@@ -83,9 +83,13 @@ class _FakeUserReference(_FakeGVEntity):
         accounts_storage_relationship = self._format_relationship_entry(relationship_path='authorized_storage_accounts')
         accounts_citation_relationship = self._format_relationship_entry(
             relationship_path='authorized_citation_accounts')
+        accounts_computing_relationship = self._format_relationship_entry(
+            relationship_path='authorized_computing_accounts'
+        )
         return {
             'authorized_storage_accounts': accounts_storage_relationship,
-            'authorized_citation_accounts': accounts_citation_relationship
+            'authorized_citation_accounts': accounts_citation_relationship,
+            'authorized_computing_accounts': accounts_computing_relationship,
         }
 
 
@@ -114,9 +118,13 @@ class _FakeResourceReference(_FakeGVEntity):
             relationship_path='configured_storage_addons')
         configured_citation_addons_relationship = self._format_relationship_entry(
             relationship_path='configured_citation_addons')
+        configured_computing_addons_relationship = self._format_relationship_entry(
+            relationship_path='configured_computing_addons'
+        )
         return {
             'configured_storage_addons': configured_storage_addons_relationship,
-            'configured_citation_addons': configured_citation_addons_relationship
+            'configured_citation_addons': configured_citation_addons_relationship,
+            'configured_computing_addons': configured_computing_addons_relationship,
         }
 
 
@@ -152,8 +160,9 @@ class _FakeCitationAddonProvider(_FakeAddonProvider):
     RESOURCE_TYPE = 'external-citation-services'
 
 
-class _FakeRemoteComputeAddonProvider(_FakeAddonProvider):
-    RESOURCE_TYPE = 'external-citation-services'
+class _FakeComputingAddonProvider(_FakeAddonProvider):
+    RESOURCE_TYPE = 'external-computing-services'
+
 
 @dataclasses.dataclass(frozen=True)
 class _FakeStorageAccount(_FakeGVEntity):
@@ -162,7 +171,7 @@ class _FakeStorageAccount(_FakeGVEntity):
     display_name: str = ''
     external_storage_service: _FakeAddonProvider | None = None
     external_citation_service: _FakeCitationAddonProvider | None = None
-    external_computing_service: _FakeRemoteComputeAddonProvider | None = None
+    external_computing_service: _FakeComputingAddonProvider | None = None
 
     @property
     @cache
@@ -201,6 +210,17 @@ class _FakeStorageAccount(_FakeGVEntity):
                     relationship_path='configured_citation_addons'
                 )
             })
+        if self.external_computing_service is not None:
+            _serialized_relationships.update({
+                'external_computing_service': self._format_relationship_entry(
+                    relationship_path='external_computing_service',
+                    related_type=_FakeComputingAddonProvider.RESOURCE_TYPE,
+                    related_pk=self.external_computing_service.pk
+                ),
+                'configured_computing_addons': self._format_relationship_entry(
+                    relationship_path='configured_computing_addons'
+                )
+            })
         if self.external_storage_service is not None:
             _serialized_relationships.update({
                 'external_storage_service': self._format_relationship_entry(
@@ -219,7 +239,7 @@ class _FakeCitationAccount(_FakeStorageAccount):
     RESOURCE_TYPE = 'authorized-citation-accounts'
 
 @dataclasses.dataclass(frozen=True)
-class _FakeRemoteComputeAccount(_FakeStorageAccount):
+class _FakeComputingAccount(_FakeStorageAccount):
     RESOURCE_TYPE = 'authorized-computing-accounts'
 
 
@@ -265,6 +285,12 @@ class _FakeStorageAddon(_FakeGVEntity):
                 related_type=_FakeCitationAddonProvider.RESOURCE_TYPE,
                 related_pk=self.base_account.external_storage_service.pk
             ),
+            # TODO: uncomment this after fixing the gv_fakes testing for non-storage
+            # 'external_computing_service': self._format_relationship_entry(
+            #     relationship_path='external_computing_service',
+            #     related_type=_FakeComputingAddonProvider.RESOURCE_TYPE,
+            #     related_pk=self.base_account.external_computing_service.pk
+            # ),
             'connected_operations': self._format_relationship_entry(
                 relationship_path='connected_operations'
             ),
@@ -275,7 +301,7 @@ class _FakeCitationAddon(_FakeStorageAddon):
     RESOURCE_TYPE = 'configured-citation-addons'
 
 @dataclasses.dataclass(frozen=True)
-class _FakeRemoteComputeAddon(_FakeStorageAddon):
+class _FakeComputingAddon(_FakeStorageAddon):
     RESOURCE_TYPE = 'configured-computing-addons'
 
 class FakeGravyValet:
@@ -284,13 +310,17 @@ class FakeGravyValet:
         r'v1/resource-references(/(?P<pk>\d+)|(\?filter\[resource_uri\]=(?P<resource_uri>[^&]+)))': '_get_resource',
         r'v1/authorized-storage-accounts/(?P<pk>\d+)': '_get_account',
         r'v1/authorized-citation-accounts/(?P<pk>\d+)': '_get_citation_account',
+        r'v1/authorized-computing-accounts/(?P<pk>\d+)': '_get_computing_account',
         r'v1/configured-storage-addons/(?P<pk>\d+)': '_get_addon',
         r'v1/configured-citation-addons/(?P<pk>\d+)': '_get_citation_addon',
+        r'v1/configured-computing-addons/(?P<pk>\d+)': '_get_computing_addon',
         r'v1/configured-storage-addons/(?P<pk>\d+)/waterbutler-credentials': '_get_wb_settings',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_citation_accounts': '_get_user_citation_accounts',
+        r'v1/user-references/(?P<user_pk>\d+)/authorized_computing_accounts': '_get_user_computing_accounts',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_citation_addons': '_get_resource_citation_addons',
+        r'v1/resource-references/(?P<resource_pk>\d+)/configured_computing_addons': '_get_resource_computing_addons',
     }
 
     def __init__(self):
@@ -343,11 +373,17 @@ class FakeGravyValet:
         return resource_uri, resource_pk
 
     def configure_fake_provider(self, provider_name: str, is_citation_provider: bool = False,
-                                **service_attrs) -> _FakeAddonProvider:
+                                is_computing_provider: bool = False, **service_attrs) -> _FakeAddonProvider:
         known_provider = self._known_providers.get(provider_name)
         provider_pk = known_provider.pk if known_provider else len(self._known_providers) + 1
         if is_citation_provider:
             new_provider = _FakeCitationAddonProvider(
+                name=provider_name,
+                pk=provider_pk,
+                **service_attrs
+            )
+        elif is_computing_provider:
+            new_provider = _FakeComputingAddonProvider(
                 name=provider_name,
                 pk=provider_pk,
                 **service_attrs
@@ -375,7 +411,7 @@ class FakeGravyValet:
             account_type = 'citation'
         elif isinstance(connected_provider, _FakeAddonProvider):
             account_type = 'storage'
-        elif isinstance(connected_provider, _FakeRemoteComputeAddonProvider):
+        elif isinstance(connected_provider, _FakeComputingAddonProvider):
             account_type = 'computing'
         else:
             raise Exception('unknown addon provider type')
@@ -570,6 +606,34 @@ class FakeGravyValet:
             )
         return _format_response_body(data=[], list_view=True)
 
+    def _get_computing_account(
+            self,
+            headers: dict,
+            pk: str,
+            include_param: str = '',
+    ) -> str:
+        pk = int(pk)
+        account = None
+        for account in itertools.chain.from_iterable(self._user_accounts.values()):
+            if account.pk == pk:
+                account = account
+                break
+
+        if not account:
+            logger.critical('Account not found')
+            raise FakeGVError(HTTPStatus.NOT_FOUND)
+
+        if self.validate_headers:
+            user_uri = self._known_users[account.account_owner_pk]
+            _validate_user(user_uri, headers)
+        if account.external_computing_service is not None:
+            return _format_response_body(
+                data=account,
+                list_view=False,
+                include_param=include_param,
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_addon(
             self, headers: dict,
             pk: str,
@@ -621,6 +685,32 @@ class FakeGravyValet:
             )
         return _format_response_body(data=[], list_view=True)
 
+    def _get_computing_addon(
+            self, headers: dict,
+            pk: str,
+            include_param: str = '',
+    ) -> str:
+        pk = int(pk)
+        addon = None
+        for addon in itertools.chain.from_iterable(self._resource_addons.values()):
+            if addon.pk == pk:
+                addon = addon
+                break
+
+        if not addon:
+            raise FakeGVError(HTTPStatus.NOT_FOUND)
+
+        if self.validate_headers:
+            resource_uri = self._known_resources[addon.resource_pk]
+            _validate_resource_access(resource_uri, headers)
+        if addon.base_account.external_computing_service is not None:
+            return _format_response_body(
+                data=addon,
+                list_view=False,
+                include_param=include_param,
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_user_accounts(
             self,
             headers: dict,
@@ -657,6 +747,25 @@ class FakeGravyValet:
             )
         return _format_response_body(data=[], list_view=True)
 
+    def _get_user_computing_accounts(
+            self,
+            headers: dict,
+            user_pk: str,
+            include_param: str = '',
+    ) -> str:
+        user_pk = int(user_pk)
+        if self.validate_headers:
+            user_uri = self._known_users[user_pk]
+            _validate_user(user_uri, headers)
+        if all(map(lambda x: x.external_computing_service is not None,
+                   self._user_accounts.get(user_pk, []))):
+            return _format_response_body(
+                data=self._user_accounts.get(user_pk, []),
+                list_view=True,
+                include_param=include_param
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_resource_addons(
             self,
             headers: dict,
@@ -685,6 +794,25 @@ class FakeGravyValet:
             resource_uri = self._known_resources[resource_pk]
             _validate_resource_access(resource_uri, headers)
         if all(map(lambda x: x.base_account.external_citation_service is not None,
+                   self._resource_addons.get(resource_pk, []))):
+            return _format_response_body(
+                data=self._resource_addons.get(resource_pk, []),
+                include_param=include_param,
+                list_view=True,
+            )
+        return _format_response_body(data=[], list_view=True)
+
+    def _get_resource_computing_addons(
+            self,
+            headers: dict,
+            resource_pk: str,
+            include_param: str = '',
+    ) -> str:
+        resource_pk = int(resource_pk)
+        if self.validate_headers:
+            resource_uri = self._known_resources[resource_pk]
+            _validate_resource_access(resource_uri, headers)
+        if all(map(lambda x: x.base_account.external_computing_service is not None,
                    self._resource_addons.get(resource_pk, []))):
             return _format_response_body(
                 data=self._resource_addons.get(resource_pk, []),
@@ -774,4 +902,4 @@ def _validate_resource_access(requested_resource_uri, headers):
 class _AccountTypes(Enum):
     storage = _FakeStorageAccount
     citation = _FakeCitationAccount
-    computing = _FakeRemoteComputeAccount
+    computing = _FakeComputingAccount
