@@ -560,6 +560,12 @@ class VersionedGuidMixin(GuidMixin):
     def get_guid(self):
         return self.versioned_guids.first().guid
 
+    def get_semantic_iri(self):
+        _osfid = self.get_guid()._id
+        if not _osfid:
+            raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
+        return osfid_iri(_osfid)
+
     _primary_key = _id
 
 @receiver(post_save)
