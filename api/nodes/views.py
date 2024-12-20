@@ -2228,7 +2228,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         node = self.get_node()
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(node.preprints.all(), auth_user)
+        return self.preprints_queryset(node.preprints.all(), auth_user, latest_only=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()

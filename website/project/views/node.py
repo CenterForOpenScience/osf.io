@@ -924,7 +924,7 @@ def serialize_collections(collection_submissions, auth):
 def serialize_preprints(node, user, latest_only=False):
     preprints = Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
     if latest_only:
-        preprints = [p for p in preprints if p.is_latest_version]
+        preprints = [preprint for preprint in preprints if preprint.is_latest_version]
     return [
         {
             'title': preprint.title,
