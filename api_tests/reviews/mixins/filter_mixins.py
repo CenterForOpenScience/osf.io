@@ -84,12 +84,9 @@ class ReviewActionFilterMixin:
         return user
 
     def test_filter_actions(self, app, url, user, expected_actions):
-        # Strip any version suffixes from expected IDs
-        def unversion_id(_id):
-            return _id.split('_v')[0] if '_v' in _id else _id
-
-        expected = {unversion_id(item._id) for item in expected_actions}
-        actual = {unversion_id(a) for a in get_actual(app, url, user)}
+        # unfiltered
+        expected = {item._id for item in expected_actions}
+        actual = get_actual(app, url, user)
         assert expected == actual
 
         if not expected_actions:
@@ -98,67 +95,61 @@ class ReviewActionFilterMixin:
         action = expected_actions[0]
 
         # filter by id
-        unversioned_action_id = unversion_id(action._id)
-        expected = {unversioned_action_id}
-        actual = {unversion_id(a) for a in get_actual(app, url, user, id=unversioned_action_id)}
+        expected = {action._id}
+        actual = get_actual(app, url, user, id=action._id)
         assert expected == actual
 
         # filter by trigger
         expected = {
-            unversion_id(item._id) for item in expected_actions if item.trigger == action.trigger
-        }
-        actual = {unversion_id(a) for a in get_actual(app, url, user, trigger=action.trigger)}
+            item._id for item in expected_actions if item.trigger == action.trigger}
+        actual = get_actual(app, url, user, trigger=action.trigger)
         assert expected == actual
 
         # filter by from_state
         expected = {
-            unversion_id(item._id) for item in expected_actions if item.from_state == action.from_state
-        }
-        actual = {unversion_id(a) for a in get_actual(app, url, user, from_state=action.from_state)}
+            item._id for item in expected_actions if item.from_state == action.from_state}
+        actual = get_actual(app, url, user, from_state=action.from_state)
         assert expected == actual
 
         # filter by to_state
         expected = {
-            unversion_id(item._id) for item in expected_actions if item.to_state == action.to_state
-        }
-        actual = {unversion_id(a) for a in get_actual(app, url, user, to_state=action.to_state)}
+            item._id for item in expected_actions if item.to_state == action.to_state}
+        actual = get_actual(app, url, user, to_state=action.to_state)
         assert expected == actual
 
         # filter by date_created
-        expected = {unversion_id(item._id) for item in expected_actions}
-        actual = {unversion_id(a) for a in get_actual(app, url, user, date_created=action.created)}
+        expected = {item._id for item in expected_actions}
+        actual = get_actual(app, url, user, date_created=action.created)
         assert expected == actual
 
         expected = set()
-        actual = {unversion_id(a) for a in get_actual(
+        actual = get_actual(
             app, url, user,
-            date_created=action.created - timedelta(days=1))}
+            date_created=action.created - timedelta(days=1))
         assert expected == actual
 
         # filter by date_modified
-        expected = {unversion_id(item._id) for item in expected_actions}
-        actual = {unversion_id(a) for a in get_actual(app, url, user, date_modified=action.modified)}
+        expected = {item._id for item in expected_actions}
+        actual = get_actual(app, url, user, date_modified=action.modified)
         assert expected == actual
 
         expected = set()
-        actual = {unversion_id(a) for a in get_actual(
+        actual = get_actual(
             app, url, user,
-            date_modified=action.modified - timedelta(days=1))}
+            date_modified=action.modified - timedelta(days=1))
         assert expected == actual
 
         # filter by target
         expected = {
-            unversion_id(item._id) for item in expected_actions if item.target_id == action.target_id
-        }
-        actual = {unversion_id(a) for a in get_actual(app, url, user, target=unversion_id(action.target._id))}
+            item._id for item in expected_actions if item.target_id == action.target_id}
+        actual = get_actual(app, url, user, target=action.target._id)
         assert expected == actual
 
         # filter by provider
         expected = {
-            unversion_id(item._id) for item in expected_actions if item.target.provider_id == action.target.provider_id
-        }
-        actual = {unversion_id(a) for a in get_actual(
-            app, url, user, provider=action.target.provider._id)}
+            item._id for item in expected_actions if item.target.provider_id == action.target.provider_id}
+        actual = get_actual(
+            app, url, user, provider=action.target.provider._id)
         assert expected == actual
 
 
