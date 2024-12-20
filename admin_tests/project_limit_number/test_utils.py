@@ -201,8 +201,8 @@ class TestGenerateLogicConditionFromAttribute(TestCase):
         }
 
         expected = (
-            'data -> \'idp_attr\' ->> \'eppn\' = %s OR '
-            'data -> \'idp_attr\' ->> \'username\' = %s'
+            '( data -> \'idp_attr\' ->> \'eppn\' = %s OR '
+            'data -> \'idp_attr\' ->> \'username\' = %s )'
         )
         query, params = generate_logic_condition_from_attribute(attribute)
         self.assertEqual(query, expected)
@@ -217,8 +217,8 @@ class TestGenerateLogicConditionFromAttribute(TestCase):
         }
 
         expected = (
-            'data -> \'idp_attr\' ->> \'eppn\' LIKE %s OR '
-            'data -> \'idp_attr\' ->> \'username\' LIKE %s'
+            '( data -> \'idp_attr\' ->> \'eppn\' LIKE %s OR '
+            'data -> \'idp_attr\' ->> \'username\' LIKE %s )'
         )
         query, params = generate_logic_condition_from_attribute(attribute)
         self.assertEqual(query, expected)

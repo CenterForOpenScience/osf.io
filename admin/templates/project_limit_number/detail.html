@@ -279,7 +279,7 @@
                     }
                     let tableDiv = '';
                     for (item of responseData) {
-                        let project_limit_number = (!!item.project_limit_number && item.project_limit_number !== -1) ? item.project_limit_number : '{% trans "No Limit" %}';
+                        let project_limit_number = item.project_limit_number !== -1 ? item.project_limit_number : '{% trans "No Limit" %}';
                         tableDiv += `
                             <tr>
                                 <td>`+ (item.guid || '') +`</td>

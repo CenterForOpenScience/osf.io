@@ -256,7 +256,7 @@ class ProjectLimitNumberTemplatesViewUpdate(RdmPermissionMixin, UserPassesTestMi
             'attributes__attribute_name',
             'attributes__setting_type',
             'attributes__attribute_value'
-        ).order_by('id').all()
+        ).order_by('attributes__id').all()
 
         # Check template is NULL
         if len(template) == 0:
@@ -556,7 +556,7 @@ class DeleteProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
 
             if template is None:
                 return JsonResponse(
-                    {'error_message': 'Template not found'},
+                    {'error_message': 'The template not exist.'},
                     status=HTTPStatus.NOT_FOUND
                 )
 

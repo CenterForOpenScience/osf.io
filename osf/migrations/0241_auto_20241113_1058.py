@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('institution', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='project_limit_number_settings', to='osf.Institution')),
                 ('template', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to='osf.ProjectLimitNumberTemplate')),
                 ('name', models.CharField(max_length=255)),
-                ('project_limit_number', models.IntegerField(blank=True, null=True)),
+                ('project_limit_number', models.IntegerField()),
                 ('priority', models.IntegerField()),
                 ('memo', models.CharField(blank=True, max_length=255, null=True)),
                 ('is_availability', models.BooleanField(default=True)),

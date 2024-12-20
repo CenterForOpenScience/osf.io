@@ -30,3 +30,6 @@ form p label {
     padding-bottom: 20px;
 }
 
+.wrapper {
+    overflow-y: hidden;
+}

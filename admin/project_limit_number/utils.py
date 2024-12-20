@@ -109,8 +109,8 @@ def generate_logic_condition_from_attribute(attribute):
     # Attribute name is EDU_PERSON_PRINCIPAL_NAME
     if attribute_name == EDU_PERSON_PRINCIPAL_NAME:
         return (
-            f'{extended_data_idp_attr.format(attribute_column="eppn")} {attribute_value_compare_string} OR '
-            f'{extended_data_idp_attr.format(attribute_column="username")} {attribute_value_compare_string}'
+            f'( {extended_data_idp_attr.format(attribute_column="eppn")} {attribute_value_compare_string} OR '
+            f'{extended_data_idp_attr.format(attribute_column="username")} {attribute_value_compare_string} )'
         ), params + params
 
     # Attribute name is MAIL_GRDM

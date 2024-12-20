@@ -45,8 +45,7 @@ function handleAjaxRequestFailure(jqXHR) {
             if (data && data['error_message']) {
                 // Convert message from snake_case to camelCase
                 if (data['error_message'].includes('_')) {
-                    // Replace _ with space and add prefix The
-                    data['error_message'] = "The " + data['error_message'].replace('_', ' ');
+                    data['error_message'] = "The " + data['error_message'].replace(/_/g, ' ');
                 } else if (data['error_message'].startsWith('name is')) {
                     // Special case that we need to change the name property from response to setting name
                     data['error_message'] = data['error_message'].replace('name is', 'The setting name is');
@@ -93,6 +92,11 @@ $(document).ready(function() {
     $('#template_id').on('invalid', setInvalidMessageForTemplateName);
     $('input[name="attribute_value_input"]').on('invalid', setInvalidMessageForAttributeValue);
 })
+
+// Trim input data on blur
+$('input').on('blur', function(event) {
+    event.target.value = event.target.value.trim();
+});
 
 // Expose functions to the global scope
 window.handleAjaxRequestFailure = handleAjaxRequestFailure;

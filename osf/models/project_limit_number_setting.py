@@ -10,7 +10,7 @@ class ProjectLimitNumberSetting(BaseModel):
     institution = ForeignKey(Institution, related_name='project_limit_number_settings', on_delete=models.CASCADE)
     template = ForeignKey(ProjectLimitNumberTemplate, related_name='settings', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
-    project_limit_number = models.IntegerField(null=True, blank=True)
+    project_limit_number = models.IntegerField()
     priority = models.IntegerField()
     memo = models.CharField(max_length=255, null=True, blank=True)
     is_availability = models.BooleanField(default=True)

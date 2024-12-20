@@ -268,7 +268,17 @@
         $(document).on('change', '.setting-availability', function() {
             let row = $(this).closest('tr').get(0);
             let settingId = Number(row.querySelector('.setting-id').value, 10);
-            changes.availability[settingId] = this.checked;
+            let changeItem = changes.availability[settingId];
+            if (!changes.availability[settingId]) {
+                changes.availability[settingId] = {
+                    new: this.checked
+                }
+                if (!changes.availability[settingId].old) {
+                    changes.availability[settingId].old = !this.checked;
+                }
+            } else if (this.checked === changes.availability[settingId].old) {
+                delete changes.availability[settingId];
+            }
             updateChangeList();
         });
 
@@ -288,7 +298,7 @@
                 updateMoveButtons(previousRow);
 
                 // Update change list
-                updateChangeList(currentRow, previousRow);
+                updateChangeList();
             }
         }
 
@@ -308,7 +318,7 @@
                 updateMoveButtons(nextRow);
 
                 // Update change list
-                updateChangeList(currentRow, nextRow);
+                updateChangeList();
             }
         }
 
@@ -320,8 +330,18 @@
                 let newPriority = pageOffset + allRows.indexOf(row) + 1;
                 let settingId = Number(row.querySelector('.setting-id').value, 10);
                 // Record the change
+                if (!changes.priority[settingId]) {
+                    let oldPriority = Number(prioritySpan.textContent, 10);
+                    changes.priority[settingId] = {
+                        new: newPriority
+                    }
+                    if (!changes.priority[settingId].old) {
+                        changes.priority[settingId].old = oldPriority;
+                    }
+                } else if (newPriority === changes.priority[settingId].old) {
+                    delete changes.priority[settingId];
+                }
                 prioritySpan.textContent = newPriority;
-                changes.priority[settingId] = newPriority;
                 updateChangeList();
             }
         }
@@ -436,6 +456,15 @@
                     }
                 }
             }).fail(function (jqXHR, textStatus, error) {
+                // Find the focused element
+                const focusedElement = document.activeElement;
+                if (focusedElement) {
+                    const ancestorDiv = focusedElement.closest('div[aria-hidden="true"]');
+                    if (ancestorDiv) {
+                        // Remove the ancestor div
+                        ancestorDiv.remove();
+                    }
+                }
                 handleAjaxRequestFailure(jqXHR);
             });
         }

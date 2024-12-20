@@ -113,6 +113,7 @@ class TestProjectLimitNumberSettingListView(AdminTestCase):
         setting = ProjectLimitNumberSetting.objects.create(
             institution=self.institution,
             template=self.template,
+            project_limit_number=-1,
             is_deleted=False,
             priority=1
         )
@@ -169,6 +170,7 @@ class TestProjectLimitNumberSettingListView(AdminTestCase):
             ProjectLimitNumberSetting.objects.create(
                 institution=self.institution,
                 template=self.template,
+                project_limit_number=-1,
                 priority=i,
                 is_deleted=False
             )
@@ -517,6 +519,7 @@ class TestProjectLimitNumberSettingSaveAvailabilityView(AdminTestCase):
         self.setting1 = ProjectLimitNumberSetting.objects.create(
             institution=self.institution,
             template=self.template,
+            project_limit_number=-1,
             priority=1,
             is_availability=True,
             is_deleted=False
@@ -524,6 +527,7 @@ class TestProjectLimitNumberSettingSaveAvailabilityView(AdminTestCase):
         self.setting2 = ProjectLimitNumberSetting.objects.create(
             institution=self.institution,
             template=self.template,
+            project_limit_number=-1,
             priority=2,
             is_availability=True,
             is_deleted=False
@@ -838,6 +842,7 @@ class TestDeleteProjectLimitNumberSettingView(AdminTestCase):
             institution=self.institution,
             template=self.template,
             name='Test Setting 1',
+            project_limit_number=-1,
             priority=1,
             is_deleted=False
         )
@@ -845,6 +850,7 @@ class TestDeleteProjectLimitNumberSettingView(AdminTestCase):
         self.setting2 = ProjectLimitNumberSetting.objects.create(
             institution=self.institution,
             template=self.template,
+            project_limit_number=-1,
             name='Test Setting 2',
             priority=2,
             is_deleted=False
@@ -1547,6 +1553,7 @@ class TestCreateProjectLimitNumberSettingView(AdminTestCase):
             institution=self.institution,
             template=self.template,
             name='Test Setting',
+            project_limit_number=-1,
             priority=1,
             is_deleted=False
         )
@@ -2142,6 +2149,7 @@ class TestUpdateProjectLimitNumberSettingView(AdminTestCase):
         ProjectLimitNumberSetting.objects.create(
             institution=self.institution,
             template=self.template,
+            project_limit_number=-1,
             name=self.valid_data['name'],
             priority=2,
             is_deleted=False

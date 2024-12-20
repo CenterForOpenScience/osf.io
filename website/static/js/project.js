@@ -117,9 +117,15 @@ NodeActions.forkPointer = function(nodeId) {
                 ).done(function(response) {
                     $osf.unblock();
                     afterForkGoto(response.data.node.url);
-                }).fail(function() {
+                }).fail(function(response) {
                     $osf.unblock();
-                    $osf.growl('Error',_('Could not fork link.'));
+                    // Check response has project limit number error
+                    var error_detail = response.responseJSON.message_long ? (response.responseJSON && response.responseJSON.message_long) : '';
+                    if (error_detail === LIMITED_ERROR){
+                        $osf.growl('Error', _(error_detail));
+                    } else {
+                        $osf.growl('Error', _('Could not fork link.'));
+                    }
                 });
             }
         },

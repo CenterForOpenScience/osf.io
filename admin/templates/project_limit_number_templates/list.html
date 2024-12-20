@@ -199,6 +199,15 @@
                     }
                 }
             }).fail(function (jqXHR, textStatus, error) {
+                // Find the focused element
+                const focusedElement = document.activeElement;
+                if (focusedElement) {
+                    const ancestorDiv = focusedElement.closest('div[aria-hidden="true"]');
+                    if (ancestorDiv) {
+                        // Remove the ancestor div
+                        ancestorDiv.remove();
+                    }
+                }
                 handleAjaxRequestFailure(jqXHR);
             });
         }

@@ -1380,7 +1380,7 @@ class TestDeleteProjectLimitNumberTemplatesSettingView(AdminTestCase):
         response = self.view.delete(request)
         self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
         response_data = json.loads(response.content)
-        self.assertEqual(response_data['error_message'], 'Template not found')
+        self.assertEqual(response_data['error_message'], 'The template not exist.')
 
     @mock.patch('osf.models.ProjectLimitNumberTemplate.objects.filter')
     def test_delete_data_template_is_being_used(self, mock_template_filter):
