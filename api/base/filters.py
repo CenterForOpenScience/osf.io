@@ -19,7 +19,7 @@ from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
-from osf.models.base import GuidMixin
+from osf.models.base import GuidMixin, Guid
 from functools import cmp_to_key
 
 def lowercase(lower):
@@ -291,7 +291,36 @@ class FilterMixin:
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
+                        base_guid, version = Guid.split_guid(value)
+                        if base_guid is None and version is None:
+                            raise InvalidFilterValue(
+                                value=value,
+                                field_type='guid',
+                            )
+                        guid_filters = {
+                            field_name: {
+                                'op': 'in',
+                                'value': self.bulk_get_values(value, field),
+                                'source_field_name': source_field_name,
+                            },
+                        }
+                        if version is not None:
+                            guid_filters = {
+                                field_name: {
+                                    'op': 'eq',
+                                    'value': base_guid,
+                                    'source_field_name': 'versioned_guids___id',
+                                },
+                                'versioned_guids__version': {
+                                    'op': 'eq',
+                                    'value': version,
+                                    'source_field_name': 'versioned_guids__version',
+                                },
+                            }
+
+                        query.get(key).update(guid_filters)
+                    elif not isinstance(value, int) and source_field_name in ['journal_id', 'moderation_state']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
