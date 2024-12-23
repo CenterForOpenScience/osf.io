@@ -11,7 +11,7 @@ from flask import request
 from django.apps import apps
 from django.utils import timezone
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Q, OuterRef, Subquery
+from django.db.models import Q, OuterRef, Subquery, Prefetch, Case, When, Value, BooleanField
 
 from framework import status
 from framework.utils import iso8601format
@@ -525,9 +525,11 @@ def node_choose_addons(auth, node, **kwargs):
 @ember_flag_is_active(features.EMBER_PROJECT_CONTRIBUTORS)
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
-    ret['contributors'] = utils.serialize_contributors(node.contributors, node)
+    contribs = node.contributor_set.include('user__groups', 'user__guids', 'user__ext')
+    ret['contributors'] = utils.serialize_contributors(contribs, node)
     ret['access_requests'] = utils.serialize_access_requests(node)
-    ret['adminContributors'] = utils.serialize_contributors(node.parent_admin_contributors, node, admin=True)
+    admin_contribs = node.parent_admin_contributors.include('groups', 'guids', 'ext')
+    ret['adminContributors'] = utils.serialize_contributors(admin_contribs, node, admin=True)
     return ret
 
 
@@ -1195,13 +1197,34 @@ def serialize_child_tree(child_list, user, nested):
         if child.has_permission(user, READ) or child.has_permission_on_children(user, READ):
             # is_admin further restricted here to mean user is a traditional admin group contributor -
             # admin group membership not sufficient
-            admin_contributors = list(child.get_admin_contributors(child.contributors))
-            contributors = [{
-                'id': contributor.user._id,
-                'is_admin': contributor.user in admin_contributors,
-                'is_confirmed': contributor.user.is_confirmed,
-                'visible': contributor.visible
-            } for contributor in child.contributor_set.all()]
+            admin_contributors = set(child.get_admin_contributors(child.contributors))
+            contribs = list(
+                child.contributor_set.prefetch_related(
+                    Prefetch(
+                        'user', queryset=OSFUser.objects.only('date_confirmed')
+                    )
+                )
+                .annotate(
+                    is_admin=Case(
+                        When(user__in=admin_contributors, then=Value(True)),
+                        default=Value(False),
+                        output_field=BooleanField(),
+                    )
+                )
+                .values(
+                    'user__guids___id', 'is_admin', 'user__date_confirmed', 'visible'
+                )
+            )
+
+            contributors = [
+                {
+                    'id': contrib['user__guids___id'],
+                    'is_admin': contrib['is_admin'],
+                    'is_confirmed': bool(contrib['user__date_confirmed']),
+                    'visible': contrib['visible'],
+                }
+                for contrib in contribs
+            ]
 
             serialized_children.append({
                 'node': {
@@ -1239,7 +1262,6 @@ def node_child_tree(user, node):
     children = (Node.objects.get_children(node)
                 .filter(is_deleted=False)
                 .annotate(parentnode_id=Subquery(parent_node_sqs[:1]))
-                .include('contributor__user__guids')
                 )
 
     nested = defaultdict(list)
