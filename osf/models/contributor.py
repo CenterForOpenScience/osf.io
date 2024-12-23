@@ -103,7 +103,9 @@ def get_contributor_permission(contributor, resource):
     write = resource.format_group(permissions.WRITE)
     admin = resource.format_group(permissions.ADMIN)
     # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
-    user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    # user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    # Above filter cause N+1 problem
+    user_groups = [g.name for g in contributor.user.groups.all()]
     if admin in user_groups:
         return permissions.ADMIN
     elif write in user_groups:
