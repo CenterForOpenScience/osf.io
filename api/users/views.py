@@ -797,27 +797,9 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         if claimed_user.is_disabled:
             raise ValidationError('Cannot claim disabled account.')
 
-        base_guid, version = Guid.split_guid(record_id)
-        if version:
-            try:
-                version = int(version)
-            except ValueError:
-                raise NotFound('Unable to find specified record.')
-
-            guid_obj = Guid.objects.filter(_id=base_guid).first()
-            if not guid_obj:
-                raise NotFound('Unable to find specified record.')
-
-            versioned_entry = guid_obj.versions.filter(version=version).first()
-            if not versioned_entry:
-                raise NotFound('Unable to find specified record.')
-
-            record_referent = versioned_entry.referent
-        else:
-            try:
-                record_referent = Guid.objects.get(_id=base_guid).referent
-            except Guid.DoesNotExist:
-                raise NotFound('Unable to find specified record.')
+        record_referent, version = Guid.load_referent(record_id)
+        if not record_referent:
+            raise NotFound('Unable to find specified record.')
 
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
