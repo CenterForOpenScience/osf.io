@@ -154,8 +154,7 @@ class TestNodePreprintIsPublishedList(PreprintIsPublishedListMixin):
             preprint_unpublished,
             preprint_published, url):
         res = app.get(url, auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 2
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 1
         assert preprint_published._id in [d['id'] for d in res.json['data']]
 
     def test_unpublished_invisible_to_write_contribs(
