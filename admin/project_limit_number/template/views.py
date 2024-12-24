@@ -202,6 +202,9 @@ class ProjectLimitNumberTemplatesViewCreate(RdmPermissionMixin, UserPassesTestMi
                     setting_type = attribute.get('setting_type')
                     if setting_type in SETTING_TYPE_FREE_VALUE_LIST:
                         attribute_value = None
+                    elif setting_type in SETTING_TYPE_LIST_VALUE_LIST:
+                        strip_list = [item.strip() for item in attribute.get('attribute_value', '').split(',')]
+                        attribute_value = ','.join(strip_list)
                     else:
                         attribute_value = attribute.get('attribute_value').strip()
 
@@ -470,6 +473,9 @@ class UpdateProjectLimitNumberTemplatesSettingView(RdmPermissionMixin, UserPasse
                 setting_type = attribute.get('setting_type')
                 if setting_type in SETTING_TYPE_FREE_VALUE_LIST:
                     attribute_value = None
+                elif setting_type in SETTING_TYPE_LIST_VALUE_LIST:
+                    strip_list = [item.strip() for item in attribute.get('attribute_value', '').split(',')]
+                    attribute_value = ','.join(strip_list)
                 else:
                     attribute_value = attribute.get('attribute_value', '').strip()
 

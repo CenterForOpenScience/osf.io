@@ -170,8 +170,7 @@
                                    data-toggle="toggle" data-onstyle="success" class="btn apple-switch setting-availability {% if setting.is_availability %}checked{% endif %}">
                         </td>
                         <td class="wrap-cell" style="white-space: pre-wrap !important;">{{setting.setting_name|default_if_none:''}}</td>
-                        <td class="wrap-cell" style="white-space: pre-wrap !important;">{{setting.template_name|default_if_none:''}}
-                        </td>
+                        <td class="wrap-cell" style="white-space: pre-wrap !important;">{{setting.template_name|default_if_none:''}}</td>
                         <td class="wrap-cell">
                             {{ setting.memo|default_if_none:'' }}
                         </td>

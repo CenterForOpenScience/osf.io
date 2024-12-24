@@ -102,7 +102,7 @@
             <label for="template_id" class="col-md-2" style="width: 10%; padding-top: 6px;">{% trans 'Rule Name' %}</label>
             <div class="col-md-10">
                 <input id="template_id" type="text" name="template_name" class="form-control"
-                    style="border-radius: 5px;"
+                    style="border-radius: 5px; white-space: pre-wrap !important;"
                     value="{{ template_name }}" placeholder="{% trans 'Rule Name' %}" disabled required>
             </div>
         </div>
@@ -164,7 +164,7 @@
                             </div>
                         {% else %}
                             <div class="col-md-4">
-                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px;"
+                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px; white-space: pre-wrap !important;"
                                    minlength="1" required placeholder="{% trans 'Value' %}" value="{{ setting_attribute.attribute_value|default_if_none:'' }}"
                                    {% if setting_attribute.setting_type == 3 or setting_attribute.setting_type == 4 %}disabled="disabled"{% endif %}>
                             </div>
@@ -209,6 +209,12 @@
 {% block bottom_js %}
     {% render_bundle 'project-limit-number-setting-page' %}
     <script type="text/javascript">
+        // Change display for some special character
+        document.querySelectorAll('select[name="attribute_value_select"] option').forEach(option => {
+            option.innerHTML = option.textContent.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
+                                .replace(/\u3000/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+                                .replace(/ /g, '&nbsp;');
+        });
         $('#project_limit_number_id').select2();
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution_id }},
