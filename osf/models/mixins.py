@@ -24,6 +24,7 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
+from . import Preprint
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
@@ -1384,7 +1385,7 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
 
-            if self._id and contrib_to_add:
+            if (self._id and contrib_to_add) or (isinstance(self, Preprint) and contrib_to_add):
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email, permissions=permissions)
