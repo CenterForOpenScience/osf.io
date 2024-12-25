@@ -44,7 +44,7 @@
                                    id="template_id_{{ project_limit_number_template.id }}"
                                    {% if project_limit_number_template.used_setting_number > 0 %} disabled {% endif %}>
                     </td>
-                    <td style="white-space: pre-wrap;">{{project_limit_number_template.template_name|default_if_none:''}}</td>
+                    <td style="white-space: pre-wrap; word-break: break-word !important;">{{project_limit_number_template.template_name|default_if_none:''}}</td>
                     <td>
                         {{ project_limit_number_template.attribute_names }}
                     </td>

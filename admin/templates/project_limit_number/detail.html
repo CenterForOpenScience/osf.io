@@ -11,6 +11,8 @@
     <style type="text/css">
         .select2-container.select2-container--default {
             width: 100% !important;
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
         }
 
         .select2-container--default .select2-selection--single {
@@ -20,6 +22,9 @@
 
             .select2-selection__arrow {
                 height: 34px !important;
+            }
+            .select2-selection__rendered {
+                white-space: pre !important;
             }
         }
 
@@ -154,17 +159,15 @@
                         </div>
                         {% if setting_attribute.setting_type == 5 or setting_attribute.setting_type == 6 %}
                             <div class="col-md-4">
-                                <select name="attribute_value_select" class="form-control attribute-value" style="width: 100%; border-radius: 5px;">
+                                <select id= "attribute_value_select" name="attribute_value_select" class="form-control attribute-value" style="width: 100%; border-radius: 5px;">
                                     {% for value in setting_attribute.attribute_value_select_list %}
-                                        <option value="{{ value }}" {% if setting_attribute.attribute_value == value %}selected{% endif %}>
-                                            {{ value|default_if_none:'' }}
-                                        </option>
+                                        <option value="{{ value }}" {% if setting_attribute.attribute_value == value %}selected{% endif %}>{{ value|default_if_none:'' }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
                         {% else %}
                             <div class="col-md-4">
-                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px; white-space: pre-wrap !important;"
+                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px; white-space: pre-wrap !important;text-overflow: ellipsis;"
                                    minlength="1" required placeholder="{% trans 'Value' %}" value="{{ setting_attribute.attribute_value|default_if_none:'' }}"
                                    {% if setting_attribute.setting_type == 3 or setting_attribute.setting_type == 4 %}disabled="disabled"{% endif %}>
                             </div>
@@ -209,12 +212,11 @@
 {% block bottom_js %}
     {% render_bundle 'project-limit-number-setting-page' %}
     <script type="text/javascript">
-        // Change display for some special character
-        document.querySelectorAll('select[name="attribute_value_select"] option').forEach(option => {
-            option.innerHTML = option.textContent.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
-                                .replace(/\u3000/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
-                                .replace(/ /g, '&nbsp;');
-        });
+        $('select[id="attribute_value_select"]').each(function() {
+            $(this).select2({
+                minimumResultsForSearch: Infinity
+            });
+        })
         $('#project_limit_number_id').select2();
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'institution_id': {{ institution_id }},

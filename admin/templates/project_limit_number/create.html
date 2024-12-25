@@ -12,6 +12,7 @@
         .select2-container.select2-container--default {
             width: 100% !important;
             white-space: pre-wrap !important;
+            word-break: break-word !important;
         }
 
         .select2-container--default .select2-selection--single {
@@ -27,7 +28,7 @@
                 height: 34px !important;
             }
             .select2-selection__rendered {
-                white-space: pre-wrap !important;
+                white-space: pre !important;
             }
         }
 
@@ -37,7 +38,7 @@
 
         .select2-hidden-accessible {
             height: 34px !important;
-            width: 100% !important;
+            width: 95% !important;
         }
 
         .flex-container {
@@ -171,7 +172,7 @@
                         </div>
                         {% if template_attribute.setting_type == 5 or template_attribute.setting_type == 6 %}
                             <div class="col-md-4">
-                                <select name="attribute_value_select" class="form-control attribute-value" style="width: 100%; border-radius: 5px;">
+                                <select id="attribute_value_select" name="attribute_value_select" class="form-control attribute-value" style="width: 100%; border-radius: 5px;">
                                     {% for value in template_attribute.attribute_value %}
                                         <option value="{{ value }}">{{ value|default_if_none:'' }}</option>
                                     {% endfor %}
@@ -179,7 +180,7 @@
                             </div>
                         {% else %}
                             <div class="col-md-4">
-                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px; white-space: pre-wrap !important;"
+                                <input type="text" name="attribute_value_input" class="form-control attribute-value" style="width: 100%; border-radius: 5px; white-space: pre-wrap !important;text-overflow: ellipsis;"
                                    minlength="1" required placeholder="{% trans 'Value' %}" value="{{ template_attribute.attribute_value|default_if_none:'' }}"
                                    {% if template_attribute.setting_type == 3 or template_attribute.setting_type == 4 %}disabled="disabled"{% endif %}>
                             </div>
@@ -223,12 +224,11 @@
 {% block bottom_js %}
     {% render_bundle 'project-limit-number-setting-page' %}
     <script type="text/javascript">
-        // Change display for some special character
-        document.querySelectorAll('select[name="attribute_value_select"] option').forEach(option => {
-            option.innerHTML = option.textContent.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;')
-                                .replace(/\u3000/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
-                                .replace(/ /g, '&nbsp;');
-        });
+        $('select[id="attribute_value_select"]').each(function() {
+            $(this).select2({
+                minimumResultsForSearch: Infinity
+            });
+        })
         $('#template_id').select2({
             placeholder: "{% trans 'Select rule name' %}"
         });
