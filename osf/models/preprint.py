@@ -338,7 +338,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         # Prepare data to clone/update
         data_for_update = {
-            'subjects': [[el] for el in source_preprint.subjects.all().values_list('_id', flat=True)],
+            'subjects': [el for el in source_preprint.subjects.all().values_list('_id', flat=True)],
             'tags': source_preprint.tags.all().values_list('name', flat=True),
             'original_publication_date': source_preprint.original_publication_date,
             'custom_publication_citation': source_preprint.custom_publication_citation,
