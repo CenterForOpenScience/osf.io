@@ -80,7 +80,7 @@ class CollectionMixin:
             user=user,
         )
         if latest_only:
-            preprints = [preprint for preprint in preprints if preprint.is_latest_version]
+            preprints = preprints.filter(pk__in=[obj.pk for obj in preprints if obj.is_latest_version])
         return preprints
 
     def get_collection_submission(self, check_object_permissions=True):

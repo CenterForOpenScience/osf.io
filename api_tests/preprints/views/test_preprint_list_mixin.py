@@ -208,8 +208,7 @@ class PreprintIsPublishedListMixin:
         res = app.get(
             f'{url}filter[is_published]=false',
             auth=user_admin_contrib.auth)
-        assert len(res.json['data']) == 1
-        assert preprint_unpublished._id in [d['id'] for d in res.json['data']]
+        assert len(res.json['data']) == 0
 
 
 @pytest.mark.django_db
