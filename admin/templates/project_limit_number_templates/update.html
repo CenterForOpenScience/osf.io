@@ -187,13 +187,20 @@
         }
 
         function navigateToPreviousPage() {
-            // Check if there's a previous page in history
-            if (window.history.length > 1) {
-                window.history.back();
-            } else {
-                // Fallback to list page if no previous page exists
-                window.location.href = "{% url 'project_limit_number:templates:list-template' %}";
+            let page = sessionStorage.getItem('template-page');
+            let pageSize = sessionStorage.getItem('template-page-size');
+            let baseUrl = "{% url 'project_limit_number:templates:list-template' %}";
+            let joinCharacter = '?';
+            if (!!page) {
+                baseUrl += joinCharacter + 'page=' + page;
+                joinCharacter = '&';
             }
+            if (!!pageSize) {
+                baseUrl += joinCharacter + 'page_size=' + pageSize;
+                joinCharacter = '&';
+            }
+            // Redirect to template list page
+            window.location.href = baseUrl;
         }
 
         function csrfSafeMethod(method) {
