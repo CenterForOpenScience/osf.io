@@ -24,7 +24,7 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
-from . import Preprint
+from .preprint import Preprint
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
