@@ -804,8 +804,10 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
         except KeyError:
-            if isinstance(record_referent,
-                          Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+            if isinstance(
+                record_referent,
+                Preprint,
+            ) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
                 record_referent = record_referent.node
                 unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
             else:
