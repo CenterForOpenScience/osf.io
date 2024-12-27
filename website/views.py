@@ -323,8 +323,6 @@ def resolve_guid(guid, suffix=None):
             return use_ember_app()
 
     # Stream to ember app if resource has emberized view
-    addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
-
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
@@ -339,7 +337,7 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
-    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and flag_is_active(request, features.EMBER_PROJECT_FILES):
+    elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('files') and flag_is_active(request, features.EMBER_PROJECT_FILES):
         return use_ember_app()
 
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('metadata'):
