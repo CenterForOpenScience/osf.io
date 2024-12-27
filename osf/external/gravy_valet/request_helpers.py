@@ -17,6 +17,7 @@ API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
 # {{placeholder}} format allows f-string to return a formatable string
 ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
 ADDONS_ENDPOINT = f'{API_BASE}configured-storage-addons'
+GENERIC_ADDONS_ENDPOINT = f'{API_BASE}{{addon_type}}'
 ADDON_ENDPOINT = f'{ADDONS_ENDPOINT}/{{pk}}'
 WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-credentials'
 
@@ -55,7 +56,7 @@ def create_addon(requested_resource, requesting_user, attributes: dict, relation
         'type': addon_type,
     }
     return _make_gv_request(
-        ADDONS_ENDPOINT,
+        GENERIC_ADDONS_ENDPOINT.format(addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method='POST',
