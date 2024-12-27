@@ -211,6 +211,9 @@ class Guid(BaseModel):
 
     @classmethod
     def split_guid(cls, guid):
+        '''
+        Return 2 parts of guid (base_guid, version)
+        '''
         if not guid:
             return None, None
         guid_parts = guid.lower().split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
@@ -231,6 +234,9 @@ class Guid(BaseModel):
 
     @classmethod
     def load_referent(cls, guid):
+        '''
+        Return referent based on guid
+        '''
         base_guid, version = cls.split_guid(guid)
 
         base_guid_obj = cls.load(base_guid)

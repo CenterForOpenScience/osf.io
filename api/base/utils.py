@@ -103,6 +103,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise NotFound
 
     elif isinstance(query_or_pk, str):
+        # if cls is subclass of VersionedGuidMixin get obj directly from model
         if issubclass(model_cls, VersionedGuidMixin):
             obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
         # they passed a 5-char guid as a string

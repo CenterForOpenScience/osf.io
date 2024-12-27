@@ -1416,11 +1416,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     # Override ReviewableMixin
     def run_submit(self, user):
-        """Run the 'reject' state transition and create a corresponding Action.
+        """Run the 'submit' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
-            comment: Text describing why.
         """
         ret = super().run_submit(user=user)
         provider = self.provider
