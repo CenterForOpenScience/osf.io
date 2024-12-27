@@ -1375,6 +1375,8 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
         for addon in ADDONS_OAUTH:
             obj = self.get_addon_settings(provider=addon, fail_if_absent=False, check_object_permissions=False)
             if obj:
+                if not isinstance(obj.id, str):
+                    obj.id = str(obj.id)
                 qs.append(obj)
         sorted(qs, key=lambda addon: addon.id, reverse=True)
         return qs
