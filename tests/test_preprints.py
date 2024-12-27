@@ -2416,14 +2416,160 @@ class TestWithdrawnPreprint:
         assert preprint_pre_mod.verified_publishable
         assert crossref_client.get_status(preprint_pre_mod) == 'unavailable'
 
-    def test_run_submit_pre_mod(self, unpublished_preprint_pre_mod, user):
+    def test_withdraw_request_accept_pending_preprint_pre_mod(self, make_withdrawal_request, user, unpublished_preprint_pre_mod):
+        unpublished_preprint_pre_mod.run_submit(user)
+        unpublished_preprint_pre_mod.run_accept(user, 'comment')
+        withdrawal_request = make_withdrawal_request(unpublished_preprint_pre_mod)
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+
+        new_version = PreprintFactory.create_version(
+            create_from=unpublished_preprint_pre_mod,
+            creator=user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        new_version.run_submit(user)
+        new_version.run_accept(user, 'comment')
+        new_version_withdrawal_request = make_withdrawal_request(new_version)
+        new_version_withdrawal_request.run_accept(user, 'comment')
+        assert new_version_withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+
+
+    def test_withdraw_request_accept_preprint_post_mod(self, make_withdrawal_request, moderator, preprint_post_mod):
+        withdrawal_request = make_withdrawal_request(preprint_post_mod)
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        withdrawal_request.run_accept(moderator, 'comment')
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+
+
+    def test_withdraw_request_accept_preprint_post_mod_version(self, make_withdrawal_request, moderator, preprint_pre_mod):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=moderator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        new_version.run_submit(moderator)
+        new_version.run_accept(moderator, 'comment')
+        new_version_withdrawal_request = make_withdrawal_request(new_version)
+        assert new_version_withdrawal_request.machine_state == DefaultStates.PENDING.value
+
+
+
+
+@pytest.mark.django_db
+class TestPreprintModeration:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def unpublished_preprint_pre_mod(self):
+        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_pre_mod(self):
+        return PreprintFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def unpublished_preprint_post_mod(self):
+        return PreprintFactory(reviews_workflow='post-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_post_mod(self):
+        return PreprintFactory(reviews_workflow='post-moderation')
+
+    @pytest.fixture()
+    def preprint(self):
+        return PreprintFactory()
+
+    @pytest.fixture()
+    def admin(self):
+        admin = AuthUserFactory()
+        osf_admin = Group.objects.get(name='osf_admin')
+        admin.groups.add(osf_admin)
+        return admin
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod, preprint_post_mod):
+        moderator = AuthUserFactory()
+        preprint_pre_mod.provider.add_to_group(moderator, 'moderator')
+        preprint_pre_mod.provider.save()
+
+        preprint_post_mod.provider.add_to_group(moderator, 'moderator')
+        preprint_post_mod.provider.save()
+
+        return moderator
+
+
+    def test_unpublished_pre_mod_accept(self, unpublished_preprint_pre_mod, user):
         assert unpublished_preprint_pre_mod.ever_public is False
         unpublished_preprint_pre_mod.run_submit(user)
         guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
         assert unpublished_preprint_pre_mod.ever_public is False
         assert guid.object_id == unpublished_preprint_pre_mod.pk
 
-    def test_run_submit_post_mod(self, unpublished_preprint_post_mod, admin):
+        unpublished_preprint_pre_mod.run_accept(user, 'comment')
+        assert unpublished_preprint_pre_mod.is_published is True
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+
+    def test_unpublished_pre_mod_reject(self, unpublished_preprint_pre_mod, user):
+        assert unpublished_preprint_pre_mod.ever_public is False
+        unpublished_preprint_pre_mod.run_submit(user)
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert unpublished_preprint_pre_mod.ever_public is False
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+
+        unpublished_preprint_pre_mod.run_reject(user, 'comment')
+
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
+
+    def test_new_version_pre_mod_accept(self, preprint_pre_mod, user):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        new_version.run_submit(user)
+        new_version.run_accept(user, 'comment')
+        assert new_version.is_published is True
+
+        guid = new_version.versioned_guids.first().guid
+
+        assert guid.object_id != preprint_pre_mod
+        assert guid.content_type == ContentType.objects.get_for_model(preprint_pre_mod)
+        assert guid.referent == new_version
+
+    def test_new_version_pre_mod_reject(self, preprint_pre_mod, user):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        new_version.run_submit(user)
+        new_version.run_reject(user, 'comment')
+        assert new_version.is_published is False
+        assert new_version.versioned_guids.first().is_rejected is True
+        guid = new_version.versioned_guids.first().guid
+
+        assert guid.object_id != preprint_pre_mod
+        assert guid.content_type == ContentType.objects.get_for_model(preprint_pre_mod)
+        assert guid.referent != new_version
+
+
+    def test_unpublished_run_submit_post_mod(self, unpublished_preprint_post_mod, admin):
         assert unpublished_preprint_post_mod.ever_public is False
         unpublished_preprint_post_mod.run_submit(admin)
         guid = unpublished_preprint_post_mod.versioned_guids.first().guid
@@ -2447,6 +2593,43 @@ class TestWithdrawnPreprint:
 
         assert guid.object_id != unpublished_preprint_post_mod
         assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_post_mod)
+        assert guid.referent == new_version
+
+    def test_pending_run_submit(self, unpublished_preprint_pre_mod, user):
+        assert unpublished_preprint_pre_mod.ever_public is False
+        unpublished_preprint_pre_mod.run_submit(user)
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert unpublished_preprint_pre_mod.ever_public is False
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+
+    def test_pending_run_submit_version(self, unpublished_preprint_pre_mod, admin):
+        assert unpublished_preprint_pre_mod.ever_public is False
+        unpublished_preprint_pre_mod.run_submit(admin)
+        guid = unpublished_preprint_pre_mod.versioned_guids.first().guid
+        assert guid.object_id == unpublished_preprint_pre_mod.pk
+        unpublished_preprint_pre_mod.run_accept(admin, 'comment')
+
+        new_version = PreprintFactory.create_version(
+            create_from=unpublished_preprint_pre_mod,
+            creator=admin,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        new_version.run_submit(admin)
+
+        guid = new_version.versioned_guids.first().guid
+
+        assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
+        assert guid.referent == unpublished_preprint_pre_mod
+
+        new_version.run_accept(admin, 'comment')
+        assert new_version.is_published is True
+        guid = new_version.versioned_guids.first().guid
+
+        assert guid.object_id != unpublished_preprint_pre_mod.pk
+        assert guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
         assert guid.referent == new_version
 
 
@@ -2476,12 +2659,4 @@ class TestWithdrawnPreprint:
         versioned_guid = unpublished_preprint_pre_mod.versioned_guids.first()
         assert versioned_guid.is_rejected is True
 
-    def test_run_accept_hybrid_mod(self, unpublished_preprint_pre_mod, moderator):
-        unpublished_preprint_pre_mod.provider.add_to_group(moderator, 'moderator')
-        comment = 'Rejecting hybrid moderated preprint.'
-        unpublished_preprint_pre_mod.run_submit(moderator)
-        unpublished_preprint_pre_mod.run_accept(moderator, comment)
-        versioned_guid = unpublished_preprint_pre_mod.versioned_guids.first()
-        assert versioned_guid.referent == unpublished_preprint_pre_mod
-        assert versioned_guid.object_id == unpublished_preprint_pre_mod.pk
-        assert versioned_guid.content_type == ContentType.objects.get_for_model(unpublished_preprint_pre_mod)
+
