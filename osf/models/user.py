@@ -646,7 +646,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def is_institutional_admin(self, institution):
         group_name = institution.format_group('institutional_admins')
-        return self.groups.filter(name=group_name).exists()
+        return self.groups.filter(name=group_name).exists() and institution.can_request_access
 
     def group_role(self, group):
         """
