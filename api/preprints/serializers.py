@@ -599,8 +599,7 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
             message = 'Fail to create a new version since an unpublished pending version already exists.'
             sentry.log_message(message)
             raise Conflict(detail=message)
-        # TODO add more checks
-        return self.update(preprint, update_data)
+        return self.update(preprint, update_data) if update_data else preprint
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):

@@ -321,6 +321,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         last_not_rejected_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
         return last_not_rejected_version.machine_state == 'pending' and not last_not_rejected_version.is_published
 
+    def check_unfinished_pending_version(self):
+        guid_obj = self.guids.first()
+        last_not_rejected_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
+        return last_not_rejected_version if last_not_rejected_version.machine_state == 'initial' else None
+
     @classmethod
     def create_version(cls, create_from_guid, auth):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
@@ -339,6 +344,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if source_preprint.has_unpublished_pending_version():
             sentry.log_message('Fail to create a new version since an unpublished pending version already exists.')
             raise UnpublishedPendingPreprintVersionExists
+        unfinished_version = source_preprint.check_unfinished_pending_version()
+        if unfinished_version:
+            sentry.log_message(f'Unfinished version found, using it instead of creating a new one: '
+                               f'[version={unfinished_version.version}, _id={unfinished_version._id}, '
+                               f'state={unfinished_version.machine_state}].')
+            return unfinished_version, None
+
         # Note: last version may not be the latest version
         last_version_number = guid_obj.versions.order_by('-version').first().version
 
