@@ -21,7 +21,7 @@ def enqueue_update_analytics(node, file, version_idx, action='download'):
 
 @app.task(max_retries=5, default_retry_delay=60)
 def update_analytics_async(node_id, file_id, version_idx, session_key=None, action='download'):
-    node = Guid.load_referent(node_id)
+    node, _ = Guid.load_referent(node_id)
     file = BaseFileNode.load(file_id)
     update_analytics(node, file, version_idx, session_key, action)
 
