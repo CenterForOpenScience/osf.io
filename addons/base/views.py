@@ -892,7 +892,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
     guid = kwargs.get('guid')
-    guid_target = getattr(Guid.load(guid), 'referent', None)
+    guid_target, _ = Guid.load_referent(guid)
     target = guid_target or kwargs.get('node') or kwargs['project']
 
     provider_safe = markupsafe.escape(provider)
