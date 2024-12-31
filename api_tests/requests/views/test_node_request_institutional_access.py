@@ -18,7 +18,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     @pytest.fixture()
     def institution(self):
-        return InstitutionFactory()
+        return InstitutionFactory(can_request_access=True)
 
     @pytest.fixture()
     def institution2(self):
