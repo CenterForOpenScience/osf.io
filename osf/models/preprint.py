@@ -317,18 +317,25 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return preprint
 
     def get_last_not_rejected_version(self):
-        guid_obj = self.get_guid()
-        return guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
+        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
 
-    def check_unpublished_pending_version(self):
+    def has_unpublished_pending_version(self):
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
+
+    def has_initiated_but_unfinished_version(self):
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'initial'
+
+    def check_unfinished_or_unpublished_version(self):
         last_not_rejected_version = self.get_last_not_rejected_version()
         if last_not_rejected_version.date_published:
-            return None
-        return last_not_rejected_version if last_not_rejected_version.machine_state == 'pending' else None
-
-    def check_initiated_but_unfinished_version(self):
-        last_not_rejected_version = self.get_last_not_rejected_version()
-        return last_not_rejected_version if last_not_rejected_version.machine_state == 'initial' else None
+            return None, None
+        if last_not_rejected_version.machine_state == 'initial':
+            return last_not_rejected_version, None
+        if last_not_rejected_version.machine_state == 'pending':
+            return None, last_not_rejected_version
+        return None, None
 
     @classmethod
     def create_version(cls, create_from_guid, auth):
@@ -345,20 +352,19 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if not source_preprint.has_permission(auth.user, ADMIN):
             sentry.log_message('User must have admin permissions to create new version.')
             raise PermissionsError
-        unpublished_pending_version = source_preprint.check_unpublished_pending_version()
-        if unpublished_pending_version:
+        unfinished_version, unpublished_version = source_preprint.check_unfinished_or_unpublished_version()
+        if unpublished_version:
             sentry.log_message('Unpublished pending version found; failed to create a new one: '
-                               f'[version={unpublished_pending_version.version}, '
-                               f'_id={unpublished_pending_version._id}, '
-                               f'state={unpublished_pending_version.machine_state}].')
+                               f'[version={unpublished_version.version}, '
+                               f'_id={unpublished_version._id}, '
+                               f'state={unpublished_version.machine_state}].')
             raise UnpublishedPendingPreprintVersionExists
-        initiated_but_unfinished_version = source_preprint.check_initiated_but_unfinished_version()
-        if initiated_but_unfinished_version:
+        if unfinished_version:
             sentry.log_message(f'Unfinished version found, using it instead of creating a new one: '
-                               f'[version={initiated_but_unfinished_version.version}, '
-                               f'_id={initiated_but_unfinished_version._id}, '
-                               f'state={initiated_but_unfinished_version.machine_state}].')
-            return initiated_but_unfinished_version, None
+                               f'[version={unfinished_version.version}, '
+                               f'_id={unfinished_version._id}, '
+                               f'state={unfinished_version.machine_state}].')
+            return unfinished_version, None
 
         # Note: last version may not be the latest version
         last_version_number = guid_obj.versions.order_by('-version').first().version
