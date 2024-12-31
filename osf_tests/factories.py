@@ -800,7 +800,7 @@ class PreprintFactory(DjangoModelFactory):
 
         # Run a few checks
         assert final_machine_state in ['pending', 'accepted', 'initial']
-        assert create_from and not create_from.has_unpublished_pending_version()
+        assert create_from and not create_from.check_unpublished_pending_version()
         guid_obj = create_from.guids.first()
         latest_version = guid_obj.referent
         assert latest_version.is_latest_version
