@@ -222,7 +222,7 @@ class Guid(BaseModel):
     def load(cls, data, select_for_update=False):
         """Override load in order to load by Guid.
 
-        Update with versioned GUID: if the guid str stored in data is versioned, only the base guid str is used. This
+        Update with versioned Guid: if the guid str stored in data is versioned, only the base guid str is used. This
         is the expected design because base guid str remains a valid one, and it always refers to the latest version.
         """
         base_guid_str, version = cls.split_guid(data)
@@ -273,7 +273,7 @@ class Guid(BaseModel):
 
 
 class GuidVersionsThrough(BaseModel):
-    """Stores version of a version-eligible GUID obj w/ ref to both the versioned obj/referent and the base Guid obj.
+    """Stores versions of versioned guid obj. It refers to both the versioned obj (referent) and the base guid obj.
     """
 
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
@@ -510,7 +510,7 @@ class GuidMixin(BaseIDMixin):
 
 
 class VersionedGuidMixin(GuidMixin):
-    """Inherits from `GuidMixin` to support objects uses `GuidVersionsThrough` for versioning.
+    """Inherits from `GuidMixin` to support objects that use the `GuidVersionsThrough` table for versioning.
     """
 
     class Meta:
@@ -522,6 +522,7 @@ class VersionedGuidMixin(GuidMixin):
 
     @property
     def _id(self):
+        # TODO: maybe a cached property?
         try:
             versioned_guid = self.versioned_guids
             if not versioned_guid.exists():
@@ -534,15 +535,16 @@ class VersionedGuidMixin(GuidMixin):
             return None
         return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
 
-    #TODO: should we enable setter for `_id`, which we found some usage in unit tests
     @_id.setter
     def _id(self, value):
+        # TODO: should we enable setter for `_id`, which we found some usage in unit tests
         pass
 
     _primary_key = _id
 
     @property
     def version(self):
+        # TODO: maybe a cached property?
         return self.versioned_guids.first().version
 
     @classmethod
@@ -572,12 +574,13 @@ class VersionedGuidMixin(GuidMixin):
             return None
 
     def get_guid(self):
-        """A helper for getting the base guid object
+        """A helper for getting the base guid
         """
         return self.versioned_guids.first().guid
 
     def get_semantic_iri(self):
-        """Override get_semantic_iri so that all versions have the same semantic iri, which uses the base guid str.
+        """Override `get_semantic_iri()` in `GuidMixin` so that all versions of the same object have the same semantic
+        iri using only the base guid str.
         """
         _osfid = self.get_guid()._id
         if not _osfid:
@@ -585,17 +588,29 @@ class VersionedGuidMixin(GuidMixin):
         return osfid_iri(_osfid)
 
 @receiver(post_save)
-def ensure_guid(sender, instance, created, **kwargs):
+def ensure_guid(sender, instance, **kwargs):
+    """Generate guid if it doesn't exist for subclasses of GuidMixin except for subclasses of VersionedGuidMixin
+
+    Note: must have **kwargs though not used since signal receivers must accept keyword arguments.
+    """
     if not issubclass(sender, GuidMixin):
         return False
     if issubclass(sender, VersionedGuidMixin):
+        # For classes that support version using VersionedGuidMixin, the base guid object must be generated manually.
+        # Only the initial or the latest version is referred to by the base guid in the Guid table. All versions have
+        # their "versioned" guid in the GuidVersionsThrough table.
         return False
-    existing_guids = Guid.objects.filter(object_id=instance.pk,
-                                         content_type=ContentType.objects.get_for_model(instance))
+    existing_guids = Guid.objects.filter(
+        object_id=instance.pk,
+        content_type=ContentType.objects.get_for_model(instance)
+    )
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
     if not existing_guids.exists():
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
-                            _id=generate_guid(instance.__guid_min_length__))
+        Guid.objects.create(
+            object_id=instance.pk,
+            content_type=ContentType.objects.get_for_model(instance),
+            _id=generate_guid(instance.__guid_min_length__)
+        )
