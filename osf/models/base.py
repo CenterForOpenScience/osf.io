@@ -1,10 +1,9 @@
+from collections.abc import Iterable
 import logging
 import random
-from collections.abc import Iterable
 
 import bson
-from django.contrib.contenttypes.fields import (GenericForeignKey,
-                                                GenericRelation)
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import MultipleObjectsReturned
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -16,10 +15,10 @@ from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
 from framework import sentry
-from website import settings as website_settings
-from osf.utils.caching import cached_property
 from osf.exceptions import ValidationError
+from osf.utils.caching import cached_property
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
+from website import settings as website_settings
 
 ALPHABET = '23456789abcdefghjkmnpqrstuvwxyz'
 
@@ -189,7 +188,6 @@ class BaseModel(TimeStampedModel, QuerySetExplainMixin):
         yield from ()  # no semantic iris unless implemented in a subclass
 
 
-# TODO: Rename to Identifier?
 class Guid(BaseModel):
     """Stores either a short guid or long object_id for any model that inherits from BaseIDMixin.
     Each ID field (e.g. 'guid', 'object_id') MUST have an accompanying method, named with
@@ -210,45 +208,55 @@ class Guid(BaseModel):
         return f'<id:{self._id}, referent:({self.referent.__repr__()})>'
 
     @classmethod
-    def split_guid(cls, guid):
-        if not guid:
+    def split_guid(cls, guid_str):
+        """Check if the guid str contains version and return a tuple that contains the base guid str and the version.
+        """
+        if not guid_str:
             return None, None
-        guid_parts = guid.lower().split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-        base_guid = guid_parts[0]
+        guid_parts = guid_str.lower().split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
+        base_guid_str = guid_parts[0]
         version = guid_parts[1] if len(guid_parts) > 1 else None
-        return base_guid, version
+        return base_guid_str, version
 
-    # Override load in order to load by GUID
     @classmethod
     def load(cls, data, select_for_update=False):
-        base_guid, version = cls.split_guid(data)
+        """Override load in order to load by Guid.
+
+        Update with versioned Guid: if the guid str stored in data is versioned, only the base guid str is used. This
+        is the expected design because base guid str remains a valid one, and it always refers to the latest version.
+        """
+        base_guid_str, version = cls.split_guid(data)
         try:
-            return cls.objects.get(_id=base_guid) if not select_for_update else cls.objects.filter(
-                _id=base_guid).select_for_update().get()
+            if not select_for_update:
+                return cls.objects.get(_id=base_guid_str)
+            return cls.objects.filter(_id=base_guid_str).select_for_update().get()
         except cls.DoesNotExist:
-            sentry.log_message(f'Object not found: [guid={base_guid}, version={version}]')
+            sentry.log_message(f'Object not found from base guid: [guid={base_guid_str}, version={version}]')
             return None
 
     @classmethod
-    def load_referent(cls, guid):
-        base_guid, version = cls.split_guid(guid)
-
-        base_guid_obj = cls.load(base_guid)
+    def load_referent(cls, guid_str):
+        """Find and return the referent from a given guid str.
+        """
+        base_guid_str, version = cls.split_guid(guid_str)
+        base_guid_obj = cls.load(base_guid_str)
         if not base_guid_obj:
             return None, None
+        # Handles versioned guid str
         if version:
             if base_guid_obj.is_versioned:
                 versioned_obj_qs = base_guid_obj.versions.filter(version=version)
                 if not versioned_obj_qs.exists():
-                    sentry.log_message(f'Version not found for GUID: [guid={base_guid}, version={version}]')
+                    sentry.log_message(f'Version not found for versioned guid: [guid={base_guid_str}, version={version}]')
                     return None, None
             else:
-                sentry.log_message(f'GUID does not support versions: [guid={base_guid}, version={version}]')
+                sentry.log_message(f'The guid object does not support versioning: [guid={base_guid_str}, version={version}]')
                 return None, None
             referent = versioned_obj_qs.first().referent
             return referent, referent.version
-
+        # Handles guid str without version
         referent = base_guid_obj.referent
+        # If the guid str doesn't have version but supports versioning, we need to check and return the version
         version = referent.version if hasattr(referent, 'version') else None
         return referent, version
 
@@ -265,17 +273,14 @@ class Guid(BaseModel):
 
 
 class GuidVersionsThrough(BaseModel):
-    """Stores version of a version-eligible GUID obj w/ ref to both the versioned obj/referent and the base Guid obj.
+    """Stores versions of versioned guid obj. It refers to both the versioned obj (referent) and the base guid obj.
     """
 
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
-
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField(null=True, blank=True)
-
     guid = models.ForeignKey('Guid', related_name='versions', on_delete=models.CASCADE)
-
     version = models.PositiveIntegerField(null=True, blank=True)
     is_rejected = models.BooleanField(default=False)
 
@@ -283,6 +288,7 @@ class GuidVersionsThrough(BaseModel):
         constraints = [
             UniqueConstraint(fields=['guid', 'version'], name='unique_guid_version')
         ]
+
 
 class BlackListGuid(BaseModel):
     id = models.AutoField(primary_key=True)
@@ -504,82 +510,108 @@ class GuidMixin(BaseIDMixin):
 
 
 class VersionedGuidMixin(GuidMixin):
+    """Inherits from `GuidMixin` to support objects that use the `GuidVersionsThrough` table for versioning.
+    """
 
     class Meta:
         abstract = True
 
+    INITIAL_VERSION_NUMBER = 1
     GUID_VERSION_DELIMITER = '_v'
 
     versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
 
     @property
     def _id(self):
+        # TODO: maybe a cached property?
         try:
-            guid = None
             versioned_guid = self.versioned_guids
-            if versioned_guid.exists():
-                version = versioned_guid.first().version
-                guid = versioned_guid.first().guid
+            if not versioned_guid.exists():
+                sentry.log_message(f'`self.versioned_guids` does not exist: [self={self}]')
+                return None
+            guid = versioned_guid.first().guid
+            version = versioned_guid.first().version
         except IndexError as e:
             sentry.log_exception(e)
             return None
-        if guid:
-            return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
-        sentry.log_message('Versioned GUID does not exist')
-        return None
+        return f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}'
 
     @_id.setter
     def _id(self, value):
+        # TODO: should we enable setter for `_id`, which we found some usage in unit tests
         pass
+
+    _primary_key = _id
 
     @property
     def version(self):
+        # TODO: maybe a cached property?
         return self.versioned_guids.first().version
 
-    # Override load in order to load by Versioned GUID
     @classmethod
-    def load(cls, guid, select_for_update=False):
+    def load(cls, guid_str, select_for_update=False):
+        """Override load in order to load by Versioned Guid. It finds and returns the versioned object based on the
+        base guid str and the version in the guid str. If the guid str does not have version, it returns the object
+        referred by the base guid obj.
+        """
         try:
-            base_guid, version = Guid.split_guid(guid)
-
+            base_guid_str, version = Guid.split_guid(guid_str)
+            # Version exists
             if version:
                 if not select_for_update:
-                    return cls.objects.get(versioned_guids__guid___id=base_guid, versioned_guids__version=version)
-                return cls.objects.filter(versioned_guids__guid___id=base_guid, versioned_guids__version=version).select_for_update().get()
-
+                    return cls.objects.get(versioned_guids__guid___id=base_guid_str, versioned_guids__version=version)
+                return cls.objects.filter(
+                    versioned_guids__guid___id=base_guid_str,
+                    versioned_guids__version=version
+                ).select_for_update().get()
+            # Version does not exists
             if not select_for_update:
-                return cls.objects.filter(guids___id=base_guid).first()
-            return cls.objects.filter(guids___id=guid).select_for_update().get()
-
+                return cls.objects.filter(guids___id=base_guid_str).first()
+            return cls.objects.filter(guids___id=guid_str).select_for_update().get()
         except cls.DoesNotExist:
-            sentry.log_message(f'Object not found: [guid={base_guid}, version={version}]')
+            sentry.log_message(f'Object not found for VersionedGuidMixin: [guid_str={guid_str}]')
             return None
         except cls.MultipleObjectsReturned:
             return None
 
     def get_guid(self):
+        """A helper for getting the base guid
+        """
         return self.versioned_guids.first().guid
 
     def get_semantic_iri(self):
+        """Override `get_semantic_iri()` in `GuidMixin` so that all versions of the same object have the same semantic
+        iri using only the base guid str.
+        """
         _osfid = self.get_guid()._id
         if not _osfid:
             raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
         return osfid_iri(_osfid)
 
-    _primary_key = _id
-
 @receiver(post_save)
-def ensure_guid(sender, instance, created, **kwargs):
+def ensure_guid(sender, instance, **kwargs):
+    """Generate guid if it doesn't exist for subclasses of GuidMixin except for subclasses of VersionedGuidMixin
+
+    Note: must have **kwargs though not used since signal receivers must accept keyword arguments.
+    """
     if not issubclass(sender, GuidMixin):
         return False
     if issubclass(sender, VersionedGuidMixin):
+        # For classes that support version using VersionedGuidMixin, the base guid object must be generated manually.
+        # Only the initial or the latest version is referred to by the base guid in the Guid table. All versions have
+        # their "versioned" guid in the GuidVersionsThrough table.
         return False
-    existing_guids = Guid.objects.filter(object_id=instance.pk,
-                                         content_type=ContentType.objects.get_for_model(instance))
+    existing_guids = Guid.objects.filter(
+        object_id=instance.pk,
+        content_type=ContentType.objects.get_for_model(instance)
+    )
     has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
     if not existing_guids.exists():
         # Clear query cache of instance.guids
         if has_cached_guids:
             del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(object_id=instance.pk, content_type=ContentType.objects.get_for_model(instance),
-                            _id=generate_guid(instance.__guid_min_length__))
+        Guid.objects.create(
+            object_id=instance.pk,
+            content_type=ContentType.objects.get_for_model(instance),
+            _id=generate_guid(instance.__guid_min_length__)
+        )
