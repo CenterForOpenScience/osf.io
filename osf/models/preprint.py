@@ -288,7 +288,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @classmethod
     def create(cls, provider, title, creator, description):
-        base_guid = Guid.objects.create()
+        """Customized creation process to support preprint versions and versioned guid.
+        """
+        # Create the preprint and base guid object manually
+        base_guid_obj = Guid.objects.create()
         preprint = cls(
             provider=provider,
             title=title,
@@ -296,20 +299,20 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=description,
         )
         preprint.save()
+        base_guid_obj.referent = preprint
+        base_guid_obj.object_id = preprint.pk
+        base_guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+        base_guid_obj.save()
 
-        base_guid.referent = preprint
-        base_guid.object_id = preprint.pk
-        base_guid.content_type = ContentType.objects.get_for_model(preprint)
-        base_guid.save()
-
-        guid_version = GuidVersionsThrough(
-            referent=base_guid.referent,
-            object_id=base_guid.object_id,
-            content_type=base_guid.content_type,
-            version=1,
-            guid=base_guid
+        # Create a new entry in the `GuidVersionsThrough` table to store version information
+        versioned_guid = GuidVersionsThrough(
+            referent=base_guid_obj.referent,
+            object_id=base_guid_obj.object_id,
+            content_type=base_guid_obj.content_type,
+            version=VersionedGuidMixin.INITIAL_VERSION_NUMBER,
+            guid=base_guid_obj
         )
-        guid_version.save()
+        versioned_guid.save()
 
         return preprint
 
@@ -320,6 +323,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @classmethod
     def create_version(cls, create_from_guid, auth):
+        """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
+        but `create_version` always finds the latest version and creates the new version from the latest one.
+        """
 
         guid_obj = Guid.load(create_from_guid)
         # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
@@ -1414,9 +1420,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    # Override ReviewableMixin
     def run_submit(self, user):
-        """Run the 'submit' state transition and create a corresponding Action.
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'submit' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -1424,6 +1430,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         ret = super().run_submit(user=user)
         provider = self.provider
         reviews_workflow = provider.reviews_workflow
+        # Only post moderation is relevant for Preprint, and hybrid moderation is included for integrity purpose.
         need_guid_update = any(
             [
                 reviews_workflow == Workflows.POST_MODERATION.value,
@@ -1434,18 +1441,19 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 ])
             ]
         )
+        # Only update the base guid obj to refer to the new version 1) if the provider is post-moderation, or 2) if the
+        # provider is hybrid-moderation and if the user who submits the preprint is a moderator or admin.
         if need_guid_update:
             base_guid_obj = self.versioned_guids.first().guid
             base_guid_obj.referent = self
             base_guid_obj.object_id = self.pk
             base_guid_obj.content_type = ContentType.objects.get_for_model(self)
             base_guid_obj.save()
-
         return ret
 
-    # Override ReviewableMixin
     def run_accept(self, user, comment, **kwargs):
-        """Run the 'accept' state transition and create a corresponding Action.
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'accept' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.
@@ -1459,12 +1467,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             base_guid_obj.object_id = self.pk
             base_guid_obj.content_type = ContentType.objects.get_for_model(self)
             base_guid_obj.save()
-
         return ret
 
     # Override ReviewableMixin
     def run_reject(self, user, comment):
-        """Run the 'reject' state transition and create a corresponding Action.
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'reject' state transition and create a corresponding Action.
 
         Params:
             user: The user triggering this transition.

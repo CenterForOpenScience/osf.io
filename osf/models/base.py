@@ -516,6 +516,7 @@ class VersionedGuidMixin(GuidMixin):
     class Meta:
         abstract = True
 
+    INITIAL_VERSION_NUMBER = 1
     GUID_VERSION_DELIMITER = '_v'
 
     versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
