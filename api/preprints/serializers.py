@@ -590,11 +590,9 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
         auth = get_user_auth(self.context['request'])
         try:
             preprint, date_for_update = Preprint.create_version(create_from_guid, auth)
-        except PermissionsError as e:
-            sentry.log_exception(e)
+        except PermissionsError:
             raise PermissionDenied(detail='User must have ADMIN permission to create a new preprint version.')
-        except UnpublishedPendingPreprintVersionExists as e:
-            sentry.log_exception(e)
+        except UnpublishedPendingPreprintVersionExists:
             raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
         if not preprint:
             raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
