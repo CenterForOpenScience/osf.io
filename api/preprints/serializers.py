@@ -4,7 +4,6 @@ from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError as DRFValidationError
 
-from framework import sentry
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
