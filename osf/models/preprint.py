@@ -19,7 +19,6 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
-from rest_framework.exceptions import NotFound
 
 from .subject import Subject
 from .tag import Tag
@@ -317,17 +316,27 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return preprint
 
     def get_last_not_rejected_version(self):
+        """Get the last version that is not rejected.
+        """
         return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
 
     def has_unpublished_pending_version(self):
+        """Check if preprint has pending unpublished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
         last_not_rejected_version = self.get_last_not_rejected_version()
         return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
 
     def has_initiated_but_unfinished_version(self):
+        """Check if preprint has initiated but unfinished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
         last_not_rejected_version = self.get_last_not_rejected_version()
         return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'initial'
 
     def check_unfinished_or_unpublished_version(self):
+        """Check and return the "initiated but unfinished version" and "unfinished or unpublished version".
+        """
         last_not_rejected_version = self.get_last_not_rejected_version()
         if last_not_rejected_version.date_published:
             return None, None
@@ -340,17 +349,20 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @classmethod
     def create_version(cls, create_from_guid, auth):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
-        but `create_version` always finds the latest version and creates the new version from the latest one.
+        but `create_version` always finds the latest version and creates the new version from the latest one. This
+        method creates the "incomplete" preprint object from model and returns both the preprint and data_for_update.
+        The API should use the `data_for_update` to "complete" the preprint.
         """
 
         guid_obj = Guid.load(create_from_guid)
-        # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
+        # Guid object always points to the latest (ever-published) version
         source_preprint = cls.load(guid_obj._id)
         if not source_preprint:
             sentry.log_message(f'Source preprint not found: [guid={guid_obj._id}, create_from_guid ={create_from_guid}]')
-            raise NotFound
+            return None, None
         if not source_preprint.has_permission(auth.user, ADMIN):
-            sentry.log_message('User must have admin permissions to create new version.')
+            sentry.log_message(f'ADMIN permission is required to create a new version: '
+                               f'[user={auth.user._id}, guid={guid_obj._id}, create_from_guid ={create_from_guid}]')
             raise PermissionsError
         unfinished_version, unpublished_version = source_preprint.check_unfinished_or_unpublished_version()
         if unpublished_version:
@@ -366,7 +378,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                                f'state={unfinished_version.machine_state}].')
             return unfinished_version, None
 
-        # Note: last version may not be the latest version
+        # Note: version number bumps from the last version number instead of the latest version number
         last_version_number = guid_obj.versions.order_by('-version').first().version
 
         # Prepare data to clone/update
