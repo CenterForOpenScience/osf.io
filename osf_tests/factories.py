@@ -799,7 +799,7 @@ class PreprintFactory(DjangoModelFactory):
     def create_version(cls, create_from, creator=None, final_machine_state='accepted', is_published=True, set_doi=True):
 
         # Run a few checks
-        assert final_machine_state in ['pending', 'accepted']
+        assert final_machine_state in ['pending', 'accepted', 'initial']
         assert create_from and not create_from.has_unpublished_pending_version()
         guid_obj = create_from.guids.first()
         latest_version = guid_obj.referent
