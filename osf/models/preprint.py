@@ -820,6 +820,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             return None
 
     def save(self, *args, **kwargs):
+        # TODO: document how `.save()` is customized for preprint
+        # TODO: insert a bare-minimum condition for saving preprint before guid and/or versioned guid is created
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
 

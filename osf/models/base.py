@@ -527,7 +527,12 @@ class VersionedGuidMixin(GuidMixin):
         try:
             versioned_guid = self.versioned_guids
             if not versioned_guid.exists():
-                sentry.log_message(f'`self.versioned_guids` does not exist: [self={self}]')
+                # This can happen during the gap AFTER preprint version is created and BEFORE versioned guid is created.
+                # This happens every time recursively inside `.super().save()` when the `preprint.save()` is called for
+                # the first time during preprint creation and new preprint version creation.
+                sentry.log_message(
+                    f'`self.versioned_guids` does not exist: [self={self.pk}, type={type(self).__name__}]'
+                )
                 return None
             guid = versioned_guid.first().guid
             version = versioned_guid.first().version
