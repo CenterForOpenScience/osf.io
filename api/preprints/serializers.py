@@ -563,6 +563,7 @@ class PreprintDraftSerializer(PreprintSerializer):
 
 class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
+    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
@@ -580,6 +581,7 @@ class PreprintCreateSerializer(PreprintSerializer):
 
 class PreprintCreateVersionSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make title nullable and customize version creation
+    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
     title = ser.CharField(required=False)
     create_from_guid = ser.CharField(required=True, write_only=True)
@@ -588,15 +590,15 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
         create_from_guid = validated_data.pop('create_from_guid', None)
         auth = get_user_auth(self.context['request'])
         try:
-            preprint, date_for_update = Preprint.create_version(create_from_guid, auth)
+            preprint, data_to_update = Preprint.create_version(create_from_guid, auth)
         except PermissionsError:
             raise PermissionDenied(detail='User must have ADMIN permission to create a new preprint version.')
         except UnpublishedPendingPreprintVersionExists:
             raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
         if not preprint:
             raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
-        if date_for_update:
-            return self.update(preprint, date_for_update)
+        if data_to_update:
+            return self.update(preprint, data_to_update)
         return preprint
 
 
