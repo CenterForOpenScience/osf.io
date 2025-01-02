@@ -797,8 +797,9 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         if claimed_user.is_disabled:
             raise ValidationError('Cannot claim disabled account.')
 
-        record_referent, version = Guid.load_referent(record_id)
-        if not record_referent:
+        try:
+            record_referent = Guid.objects.get(_id=record_id).referent
+        except Guid.DoesNotExist:
             raise NotFound('Unable to find specified record.')
 
         try:

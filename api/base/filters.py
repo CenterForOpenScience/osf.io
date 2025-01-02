@@ -606,25 +606,28 @@ class PreprintFilterMixin(ListFilterMixin):
             operation['source_field_name'] = 'provider___id'
 
         if field_name == 'id':
-            values = operation['value']
-            object_ids = []
-
-            for val in values:
-                referent, version = Guid.load_referent(val)
-                if referent is None:
-                    continue
-                object_ids.append(referent.id)
-
-            # Override the operation to filter id__in=these object_ids
-            operation['source_field_name'] = 'id__in'
-            operation['value'] = list(object_ids)
-            operation['op'] = 'eq'
+            self.postprocess_version_id_query_param(operation)
 
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 
+    def postprocess_version_id_query_param(self, operation):
+        values = operation['value']
+        object_ids = []
+
+        for val in values:
+            referent, version = Guid.load_referent(val)
+            if referent is None:
+                continue
+            object_ids.append(referent.id)
+
+        # Override the operation to filter id__in=these object_ids
+        operation['source_field_name'] = 'id__in'
+        operation['value'] = list(object_ids)
+        operation['op'] = 'eq'
+
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False, latest_only=False):
-        preprints = Preprint.objects.can_view(
+        return Preprint.objects.can_view(
             base_queryset=base_queryset,
             user=auth_user,
             allow_contribs=allow_contribs,
