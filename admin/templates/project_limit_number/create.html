@@ -224,6 +224,14 @@
 {% block bottom_js %}
     {% render_bundle 'project-limit-number-setting-page' %}
     <script type="text/javascript">
+        $(document).ready(function() {
+            // Get data from session and display to create view
+            $('#setting_name_id').val(sessionStorage.getItem('setting_name_input'));
+            $('#memo_id').val(sessionStorage.getItem('memo_input'));
+            // Remove setting name and memo input
+            sessionStorage.removeItem('setting_name_input');
+            sessionStorage.removeItem('memo_input');
+        });
         $('select[id="attribute_value_select"]').each(function() {
             $(this).select2({
                 minimumResultsForSearch: Infinity
@@ -373,6 +381,8 @@
         }
 
         function changeTemplate() {
+            sessionStorage.setItem('setting_name_input', $('#setting_name_id').val());
+            sessionStorage.setItem('memo_input', $('#memo_id').val());
             var template_id = $('#template_id').val();
             window.location.href = "{% url 'project_limit_number:settings:create-setting' %}?institution_id={{ institution.id }}&template_id=" + template_id;
         }
