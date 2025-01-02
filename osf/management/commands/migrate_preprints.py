@@ -3,7 +3,7 @@ from django.apps import apps
 from tqdm import tqdm
 
 class Command(BaseCommand):
-    help = "Migrate preprints to the versioned style"
+    help = 'Migrate preprints to the versioned style'
 
     def add_arguments(self, parser):
         parser.add_argument(
