@@ -163,7 +163,8 @@ def _send_with_sendgrid(
 
     client = client or SendGridAPIClient(settings.SENDGRID_API_KEY)
     mail = Mail(
-        from_email=Email(from_addr),
+        from_email=from_addr,
+        to_emails=to_addr,
         html_content=message,
         subject=subject,
     )
@@ -191,7 +192,7 @@ def _send_with_sendgrid(
     mail.add_personalization(personalization)
 
     if categories:
-        mail.add_category([Category(x) for x in categories])
+        mail.category = [Category(x) for x in categories]
 
     if attachment_name and attachment_content:
         attachment = Attachment(

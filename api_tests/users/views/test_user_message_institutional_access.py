@@ -112,7 +112,7 @@ class TestUserMessageInstitutionalAccess:
 
     @mock.patch('osf.models.user_message.send_mail')
     def test_institutional_admin_can_not_create_message(self, mock_send_mail, app, institutional_admin_on_institution_without_access,
-                                                        institution_without_access,url_with_affiliation_on_institution_without_access,
+                                                        institution_without_access, url_with_affiliation_on_institution_without_access,
                                                         payload):
         """
         Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'can_request_access' as False
