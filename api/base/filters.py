@@ -627,7 +627,7 @@ class PreprintFilterMixin(ListFilterMixin):
         operation['op'] = 'eq'
 
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False, latest_only=False):
-        return Preprint.objects.can_view(
+        preprints = Preprint.objects.can_view(
             base_queryset=base_queryset,
             user=auth_user,
             allow_contribs=allow_contribs,
