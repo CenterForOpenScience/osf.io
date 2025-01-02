@@ -2,9 +2,8 @@ from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
-from rest_framework.exceptions import PermissionDenied, ValidationError as DRFValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError as DRFValidationError
 
-from framework import sentry
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
@@ -564,6 +563,7 @@ class PreprintDraftSerializer(PreprintSerializer):
 
 class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
+    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
@@ -580,27 +580,26 @@ class PreprintCreateSerializer(PreprintSerializer):
 
 
 class PreprintCreateVersionSerializer(PreprintSerializer):
-    # Overrides PreprintSerializer to make id and title nullable
+    # Overrides PreprintSerializer to make title nullable and customize version creation
+    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
     title = ser.CharField(required=False)
-
     create_from_guid = ser.CharField(required=True, write_only=True)
 
     def create(self, validated_data):
         create_from_guid = validated_data.pop('create_from_guid', None)
         auth = get_user_auth(self.context['request'])
         try:
-            preprint, update_data = Preprint.create_version(create_from_guid, auth)
+            preprint, data_to_update = Preprint.create_version(create_from_guid, auth)
         except PermissionsError:
-            message = 'User must have admin permissions to create new version.'
-            sentry.log_message(message)
-            raise PermissionDenied(detail=message)
+            raise PermissionDenied(detail='User must have ADMIN permission to create a new preprint version.')
         except UnpublishedPendingPreprintVersionExists:
-            message = 'Fail to create a new version since an unpublished pending version already exists.'
-            sentry.log_message(message)
-            raise Conflict(detail=message)
-        # TODO add more checks
-        return self.update(preprint, update_data)
+            raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
+        if not preprint:
+            raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
+        if data_to_update:
+            return self.update(preprint, data_to_update)
+        return preprint
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):

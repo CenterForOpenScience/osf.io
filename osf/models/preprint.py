@@ -19,7 +19,6 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
-from rest_framework.exceptions import NotFound
 
 from .subject import Subject
 from .tag import Tag
@@ -290,8 +289,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def create(cls, provider, title, creator, description):
         """Customized creation process to support preprint versions and versioned guid.
         """
-        # Create the preprint and base guid object manually
-        base_guid_obj = Guid.objects.create()
+        # Step 1: Create the preprint obj
         preprint = cls(
             provider=provider,
             title=title,
@@ -299,12 +297,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=description,
         )
         preprint.save()
+        # Step 2: Create the base guid obj
+        base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
         base_guid_obj.object_id = preprint.pk
         base_guid_obj.content_type = ContentType.objects.get_for_model(preprint)
         base_guid_obj.save()
-
-        # Create a new entry in the `GuidVersionsThrough` table to store version information
+        # Step 3: Create a new entry in the `GuidVersionsThrough` table to store version information
         versioned_guid = GuidVersionsThrough(
             referent=base_guid_obj.referent,
             object_id=base_guid_obj.object_id,
@@ -316,79 +315,106 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         return preprint
 
+    def get_last_not_rejected_version(self):
+        """Get the last version that is not rejected.
+        """
+        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
+
     def has_unpublished_pending_version(self):
-        guid_obj = self.guids.first()
-        last_not_rejected_version = guid_obj.versions.filter(is_rejected=False).order_by('-version').first().referent
-        return last_not_rejected_version.machine_state == 'pending' and not last_not_rejected_version.is_published
+        """Check if preprint has pending unpublished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
+
+    def has_initiated_but_unfinished_version(self):
+        """Check if preprint has initiated but unfinished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'initial'
+
+    def check_unfinished_or_unpublished_version(self):
+        """Check and return the "initiated but unfinished version" and "unfinished or unpublished version".
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        if last_not_rejected_version.date_published:
+            return None, None
+        if last_not_rejected_version.machine_state == 'initial':
+            return last_not_rejected_version, None
+        if last_not_rejected_version.machine_state == 'pending':
+            return None, last_not_rejected_version
+        return None, None
 
     @classmethod
     def create_version(cls, create_from_guid, auth):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
-        but `create_version` always finds the latest version and creates the new version from the latest one.
+        but `create_version` always finds the latest version and creates a new version from it. In addition, this
+        creates an "incomplete" new preprint version object using the model class and returns both the new object and
+        the data to be updated. The API, more specifically `PreprintCreateVersionSerializer` must call `.update()` to
+        "completely finish" the new preprint version object creation.
         """
 
+        # Use `Guid.load()` instead of `VersionedGuid.load()` to retrieve the base guid obj, which always points to the
+        # latest (ever-published) version.
         guid_obj = Guid.load(create_from_guid)
-        # Guid object always points to the latest ever-published (i.e. either published or withdrawn) version
-        source_preprint = cls.load(guid_obj._id)
-        if not source_preprint:
-            sentry.log_message(f'Source preprint not found: [guid={guid_obj._id}, create_from_guid ={create_from_guid}]')
-            raise NotFound
-        if not source_preprint.has_permission(auth.user, ADMIN):
-            sentry.log_message('User must have admin permissions to create new version.')
+        latest_version = cls.load(guid_obj._id)
+        if not latest_version:
+            sentry.log_message(f'Preprint not found: [guid={guid_obj._id}, create_from_guid={create_from_guid}]')
+            return None, None
+        if not latest_version.has_permission(auth.user, ADMIN):
+            sentry.log_message(f'ADMIN permission for the latest version is required to create a new version: '
+                               f'[user={auth.user._id}, guid={guid_obj._id}, latest_version={latest_version._id}]')
             raise PermissionsError
-        if source_preprint.has_unpublished_pending_version():
-            sentry.log_message('Fail to create a new version since an unpublished pending version already exists.')
+        unfinished_version, unpublished_version = latest_version.check_unfinished_or_unpublished_version()
+        if unpublished_version:
+            sentry.log_message('Failed to create a new version due to unpublished pending version already exists: '
+                               f'[version={unpublished_version.version}, '
+                               f'_id={unpublished_version._id}, '
+                               f'state={unpublished_version.machine_state}].')
             raise UnpublishedPendingPreprintVersionExists
-        # Note: last version may not be the latest version
+        if unfinished_version:
+            sentry.log_message(f'Use existing initiated but unfinished version instead of creating a new one: '
+                               f'[version={unfinished_version.version}, '
+                               f'_id={unfinished_version._id}, '
+                               f'state={unfinished_version.machine_state}].')
+            return unfinished_version, None
+
+        # Note: version number bumps from the last version number instead of the latest version number
         last_version_number = guid_obj.versions.order_by('-version').first().version
 
-        # Prepare data to clone/update
-        data_for_update = {
-            'subjects': [el for el in source_preprint.subjects.all().values_list('_id', flat=True)],
-            'tags': source_preprint.tags.all().values_list('name', flat=True),
-            'original_publication_date': source_preprint.original_publication_date,
-            'custom_publication_citation': source_preprint.custom_publication_citation,
-            'article_doi': source_preprint.article_doi, 'has_coi': source_preprint.has_coi,
-            'conflict_of_interest_statement': source_preprint.conflict_of_interest_statement,
-            'has_data_links': source_preprint.has_data_links, 'why_no_data': source_preprint.why_no_data,
-            'data_links': source_preprint.data_links,
-            'has_prereg_links': source_preprint.has_prereg_links,
-            'why_no_prereg': source_preprint.why_no_prereg, 'prereg_links': source_preprint.prereg_links,
+        # Prepare the data to clone/update
+        data_to_update = {
+            'subjects': [el for el in latest_version.subjects.all().values_list('_id', flat=True)],
+            'tags': latest_version.tags.all().values_list('name', flat=True),
+            'original_publication_date': latest_version.original_publication_date,
+            'custom_publication_citation': latest_version.custom_publication_citation,
+            'article_doi': latest_version.article_doi, 'has_coi': latest_version.has_coi,
+            'conflict_of_interest_statement': latest_version.conflict_of_interest_statement,
+            'has_data_links': latest_version.has_data_links, 'why_no_data': latest_version.why_no_data,
+            'data_links': latest_version.data_links,
+            'has_prereg_links': latest_version.has_prereg_links,
+            'why_no_prereg': latest_version.why_no_prereg, 'prereg_links': latest_version.prereg_links,
         }
-        if source_preprint.license:
-            data_for_update['license_type'] = source_preprint.license.node_license
-            data_for_update['license'] = {
-                'copyright_holders': source_preprint.license.copyright_holders,
-                'year': source_preprint.license.year
+        if latest_version.license:
+            data_to_update['license_type'] = latest_version.license.node_license
+            data_to_update['license'] = {
+                'copyright_holders': latest_version.license.copyright_holders,
+                'year': latest_version.license.year
             }
-        if source_preprint.node:
-            data_for_update['node'] = source_preprint.node
+        if latest_version.node:
+            data_to_update['node'] = latest_version.node
 
         # Create a preprint obj for the new version
         preprint = cls(
-            provider=source_preprint.provider,
-            title=source_preprint.title,
+            provider=latest_version.provider,
+            title=latest_version.title,
             creator=auth.user,
-            description=source_preprint.description,
+            description=latest_version.description,
         )
         preprint.save()
-
-        # Add contributors
-        for contributor_info in source_preprint.contributor_set.exclude(user=source_preprint.creator).values('visible', 'user_id', '_order'):
-            preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
-
-        # Add affiliated institutions
-        for institution in source_preprint.affiliated_institutions.all():
-            preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
-
-        # Update Guid obj to point to the new version if there is no moderation
-        if not preprint.provider.reviews_workflow:
-            guid_obj.referent = preprint
-            guid_obj.object_id = preprint.pk
-            guid_obj.content_type = ContentType.objects.get_for_model(preprint)
-            guid_obj.save()
-
-        # Create an entry in the `GuidVersionsThrough` table
+        # Create a new entry in the `GuidVersionsThrough` table to store version information, which must happen right
+        # after the first `.save()` of the new preprint version object, which enables `preprint._id` to be computed.
         guid_version = GuidVersionsThrough(
             referent=preprint,
             object_id=guid_obj.object_id,
@@ -398,7 +424,22 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         guid_version.save()
 
-        return preprint, data_for_update
+        # Add contributors
+        for contributor_info in latest_version.contributor_set.exclude(user=latest_version.creator).values('visible', 'user_id', '_order'):
+            preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
+
+        # Add affiliated institutions
+        for institution in latest_version.affiliated_institutions.all():
+            preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
+
+        # Update Guid obj to point to the new version if there is no moderation
+        if not preprint.provider.reviews_workflow:
+            guid_obj.referent = preprint
+            guid_obj.object_id = preprint.pk
+            guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+            guid_obj.save()
+
+        return preprint, data_to_update
 
     @property
     def is_deleted(self):
@@ -781,6 +822,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             return None
 
     def save(self, *args, **kwargs):
+        # TODO: document how `.save()` is customized for preprint
+        # TODO: insert a bare-minimum condition for saving preprint before guid and/or versioned guid is created
         first_save = not bool(self.pk)
         saved_fields = self.get_dirty_fields() or []
 
