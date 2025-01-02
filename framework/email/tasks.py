@@ -12,7 +12,6 @@ from sendgrid.helpers.mail import (
     Category,
     Attachment,
     FileContent,
-    Email,
     To,
     Personalization,
     Cc,
