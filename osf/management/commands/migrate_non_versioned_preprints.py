@@ -32,6 +32,8 @@ class Command(BaseCommand):
         batch_size = options['batch_size']
         if dry_run:
             self.stdout.write(self.style.WARNING('This is a DRY_RUN pass!'))
+        else:
+            self.stdout.write(self.style.SUCCESS('Migrate started!'))
 
         ContentType = apps.get_model('contenttypes', 'ContentType')
         GuidVersionsThrough = apps.get_model('osf', 'GuidVersionsThrough')
@@ -49,7 +51,10 @@ class Command(BaseCommand):
             for preprint in preprints_list:
                 guid = preprint.guids.first()
                 if not guid:
-                    self.stdout.write(self.style.ERROR(f'Preprint object [pk={preprint.pk}] skipped, missing guid.'))
+                    if dry_run:
+                        self.stdout.write(
+                            self.style.ERROR(f'Preprint object [pk={preprint.pk}] will be skipped due to missing guid.')
+                        )
                 else:
                     if not guid.versions.exists():
                         vq_list.append(
@@ -61,13 +66,10 @@ class Command(BaseCommand):
                             )
                         )
             if vq_list:
-                if dry_run:
-                    self.stdout.write(self.style.WARNING(f'DRY_RUN: GuidVersionsThrough.objects.bulk_create() with {len(vq_list)} items ...'))
-                else:
+                if not dry_run:
                     GuidVersionsThrough.objects.bulk_create(vq_list, batch_size=len(vq_list))
-                    self.stdout.write(self.style.SUCCESS( f'{len(vq_list)} Preprints migrated ...'))
             vq_list = []
         if dry_run:
-            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully!}'))
+            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully!'))
         else:
-            self.stdout.write(self.style.SUCCESS('Migration completed successfully!}'))
+            self.stdout.write(self.style.SUCCESS('Migration completed successfully!'))
