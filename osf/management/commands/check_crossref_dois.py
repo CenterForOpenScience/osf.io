@@ -1,18 +1,18 @@
+from datetime import timedelta
 import logging
 import requests
 
-from datetime import timedelta
-
-from framework.celery_tasks import app as celery_app
-from website import settings
-from website import mails
-from django.utils import timezone
-from django.core.management.base import BaseCommand
-
 import django
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 django.setup()
 
-from osf.models import Preprint, VersionedGuidMixin
+from framework.celery_tasks import app as celery_app
+from framework.sentry import sentry
+from osf.models import Guid, Preprint
+from website import settings
+from website import mails
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -66,8 +66,11 @@ def check_crossref_dois(dry_run=True):
 
         pending_dois = []
         for preprint in preprint_batch:
-            prefix = preprint.provider.doi_prefix
-            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)}')
+            doi_prefix = preprint.provider.doi_prefix
+            if not doi_prefix:
+                sentry.log_message(f'Preprint {preprint._id} is skipped for CrossRef DOI Check since the provider {preprint.provider._id.name} has invalid doi_prefix {doi_prefix}')
+                continue
+            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)}')
 
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
@@ -76,17 +79,23 @@ def check_crossref_dois(dry_run=True):
             resp.raise_for_status()
         except requests.exceptions.HTTPError as exc:
             logger.error(f'Could not contact crossref to check for DOIs, response returned with exception {exc}')
-            raise exc
+            continue
 
         preprints_response = resp.json()['message']['items']
 
         for preprint in preprints_response:
-            guid = preprint['DOI'].split('/')[-1]
-            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-            pending_preprint = preprints_with_pending_dois.get(
+            preprint__id = preprint['DOI'].split('/')[-1]
+            base_guid, version = Guid.split_guid(preprint__id)
+            if not base_guid or not version:
+                sentry.log_message(f'Preprint._id {preprint__id} returned by CrossRef API is invalid')
+                continue
+            pending_preprint = preprints_with_pending_dois.filter(
                 versioned_guids__guid___id=base_guid,
                 versioned_guids__version=version,
-            )
+            ).first()
+            if not pending_preprint:
+                sentry.log_message(f'Preprint._id {preprint__id} returned by CrossRef API is not found.')
+                continue
             if not dry_run:
                 pending_preprint.set_identifier_values(preprint['DOI'], save=True)
             else:
