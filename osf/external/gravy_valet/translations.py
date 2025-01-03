@@ -227,6 +227,7 @@ class EphemeralNodeSettings:
             gv_addon_pk=self.gv_data.resource_id,
             requested_resource=self.configured_resource,
             requesting_user=self.active_user,
+            addon_type=self.gv_data.resource_type,
         )
         self._credentials = result.get_attribute('credentials')
         self._config = result.get_attribute('config')
