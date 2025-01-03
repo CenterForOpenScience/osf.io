@@ -219,11 +219,13 @@ class Guid(BaseModel):
         return base_guid_str, version
 
     @classmethod
-    def load(cls, data, select_for_update=False):
+    def load(cls, data, select_for_update=False, ignore_not_found=False):
         """Override load in order to load by Guid.
 
         Update with versioned Guid: if the guid str stored in data is versioned, only the base guid str is used. This
         is the expected design because base guid str remains a valid one, and it always refers to the latest version.
+
+        If `ignore_not_found` is True, then don't log to sentry. This is used in `website.views.resolve_guid()`.
         """
         base_guid_str, version = cls.split_guid(data)
         try:
@@ -231,15 +233,16 @@ class Guid(BaseModel):
                 return cls.objects.get(_id=base_guid_str)
             return cls.objects.filter(_id=base_guid_str).select_for_update().get()
         except cls.DoesNotExist:
-            sentry.log_message(f'Object not found from base guid: [guid={base_guid_str}, version={version}]')
+            if not ignore_not_found:
+                sentry.log_message(f'Object not found from base guid: [guid={base_guid_str}, version={version}]')
             return None
 
     @classmethod
-    def load_referent(cls, guid_str):
+    def load_referent(cls, guid_str, ignore_not_found=False):
         """Find and return the referent from a given guid str.
         """
         base_guid_str, version = cls.split_guid(guid_str)
-        base_guid_obj = cls.load(base_guid_str)
+        base_guid_obj = cls.load(base_guid_str, ignore_not_found=ignore_not_found)
         if not base_guid_obj:
             return None, None
         # Handles versioned guid str
