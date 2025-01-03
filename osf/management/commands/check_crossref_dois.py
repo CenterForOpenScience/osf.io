@@ -7,11 +7,10 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 django.setup()
 
+from framework import sentry
 from framework.celery_tasks import app as celery_app
-from framework.sentry import sentry
 from osf.models import Guid, Preprint
-from website import settings
-from website import mails
+from website import mails, settings
 
 
 logger = logging.getLogger(__name__)
@@ -68,7 +67,8 @@ def check_crossref_dois(dry_run=True):
         for preprint in preprint_batch:
             doi_prefix = preprint.provider.doi_prefix
             if not doi_prefix:
-                sentry.log_message(f'Preprint {preprint._id} is skipped for CrossRef DOI Check since the provider {preprint.provider._id.name} has invalid doi_prefix {doi_prefix}')
+                sentry.log_message(f'Preprint {preprint._id} has been skipped for CrossRef DOI Check since the '
+                                   f'provider {preprint.provider._id.name} has invalid `doi_prefix` {doi_prefix}')
                 continue
             pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)}')
 
