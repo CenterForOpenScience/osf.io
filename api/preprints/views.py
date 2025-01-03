@@ -111,15 +111,14 @@ class PreprintMixin(NodeMixin):
         else:
             qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
 
-        try:
-            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
-        except Preprint.DoesNotExist:
+        preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
+        if not preprint:
             sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:
                 return
             raise NotFound
-
         if preprint.deleted is not None:
+            sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
             raise NotFound
 
         # May raise a permission denied
