@@ -71,12 +71,13 @@ from osf.metrics import PreprintDownload, PreprintView
 
 
 class PreprintOldVersionsImmutableMixin:
-    '''Override method to reject modify requests for old preprint versions (except for withdrawal)'''
+    """Override method to reject modify requests for old preprint versions (except for withdrawal)
+    """
     def update(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return super().update(request, *args, **kwargs)
-        message = 'User can not edit previous versions of a preprint'
+        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -84,15 +85,15 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return super().create(request, *args, **kwargs)
-        message = 'User can not edit previous versions of a preprint'
+        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
         if preprint.is_latest_version or preprint.machine_state == 'initial':
-            return super().delete(request, *args, **kwargs)
-        message = 'User can not edit previous versions of a preprint'
+            return super().destroy(request, *args, **kwargs)
+        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
