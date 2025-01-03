@@ -1,18 +1,17 @@
+from datetime import timedelta
 import logging
 import requests
 
-from datetime import timedelta
-
-from framework.celery_tasks import app as celery_app
-from website import settings
-from website import mails
-from django.utils import timezone
-from django.core.management.base import BaseCommand
-
 import django
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 django.setup()
 
-from osf.models import Preprint, VersionedGuidMixin
+from framework import sentry
+from framework.celery_tasks import app as celery_app
+from osf.models import Guid, Preprint
+from website import mails, settings
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -66,8 +65,13 @@ def check_crossref_dois(dry_run=True):
 
         pending_dois = []
         for preprint in preprint_batch:
-            prefix = preprint.provider.doi_prefix
-            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=prefix, guid=preprint._id)}')
+            doi_prefix = preprint.provider.doi_prefix
+            if not doi_prefix:
+                sentry.log_message(f'Preprint [_id={preprint._id}] has been skipped for CrossRef DOI Check '
+                                   f'since the provider [_id={preprint.provider._id}] has invalid DOI Prefix '
+                                   f'[doi_prefix={doi_prefix}]')
+                continue
+            pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)}')
 
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
@@ -75,22 +79,29 @@ def check_crossref_dois(dry_run=True):
             resp = requests.get(url)
             resp.raise_for_status()
         except requests.exceptions.HTTPError as exc:
-            logger.error(f'Could not contact crossref to check for DOIs, response returned with exception {exc}')
-            raise exc
+            sentry.log_message(f'Could not contact crossref to check for DOIs, response returned with exception {exc}')
+            continue
 
         preprints_response = resp.json()['message']['items']
 
         for preprint in preprints_response:
-            guid = preprint['DOI'].split('/')[-1]
-            base_guid, version = guid.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)
-            pending_preprint = preprints_with_pending_dois.get(
+            preprint__id = preprint['DOI'].split('/')[-1]
+            base_guid, version = Guid.split_guid(preprint__id)
+            if not base_guid or not version:
+                sentry.log_message(f'[Skipped] Preprint [_id={preprint__id}] returned by CrossRef API has invalid _id')
+                continue
+            pending_preprint = preprints_with_pending_dois.filter(
                 versioned_guids__guid___id=base_guid,
                 versioned_guids__version=version,
-            )
+            ).first()
+            if not pending_preprint:
+                sentry.log_message(f'[Skipped] Preprint [_id={preprint__id}] returned by CrossRef API is not found.')
+                continue
             if not dry_run:
+                logger.debug(f'Set identifier for {pending_preprint._id}')
                 pending_preprint.set_identifier_values(preprint['DOI'], save=True)
             else:
-                logger.info('DRY RUN')
+                logger.info(f'DRY RUN: Set identifier for {pending_preprint._id}')
 
 
 def report_stuck_dois(dry_run=True):
