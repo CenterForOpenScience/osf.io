@@ -1,14 +1,10 @@
+from django.db.models.fields import Field
+
 from api.base.settings.defaults import API_BASE
 from osf.models import Preprint
 from osf.utils import permissions
-from osf_tests.factories import (
-    ProjectFactory,
-    PreprintFactory,
-    AuthUserFactory,
-)
+from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory
 from tests.base import ApiTestCase
-
-from django.db.models.fields import Field
 
 
 class TestPreprintVersion(ApiTestCase):
@@ -16,16 +12,12 @@ class TestPreprintVersion(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-
         self.preprint = PreprintFactory(creator=self.user)
-
         self.project = ProjectFactory(creator=self.user)
-
-        self.url = f'/{API_BASE}preprints/{self.preprint._id}/versions/'
+        self.url = f'/{API_BASE}preprints/{self.preprint._id}/versions/?version=2.20'
 
     def test_create_preprint_version(self):
         res = self.app.post_json_api(self.url, auth=self.user.auth)
-
         assert res.status_code == 201
 
     def test_non_relation_fields(self):
