@@ -252,7 +252,12 @@ class EphemeralNodeSettings:
 
     def after_remove_contributor(self, node, removed, auth):
         if self.user_settings.owner == removed:
-            gv_requests.delete_addon(self.id, requesting_user=auth.user, requested_resource=node)
+            gv_requests.delete_addon(
+                self.id,
+                requesting_user=auth.user,
+                requested_resource=node,
+                addon_type=self.gv_data.resource_type
+            )
             message = f'''
                  Because the {self.config.full_name} add-on for {markupsafe.escape(node.category_display)}
                  {markupsafe.escape(node.title)}" was authenticated by {markupsafe.escape(removed.fullname)},

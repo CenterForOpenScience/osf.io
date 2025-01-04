@@ -65,18 +65,18 @@ def create_addon(requested_resource, requesting_user, attributes: dict, relation
         json_data={'data': json_data},
     )
 
-def delete_addon(pk, requesting_user, requested_resource):
+def delete_addon(pk, requesting_user, requested_resource, addon_type: str):
     return _make_gv_request(
-        ADDON_ENDPOINT.format(pk=pk),
+        ADDON_ENDPOINT.format(pk=pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        request_method='DELETE'
+        request_method='DELETE',
     )
 
-def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
+def get_addon(gv_addon_pk, requested_resource, requesting_user, addon_type: str):  # -> JSONAPIResultEntry
     '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
     return get_gv_result(
-        endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk),
+        endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'include': ADDON_EXTERNAL_SERVICE_PATH},
