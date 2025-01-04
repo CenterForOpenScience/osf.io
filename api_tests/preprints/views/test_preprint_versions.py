@@ -86,7 +86,7 @@ class TestPreprintVersion(ApiTestCase):
     def test_return_409_if_unpublished_pending_version_exists(self):
         res = self.app.post_json_api(self.pre_mode_version_create_url, auth=self.user.auth)
         new_version = Preprint.load(res.json['data']['id'])
-        filename = f'preprint_file.txt'
+        filename = 'preprint_file.txt'
         preprint_file = OsfStorageFile.create(
             target_object_id=new_version.id,
             target_content_type=ContentType.objects.get_for_model(new_version),
@@ -108,7 +108,7 @@ class TestPreprintVersion(ApiTestCase):
     def test_return_409_if_try_to_edit_old_versions(self):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
         new_version = Preprint.load(res.json['data']['id'])
-        filename = f'preprint_file.txt'
+        filename = 'preprint_file.txt'
         preprint_file = OsfStorageFile.create(
             target_object_id=new_version.id,
             target_content_type=ContentType.objects.get_for_model(new_version),
