@@ -176,8 +176,11 @@ def get_globals():
 def is_private_link_anonymous_view():
     # Avoid circular import
     from osf.models import PrivateLink
+    view_only = request.args.get('view_only')
+    if not view_only:
+        return False
     try:
-        return PrivateLink.objects.filter(key=request.args.get('view_only')).values_list('anonymous', flat=True).get()
+        return PrivateLink.objects.filter(key=view_only).values_list('anonymous', flat=True).get()
     except PrivateLink.DoesNotExist:
         return False
 
