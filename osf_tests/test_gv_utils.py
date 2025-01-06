@@ -157,7 +157,10 @@ class TestFakeGV:
         assert json_data['relationships']['external_storage_service']['data']['id'] == account_one.external_storage_service.pk
 
     def test_addon_route(self, fake_gv, addon_one):
-        gv_addon_detail_url = gv_requests.ADDON_ENDPOINT.format(pk=addon_one.pk)
+        gv_addon_detail_url = gv_requests.ADDON_ENDPOINT.format(
+            pk=addon_one.pk,
+            addon_type='configured-storage-addons',
+        )
         with fake_gv.run_fake():
             resp = requests.get(gv_addon_detail_url)
         assert resp.status_code == HTTPStatus.OK
@@ -424,6 +427,7 @@ class TestRequestHelpers:
                 gv_addon_pk=external_account.pk,
                 requested_resource=resource,
                 requesting_user=contributor,
+                addon_type='configured-storage-addons',
             )
         retrieved_id = result.resource_id
         assert retrieved_id == configured_addon.pk
@@ -536,6 +540,7 @@ class TestEphemeralSettings:
                 gv_addon_pk=fake_box_addon.pk,
                 requesting_user=contributor,
                 requested_resource=project,
+                addon_type='configured-storage-addons',
             )
             ephemeral_config = translations.make_ephemeral_node_settings(
                 addon_data, requesting_user=contributor, requested_resource=project

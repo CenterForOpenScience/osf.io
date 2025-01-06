@@ -18,7 +18,7 @@ API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
 ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
 ADDONS_ENDPOINT = f'{API_BASE}configured-storage-addons'
 GENERIC_ADDONS_ENDPOINT = f'{API_BASE}{{addon_type}}'
-ADDON_ENDPOINT = f'{ADDONS_ENDPOINT}/{{pk}}'
+ADDON_ENDPOINT = f'{GENERIC_ADDONS_ENDPOINT}/{{pk}}'
 WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-credentials'
 
 USER_LIST_ENDPOINT = f'{API_BASE}user-references'
@@ -32,6 +32,8 @@ ACCOUNT_OWNER_PATH = 'base_account.account_owner'
 ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
 ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
 ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
+ACCOUNT_EXTERNAL_COMPUTING_SERVICE_PATH = 'external_computing_service'
+ADDON_EXTERNAL_COMPUTING_SERVICE_PATH = 'base_account.external_computing_service'
 
 CITATION_ITEM_TYPE_ALIASES = {
     'COLLECTION': 'folder',
@@ -63,18 +65,18 @@ def create_addon(requested_resource, requesting_user, attributes: dict, relation
         json_data={'data': json_data},
     )
 
-def delete_addon(pk, requesting_user, requested_resource):
+def delete_addon(pk, requesting_user, requested_resource, addon_type: str):
     return _make_gv_request(
-        ADDON_ENDPOINT.format(pk=pk),
+        ADDON_ENDPOINT.format(pk=pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        request_method='DELETE'
+        request_method='DELETE',
     )
 
-def get_addon(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
+def get_addon(gv_addon_pk, requested_resource, requesting_user, addon_type: str):  # -> JSONAPIResultEntry
     '''Return a JSONAPIResultEntry representing a known ConfiguredStorageAddon.'''
     return get_gv_result(
-        endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk),
+        endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'include': ADDON_EXTERNAL_SERVICE_PATH},
@@ -100,6 +102,11 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
         requesting_user=requesting_user,
         params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH}'}
     )
+    yield from iterate_gv_results(
+        endpoint_url=user_result.get_related_link('authorized_computing_accounts'),
+        requesting_user=requesting_user,
+        params={'include': f'{ACCOUNT_EXTERNAL_COMPUTING_SERVICE_PATH}'}
+    )
 
 
 def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
@@ -124,11 +131,17 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
         requested_resource=requested_resource,
         params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
     )
+    yield from iterate_gv_results(
+        endpoint_url=resource_result.get_related_link('configured_computing_addons'),
+        requesting_user=requesting_user,
+        requested_resource=requested_resource,
+        params={'include': f'{ADDON_EXTERNAL_COMPUTING_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+    )
 
 
-def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user):  # -> JSONAPIResultEntry
+def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user, addon_type):  # -> JSONAPIResultEntry
     return get_gv_result(
-        endpoint_url=WB_CONFIG_ENDPOINT.format(pk=gv_addon_pk),
+        endpoint_url=WB_CONFIG_ENDPOINT.format(pk=gv_addon_pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource
     )
