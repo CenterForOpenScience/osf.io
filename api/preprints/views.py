@@ -75,7 +75,7 @@ class PreprintOldVersionsImmutableMixin:
     """
     def update(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.machine_state == 'initial':
+        if preprint.is_latest_version or preprint.machine_state in ['initial', 'pending']:
             return super().update(request, *args, **kwargs)
         message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
@@ -83,7 +83,7 @@ class PreprintOldVersionsImmutableMixin:
 
     def create(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.machine_state == 'initial':
+        if preprint.is_latest_version or preprint.machine_state in ['initial', 'pending']:
             return super().create(request, *args, **kwargs)
         message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
@@ -91,7 +91,7 @@ class PreprintOldVersionsImmutableMixin:
 
     def destroy(self, request, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if preprint.is_latest_version or preprint.machine_state == 'initial':
+        if preprint.is_latest_version or preprint.machine_state in ['initial', 'pending']:
             return super().destroy(request, *args, **kwargs)
         message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
