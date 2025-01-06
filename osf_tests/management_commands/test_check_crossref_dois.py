@@ -32,6 +32,7 @@ class TestCheckCrossrefDOIs:
         guid._id = 'guid0'
         guid.save()
 
+        preprint._id = None
         preprint.save()
         return preprint
 
