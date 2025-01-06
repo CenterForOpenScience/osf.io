@@ -196,6 +196,7 @@ def serialize_access_requests(node):
         {
             'user': serialize_user(access_request.creator),
             'comment': access_request.comment,
+            'requested_permissions': access_request.requested_permissions,
             'id': access_request._id
         } for access_request in node.requests.filter(
             request_type=workflows.RequestTypes.ACCESS.value,
