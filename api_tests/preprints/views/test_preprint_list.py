@@ -16,7 +16,7 @@ from api_tests.preprints.views.test_preprint_list_mixin import (
     PreprintIsValidListMixin,
 )
 from api_tests.reviews.mixins.filter_mixins import ReviewableFilterMixin
-from osf.models import Preprint, Node
+from osf.models import Guid, Node, Preprint
 from osf import features
 from osf.utils.workflows import DefaultStates
 from osf.utils import permissions
@@ -130,7 +130,7 @@ class TestPreprintCreateWithoutNode:
         res = app.post_json_api(url, preprint_payload, auth=user_one.auth)
         assert res.status_code == 201
         preprint = Preprint.load(res.json['data']['id'])
-        preprint_id, version = res.json['data']['id'].split('_v')
+        preprint_id, version = Guid.split_guid(res.json['data']['id'])
 
         assert preprint.node == supplementary_project
         filtered_nodes = Node.objects.filter(
