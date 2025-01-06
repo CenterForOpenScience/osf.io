@@ -1383,11 +1383,12 @@ class ContributorMixin(models.Model):
                 )
             if save:
                 self.save()
+            # TODO: Remove this comment after `Preprint.save()` has been fixed. There is a bug for Preprint when the
+            #       first `.save()` is called. It triggers a series of events which includes adding creator as one
+            #       contributor. However, with versioned guid, there is a gap between when preprint os saved and when
+            #       guid and versioned guid are saved. During this gap, `self._id` is unfortunately `None` and the
+            #       signal can not be be sent.
             if self._id and contrib_to_add:
-            # TODO: remove the comment after `Preprint.save()` has been fixed.
-            # There is a bug for Preprint when the first `.save()` is called. It triggers a series of events which
-            # includes adding creator as the contributor. However, with versioned guid, there is a gap between preprint
-            # is saved and guid is updated, during which `self._id` is None and the signal can not be be sent.
                 project_signals.contributor_added.send(self,
                                                        contributor=contributor,
                                                        auth=auth, email_template=send_email, permissions=permissions)
