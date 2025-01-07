@@ -565,6 +565,5 @@ class TestGuidVersionsThrough:
         assert preprint._id == expected_guid
 
         GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
-        preprint._id = None
 
         assert preprint._id is None
