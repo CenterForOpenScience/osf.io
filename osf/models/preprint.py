@@ -314,8 +314,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         versioned_guid.save()
         preprint.save(first_save=True)
 
-        preprint._id = None  # trigger _id cache update
-
         return preprint
 
     def get_last_not_rejected_version(self):
@@ -428,8 +426,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         guid_version.save()
         preprint.save(first_save=True)
 
-        preprint._id = None  # trigger _id cache update
-
         # Add contributors
         for contributor_info in latest_version.contributor_set.exclude(user=latest_version.creator).values('visible', 'user_id', '_order'):
             preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
@@ -444,7 +440,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid_obj.object_id = preprint.pk
             guid_obj.content_type = ContentType.objects.get_for_model(preprint)
             guid_obj.save()
-            preprint._id = None  # trigger _id cache update
 
         return preprint, data_to_update
 
