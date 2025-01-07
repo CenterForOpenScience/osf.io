@@ -727,29 +727,18 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
+
         update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
-        finish = kwargs.pop('finish', True)
-        set_doi = kwargs.pop('set_doi', True)
-        is_published = kwargs.pop('is_published', True)
+        # Step 1: create prerpint, guid and versioned guid
         instance = cls._build(target_class, *args, **kwargs)
-        file_size = kwargs.pop('file_size', 1337)
-
-        doi = kwargs.pop('doi', None)
-        license_details = kwargs.pop('license_details', None)
-        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
-        subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
-        instance.article_doi = doi
-
-        user = kwargs.pop('creator', None) or instance.creator
-        instance.save()
+        instance.save(guid_ready=False)
         guid = models.Guid.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
             object_id=instance.pk,
         )
-
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
@@ -757,6 +746,21 @@ class PreprintFactory(DjangoModelFactory):
             version=1,
             guid=guid
         )
+        instance.save(first_save=True)
+
+        # Step 2: finish preprint creation work flow
+        finish = kwargs.pop('finish', True)
+        set_doi = kwargs.pop('set_doi', True)
+        user = kwargs.pop('creator', None) or instance.creator
+        is_published = kwargs.pop('is_published', True)
+        file_size = kwargs.pop('file_size', 1337)
+        doi = kwargs.pop('doi', None)
+        license_details = kwargs.pop('license_details', None)
+        filename = kwargs.pop('filename', None) or 'preprint_file.txt'
+        subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
+        instance.article_doi = doi
+        machine_state = kwargs.pop('machine_state', 'initial')
+
         preprint_file = OsfStorageFile.create(
             target_object_id=instance.id,
             target_content_type=ContentType.objects.get_for_model(instance),
@@ -764,7 +768,7 @@ class PreprintFactory(DjangoModelFactory):
             name=filename,
             materialized_path=f'/{filename}')
 
-        instance.machine_state = kwargs.pop('machine_state', 'initial')
+        instance.machine_state = machine_state
         preprint_file.save()
         from addons.osfstorage import settings as osfstorage_settings
 
@@ -818,12 +822,9 @@ class PreprintFactory(DjangoModelFactory):
             provider=latest_version.provider,
             title=latest_version.title,
             description=latest_version.description,
-            creator=creator,
-            node=latest_version.node,
+            creator=creator
         )
-        instance.machine_state = 'initial'
-        instance.provider = latest_version.provider
-        instance.save()
+        instance.save(guid_ready=False)
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),
@@ -831,6 +832,9 @@ class PreprintFactory(DjangoModelFactory):
             guid=guid_obj,
             version=last_version_number + 1
         )
+        instance.machine_state = 'initial'
+        instance.node = latest_version.node
+        instance.save(first_save=True)
 
         # Prepare and add file
         filename = f'preprint_file_{last_version_number + 1}.txt'
