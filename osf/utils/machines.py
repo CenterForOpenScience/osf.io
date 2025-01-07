@@ -123,10 +123,9 @@ class ReviewsMachine(BaseMachine):
         self.machineable.save()
 
     def resubmission_allowed(self, ev):
-        '''
-        Allow resubmission if the preprint uses the PRE_MODERATION workflow or
-        uses the POST_MODERATION workflow and is in a pending state
-        '''
+        """Allow resubmission 1) if the preprint uses the PRE_MODERATION workflow, or 2) if it uses the POST_MODERATION
+        workflow and is in a pending state.
+        """
         workflow = self.machineable.provider.reviews_workflow
         result = any(
             [
