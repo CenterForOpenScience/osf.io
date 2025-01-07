@@ -4,7 +4,7 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
@@ -296,7 +296,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             creator=creator,
             description=description,
         )
-        preprint.save()
+        preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
         base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
@@ -312,6 +312,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=base_guid_obj
         )
         versioned_guid.save()
+        preprint.save(first_save=True)
 
         return preprint
 
@@ -412,7 +413,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             creator=auth.user,
             description=latest_version.description,
         )
-        preprint.save()
+        preprint.save(guid_ready=False)
         # Create a new entry in the `GuidVersionsThrough` table to store version information, which must happen right
         # after the first `.save()` of the new preprint version object, which enables `preprint._id` to be computed.
         guid_version = GuidVersionsThrough(
@@ -423,6 +424,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=guid_obj
         )
         guid_version.save()
+        preprint.save(first_save=True)
 
         # Add contributors
         for contributor_info in latest_version.contributor_set.exclude(user=latest_version.creator).values('visible', 'user_id', '_order'):
@@ -824,7 +826,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def save(self, *args, **kwargs):
         # TODO: document how `.save()` is customized for preprint
         # TODO: insert a bare-minimum condition for saving preprint before guid and/or versioned guid is created
-        first_save = not bool(self.pk)
+        guid_ready = kwargs.pop('guid_ready', True)
+        if not guid_ready:
+            return super().save(*args, **kwargs)
+
+        if not bool(self.pk):
+            raise IntegrityError('Preprint must have PK')
+        first_save = kwargs.pop('first_save', False)
         saved_fields = self.get_dirty_fields() or []
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
