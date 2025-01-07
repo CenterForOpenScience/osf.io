@@ -282,9 +282,10 @@ class TestPreprintCreation:
 
     def test_creator_is_added_as_contributor(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs(),
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -297,9 +298,10 @@ class TestPreprintCreation:
 
     def test_default_region_set_to_user_settings_osfstorage_default(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -308,9 +310,10 @@ class TestPreprintCreation:
 
     def test_root_folder_created_automatically(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()

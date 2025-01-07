@@ -524,7 +524,7 @@ class TestPreprint(OsfTestCase):
             search.delete_index(elastic_search.INDEX)
             search.create_index(elastic_search.INDEX)
             self.user = factories.UserFactory(fullname='John Deacon')
-            self.preprint = Preprint(
+            self.preprint = Preprint.create(
                 title='Red Special',
                 description='We are the champions',
                 creator=self.user,

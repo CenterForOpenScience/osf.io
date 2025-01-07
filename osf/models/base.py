@@ -524,9 +524,8 @@ class VersionedGuidMixin(GuidMixin):
 
     versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
 
-    @property
+    @cached_property
     def _id(self):
-        # TODO: maybe a cached property?
         try:
             versioned_guid = self.versioned_guids
             if not versioned_guid.exists():
@@ -551,9 +550,9 @@ class VersionedGuidMixin(GuidMixin):
 
     _primary_key = _id
 
-    @property
+    @cached_property
     def version(self):
-        # TODO: maybe a cached property?
+        # Once assigned, version number never changes
         return self.versioned_guids.first().version
 
     @classmethod
