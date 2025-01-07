@@ -122,13 +122,15 @@ def generate_logic_condition_from_attribute(attribute):
     return '', []
 
 
-def check_logic_condition(user, setting_attribute_list):
+def check_logic_condition(user, setting_attribute_list, user_extended_data_attribute=None):
     """Check if a user meets the logic condition based on an attribute."""
     if not setting_attribute_list or len(setting_attribute_list) == 0:
         # If setting_attribute_list is empty, return False
         return False
     result = True
-    user_extended_data_attribute = None
+    if user_extended_data_attribute:
+        user_extended_data_attribute = getattr(user_extended_data_attribute, 'data', {}).get('idp_attr', {})
+
     for setting_attribute in setting_attribute_list:
         attribute_name = setting_attribute.get('attribute_name')
         setting_type = setting_attribute.get('setting_type')

@@ -17,7 +17,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, Node, Registration, UserExtendedData
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -303,9 +303,10 @@ def check_user_can_create_project(user):
         setting_id = setting_attribute.get('setting_id')
         setting_attributes_dict.setdefault(setting_id, []).append(setting_attribute)
 
+    user_extended_data = UserExtendedData.objects.filter(user_id=user_dict.get('id')).first()
     # Check user by setting list attribute condition for each setting
     for setting in setting_list:
-        if check_logic_condition(user_dict, setting_attributes_dict.get(setting.id, [])):
+        if check_logic_condition(user_dict, setting_attributes_dict.get(setting.id, []), user_extended_data):
             project_limit_number = setting.project_limit_number
             break
 

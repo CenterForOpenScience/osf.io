@@ -18,7 +18,7 @@ from admin.project_limit_number import utils
 from admin.rdm.utils import RdmPermissionMixin
 from django.contrib.auth.mixins import UserPassesTestMixin
 from osf.models import Institution, ProjectLimitNumberSetting, ProjectLimitNumberSettingAttribute, ProjectLimitNumberTemplate, \
-    ProjectLimitNumberTemplateAttribute, ProjectLimitNumberDefault, AbstractNode
+    ProjectLimitNumberTemplateAttribute, ProjectLimitNumberDefault, AbstractNode, UserExtendedData
 from django.db.models import F, Max, Value, Count
 from admin.base import settings
 from django.http import Http404, JsonResponse
@@ -908,13 +908,15 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
 
             user_list_met_condition = []
             user_list_response = []
+            user_extended_data_attributes = UserExtendedData.objects.filter(user_id__in=[user.get('id') for user in user_list])
             # Check if user met any logic condition from setting list
             for setting in setting_list:
                 if len(user_list) > 0:
                     project_limit_number = setting.project_limit_number
                     for user in user_list:
+                        user_extended_data_attribute = next((p for p in user_extended_data_attributes if p.user_id == user.get('id')), None)
                         # Check if user met the logic condition from this setting
-                        is_user_met_condition = utils.check_logic_condition(user, setting_attributes_dict.get(setting.id, []))
+                        is_user_met_condition = utils.check_logic_condition(user, setting_attributes_dict.get(setting.id, []), user_extended_data_attribute)
                         if is_user_met_condition:
                             user['project_limit_number'] = project_limit_number
                             user_list_met_condition.append(user.get('guid'))
@@ -960,7 +962,16 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     def count_user_met_logic_condition(self, institution_id, logic_condition_query_string,
                                        include_osf_user_query_string, logic_condition_params, include_osf_user_params):
-        query = """
+        query = ''
+        if len(logic_condition_query_string) > 0:
+            query += f"""
+                WITH userextendeddata AS (
+                    SELECT DISTINCT user_id
+                    FROM osf_userextendeddata
+                    WHERE {logic_condition_query_string} )
+            """
+
+        query += """
             SELECT COUNT(*)
             FROM osf_osfuser AS u
             JOIN osf_guid AS g
@@ -968,16 +979,19 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
                 AND g.content_type_id = 1
             JOIN osf_osfuser_affiliated_institutions AS ui
                 ON u.id = ui.osfuser_id
+            """
+        if len(logic_condition_query_string) > 0:
+            query += ' JOIN userextendeddata ux ON u.id = ux.user_id'
+
+        query += """
             WHERE ui.institution_id = %s
             """
 
-        if len(logic_condition_query_string) > 0:
-            query += f' AND u.id IN ( SELECT user_id FROM osf_userextendeddata WHERE {logic_condition_query_string})'
         if len(include_osf_user_query_string) > 0:
             query += f' AND {include_osf_user_query_string}'
 
         # Execute the raw query
-        params = [institution_id] + logic_condition_params + include_osf_user_params
+        params = logic_condition_params + [institution_id] + include_osf_user_params
         with connection.cursor() as cursor:
             cursor.execute(query, params)
             count = cursor.fetchone()[0]
@@ -986,7 +1000,17 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
 
     def get_user_list_met_logic_condition(self, institution_id, page, logic_condition_query_string,
                                           include_osf_user_query, logic_condition_params, include_osf_user_params):
-        query = """
+
+        query = ''
+        if len(logic_condition_query_string) > 0:
+            query += f"""
+                WITH userextendeddata AS (
+                    SELECT DISTINCT user_id
+                    FROM osf_userextendeddata
+                    WHERE {logic_condition_query_string} )
+            """
+
+        query += """
             SELECT g._id AS guid, u.id, u.username, u.fullname, u.eppn
             FROM osf_osfuser AS u
             JOIN osf_guid AS g
@@ -994,25 +1018,25 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
                 AND g.content_type_id = 1
             JOIN osf_osfuser_affiliated_institutions AS ui
                 ON u.id = ui.osfuser_id
+            """
+        if len(logic_condition_query_string) > 0:
+            query += ' JOIN userextendeddata ux ON u.id = ux.user_id'
+        query += """
             WHERE ui.institution_id = %s
-                {}
                 {}
                 ORDER BY guid ASC
                 LIMIT 10
                 OFFSET (%s - 1) * 10
             """
 
-        if len(logic_condition_query_string) > 0:
-            logic_condition_query_string = f' AND u.id IN ( SELECT user_id FROM osf_userextendeddata WHERE {logic_condition_query_string})'
-
         if len(include_osf_user_query) > 0:
             include_osf_user_query = f' AND {include_osf_user_query}'
 
         # Format the query with the logic condition
-        formatted_query = query.format(logic_condition_query_string, include_osf_user_query)
+        formatted_query = query.format(include_osf_user_query)
 
         # Execute the raw query
-        params = [institution_id] + logic_condition_params + include_osf_user_params + [page]
+        params = logic_condition_params + [institution_id] + include_osf_user_params + [page]
         with connection.cursor() as cursor:
             cursor.execute(formatted_query, params)
             user_list = cursor.fetchall()
