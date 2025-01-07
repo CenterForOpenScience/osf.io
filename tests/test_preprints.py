@@ -285,6 +285,7 @@ class TestPreprintCreation:
         preprint = Preprint.create(
             title=fake.bs(),
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -300,6 +301,7 @@ class TestPreprintCreation:
         preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -311,6 +313,7 @@ class TestPreprintCreation:
         preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
