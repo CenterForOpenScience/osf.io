@@ -746,7 +746,7 @@ class PreprintFactory(DjangoModelFactory):
             version=1,
             guid=guid
         )
-        instance.save(first_save=True)
+        instance.save(guid_ready=True, first_save=True)
 
         # Step 2: finish preprint creation work flow
         finish = kwargs.pop('finish', True)
@@ -834,7 +834,7 @@ class PreprintFactory(DjangoModelFactory):
         )
         instance.machine_state = 'initial'
         instance.node = latest_version.node
-        instance.save(first_save=True)
+        instance.save(guid_ready=True, first_save=True)
 
         # Prepare and add file
         filename = f'preprint_file_{last_version_number + 1}.txt'

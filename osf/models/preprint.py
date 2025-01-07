@@ -312,7 +312,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=base_guid_obj
         )
         versioned_guid.save()
-        preprint.save(first_save=True)
+        preprint.save(guid_ready=True, first_save=True)
 
         return preprint
 
@@ -424,7 +424,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=guid_obj
         )
         guid_version.save()
-        preprint.save(first_save=True)
+        preprint.save(guid_ready=True, first_save=True)
 
         # Add contributors
         for contributor_info in latest_version.contributor_set.exclude(user=latest_version.creator).values('visible', 'user_id', '_order'):
@@ -824,14 +824,32 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             return None
 
     def save(self, *args, **kwargs):
-        # TODO: document how `.save()` is customized for preprint
-        # TODO: insert a bare-minimum condition for saving preprint before guid and/or versioned guid is created
-        guid_ready = kwargs.pop('guid_ready', True)
-        if not guid_ready:
+        """Customize preprint save process, which has three steps.
+
+        1. Initial: this save happens before guid and versioned guid are created for the preprint; this save
+        creates the pk; after this save, none of `guids`, `versioned_guids` or `._id` is available.
+        2. First: this save happens and must happen right after versioned guid have been created; this is the
+        same "first save" as it was before preprint became versioned; the only change is that `pk` already exists
+        3. This is the case for all subsequent saves after initial and first save.
+
+        Note: When creating a preprint or new version , must use Preprint.create() or Preprint.create_version()
+        respectively, which handles the save process automatically.
+        """
+        initial_save = not kwargs.pop('guid_ready', True)
+        if initial_save:
+            # Save when guid and versioned guid are not ready
             return super().save(*args, **kwargs)
 
+        # Preprint must have PK and _id set before continue
         if not bool(self.pk):
-            raise IntegrityError('Preprint must have PK')
+            err_msg = 'Preprint must have pk!'
+            sentry.log_message(err_msg)
+            raise IntegrityError(err_msg)
+        if not self._id:
+            err_msg = 'Preprint must have _id!'
+            sentry.log_message(err_msg)
+            raise IntegrityError(err_msg)
+
         first_save = kwargs.pop('first_save', False)
         saved_fields = self.get_dirty_fields() or []
 
