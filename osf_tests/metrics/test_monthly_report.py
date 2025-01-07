@@ -135,7 +135,7 @@ class TestLastMonthReport:
 
 def _prior_yearmonth(ym: YearMonth) -> YearMonth:
     return (
-        YearMonth(ym.year - 1, 1)
+        YearMonth(ym.year - 1, 12)
         if ym.month == 1
         else YearMonth(ym.year, ym.month - 1)
     )
