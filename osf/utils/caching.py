@@ -61,14 +61,13 @@ class _CachedProperty(property):
 
         return do_fdel
 
-class _CachedNotNoneProperty(_CachedProperty):
+class _CachedTruthyProperty(_CachedProperty):
 
     def _wrap_fget(self, fget):
         @wraps(fget)
         def do_fget(obj):
-            if hasattr(obj, self._cache_name):
-                if getattr(obj, self._cache_name):
-                    return getattr(obj, self._cache_name)
+            if getattr(obj, self._cache_name, False):
+                return getattr(obj, self._cache_name)
             # Generate the value to cache.
             value = fget(obj)
             if value:
@@ -80,4 +79,4 @@ class _CachedNotNoneProperty(_CachedProperty):
 
 # Public name for the cached property decorator. Using a class as a decorator just looks plain ugly. :P
 cached_property = _CachedProperty
-cached_not_none_property = _CachedNotNoneProperty
+cached_truthy_property = _CachedTruthyProperty

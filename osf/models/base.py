@@ -16,7 +16,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from framework import sentry
 from osf.exceptions import ValidationError
-from osf.utils.caching import cached_property, cached_not_none_property
+from osf.utils.caching import cached_property, cached_truthy_property
 from osf.utils.fields import LowercaseCharField, NonNaiveDateTimeField
 from website import settings as website_settings
 
@@ -524,7 +524,7 @@ class VersionedGuidMixin(GuidMixin):
 
     versioned_guids = GenericRelation('GuidVersionsThrough', related_name='referent', related_query_name='referents')
 
-    @cached_not_none_property
+    @cached_truthy_property
     def _id(self):
         try:
             versioned_guid = self.versioned_guids
