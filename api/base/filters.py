@@ -601,12 +601,29 @@ class PreprintFilterMixin(ListFilterMixin):
 
        Subclasses must define `get_default_queryset()`.
     """
+
+    @staticmethod
+    def postprocess_versioned_guid_id_query_param(operation):
+        """Handle query parameters when filtering on `id` for preprint and versioned guid. With versioned guid,
+        preprint no longer has guid._id for every version, and thus must switch to filter by pk.
+        """
+        object_ids = []
+        for val in operation['value']:
+            referent, version = Guid.load_referent(val)
+            if referent is None:
+                continue
+            object_ids.append(referent.id)
+        # Override the operation to filter `id__in=object_ids`
+        operation['source_field_name'] = 'id__in'
+        operation['value'] = object_ids
+        operation['op'] = 'eq'
+
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
             operation['source_field_name'] = 'provider___id'
 
         if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
+            PreprintFilterMixin.postprocess_versioned_guid_id_query_param(operation)
 
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
