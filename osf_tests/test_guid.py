@@ -505,7 +505,7 @@ class TestGuidVersionsThrough:
         preprint_guid = preprint.guids.first()
 
         preprint_metadata = {
-            'subjects': [[el] for el in preprint.subjects.all().values_list('_id', flat=True)],
+            'subjects': [el for el in preprint.subjects.all().values_list('_id', flat=True)],
             'original_publication_date': preprint.original_publication_date,
             'custom_publication_citation': preprint.custom_publication_citation,
             'article_doi': preprint.article_doi,
