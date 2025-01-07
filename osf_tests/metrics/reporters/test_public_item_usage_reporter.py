@@ -28,7 +28,11 @@ class TestPublicItemUsageReporter:
     @pytest.fixture
     def item0(self):
         _item0 = factories.PreprintFactory(is_public=True)
-        _item0._id = 'item0'
+        guid = _item0.get_guid()
+        guid._id = 'item0'
+        guid.save()
+
+        _item0._id = None
         return _item0
 
     @pytest.fixture
@@ -186,7 +190,7 @@ class TestPublicItemUsageReporter:
         _sparse_item0, _sparse_item1, _sparse_item2 = sorted(_sparse, key=attrgetter('item_osfid'))
         # sparse-month item0
         assert isinstance(_sparse_item0, PublicItemUsageReport)
-        assert _sparse_item0.item_osfid == 'item0'
+        assert _sparse_item0.item_osfid == 'item0_v1'
         assert _sparse_item0.provider_id == [item0.provider._id]
         assert _sparse_item0.platform_iri == ['http://osf.example']
         assert _sparse_item0.view_count == 3
@@ -217,7 +221,7 @@ class TestPublicItemUsageReporter:
         _busy_item0, _busy_item1, _busy_item2 = sorted(_busy, key=attrgetter('item_osfid'))
         # busy-month item0
         assert isinstance(_busy_item0, PublicItemUsageReport)
-        assert _busy_item0.item_osfid == 'item0'
+        assert _busy_item0.item_osfid == 'item0_v1'
         assert _busy_item0.provider_id == [item0.provider._id]
         assert _busy_item0.platform_iri == ['http://osf.example']
         assert _busy_item0.view_count == 4 * 7
