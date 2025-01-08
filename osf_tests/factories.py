@@ -257,14 +257,11 @@ class InstitutionFactory(DjangoModelFactory):
     email_domains = FakeList('domain_name', n=1)
     orcid_record_verified_source = ''
     delegation_protocol = ''
-    can_request_access = False
+    institutional_request_access_enabled = False
 
     class Meta:
         model = models.Institution
 
-    @classmethod
-    def _create(cls, *args, **kwargs):
-        return super()._create(*args, **kwargs)
 
 class NodeLicenseRecordFactory(DjangoModelFactory):
     year = factory.Faker('year')

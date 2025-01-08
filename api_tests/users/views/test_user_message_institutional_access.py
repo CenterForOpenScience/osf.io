@@ -18,7 +18,7 @@ class TestUserMessageInstitutionalAccess:
 
     @pytest.fixture()
     def institution(self):
-        return InstitutionFactory(can_request_access=True)
+        return InstitutionFactory(institutional_request_access_enabled=True)
 
     @pytest.fixture()
     def institution_without_access(self):
@@ -115,7 +115,7 @@ class TestUserMessageInstitutionalAccess:
                                                         institution_without_access, url_with_affiliation_on_institution_without_access,
                                                         payload):
         """
-        Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'can_request_access' as False
+        Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'institutional_request_access_enabled' as False
         """
         mock_send_mail.return_value = mock.MagicMock()
 

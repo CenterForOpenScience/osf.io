@@ -103,7 +103,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         related_name='institutions'
     )
 
-    can_request_access = models.BooleanField(default=False)
+    institutional_request_access_enabled = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False, db_index=True)
     deleted = NonNaiveDateTimeField(null=True, blank=True)
     deactivated = NonNaiveDateTimeField(null=True, blank=True)

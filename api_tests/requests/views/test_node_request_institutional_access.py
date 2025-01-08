@@ -18,16 +18,22 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     @pytest.fixture()
     def institution(self):
-        return InstitutionFactory(can_request_access=True)
+        return InstitutionFactory(institutional_request_access_enabled=True)
 
     @pytest.fixture()
-    def institution2(self):
+    def institution_without_access(self):
         return InstitutionFactory()
 
     @pytest.fixture()
     def user_with_affiliation(self, institution):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution)
+        return user
+
+    @pytest.fixture()
+    def user_with_affiliation_on_institution_without_access(self, institution2):
+        user = AuthUserFactory()
+        user.add_or_update_affiliated_institution(institution2)
         return user
 
     @pytest.fixture()
@@ -38,6 +44,12 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
     def institutional_admin(self, institution):
         admin_user = AuthUserFactory()
         institution.get_group('institutional_admins').user_set.add(admin_user)
+        return admin_user
+
+    @pytest.fixture()
+    def institutional_admin_on_institution_without_access(self, institution2):
+        admin_user = AuthUserFactory()
+        institution2.get_group('institutional_admins').user_set.add(admin_user)
         return admin_user
 
     @pytest.fixture()
@@ -58,6 +70,32 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
                     'message_recipient': {
                         'data': {
                             'id': user_with_affiliation._id,
+                            'type': 'users'
+                        }
+                    }
+                },
+                'type': 'node-requests'
+            }
+        }
+
+    @pytest.fixture()
+    def create_payload_on_institution_without_access(self, institution_without_access, user_with_affiliation_on_institution_without_access):
+        return {
+            'data': {
+                'attributes': {
+                    'comment': 'Wanna Philly Philly?',
+                    'request_type': NodeRequestTypes.INSTITUTIONAL_REQUEST.value,
+                },
+                'relationships': {
+                    'institution': {
+                        'data': {
+                            'id': institution_without_access._id,
+                            'type': 'institutions'
+                        }
+                    },
+                    'message_recipient': {
+                        'data': {
+                            'id': user_with_affiliation_on_institution_without_access._id,
                             'type': 'users'
                         }
                     }
@@ -111,6 +149,18 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request = project.requests.get(creator=institutional_admin)
         assert node_request.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
         assert node_request.requested_permissions == 'admin'
+
+    def test_institutional_admin_can_not_add_requested_permission(self, app, project, institutional_admin_on_institution_without_access, url, create_payload_on_institution_without_access):
+        """
+        Test that an institutional admin can not make an institutional access request on institution with disabled access .
+        """
+        create_payload_on_institution_without_access['data']['attributes']['requested_permissions'] = 'admin'
+
+        res = app.post_json_api(
+            url, create_payload_on_institution_without_access, auth=institutional_admin_on_institution_without_access.auth, expect_errors=True
+        )
+
+        assert res.status_code == 403
 
     def test_institutional_admin_needs_institution(self, app, project, institutional_admin, url, create_payload):
         """
