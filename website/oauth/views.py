@@ -54,7 +54,7 @@ def oauth_callback(service_name, auth):
             _forward_to_addon_service('oauth1')
         elif provider._oauth_version == 2:
             _forward_to_addon_service('oauth2')
-        return {}
+        return {'enable_gv': True}
 
     user = auth.user
 
