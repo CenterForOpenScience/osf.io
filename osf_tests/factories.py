@@ -734,11 +734,24 @@ class PreprintFactory(DjangoModelFactory):
         # Step 1: create prerpint, guid and versioned guid
         instance = cls._build(target_class, *args, **kwargs)
         instance.save(guid_ready=False)
-        guid = models.Guid.objects.create(
-            referent=instance,
-            content_type=ContentType.objects.get_for_model(instance),
-            object_id=instance.pk,
-        )
+        # If use_guid is passed, use that guid instead of creating a new one
+        if use_guid := kwargs.pop('use_guid', None):
+            guid = use_guid
+            guid.referent = instance
+            guid.content_type = ContentType.objects.get_for_model(instance)
+            guid.object_id = instance.pk
+            guid.save()
+        else:
+            guid = models.Guid.objects.create(
+                referent=instance,
+                content_type=ContentType.objects.get_for_model(instance),
+                object_id=instance.pk,
+            )
+            # If guid__id is passed, set the guid's id to that value
+            if guid__id := kwargs.pop('set_guid', None):
+                guid._id = guid__id
+                guid.save()
+
         models.GuidVersionsThrough.objects.create(
             referent=instance,
             content_type=ContentType.objects.get_for_model(instance),

@@ -27,12 +27,7 @@ class TestPublicItemUsageReporter:
 
     @pytest.fixture
     def item0(self):
-        _item0 = factories.PreprintFactory(is_public=True)
-        guid = _item0.get_guid()
-        guid._id = 'item0'
-        guid.save()
-
-        _item0._id = None
+        _item0 = factories.PreprintFactory(is_public=True, set_guid='item0')
         return _item0
 
     @pytest.fixture
