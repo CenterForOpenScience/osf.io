@@ -135,10 +135,12 @@ from osf.models import OSFUser
 from osf.models import OSFGroup
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
+from osf.models import Contributor
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails
+from website.util import quota
 from osf.models import RdmTimestampGrantPattern
 
 from nii.mapcore import (
@@ -381,6 +383,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         except PermissionsError as err:
             raise PermissionDenied(str(err))
 
+        if instance.project_or_component == 'project':
+            storage_type = instance.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=instance).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
+
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
@@ -419,6 +428,13 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             node.remove_node(auth=auth)
         except PermissionsError as err:
             raise PermissionDenied(str(err))
+
+        if node.project_or_component == 'project':
+            storage_type = node.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()
