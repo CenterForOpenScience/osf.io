@@ -22,7 +22,7 @@ class TestCheckCrossrefDOIs:
 
     @pytest.fixture()
     def stuck_preprint(self):
-        preprint = PreprintFactory(set_doi=False)
+        preprint = PreprintFactory(set_doi=False, set_guid='guid0')
         preprint.date_published = preprint.date_published - timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL + 1)
         # match guid to the fixture crossref_works_response.json
         guid = preprint.guids.first()
