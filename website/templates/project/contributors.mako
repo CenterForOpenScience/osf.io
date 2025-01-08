@@ -356,7 +356,7 @@
                 <div class="td-content" data-bind="visible: !$root.collapsed() ||  accessRequest.expanded()">
                 <select class="form-control input-sm" data-bind="
                     options: $parents[0].permissionList,
-                    value: permission,
+                    value: requested_permissions,
                     optionsText: optionsText.bind(permission)"
                 >
                 </select>
