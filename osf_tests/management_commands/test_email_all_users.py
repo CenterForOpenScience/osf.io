@@ -49,7 +49,7 @@ class TestEmailAllUsers:
         mock_email.assert_called_with(
             to_addr=superuser.email,
             mail=mails.TOU_NOTIF,
-            fullname=superuser.fullname
+            given_name=superuser.given_name
         )
 
     @pytest.mark.django_db
@@ -64,10 +64,10 @@ class TestEmailAllUsers:
     @pytest.mark.django_db
     @mock.patch('website.mails.send_mail')
     def test_email_all_users_offset(self, mock_email, user, user2):
-        email_all_users('TOU_NOTIF', offset=1, run=0)
+        email_all_users('TOU_NOTIF', offset=1, start_id=0)
 
-        email_all_users('TOU_NOTIF', offset=1, run=1)
+        email_all_users('TOU_NOTIF', offset=1, start_id=1)
 
-        email_all_users('TOU_NOTIF', offset=1, run=2)
+        email_all_users('TOU_NOTIF', offset=1, start_id=2)
 
         assert mock_email.call_count == 2
