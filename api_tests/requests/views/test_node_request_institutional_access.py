@@ -31,9 +31,9 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         return user
 
     @pytest.fixture()
-    def user_with_affiliation_on_institution_without_access(self, institution2):
+    def user_with_affiliation_on_institution_without_access(self, institution_without_access):
         user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution2)
+        user.add_or_update_affiliated_institution(institution_without_access)
         return user
 
     @pytest.fixture()
@@ -47,9 +47,9 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         return admin_user
 
     @pytest.fixture()
-    def institutional_admin_on_institution_without_access(self, institution2):
+    def institutional_admin_on_institution_without_access(self, institution_without_access):
         admin_user = AuthUserFactory()
-        institution2.get_group('institutional_admins').user_set.add(admin_user)
+        institution_without_access.get_group('institutional_admins').user_set.add(admin_user)
         return admin_user
 
     @pytest.fixture()
@@ -183,12 +183,12 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 400
         assert 'Institution is does not exist.' in res.json['errors'][0]['detail']
 
-    def test_institutional_admin_unauth_institution(self, app, project, institution2, institutional_admin, url, create_payload):
+    def test_institutional_admin_unauth_institution(self, app, project, institution_without_access, institutional_admin, url, create_payload):
         """
         Test that the view authenticates the relationship between the institution and the user and gives the correct
-        error message when it's unauthorized.'
+        error message when it's unauthorized
         """
-        create_payload['data']['relationships']['institution']['data']['id'] = institution2._id
+        create_payload['data']['relationships']['institution']['data']['id'] = institution_without_access._id
 
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 403
