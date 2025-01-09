@@ -1327,7 +1327,7 @@ class ContributorMixin(models.Model):
         return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False):
+                        send_email=None, auth=None, log=True, save=False, make_curator=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1393,6 +1393,11 @@ class ContributorMixin(models.Model):
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+
+            if make_curator:
+                contributor_obj.is_curator = True
+                contributor_obj.save()
+
             return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):

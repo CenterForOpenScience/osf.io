@@ -33,6 +33,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'surname': user.family_name,
         'fullname': fullname,
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
+        'is_curator': user.is_institutional_admin_or_curator(node=node),
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'active': user.is_active,
     }
@@ -199,7 +200,10 @@ def serialize_access_requests(node):
             'requested_permissions': access_request.requested_permissions,
             'id': access_request._id
         } for access_request in node.requests.filter(
-            request_type=workflows.RequestTypes.ACCESS.value,
+            request_type__in=[
+                workflows.NodeRequestTypes.ACCESS.value,
+                workflows.NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+            ],
             machine_state=workflows.DefaultStates.PENDING.value
         ).select_related('creator')
     ]

@@ -79,6 +79,6 @@ class UserMessagePermissions(permissions.BasePermission):
 
         message_type = request.data.get('message_type')
         if message_type == MessageTypes.INSTITUTIONAL_REQUEST:
-            return user.is_institutional_admin(institution) and institution.institutional_request_access_enabled
+            return user.is_institutional_admin_or_curator(institution) and institution.institutional_request_access_enabled
         else:
             raise exceptions.ValidationError('Not valid message type.')

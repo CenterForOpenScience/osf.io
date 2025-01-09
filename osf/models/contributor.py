@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, IntegrityError
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils import permissions
 
@@ -30,6 +30,7 @@ class AbstractBaseContributor(models.Model):
 
 class Contributor(AbstractBaseContributor):
     node = models.ForeignKey('AbstractNode', on_delete=models.CASCADE)
+    is_curator = models.BooleanField(default=False)
 
     @property
     def _id(self):
@@ -40,6 +41,14 @@ class Contributor(AbstractBaseContributor):
         # Make contributors orderable
         # NOTE: Adds an _order column
         order_with_respect_to = 'node'
+
+    def save(self, *args, **kwargs):
+        if not self.user.is_institutional_admin_or_curator():
+            return super().save(*args, **kwargs)
+        elif self.visible:
+            raise IntegrityError('Curators cannot be made bibliographic contributors')
+        else:
+            return super().save(*args, **kwargs)
 
 
 class PreprintContributor(AbstractBaseContributor):
