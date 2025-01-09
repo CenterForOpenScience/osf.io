@@ -1,24 +1,10 @@
 import dataclasses
 import enum
-from dataclasses import asdict
+from dataclasses import asdict, InitVar
 from typing import TYPE_CHECKING
 
 import markupsafe
 
-from addons.bitbucket.apps import BitbucketAddonConfig
-from addons.boa.apps import BoaAddonAppConfig
-from addons.box.apps import BoxAddonAppConfig
-from addons.dataverse.apps import DataverseAddonAppConfig
-from addons.dropbox.apps import DropboxAddonAppConfig
-from addons.figshare.apps import FigshareAddonAppConfig
-from addons.github.apps import GitHubAddonConfig
-from addons.gitlab.apps import GitLabAddonConfig
-from addons.googledrive.apps import GoogleDriveAddonConfig
-from addons.zotero.apps import ZoteroAddonAppConfig
-from addons.mendeley.apps import MendeleyAddonConfig
-from addons.s3.apps import S3AddonAppConfig
-from addons.onedrive.apps import OneDriveAddonAppConfig
-from addons.owncloud.apps import OwnCloudAddonAppConfig
 from . import request_helpers as gv_requests
 
 if TYPE_CHECKING:
@@ -29,34 +15,12 @@ class AddonType(enum.StrEnum):
     CITATION = enum.auto()
     COMPUTING = enum.auto()
 
-class _LegacyConfigsForWBKey(enum.Enum):
-    """Mapping from a GV ExternalStorageService's waterbutler key to the legacy Addon config."""
-
-    box = BoxAddonAppConfig
-    bitbucket = BitbucketAddonConfig
-    dataverse = DataverseAddonAppConfig
-    dropbox = DropboxAddonAppConfig
-    figshare = FigshareAddonAppConfig
-    github = GitHubAddonConfig
-    gitlab = GitLabAddonConfig
-    googledrive = GoogleDriveAddonConfig
-    onedrive = OneDriveAddonAppConfig
-    owncloud = OwnCloudAddonAppConfig
-    s3 = S3AddonAppConfig
-    zotero_org = ZoteroAddonAppConfig
-    mendeley = MendeleyAddonConfig
-    boa = BoaAddonAppConfig
-
-
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
-    include_path = f'external_{gv_account_data.resource_type.split('-')[1]}_service',
-    service_wb_key = gv_account_data.get_included_attribute(
-        include_path=include_path,
-        attribute_name='wb_key'
-    )
-    legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
+    include_path = f'external_{gv_account_data.resource_type.split('-')[1]}_service'
+    raw_config = gv_account_data.get_included_member(include_path)
+    config = EphemeralAddonConfig(raw_config)
     return EphemeralUserSettings(
-        config=EphemeralAddonConfig.from_legacy_config(legacy_config),
+        config=config,
         gv_data=gv_account_data,
         active_user=requesting_user,
     )
@@ -65,50 +29,38 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
 def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, requested_resource, requesting_user):
     addon_type = gv_addon_data.resource_type.split('-')[1]
     include_path = ('base_account', f'external_{addon_type}_service')
-    service_wb_key = gv_addon_data.get_included_attribute(
-        include_path=include_path,
-        attribute_name='wb_key'
-    )
-    legacy_config = _LegacyConfigsForWBKey[service_wb_key].value
+    config = EphemeralAddonConfig(gv_addon_data.get_included_member(*include_path))
     settings_class = get_settings_class(addon_type)
     return settings_class(
-        config=EphemeralAddonConfig.from_legacy_config(legacy_config),
+        config=config,
         gv_data=gv_addon_data,
         user_settings=make_ephemeral_user_settings(gv_addon_data.get_included_member('base_account'), requesting_user),
         configured_resource=requested_resource,
         active_user=requesting_user,
-        wb_key=service_wb_key,
+        wb_key=config.wb_key,
     )
 
 
 @dataclasses.dataclass
 class EphemeralAddonConfig:
     """Minimalist dataclass for storing the actually used properties of an AddonConfig"""
-
-    name: str
-    label: str
-    short_name: str
-    full_name: str
-    has_hgrid_files: bool
+    gv_data: InitVar[gv_requests.JSONAPIResultEntry]
+    # name: str =  dataclasses.field(init=False, default=False)
+    # label: str =  dataclasses.field(init=False, default=False)
+    short_name: str = dataclasses.field(init=False)
+    full_name: str = dataclasses.field(init=False)
+    has_hgrid_files: bool = dataclasses.field(init=False, default=False)
     has_widget: bool = dataclasses.field(init=False, default=False)
+    icon_url: str = dataclasses.field(init=False)
+    wb_key: str = dataclasses.field(init=False)
 
-    def __post_init__(self):
-        if self.short_name in ['zotero', 'mendeley']:
-            self.has_widget = True
-
-    @property
-    def icon_url(self):
-        return ''
-
-    @classmethod
-    def from_legacy_config(cls, legacy_config):
-        return cls(
-            name=legacy_config.name,
-            label=legacy_config.label,
-            full_name=legacy_config.full_name,
-            short_name=legacy_config.short_name,
-            has_hgrid_files=legacy_config.has_hgrid_files
-        )
+    def __post_init__(self, gv_data: gv_requests.JSONAPIResultEntry):
+        self.short_name = gv_data.get_attribute('external_service_name')
+        self.full_name = gv_data.get_attribute('display_name')
+        self.has_hgrid_files = gv_data.resource_type == 'external-storage-services'
+        self.has_widget = gv_data.resource_type == 'external-citation-services'
+        self.icon_url = gv_data.get_attribute('icon_url')
+        self.wb_key = gv_data.get_attribute('wb_key')
 
     def to_json(self):
         return asdict(self)

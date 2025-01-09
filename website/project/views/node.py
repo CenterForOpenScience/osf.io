@@ -447,31 +447,17 @@ def configure_requests(node, **kwargs):
 ##############################################################################
 # View Project
 ##############################################################################
-
-CITATION_WIDGET_DATA = {
-    'mendeley': {
-        'addon_capabilities': '\n\n<h3>Mendeley Add-on Terms</h3>\n\n<table class="table table-bordered table-addon-terms">\n\n    <thead>\n        <tr>\n  ...n allows you to store files using an external service. Files added to this add-on are not stored within the OSF.</li>\n</ul>\n',
+def make_citation_widget_data(addon_name: str):
+    return {
+        'addon_capabilities': '',
         'capabilities': True,
-        'full_name': 'Mendeley',
+        'full_name': addon_name.capitalize(),
         'has_page': False,
         'has_widget': True,
-        'icon': '/static/addons/mendeley/comicon.png',
+        'icon': f'/static/addons/{addon_name}/comicon.png',
         'list_id': 'ROOT',
-        'short_name': 'mendeley'
-    },
-    'zotero': {
-        'addon_capabilities': '\n\n<h3>Zotero Add-on Terms</h3>\n\n<table class="table table-bordered table-addon-terms">\n\n    <thead>\n        <tr>\n    ...n allows you to store files using an external service. Files added to this add-on are not stored within the OSF.</li>\n</ul>\n',
-        'capabilities': True,
-        'full_name': 'Zotero',
-        'has_page': False,
-        'has_widget': True,
-        'icon': '/static/addons/zotero/comicon.png',
-        'library_id': 'personal',
-        'list_id': 'ROOT',
-        'short_name': 'zotero'
-    },
-}
-
+        'short_name': addon_name
+    }
 
 @process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
@@ -516,18 +502,17 @@ def view_project(auth, node, **kwargs):
 
     if waffle.flag_is_active(request, features.ENABLE_GV):
         project = Node.objects.filter(guids___id__in=[kwargs['pid']]).first()
-        for item in ['zotero', 'mendeley']:
-            citation_list_urls = get_gv_citation_url_list_for_project(
-                auth=auth,
-                pid=kwargs.get('pid'),
-                addon_short_name=item,
-                project=project
-            )
-            data = CITATION_WIDGET_DATA[item]
-            data['complete'] = bool(citation_list_urls)
+        citation_list_urls = get_gv_citation_url_list_for_project(
+            auth=auth,
+            pid=kwargs.get('pid'),
+            project=project
+        )
+        for key, value in citation_list_urls.items():
+            data = make_citation_widget_data(key)
+            data['complete'] = bool(value)
             if data['complete']:
-                data['list_id'] = citation_list_urls[0]['attributes']['root_folder']
-            addons_widget_data[item] = data
+                data['list_id'] = value['attributes']['root_folder']
+            addons_widget_data[key] = data
     else:
         if 'zotero' in ret['addons']:
             node_addon = node.get_addon('zotero')
