@@ -760,7 +760,7 @@ class UserMessageSerializer(JSONAPISerializer):
             'institution',
         )
 
-        if not sender.is_institutional_admin_or_curator(institution):
+        if not sender.is_institutional_admin_at(institution):
             raise Conflict({'sender': 'Only institutional administrators can create messages.'})
 
         if not recipient.is_affiliated_with_institution(institution):

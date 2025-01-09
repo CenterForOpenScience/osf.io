@@ -43,12 +43,11 @@ class Contributor(AbstractBaseContributor):
         order_with_respect_to = 'node'
 
     def save(self, *args, **kwargs):
-        if not self.user.is_institutional_admin_or_curator():
-            return super().save(*args, **kwargs)
-        elif self.visible:
-            raise IntegrityError('Curators cannot be made bibliographic contributors')
-        else:
-            return super().save(*args, **kwargs)
+        if self.user.is_institutional_admin():
+            if self.visible:
+                raise IntegrityError('Curators cannot be made bibliographic contributors')
+
+        return super().save(*args, **kwargs)
 
 
 class PreprintContributor(AbstractBaseContributor):
