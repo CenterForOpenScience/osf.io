@@ -263,16 +263,8 @@
         });
 
         function navigateToPreviousPage() {
-            let page = sessionStorage.getItem('setting-page');
-            let pageSize = sessionStorage.getItem('setting-page-size');
             let baseUrl = "{% url 'project_limit_number:settings:list-setting' %}?institution_id={{ institution.id }}";
-            let joinCharacter = '&';
-            if (!!page) {
-                baseUrl += joinCharacter + 'page=' + page;
-            }
-            if (!!pageSize) {
-                baseUrl += joinCharacter + 'page_size=' + pageSize;
-            }
+            baseUrl += '&page=1&page_size=10';
             // Redirect to template list page
             window.location.href = baseUrl;
         }

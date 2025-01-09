@@ -182,8 +182,7 @@
                         </td>
                         <td class="col-md-12 wrap-cell" style="text-align: left; padding-left: 0px;">
                             <a class="btn btn-primary" style="margin-left: 10px" id="edit_authentication_attribute_{{ setting.id }}" name="editAuthenticationAttribute"
-                                    href="{% url 'project_limit_number:settings:setting-detail' setting_id=setting.id %}"
-                                    onclick="saveQueryParamData()">
+                                    href="{% url 'project_limit_number:settings:setting-detail' setting_id=setting.id %}">
                                 {% trans "Edit" %}
                             </a>
                             <button type="button" class="btn btn-danger"
@@ -199,8 +198,9 @@
             </tbody>
         </table>
         <div>
-            <a href="{% url 'project_limit_number:settings:create-setting'%}?institution_id={{selected_institution.id}}" class="btn btn-primary"
-                    onclick="saveQueryParamData()">{% trans "Create New" %}</a>
+            <a href="{% url 'project_limit_number:settings:create-setting'%}?institution_id={{selected_institution.id}}" class="btn btn-primary">
+                    {% trans "Create New" %}
+            </a>
         </div>
     {% endif %}
     <div class="modal middle fade" id="deleteSetting" tabindex="-1" aria-labelledby="deleteSettingLabel" aria-hidden="true">
@@ -484,18 +484,6 @@
         function toggleButtonState(disabled) {
             $('#save_changes_button').prop('disabled', disabled);
             $('#clear_changes_button').prop('disabled', disabled);
-        }
-
-        function saveQueryParamData() {
-            const url = new URL(window.location.href);
-            const currentPage = url.searchParams.get('page');
-            const currentPageSize = url.searchParams.get('page_size');
-            if (!!currentPage) {
-                sessionStorage.setItem('setting-page', currentPage);
-            }
-            if (!!currentPageSize) {
-                sessionStorage.setItem('setting-page-size', currentPageSize);
-            }
         }
     </script>
 {% endblock %}
