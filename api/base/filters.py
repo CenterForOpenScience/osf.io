@@ -292,6 +292,7 @@ class FilterMixin:
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
                     elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
+                        # TODO: this is broken since value can be a multi-value str separated by comma
                         base_guid, version = Guid.split_guid(value)
                         if base_guid is None and version is None:
                             raise InvalidFilterValue(
