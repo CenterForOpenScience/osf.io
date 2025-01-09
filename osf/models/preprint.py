@@ -52,7 +52,9 @@ from framework.sentry import log_exception
 from osf.exceptions import (
     PreprintStateError,
     InvalidTagError,
-    TagNotFoundError
+    TagNotFoundError,
+    UserStateError,
+    ValidationValueError,
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
@@ -427,9 +429,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         preprint.save(guid_ready=True, first_save=True)
 
         # Add contributors
-        for contributor_info in latest_version.contributor_set.exclude(user=latest_version.creator).values('visible', 'user_id', '_order'):
-            preprint.contributor_set.create(**{**contributor_info, 'preprint_id': preprint.id})
-
+        for contributor in latest_version.contributor_set.exclude(user=latest_version.creator):
+            try:
+                preprint.add_contributor(
+                    contributor.user,
+                    permissions=contributor.permission,
+                    visible=contributor.visible,
+                    save=True
+                )
+            except (ValidationValueError, UserStateError) as e:
+                sentry.log_exception(e)
+                sentry.log_message(f'Contributor was not added to new preprint version due to error: '
+                                   f'[preprint={preprint._id}, user={contributor.user._id}]')
         # Add affiliated institutions
         for institution in latest_version.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
