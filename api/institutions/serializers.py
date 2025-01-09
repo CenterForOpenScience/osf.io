@@ -41,6 +41,7 @@ class InstitutionSerializer(JSONAPISerializer):
         ser.CharField(read_only=True),
         permission='view_institutional_metrics',
     )
+    institutional_request_access_enabled = ser.CharField(read_only=True)
     links = LinksField({
         'self': 'get_api_url',
         'html': 'get_absolute_html_url',

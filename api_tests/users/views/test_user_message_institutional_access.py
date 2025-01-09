@@ -7,6 +7,7 @@ from osf_tests.factories import (
     InstitutionFactory
 )
 from website.mails import USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
+from webtest import AppError
 
 
 @pytest.mark.django_db
@@ -17,6 +18,10 @@ class TestUserMessageInstitutionalAccess:
 
     @pytest.fixture()
     def institution(self):
+        return InstitutionFactory(institutional_request_access_enabled=True)
+
+    @pytest.fixture()
+    def institution_without_access(self):
         return InstitutionFactory()
 
     @pytest.fixture()
@@ -34,14 +39,30 @@ class TestUserMessageInstitutionalAccess:
         return user
 
     @pytest.fixture()
+    def user_with_affiliation_on_institution_without_access(self, institution_without_access):
+        user = AuthUserFactory()
+        user.add_or_update_affiliated_institution(institution_without_access)
+        return user
+
+    @pytest.fixture()
     def institutional_admin(self, institution):
         admin_user = AuthUserFactory()
         institution.get_group('institutional_admins').user_set.add(admin_user)
         return admin_user
 
     @pytest.fixture()
+    def institutional_admin_on_institution_without_access(self, institution_without_access):
+        admin_user = AuthUserFactory()
+        institution_without_access.get_group('institutional_admins').user_set.add(admin_user)
+        return admin_user
+
+    @pytest.fixture()
     def url_with_affiliation(self, user_with_affiliation):
         return f'/{API_BASE}users/{user_with_affiliation._id}/messages/'
+
+    @pytest.fixture()
+    def url_with_affiliation_on_institution_without_access(self, user_with_affiliation_on_institution_without_access):
+        return f'/{API_BASE}users/{user_with_affiliation_on_institution_without_access._id}/messages/'
 
     @pytest.fixture()
     def url_without_affiliation(self, user):
@@ -88,6 +109,26 @@ class TestUserMessageInstitutionalAccess:
         assert mock_send_mail.call_args[1]['to_addr'] == user_message.recipient.username
         assert 'Requesting user access for collaboration' in mock_send_mail.call_args[1]['message_text']
         assert user_message._id == data['id']
+
+    @mock.patch('osf.models.user_message.send_mail')
+    def test_institutional_admin_can_not_create_message(self, mock_send_mail, app, institutional_admin_on_institution_without_access,
+                                                        institution_without_access, url_with_affiliation_on_institution_without_access,
+                                                        payload):
+        """
+        Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'institutional_request_access_enabled' as False
+        """
+        mock_send_mail.return_value = mock.MagicMock()
+
+        # Use pytest.raises to explicitly expect the 403 error
+        with pytest.raises(AppError) as exc_info:
+            app.post_json_api(
+                url_with_affiliation_on_institution_without_access,
+                payload,
+                auth=institutional_admin_on_institution_without_access.auth
+            )
+
+        # Assert that the raised error contains the 403 Forbidden status
+        assert '403 Forbidden' in str(exc_info.value)
 
     def test_unauthenticated_user_cannot_create_message(self, app, user, url_with_affiliation, payload):
         """
