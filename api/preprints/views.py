@@ -72,40 +72,38 @@ from osf.metrics import PreprintDownload, PreprintView
 
 
 class PreprintOldVersionsImmutableMixin:
-    """Override method to reject modify requests for old preprint versions (except for withdrawal)
-    """
-    def update(self, request, *args, **kwargs):
-        preprint = self.get_preprint(check_object_permissions=False)
-        is_pre_mod_pending = (
+    """Override method to reject modify requests for old preprint versions (except for withdrawal)"""
+
+    def is_edit_allowed(self, preprint):
+        if preprint.is_latest_version:
+            return True
+
+        if preprint.machine_state in ['initial', 'rejected']:
+            return True
+
+        if (
             preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and preprint.machine_state == 'pending'
-        )
-        if preprint.is_latest_version or preprint.machine_state == 'initial' or is_pre_mod_pending:
-            return super().update(request, *args, **kwargs)
+        ):
+            return True
+
+        return False
+
+    def handle_request(self, request, method, *args, **kwargs):
+        preprint = self.get_preprint(check_object_permissions=False)
+        if self.is_edit_allowed(preprint):
+            return method(request, *args, **kwargs)
         message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
+
+    def update(self, request, *args, **kwargs):
+        return self.handle_request(request, super().update, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
-        preprint = self.get_preprint(check_object_permissions=False)
-        is_pre_mod_pending = (
-            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and preprint.machine_state == 'pending'
-        )
-        if preprint.is_latest_version or preprint.machine_state == 'initial' or is_pre_mod_pending:
-            return super().create(request, *args, **kwargs)
-        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
-        sentry.log_message(message)
-        raise Conflict(detail=message)
+        return self.handle_request(request, super().create, *args, **kwargs)
 
     def destroy(self, request, *args, **kwargs):
-        preprint = self.get_preprint(check_object_permissions=False)
-        is_pre_mod_pending = (
-            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and preprint.machine_state == 'pending'
-        )
-        if preprint.is_latest_version or preprint.machine_state == 'initial' or is_pre_mod_pending:
-            return super().destroy(request, *args, **kwargs)
-        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
-        sentry.log_message(message)
-        raise Conflict(detail=message)
+        return self.handle_request(request, super().destroy, *args, **kwargs)
 
 
 class PreprintMixin(NodeMixin):

@@ -1547,6 +1547,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             base_guid_obj.object_id = self.pk
             base_guid_obj.content_type = ContentType.objects.get_for_model(self)
             base_guid_obj.save()
+
+        versioned_guid = self.versioned_guids.first()
+        if versioned_guid.is_rejected:
+            versioned_guid.is_rejected = False
+            versioned_guid.save()
         return ret
 
     # Override ReviewableMixin
