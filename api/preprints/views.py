@@ -74,23 +74,18 @@ from osf.metrics import PreprintDownload, PreprintView
 class PreprintOldVersionsImmutableMixin:
     """Override method to reject modify requests for old preprint versions (except for withdrawal)"""
 
-    def is_edit_allowed(self, preprint):
-        if preprint.is_latest_version:
-            return True
-
-        if preprint.machine_state in ['initial', 'rejected']:
-            return True
-
-        if (
-            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and preprint.machine_state == 'pending'
-        ):
-            return True
-
-        return False
+    @staticmethod
+    def is_edit_allowed(preprint):
+        return True if any([
+            preprint.is_latest_version,
+            preprint.machine_state in ['initial', 'rejected'],
+            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and
+            preprint.machine_state == 'pending',
+        ]) else False
 
     def handle_request(self, request, method, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
-        if self.is_edit_allowed(preprint):
+        if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
             return method(request, *args, **kwargs)
         message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
