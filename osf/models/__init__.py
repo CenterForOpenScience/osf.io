@@ -17,7 +17,7 @@ from .base import (
     BlackListGuid,
     Guid,
     GuidVersionsThrough,
-    VersionedGuidMixin
+    VersionedGuidMixin,
 )
 from .brand import Brand
 from .cedar_metadata import CedarMetadataRecord, CedarMetadataTemplate

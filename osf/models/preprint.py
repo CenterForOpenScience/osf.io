@@ -1554,7 +1554,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             versioned_guid.save()
         return ret
 
-    # Override ReviewableMixin
     def run_reject(self, user, comment):
         """Override `ReviewableMixin`/`MachineableMixin`.
         Run the 'reject' state transition and create a corresponding Action.

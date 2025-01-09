@@ -391,9 +391,7 @@ def get_auth(auth, **kwargs):
     waterbutler_data = decrypt_and_decode_jwt_payload()
 
     # Authenticate the resource based on the node_id and handle potential draft nodes
-    nid = waterbutler_data.get('nid')
-
-    resource = get_authenticated_resource(nid)
+    resource = get_authenticated_resource(waterbutler_data.get('nid'))
     # Authenticate the user using cookie or Oauth if possible
     authenticate_user_if_needed(auth, waterbutler_data, resource)
 
