@@ -139,6 +139,7 @@ class _FakeAddonProvider(_FakeGVEntity):
 
     def _serialize_attributes(self):
         return {
+            'external_service_name': self.wb_key or self.name,
             'display_name': self.name,
             'max_upload_mb': self.max_upload_mb,
             'max_concurrent_uploads': self.max_concurrent_uploads,

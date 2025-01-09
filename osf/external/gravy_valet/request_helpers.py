@@ -240,7 +240,7 @@ def _make_gv_request(
     return response
 
 
-def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) -> list:
+def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) -> dict:
     if pid:
         project_url = settings.DOMAIN + pid
     else:
@@ -254,14 +254,16 @@ def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) 
     if not resource_references_response:
         return {}
     configured_citation_addons_url = resource_references_response.get_related_link('configured_citation_addons')
-    return get_raw_gv_result(
+    addon_list = get_raw_gv_result(
         endpoint_url=configured_citation_addons_url,
         requesting_user=auth.user,
         requested_resource=project,
         request_method='GET',
         params={}
     )
-
+    return {
+        addon['attributes']['external_service_name']: addon for addon in addon_list
+    }
 
 def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
     data = {
