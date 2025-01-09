@@ -1,18 +1,23 @@
 from unittest import mock
-import pytest
 from urllib.parse import quote
 
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
+import pytest
+
 from framework.auth import Auth
-
-
-from osf.models import Guid, NodeLicenseRecord, OSFUser, GuidVersionsThrough
+from osf.models import Guid, GuidVersionsThrough, NodeLicenseRecord, OSFUser, Preprint
 from osf.models.base import VersionedGuidMixin
-from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
-    RegistrationFactory, PreprintFactory, PreprintProviderFactory
 from osf.utils.permissions import ADMIN
-from osf.models import Preprint
+from osf_tests.factories import (
+    AuthUserFactory,
+    NodeFactory,
+    NodeLicenseRecordFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    RegistrationFactory,
+    UserFactory,
+)
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
@@ -44,6 +49,7 @@ class TestGuid:
         obj = Factory()
         assert obj._id
         assert len(obj._id) == 5
+
 
 @pytest.mark.django_db
 class TestReferent:
@@ -458,6 +464,7 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
 
+
 @pytest.fixture()
 def creator():
     return AuthUserFactory()
@@ -470,6 +477,7 @@ def auth(creator):
 def preprint_provider():
     return PreprintProviderFactory()
 
+
 @pytest.mark.django_db
 class TestGuidVersionsThrough:
     def test_creation_versioned_guid(self, creator, preprint_provider):
@@ -480,19 +488,18 @@ class TestGuidVersionsThrough:
             description='Abstract'
         )
         assert preprint.guids.count() == 1
-        preprint_guid = preprint.guids.first()
-        version_entry = preprint.versioned_guids.first()
         assert preprint.creator == creator
         assert preprint.provider == preprint_provider
         assert preprint.title == 'Preprint'
         assert preprint.description == 'Abstract'
 
-        assert preprint_guid._id == version_entry.guid._id
+        preprint_guid = preprint.guids.first()
         assert preprint_guid.referent == preprint
         assert preprint_guid.content_type.model == 'preprint'
         assert preprint_guid.object_id == preprint.pk
         assert preprint_guid.is_versioned is True
 
+        version_entry = preprint.versioned_guids.first()
         assert version_entry.guid == preprint_guid
         assert version_entry.referent == preprint
         assert version_entry.content_type.model == 'preprint'
@@ -526,12 +533,8 @@ class TestGuidVersionsThrough:
                 'copyright_holders': preprint.license.copyright_holders,
                 'year': preprint.license.year
             }
-
         auth = Auth(user=creator)
-        new_preprint, data_for_update = Preprint.create_version(
-            create_from_guid=preprint._id,
-            auth=auth
-        )
+        new_preprint, data_for_update = Preprint.create_version(create_from_guid=preprint._id, auth=auth)
         tags = data_for_update.pop('tags')
         assert list(tags) == list(preprint.tags.all().values_list('name', flat=True))
         assert preprint_metadata == data_for_update
@@ -560,11 +563,9 @@ class TestGuidVersionsThrough:
             description='Abstract'
         )
         preprint_guid = preprint.guids.first()
-        expected_guid = f'{preprint_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}1'
-
+        expected_guid = f'{preprint_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{VersionedGuidMixin.INITIAL_VERSION_NUMBER}'
         assert preprint._id == expected_guid
 
         GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
         preprint._id = None
-
         assert preprint._id is None
