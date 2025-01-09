@@ -15,11 +15,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='contributor',
-            name='is_curator',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
             model_name='institution',
             name='institutional_request_access_enabled',
             field=models.BooleanField(default=False),
