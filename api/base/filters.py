@@ -338,6 +338,35 @@ class FilterMixin:
                         })
                     elif self.should_parse_special_query_params(field_name):
                         query = self.parse_special_query_params(field_name, key, value, query)
+                    elif not isinstance(value, int) and source_field_name == 'target__guids___id':
+                        base_guid, version = Guid.split_guid(value)
+                        if base_guid is None and version is None:
+                            raise InvalidFilterValue(
+                                value=value,
+                                field_type='guid',
+                            )
+                        guid_filters = {
+                            field_name: {
+                                'op': 'in',
+                                'value': self.bulk_get_values(value, field),
+                                'source_field_name': source_field_name,
+                            },
+                        }
+                        if version is not None:
+                            guid_filters = {
+                                field_name: {
+                                    'op': 'eq',
+                                    'value': base_guid,
+                                    'source_field_name': 'target__guids___id',
+                                },
+                                'target__versioned_guids__version': {
+                                    'op': 'eq',
+                                    'value': version,
+                                    'source_field_name': 'target__versioned_guids__version',
+                                },
+                            }
+
+                        query.get(key).update(guid_filters)
                     else:
                         query.get(key).update({
                             field_name: {
