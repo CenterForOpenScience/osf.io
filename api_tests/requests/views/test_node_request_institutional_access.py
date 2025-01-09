@@ -192,7 +192,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 403
-        assert 'You do not have permission to perform this action for this institution.' in res.json['errors'][0]['detail']
+        assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
     @mock.patch('api.requests.serializers.send_mail')
     def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,
