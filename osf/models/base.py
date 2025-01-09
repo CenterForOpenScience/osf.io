@@ -57,10 +57,10 @@ def coerce_guid(maybe_guid, create_if_needed=False):
             raise InvalidGuid(f'guid does not exist ({maybe_guid})')
         return guid
     if isinstance(maybe_guid, str):
-        try:
-            return Guid.load(maybe_guid)
-        except Guid.DoesNotExist:
+        guid = Guid.load(maybe_guid)
+        if not guid:
             raise InvalidGuid(f'guid does not exist ({maybe_guid})')
+        return guid
     raise InvalidGuid(f'cannot coerce {type(maybe_guid)} ({maybe_guid}) into Guid')
 
 
