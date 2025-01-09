@@ -64,7 +64,12 @@
                     </tr>
                     <tr>
                         <td>Moderation State</td>
-                        <td>{{ node.moderation_state }}</td>
+                        <td>{{ node.moderation_state }}
+                        <form method="post" action="{% url 'nodes:node-update-mod-state' node.guid %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary">Update Moderation State</button>
+                        </form>
+                        </td>
                     </tr>
                     <tr>
                         <td>Creator</td>
