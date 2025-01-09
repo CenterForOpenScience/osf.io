@@ -582,8 +582,17 @@
             ${ render_addon_widget.render_addon_widget('wiki', addons_widget_data['wiki']) }
         %endif
 
-        %if not enable_gv:
-            <!-- Files -->
+        <!-- Files -->
+        % if enable_gv:
+            <div class="panel panel-default">
+                <div class="panel-heading clearfix">
+                    <h3 class="panel-title">Files</h3>
+                </div>
+                <div class="panel-body">
+                    <p> <em> Files can now be accessed and managed under the Files tab. </em> </p>
+                </div><!-- end .panel-body -->
+            </div>
+        % else:
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
                     <h3 class="panel-title">Files</h3>
@@ -611,7 +620,7 @@
                         </div>
                     </div><!-- end .panel-body -->
             </div>
-        %endif
+        % endif
 
         % if addons:
             <!-- Show widgets in left column if present -->
