@@ -33,8 +33,6 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'surname': user.family_name,
         'fullname': fullname,
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
-        'has_institutional_request': user.has_institutional_request(node),
-        'is_curator': user.is_institutional_curator(node),
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'active': user.is_active,
     }
@@ -53,7 +51,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             is_contributor_obj = isinstance(contrib, Contributor)
             flags = {
                 'visible': contrib.visible if is_contributor_obj else node.contributor_set.filter(user=user, visible=True).exists(),
-                'permission': contrib.permission if is_contributor_obj else None
+                'permission': contrib.permission if is_contributor_obj else None,
+                'is_curator': contrib.is_curator,
             }
         ret.update(flags)
     if user.is_registered:
@@ -197,6 +196,7 @@ def serialize_access_requests(node):
     return [
         {
             'user': serialize_user(access_request.creator),
+            'is_institutional_request': access_request.is_institutional_request,
             'comment': access_request.comment,
             'requested_permissions': access_request.requested_permissions,
             'id': access_request._id

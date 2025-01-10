@@ -45,7 +45,6 @@ from .mixins import AddonModelMixin
 from .spam import SpamMixin
 from .session import UserSessionMap
 from .tag import Tag
-from .request import NodeRequest
 from .validators import validate_email, validate_social, validate_history_item
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
@@ -58,7 +57,6 @@ from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
-from osf.utils.workflows import NodeRequestTypes
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -672,16 +670,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             node=node,
             user=self,
             is_curator=True,
-        ).exists()
-
-    def has_institutional_request(self, node):
-        """
-        Checks if user a has requested a node using the institutional access request feature.
-        """
-        return NodeRequest.objects.filter(
-            request_type=NodeRequestTypes.INSTITUTIONAL_REQUEST.value,
-            target=node,
-            creator=self,
         ).exists()
 
     def group_role(self, group):

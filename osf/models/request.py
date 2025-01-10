@@ -12,6 +12,7 @@ class AbstractRequest(BaseModel, ObjectIDMixin):
     request_type = models.CharField(max_length=31, choices=RequestTypes.choices())
     creator = models.ForeignKey('OSFUser', related_name='submitted_%(class)s', on_delete=models.CASCADE)
     comment = models.TextField(null=True, blank=True)
+    is_institutional_request = models.BooleanField(default=False)
 
     @property
     def target(self):

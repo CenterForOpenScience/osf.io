@@ -1,9 +1,11 @@
 import pytest
+
 from osf.models import Contributor
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    InstitutionFactory
+    InstitutionFactory,
+    NodeRequestFactory
 )
 from django.db.utils import IntegrityError
 
@@ -13,6 +15,26 @@ class TestContributorModel:
     @pytest.fixture()
     def user(self):
         return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_with_institutional_request(self, project):
+        user = AuthUserFactory()
+        NodeRequestFactory(
+            target=project,
+            creator=user,
+            is_institutional_request=True,
+        )
+        return user
+
+    @pytest.fixture()
+    def user_with_non_institutional_request(self, project):
+        user = AuthUserFactory()
+        NodeRequestFactory(
+            target=project,
+            creator=user,
+            is_institutional_request=False,
+        )
+        return user
 
     @pytest.fixture()
     def project(self):
@@ -36,6 +58,25 @@ class TestContributorModel:
             visible=False,
             is_curator=True
         )
+
+    def test_contributor_with_visible_and_pending_request_raises_error(self, user_with_institutional_request, project, institution):
+        user_with_institutional_request.save()
+        user_with_institutional_request.visible = True
+        user_with_institutional_request.refresh_from_db()
+        assert user_with_institutional_request.visible
+
+        try:
+            project.add_contributor(user_with_institutional_request, make_curator=True)
+        except IntegrityError as e:
+            assert e.args == ('Curators cannot be made bibliographic contributors',)
+
+    def test_contributor_with_visible_and_valid_request(self, user_with_non_institutional_request, project, institution):
+        user_with_non_institutional_request.save()
+        user_with_non_institutional_request.visible = True
+        user_with_non_institutional_request.save()
+
+        user_with_non_institutional_request.refresh_from_db()
+        assert user_with_non_institutional_request.visible
 
     def test_contributor_with_visible_and_institutional_admin_raises_error(self, curator, project, institution):
         curator.save()

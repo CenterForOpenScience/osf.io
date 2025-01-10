@@ -33,7 +33,7 @@ class TestChangeInstitutionalAdminContributor:
     def project(self, project_admin, project_admin2, institutional_admin):
         project = ProjectFactory(creator=project_admin)
         project.add_contributor(project_admin2, permissions='admin', visible=False)
-        project.add_contributor(institutional_admin, visible=False)
+        project.add_contributor(institutional_admin, visible=False, make_curator=True)
         return project
 
     @pytest.fixture()

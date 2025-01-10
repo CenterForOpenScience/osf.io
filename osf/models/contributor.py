@@ -43,9 +43,8 @@ class Contributor(AbstractBaseContributor):
         order_with_respect_to = 'node'
 
     def save(self, *args, **kwargs):
-        if self.user.is_institutional_admin():
-            if self.visible:
-                raise IntegrityError('Curators cannot be made bibliographic contributors')
+        if self.is_curator and self.visible:
+            raise IntegrityError('Curators cannot be made bibliographic contributors')
 
         return super().save(*args, **kwargs)
 

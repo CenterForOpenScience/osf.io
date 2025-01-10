@@ -1338,6 +1338,7 @@ class ContributorMixin(models.Model):
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
+        :param bool make_curator incicates whether the user should be an institituional curator
         :returns: Whether contributor was added
         """
         send_email = send_email or self.contributor_email_template
@@ -1838,6 +1839,8 @@ class ContributorMixin(models.Model):
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(f'User {user} not in contributors')
+        if user.is_curator(self):
+            raise ValueError('Curators cannot be made bibliographic contributors')
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         kwargs['visible'] = True
