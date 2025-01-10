@@ -240,7 +240,7 @@ def _make_gv_request(
     return response
 
 
-def get_gv_citation_url_list_for_project(auth, addon_short_name, project, request=None, pid=None) -> list:
+def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) -> dict:
     if pid:
         project_url = settings.DOMAIN + pid
     else:
@@ -252,21 +252,18 @@ def get_gv_citation_url_list_for_project(auth, addon_short_name, project, reques
         params={'filter[resource_uri]': project_url},
     )
     if not resource_references_response:
-        return []
-    configured_citation_addons_url = resource_references_response.get_related_link(
-        'configured_citation_addons')
-    addons_url_list = get_raw_gv_result(
+        return {}
+    configured_citation_addons_url = resource_references_response.get_related_link('configured_citation_addons')
+    addon_list = get_raw_gv_result(
         endpoint_url=configured_citation_addons_url,
         requesting_user=auth.user,
         requested_resource=project,
         request_method='GET',
         params={}
     )
-    gv_addon_name = addon_short_name if addon_short_name != 'zotero' else 'zotero_org'
-    citation_url_list = list(
-        filter(lambda x: x['attributes']['external_service_name'] == gv_addon_name, addons_url_list))
-    return citation_url_list
-
+    return {
+        addon['attributes']['external_service_name']: addon for addon in addon_list
+    }
 
 def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
     data = {
@@ -300,51 +297,49 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
 def citation_list_gv_request(auth, request, addon_short_name, list_id, show):
     from osf.models import Node
 
-    response = {'contents': []}
+    contents = []
     project = Node.objects.filter(guids___id__in=[request.view_args.get('pid')]).first()
-    citation_url_list = get_gv_citation_url_list_for_project(
+    addon = get_gv_citation_url_list_for_project(
         auth=auth,
         request=request,
-        addon_short_name=addon_short_name,
         project=project
+    )[addon_short_name]
+    gv_response = _invoke_gv_citation_operation_invocations(
+        auth=auth,
+        addon=addon,
+        project=project,
+        list_id=list_id
     )
-    for addon in citation_url_list:
-        gv_response = _invoke_gv_citation_operation_invocations(
-            auth=auth,
-            addon=addon,
-            project=project,
-            list_id=list_id
-        )
-        if gv_response.status_code == 201:
-            attributes_dict = gv_response.json()['data']['attributes']
-            items = attributes_dict.get('operation_result').get('items')
-            for item in items:
-                item_id = item.get('item_id', '')
-                kind = CITATION_ITEM_TYPE_ALIASES.get(item.get('item_type', ''))
-                if 'csl' in item.keys():
-                    change_response = item
-                    change_response['kind'] = kind
-                    change_response['id'] = item_id
-                else:
-                    change_response = {
-                        'data': {
-                            'addon': addon_short_name,
-                            'kind': kind,
-                            'id': item_id,
-                            'name': item.get('item_name', ''),
-                            'path': item.get('item_path', '/'),
-                            'parent_list_id': item.get('parent_list_id', 'ROOT'),
-                            'provider_list_id': item_id,
-                        },
+    if gv_response.status_code == 201:
+        attributes_dict = gv_response.json()['data']['attributes']
+        items = attributes_dict.get('operation_result').get('items')
+        for item in items:
+            item_id = item.get('item_id', '')
+            kind = CITATION_ITEM_TYPE_ALIASES.get(item.get('item_type', ''))
+            if 'csl' in item.keys():
+                change_response = item
+                change_response['kind'] = kind
+                change_response['id'] = item_id
+            else:
+                change_response = {
+                    'data': {
+                        'addon': addon_short_name,
                         'kind': kind,
-                        'name': item.get('item_name', ''),
                         'id': item_id,
-                        'urls': {
-                            'fetch': f'/api/v1/project/{project._id}/{addon_short_name}/citations/{item_id}/',
-                        }
+                        'name': item.get('item_name', ''),
+                        'path': item.get('item_path', '/'),
+                        'parent_list_id': item.get('parent_list_id', 'ROOT'),
+                        'provider_list_id': item_id,
+                    },
+                    'kind': kind,
+                    'name': item.get('item_name', ''),
+                    'id': item_id,
+                    'urls': {
+                        'fetch': f'/api/v1/project/{project._id}/{addon_short_name}/citations/{item_id}/',
                     }
-                response['contents'].append(change_response)
-    return response
+                }
+            contents.append(change_response)
+    return {'contents': contents}
 
 
 def _format_included_entities(included_entities_json):
@@ -394,13 +389,14 @@ class JSONAPIResultEntry:
     def get_related_link(self, relationship_name):
         return self._relationships[relationship_name].related_link
 
-    def get_included_member(self, relationship_name):
-        return self._includes.get(relationship_name)
+    def get_included_member(self, *relationship_path: str):
+        related_object = self
+        for relationship_name in relationship_path:
+            related_object = related_object._includes.get(relationship_name)
+        return related_object
 
     def get_included_attribute(self, include_path: typing.Iterable[str], attribute_name: str):
-        related_object = self
-        for relationship_name in include_path:
-            related_object = related_object.get_included_member(relationship_name)
+        related_object = self.get_included_member(*include_path)
         if related_object:
             return related_object.get_attribute(attribute_name)
 

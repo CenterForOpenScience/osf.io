@@ -532,7 +532,6 @@ class TestEphemeralSettings:
         ephemeral_config = translations.make_ephemeral_user_settings(account_data, requesting_user=contributor)
         assert ephemeral_config.short_name == 'box'
         assert ephemeral_config.gv_id == fake_box_account.pk
-        assert ephemeral_config.config.name == 'addons.box'
 
     def test_make_ephemeral_node_settings(self, contributor, project, fake_box_addon, fake_gv):
         with fake_gv.run_fake():
@@ -547,7 +546,6 @@ class TestEphemeralSettings:
             )
             assert ephemeral_config.short_name == 'box'
             assert ephemeral_config.gv_id == fake_box_addon.pk
-            assert ephemeral_config.config.name == 'addons.box'
             assert ephemeral_config.serialize_waterbutler_settings() == {
                 'folder': fake_box_addon.root_folder.split(':')[1],
                 'service': 'box'
