@@ -610,7 +610,7 @@ class PreprintFilterMixin(ListFilterMixin):
             public_only=public_only,
         )
         if latest_only:
-            preprints = preprints.filter(pk__in=[obj.pk for obj in preprints if obj.is_latest_version])
+            preprints = preprints.filter(guids__isnull=False)
         return preprints
 
 
