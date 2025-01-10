@@ -22,7 +22,7 @@ from api.actions.views import get_review_actions_queryset
 from api.base.pagination import PreprintContributorPagination
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintFilterMixin, PreprintActionFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -590,7 +590,7 @@ class PreprintSubjectsRelationship(PreprintOldVersionsImmutableMixin, SubjectRel
         return obj
 
 
-class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
+class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintActionFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)

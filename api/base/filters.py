@@ -291,39 +291,7 @@ class FilterMixin:
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id']:
-                        # TODO: this is broken since value can be a multi-value str separated by comma; in addition,
-                        #       as for a single-versioned-guid value, the filter is `or` but we need `and`; this will
-                        #       be fixed in [ENG-6878](https://openscience.atlassian.net/browse/ENG-6878).
-                        base_guid, version = Guid.split_guid(value)
-                        if base_guid is None and version is None:
-                            raise InvalidFilterValue(
-                                value=value,
-                                field_type='guid',
-                            )
-                        guid_filters = {
-                            field_name: {
-                                'op': 'in',
-                                'value': self.bulk_get_values(value, field),
-                                'source_field_name': source_field_name,
-                            },
-                        }
-                        if version is not None:
-                            guid_filters = {
-                                field_name: {
-                                    'op': 'eq',
-                                    'value': base_guid,
-                                    'source_field_name': 'versioned_guids___id',
-                                },
-                                'versioned_guids__version': {
-                                    'op': 'eq',
-                                    'value': version,
-                                    'source_field_name': 'versioned_guids__version',
-                                },
-                            }
-
-                        query.get(key).update(guid_filters)
-                    elif not isinstance(value, int) and source_field_name in ['journal_id', 'moderation_state']:
+                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -600,25 +568,28 @@ class ListFilterMixin(FilterMixin):
 
 
 class PreprintFilterMixin(ListFilterMixin):
-    """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
+    """View mixin for many preprint listing views. It inherits from ListFilterMixin and customize postprocessing for
+    preprint querying by provider, subjects and versioned `_id`.
 
-       Subclasses must define `get_default_queryset()`.
+    Note: Subclasses must define `get_default_queryset()`.
     """
 
     @staticmethod
     def postprocess_versioned_guid_id_query_param(operation):
-        """Handle query parameters when filtering on `id` for preprint and versioned guid. With versioned guid,
-        preprint no longer has guid._id for every version, and thus must switch to filter by pk.
+        """Handle query parameters when filtering on `_id` for preprint which are now versioned.
+
+        Note: preprint achieves versioning by using versioned guid, and thus no long has guid or guid._id for every
+        version. Must convert `guid___id__in=` look-up to `pk__in` look-up.
         """
-        object_ids = []
+        preprint_pk_list = []
         for val in operation['value']:
             referent, version = Guid.load_referent(val)
             if referent is None:
                 continue
-            object_ids.append(referent.id)
-        # Override the operation to filter `id__in=object_ids`
+            preprint_pk_list.append(referent.id)
+        # Override the operation to filter `id__in=preprint_pk_list`
         operation['source_field_name'] = 'id__in'
-        operation['value'] = object_ids
+        operation['value'] = preprint_pk_list
         operation['op'] = 'eq'
 
     def postprocess_query_param(self, key, field_name, operation):
@@ -641,3 +612,54 @@ class PreprintFilterMixin(ListFilterMixin):
         if latest_only:
             preprints = preprints.filter(pk__in=[obj.pk for obj in preprints if obj.is_latest_version])
         return preprints
+
+
+class PreprintActionFilterMixin(ListFilterMixin):
+    """View mixin for `PreprintActionList`. It inherits from `ListFilterMixin` and customize postprocessing for
+    versioned preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+
+    @staticmethod
+    def postprocess_versioned_guid_target_query_param(operation):
+        """When target is a preprint, which must be versioned, the traditional non-versioned `guid___id==target`
+        look-up no longer works. Must convert to PK look-up `referent__id==pk`.
+        """
+        referent, version = Guid.load_referent(operation['value'])
+        # A valid preprint must have referent and version
+        if not referent or not version:
+            return
+        # Override the operation to filter  `target__id=target.pk`
+        operation['source_field_name'] = 'target__id'
+        operation['value'] = referent.id
+        operation['op'] = 'eq'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target`.
+        """
+        if field_name == 'target':
+            PreprintActionFilterMixin.postprocess_versioned_guid_target_query_param(operation)
+        else:
+            super().postprocess_query_param(key, field_name, operation)
+
+class ReviewActionFilterMixin(ListFilterMixin):
+    """View mixin for `ReviewActionListCreate`. It inherits from `ListFilterMixin` and uses `PreprintActionFilterMixin`
+    to customized postprocessing for handling versioned preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target` and when `target` is a versioned Preprint.
+        """
+        if field_name == 'target':
+            referent, version = Guid.load_referent(operation['value'])
+            if referent:
+                if version:
+                    PreprintActionFilterMixin.postprocess_versioned_guid_target_query_param(operation)
+                else:
+                    super().postprocess_query_param(key, field_name, operation)
+            else:
+                return
+        else:
+            super().postprocess_query_param(key, field_name, operation)
