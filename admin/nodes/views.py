@@ -118,6 +118,17 @@ class NodeRemoveNotificationView(View):
 
         return redirect('nodes:node', guid=kwargs.get('guid'))
 
+
+class NodeUpdateModerationStateView(View):
+    def post(self, request, *args, **kwargs):
+        guid = kwargs.get('guid')
+        node = AbstractNode.load(guid)
+        node.update_moderation_state()
+        messages.success(request, 'Moderation state successfully updated.')
+
+        return redirect('nodes:node', guid=kwargs.get('guid'))
+
+
 class NodeSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a node by it's guid.
     """

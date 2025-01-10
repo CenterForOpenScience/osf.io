@@ -84,7 +84,6 @@ from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
-from api.share.utils import update_share
 
 logger = logging.getLogger(__name__)
 
@@ -723,6 +722,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @classmethod
     def bulk_update_search(cls, nodes, index=None):
+        from api.share.utils import update_share
         for _node in nodes:
             update_share(_node)
         from website import search
@@ -734,6 +734,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             log_exception(e)
 
     def update_search(self):
+        from api.share.utils import update_share
         update_share(self)
         from website import search
         try:

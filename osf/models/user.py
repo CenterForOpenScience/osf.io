@@ -34,7 +34,6 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
-from api.share.utils import update_share
 from osf.external.gravy_valet import (
     request_helpers as gv_requests,
     translations as gv_translations,
@@ -1231,12 +1230,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.family_name = parsed['family']
         self.suffix = parsed['suffix']
 
-    def add_unconfirmed_email(self, email, expiration=None, external_identity=None):
+    def add_unconfirmed_email(self, email, expiration=None, external_identity=None, force=False):
         """
         Add an email verification token for a given email.
 
         :param email: the email to confirm
-        :param email: overwrite default expiration time
+        :param expiration: overwrite default expiration time
         :param external_identity: the user's external identity
         :return: a token
         :raises: ValueError if email already confirmed, except for login through external idp.
@@ -1253,7 +1252,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             validate_email(email)
 
         if not external_identity and self.emails.filter(address=email).exists():
-            raise ValueError('Email already confirmed to this user.')
+            if not force or self.is_confirmed:
+                raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -1308,14 +1308,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 # assume the token is expired
                 expiration = info.get('expiration')
                 if renew:
-                    new_token = self.add_unconfirmed_email(email)
+                    new_token = self.add_unconfirmed_email(email, force=force)
                     self.save()
                     return new_token
                 if not expiration or (expiration and expiration < timezone.now()):
                     if not force:
                         raise ExpiredTokenError(f'Token for email "{email}" is expired')
                     else:
-                        new_token = self.add_unconfirmed_email(email)
+                        new_token = self.add_unconfirmed_email(email, force=force)
                         self.save()
                         return new_token
                 return token
@@ -1345,6 +1345,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         external = 'external/' if external_id_provider else ''
         destination = '?{}'.format(urlencode({'destination': destination})) if destination else ''
         return f'{base}confirm/{external}{self._primary_key}/{token}/{destination}'
+
+    def get_or_create_confirmation_url(self, email, force=False, renew=False):
+        """
+        Get or create a confirmation URL for the given email.
+
+        :param email: The email to generate a confirmation URL for.
+        :param force: Force generating a new confirmation link.
+        :param renew: Renew an expired token.
+        :raises ValidationError: If email is invalid or domain is banned.
+        :return: Confirmation URL for the email.
+        """
+        try:
+            self.get_confirmation_token(email, force=force, renew=renew)
+        except KeyError:
+            self.add_unconfirmed_email(email, force=force)
+            self.save()
+        return self.get_confirmation_url(email)
 
     def register(self, username, password=None, accepted_terms_of_service=None):
         """Registers the user.
@@ -1455,6 +1472,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user_has_trusted_email
 
     def update_search(self):
+        from api.share.utils import update_share
         update_share(self)
         from website.search.search import update_user
         update_user(self)

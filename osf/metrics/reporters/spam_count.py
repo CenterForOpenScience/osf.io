@@ -5,15 +5,14 @@ from ._base import MonthlyReporter
 from osf.models import PreprintLog, NodeLog
 from osf.models.spam import SpamStatus
 
-
 class SpamCountReporter(MonthlyReporter):
 
-    def report(self, report_yearmonth):
-        target_month = report_yearmonth.target_month()
-        next_month = report_yearmonth.next_month()
+    def report(self, **report_kwargs):
+        assert not report_kwargs
+        target_month = self.yearmonth.month_start()
+        next_month = self.yearmonth.month_end()
 
-        report = SpamSummaryReport(
-            report_yearmonth=str(report_yearmonth),
+        return SpamSummaryReport(
             # Node Log entries
             node_confirmed_spam=NodeLog.objects.filter(
                 action=NodeLog.CONFIRM_SPAM,
@@ -80,5 +79,3 @@ class SpamCountReporter(MonthlyReporter):
                 created__lt=next_month,
             ).count()
         )
-
-        return [report]

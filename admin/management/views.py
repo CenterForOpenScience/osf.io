@@ -1,4 +1,3 @@
-import datetime
 from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
@@ -13,6 +12,7 @@ from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
+from osf.metrics.utils import YearMonth
 from osf.models import Preprint, Node, Registration
 
 
@@ -120,11 +120,14 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
         if monthly_report_date:
             report_date = isoparse(monthly_report_date).date()
         else:
-            report_date = datetime.datetime.now().date()
+            report_date = None
 
         errors = monthly_reporters_go(
-            report_month=report_date.month,
-            report_year=report_date.year
+            yearmonth=(
+                str(YearMonth.from_date(report_date))
+                if report_date is not None
+                else ''
+            ),
         )
 
         if errors:

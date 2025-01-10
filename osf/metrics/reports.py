@@ -1,3 +1,5 @@
+from __future__ import annotations
+from collections import abc
 import datetime
 
 from django.dispatch import receiver
@@ -20,9 +22,23 @@ class DailyReport(metrics.Metric):
     There's something we'd like to know about every so often,
     so let's regularly run a report and stash the results here.
     """
-    DAILY_UNIQUE_FIELD = None  # set in subclasses that expect multiple reports per day
+    UNIQUE_TOGETHER_FIELDS: tuple[str, ...] = ('report_date',)  # override in subclasses for multiple reports per day
 
     report_date = metrics.Date(format='strict_date', required=True)
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert 'report_date' in cls.UNIQUE_TOGETHER_FIELDS, f'DailyReport subclasses must have "report_date" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
+
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = datetime.datetime(
+                self.report_date.year,
+                self.report_date.month,
+                self.report_date.day,
+                tzinfo=datetime.UTC,
+            )
+        super().save(*args, **kwargs)
 
     class Meta:
         abstract = True
@@ -32,17 +48,19 @@ class DailyReport(metrics.Metric):
 
 class YearmonthField(metrics.Date):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs, format='strict_year_month', required=True)
+        super().__init__(*args, **kwargs, format='strict_year_month')
 
     def deserialize(self, data):
-        if isinstance(data, YearMonth):
-            return data
-        elif isinstance(data, str):
-            return YearMonth.from_str(data)
-        elif isinstance(data, (datetime.datetime, datetime.date)):
-            return YearMonth.from_date(data)
-        else:
-            raise ValueError('unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
+        if isinstance(data, int):
+            # elasticsearch stores dates in milliseconds since the unix epoch
+            _as_datetime = datetime.datetime.fromtimestamp(data // 1000)
+            return YearMonth.from_date(_as_datetime)
+        elif data is None:
+            return None
+        try:
+            return YearMonth.from_any(data)
+        except ValueError:
+            raise ValueError(f'unsure how to deserialize "{data}" (of type {type(data)}) to YearMonth')
 
     def serialize(self, data):
         if isinstance(data, str):
@@ -51,6 +69,8 @@ class YearmonthField(metrics.Date):
             return str(data)
         elif isinstance(data, (datetime.datetime, datetime.date)):
             return str(YearMonth.from_date(data))
+        elif data is None:
+            return None
         else:
             raise ValueError(f'unsure how to serialize "{data}" (of type {type(data)}) as YYYY-MM')
 
@@ -58,34 +78,62 @@ class YearmonthField(metrics.Date):
 class MonthlyReport(metrics.Metric):
     """MonthlyReport (abstract base for report-based metrics that run monthly)
     """
+    UNIQUE_TOGETHER_FIELDS: tuple[str, ...] = ('report_yearmonth',)  # override in subclasses for multiple reports per month
 
-    report_yearmonth = YearmonthField()
+    report_yearmonth = YearmonthField(required=True)
 
     class Meta:
         abstract = True
         dynamic = metrics.MetaField('strict')
         source = metrics.MetaField(enabled=True)
 
+    @classmethod
+    def most_recent_yearmonth(cls, base_search=None) -> YearMonth | None:
+        _search = base_search or cls.search()
+        _search = _search.update_from_dict({'size': 0})  # omit hits
+        _search.aggs.bucket(
+            'agg_most_recent_yearmonth',
+            'terms',
+            field='report_yearmonth',
+            order={'_key': 'desc'},
+            size=1,
+        )
+        _response = _search.execute()
+        if not _response.aggregations:
+            return None
+        (_bucket,) = _response.aggregations.agg_most_recent_yearmonth.buckets
+        return _bucket.key
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        assert 'report_yearmonth' in cls.UNIQUE_TOGETHER_FIELDS, f'MonthlyReport subclasses must have "report_yearmonth" in UNIQUE_TOGETHER_FIELDS (on {cls.__qualname__}, got {cls.UNIQUE_TOGETHER_FIELDS})'
+
+    def save(self, *args, **kwargs):
+        if self.timestamp is None:
+            self.timestamp = YearMonth.from_any(self.report_yearmonth).month_start()
+        super().save(*args, **kwargs)
+
 
 @receiver(metrics_pre_save)
 def set_report_id(sender, instance, **kwargs):
-    # Set the document id to a hash of "unique together"
-    # values (just `report_date` by default) to get
-    # "ON CONFLICT UPDATE" behavior -- if the document
-    # already exists, it will be updated rather than duplicated.
-    # Cannot detect/avoid conflicts this way, but that's ok.
-
-    if issubclass(sender, DailyReport):
-        duf_name = instance.DAILY_UNIQUE_FIELD
-        if duf_name is None:
-            instance.meta.id = stable_key(instance.report_date)
-        else:
-            duf_value = getattr(instance, duf_name)
-            if not duf_value or not isinstance(duf_value, str):
-                raise ReportInvalid(f'{sender.__name__}.{duf_name} MUST have a non-empty string value (got {duf_value})')
-            instance.meta.id = stable_key(instance.report_date, duf_value)
-    elif issubclass(sender, MonthlyReport):
-        instance.meta.id = stable_key(instance.report_yearmonth)
+    try:
+        _unique_together_fields = instance.UNIQUE_TOGETHER_FIELDS
+    except AttributeError:
+        pass
+    else:
+        # Set the document id to a hash of "unique together" fields
+        # for "ON CONFLICT UPDATE" behavior -- if the document
+        # already exists, it will be updated rather than duplicated.
+        # Cannot detect/avoid conflicts this way, but that's ok.
+        _key_values = []
+        for _field_name in _unique_together_fields:
+            _field_value = getattr(instance, _field_name)
+            if not _field_value or (
+                isinstance(_field_value, abc.Iterable) and not isinstance(_field_value, str)
+            ):
+                raise ReportInvalid(f'because "{_field_name}" is in {sender.__name__}.UNIQUE_TOGETHER_FIELDS, {sender.__name__}.{_field_name} MUST have a non-empty scalar value (got {_field_value} of type {type(_field_value)})')
+            _key_values.append(_field_value)
+        instance.meta.id = stable_key(*_key_values)
 
 
 #### BEGIN reusable inner objects #####
@@ -157,7 +205,7 @@ class DownloadCountReport(DailyReport):
 
 
 class InstitutionSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'institution_id'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'institution_id',)
 
     institution_id = metrics.Keyword()
     institution_name = metrics.Keyword()
@@ -169,7 +217,7 @@ class InstitutionSummaryReport(DailyReport):
 
 
 class NewUserDomainReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'domain_name'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'domain_name',)
 
     domain_name = metrics.Keyword()
     new_user_count = metrics.Integer()
@@ -187,7 +235,7 @@ class OsfstorageFileCountReport(DailyReport):
 
 
 class PreprintSummaryReport(DailyReport):
-    DAILY_UNIQUE_FIELD = 'provider_key'
+    UNIQUE_TOGETHER_FIELDS = ('report_date', 'provider_key',)
 
     provider_key = metrics.Keyword()
     preprint_count = metrics.Integer()
@@ -214,3 +262,86 @@ class SpamSummaryReport(MonthlyReport):
     preprint_flagged = metrics.Integer()
     user_marked_as_spam = metrics.Integer()
     user_marked_as_ham = metrics.Integer()
+
+
+class InstitutionalUserReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', 'user_id',)
+    institution_id = metrics.Keyword()
+    # user info:
+    user_id = metrics.Keyword()
+    user_name = metrics.Keyword()
+    department_name = metrics.Keyword()
+    month_last_login = YearmonthField()
+    month_last_active = YearmonthField()
+    account_creation_date = YearmonthField()
+    orcid_id = metrics.Keyword()
+    # counts:
+    public_project_count = metrics.Integer()
+    private_project_count = metrics.Integer()
+    public_registration_count = metrics.Integer()
+    embargoed_registration_count = metrics.Integer()
+    published_preprint_count = metrics.Integer()
+    public_file_count = metrics.Long()
+    storage_byte_count = metrics.Long()
+
+
+class InstitutionMonthlySummaryReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'institution_id', )
+    institution_id = metrics.Keyword()
+    user_count = metrics.Integer()
+    public_project_count = metrics.Integer()
+    private_project_count = metrics.Integer()
+    public_registration_count = metrics.Integer()
+    embargoed_registration_count = metrics.Integer()
+    published_preprint_count = metrics.Integer()
+    storage_byte_count = metrics.Long()
+    public_file_count = metrics.Long()
+    monthly_logged_in_user_count = metrics.Long()
+    monthly_active_user_count = metrics.Long()
+
+
+class PublicItemUsageReport(MonthlyReport):
+    UNIQUE_TOGETHER_FIELDS = ('report_yearmonth', 'item_osfid')
+
+    # where noted, fields are meant to correspond to defined terms from COUNTER
+    # https://cop5.projectcounter.org/en/5.1/appendices/a-glossary-of-terms.html
+    # https://coprd.countermetrics.org/en/1.0.1/appendices/a-glossary.html
+    item_osfid = metrics.Keyword()                    # counter:Item (or Dataset)
+    item_type = metrics.Keyword(multi=True)           # counter:Data-Type
+    provider_id = metrics.Keyword(multi=True)         # counter:Database(?)
+    platform_iri = metrics.Keyword(multi=True)        # counter:Platform
+
+    # view counts include views on components or files contained by this item
+    view_count = metrics.Long()                       # counter:Total Investigations
+    view_session_count = metrics.Long()               # counter:Unique Investigations
+
+    # download counts of this item only (not including contained components or files)
+    download_count = metrics.Long()                   # counter:Total Requests
+    download_session_count = metrics.Long()           # counter:Unique Requests
+
+    @classmethod
+    def for_last_month(cls, item_osfid: str) -> PublicItemUsageReport | None:
+        _search = (
+            PublicItemUsageReport.search()
+            .filter('term', item_osfid=item_osfid)
+            # only last month's report
+            .filter('range', report_yearmonth={
+                'gte': 'now-2M/M',
+                'lt': 'now/M',
+            })
+            .sort('-report_yearmonth')
+            [:1]
+        )
+        _response = _search.execute()
+        return _response[0] if _response else None
+
+
+class PrivateSpamMetricsReport(MonthlyReport):
+    node_oopspam_flagged = metrics.Integer()
+    node_oopspam_hammed = metrics.Integer()
+    node_akismet_flagged = metrics.Integer()
+    node_akismet_hammed = metrics.Integer()
+    preprint_oopspam_flagged = metrics.Integer()
+    preprint_oopspam_hammed = metrics.Integer()
+    preprint_akismet_flagged = metrics.Integer()
+    preprint_akismet_hammed = metrics.Integer()

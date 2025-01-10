@@ -12,8 +12,10 @@ from api.base.serializers import (
     BaseAPISerializer,
     ShowIfVersion,
     IDField,
+    ShowIfObjectPermission,
 )
 
+from api.base.serializers import YearmonthField
 from api.nodes.serializers import CompoundIDField
 from api.base.exceptions import RelationshipPostMakesNoChanges
 from api.base.utils import absolute_reverse
@@ -35,6 +37,10 @@ class InstitutionSerializer(JSONAPISerializer):
     ror_iri = ser.CharField(read_only=True, source='ror_uri')
     iris = ser.SerializerMethodField(read_only=True)
     assets = ser.SerializerMethodField(read_only=True)
+    link_to_external_reports_archive = ShowIfObjectPermission(
+        ser.CharField(read_only=True),
+        permission='view_institutional_metrics',
+    )
     links = LinksField({
         'self': 'get_api_url',
         'html': 'get_absolute_html_url',
@@ -55,19 +61,28 @@ class InstitutionSerializer(JSONAPISerializer):
         related_view_kwargs={'institution_id': '<_id>'},
     )
 
-    department_metrics = RelationshipField(
-        related_view='institutions:institution-department-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    department_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-department-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
-    user_metrics = RelationshipField(
-        related_view='institutions:institution-user-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    user_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-user-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
-    summary_metrics = RelationshipField(
-        related_view='institutions:institution-summary-metrics',
-        related_view_kwargs={'institution_id': '<_id>'},
+    summary_metrics = ShowIfObjectPermission(
+        RelationshipField(
+            related_view='institutions:institution-summary-metrics',
+            related_view_kwargs={'institution_id': '<_id>'},
+        ),
+        permission='view_institutional_metrics',
     )
 
     def get_api_url(self, obj):
@@ -256,7 +271,12 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
         )
 
 
-class InstitutionUserMetricsSerializer(JSONAPISerializer):
+class OldInstitutionUserMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is NOT active
+    (and should be removed when that flag is permanently active)
+    '''
 
     class Meta:
         type_ = 'institution-users'
@@ -292,6 +312,92 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
                 'version': 'v2',
             },
         )
+
+
+class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-users metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+    '''
+
+    class Meta:
+        type_ = 'institution-users'
+
+    filterable_fields = frozenset({
+        'department',
+        'orcid_id',
+    })
+
+    id = IDField(source='meta.id', read_only=True)
+    report_yearmonth = YearmonthField(read_only=True)
+    user_name = ser.CharField(read_only=True)
+    department = ser.CharField(read_only=True, source='department_name')
+    orcid_id = ser.CharField(read_only=True)
+    month_last_login = YearmonthField(read_only=True)
+    month_last_active = YearmonthField(read_only=True)
+    account_creation_date = YearmonthField(read_only=True)
+
+    public_projects = ser.IntegerField(read_only=True, source='public_project_count')
+    private_projects = ser.IntegerField(read_only=True, source='private_project_count')
+    public_registration_count = ser.IntegerField(read_only=True)
+    embargoed_registration_count = ser.IntegerField(read_only=True)
+    published_preprint_count = ser.IntegerField(read_only=True)
+    public_file_count = ser.IntegerField(read_only=True)
+    storage_byte_count = ser.IntegerField(read_only=True)
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user_id>'},
+    )
+    institution = RelationshipField(
+        related_view='institutions:institution-detail',
+        related_view_kwargs={'institution_id': '<institution_id>'},
+    )
+
+    links = LinksField({})
+
+    def get_absolute_url(self):
+        return None  # there is no detail view for institution-users
+
+
+class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
+    '''serializer for institution-summary metrics
+
+    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
+    (and should be renamed without "New" when that flag is permanently active)
+    '''
+
+    class Meta:
+        type_ = 'institution-summary-metrics'
+
+    id = IDField(read_only=True)
+
+    report_yearmonth = YearmonthField(read_only=True)
+    user_count = ser.IntegerField(read_only=True)
+    public_project_count = ser.IntegerField(read_only=True)
+    private_project_count = ser.IntegerField(read_only=True)
+    public_registration_count = ser.IntegerField(read_only=True)
+    embargoed_registration_count = ser.IntegerField(read_only=True)
+    published_preprint_count = ser.IntegerField(read_only=True)
+    public_file_count = ser.IntegerField(read_only=True)
+    storage_byte_count = ser.IntegerField(read_only=True)
+    monthly_logged_in_user_count = ser.IntegerField(read_only=True)
+    monthly_active_user_count = ser.IntegerField(read_only=True)
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user_id>'},
+    )
+    institution = RelationshipField(
+        related_view='institutions:institution-detail',
+        related_view_kwargs={'institution_id': '<institution_id>'},
+    )
+
+    links = LinksField({})
+
+    def get_absolute_url(self):
+        return None  # there is no detail view for institution-users
 
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):

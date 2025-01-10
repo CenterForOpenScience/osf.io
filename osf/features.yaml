@@ -189,6 +189,10 @@ flags:
     note: This is not used
     everyone: true
 
+  - flag_name: INSTITUTIONAL_DASHBOARD_2024
+    name: institutional_dashboard_2024
+    note: whether to surface older or updated (in 2024) institutional metrics
+
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails
@@ -217,3 +221,8 @@ switches:
   - flag_name: ENABLE_INACTIVE_SCHEMAS
     name: enable_inactive_schemas
     note: This is no longer used
+
+  - flag_name: COUNTEDUSAGE_UNIFIED_METRICS_2024
+    name: countedusage_unified_metrics_2024
+    note: use only `osf.metrics.counted_usage`-based metrics where possible; un-use PageCounter, PreprintView, PreprintDownload, etc
+    active: false

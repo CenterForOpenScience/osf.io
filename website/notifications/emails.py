@@ -176,7 +176,7 @@ def get_user_subscriptions(user, event):
     if user_subscription:
         return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
     else:
-        return {key: [] for key in constants.NOTIFICATION_TYPES}
+        return {key: [user._id] if (event in constants.USER_SUBSCRIPTIONS_AVAILABLE and key == 'email_transactional') else [] for key in constants.NOTIFICATION_TYPES}
 
 
 def get_node_lineage(node):

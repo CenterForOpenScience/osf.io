@@ -1,22 +1,32 @@
+from collections import abc
+import dataclasses
 import logging
 
+import celery
+
+from osf.metrics.reports import MonthlyReport
 from osf.metrics.utils import YearMonth
 
 
 logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass
 class MonthlyReporter:
-    def report(self, report_yearmonth: YearMonth):
+    yearmonth: YearMonth
+
+    def iter_report_kwargs(self, continue_after: dict | None = None) -> abc.Iterator[dict]:
+        # override for multiple reports per month
+        if continue_after is None:
+            yield {}  # by default, calls `.report()` once with no kwargs
+
+    def report(self, **report_kwargs) -> MonthlyReport | None:
         """build a report for the given month
         """
-        raise NotImplementedError(f'{self.__name__} must implement `report`')
+        raise NotImplementedError(f'{self.__class__.__name__} must implement `report`')
 
-    def run_and_record_for_month(self, report_yearmonth: YearMonth):
-        reports = self.report(report_yearmonth)
-        for report in reports:
-            assert report.report_yearmonth == str(report_yearmonth)
-            report.save()
+    def followup_task(self, report) -> celery.Signature | None:
+        return None
 
 
 class DailyReporter:
@@ -25,7 +35,7 @@ class DailyReporter:
 
         return an iterable of DailyReport (unsaved)
         """
-        raise NotImplementedError(f'{self.__name__} must implement `report`')
+        raise NotImplementedError(f'{self.__class__.__name__} must implement `report`')
 
     def run_and_record_for_date(self, report_date):
         reports = self.report(report_date)

@@ -116,7 +116,7 @@ class TestPreprintMetrics:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Malformed elasticsearch query.'
 
-    @pytest.mark.es
+    @pytest.mark.es_metrics
     def test_agg_query(self, app, user, base_url):
 
         post_url = f'{base_url}downloads/'

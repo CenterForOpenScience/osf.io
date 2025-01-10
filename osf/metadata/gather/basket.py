@@ -19,15 +19,14 @@ class Basket:
     def __init__(self, focus: Focus):
         assert isinstance(focus, Focus)
         self.focus = focus
-        self.reset()  # start with an empty basket (except the focus itself)
+        self.reset()  # start with an empty basket
 
     def reset(self):
         self._gathertasks_done = set()
-        self._known_focus_dict = {}
+        self._known_focus_dict = {self.focus.iri: {self.focus}}
         self.gathered_metadata = rdfutils.contextualized_graph()
-        self._add_focus_reference(self.focus)
 
-    def pls_gather(self, predicate_map):  # TODO: async
+    def pls_gather(self, predicate_map, *, include_defaults=True):  # TODO: async
         '''go gatherers, go!
 
         @predicate_map: dict with rdflib.URIRef keys
@@ -48,7 +47,7 @@ class Basket:
             },
         })
         '''
-        self._do_gather(self.focus, predicate_map)
+        self._do_gather(self.focus, predicate_map, include_defaults=include_defaults)
 
     def __getitem__(self, slice_or_arg) -> typing.Iterable[rdflib.term.Node]:
         '''convenience for getting values from the basket
@@ -98,14 +97,20 @@ class Basket:
         else:
             raise ValueError(f'expected `iri_or_focus` to be Focus or URIRef (got {iri_or_focus})')
 
-    def _do_gather(self, focus, predicate_map):
+    def _do_gather(self, focus, predicate_map, *, include_defaults=True):
+        if include_defaults:
+            self._add_focus_reference(focus)
         if not isinstance(predicate_map, dict):
             # allow iterable of predicates with no deeper paths
             predicate_map = {
                 predicate_iri: None
                 for predicate_iri in predicate_map
             }
-        for gatherer in get_gatherers(focus.rdftype, predicate_map.keys()):
+        for gatherer in get_gatherers(
+            focus.rdftype,
+            predicate_map.keys(),
+            include_focustype_defaults=include_defaults,
+        ):
             for (subj, pred, obj) in self._do_a_gathertask(gatherer, focus):
                 if isinstance(obj, Focus):
                     self._add_focus_reference(obj)

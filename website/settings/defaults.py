@@ -26,6 +26,9 @@ ADDON_PATH = os.path.join(APP_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
+POLICY_PATH = os.path.join(APP_PATH, 'COS_POLICIES')
+PRIVACY_POLICY_PATH = os.path.join(POLICY_PATH, 'PRIVACY_POLICY.md')
+TERMS_POLICY_PATH = os.path.join(POLICY_PATH, 'TERMS_OF_USE.md')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
@@ -446,6 +449,7 @@ class CeleryConfig:
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
+        'osf.metrics.reporters',
     }
 
     med_pri_modules = {
@@ -2047,10 +2051,12 @@ OSF_PREREG_LOGO = 'osf_prereg'
 OSF_REGISTRIES_LOGO = 'osf_registries'
 OSF_LOGO_LIST = [OSF_LOGO, OSF_PREPRINTS_LOGO, OSF_MEETINGS_LOGO, OSF_PREREG_LOGO, OSF_REGISTRIES_LOGO]
 
+PRIVACY_POLICY_GITHUB_LINK = 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md'
+TERMS_POLICY_GITHUB_LINK = 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md'
 FOOTER_LINKS = {
-    'terms': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/TERMS_OF_USE.md',
-    'privacyPolicy': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md',
-    'cookies': 'https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md#f-cookies',
+    'terms': 'https://osf.io/terms_of_use/',
+    'privacyPolicy': 'https://osf.io/privacy_policy/',
+    'cookies': 'https://osf.io/privacy_policy/#f-cookies',
     'cos': 'https://cos.io',
     'statusPage': 'https://status.cos.io/',
     'apiDocs': 'https://developer.osf.io/',

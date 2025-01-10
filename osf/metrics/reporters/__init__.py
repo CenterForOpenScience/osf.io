@@ -4,12 +4,16 @@ import enum
 from .storage_addon_usage import StorageAddonUsageReporter
 from .download_count import DownloadCountReporter
 from .institution_summary import InstitutionSummaryReporter
+from .institutional_users import InstitutionalUsersReporter
+from .institution_summary_monthly import InstitutionalSummaryMonthlyReporter
 from .new_user_domain import NewUserDomainReporter
 from .node_count import NodeCountReporter
 from .osfstorage_file_count import OsfstorageFileCountReporter
 from .preprint_count import PreprintCountReporter
+from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
+from .private_spam_metrics import PrivateSpamMetricsReporter
 
 
 class AllDailyReporters(enum.Enum):
@@ -26,3 +30,7 @@ class AllDailyReporters(enum.Enum):
 
 class AllMonthlyReporters(enum.Enum):
     SPAM_COUNT = SpamCountReporter
+    INSTITUTIONAL_USERS = InstitutionalUsersReporter
+    INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
+    ITEM_USAGE = PublicItemUsageReporter
+    PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter
