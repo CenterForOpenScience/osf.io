@@ -1726,6 +1726,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to call this after save for the notifications to be created with the _primary_key
         project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
 
+        set_project_storage_type(forked)
+
         return forked
 
     def clone_logs(self, node, page_size=100):
