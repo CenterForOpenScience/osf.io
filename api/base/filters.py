@@ -568,8 +568,8 @@ class ListFilterMixin(FilterMixin):
 
 
 class PreprintFilterMixin(ListFilterMixin):
-    """View mixin for many preprint listing views, which uses ListFilterMixin, adding postprocessing for preprint
-    querying by provider, subjects and versioned `_id`.
+    """View mixin for many preprint listing views. It inherits from ListFilterMixin and customize postprocessing for
+    preprint querying by provider, subjects and versioned `_id`.
 
     Note: Subclasses must define `get_default_queryset()`.
     """
@@ -615,7 +615,8 @@ class PreprintFilterMixin(ListFilterMixin):
 
 
 class PreprintActionFilterMixin(ListFilterMixin):
-    """View mixin for `PreprintActionList` which uses ListFilterMixin, adding postprocessing for versioned preprint.
+    """View mixin for `PreprintActionList`. It inherits from `ListFilterMixin` and customize postprocessing for
+    versioned preprint.
 
     Note: Subclasses must define `get_default_queryset()`.
     """
@@ -639,5 +640,26 @@ class PreprintActionFilterMixin(ListFilterMixin):
         """
         if field_name == 'target':
             PreprintActionFilterMixin.postprocess_versioned_guid_target_query_param(operation)
+        else:
+            super().postprocess_query_param(key, field_name, operation)
+
+class ReviewActionFilterMixin(ListFilterMixin):
+    """View mixin for `ReviewActionListCreate`. It inherits from `ListFilterMixin` and uses `PreprintActionFilterMixin`
+    to customized postprocessing for handling versioned preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target` and when `target` is a versioned Preprint.
+        """
+        if field_name == 'target':
+            referent, version = Guid.load_referent(operation['value'])
+            if referent:
+                if version:
+                    PreprintActionFilterMixin.postprocess_versioned_guid_target_query_param(operation)
+                else:
+                    super().postprocess_query_param(key, field_name, operation)
+            else:
+                return
         else:
             super().postprocess_query_param(key, field_name, operation)
