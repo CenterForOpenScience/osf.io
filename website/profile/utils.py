@@ -33,7 +33,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'surname': user.family_name,
         'fullname': fullname,
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
-        'is_institutional_admin': user.is_institutional_admin(),
+        'has_institutional_request': user.has_institutional_request(node),
         'is_curator': user.is_institutional_curator(node),
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),
         'active': user.is_active,

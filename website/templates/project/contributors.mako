@@ -343,7 +343,6 @@
                     aria-label='Curator Disabled Bibliographic User Checkbox'
                     style='background-color: lightgray;'
                     disabled
-                    checked
                 >
             </div>
         </td>
@@ -406,23 +405,23 @@
         <td>
             <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
-            <div data-bind="ifnot: accessRequest.user.is_institutional_admin">
+            <div data-bind="ifnot: accessRequest.user.has_institutional_request">
                 <input
                     type="checkbox" class="biblio"
                     data-bind="checked: visible"
                 />
             </div>
-            <div data-bind="if: accessRequest.user.is_institutional_admin">
+            <div data-bind="if: accessRequest.user.has_institutional_request">
                 <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled>
             </div>
         </td>
         <td>
             <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
-                <div data-bind="ifnot: accessRequest.user.is_institutional_admin">
+                <div data-bind="ifnot: accessRequest.user.has_institutional_request">
                     <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled>
                 </div>
-                <div data-bind="if: accessRequest.user.is_institutional_admin">
+                <div data-bind="if: accessRequest.user.has_institutional_request">
                     <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled  checked>
                 </div>
             </div>
