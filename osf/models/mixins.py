@@ -1846,7 +1846,7 @@ class ContributorMixin(models.Model):
             set_visible_kwargs = kwargs
             set_visible_kwargs['visible'] = False
             contribs = self.contributor_class.objects.filter(**set_visible_kwargs)
-            if contribs.filter(is_curator=True).exists():
+            if self.guardian_object_type == 'node' and contribs.filter(is_curator=True).exists():
                 raise ValueError('Curators cannot be made bibliographic contributors')
             contribs.update(visible=True)
 
