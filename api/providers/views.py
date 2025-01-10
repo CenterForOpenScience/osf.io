@@ -15,7 +15,7 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterValue,
 )
-from api.base.filters import ListFilterMixin, PreprintFilterMixin, PreprintProviderWithdrawRequestFilterMixin
+from api.base.filters import ListFilterMixin, PreprintAsTargetFilterMixin, PreprintFilterMixin
 from api.base.metrics import PreprintMetricsViewMixin
 from api.base.pagination import MaxSizePagination, IncreasedPageSizePagination
 from api.base.settings import BULK_SETTINGS
@@ -571,7 +571,7 @@ class RegistrationProviderSubmissionList(JSONAPIBaseView, generics.ListCreateAPI
         raise ValidationError(f'Provider {provider.name} has no primary collection to submit to.')
 
 
-class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView, PreprintProviderWithdrawRequestFilterMixin, ProviderMixin):
+class PreprintProviderWithdrawRequestList(JSONAPIBaseView, generics.ListAPIView, PreprintAsTargetFilterMixin, ProviderMixin):
     provider_class = PreprintProvider
     permission_classes = (
         drf_permissions.IsAuthenticated,
