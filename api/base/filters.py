@@ -568,25 +568,28 @@ class ListFilterMixin(FilterMixin):
 
 
 class PreprintFilterMixin(ListFilterMixin):
-    """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
+    """View mixin for many preprint listing views, which uses ListFilterMixin, adding postprocessing for preprint
+    querying by provider, subjects and versioned `_id`.
 
-       Subclasses must define `get_default_queryset()`.
+    Note: Subclasses must define `get_default_queryset()`.
     """
 
     @staticmethod
     def postprocess_versioned_guid_id_query_param(operation):
-        """Handle query parameters when filtering on `id` for preprint and versioned guid. With versioned guid,
-        preprint no longer has guid._id for every version, and thus must switch to filter by pk.
+        """Handle query parameters when filtering on `_id` for preprint which are now versioned.
+
+        Note: preprint achieves versioning by using versioned guid, and thus no long has guid or guid._id for every
+        version. Must convert `guid___id__in=` look-up to `pk__in` look-up.
         """
-        object_ids = []
+        preprint_pk_list = []
         for val in operation['value']:
             referent, version = Guid.load_referent(val)
             if referent is None:
                 continue
-            object_ids.append(referent.id)
-        # Override the operation to filter `id__in=object_ids`
+            preprint_pk_list.append(referent.id)
+        # Override the operation to filter `id__in=preprint_pk_list`
         operation['source_field_name'] = 'id__in'
-        operation['value'] = object_ids
+        operation['value'] = preprint_pk_list
         operation['op'] = 'eq'
 
     def postprocess_query_param(self, key, field_name, operation):
@@ -609,3 +612,32 @@ class PreprintFilterMixin(ListFilterMixin):
         if latest_only:
             preprints = preprints.filter(pk__in=[obj.pk for obj in preprints if obj.is_latest_version])
         return preprints
+
+
+class PreprintActionFilterMixin(ListFilterMixin):
+    """View mixin for `PreprintActionList` which uses ListFilterMixin, adding postprocessing for versioned preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+
+    @staticmethod
+    def postprocess_versioned_guid_target_query_param(operation):
+        """When target is a preprint, which must be versioned, the traditional non-versioned `guid___id==target`
+        look-up no longer works. Must convert to PK look-up `referent__id==pk`.
+        """
+        referent, version = Guid.load_referent(operation['value'])
+        # A valid preprint must have referent and version
+        if not referent or not version:
+            return
+        # Override the operation to filter  `target__id=target.pk`
+        operation['source_field_name'] = 'target__id'
+        operation['value'] = referent.id
+        operation['op'] = 'eq'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target`.
+        """
+        if field_name == 'target':
+            PreprintActionFilterMixin.postprocess_versioned_guid_target_query_param(operation)
+        else:
+            super().postprocess_query_param(key, field_name, operation)
