@@ -54,7 +54,9 @@ RUN set -ex \
 WORKDIR /code
 
 # Policies
-ADD https://github.com/CenterForOpenScience/cos.io.git#master ./COS_POLICIES/
+RUN git clone https://github.com/CenterForOpenScience/cos.io.git ./COS_POLICIES/
+# When Jenkins uses a newer docker:
+# ADD https://github.com/CenterForOpenScience/cos.io.git#master ./COS_POLICIES/
 
 COPY pyproject.toml .
 COPY poetry.lock .
