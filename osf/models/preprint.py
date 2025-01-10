@@ -429,7 +429,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         preprint.save(guid_ready=True, first_save=True)
 
         # Add contributors
-        for contributor in latest_version.contributor_set.exclude(user=latest_version.creator):
+        for contributor in latest_version.contributor_set.exclude(user=preprint.creator):
             try:
                 preprint.add_contributor(
                     contributor.user,

@@ -8,10 +8,11 @@ from rest_framework import permissions as drf_permissions
 from framework import sentry
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import (
-    ReviewAction,
+    Institution,
     Preprint,
     PreprintContributor,
-    Institution,
+    ReviewAction,
+    VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
 
@@ -76,12 +77,14 @@ class PreprintOldVersionsImmutableMixin:
 
     @staticmethod
     def is_edit_allowed(preprint):
-        return True if any([
-            preprint.is_latest_version,
-            preprint.machine_state in ['initial', 'rejected'],
-            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and
-            preprint.machine_state == 'pending',
-        ]) else False
+        if preprint.is_latest_version or preprint.machine_state == 'initial':
+            return True
+        if preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
+            if preprint.machine_state == 'pending':
+                return True
+            if preprint.machine_state == 'rejected' and preprint.version == VersionedGuidMixin.INITIAL_VERSION_NUMBER:
+                return True
+        return False
 
     def handle_request(self, request, method, *args, **kwargs):
         preprint = self.get_preprint(check_object_permissions=False)
