@@ -663,9 +663,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @property
     def is_latest_version(self):
-        if not self.date_published:
-            return False
-        return self.versioned_guids.first().guid.referent.version == self.version
+        return self.guids.exists()
 
     def get_preprint_versions(self):
         guids = self.versioned_guids.first().guid.versions.all()
