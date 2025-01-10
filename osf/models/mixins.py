@@ -1839,15 +1839,17 @@ class ContributorMixin(models.Model):
     def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(f'User {user} not in contributors')
-        if user.is_curator(self):
-            raise ValueError('Curators cannot be made bibliographic contributors')
         kwargs = self.contributor_kwargs
         kwargs['user'] = user
         kwargs['visible'] = True
         if visible and not self.contributor_class.objects.filter(**kwargs).exists():
             set_visible_kwargs = kwargs
             set_visible_kwargs['visible'] = False
-            self.contributor_class.objects.filter(**set_visible_kwargs).update(visible=True)
+            contribs = self.contributor_class.objects.filter(**set_visible_kwargs)
+            if contribs.filter(is_curator=True).exists():
+                raise ValueError('Curators cannot be made bibliographic contributors')
+            contribs.update(visible=True)
+
         elif not visible and self.contributor_class.objects.filter(**kwargs).exists():
             num_visible_kwargs = self.contributor_kwargs
             num_visible_kwargs['visible'] = True
