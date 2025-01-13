@@ -227,6 +227,8 @@ class Guid(BaseModel):
 
         If `ignore_not_found` is True, then don't log to sentry. This is used in `website.views.resolve_guid()`.
         """
+        if not data:
+            return None
         base_guid_str, version = cls.split_guid(data)
         try:
             if not select_for_update:
@@ -234,13 +236,16 @@ class Guid(BaseModel):
             return cls.objects.filter(_id=base_guid_str).select_for_update().get()
         except cls.DoesNotExist:
             if not ignore_not_found:
-                sentry.log_message(f'Object not found from base guid: [guid={base_guid_str}, version={version}]')
+                sentry.log_message(f'Object not found from base guid: '
+                                   f'[data={data}, guid={base_guid_str}, version={version}]')
             return None
 
     @classmethod
     def load_referent(cls, guid_str, ignore_not_found=False):
         """Find and return the referent from a given guid str.
         """
+        if not guid_str:
+            return None, None
         base_guid_str, version = cls.split_guid(guid_str)
         base_guid_obj = cls.load(base_guid_str, ignore_not_found=ignore_not_found)
         if not base_guid_obj:
@@ -561,6 +566,8 @@ class VersionedGuidMixin(GuidMixin):
         base guid str and the version in the guid str. If the guid str does not have version, it returns the object
         referred by the base guid obj.
         """
+        if not guid_str:
+            return None
         try:
             base_guid_str, version = Guid.split_guid(guid_str)
             # Version exists
