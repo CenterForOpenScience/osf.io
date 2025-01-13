@@ -255,8 +255,9 @@ class InstitutionalMetricsAdminRegister(PermissionRequiredMixin, FormView):
         if not osf_user:
             raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
-        group = Group.objects.filter(name__startswith=f'institution_{target_institution._id}').first()
+        osf_user.add_or_update_affiliated_institution(target_institution)
 
+        group = Group.objects.filter(name__startswith=f'institution_{target_institution._id}').first()
         group.user_set.add(osf_user)
         group.save()
 
