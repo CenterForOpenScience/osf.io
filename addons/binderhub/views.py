@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
+from itertools import chain
 import json
 from rest_framework import status as http_status
-from django.core.exceptions import ObjectDoesNotExist, MultipleObjectsReturned
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    MultipleObjectsReturned,
+    ValidationError,
+)
+from django.db import transaction
 from flask import request
 import logging
 from future.moves.urllib.parse import urljoin, urlencode
@@ -20,7 +26,14 @@ from website.ember_osf_web.views import use_ember_app
 from website.util import api_url_for
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
-from .models import BinderHubToken, ServerAnnotation, get_default_binderhub, fill_binderhub_secrets
+from .models import (
+    BinderHubToken,
+    CustomBaseImage,
+    ServerAnnotation,
+    camel_to_snake,
+    get_default_binderhub,
+    fill_binderhub_secrets,
+)
 from . import settings
 
 logger = logging.getLogger(__name__)
@@ -400,3 +413,175 @@ def delete_server_annotation(**kwargs):
                 'id': kwargs['aid'],
             }
         }
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def create_custom_base_image(**kwargs):
+    try:
+        attrs = request.json['data']['attributes']
+        imgRef = attrs['imageReference'].strip()
+        if any(imgRef == image['url'] for image in settings.BINDERHUB_DEPLOYMENT_IMAGES):
+            raise HTTPError(
+                http_status.HTTP_409_CONFLICT,
+                message='Custom Base Image with specified image URL is officially offered.',
+            )
+        if imgRef.startswith('#repo2docker'):
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                message='Image URL #repo2docker is not allowed.',
+            )
+
+        with transaction.atomic():
+            if CustomBaseImage.objects.filter(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                image_reference=imgRef,
+            ).exists():
+                raise HTTPError(
+                    http_status.HTTP_409_CONFLICT,
+                    message='Custom Base Image with specified image URL already exists.'
+                )
+
+            image = CustomBaseImage.objects.create(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                name=attrs['name'],
+                image_reference=imgRef,
+                description_ja=attrs.get('descriptionJa', ''),
+                description_en=attrs.get('descriptionEn', ''),
+                deprecated=attrs.get('deprecated', False),
+            )
+        return {'data': image.make_resource_object()}
+    except (KeyError, TypeError) as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except ValidationError as e:
+        raise HTTPError(
+            http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message=str(e)
+        )
+
+def collect_ancestor_nodes(node):
+    def _rec(node, level):
+        parents = [(level, rel.parent) for rel in node._parents.filter(is_node_link=False)]
+        return chain(parents, chain.from_iterable([_rec(p, level+1) for (_, p) in parents]))
+    return _rec(node, 1)
+
+# It returns a list that consists of following 3 things:
+#
+#  1. the given `node` itself
+#  2. the ancestor nodes
+#  3. linked node of ancestor nodes
+#
+# The graph is directed and cyclic but is never reflective.
+def collect_relative_nodes(node):
+    visited = set()
+    def _rec(node, level):
+        if node in visited:
+            return
+        else:
+            visited.add(node)
+            yield (level, node)
+            for parent_node in [rel.parent for rel in node._parents.all()]:
+                yield from _rec(parent_node, level+1)
+    return sorted(list(_rec(node, 0)), key=lambda x: x[0])
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def get_custom_base_image(**kwargs):
+    try:
+        user = kwargs['auth'].user
+        node = kwargs['node'] or kwargs['project']
+        return {
+            'data': [
+                img.make_resource_object(level)
+                for (level, img)
+                in (
+                    chain.from_iterable([
+                        [
+                            (level, image) for image in (
+                                CustomBaseImage.objects.filter(node=relative)
+                                if relative.has_permission(user, READ) else []
+                            )
+                        ]
+                        for (level, relative) in collect_relative_nodes(node)
+                    ])
+                    if request.args.get('includeParentImages') == 'true'
+                    else [(0, i) for i in CustomBaseImage.objects.filter(node=node)]
+                )
+            ]
+        }
+    except (KeyError, TypeError):
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def update_custom_base_image(**kwargs):
+    try:
+        with transaction.atomic():
+            image = CustomBaseImage.objects.select_for_update().get(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                id=kwargs['image_id'],
+            )
+            image.safe_camel_update(request.json['data']['attributes'])
+            image.save()
+            return {'data': image.make_resource_object()}
+    except (KeyError, TypeError) as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except InvalidUpdateDirectiveError as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except ValidationError as e:
+        raise HTTPError(
+            http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message=str(e),
+        )
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'CustomBaseImage with id={kwargs["image_id"]} not found.',
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple CustomBaseImage have id={kwargs["image_id"]}.',
+        )
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def delete_custom_base_image(**kwargs):
+    try:
+        with transaction.atomic():
+            image = CustomBaseImage.objects.select_for_update().get(
+                id=kwargs['image_id'],
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+            )
+
+            deleted_count, _ = image.delete()
+
+            if deleted_count == 0:
+                raise HTTPError(
+                    http_status.HTTP_404_NOT_FOUND,
+                    message=f'CustomBaseImage with id={kwargs["image_id"]} not found.'
+                )
+
+            return {
+                'data': {
+                    'type': 'custom-base-image',
+                    'id': kwargs['image_id'],
+                }
+            }
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'CustomBaseImage with id={kwargs["image_id"]} not found.'
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple CustomBaseImage have id={kwargs["image_id"]}.'
+        )

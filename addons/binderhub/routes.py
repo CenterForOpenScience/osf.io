@@ -90,6 +90,23 @@ api_routes = {
             '/project/<pid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
         ], 'delete', views.delete_server_annotation, json_renderer),
+        # Custom Base Image CRUD API
+        Rule([
+            '/project/<pid>/{}/custom_base_image'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image'.format(SHORT_NAME),
+        ], 'post', views.create_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image'.format(SHORT_NAME),
+        ], 'get', views.get_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+        ], 'patch', views.update_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+        ], 'delete', views.delete_custom_base_image, json_renderer),
         # Read mpm addon list
         # API to logout from a BinderHub.
         Rule([
