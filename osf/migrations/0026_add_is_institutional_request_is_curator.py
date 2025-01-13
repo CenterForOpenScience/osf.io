@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0025_contributor_is_curator_and_more'),
+        ('osf', '0025_institutional_request_access_enabled_and_more'),
     ]
 
     operations = [
