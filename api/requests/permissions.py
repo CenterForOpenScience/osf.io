@@ -81,7 +81,7 @@ class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
         if not institution.institutional_request_access_enabled:
             raise exceptions.PermissionDenied({'institution': 'Institutional request access is not enabled.'})
 
-        if get_user_auth(request).user.is_institutional_admin(institution):
+        if get_user_auth(request).user.is_institutional_admin_at(institution):
             return True
         else:
             raise exceptions.PermissionDenied({'institution': 'You do not have permission to perform this action for this institution.'})

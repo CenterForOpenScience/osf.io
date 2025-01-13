@@ -177,6 +177,8 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
     def make_node_institutional_access_request(self, node, validated_data) -> NodeRequest:
         sender = self.context['request'].user
         node_request = self._create_node_request(node, validated_data)
+        node_request.is_institutional_request = True
+        node_request.save()
         institution = Institution.objects.get(_id=validated_data['institution'])
         recipient = OSFUser.load(validated_data.get('message_recipient'))
 

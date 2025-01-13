@@ -188,10 +188,20 @@
             </th>
             <th class="biblio-contrib">
                 Bibliographic Contributor
-                <i class="fa fa-question-circle visibility-info"
+                <i class="fa fa-question-circle visibility-info-contrib"
                     data-toggle="popover"
                     data-title="Bibliographic Contributor Information"
                     data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th class="curator-contrib">
+                Curator
+                <i class="fa fa-question-circle visibility-info-curator"
+                    data-toggle="popover"
+                    data-title="Curator Information"
+                    data-content="body"
                     data-placement="right"
                     data-html="true"
                 ></i>
@@ -242,6 +252,17 @@
                     data-html="true"
                 ></i>
             </th>
+            <th class="curator-contrib">
+                Curator
+                <i class="fa fa-question-circle visibility-info-curator"
+                    data-toggle="popover"
+                    data-title="Curator Information"
+                    data-content="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+
             <th></th>
         </tr>
     </thead>
@@ -307,12 +328,30 @@
             </div>
         </td>
         <td>
-            <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
-            <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
+            <div data-bind="ifnot: contributor.is_curator">
+                <div class="header" data-bind="visible: contributor.expanded() && $root.collapsed()"></div>
+                <div class="td-content" data-bind="visible: !$root.collapsed() || contributor.expanded()">
+                    <input
+                        type="checkbox" aria-label="Bibliographic User Checkbox" class="biblio visible-filter"
+                        data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
+                    />
+                </div>
+            </div>
+            <div data-bind="if: contributor.is_curator">
                 <input
-                    type="checkbox" aria-label="Bibliographic User Checkbox" class="biblio visible-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isParentAdmin && !deleteStaged()"
-                />
+                    type='checkbox'
+                    aria-label='Curator Disabled Bibliographic User Checkbox'
+                    style='background-color: lightgray;'
+                    disabled
+                >
+            </div>
+        </td>
+        <td>
+            <div data-bind="if: contributor.is_curator">
+                <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled  checked>
+            </div>
+            <div data-bind="ifnot: contributor.is_curator">
+                <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled>
             </div>
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
@@ -366,10 +405,25 @@
         <td>
             <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
+            <div data-bind="ifnot: accessRequest.is_institutional_request">
                 <input
                     type="checkbox" class="biblio"
                     data-bind="checked: visible"
                 />
+            </div>
+            <div data-bind="if: accessRequest.is_institutional_request">
+                <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled>
+            </div>
+        </td>
+        <td>
+            <div class="header" data-bind="visible: accessRequest.expanded()  && $root.collapsed()"></div>
+            <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
+                <div data-bind="ifnot: accessRequest.is_institutional_request">
+                    <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled>
+                </div>
+                <div data-bind="if: accessRequest.is_institutional_request">
+                    <input type="checkbox" aria-label="Curator Confirmation Checkbox" disabled  checked>
+                </div>
             </div>
         </td>
         <td data-bind="css: {'add-remove': !$root.collapsed()}">

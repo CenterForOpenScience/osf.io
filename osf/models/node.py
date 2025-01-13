@@ -15,7 +15,7 @@ from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ImproperlyConfigured
 from django.core.paginator import Paginator
 from django.urls import reverse
-from django.db import models, connection
+from django.db import models, connection, IntegrityError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -77,6 +77,7 @@ from osf.utils.permissions import (
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from api.base.exceptions import Conflict
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
@@ -1079,7 +1080,18 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if not self.is_contributor(user):
             raise ValueError(f'User {user} not in contributors')
         if visible and not Contributor.objects.filter(node=self, user=user, visible=True).exists():
-            Contributor.objects.filter(node=self, user=user, visible=False).update(visible=True)
+            contributor = Contributor.objects.get(
+                node=self,
+                user=user,
+                visible=False
+            )
+            try:
+                contributor.visible = True
+                contributor.save()
+            except IntegrityError as e:
+                if 'Curators cannot be made bibliographic contributors' in str(e):
+                    raise Conflict(str(e)) from e
+                raise e
         elif not visible and Contributor.objects.filter(node=self, user=user, visible=True).exists():
             if Contributor.objects.filter(node=self, visible=True).count() == 1:
                 raise ValueError('Must have at least one visible contributor')
