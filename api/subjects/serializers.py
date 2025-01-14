@@ -15,6 +15,7 @@ from osf.exceptions import NodeStateError, ValidationValueError
 
 
 class UpdateSubjectsMixin:
+
     def update_subjects_method(self, resource, subjects, auth, skip_share=False):
         # Method to update subjects on resource
         raise NotImplementedError()
