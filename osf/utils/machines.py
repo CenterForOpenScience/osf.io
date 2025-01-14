@@ -226,15 +226,15 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
-
-        for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-            mails.send_mail(
-                admin.username,
-                mails.ACCESS_REQUEST_SUBMITTED,
-                admin=admin,
-                osf_contact_email=OSF_CONTACT_EMAIL,
-                **context
-            )
+        if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+            for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
+                mails.send_mail(
+                    admin.username,
+                    mails.ACCESS_REQUEST_SUBMITTED,
+                    admin=admin,
+                    osf_contact_email=OSF_CONTACT_EMAIL,
+                    **context
+                )
 
     def notify_resubmit(self, ev):
         """ Notify admins that someone is requesting access again
