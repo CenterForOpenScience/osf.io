@@ -40,8 +40,12 @@ class Command(BaseCommand):
         Preprint = apps.get_model('osf', 'Preprint')
 
         content_type_id = ContentType.objects.get_for_model(Preprint).id
-        first_id = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id').first().id
-        last_id = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id').last().id
+        qs = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id')
+        if not qs.exists():
+            self.stdout.write(self.style.WARNING('No preprints to migrate!'))
+            return
+        first_id = qs.first().id
+        last_id = qs.last().id
 
         vq_list = []
         total_migrated = 0
