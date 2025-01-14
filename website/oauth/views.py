@@ -11,6 +11,7 @@ from flask import redirect, request
 from api.waffle.utils import flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from framework import sentry
 from osf.models import ExternalAccount
 from osf import features
 from website.oauth.utils import get_service
@@ -83,4 +84,5 @@ def _forward_to_addon_service(oauth_version):
     }
 
     gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path=f'/v1/{oauth_version}/callback', query=urlencode(query_params)))
+    sentry.log_message(request.cookies)
     requests.get(gv_url, cookies=request.cookies)
