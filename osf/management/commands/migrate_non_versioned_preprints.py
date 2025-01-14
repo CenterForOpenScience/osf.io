@@ -40,11 +40,16 @@ class Command(BaseCommand):
         Preprint = apps.get_model('osf', 'Preprint')
 
         content_type_id = ContentType.objects.get_for_model(Preprint).id
-        first_id = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id').first().id
-        last_id = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id').last().id
+        qs = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id')
+        if not qs.exists():
+            self.stdout.write(self.style.WARNING('No preprints to migrate!'))
+            return
+        first_id = qs.first().id
+        last_id = qs.last().id
 
         vq_list = []
-        p_batch_ids = [[x, x + batch_size - 1] for x in range(first_id, last_id, batch_size)]
+        total_migrated = 0
+        p_batch_ids = [[x, x + batch_size - 1] for x in range(first_id, last_id + 1, batch_size)]
 
         for ids in tqdm(p_batch_ids, desc='Processing', unit='batch'):
             preprints_list = Preprint.objects.filter(id__range=ids)
@@ -68,8 +73,10 @@ class Command(BaseCommand):
             if vq_list:
                 if not dry_run:
                     GuidVersionsThrough.objects.bulk_create(vq_list, batch_size=len(vq_list))
+            total_migrated += len(vq_list)
             vq_list = []
+        success_message = f'Migration completed successfully! [{total_migrated}] preprints have been migrated.'
         if dry_run:
-            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully!'))
+            self.stdout.write(self.style.WARNING(f'DRY_RUN: {success_message}'))
         else:
-            self.stdout.write(self.style.SUCCESS('Migration completed successfully!'))
+            self.stdout.write(self.style.SUCCESS(success_message))
