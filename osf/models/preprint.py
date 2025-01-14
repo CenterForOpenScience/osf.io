@@ -1141,8 +1141,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             logger.exception(e)
             log_exception(e)
 
-    def update_search(self):
-        update_share(self)
+    def update_search(self, skip_share=False):
+        """Update SHARE and OSF search.
+        """
+        if not skip_share:
+            update_share(self)
+
         from website import search
         try:
             search.search.update_preprint(self, bulk=False, async_update=True)
