@@ -44,7 +44,7 @@ class Command(BaseCommand):
         last_id = Preprint.objects.filter(versioned_guids__isnull=True).order_by('id').last().id
 
         vq_list = []
-        created_vq_list = []
+        total_migrated = 0
         p_batch_ids = [[x, x + batch_size - 1] for x in range(first_id, last_id + 1, batch_size)]
 
         for ids in tqdm(p_batch_ids, desc='Processing', unit='batch'):
@@ -69,10 +69,9 @@ class Command(BaseCommand):
             if vq_list:
                 if not dry_run:
                     GuidVersionsThrough.objects.bulk_create(vq_list, batch_size=len(vq_list))
-            created_vq_list.extend(vq_list)
+            total_migrated += len(vq_list)
             vq_list = []
         if dry_run:
-            self.stdout.write(self.style.WARNING('DRY_RUN: Migration will affect {} preprints.'.format(len(created_vq_list))))
-            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully!'))
+            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully! {total_migrated} preprint(s) has been migrated.'))
         else:
-            self.stdout.write(self.style.SUCCESS('Migration completed successfully!'))
+            self.stdout.write(self.style.SUCCESS('Migration completed successfully! {total_migrated} preprint(s) have been migrated.'))
