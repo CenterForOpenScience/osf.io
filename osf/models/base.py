@@ -602,6 +602,10 @@ class VersionedGuidMixin(GuidMixin):
             raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
         return osfid_iri(_osfid)
 
+    def update_search(self, skip_share=False):
+        """Subclasses must implement `update_search()` with kwarg `skip_share=False`."""
+        raise NotImplementedError()
+
 @receiver(post_save)
 def ensure_guid(sender, instance, **kwargs):
     """Generate guid if it doesn't exist for subclasses of GuidMixin except for subclasses of VersionedGuidMixin
