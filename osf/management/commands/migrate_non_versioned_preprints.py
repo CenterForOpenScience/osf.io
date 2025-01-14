@@ -71,7 +71,8 @@ class Command(BaseCommand):
                     GuidVersionsThrough.objects.bulk_create(vq_list, batch_size=len(vq_list))
             total_migrated += len(vq_list)
             vq_list = []
+        success_message = f'Migration completed successfully! [{total_migrated}] preprints have been migrated.'
         if dry_run:
-            self.stdout.write(self.style.WARNING('DRY_RUN: Migration has completed successfully! {total_migrated} preprint(s) has been migrated.'))
+            self.stdout.write(self.style.WARNING(f'DRY_RUN: {success_message}'))
         else:
-            self.stdout.write(self.style.SUCCESS('Migration completed successfully! {total_migrated} preprint(s) have been migrated.'))
+            self.stdout.write(self.style.SUCCESS(success_message))
