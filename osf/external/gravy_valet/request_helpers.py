@@ -6,6 +6,7 @@ import typing
 
 from . import auth_helpers
 import requests
+from requests.exceptions import RequestException
 
 from website import settings
 
@@ -155,13 +156,16 @@ def get_gv_result(
     params: dict = None,
 ):  # -> JSONAPIResultEntry
     '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
-    response_json = _make_gv_request(
+    response = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method=request_method,
         params=params,
-    ).json()
+    )
+    if not response:
+        return
+    response_json = response.json()
 
     if not response_json.get('data'):
         return None
@@ -180,15 +184,18 @@ def get_raw_gv_result(
         params: dict = None,
 ):
     '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
-    response_json = _make_gv_request(
+    response = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method=request_method,
         params=params,
-    ).json()
+    )
+    if not response:
+        return {}
+    response_json = response.json()
     if not response_json.get('data'):
-        return dict()
+        return {}
     return response_json['data']
 
 
@@ -200,13 +207,17 @@ def iterate_gv_results(
     params: dict = None,
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
-    response_json = _make_gv_request(
+    response = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method=request_method,
         params=params
-    ).json()
+    )
+    if not response:
+        return
+
+    response_json = response.json()
     if not response_json.get('data'):
         return  # empty iterator
     included_entities_lookup = _format_included_entities(response_json.get('included', []))
@@ -233,7 +244,10 @@ def _make_gv_request(
         ) | {'content-type': 'application/vnd.api+json'}
     )
     assert not (request_method == 'GET' and json_data is not None)
-    response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data)
+    try:
+        response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data)
+    except RequestException:
+        return None
     if not response.ok:
         # log error to Sentry
         pass
