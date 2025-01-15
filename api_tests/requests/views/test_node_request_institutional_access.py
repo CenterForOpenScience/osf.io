@@ -194,13 +194,52 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
-    @mock.patch('website.mails.send_mail')
-    def test_email_send_to_all_admins_once_on_institutional_request(self, mock_mail, app, project, url, create_payload, institutional_admin):
+    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('osf.utils.machines.mails.send_mail')
+    def test_email_send_institutional_request_specific_email(
+            self,
+            mock_send_mail_machines,
+            mock_send_mail_serializers,
+            user_with_affiliation,
+            app,
+            project,
+            url,
+            create_payload,
+            institutional_admin,
+            institution
+    ):
+        """
+        Test that the institutional request triggers email notifications to appropriate recipients.
+        """
+        # Set up mock behaviors
         project.is_public = True
         project.save()
+
+        # Perform the action
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+
+        # Ensure response is successful
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
+
+        assert mock_send_mail_serializers.call_count == 1
+        assert mock_send_mail_machines.call_count == 0
+
+        # Check calls for osf.utils.machines.mails.send_mail
+        mock_send_mail_serializers.assert_called_once_with(
+            to_addr=user_with_affiliation.username,
+            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            user=user_with_affiliation,
+            bcc_addr=None,
+            reply_to=None,
+            **{
+                'sender': institutional_admin,
+                'recipient': user_with_affiliation,
+                'comment': create_payload['data']['attributes']['comment'],
+                'institution': institution,
+                'osf_url': mock.ANY,
+                'node': project,
+            }
+        )
 
     @mock.patch('api.requests.serializers.send_mail')
     def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,

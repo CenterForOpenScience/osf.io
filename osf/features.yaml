@@ -192,7 +192,6 @@ flags:
   - flag_name: INSTITUTIONAL_DASHBOARD_2024
     name: institutional_dashboard_2024
     note: whether to surface older or updated (in 2024) institutional metrics
-    everyone: false
 
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
