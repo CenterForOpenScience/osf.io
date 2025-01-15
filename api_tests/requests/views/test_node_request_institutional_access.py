@@ -194,6 +194,14 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
+    @mock.patch('website.mails.send_mail')
+    def test_email_send_to_all_admins_once_on_institutional_request(self, mock_mail, app, project, url, create_payload, institutional_admin):
+        project.is_public = True
+        project.save()
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        assert mock_mail.call_count == 1
+
     @mock.patch('api.requests.serializers.send_mail')
     def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,
                                                  create_payload, institution):
