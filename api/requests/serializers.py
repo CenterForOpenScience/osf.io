@@ -135,12 +135,12 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
         """
         Retrieves the id value from `RelationshipField` fields
         """
-        instituion_id = data.pop('institution', None)
+        institution_id = data.pop('institution', None)
         message_recipient_id = data.pop('message_recipient', None)
         data = super().to_internal_value(data)
 
-        if instituion_id:
-            data['institution'] = instituion_id
+        if institution_id:
+            data['institution'] = institution_id
 
         if message_recipient_id:
             data['message_recipient'] = message_recipient_id
