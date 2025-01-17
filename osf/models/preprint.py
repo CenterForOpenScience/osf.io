@@ -405,8 +405,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 'copyright_holders': latest_version.license.copyright_holders,
                 'year': latest_version.license.year
             }
-        if latest_version.node:
-            data_to_update['node'] = latest_version.node
 
         # Create a preprint obj for the new version
         preprint = cls(
@@ -451,6 +449,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid_obj.object_id = preprint.pk
             guid_obj.content_type = ContentType.objects.get_for_model(preprint)
             guid_obj.save()
+
+        if latest_version.node:
+            preprint.set_supplemental_node(latest_version.node, auth, save=False, ignore_node_permissions=True)
 
         return preprint, data_to_update
 
@@ -984,11 +985,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['tags'])
             return True
 
-    def set_supplemental_node(self, node, auth, save=False):
+    def set_supplemental_node(self, node, auth, save=False, ignore_node_permissions=False):
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
-        if not node.has_permission(auth.user, WRITE):
+        if not node.has_permission(auth.user, WRITE) and not ignore_node_permissions:
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
 
         if node.is_deleted:
