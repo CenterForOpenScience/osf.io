@@ -716,10 +716,10 @@ class UserMessageSerializer(JSONAPISerializer):
         )
 
     def to_internal_value(self, data):
-        instituion_id = data.pop('institution', None)
+        institution_id = data.pop('institution', None)
         data = super().to_internal_value(data)
-        if instituion_id:
-            data['institution'] = instituion_id
+        if institution_id:
+            data['institution'] = institution_id
         return data
 
     class Meta:
