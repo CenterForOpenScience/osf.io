@@ -104,7 +104,8 @@ class CrossRefClient(AbstractIdentifierClient):
 
             if preprint.description:
                 posted_content.append(
-                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE))
+                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE)
+                )
 
             if preprint.license and preprint.license.node_license.url:
                 posted_content.append(
@@ -139,22 +140,21 @@ class CrossRefClient(AbstractIdentifierClient):
         posted_content.append(element.doi_data(*doi_data))
 
         preprint_versions = preprint.get_preprint_versions()
-        for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
-            if preprint_version.version > preprint.version:
-                continue
-            doi_relations = element.doi_relations(
-                element.doi(self.build_doi(preprint_version)),
-                element.program(
-                    element.related_item(
-                        element.description('Updated version'),
-                        element.intra_work_relation(
-                            self.build_doi(previous_version),
-                            **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
-                        )
-                    ), xmlns=CROSSREF_RELATIONS
+        if preprint_versions:
+            program = element.program(xmlns=CROSSREF_RELATIONS)
+            for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
+                if preprint_version.version > preprint.version:
+                    continue
+                related_item = element.related_item(
+                    element.doi(self.build_doi(preprint_version)),
+                    element.description('Updated version of preprint'),
+                    element.intra_work_relation(
+                        self.build_doi(previous_version),
+                        **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
+                    )
                 )
-            )
-            posted_content.append(doi_relations)
+                program.append(related_item)
+            posted_content.append(program)
         return posted_content
 
     def _process_crossref_name(self, contributor):
