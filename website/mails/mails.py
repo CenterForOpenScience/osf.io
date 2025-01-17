@@ -76,17 +76,29 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(
-        to_addr, mail, from_addr=None, mailer=None, celery=True,
-        username=None, password=None, callback=None, attachment_name=None,
-        attachment_content=None, **context):
-    """Send an email from the OSF.
-    Example: ::
-
+        to_addr,
+        mail,
+        from_addr=None,
+        bcc_addr=None,
+        reply_to=None,
+        mailer=None,
+        celery=True,
+        username=None,
+        password=None,
+        callback=None,
+        attachment_name=None,
+        attachment_content=None,
+        **context):
+    """
+    Send an email from the OSF.
+    Example:
         from website import mails
 
         mails.send_email('foo@bar.com', mails.TEST, name="Foo")
 
     :param str to_addr: The recipient's email address
+    :param str bcc_addr: The BCC senders's email address (or list of addresses)
+    :param str reply_to: The sender's email address will appear in the reply-to header
     :param Mail mail: The mail object
     :param str mimetype: Either 'plain' or 'html'
     :param function callback: celery task to execute after send_mail completes
@@ -119,6 +131,8 @@ def send_mail(
         categories=mail.categories,
         attachment_name=attachment_name,
         attachment_content=attachment_content,
+        bcc_addr=bcc_addr,
+        reply_to=reply_to,
     )
 
     logger.debug('Preparing to send...')
@@ -594,4 +608,14 @@ ADDONS_BOA_JOB_COMPLETE = Mail(
 ADDONS_BOA_JOB_FAILURE = Mail(
     'addons_boa_job_failure',
     subject='Your Boa job has failed'
+)
+
+NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST = Mail(
+    'node_request_institutional_access_request',
+    subject='Institutional Access Project Request'
+)
+
+USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST = Mail(
+    'user_message_institutional_access_request',
+    subject='Message from Institutional Admin'
 )

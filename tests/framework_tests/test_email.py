@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import sendgrid
 from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Category
+from sendgrid.helpers.mail import Mail, Email, To, Category
 
 from framework.email.tasks import send_email, _send_with_sendgrid
 from website import settings
@@ -55,17 +55,26 @@ class TestEmail(unittest.TestCase):
             categories=(category1, category2)
         )
         assert ret
-        mock_mail.assert_called_once_with(
-            from_email=from_addr,
-            to_emails=to_addr,
-            subject=subject,
-            html_content=message,
-        )
-        assert len(mock_mail.return_value.category) == 2
-        assert mock_mail.return_value.category[0].get() == category1
-        assert mock_mail.return_value.category[1].get() == category2
-        mock_client.send.assert_called_once_with(mock_mail.return_value)
 
+        # Check Mail object arguments
+        mock_mail.assert_called_once()
+        kwargs = mock_mail.call_args.kwargs
+        assert kwargs['from_email'].email == from_addr
+        assert kwargs['subject'] == subject
+        assert kwargs['html_content'] == message
+
+        mock_mail.return_value.add_personalization.assert_called_once()
+
+        # Capture the categories added via add_category
+        mock_mail.return_value.add_category.assert_called_once()
+        added_categories = mock_mail.return_value.add_category.call_args.args[0]
+        assert len(added_categories) == 2
+        assert isinstance(added_categories[0], Category)
+        assert isinstance(added_categories[1], Category)
+        assert added_categories[0].get() == category1
+        assert added_categories[1].get() == category2
+
+        mock_client.send.assert_called_once_with(mock_mail.return_value)
 
     @mock.patch(f'{_send_with_sendgrid.__module__}.sentry.log_message', autospec=True)
     @mock.patch(f'{_send_with_sendgrid.__module__}.Mail', autospec=True)
@@ -84,12 +93,14 @@ class TestEmail(unittest.TestCase):
         )
         assert not ret
         sentry_mock.assert_called_once()
-        mock_mail.assert_called_once_with(
-            from_email=from_addr,
-            to_emails=to_addr,
-            subject=subject,
-            html_content=message,
-        )
+
+        # Check Mail object arguments
+        mock_mail.assert_called_once()
+        kwargs = mock_mail.call_args.kwargs
+        assert kwargs['from_email'].email == from_addr
+        assert kwargs['subject'] == subject
+        assert kwargs['html_content'] == message
+
         mock_client.send.assert_called_once_with(mock_mail.return_value)
 
 

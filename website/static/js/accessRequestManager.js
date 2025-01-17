@@ -22,8 +22,9 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
 
     self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);
 
-    self.visible = ko.observable(true);
-
+    self.is_curator = ko.observable(accessRequest.user.is_curator || false);
+    self.is_institutional_request = ko.observable(accessRequest.is_institutional_request || false);
+    self.visible = ko.observable(!accessRequest.is_institutional_request);
     self.pageOwner = pageOwner;
 
     self.expanded = ko.observable(false);

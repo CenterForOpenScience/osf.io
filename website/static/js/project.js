@@ -217,8 +217,14 @@ $(document).ready(function() {
            'in the Contributors list and in project citations. Non-bibliographic contributors ' +
             'can read and modify the project as normal.';
 
-    $('.visibility-info').attr(
+    $('.visibility-info-contrib').attr(
         'data-content', bibliographicContribInfoHtml
+    ).popover({
+        trigger: 'hover'
+    });
+
+    $('.visibility-info-curator').attr(
+        'data-content', 'An administrator designated by your affiliated institution to curate your project.'
     ).popover({
         trigger: 'hover'
     });

@@ -51,7 +51,8 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
             is_contributor_obj = isinstance(contrib, Contributor)
             flags = {
                 'visible': contrib.visible if is_contributor_obj else node.contributor_set.filter(user=user, visible=True).exists(),
-                'permission': contrib.permission if is_contributor_obj else None
+                'permission': contrib.permission if is_contributor_obj else None,
+                'is_curator': contrib.is_curator,
             }
         ret.update(flags)
     if user.is_registered:
@@ -195,10 +196,15 @@ def serialize_access_requests(node):
     return [
         {
             'user': serialize_user(access_request.creator),
+            'is_institutional_request': access_request.is_institutional_request,
             'comment': access_request.comment,
+            'requested_permissions': access_request.requested_permissions,
             'id': access_request._id
         } for access_request in node.requests.filter(
-            request_type=workflows.RequestTypes.ACCESS.value,
+            request_type__in=[
+                workflows.NodeRequestTypes.ACCESS.value,
+                workflows.NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+            ],
             machine_state=workflows.DefaultStates.PENDING.value
         ).select_related('creator')
     ]

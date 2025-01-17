@@ -4,10 +4,24 @@ from rest_framework import serializers as ser
 
 from api.base.exceptions import Conflict
 from api.base.utils import absolute_reverse, get_user_auth
-from api.base.serializers import JSONAPISerializer, LinksField, VersionedDateTimeField, RelationshipField
-from osf.models import NodeRequest, PreprintRequest
-from osf.utils.workflows import DefaultStates, RequestTypes
+from api.base.serializers import (
+    JSONAPISerializer,
+    LinksField,
+    VersionedDateTimeField,
+    RelationshipField,
+)
+from osf.models import (
+    NodeRequest,
+    PreprintRequest,
+    Institution,
+    OSFUser,
+)
+from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
+from website import settings
+from website.mails import send_mail, NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
+
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 
 class RequestSerializer(JSONAPISerializer):
@@ -56,6 +70,8 @@ class RequestSerializer(JSONAPISerializer):
         raise NotImplementedError()
 
 class NodeRequestSerializer(RequestSerializer):
+    request_type = ser.ChoiceField(read_only=True, required=False, choices=NodeRequestTypes.choices())
+
     class Meta:
         type_ = 'node-requests'
 
@@ -64,6 +80,13 @@ class NodeRequestSerializer(RequestSerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<target._id>'},
         source='target__guids___id',
+    )
+
+    requested_permissions = ser.ChoiceField(
+        help_text='These are the default permission suggested when the Node admin sees users '
+                  'listed in an `Request Access` list.',
+        choices=osf_permissions.API_CONTRIBUTOR_PERMISSIONS,
+        required=False,
     )
 
     def get_target_url(self, obj):
@@ -89,40 +112,116 @@ class RegistrationRequestSerializer(RequestSerializer):
             },
         )
 
+
 class NodeRequestCreateSerializer(NodeRequestSerializer):
-    request_type = ser.ChoiceField(required=True, choices=RequestTypes.choices())
+    request_type = ser.ChoiceField(read_only=False, required=False, choices=NodeRequestTypes.choices())
+    message_recipient = RelationshipField(
+        help_text='An optional user who will receive an email explaining the nature of the request.',
+        required=False,
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+    )
+    bcc_sender = ser.BooleanField(
+        required=False,
+        default=False,
+        help_text='If true, BCCs the sender, giving them a copy of the email message they sent.',
+    )
+    reply_to = ser.BooleanField(
+        default=False,
+        help_text='Whether to set the sender\'s username as the `Reply-To` header in the email.',
+    )
 
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        if not auth.user:
-            raise exceptions.PermissionDenied
+    def to_internal_value(self, data):
+        """
+        Retrieves the id value from `RelationshipField` fields
+        """
+        institution_id = data.pop('institution', None)
+        message_recipient_id = data.pop('message_recipient', None)
+        data = super().to_internal_value(data)
 
+        if institution_id:
+            data['institution'] = institution_id
+
+        if message_recipient_id:
+            data['message_recipient'] = message_recipient_id
+        return data
+
+    def get_node_and_validate_non_contributor(self, auth):
+        """
+        Ensures request user isn't already a contributor.
+        """
         try:
-            node = self.context['view'].get_target()
+            return self.context['view'].get_target()
         except exceptions.PermissionDenied:
             node = self.context['view'].get_target(check_object_permissions=False)
             if auth.user in node.contributors:
                 raise exceptions.PermissionDenied('You cannot request access to a node you contribute to.')
             raise
 
-        comment = validated_data.pop('comment', '')
-        request_type = validated_data.pop('request_type', None)
+    def create(self, validated_data) -> NodeRequest:
+        auth = get_user_auth(self.context['request'])
+        if not auth.user:
+            raise exceptions.PermissionDenied
 
-        if request_type != RequestTypes.ACCESS.value:
-            raise exceptions.ValidationError('You must specify a valid request_type.')
+        node = self.get_node_and_validate_non_contributor(auth)
 
+        request_type = validated_data.get('request_type')
+        match request_type:
+            case NodeRequestTypes.ACCESS.value:
+                return self._create_node_request(node, validated_data)
+            case NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+                return self.make_node_institutional_access_request(node, validated_data)
+            case _:
+                raise ValidationError('You must specify a valid request_type.')
+
+    def make_node_institutional_access_request(self, node, validated_data) -> NodeRequest:
+        sender = self.context['request'].user
+        node_request = self._create_node_request(node, validated_data)
+        node_request.is_institutional_request = True
+        node_request.save()
+        institution = Institution.objects.get(_id=validated_data['institution'])
+        recipient = OSFUser.load(validated_data.get('message_recipient'))
+
+        if recipient:
+            if not recipient.is_affiliated_with_institution(institution):
+                raise PermissionDenied(f"User {recipient._id} is not affiliated with the institution.")
+
+            if validated_data['comment']:
+                send_mail(
+                    to_addr=recipient.username,
+                    mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+                    user=recipient,
+                    sender=sender,
+                    bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
+                    reply_to=sender.username if validated_data['reply_to'] else None,
+                    recipient=recipient,
+                    comment=validated_data['comment'],
+                    institution=institution,
+                    osf_url=settings.DOMAIN,
+                    node=node_request.target,
+                )
+
+        return node_request
+
+    def _create_node_request(self, node, validated_data) -> NodeRequest:
+        creator = self.context['request'].user
+        request_type = validated_data['request_type']
+        comment = validated_data.get('comment', '')
+        requested_permissions = validated_data.get('requested_permissions')
         try:
             node_request = NodeRequest.objects.create(
                 target=node,
-                creator=auth.user,
+                creator=creator,
                 comment=comment,
                 machine_state=DefaultStates.INITIAL.value,
                 request_type=request_type,
+                requested_permissions=requested_permissions,
             )
             node_request.save()
         except IntegrityError:
-            raise Conflict(f'Users may not have more than one {request_type} request per node.')
-        node_request.run_submit(auth.user)
+            raise Conflict(f"Users may not have more than one {request_type} request per node.")
+
+        node_request.run_submit(creator)
         return node_request
 
 class PreprintRequestSerializer(RequestSerializer):

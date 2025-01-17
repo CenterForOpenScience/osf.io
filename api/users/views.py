@@ -7,6 +7,7 @@ from rest_framework.throttling import UserRateThrottle
 
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
+from api.users.permissions import UserMessagePermissions
 from api.base.waffle_decorators import require_flag
 from api.base.exceptions import Conflict, UserGone, Gone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
@@ -55,6 +56,7 @@ from api.users.serializers import (
     UserAccountExportSerializer,
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
+    UserMessageSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -957,3 +959,23 @@ class UserEmailsDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, U
         else:
             user.remove_unconfirmed_email(email)
             user.save()
+
+
+class UserMessageView(JSONAPIBaseView, generics.CreateAPIView):
+    """
+    List and create UserMessages for a user.
+    """
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+        UserMessagePermissions,
+    )
+
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.USERS_MESSAGE_WRITE_EMAIL]
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+    throttle_classes = [BurstRateThrottle, SendEmailThrottle]
+    serializer_class = UserMessageSerializer
+
+    view_category = 'users'
+    view_name = 'user-messages'

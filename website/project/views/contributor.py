@@ -3,6 +3,7 @@ from rest_framework import status as http_status
 from flask import request
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.db import IntegrityError
 
 from framework import forms, status
 from framework.auth import cas
@@ -287,6 +288,13 @@ def project_manage_contributors(auth, node, **kwargs):
         node.manage_contributors(contributors, auth=auth, save=True)
     except (ValueError, NodeStateError) as error:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': error.args[0]})
+    except IntegrityError as error:
+        status.push_status_message(
+            'You can not make an institutional curator a bibliographic contributor.',
+            kind='error',
+            trust=False
+        )
+        raise HTTPError(http_status.HTTP_409_CONFLICT, data={'message_long': error.args[0]})
 
     # If user has removed herself from project, alert; redirect to
     # node summary if node is public, else to user's dashboard page
