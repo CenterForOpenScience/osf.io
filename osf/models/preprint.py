@@ -110,6 +110,31 @@ class PreprintManager(models.Manager):
         # TODO: Remove need for .distinct using correct subqueries
         return ret.distinct('id', 'created') if include_non_public else ret
 
+    def preprint_versions_permissions_query(self, user=None, allow_contribs=True, public_only=False):
+        include_non_public = user and not user.is_anonymous and not public_only
+        if include_non_public:
+            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
+            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+            reviews_user_query = Q(is_public=True, provider__in=moderator_for)
+            if allow_contribs:
+                contrib_user_query = ~Q(
+                    machine_state__in=[
+                        DefaultStates.INITIAL.value,
+                        DefaultStates.PENDING.value,
+                        DefaultStates.REJECTED.value
+                    ]
+                ) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+                query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = (self.no_user_query | admin_user_query | reviews_user_query)
+        else:
+            moderator_for = PreprintProvider.objects.none()
+            query = self.no_user_query
+
+        if not moderator_for.exists():
+            query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+        return query
+
 class PublishedPreprintManager(PreprintManager):
     def get_queryset(self):
         return super().get_queryset().filter(is_published=True)
