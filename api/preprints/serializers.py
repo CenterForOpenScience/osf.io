@@ -2,7 +2,8 @@ from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
-from rest_framework.exceptions import ValidationError as DRFValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError as DRFValidationError
+
 from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
@@ -38,7 +39,7 @@ from api.nodes.serializers import (
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
@@ -142,6 +143,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     )
     reviews_state = ser.CharField(source='machine_state', read_only=True, max_length=15)
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
+    version = ser.IntegerField(read_only=True)
+    is_latest_version = ser.BooleanField(read_only=True)
 
     citation = NoneIfWithdrawal(
         RelationshipField(
@@ -221,6 +224,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
+            'preprint_versions': 'get_preprint_versions',
             'preprint_doi': 'get_preprint_doi_url',
         },
     )
@@ -253,11 +257,21 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         # Overrides TaxonomizableSerializerMixin
         return 'preprints:preprint-relationships-subjects'
 
+    def get_preprint_versions(self, obj):
+        return absolute_reverse(
+            'preprints:preprint-versions',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
+            },
+        )
+
     def get_preprint_url(self, obj):
         return absolute_reverse(
-            'preprints:preprint-detail', kwargs={
-                'preprint_id': obj._id, 'version':
-                self.context['request'].parser_context['kwargs']['version'],
+            'preprints:preprint-detail',
+            kwargs={
+                'preprint_id': obj._id,
+                'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
 
@@ -282,7 +296,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             doi = client.build_doi(preprint=obj) if client else None
         return f'https://doi.org/{doi}' if doi else None
 
-    def update(self, preprint, validated_data):
+    def update(self, preprint, validated_data, skip_share=False):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
@@ -461,7 +475,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
-            self.update_subjects(preprint, subjects, auth)
+            self.update_subjects(preprint, subjects, auth, skip_share=skip_share)
             save_preprint = True
 
         if 'title' in validated_data:
@@ -549,6 +563,7 @@ class PreprintDraftSerializer(PreprintSerializer):
 
 class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
+    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
@@ -559,10 +574,33 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        preprint = Preprint(provider=provider, title=title, creator=creator, description=description)
-        preprint.save()
+        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description)
 
         return self.update(preprint, validated_data)
+
+
+class PreprintCreateVersionSerializer(PreprintSerializer):
+    # Overrides PreprintSerializer to make title nullable and customize version creation
+    # TODO: add better Docstrings
+    id = IDField(source='_id', required=False, allow_null=True)
+    title = ser.CharField(required=False)
+    create_from_guid = ser.CharField(required=True, write_only=True)
+
+    def create(self, validated_data):
+        create_from_guid = validated_data.pop('create_from_guid', None)
+        auth = get_user_auth(self.context['request'])
+        try:
+            preprint, data_to_update = Preprint.create_version(create_from_guid, auth)
+        except PermissionsError:
+            raise PermissionDenied(detail='User must have ADMIN permission to create a new preprint version.')
+        except UnpublishedPendingPreprintVersionExists:
+            raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
+        if not preprint:
+            raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
+        if data_to_update:
+            # Share should not be updated during version creation
+            return self.update(preprint, data_to_update, skip_share=True)
+        return preprint
 
 
 class PreprintCitationSerializer(NodeCitationSerializer):

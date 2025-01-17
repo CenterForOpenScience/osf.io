@@ -124,7 +124,7 @@ class TestOsfGathering(TestCase):
         assert self.registrationfocus.iri == OSFIO[self.registration._id]
         assert self.registrationfocus.rdftype == OSF.Registration
         assert self.registrationfocus.dbmodel is self.registration
-        assert self.preprintfocus.iri == OSFIO[self.preprint._id]
+        assert self.preprintfocus.iri == OSFIO[self.preprint.get_guid()._id]
         assert self.preprintfocus.rdftype == OSF.Preprint
         assert self.preprintfocus.dbmodel is self.preprint
         assert self.filefocus.iri == OSFIO[self.file.get_guid()._id]

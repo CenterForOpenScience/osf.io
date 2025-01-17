@@ -250,6 +250,7 @@ class TestSerializers(OsfTestCase):
             subjects=[
                 [parent_subject._id, child_subject._id],
             ],
+            use_guid=osfguid_sequence.get_or_create(id=-1)[0]
         )
         self.registration = factories.RegistrationFactory(
             is_public=True,

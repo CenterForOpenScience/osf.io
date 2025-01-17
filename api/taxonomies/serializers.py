@@ -98,7 +98,7 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         ]
 
     # Overrides UpdateSubjectsMixin
-    def update_subjects_method(self, resource, subjects, auth):
+    def update_subjects_method(self, resource, subjects, auth, skip_share=False):
         """Depending on the request's version, runs a different method
         to update the resource's subjects. Will expect request to be formatted
         differently, depending on the version.
@@ -108,8 +108,8 @@ class TaxonomizableSerializerMixin(ser.Serializer, UpdateSubjectsMixin):
         :param object Auth object
         """
         if self.expect_subjects_as_relationships(self.context['request']):
-            return resource.set_subjects_from_relationships(subjects, auth)
-        return resource.set_subjects(subjects, auth)
+            return resource.set_subjects_from_relationships(subjects, auth, skip_share=skip_share)
+        return resource.set_subjects(subjects, auth, skip_share=skip_share)
 
     def expect_subjects_as_relationships(self, request):
         """Determines whether subjects should be serialized as a relationship.

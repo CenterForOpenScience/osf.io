@@ -13,7 +13,7 @@
     dcterms:description "this is a preprint description!" ;
     dcterms:hasVersion <https://doi.org/11.111/something-or-other> ;
     dcterms:identifier "http://localhost:5000/w4ibb",
-        "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
+        "https://doi.org/11.pp/FK2osf.io/w4ibb_v1" ;
     dcterms:modified "2123-05-04" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
     dcterms:subject <http://localhost:8000/v2/subjects/subjwibb>,
@@ -22,7 +22,7 @@
         <http://localhost:8000/v2/subjects/subjwobbb> ;
     dcterms:title "this is a preprint title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
-    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> ;
+    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb_v1> ;
     dcat:accessService <http://localhost:5000> ;
     osf:hostingInstitution <https://cos.io/> ;
     osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
@@ -124,4 +124,3 @@
 <http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wibbble" .
-

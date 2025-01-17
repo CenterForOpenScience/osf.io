@@ -16,6 +16,8 @@ from .banner import ScheduledBanner
 from .base import (
     BlackListGuid,
     Guid,
+    GuidVersionsThrough,
+    VersionedGuidMixin,
 )
 from .brand import Brand
 from .cedar_metadata import CedarMetadataRecord, CedarMetadataTemplate

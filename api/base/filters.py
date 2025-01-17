@@ -19,8 +19,9 @@ from django.db.models import Q
 from rest_framework import serializers as ser
 from rest_framework.filters import OrderingFilter
 from osf.models import Subject, Preprint
-from osf.models.base import GuidMixin
+from osf.models.base import GuidMixin, Guid
 from functools import cmp_to_key
+from framework import sentry
 
 def lowercase(lower):
     if hasattr(lower, '__call__'):
@@ -568,24 +569,102 @@ class ListFilterMixin(FilterMixin):
 
 
 class PreprintFilterMixin(ListFilterMixin):
-    """View mixin that uses ListFilterMixin, adding postprocessing for preprint querying
+    """View mixin for many preprint listing views. It inherits from ListFilterMixin and customize postprocessing for
+    preprint querying by provider, subjects and versioned `_id`.
 
-       Subclasses must define `get_default_queryset()`.
+    Note: Subclasses must define `get_default_queryset()`.
     """
+
+    @staticmethod
+    def postprocess_versioned_guid_id_query_param(operation):
+        """Handle query parameters when filtering on `_id` for preprint which are now versioned.
+
+        Note: preprint achieves versioning by using versioned guid, and thus no long has guid or guid._id for every
+        version. Must convert `guid___id__in=` look-up to `pk__in` look-up.
+        """
+        preprint_pk_list = []
+        for val in operation['value']:
+            referent, version = Guid.load_referent(val)
+            if referent is None:
+                continue
+            preprint_pk_list.append(referent.id)
+        # Override the operation to filter `id__in=preprint_pk_list`
+        operation['source_field_name'] = 'id__in'
+        operation['value'] = preprint_pk_list
+        operation['op'] = 'eq'
+
     def postprocess_query_param(self, key, field_name, operation):
         if field_name == 'provider':
             operation['source_field_name'] = 'provider___id'
 
         if field_name == 'id':
-            operation['source_field_name'] = 'guids___id'
+            PreprintFilterMixin.postprocess_versioned_guid_id_query_param(operation)
 
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 
-    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False):
-        return Preprint.objects.can_view(
+    def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False, latest_only=False):
+        preprints = Preprint.objects.can_view(
             base_queryset=base_queryset,
             user=auth_user,
             allow_contribs=allow_contribs,
             public_only=public_only,
         )
+        if latest_only:
+            preprints = preprints.filter(guids__isnull=False)
+        return preprints
+
+
+class TargetFilterMixin(ListFilterMixin):
+    """View mixin for multi-content-type list views (e.g. `ReviewActionListCreate`). It inherits from `ListFilterMixin`
+     and customizes the postprocessing of the `target` field when target is a preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+
+    @staticmethod
+    def postprocess_preprint_as_target_query_param(operation, target_pk):
+        """When target is a preprint, which must be versioned, the traditional non-versioned `guid___id==_id`
+        look-up no longer works. Must convert it to PK look-up `target__id==pk`.
+        """
+        # Override the operation to filter `target__id==pk`
+        operation['source_field_name'] = 'target__id'
+        operation['value'] = target_pk
+        operation['op'] = 'eq'
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target` when `target` is a Preprint.
+        """
+        if field_name == 'target':
+            referent, version = Guid.load_referent(operation['value'])
+            if referent:
+                if version:
+                    TargetFilterMixin.postprocess_preprint_as_target_query_param(operation, referent.id)
+                else:
+                    super().postprocess_query_param(key, field_name, operation)
+            else:
+                sentry.log_message(f'Target object invalid or not found: [target={operation['value']}]')
+                return
+        else:
+            super().postprocess_query_param(key, field_name, operation)
+
+
+class PreprintAsTargetFilterMixin(TargetFilterMixin):
+    """View mixin for preprint related list views (e.g. `PreprintProviderWithdrawRequestList` and `PreprintActionList`).
+    It inherits from `TargetFilterMixin` and customizes postprocessing the `target` field for preprint.
+
+    Note: Subclasses must define `get_default_queryset()`.
+    """
+
+    def postprocess_query_param(self, key, field_name, operation):
+        """Handles a special case when filtering on `target`.
+        """
+        if field_name == 'target':
+            referent, version = Guid.load_referent(operation['value'])
+            # A valid preprint must have referent and version
+            if not referent or not version:
+                sentry.log_message(f'Preprint invalid or note found: [target={operation['value']}]')
+                return
+            TargetFilterMixin.postprocess_preprint_as_target_query_param(operation, referent.id)
+        else:
+            super().postprocess_query_param(key, field_name, operation)

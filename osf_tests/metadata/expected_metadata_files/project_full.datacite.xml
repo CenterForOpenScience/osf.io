@@ -55,7 +55,7 @@
   </fundingReferences>
   <relatedIdentifiers>
     <relatedIdentifier relatedIdentifierType="URL" relationType="HasVersion">http://localhost:5000/w5ibb</relatedIdentifier>
-    <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo">11.pp/FK2osf.io/w4ibb</relatedIdentifier>
+    <relatedIdentifier relatedIdentifierType="DOI" relationType="IsSupplementTo">11.pp/FK2osf.io/w4ibb_v1</relatedIdentifier>
   </relatedIdentifiers>
   <relatedItems>
     <relatedItem relationType="HasVersion" relatedItemType="StudyRegistration">
@@ -67,7 +67,7 @@
       <publisher>RegiProvi the Registration Provider</publisher>
     </relatedItem>
     <relatedItem relationType="IsSupplementTo" relatedItemType="Preprint">
-      <relatedItemIdentifier relatedItemIdentifierType="DOI">11.pp/FK2osf.io/w4ibb</relatedItemIdentifier>
+      <relatedItemIdentifier relatedItemIdentifierType="DOI">11.pp/FK2osf.io/w4ibb_v1</relatedItemIdentifier>
       <titles>
         <title>this is a preprint title!</title>
       </titles>

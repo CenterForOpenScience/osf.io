@@ -297,8 +297,8 @@ class AffiliatedInstitutionMixin(models.Model):
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, log=True):
-        if not user.is_affiliated_with_institution(inst):
+    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False):
+        if not user.is_affiliated_with_institution(inst) and not ignore_user_affiliation:
             raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
@@ -1104,7 +1104,7 @@ class TaxonomizableMixin(models.Model):
         if (expect_list and not is_list) or (not expect_list and is_list):
             raise ValidationValueError(f'Subjects are improperly formatted. {error_msg}')
 
-    def set_subjects(self, new_subjects, auth, add_log=True):
+    def set_subjects(self, new_subjects, auth, add_log=True, skip_share=False):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
 
@@ -1135,9 +1135,13 @@ class TaxonomizableMixin(models.Model):
 
         self.save()
         if hasattr(self, 'update_search'):
-            self.update_search()
+            from osf.models.base import VersionedGuidMixin
+            if isinstance(self, VersionedGuidMixin):
+                self.update_search(skip_share=skip_share)
+            else:
+                self.update_search()
 
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True, skip_share=False):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -1162,7 +1166,11 @@ class TaxonomizableMixin(models.Model):
 
         self.save()
         if hasattr(self, 'update_search'):
-            self.update_search()
+            from osf.models.base import VersionedGuidMixin
+            if isinstance(self, VersionedGuidMixin):
+                self.update_search(skip_share=skip_share)
+            else:
+                self.update_search()
 
     def map_subjects_between_providers(self, old_provider, new_provider, auth=None):
         """
@@ -1383,11 +1391,14 @@ class ContributorMixin(models.Model):
                 )
             if save:
                 self.save()
-
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email, permissions=permissions)
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth,
+                    email_template=send_email,
+                    permissions=permissions
+                )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):

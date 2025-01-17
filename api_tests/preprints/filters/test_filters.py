@@ -141,8 +141,7 @@ class PreprintsListFilteringMixin:
         actual = [preprint['id'] for preprint in res.json['data']]
         assert expected == actual
 
-    def test_id_filter_equals_returns_one(
-            self, app, user, preprint_two, id_url):
+    def test_id_filter_equals_returns_one(self, app, user, preprint_two, id_url):
         expected = [preprint_two._id]
         res = app.get(f'{id_url}{preprint_two._id}', auth=user.auth)
         actual = [preprint['id'] for preprint in res.json['data']]
