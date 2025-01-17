@@ -7,15 +7,14 @@ from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import Preprint
 from osf.utils import permissions
-from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory
+from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintProviderFactory
 from tests.base import ApiTestCase
 
 
 # TODO: we have good coverage for `POST`; please add new tests for `GET`
-class TestPreprintVersion(ApiTestCase):
+class TestPreprintVersionPost(ApiTestCase):
 
     def setUp(self):
-
         super().setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
@@ -154,3 +153,85 @@ class TestPreprintVersion(ApiTestCase):
         self.post_mod_preprint.add_contributor(user_write, permissions.WRITE)
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=user_write.auth, expect_errors=True)
         assert res.status_code == 403
+
+
+class TestPreprintVersionList(ApiTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.moderator = AuthUserFactory()
+        self.provider = PreprintProviderFactory(_id='osf', name='osfprovider')
+        self.post_mod_preprint = PreprintFactory(
+            reviews_workflow='post-moderation',
+            is_published=True,
+            creator=self.user,
+            provider=self.provider
+        )
+        self.pre_mod_preprint = PreprintFactory(
+            reviews_workflow='pre-moderation',
+            is_published=False,
+            creator=self.user,
+            provider=self.provider
+        )
+        self.pre_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
+        self.post_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
+        self.latest_preprint = self.post_mod_preprint
+        self.origin_guid = str(self.post_mod_preprint.guids.first()._id)
+        for _ in range(5):
+            new_version = PreprintFactory.create_version(
+                create_from=self.latest_preprint,
+                creator=self.user,
+                set_doi=False
+            )
+            self.latest_preprint = new_version
+
+        self.version_list_url = f"/{API_BASE}preprints/{self.origin_guid}_v1/versions/"
+
+    def test_list_versions(self):
+        res = self.app.get(self.version_list_url, auth=self.user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 6
+        assert len(set([item['id'] for item in data])) == 6
+
+    def test_filter_by_id(self):
+        version = self.latest_preprint.versioned_guids.first()
+        res = self.app.get(f"{self.version_list_url}?filter[id]={version.referent._id}", auth=self.user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 6
+        assert data[0]['id'] == version.referent._id
+
+    def test_public_visibility(self):
+        self.pre_mod_preprint.is_public = True
+        self.pre_mod_preprint.save()
+        res = self.app.get(self.version_list_url)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+    def test_invalid_preprint_id(self):
+        res = self.app.get(f"/{API_BASE}preprints/lkziv_v1010101/versions/", auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_pagination(self):
+        res = self.app.get(f"{self.version_list_url}?page[size]=2", auth=self.user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 2
+        assert 'links' in res.json
+        assert 'next' in res.json['links']
+
+    def test_new_unpublished_version(self):
+        PreprintFactory.create_version(
+            self.latest_preprint,
+            creator=self.user,
+            set_doi=False,
+            final_machine_state='pending',
+            is_published=False
+        )
+        res = self.app.get(self.version_list_url, auth=self.user.auth)
+        assert res.status_code == 200
+        data = res.json['data']
+        assert len(data) == 7
+        assert len(set([item['id'] for item in data])) == 7
