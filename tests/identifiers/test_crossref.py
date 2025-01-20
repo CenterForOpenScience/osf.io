@@ -129,8 +129,6 @@ class TestCrossRefClient:
         preprint_date_parts = preprint.date_published.strftime('%Y-%m-%d').split('-')
         assert set(metadata_date_parts) == set(preprint_date_parts)
 
-    # TODO: temporarily skip this since we need the CrossRef fix on staging2 asap, must fix this before project release
-    @pytest.mark.skip()
     def test_crossref_build_metadata_versioned(self, crossref_client, preprint_version, preprint):
         test_email = 'test-email@osf.io'
         with mock.patch('website.settings.CROSSREF_DEPOSITOR_EMAIL', test_email):
@@ -155,21 +153,33 @@ class TestCrossRefClient:
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get(
             'start_date') == preprint_version.date_published.strftime('%Y-%m-%d')
 
-        doi_relations = root.find('.//{%s}doi_relations' % crossref.CROSSREF_NAMESPACE)
-        assert doi_relations is not None
+        programs = root.findall('.//{%s}program' % crossref.CROSSREF_RELATIONS)
+        program_preprint = programs[0]
+        program_versioned = programs[1]
+        assert program_preprint is not None
+        assert program_versioned is not None
 
-        doi = doi_relations.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE)
+        # program preprint version
+        related_item_preprint = program_preprint.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
+        assert related_item_preprint is not None
+
+        intra_work_relation = related_item_preprint.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
+        assert intra_work_relation is not None
+        assert intra_work_relation.get('relationship-type') == 'isPreprintOf'
+        assert intra_work_relation.get('identifier-type') == 'doi'
+
+        # program preprint previous versions
+        related_item_preprint_version = program_versioned.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
+
+        doi = related_item_preprint_version.find('.//{%s}doi' % crossref.CROSSREF_RELATIONS)
         assert doi is not None
         assert doi.text == settings.DOI_FORMAT.format(prefix=preprint_version.provider.doi_prefix, guid=preprint_version._id)
 
-        related_item = doi_relations.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
-        assert related_item is not None
-
-        description = related_item.find('.//{%s}description' % crossref.CROSSREF_RELATIONS)
+        description = related_item_preprint_version.find('.//{%s}description' % crossref.CROSSREF_RELATIONS)
         assert description is not None
-        assert description.text == 'Updated version'
+        assert description.text == 'Updated version of preprint'
 
-        intra_work_relation = related_item.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
+        intra_work_relation = related_item_preprint_version.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
         assert intra_work_relation is not None
         assert intra_work_relation.get('relationship-type') == 'isVersionOf'
         assert intra_work_relation.get('identifier-type') == 'doi'
