@@ -396,16 +396,16 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise PermissionsError
         unfinished_version, unpublished_version = latest_version.check_unfinished_or_unpublished_version()
         if unpublished_version:
-            sentry.log_message('Failed to create a new version due to unpublished pending version already exists: '
-                               f'[version={unpublished_version.version}, '
-                               f'_id={unpublished_version._id}, '
-                               f'state={unpublished_version.machine_state}].')
+            logger.error('Failed to create a new version due to unpublished pending version already exists: '
+                         f'[version={unpublished_version.version}, '
+                         f'_id={unpublished_version._id}, '
+                         f'state={unpublished_version.machine_state}].')
             raise UnpublishedPendingPreprintVersionExists
         if unfinished_version:
-            sentry.log_message(f'Use existing initiated but unfinished version instead of creating a new one: '
-                               f'[version={unfinished_version.version}, '
-                               f'_id={unfinished_version._id}, '
-                               f'state={unfinished_version.machine_state}].')
+            logger.warning(f'Use existing initiated but unfinished version instead of creating a new one: '
+                           f'[version={unfinished_version.version}, '
+                           f'_id={unfinished_version._id}, '
+                           f'state={unfinished_version.machine_state}].')
             return unfinished_version, None
 
         # Note: version number bumps from the last version number instead of the latest version number

@@ -206,7 +206,7 @@ def forgot_password_form():
 
 
 def resolve_guid_download(guid, provider=None):
-    resource, _ = Guid.load_referent(guid, ignore_not_found=True)
+    resource, _ = Guid.load_referent(guid)
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
@@ -291,7 +291,7 @@ def resolve_guid(guid, suffix=None):
         return resolve_guid_download(guid)
 
     # Retrieve resource and version from a guid str
-    resource, version = Guid.load_referent(guid, ignore_not_found=True)
+    resource, version = Guid.load_referent(guid)
     if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
