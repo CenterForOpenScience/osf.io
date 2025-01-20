@@ -21,9 +21,15 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
-
-  - Ubuntu
+  - Ubuntu (legacy)
     - Add loopback alias
+      ```bash
+        sudo cp ip-alias.service /etc/systemd/system \
+        && sudo systemctl daemon-reload \
+        && sudo systemctl start ip-alias \
+        && sudo systemctl enable ip-alias
+      ```
+    - Add loopback alias (legacy)
       ```bash
       sudo ifconfig lo:0 192.168.168.167 netmask 255.255.255.255 up
       ```
