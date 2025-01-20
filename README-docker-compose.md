@@ -21,7 +21,7 @@
       && sudo chown root:wheel $libdir/$file \
       && sudo launchctl load $libdir/$file
     ```
-  - Ubuntu (legacy)
+  - Ubuntu
     - Add loopback alias
       ```bash
         sudo cp ip-alias.service /etc/systemd/system \
