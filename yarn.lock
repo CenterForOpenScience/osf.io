@@ -34,6 +34,11 @@
   resolved "https://registry.yarnpkg.com/@centerforopenscience/osf-style/-/osf-style-1.9.0.tgz#0ab5cb17e2c531aafcc19e226f36ff86b734116e"
   integrity sha512-R9IBVbz4eb/NkoM5TZGH46T9m5jspwK0H605O0oSMggHZPcTrf5gAHw0axeC26nKmEpz2FSXjvm84ziPNvhsvA==
 
+"@datacite/datacite-tracker@^0.0.5":
+  version "0.0.5"
+  resolved "https://registry.yarnpkg.com/@datacite/datacite-tracker/-/datacite-tracker-0.0.5.tgz#7be86bbd02b39427eb87e43c5dc843f2fb9c637e"
+  integrity sha512-6F2YAHCLWnRiHEQdHz/0btRTlfgXIFbUEXAK0SyPV2+J2dVZK3fBCjXqsA1p/WAErRfIOvnH+eDqAT+9kNRb0w==
+
 "@samverschueren/stream-to-observable@^0.3.0":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@samverschueren/stream-to-observable/-/stream-to-observable-0.3.1.tgz#a21117b19ee9be70c379ec1877537ef2e1c63301"
