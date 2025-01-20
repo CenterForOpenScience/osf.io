@@ -26,19 +26,26 @@ def pop_slice(lis, n):
     del lis[:n]
     return tem
 
-def create_dois_locally():
+def mint_doi_for_preprints_locally(confirm_local=False):
+    """This method creates identifiers for preprints which have pending DOI in local environment only.
     """
-    This script creates identifiers for preprints which have pending DOI in local environment.
-    """
-    preprints_with_pending_doi = Preprint.objects.filter(
-        preprint_doi_created__isnull=True,
-        is_published=True
-    )
+    if not settings.DEV_MODE or not settings.DEBUG_MODE:
+        logger.error('This command should only run in the local development environment.')
+        return
+    if not confirm_local:
+        logger.error('You must explicitly set `confirm_local` to run this command.')
+        return
 
+    preprints_with_pending_doi = Preprint.objects.filter(preprint_doi_created__isnull=True, is_published=True)
+    total_created = 0
     for preprint in preprints_with_pending_doi:
         client = preprint.get_doi_client()
         doi = client.build_doi(preprint=preprint) if client else None
-        preprint.set_identifier_values(doi, save=True)
+        if doi:
+            logger.info(f'Minting DOI [{doi}] for Preprint [{preprint._id}].')
+            preprint.set_identifier_values(doi, save=True)
+            total_created += 1
+    logger.info(f'[{total_created}] DOIs minted.')
 
 def check_crossref_dois(dry_run=True):
     """
