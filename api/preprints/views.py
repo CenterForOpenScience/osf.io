@@ -243,8 +243,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
 
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
-        qs = self.preprints_queryset(qs, auth_user, public_only=public_only)
-        qs = qs.filter(Preprint.objects.preprint_versions_permissions_query(auth_user))
+        qs = qs.filter(Preprint.objects.preprint_versions_permissions_query(auth_user, public_only=public_only))
 
         return qs
 
