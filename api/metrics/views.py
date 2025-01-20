@@ -501,25 +501,25 @@ class NodeAnalyticsQuery(JSONAPIBaseView):
                 },
                 'referer-domain': {
                     'terms': {
-                        'field': 'pageview_info.referer_domain',
+                        'field': 'pageview_info.referer_domain.keyword',
                         'size': 10,
                     },
                 },
                 'popular-pages': {
                     'terms': {
-                        'field': 'pageview_info.page_path',
+                        'field': 'pageview_info.page_path.keyword',
                         'size': 10,
                     },
                     'aggs': {
                         'route-for-path': {
                             'terms': {
-                                'field': 'pageview_info.route_name',
+                                'field': 'pageview_info.route_name.keyword',
                                 'size': 1,
                             },
                         },
                         'title-for-path': {
                             'terms': {
-                                'field': 'pageview_info.page_title',
+                                'field': 'pageview_info.page_title.keyword',
                                 'size': 1,
                             },
                         },
