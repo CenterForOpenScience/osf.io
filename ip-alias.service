@@ -1,0 +1,17 @@
+[Unit]
+Description=IP alias
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+Type=forking
+ExecStart=ip address add 192.168.168.167/32 dev lo
+TimeoutSec=30
+Restart=on-failure
+RestartSec=30
+StartLimitInterval=350
+StartLimitBurst=10
+
+[Install]
+WantedBy=multi-user.target
