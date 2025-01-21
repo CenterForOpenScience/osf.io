@@ -257,6 +257,7 @@ class InstitutionFactory(DjangoModelFactory):
     email_domains = FakeList('domain_name', n=1)
     orcid_record_verified_source = ''
     delegation_protocol = ''
+    institutional_request_access_enabled = False
 
     class Meta:
         model = models.Institution
@@ -1018,6 +1019,13 @@ class NodeRequestFactory(DjangoModelFactory):
 class PreprintRequestFactory(DjangoModelFactory):
     class Meta:
         model = models.PreprintRequest
+
+    comment = factory.Faker('text')
+
+
+class UserMessageFactory(DjangoModelFactory):
+    class Meta:
+        model = models.UserMessage
 
     comment = factory.Faker('text')
 

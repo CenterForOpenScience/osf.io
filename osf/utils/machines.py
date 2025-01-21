@@ -1,4 +1,5 @@
 from django.utils import timezone
+from django.db import IntegrityError
 from transitions import Machine, MachineError
 
 from api.providers.workflows import Workflows
@@ -7,7 +8,6 @@ from framework.auth import Auth
 from osf.exceptions import InvalidTransitionError
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
-
 from osf.utils import permissions
 from osf.utils.workflows import (
     DefaultStates,
@@ -19,12 +19,15 @@ from osf.utils.workflows import (
     APPROVAL_TRANSITIONS,
     CollectionSubmissionStates,
     COLLECTION_SUBMISSION_TRANSITIONS,
+    NodeRequestTypes
 )
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
 from osf.utils import notifications as notify
+
+from api.base.exceptions import Conflict
 
 class BaseMachine(Machine):
 
@@ -199,12 +202,19 @@ class NodeRequestMachine(BaseMachine):
         if ev.event.name == DefaultTriggers.ACCEPT.value:
             if not self.machineable.target.is_contributor(self.machineable.creator):
                 contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
-                self.machineable.target.add_contributor(
-                    self.machineable.creator,
-                    auth=Auth(ev.kwargs['user']),
-                    permissions=contributor_permissions,
-                    visible=ev.kwargs.get('visible', True),
-                    send_email=f'{self.machineable.request_type}_request')
+                try:
+                    self.machineable.target.add_contributor(
+                        self.machineable.creator,
+                        auth=Auth(ev.kwargs['user']),
+                        permissions=contributor_permissions,
+                        visible=ev.kwargs.get('visible', True),
+                        send_email=f'{self.machineable.request_type}_request',
+                        make_curator=self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value,
+                    )
+                except IntegrityError as e:
+                    if 'Curators cannot be made bibliographic contributors' in str(e):
+                        raise Conflict(str(e)) from e
+                    raise e
 
     def resubmission_allowed(self, ev):
         # TODO: [PRODUCT-395]
@@ -216,15 +226,15 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
-
-        for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-            mails.send_mail(
-                admin.username,
-                mails.ACCESS_REQUEST_SUBMITTED,
-                admin=admin,
-                osf_contact_email=OSF_CONTACT_EMAIL,
-                **context
-            )
+        if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+            for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
+                mails.send_mail(
+                    admin.username,
+                    mails.ACCESS_REQUEST_SUBMITTED,
+                    admin=admin,
+                    osf_contact_email=OSF_CONTACT_EMAIL,
+                    **context
+                )
 
     def notify_resubmit(self, ev):
         """ Notify admins that someone is requesting access again
