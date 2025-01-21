@@ -4,15 +4,17 @@ from django.db.models.fields import Field
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.models import OsfStorageFile
 from api.base.settings.defaults import API_BASE
+
 from framework.auth.core import Auth
 from osf.models import Preprint
 from osf.utils import permissions
+
 from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintProviderFactory
 from tests.base import ApiTestCase
 
 
 # TODO: we have good coverage for `POST`; please add new tests for `GET`
-class TestPreprintVersionPost(ApiTestCase):
+class TestPreprintVersionsListCreate(ApiTestCase):
 
     def setUp(self):
         super().setUp()
@@ -155,11 +157,12 @@ class TestPreprintVersionPost(ApiTestCase):
         assert res.status_code == 403
 
 
-class TestPreprintVersionList(ApiTestCase):
+class TestPreprintVersionsListRetrieve(ApiTestCase):
 
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
+        self.admin = AuthUserFactory()
         self.moderator = AuthUserFactory()
         self.provider = PreprintProviderFactory(_id='osf', name='osfprovider')
         self.post_mod_preprint = PreprintFactory(
@@ -168,12 +171,20 @@ class TestPreprintVersionList(ApiTestCase):
             creator=self.user,
             provider=self.provider
         )
+        self.post_mod_preprint.add_contributor(self.admin, permissions=permissions.ADMIN)
+        self.post_mod_preprint.add_contributor(self.user, permissions=permissions.WRITE)
+        self.post_mod_preprint.add_contributor(self.user, permissions=permissions.READ)
+
         self.pre_mod_preprint = PreprintFactory(
             reviews_workflow='pre-moderation',
             is_published=False,
             creator=self.user,
             provider=self.provider
         )
+        self.pre_mod_preprint.add_contributor(self.admin, permissions=permissions.ADMIN)
+        self.pre_mod_preprint.add_contributor(self.user, permissions=permissions.WRITE)
+        self.pre_mod_preprint.add_contributor(self.user, permissions=permissions.READ)
+
         self.pre_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
         self.post_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
         self.latest_preprint = self.post_mod_preprint
@@ -185,6 +196,9 @@ class TestPreprintVersionList(ApiTestCase):
                 set_doi=False
             )
             self.latest_preprint = new_version
+            new_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+            new_version.add_contributor(self.user, permissions=permissions.WRITE)
+            new_version.add_contributor(self.user, permissions=permissions.READ)
 
         self.version_list_url = f"/{API_BASE}preprints/{self.origin_guid}_v1/versions/"
 
@@ -235,3 +249,283 @@ class TestPreprintVersionList(ApiTestCase):
         data = res.json['data']
         assert len(data) == 7
         assert len(set([item['id'] for item in data])) == 7
+
+    def test_preprints_version_permissions_for_admin(self):
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        self.latest_preprint = unpublished_preprint_version
+        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_submit(user=self.admin)
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_preprint_version.run_accept(user=self.admin, comment='Text')
+
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+
+        unpublished_version.run_submit(user=self.admin)
+
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 8
+
+        unpublished_version.run_reject(user=self.admin, comment='Test')
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 8
+
+    def test_preprints_version_permissions_for_write_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        self.latest_preprint = unpublished_preprint_version
+        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        unpublished_preprint_version.add_contributor(new_user, permissions=permissions.WRITE)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_submit(user=self.admin)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_accept(user=self.admin, comment='Text')
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        unpublished_version.add_contributor(new_user, permissions=permissions.WRITE)
+
+        unpublished_version.run_submit(user=self.admin)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version.run_reject(user=self.admin, comment='Test')
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_pre_mod_preprints_version_permissions_for_read_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        self.latest_preprint = unpublished_preprint_version
+        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        unpublished_preprint_version.add_contributor(new_user, permissions=permissions.READ)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_submit(user=self.admin)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_accept(user=self.admin, comment='Text')
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        unpublished_version.add_contributor(new_user, permissions=permissions.READ)
+
+        unpublished_version.run_submit(user=self.admin)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version.run_reject(user=self.admin, comment='Test')
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_pre_mod_preprints_version_permissions_for_other_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        self.latest_preprint = unpublished_preprint_version
+        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_submit(user=self.admin)
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        unpublished_preprint_version.run_accept(user=self.admin, comment='Text')
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+
+        unpublished_version.run_submit(user=self.admin)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+        unpublished_version.run_reject(user=self.admin, comment='Test')
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_post_mod_preprints_version_permissions_for_admin_user(self):
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        new_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='accepted',
+            is_published=True,
+            set_doi=False
+        )
+        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+
+        res = self.app.get(self.version_list_url, auth=self.admin.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_post_mod_preprints_version_permissions_for_write_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        new_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='accepted',
+            is_published=True,
+            set_doi=False
+        )
+        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        new_preprint_version.add_contributor(new_user, permissions=permissions.WRITE)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_post_mod_preprints_version_permissions_for_read_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        new_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='accepted',
+            is_published=True,
+            set_doi=False
+        )
+        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+        new_preprint_version.add_contributor(new_user, permissions=permissions.READ)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
+
+    def test_post_mod_preprints_version_permissions_for_other_user(self):
+        new_user = AuthUserFactory()
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 6
+
+        new_preprint_version = PreprintFactory.create_version(
+            create_from=self.latest_preprint,
+            creator=self.user,
+            final_machine_state='accepted',
+            is_published=True,
+            set_doi=False
+        )
+        new_preprint_version.add_contributor(new_user, permissions=permissions.ADMIN)
+
+        res = self.app.get(self.version_list_url, auth=new_user.auth)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 7
