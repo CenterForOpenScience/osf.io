@@ -1,11 +1,15 @@
-from rest_framework import permissions as drf_permissions
+from rest_framework import exceptions, permissions as drf_permissions
 
 from api.base.utils import get_user_auth
-from osf.models.action import NodeRequestAction, PreprintRequestAction
+from osf.models import (
+    Node,
+    NodeRequestAction,
+    PreprintRequestAction,
+    Preprint,
+    Institution,
+)
 from osf.models.mixins import NodeRequestableMixin, PreprintRequestableMixin
-from osf.models.node import Node
-from osf.models.preprint import Preprint
-from osf.utils.workflows import DefaultTriggers
+from osf.utils.workflows import DefaultTriggers, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
 
 
@@ -32,7 +36,7 @@ class NodeRequestPermission(drf_permissions.BasePermission):
             raise ValueError(f'Not a request-related model: {obj}')
 
         if not node.access_requests_enabled:
-            return False
+            raise exceptions.PermissionDenied(f'{node._id} does not have Access Requests enabled')
 
         is_requester = target is not None and target.creator == auth.user or trigger == DefaultTriggers.SUBMIT.value
         is_node_admin = node.has_permission(auth.user, osf_permissions.ADMIN)
@@ -52,7 +56,35 @@ class NodeRequestPermission(drf_permissions.BasePermission):
                 # Requesters may not be contributors
                 # Requesters may edit their comment or submit their request
                 return is_requester and auth.user not in node.contributors
-            return False
+
+
+class InstitutionalAdminRequestTypePermission(drf_permissions.BasePermission):
+    """
+    Permission class for handling object permissions related to Node requests and actions.
+    """
+
+    def has_permission(self, request, view):
+        # Skip if not institutional_request request_type
+        request_type = request.data.get('request_type')
+        if request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+            return True
+
+        institution_id = request.data.get('institution')
+        if not institution_id:
+            raise exceptions.ValidationError({'institution': 'Institution is required.'})
+
+        try:
+            institution = Institution.objects.get(_id=institution_id)
+        except Institution.DoesNotExist:
+            raise exceptions.ValidationError({'institution': 'Institution is does not exist.'})
+
+        if not institution.institutional_request_access_enabled:
+            raise exceptions.PermissionDenied({'institution': 'Institutional request access is not enabled.'})
+
+        if get_user_auth(request).user.is_institutional_admin_at(institution):
+            return True
+        else:
+            raise exceptions.PermissionDenied({'institution': 'You do not have permission to perform this action for this institution.'})
 
 
 class PreprintRequestPermission(drf_permissions.BasePermission):

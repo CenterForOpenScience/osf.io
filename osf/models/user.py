@@ -644,6 +644,34 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         OSFGroup = apps.get_model('osf.OSFGroup')
         return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
 
+    def is_institutional_admin_at(self, institution):
+        """
+        Checks if user is admin of a specific institution.
+        """
+        return self.has_perms(
+            institution.groups['institutional_admins'],
+            institution
+        )
+
+    def is_institutional_admin(self):
+        """
+        Checks if user is admin of any institution.
+        """
+        return self.groups.filter(
+            name__startswith='institution_',
+            name__endswith='_institutional_admins'
+        ).exists()
+
+    def is_institutional_curator(self, node):
+        """
+        Checks if user is user has curator permissions for a node.
+        """
+        return Contributor.objects.filter(
+            node=node,
+            user=self,
+            is_curator=True,
+        ).exists()
+
     def group_role(self, group):
         """
         For the given OSFGroup, return the user's role - either member or manager
