@@ -119,7 +119,6 @@ class PreprintManager(models.Manager):
             if allow_contribs:
                 contrib_user_query = ~Q(
                     machine_state__in=[
-                        DefaultStates.INITIAL.value,
                         DefaultStates.PENDING.value,
                         DefaultStates.REJECTED.value
                     ]
@@ -133,7 +132,7 @@ class PreprintManager(models.Manager):
 
         if not moderator_for.exists():
             query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
-        return query
+        return query & ~Q(machine_state=DefaultStates.INITIAL.value)
 
 class PublishedPreprintManager(PreprintManager):
     def get_queryset(self):
