@@ -269,12 +269,15 @@ def ember_app(path=None):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             if k == 'preprints':
-                path_values = path.split('/')
-                provider_str, guid_str = path_values[0], path_values[1]
-                preprint = Preprint.load(guid_str)
-                path = f'{provider_str}/{preprint._id}/'
-                if preprint._id != guid_str:
-                    return redirect(preprint._id, code=302)
+                if path:
+                    path_values = path.split('/')
+                    guid_str = path_values[1] if len(path_values) > 1 else None
+
+                    if guid_str:
+                        preprint = Preprint.load(guid_str)
+
+                        if preprint and preprint._id != guid_str:
+                            return redirect(preprint._id, code=302)
                 ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
 
