@@ -51,5 +51,7 @@
                              "": {"name": "ku-kakuma-1"}},
                            "serverSideEncryption": false}
                            ],
+                          {"name": "MinIO-Dev@Gunma University",
+                           "host": "minio-dev.media.gunma-u.ac.jp:443"},
     "encryptUploads": true
 }
