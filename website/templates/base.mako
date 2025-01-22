@@ -34,6 +34,13 @@
     </script>
     % endif
 
+    % if settings.DATACITE_REPO_ID:
+    <script>
+    const tracker = require('js/components/tracker')
+    tracker.init(settings.DATACITE_REPO_ID)
+    </script>
+    % endif
+
     <!-- Metadata tags-->
     <meta name="dc.title" content="${self.title_meta()}" />
     <meta name="dc.type" content="collection" />

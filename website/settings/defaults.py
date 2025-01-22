@@ -344,6 +344,7 @@ DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
+DATACITE_REPO_ID = None
 
 # crossref
 CROSSREF_USERNAME = None
