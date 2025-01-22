@@ -32,7 +32,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf import features
-from osf.models import Institution
+from osf.models import Institution, Preprint
 from osf.utils import sanitize
 from osf.utils import permissions
 from website import util
@@ -269,6 +269,12 @@ def ember_app(path=None):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             if k == 'preprints':
+                path_values = path.split('/')
+                provider_str, guid_str = path_values[0], path_values[1]
+                preprint = Preprint.load(guid_str)
+                path = f'{provider_str}/{preprint._id}/'
+                if preprint._id != guid_str:
+                    return redirect(preprint._id, code=302)
                 ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
 
