@@ -125,7 +125,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationCreateSerializer,
 )
-from api.requests.permissions import NodeRequestPermission
+from api.requests.permissions import NodeRequestPermission, InstitutionalAdminRequestTypePermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
 from api.resources import annotations as resource_annotations
@@ -2239,6 +2239,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         NodeRequestPermission,
+        InstitutionalAdminRequestTypePermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]
