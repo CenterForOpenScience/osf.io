@@ -153,23 +153,17 @@ class TestCrossRefClient:
         assert root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS).get(
             'start_date') == preprint_version.date_published.strftime('%Y-%m-%d')
 
-        programs = root.findall('.//{%s}program' % crossref.CROSSREF_RELATIONS)
-        program_preprint = programs[0]
-        program_versioned = programs[1]
-        assert program_preprint is not None
-        assert program_versioned is not None
+        program = root.find('.//{%s}program' % crossref.CROSSREF_RELATIONS)
 
-        # program preprint version
-        related_item_preprint = program_preprint.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
-        assert related_item_preprint is not None
+        related_items = program.findall('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
+        assert related_items is not None
+        # related items
+        related_item_preprint, related_item_preprint_version = related_items[0], related_items[1]
 
         intra_work_relation = related_item_preprint.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
         assert intra_work_relation is not None
         assert intra_work_relation.get('relationship-type') == 'isPreprintOf'
         assert intra_work_relation.get('identifier-type') == 'doi'
-
-        # program preprint previous versions
-        related_item_preprint_version = program_versioned.find('.//{%s}related_item' % crossref.CROSSREF_RELATIONS)
 
         doi = related_item_preprint_version.find('.//{%s}doi' % crossref.CROSSREF_RELATIONS)
         assert doi is not None

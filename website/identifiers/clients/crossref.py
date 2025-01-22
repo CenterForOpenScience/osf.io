@@ -119,19 +119,17 @@ class CrossRefClient(AbstractIdentifierClient):
                 posted_content.append(
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
+        relations_program = element.program(xmlns=CROSSREF_RELATIONS)
 
-            if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
-                posted_content.append(
-                    element.program(
-                        element.related_item(
-                            element.intra_work_relation(
-                                preprint.article_doi,
-                                **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
-                            )
-                        ), xmlns=CROSSREF_RELATIONS
+        if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
+            relations_program.append(
+                element.related_item(
+                    element.intra_work_relation(
+                        preprint.article_doi,
+                        **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
                     )
                 )
-
+            )
         doi = self.build_doi(preprint)
         doi_data = [
             element.doi(doi),
@@ -141,7 +139,6 @@ class CrossRefClient(AbstractIdentifierClient):
 
         preprint_versions = preprint.get_preprint_versions()
         if preprint_versions:
-            program = element.program(xmlns=CROSSREF_RELATIONS)
             for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
                 if preprint_version.version > preprint.version:
                     continue
@@ -153,8 +150,10 @@ class CrossRefClient(AbstractIdentifierClient):
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
-                program.append(related_item)
-            posted_content.append(program)
+                relations_program.append(related_item)
+
+        if len(relations_program) > 0:
+            posted_content.append(relations_program)
         return posted_content
 
     def _process_crossref_name(self, contributor):
