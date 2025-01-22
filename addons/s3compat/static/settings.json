@@ -49,9 +49,9 @@
                            "bucketLocations": {
                              "ku-kakuma-1": {"name": "ku-kakuma-1", "host": "minio.rdm.kanazawa-u.ac.jp:443"},
                              "": {"name": "ku-kakuma-1"}},
-                           "serverSideEncryption": false}
-                           ],
+                           "serverSideEncryption": false},
                           {"name": "MinIO-Dev@Gunma University",
-                           "host": "minio-dev.media.gunma-u.ac.jp:443"},
+                           "host": "minio-dev.media.gunma-u.ac.jp:443"}
+                           ],
     "encryptUploads": true
 }
