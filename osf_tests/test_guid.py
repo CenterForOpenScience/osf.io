@@ -464,6 +464,12 @@ class TestResolveGuid(OsfTestCase):
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
 
+    def test_resolve_guid_redirect_to_versioned_guid(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(f'{pp.get_guid()._id}/')
+        assert res.status_code == 302
+        assert res.location == f'/{pp._id}/'
 
 @pytest.fixture()
 def creator():
