@@ -269,15 +269,16 @@ def ember_app(path=None):
         if request.path.strip('/').startswith(k):
             ember_app = EXTERNAL_EMBER_APPS[k]
             if k == 'preprints':
+                # If a valid guid is provided w/o version, find and redirect to the latest version. This only applies
+                # to route preprints/<provider_id>/<preprint_id>: e.g. /preprints/osf/abcde -> /preprints/osf/abcde_v3
                 if path:
                     path_values = path.split('/')
                     guid_str = path_values[1] if len(path_values) > 1 else None
-
                     if guid_str:
                         preprint = Preprint.load(guid_str)
-
                         if preprint and preprint._id != guid_str:
                             return redirect(preprint._id, code=302)
+                # For all other cases, let ember app handle it
                 ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
 
