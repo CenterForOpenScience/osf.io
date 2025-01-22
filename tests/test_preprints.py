@@ -2707,3 +2707,13 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_retracted is True
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.WITHDRAWN.value
+
+class TestEmberRedirect(OsfTestCase):
+
+    def test_ember_redirect_to_versioned_guid(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(f'preprints/provider/{pp.get_guid()._id}/')
+
+        assert res.status_code == 302
+        assert res.location == f'{pp._id}'
