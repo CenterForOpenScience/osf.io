@@ -398,7 +398,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     def test_requester_can_resubmit(self, app, project, institutional_admin, url, create_payload):
         """
-        Test that a requester cannot submit another access request for the same node.
+        Test that a requester can submit another access request for the same node.
         """
         # Create the first request
         app.post_json_api(url, create_payload, auth=institutional_admin.auth)
