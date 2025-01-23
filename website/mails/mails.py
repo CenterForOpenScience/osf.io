@@ -619,3 +619,8 @@ USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST = Mail(
     'user_message_institutional_access_request',
     subject='Message from Institutional Admin'
 )
+
+PROJECT_AFFILIATION_CHANGED = Mail(
+    'project_affiliation_changed',
+    subject='Project Affiliation Changed'
+)
