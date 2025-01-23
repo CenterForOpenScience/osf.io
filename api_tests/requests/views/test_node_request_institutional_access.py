@@ -6,6 +6,7 @@ from api_tests.requests.mixins import NodeRequestTestMixin
 
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
+from website import language
 from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 
@@ -395,3 +396,39 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         )
         assert res.status_code == 403
         assert f"{node_with_disabled_access_requests._id} does not have Access Requests enabled" in res.json['errors'][0]['detail']
+
+    @mock.patch('api.requests.serializers.send_mail')
+    def test_placeholder_text_when_comment_is_empty(
+            self,
+            mock_mail,
+            app,
+            project,
+            institutional_admin,
+            url,
+            user_with_affiliation,
+            create_payload,
+            institution
+    ):
+        """
+        Test that the placeholder text is used when the comment field is empty or None.
+        """
+        # Test with empty comment
+        create_payload['data']['attributes']['comment'] = ''
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+
+        mock_mail.assert_called_with(
+            to_addr=user_with_affiliation.username,
+            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            user=user_with_affiliation,
+            bcc_addr=None,
+            reply_to=None,
+            **{
+                'sender': institutional_admin,
+                'recipient': user_with_affiliation,
+                'comment': language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT,
+                'institution': institution,
+                'osf_url': mock.ANY,
+                'node': project,
+            }
+        )
