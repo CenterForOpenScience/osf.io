@@ -132,11 +132,14 @@ class Loggable(models.Model):
     def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
             log_date = log.date if hasattr(log, 'date') else log.created
-            self.last_logged = log_date.replace(tzinfo=pytz.utc)
+            last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            recent_log = self.logs.first()
+            recent_log = self.logs.latest('created')
             log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
-            self.last_logged = log_date
+            last_logged = log_date
+
+        if not log.should_hide:
+            self.last_logged = last_logged
 
         if save:
             self.save()
