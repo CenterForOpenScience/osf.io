@@ -165,14 +165,6 @@ class TestCrossRefClient:
         assert intra_work_relation.get('relationship-type') == 'isPreprintOf'
         assert intra_work_relation.get('identifier-type') == 'doi'
 
-        doi = related_item_preprint_version.find('.//{%s}doi' % crossref.CROSSREF_RELATIONS)
-        assert doi is not None
-        assert doi.text == settings.DOI_FORMAT.format(prefix=preprint_version.provider.doi_prefix, guid=preprint_version._id)
-
-        description = related_item_preprint_version.find('.//{%s}description' % crossref.CROSSREF_RELATIONS)
-        assert description is not None
-        assert description.text == 'Updated version of preprint'
-
         intra_work_relation = related_item_preprint_version.find('.//{%s}intra_work_relation' % crossref.CROSSREF_RELATIONS)
         assert intra_work_relation is not None
         assert intra_work_relation.get('relationship-type') == 'isVersionOf'

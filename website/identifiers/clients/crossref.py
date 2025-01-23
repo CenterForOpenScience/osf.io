@@ -130,12 +130,6 @@ class CrossRefClient(AbstractIdentifierClient):
                     )
                 )
             )
-        doi = self.build_doi(preprint)
-        doi_data = [
-            element.doi(doi),
-            element.resource(settings.DOMAIN + preprint._id)
-        ]
-        posted_content.append(element.doi_data(*doi_data))
 
         preprint_versions = preprint.get_preprint_versions()
         if preprint_versions:
@@ -143,17 +137,22 @@ class CrossRefClient(AbstractIdentifierClient):
                 if preprint_version.version > preprint.version:
                     continue
                 related_item = element.related_item(
-                    element.doi(self.build_doi(preprint_version)),
-                    element.description('Updated version of preprint'),
                     element.intra_work_relation(
                         self.build_doi(previous_version),
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
                 relations_program.append(related_item)
-
         if len(relations_program) > 0:
             posted_content.append(relations_program)
+
+        doi = self.build_doi(preprint)
+        doi_data = [
+            element.doi(doi),
+            element.resource(settings.DOMAIN + preprint._id)
+        ]
+        posted_content.append(element.doi_data(*doi_data))
+
         return posted_content
 
     def _process_crossref_name(self, contributor):
