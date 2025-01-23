@@ -110,7 +110,7 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
         # If the class is a subclass of `GuidMixin` (except for `VersionedGuidMixin`), turn it into a query dictionary.
         # The naming for `query_or_pk` no longer matches the actual case either. It is neither a query nor a pk, but a
         # 5-char guid str. We should be able to use the `.load()` the same way as in the `VersionedGuidMixin` case.
-        if issubclass(model_cls, GuidMixin):
+        elif issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name
             query = {'guids___id': query_or_pk}
         else:
