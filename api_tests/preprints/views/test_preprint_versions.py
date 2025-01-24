@@ -269,7 +269,7 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
 
         res = self.app.get(self.version_list_url, auth=self.admin.auth)
         assert res.status_code == 200
-        assert len(res.json['data']) == 7
+        assert len(res.json['data']) == 6
 
         unpublished_preprint_version.run_submit(user=self.admin)
         res = self.app.get(self.version_list_url, auth=self.admin.auth)
