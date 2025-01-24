@@ -690,9 +690,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def is_latest_version(self):
         return self.guids.exists()
 
-    def get_preprint_versions(self):
+    def get_preprint_versions(self, include_rejected=True):
         guids = self.versioned_guids.first().guid.versions.all()
         preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
+        if include_rejected is False:
+            preprint_versions = [p for p in preprint_versions if p.machine_state != 'rejected']
         return preprint_versions
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):

@@ -131,7 +131,7 @@ class CrossRefClient(AbstractIdentifierClient):
                 )
             )
 
-        preprint_versions = preprint.get_preprint_versions()
+        preprint_versions = preprint.get_preprint_versions(include_rejected=False)
         if preprint_versions:
             for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
                 if preprint_version.version > preprint.version:
