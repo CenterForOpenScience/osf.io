@@ -37,6 +37,8 @@ from osf.utils.workflows import (
     SchemaResponseTriggers
 )
 from addons.osfstorage.models import OsfStorageFile, Region
+from osf.exceptions import UserStateError, ValidationValueError
+
 fake = Factory.create()
 faker = Faker()
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
@@ -875,11 +877,16 @@ class PreprintFactory(DjangoModelFactory):
         preprint_file.create_version(creator, location, metadata=metadata).save()
 
         # Set relationships
-        contributor_list = latest_version.contributor_set.exclude(
-            user=latest_version.creator
-        ).values('visible', 'user_id', '_order')
-        for contributor in contributor_list:
-            instance.contributor_set.create(**{**contributor, 'preprint_id': instance.id})
+        for contributor in latest_version.contributor_set.exclude(user=instance.creator):
+            try:
+                instance.add_contributor(
+                    contributor.user,
+                    permissions=contributor.permission,
+                    visible=contributor.visible,
+                    save=True
+                )
+            except (ValidationValueError, UserStateError):
+                pass
         for institution in latest_version.affiliated_institutions.all():
             instance.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
