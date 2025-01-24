@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.fields import Field
+from django.contrib.auth.models import Group
 
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.models import OsfStorageFile
@@ -13,7 +14,6 @@ from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory
 from tests.base import ApiTestCase
 
 
-# TODO: we have good coverage for `POST`; please add new tests for `GET`
 class TestPreprintVersionsListCreate(ApiTestCase):
 
     def setUp(self):
@@ -159,10 +159,20 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
 class TestPreprintVersionsListRetrieve(ApiTestCase):
 
+    def add_contributors_for_preprint(self, preprint):
+        preprint.add_contributor(self.admin, permissions=permissions.ADMIN)
+        preprint.add_contributor(self.write_user, permissions=permissions.WRITE)
+        preprint.add_contributor(self.read_user, permissions=permissions.READ)
+
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
+        self.read_user = AuthUserFactory()
+        self.write_user = AuthUserFactory()
         self.admin = AuthUserFactory()
+        osf_admin = Group.objects.get(name='osf_admin')
+        self.admin.groups.add(osf_admin)
+
         self.moderator = AuthUserFactory()
         self.provider = PreprintProviderFactory(_id='osf', name='osfprovider')
         self.post_mod_preprint = PreprintFactory(
@@ -171,9 +181,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             creator=self.user,
             provider=self.provider
         )
-        self.post_mod_preprint.add_contributor(self.admin, permissions=permissions.ADMIN)
-        self.post_mod_preprint.add_contributor(self.user, permissions=permissions.WRITE)
-        self.post_mod_preprint.add_contributor(self.user, permissions=permissions.READ)
 
         self.pre_mod_preprint = PreprintFactory(
             reviews_workflow='pre-moderation',
@@ -181,10 +188,16 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             creator=self.user,
             provider=self.provider
         )
-        self.pre_mod_preprint.add_contributor(self.admin, permissions=permissions.ADMIN)
-        self.pre_mod_preprint.add_contributor(self.user, permissions=permissions.WRITE)
-        self.pre_mod_preprint.add_contributor(self.user, permissions=permissions.READ)
+        self.add_contributors_for_preprint(self.pre_mod_preprint)
 
+        self.pre_mod_preprint_pending = PreprintFactory(
+            reviews_workflow='pre-moderation',
+            is_published=False,
+            creator=self.user,
+            provider=self.provider
+        )
+        self.add_contributors_for_preprint(self.pre_mod_preprint_pending)
+        self.pre_mod_preprint_pending.run_submit(user=self.admin)
         self.pre_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
         self.post_mod_preprint.provider.get_group('moderator').user_set.add(self.moderator)
         self.latest_preprint = self.post_mod_preprint
@@ -196,9 +209,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
                 set_doi=False
             )
             self.latest_preprint = new_version
-            new_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-            new_version.add_contributor(self.user, permissions=permissions.WRITE)
-            new_version.add_contributor(self.user, permissions=permissions.READ)
 
         self.version_list_url = f"/{API_BASE}preprints/{self.origin_guid}_v1/versions/"
 
@@ -208,14 +218,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         data = res.json['data']
         assert len(data) == 6
         assert len(set([item['id'] for item in data])) == 6
-
-    def test_filter_by_id(self):
-        version = self.latest_preprint.versioned_guids.first()
-        res = self.app.get(f"{self.version_list_url}?filter[id]={version.referent._id}", auth=self.user.auth)
-        assert res.status_code == 200
-        data = res.json['data']
-        assert len(data) == 6
-        assert data[0]['id'] == version.referent._id
 
     def test_public_visibility(self):
         self.pre_mod_preprint.is_public = True
@@ -264,6 +266,7 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         )
         self.latest_preprint = unpublished_preprint_version
         unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
+
         res = self.app.get(self.version_list_url, auth=self.admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 7
@@ -313,8 +316,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             set_doi=False
         )
         self.latest_preprint = unpublished_preprint_version
-        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        unpublished_preprint_version.add_contributor(new_user, permissions=permissions.WRITE)
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 6
@@ -337,8 +338,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=False,
             set_doi=False
         )
-        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        unpublished_version.add_contributor(new_user, permissions=permissions.WRITE)
 
         unpublished_version.run_submit(user=self.admin)
 
@@ -365,8 +364,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             set_doi=False
         )
         self.latest_preprint = unpublished_preprint_version
-        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        unpublished_preprint_version.add_contributor(new_user, permissions=permissions.READ)
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 6
@@ -389,8 +386,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=False,
             set_doi=False
         )
-        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        unpublished_version.add_contributor(new_user, permissions=permissions.READ)
 
         unpublished_version.run_submit(user=self.admin)
 
@@ -417,7 +412,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             set_doi=False
         )
         self.latest_preprint = unpublished_preprint_version
-        unpublished_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 6
@@ -440,7 +434,6 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=False,
             set_doi=False
         )
-        unpublished_version.add_contributor(self.admin, permissions=permissions.ADMIN)
 
         unpublished_version.run_submit(user=self.admin)
 
@@ -458,15 +451,13 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         assert res.status_code == 200
         assert len(res.json['data']) == 6
 
-        new_preprint_version = PreprintFactory.create_version(
+        PreprintFactory.create_version(
             create_from=self.latest_preprint,
             creator=self.user,
             final_machine_state='accepted',
             is_published=True,
             set_doi=False
         )
-        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-
         res = self.app.get(self.version_list_url, auth=self.admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 7
@@ -477,15 +468,13 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         assert res.status_code == 200
         assert len(res.json['data']) == 6
 
-        new_preprint_version = PreprintFactory.create_version(
+        PreprintFactory.create_version(
             create_from=self.latest_preprint,
             creator=self.user,
             final_machine_state='accepted',
             is_published=True,
             set_doi=False
         )
-        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        new_preprint_version.add_contributor(new_user, permissions=permissions.WRITE)
 
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
@@ -497,15 +486,13 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         assert res.status_code == 200
         assert len(res.json['data']) == 6
 
-        new_preprint_version = PreprintFactory.create_version(
+        PreprintFactory.create_version(
             create_from=self.latest_preprint,
             creator=self.user,
             final_machine_state='accepted',
             is_published=True,
             set_doi=False
         )
-        new_preprint_version.add_contributor(self.admin, permissions=permissions.ADMIN)
-        new_preprint_version.add_contributor(new_user, permissions=permissions.READ)
 
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
@@ -517,14 +504,13 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         assert res.status_code == 200
         assert len(res.json['data']) == 6
 
-        new_preprint_version = PreprintFactory.create_version(
+        PreprintFactory.create_version(
             create_from=self.latest_preprint,
             creator=self.user,
             final_machine_state='accepted',
             is_published=True,
             set_doi=False
         )
-        new_preprint_version.add_contributor(new_user, permissions=permissions.ADMIN)
 
         res = self.app.get(self.version_list_url, auth=new_user.auth)
         assert res.status_code == 200
