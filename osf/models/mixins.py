@@ -1371,13 +1371,21 @@ class ContributorMixin(models.Model):
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
             self.add_permission(contrib_to_add, permissions, save=True)
+            if make_curator:
+                contributor_obj.is_curator = True
             contributor_obj.save()
 
             if log:
                 params = self.log_params
                 params['contributors'] = [contrib_to_add._id]
+
+                if getattr(contributor_obj, 'is_curator', False):
+                    action = self.log_class.CURATOR_ADDED
+                else:
+                    action = self.log_class.CONTRIB_ADDED
+
                 self.add_log(
-                    action=self.log_class.CONTRIB_ADDED,
+                    action=action,
                     params=params,
                     auth=auth,
                     save=False,
@@ -1394,11 +1402,6 @@ class ContributorMixin(models.Model):
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
-
-            if make_curator:
-                contributor_obj.is_curator = True
-                contributor_obj.save()
-
             return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1656,8 +1659,13 @@ class ContributorMixin(models.Model):
         if log:
             params = self.log_params
             params['contributors'] = [contributor._id]
+            if getattr(contributor, 'is_curator', False):
+                action = self.log_class.CURATOR_REMOVED
+            else:
+                action = self.log_class.CONTRIB_REMOVED
+
             self.add_log(
-                action=self.log_class.CONTRIB_REMOVED,
+                action=action,
                 params=params,
                 auth=auth,
                 save=False,
