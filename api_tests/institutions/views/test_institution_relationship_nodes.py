@@ -38,17 +38,17 @@ class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()
     def user(self, institution):
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution)
-        user.save()
-        return user
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution)
+        user_auth.save()
+        return user_auth
 
     @pytest.fixture()
     def node_one(self, user, institution):
-        node = NodeFactory(creator=user)
-        node.affiliated_institutions.add(institution)
-        node.save()
-        return node
+        project = NodeFactory(creator=user)
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
 
     @pytest.fixture()
     def node_without_institution(self, user):
@@ -56,25 +56,25 @@ class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()
     def node_public(self, user, institution):
-        node_public = NodeFactory(is_public=True)
-        node_public.affiliated_institutions.add(institution)
-        node_public.save()
-        return node_public
+        project = NodeFactory(is_public=True)
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
 
     @pytest.fixture()
     def admin(self, institution, node_public):
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution)
-        node_public.add_contributor(user, permissions=permissions.ADMIN)
-        user.save()
-        return user
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution)
+        node_public.add_contributor(user_auth, permissions=permissions.ADMIN)
+        user_auth.save()
+        return user_auth
 
     @pytest.fixture()
     def node_private(self, user, institution):
-        node_private = NodeFactory()
-        node_private.affiliated_institutions.add(institution)
-        node_private.save()
-        return node_private
+        project = NodeFactory()
+        project.affiliated_institutions.add(institution)
+        project.save()
+        return project
 
     @pytest.fixture()
     def url_institution_nodes(self, institution):
@@ -104,18 +104,25 @@ class TestInstitutionRelationshipNodes:
         res = app.post_json_api(
             url_institution_nodes,
             make_payload('notIdatAll'),
-            expect_errors=True, auth=user.auth
+            expect_errors=True,
+            auth=user.auth
         )
 
         assert res.status_code == 404
 
     def test_node_type_does_not_exist(self, app, user, node_without_institution, url_institution_nodes):
-
-        # test_node_type_does_not_exist
         res = app.post_json_api(
             url_institution_nodes,
-            {'data': [{'type': 'dugtrio', 'id': node_without_institution._id}]},
-            expect_errors=True, auth=user.auth
+            {
+                'data': [
+                    {
+                        'type': 'dugtrio',
+                        'id': node_without_institution._id
+                    }
+                ]
+            },
+            expect_errors=True,
+            auth=user.auth
         )
 
         assert res.status_code == 409
@@ -137,11 +144,7 @@ class TestInstitutionRelationshipNodes:
         node_without_institution.reload()
         assert institution in node_without_institution.affiliated_institutions.all()
 
-    def test_user_does_not_have_node(
-            self, app, node,
-            url_institution_nodes, user,
-            institution
-    ):
+    def test_user_does_not_have_node(self, app, node, url_institution_nodes, user, institution):
         res = app.post_json_api(
             url_institution_nodes,
             make_payload(node._id),
@@ -152,11 +155,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_user_is_admin(
-            self, app, node_without_institution,
-            url_institution_nodes, user,
-            institution
-    ):
+    def test_user_is_admin(self, app, node_without_institution, url_institution_nodes, user, institution):
         res = app.post_json_api(
             url_institution_nodes,
             make_payload(node_without_institution._id),
@@ -166,11 +165,7 @@ class TestInstitutionRelationshipNodes:
         node_without_institution.reload()
         assert institution in node_without_institution.affiliated_institutions.all()
 
-    def test_user_is_read_write(
-            self, app, node,
-            url_institution_nodes,
-            institution
-    ):
+    def test_user_is_read_write(self, app, node, url_institution_nodes, institution, user):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution)
         node.add_contributor(user)
@@ -185,11 +180,7 @@ class TestInstitutionRelationshipNodes:
         node.reload()
         assert institution in node.affiliated_institutions.all()
 
-    def test_user_is_read_only(
-            self, app, node,
-            url_institution_nodes,
-            institution
-    ):
+    def test_user_is_read_only(self, app, node, url_institution_nodes, institution, user):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution)
         node.add_contributor(user, permissions=permissions.READ)
@@ -198,15 +189,15 @@ class TestInstitutionRelationshipNodes:
         res = app.post_json_api(
             url_institution_nodes,
             make_payload(node._id),
-            auth=user.auth, expect_errors=True
+            auth=user.auth,
+            expect_errors=True
         )
 
         assert res.status_code == 403
         node.reload()
         assert institution not in node.affiliated_institutions.all()
 
-    def test_user_is_admin_but_not_affiliated(
-            self, app, url_institution_nodes, institution):
+    def test_user_is_admin_but_not_affiliated(self, app, url_institution_nodes, institution, user):
         user = AuthUserFactory()
         node = NodeFactory(creator=user)
         res = app.post_json_api(
@@ -288,10 +279,7 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 204
 
-    def test_delete_user_is_admin(
-            self, app, url_institution_nodes,
-            node_one, user, institution
-    ):
+    def test_delete_user_is_admin(self, app, url_institution_nodes, node_one, user, institution):
         res = app.delete_json_api(
             url_institution_nodes,
             make_payload(node_one._id),
@@ -301,11 +289,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
         assert institution not in node_one.affiliated_institutions.all()
 
-    def test_delete_user_is_read_write(
-            self, app, node_private,
-            user, url_institution_nodes,
-            institution
-    ):
+    def test_delete_user_is_read_write(self, app, node_private, user, url_institution_nodes, institution):
         node_private.add_contributor(user)
         node_private.save()
 
@@ -319,10 +303,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
         assert institution not in node_private.affiliated_institutions.all()
 
-    def test_delete_user_is_read_only(
-            self, node_private, user,
-            app, url_institution_nodes,
-            institution):
+    def test_delete_user_is_read_only(self, node_private, user, app, url_institution_nodes, institution):
         node_private.add_contributor(user, permissions=permissions.READ)
         node_private.save()
 
@@ -350,8 +331,8 @@ class TestInstitutionRelationshipNodes:
         node_one.reload()
         assert institution not in node_one.affiliated_institutions.all()
 
-    def test_delete_user_is_admin_but_not_affiliated_with_inst(
-            self, institution, app, url_institution_nodes):
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, institution, app, url_institution_nodes, node,
+                                                               user):
         user = AuthUserFactory()
         node = NodeFactory(creator=user)
         node.affiliated_institutions.add(institution)
@@ -414,7 +395,7 @@ class TestInstitutionRelationshipNodes:
             mocked_send_mail.assert_called_once()
             call_args = mocked_send_mail.call_args[1]
             assert institution in call_args['institution_added']
-            assert set([current_institution, institution]) == set(call_args['current_affiliations'])
+            assert {current_institution, institution} == set(call_args['current_affiliations'])
 
     def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
         current_institution = InstitutionFactory()

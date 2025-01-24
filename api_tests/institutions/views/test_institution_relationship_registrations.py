@@ -105,13 +105,7 @@ class TestInstitutionRelationshipRegistrations:
         assert registration_public._id in registration_ids
         assert registration_no_owner._id not in registration_ids
 
-    def test_add_incorrect_permissions(
-            self, app, admin, user, affiliated_user,
-            registration_no_affiliation,
-            url_institution_registrations,
-            institution
-    ):
-        # No authentication
+    def test_no_auth(self, app, admin, user, affiliated_user, registration_no_affiliation, url_institution_registrations):
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_no_affiliation._id),
@@ -119,7 +113,8 @@ class TestInstitutionRelationshipRegistrations:
         )
         assert res.status_code == 401
 
-        # User has no permission
+    def test_no_permission(self, app, admin, user, affiliated_user, registration_no_affiliation,
+                           url_institution_registrations):
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_no_affiliation._id),
@@ -127,19 +122,23 @@ class TestInstitutionRelationshipRegistrations:
         )
         assert res.status_code == 403
 
-        # User has read permission
+    def test_read_permission(self, app, admin, user, affiliated_user, registration_no_affiliation,
+                             url_institution_registrations):
         registration_no_affiliation.add_contributor(
-            affiliated_user, permissions=permissions.READ)
-        registration_no_affiliation.save()
-
+            affiliated_user,
+            permissions=permissions.READ,
+            save=True
+        )
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_no_affiliation._id),
-            auth=user.auth, expect_errors=True
+            auth=user.auth,
+            expect_errors=True
         )
         assert res.status_code == 403
 
-        # User is admin but not affiliated
+    def test_admin_permission_not_affiliated(self, app, admin, user, affiliated_user, registration_no_affiliation,
+                                             institution, url_institution_registrations):
         registration = RegistrationFactory(creator=user)
         res = app.post_json_api(
             url_institution_registrations,
@@ -147,14 +146,16 @@ class TestInstitutionRelationshipRegistrations:
             expect_errors=True, auth=user.auth
         )
         assert res.status_code == 403
-        registration.reload()
         assert institution not in registration.affiliated_institutions.all()
 
+    def test_does_not_exist(self, app, admin, user, affiliated_user, registration_no_affiliation, institution,
+                                                 url_institution_registrations):
         # Registration does not exist
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload('notIdatAll'),
-            expect_errors=True, auth=admin.auth
+            expect_errors=True,
+            auth=admin.auth
         )
         assert res.status_code == 404
 
@@ -162,74 +163,56 @@ class TestInstitutionRelationshipRegistrations:
         res = app.post_json_api(
             url_institution_registrations,
             {'data': [{'type': 'nodes', 'id': NodeFactory(creator=admin)._id}]},
-            expect_errors=True, auth=admin.auth
+            expect_errors=True,
+            auth=admin.auth
         )
         assert res.status_code == 409
 
-        registration_no_affiliation.reload()
         assert institution not in registration_no_affiliation.affiliated_institutions.all()
 
     def test_add_some_with_permissions_others_without(
-            self, admin, app,
-            registration_no_affiliation,
-            registration_no_owner,
-            url_institution_registrations,
-            institution
-    ):
+            self, admin, app, registration_no_affiliation, registration_no_owner, url_institution_registrations,
+            institution):
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(
                 registration_no_owner._id,
-                registration_no_affiliation._id),
+                registration_no_affiliation._id
+            ),
             expect_errors=True,
-            auth=admin.auth)
+            auth=admin.auth
+        )
 
         assert res.status_code == 403
-        registration_no_owner.reload()
-        registration_no_affiliation.reload()
         assert institution not in registration_no_owner.affiliated_institutions.all()
         assert institution not in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_user_is_admin(
-            self, admin, app,
-            registration_no_affiliation,
-            url_institution_registrations,
-            institution
-    ):
+    def test_add_user_is_admin(self, admin, app, registration_no_affiliation, url_institution_registrations,
+                               institution):
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_no_affiliation._id),
             auth=admin.auth
         )
-
         assert res.status_code == 201
-        registration_no_affiliation.reload()
         assert institution in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_withdrawn_registration(
-            self, app, url_institution_registrations,
-            admin, registration_no_affiliation,
-            institution
-    ):
+    def test_add_withdrawn_registration(self, app, url_institution_registrations, admin, registration_no_affiliation,
+            institution):
         WithdrawnRegistrationFactory(
-            registration=registration_no_affiliation, user=admin)
-
+            registration=registration_no_affiliation,
+            user=admin
+        )
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_no_affiliation._id),
             auth=admin.auth
         )
-
         assert res.status_code == 201
-        registration_no_affiliation.reload()
         assert institution in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_user_is_read_write(
-            self, app, affiliated_user,
-            registration_no_affiliation,
-            url_institution_registrations,
-            institution
-    ):
+    def test_add_user_is_read_write(self, app, affiliated_user, registration_no_affiliation,
+                                    url_institution_registrations, institution):
         registration_no_affiliation.add_contributor(affiliated_user)
         registration_no_affiliation.save()
         res = app.post_json_api(
@@ -239,15 +222,9 @@ class TestInstitutionRelationshipRegistrations:
         )
 
         assert res.status_code == 201
-        registration_no_affiliation.reload()
         assert institution in registration_no_affiliation.affiliated_institutions.all()
 
-    def test_add_already_added(
-            self, admin, app,
-            registration_pending,
-            url_institution_registrations,
-            institution
-    ):
+    def test_add_already_added(self, admin, app, registration_pending, url_institution_registrations, institution):
         res = app.post_json_api(
             url_institution_registrations,
             make_registration_payload(registration_pending._id),
@@ -255,30 +232,19 @@ class TestInstitutionRelationshipRegistrations:
         )
 
         assert res.status_code == 204
-        registration_pending.reload()
         assert institution in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_admin(
-            self, app,
-            url_institution_registrations,
-            registration_pending,
-            admin, institution
-    ):
+    def test_delete_user_is_admin(self, app, url_institution_registrations, registration_pending, admin, institution):
         res = app.delete_json_api(
             url_institution_registrations,
             make_registration_payload(registration_pending._id),
             auth=admin.auth
         )
-        registration_pending.reload()
         assert res.status_code == 204
         assert institution not in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_read_write(
-            self, app, affiliated_user,
-            registration_pending,
-            url_institution_registrations,
-            institution
-    ):
+    def test_delete_user_is_read_write(self, app, affiliated_user, registration_pending, url_institution_registrations,
+                                       institution):
         registration_pending.add_contributor(affiliated_user)
         registration_pending.save()
 
@@ -287,13 +253,11 @@ class TestInstitutionRelationshipRegistrations:
             make_registration_payload(registration_pending._id),
             auth=affiliated_user.auth
         )
-        registration_pending.reload()
-
         assert res.status_code == 204
         assert institution not in registration_pending.affiliated_institutions.all()
 
-    def test_delete_user_is_admin_but_not_affiliated_with_inst(
-            self, user, institution, app, url_institution_registrations):
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, user, institution, app,
+                                                               url_institution_registrations):
         registration = RegistrationFactory(creator=user)
         registration.affiliated_institutions.add(institution)
         registration.save()
@@ -304,7 +268,5 @@ class TestInstitutionRelationshipRegistrations:
             make_registration_payload(registration._id),
             auth=user.auth
         )
-
         assert res.status_code == 204
-        registration.reload()
         assert institution not in registration.affiliated_institutions.all()
