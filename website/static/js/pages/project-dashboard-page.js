@@ -766,6 +766,7 @@ $(document).ready(function () {
 
     // Wiki widget markdown rendering
     if (ctx.wikiWidget) {
+        console.log('aaa');
         // Render math in the wiki widget
         var markdownElement = $('#markdownRender');
         mathrender.mathjaxify(markdownElement);
