@@ -15,12 +15,11 @@ from osf.exceptions import NodeStateError, ValidationValueError
 
 
 class UpdateSubjectsMixin:
-
-    def update_subjects_method(self, resource, subjects, auth, skip_share=False):
+    def update_subjects_method(self, resource, subjects, auth):
         # Method to update subjects on resource
         raise NotImplementedError()
 
-    def update_subjects(self, resource, subjects, auth, skip_share=False):
+    def update_subjects(self, resource, subjects, auth):
         """Updates subjects on resource and handles errors.
 
         :param object resource: Object for which you want to update subjects
@@ -28,7 +27,7 @@ class UpdateSubjectsMixin:
         :param object Auth object
         """
         try:
-            self.update_subjects_method(resource, subjects, auth, skip_share=skip_share)
+            self.update_subjects_method(resource, subjects, auth)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=str(e))
         except ValueError as e:
@@ -107,9 +106,9 @@ class SubjectsRelationshipSerializer(BaseAPISerializer, UpdateSubjectsMixin):
     def format_subjects(self, subjects):
         return [subj['_id'] for subj in subjects]
 
-    def update_subjects_method(self, resource, subjects, auth, skip_share=False):
+    def update_subjects_method(self, resource, subjects, auth):
         # Overrides UpdateSubjectsMixin
-        return resource.set_subjects_from_relationships(subjects, auth, skip_share=skip_share)
+        return resource.set_subjects_from_relationships(subjects, auth)
 
     def update(self, instance, validated_data):
         resource = instance['self']
