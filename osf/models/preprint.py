@@ -1169,7 +1169,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             log_exception(e)
 
     def update_search(self):
-        update_share(self)
+        # Only update share if the preprint is the latest version (i.e. has `guids`)
+        if self.is_latest_version:
+            update_share(self)
         from website import search
         try:
             search.search.update_preprint(self, bulk=False, async_update=True)
