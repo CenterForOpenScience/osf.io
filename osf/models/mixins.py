@@ -1104,7 +1104,7 @@ class TaxonomizableMixin(models.Model):
         if (expect_list and not is_list) or (not expect_list and is_list):
             raise ValidationValueError(f'Subjects are improperly formatted. {error_msg}')
 
-    def set_subjects(self, new_subjects, auth, add_log=True, skip_share=False):
+    def set_subjects(self, new_subjects, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
 
@@ -1135,13 +1135,9 @@ class TaxonomizableMixin(models.Model):
 
         self.save()
         if hasattr(self, 'update_search'):
-            from osf.models.base import VersionedGuidMixin
-            if isinstance(self, VersionedGuidMixin):
-                self.update_search(skip_share=skip_share)
-            else:
-                self.update_search()
+            self.update_search()
 
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True, skip_share=False):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -1166,11 +1162,7 @@ class TaxonomizableMixin(models.Model):
 
         self.save()
         if hasattr(self, 'update_search'):
-            from osf.models.base import VersionedGuidMixin
-            if isinstance(self, VersionedGuidMixin):
-                self.update_search(skip_share=skip_share)
-            else:
-                self.update_search()
+            self.update_search()
 
     def map_subjects_between_providers(self, old_provider, new_provider, auth=None):
         """

@@ -296,7 +296,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             doi = client.build_doi(preprint=obj) if client else None
         return f'https://doi.org/{doi}' if doi else None
 
-    def update(self, preprint, validated_data, skip_share=False):
+    def update(self, preprint, validated_data):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
@@ -475,7 +475,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
-            self.update_subjects(preprint, subjects, auth, skip_share=skip_share)
+            self.update_subjects(preprint, subjects, auth)
             save_preprint = True
 
         if 'title' in validated_data:
@@ -598,8 +598,7 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
         if not preprint:
             raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
         if data_to_update:
-            # Share should not be updated during version creation
-            return self.update(preprint, data_to_update, skip_share=True)
+            return self.update(preprint, data_to_update)
         return preprint
 
 
