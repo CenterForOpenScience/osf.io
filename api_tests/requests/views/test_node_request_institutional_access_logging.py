@@ -83,25 +83,15 @@ class TestNodeRequestListInstitutionalAccessActionAccept:
         assert 'contributors' in log.params
         assert institutional_admin._id in log.params['contributors']
 
-    def test_post_node_request_action_remove_curator(self, app, action_payload, url, user_with_affiliation, institutional_admin, project):
+    def test_post_node_request_action_reject_curator(self, app, action_payload, url, user_with_affiliation, institutional_admin, project):
         """
         Test a successful POST request to remove a curator and log the action.
         """
         # Perform the POST request
+        action_payload['data']['attributes']['trigger'] = 'reject'
         res = app.post_json_api(url, action_payload, auth=user_with_affiliation.auth)
         assert res.status_code == 201
-        assert res.json['data']['attributes']['trigger'] == 'remove'
+        assert res.json['data']['attributes']['trigger'] == 'reject'
 
-        # Verify the curator is removed
         assert not project.contributors.filter(id=institutional_admin.id).exists()
-
-        # Fetch the log entry
-        log = project.logs.get(action=NodeLog.CURATOR_REMOVED)
-
-        # Assert log details
-        assert log.action == NodeLog.CURATOR_REMOVED
-        assert log.user_id == user_with_affiliation.id
-        assert log.node_id == project.id
-        assert log.params['node'] == project._id
-        assert 'contributors' in log.params
-        assert institutional_admin._id in log.params['contributors']
+        assert not project.logs.filter(action=NodeLog.CURATOR_ADDED)
