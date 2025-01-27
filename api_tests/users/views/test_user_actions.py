@@ -170,7 +170,6 @@ class TestReviewActionCreateRelated:
                 ('initial', 'accept'),
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
-                ('pending', 'submit'),
                 ('rejected', 'reject'),
                 ('rejected', 'submit'),
             ],

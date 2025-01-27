@@ -104,7 +104,8 @@ class CrossRefClient(AbstractIdentifierClient):
 
             if preprint.description:
                 posted_content.append(
-                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE))
+                    element.abstract(element.p(remove_control_characters(preprint.description)), xmlns=JATS_NAMESPACE)
+                )
 
             if preprint.license and preprint.license.node_license.url:
                 posted_content.append(
@@ -118,18 +119,32 @@ class CrossRefClient(AbstractIdentifierClient):
                 posted_content.append(
                     element.program(xmlns=CROSSREF_ACCESS_INDICATORS)
                 )
+        relations_program = element.program(xmlns=CROSSREF_RELATIONS)
 
-            if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
-                posted_content.append(
-                    element.program(
-                        element.related_item(
-                            element.intra_work_relation(
-                                preprint.article_doi,
-                                **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
-                            )
-                        ), xmlns=CROSSREF_RELATIONS
+        if preprint.article_doi and preprint.article_doi != self.build_doi(preprint) and include_relation:
+            relations_program.append(
+                element.related_item(
+                    element.intra_work_relation(
+                        preprint.article_doi,
+                        **{'relationship-type': 'isPreprintOf', 'identifier-type': 'doi'}
                     )
                 )
+            )
+
+        preprint_versions = preprint.get_preprint_versions(include_rejected=False)
+        if preprint_versions:
+            for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
+                if preprint_version.version > preprint.version:
+                    continue
+                related_item = element.related_item(
+                    element.intra_work_relation(
+                        self.build_doi(previous_version),
+                        **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
+                    )
+                )
+                relations_program.append(related_item)
+        if len(relations_program) > 0:
+            posted_content.append(relations_program)
 
         doi = self.build_doi(preprint)
         doi_data = [

@@ -71,14 +71,17 @@ class CollectionMixin:
             self.check_object_permissions(self.request, collection)
         return collection
 
-    def collection_preprints(self, collection, user):
-        return Preprint.objects.can_view(
+    def collection_preprints(self, collection, user, latest_only=False):
+        preprints = Preprint.objects.can_view(
             Preprint.objects.filter(
                 guids__in=collection.active_guids,
                 deleted__isnull=True,
             ),
             user=user,
         )
+        if latest_only:
+            preprints = preprints.filter(guids__isnull=False)
+        return preprints
 
     def get_collection_submission(self, check_object_permissions=True):
         collection_submission = get_object_or_error(
@@ -685,7 +688,7 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return self.collection_preprints(self.get_collection(), auth.user)
+        return self.collection_preprints(self.get_collection(), auth.user, latest_only=True)
 
     # overrides APIView
     def get_parser_context(self, http_request):

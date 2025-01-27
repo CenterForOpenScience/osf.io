@@ -60,7 +60,7 @@
       "relationType": "HasVersion"
     },
     {
-      "relatedIdentifier": "11.pp/FK2osf.io/w4ibb",
+      "relatedIdentifier": "11.pp/FK2osf.io/w4ibb_v1",
       "relatedIdentifierType": "DOI",
       "relationType": "IsSupplementTo"
     }
@@ -85,7 +85,7 @@
       "publicationYear": "2123",
       "publisher": "PP the Preprint Provider",
       "relatedItemIdentifier": {
-        "relatedItemIdentifier": "11.pp/FK2osf.io/w4ibb",
+        "relatedItemIdentifier": "11.pp/FK2osf.io/w4ibb_v1",
         "relatedItemIdentifierType": "DOI"
       },
       "relatedItemType": "Preprint",

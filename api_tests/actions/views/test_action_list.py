@@ -154,7 +154,6 @@ class TestReviewActionCreateRoot:
                 ('initial', 'edit_comment'),
                 ('initial', 'reject'),
                 ('initial', 'withdraw'),
-                ('pending', 'submit'),
                 ('rejected', 'reject'),
                 ('rejected', 'submit'),
                 ('rejected', 'withdraw'),
