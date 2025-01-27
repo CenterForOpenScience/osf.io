@@ -3,11 +3,11 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_contributors_detail import (
     TestContributorDetail,
-    TestNodeContributorOrdering,
-    TestNodeContributorUpdate,
     TestNodeContributorPartialUpdate,
     TestNodeContributorDelete
 )
+from api_tests.nodes.views.test_node_contributors_detail_ordering import TestNodeContributorOrdering
+from api_tests.nodes.views.test_node_contributors_detail_update import TestNodeContributorUpdate
 from osf_tests.factories import (
     DraftRegistrationFactory,
     ProjectFactory,
