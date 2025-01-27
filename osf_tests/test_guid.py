@@ -1,16 +1,27 @@
 from unittest import mock
-import pytest
 from urllib.parse import quote
+
 from django.utils import timezone
 from django.core.exceptions import MultipleObjectsReturned
+import pytest
 
-from osf.models import Guid, NodeLicenseRecord, OSFUser
-from osf_tests.factories import AuthUserFactory, UserFactory, NodeFactory, NodeLicenseRecordFactory, \
-    RegistrationFactory, PreprintFactory, PreprintProviderFactory
+from framework.auth import Auth
+from osf.models import Guid, GuidVersionsThrough, NodeLicenseRecord, OSFUser, Preprint
+from osf.models.base import VersionedGuidMixin
 from osf.utils.permissions import ADMIN
+from osf_tests.factories import (
+    AuthUserFactory,
+    NodeFactory,
+    NodeLicenseRecordFactory,
+    PreprintFactory,
+    PreprintProviderFactory,
+    RegistrationFactory,
+    UserFactory,
+)
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
+
 
 @pytest.mark.django_db
 class TestGuid:
@@ -38,6 +49,7 @@ class TestGuid:
         obj = Factory()
         assert obj._id
         assert len(obj._id) == 5
+
 
 @pytest.mark.django_db
 class TestReferent:
@@ -433,7 +445,6 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 404
 
         pp = PreprintFactory(is_published=False)
-
         res = self.app.get(pp.url + 'download')
         assert res.status_code == 404
 
@@ -452,3 +463,115 @@ class TestResolveGuid(OsfTestCase):
 
         res = self.app.get(pp.url + 'download', auth=non_contrib.auth)
         assert res.status_code == 410
+
+    def test_resolve_guid_redirect_to_versioned_guid(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(f'{pp.get_guid()._id}/')
+        assert res.status_code == 302
+        assert res.location == f'/{pp._id}/'
+
+@pytest.fixture()
+def creator():
+    return AuthUserFactory()
+
+@pytest.fixture()
+def auth(creator):
+    return Auth(user=creator)
+
+@pytest.fixture()
+def preprint_provider():
+    return PreprintProviderFactory()
+
+
+@pytest.mark.django_db
+class TestGuidVersionsThrough:
+    def test_creation_versioned_guid(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
+        )
+        assert preprint.guids.count() == 1
+        assert preprint.creator == creator
+        assert preprint.provider == preprint_provider
+        assert preprint.title == 'Preprint'
+        assert preprint.description == 'Abstract'
+
+        preprint_guid = preprint.guids.first()
+        assert preprint_guid.referent == preprint
+        assert preprint_guid.content_type.model == 'preprint'
+        assert preprint_guid.object_id == preprint.pk
+        assert preprint_guid.is_versioned is True
+
+        version_entry = preprint.versioned_guids.first()
+        assert version_entry.guid == preprint_guid
+        assert version_entry.referent == preprint
+        assert version_entry.content_type.model == 'preprint'
+        assert version_entry.object_id == preprint.pk
+        assert version_entry.version == 1
+
+    def test_create_version(self, creator, preprint_provider):
+        preprint = PreprintFactory(creator=creator)
+        assert preprint.guids.count() == 1
+        preprint_guid = preprint.guids.first()
+
+        preprint_metadata = {
+            'subjects': [el for el in preprint.subjects.all().values_list('_id', flat=True)],
+            'original_publication_date': preprint.original_publication_date,
+            'custom_publication_citation': preprint.custom_publication_citation,
+            'article_doi': preprint.article_doi,
+            'has_coi': preprint.has_coi,
+            'conflict_of_interest_statement': preprint.conflict_of_interest_statement,
+            'has_data_links': preprint.has_data_links,
+            'why_no_data': preprint.why_no_data,
+            'data_links': preprint.data_links,
+            'has_prereg_links': preprint.has_prereg_links,
+            'why_no_prereg': preprint.why_no_prereg,
+            'prereg_links': preprint.prereg_links,
+        }
+        if preprint.node:
+            preprint_metadata['node'] = preprint.node
+        if preprint.license:
+            preprint_metadata['license_type'] = preprint.license.node_license
+            preprint_metadata['license'] = {
+                'copyright_holders': preprint.license.copyright_holders,
+                'year': preprint.license.year
+            }
+        auth = Auth(user=creator)
+        new_preprint, data_for_update = Preprint.create_version(create_from_guid=preprint._id, auth=auth)
+        tags = data_for_update.pop('tags')
+        assert list(tags) == list(preprint.tags.all().values_list('name', flat=True))
+        assert preprint_metadata == data_for_update
+
+        new_version = new_preprint.versioned_guids.first()
+
+        assert preprint.guids.count() == 0
+        assert preprint.versioned_guids.count() == 1
+        assert preprint.files.count() == 1
+        assert new_preprint.guids.count() == 1
+        assert new_preprint.versioned_guids.count() == 1
+        assert new_preprint.files.count() == 0
+
+        assert new_version.referent == new_preprint
+        assert new_version.object_id == new_preprint.pk
+        assert new_version.content_type.model == 'preprint'
+        assert new_version.guid == preprint_guid
+        assert new_version.version == 2
+        assert preprint_guid.versions.count() == 2
+
+    def test_versioned_preprint_id_property(self, creator, preprint_provider):
+        preprint = Preprint.create(
+            creator=creator,
+            provider=preprint_provider,
+            title='Preprint',
+            description='Abstract'
+        )
+        preprint_guid = preprint.guids.first()
+        expected_guid = f'{preprint_guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{VersionedGuidMixin.INITIAL_VERSION_NUMBER}'
+        assert preprint._id == expected_guid
+
+        GuidVersionsThrough.objects.filter(guid=preprint_guid).delete()
+        preprint._id = None
+        assert preprint._id is None

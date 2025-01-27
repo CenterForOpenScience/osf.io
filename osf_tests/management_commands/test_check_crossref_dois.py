@@ -22,7 +22,7 @@ class TestCheckCrossrefDOIs:
 
     @pytest.fixture()
     def stuck_preprint(self):
-        preprint = PreprintFactory(set_doi=False)
+        preprint = PreprintFactory(set_doi=False, set_guid='guid0')
         preprint.date_published = preprint.date_published - timedelta(days=settings.DAYS_CROSSREF_DOIS_MUST_BE_STUCK_BEFORE_EMAIL + 1)
         # match guid to the fixture crossref_works_response.json
         guid = preprint.guids.first()
@@ -43,7 +43,7 @@ class TestCheckCrossrefDOIs:
     @responses.activate
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
     def test_check_crossref_dois(self, crossref_response, stuck_preprint, preprint):
-        doi = settings.DOI_FORMAT.format(prefix=stuck_preprint.provider.doi_prefix, guid=stuck_preprint.guids.first()._id)
+        doi = settings.DOI_FORMAT.format(prefix=stuck_preprint.provider.doi_prefix, guid=stuck_preprint._id)
         responses.add(
             responses.Response(
                 responses.GET,

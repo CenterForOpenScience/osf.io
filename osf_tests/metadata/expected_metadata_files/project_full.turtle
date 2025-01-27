@@ -39,11 +39,11 @@
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
     dcterms:identifier "http://localhost:5000/w4ibb",
-        "https://doi.org/11.pp/FK2osf.io/w4ibb" ;
+        "https://doi.org/11.pp/FK2osf.io/w4ibb_v1" ;
     dcterms:publisher <http://localhost:5000/preprints/preprovi> ;
     dcterms:title "this is a preprint title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
-    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb> .
+    owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb_v1> .
 
 <http://localhost:5000/w5ibb> a osf:Registration ;
     dcterms:created "2123-05-04" ;
