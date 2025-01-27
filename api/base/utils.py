@@ -16,7 +16,7 @@ from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models.base import GuidMixin
+from osf.models.base import GuidMixin, VersionedGuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
 from website import util as website_util  # noqa
@@ -103,8 +103,14 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
             raise NotFound
 
     elif isinstance(query_or_pk, str):
-        # they passed a 5-char guid as a string
-        if issubclass(model_cls, GuidMixin):
+        # If the class is a subclass of `VersionedGuidMixin`, get obj directly from model using `.load()`. The naming
+        # for `query_or_pk` no longer matches the actual case. It is neither a query nor a pk, but a guid str.
+        if issubclass(model_cls, VersionedGuidMixin):
+            obj = model_cls.load(query_or_pk, select_for_update=select_for_update)
+        # If the class is a subclass of `GuidMixin` (except for `VersionedGuidMixin`), turn it into a query dictionary.
+        # The naming for `query_or_pk` no longer matches the actual case either. It is neither a query nor a pk, but a
+        # 5-char guid str. We should be able to use the `.load()` the same way as in the `VersionedGuidMixin` case.
+        elif issubclass(model_cls, GuidMixin):
             # if it's a subclass of GuidMixin we know it's primary_identifier_name
             query = {'guids___id': query_or_pk}
         else:

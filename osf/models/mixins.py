@@ -297,8 +297,8 @@ class AffiliatedInstitutionMixin(models.Model):
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, log=True, notify=True):
-        if not user.is_affiliated_with_institution(inst):
+    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False, notify=True):
+        if not user.is_affiliated_with_institution(inst) and not ignore_user_affiliation:
             raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
@@ -1410,11 +1410,14 @@ class ContributorMixin(models.Model):
                 )
             if save:
                 self.save()
-
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email, permissions=permissions)
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth,
+                    email_template=send_email,
+                    permissions=permissions
+                )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):

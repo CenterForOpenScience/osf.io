@@ -6,7 +6,7 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer, PreprintRequestActionSerializer
 from api.base.exceptions import Conflict
-from api.base.filters import ListFilterMixin
+from api.base.filters import TargetFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
@@ -110,7 +110,7 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return action
 
 
-class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin):
+class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, TargetFilterMixin):
     """List of review actions viewable by this user
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)

@@ -16,7 +16,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     SubjectFactory,
 )
-from osf.models import Collection
+from osf.models import Collection, VersionedGuidMixin
 from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, WRITE, READ
 from website.project.signals import contributor_removed
@@ -3894,10 +3894,14 @@ class TestCollectionLinkedPreprints:
 
     @pytest.fixture()
     def id_linked_preprints(self, collection):
-        return list(
-            collection.guid_links.values_list(
-                '_id', flat=True)
-        )
+        res = []
+        for guid in collection.guid_links.all():
+            if guid.is_versioned:
+                for through_item in guid.versions.all():
+                    res.append(f'{guid._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{through_item.version}')
+            else:
+                res.append(guid._id)
+        return res
 
     def test_linked_preprints_returns_everything(
             self, app, url_collection_linked_preprints,
