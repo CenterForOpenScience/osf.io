@@ -409,7 +409,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
 
         # Permissions on the list objects are handled by the query
         default_qs = Preprint.objects.filter(_contributors__guids___id=target_user._id).exclude(machine_state='initial')
-        return self.preprints_queryset(default_qs, auth_user, allow_contribs=False)
+        return self.preprints_queryset(default_qs, auth_user, allow_contribs=False, latest_only=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -794,18 +794,22 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         record_id = (request.data.get('id', None) or '').lower().strip()
         if not record_id:
             raise ValidationError('Must specify record "id".')
+
         claimed_user = self.get_user(check_permissions=True)  # Ensures claimability
         if claimed_user.is_disabled:
             raise ValidationError('Cannot claim disabled account.')
-        try:
-            record_referent = Guid.objects.get(_id=record_id).referent
-        except Guid.DoesNotExist:
+
+        record_referent, _ = Guid.load_referent(record_id)
+        if not record_referent:
             raise NotFound('Unable to find specified record.')
 
         try:
             unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
         except KeyError:
-            if isinstance(record_referent, Preprint) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
+            if isinstance(
+                record_referent,
+                Preprint,
+            ) and record_referent.node and record_referent.node._id in claimed_user.unclaimed_records:
                 record_referent = record_referent.node
                 unclaimed_record = claimed_user.unclaimed_records[record_referent._id]
             else:
@@ -827,9 +831,9 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
                 self._send_claim_email(claimer, claimed_user, record_referent, registered=True)
             except HTTPError as e:
                 raise ValidationError(e.data['message_long'])
-
         else:
             raise ValidationError('Must either be logged in or specify claim email.')
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

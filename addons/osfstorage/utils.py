@@ -9,7 +9,7 @@ from framework.analytics import update_counter
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.sessions import get_session
-from osf.models import BaseFileNode, Guid
+from osf.models import BaseFileNode, Guid, Preprint
 
 from addons.osfstorage import settings
 
@@ -21,7 +21,7 @@ def enqueue_update_analytics(node, file, version_idx, action='download'):
 
 @app.task(max_retries=5, default_retry_delay=60)
 def update_analytics_async(node_id, file_id, version_idx, session_key=None, action='download'):
-    node = Guid.load(node_id).referent
+    node, _ = Guid.load_referent(node_id)
     file = BaseFileNode.load(file_id)
     update_analytics(node, file, version_idx, session_key, action)
 
@@ -43,7 +43,7 @@ def update_analytics(node, file, version_idx, session_key, action='download'):
     node_info = {
         'contributors': contributors
     }
-    resource = node.guids.first()
+    resource = node.get_guid() if isinstance(node, Preprint) else node.guids.first()
 
     update_counter(resource, file, version=None, action=action, node_info=node_info, session_key=session_key)
     update_counter(resource, file, version_idx, action, node_info=node_info, session_key=session_key)

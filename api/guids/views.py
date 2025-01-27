@@ -49,9 +49,10 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return None
 
     def get_object(self):
+        base_guid_str, _ = Guid.split_guid(self.kwargs['guids'])
         return get_object_or_error(
             Guid,
-            self.kwargs['guids'],
+            base_guid_str,
             self.request,
             display_name='guid',
         )

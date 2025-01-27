@@ -16,13 +16,13 @@ from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 
 
+@pytest.fixture()
+def user(self):
+    return AuthUserFactory()
+
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorDetail:
-
-    @pytest.fixture()
-    def user(self):
-        return AuthUserFactory()
 
     @pytest.fixture()
     def title(self):
