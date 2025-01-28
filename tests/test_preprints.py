@@ -1,46 +1,30 @@
-import jwe
-import jwt
-from unittest import mock
-from furl import furl
-import pytest
+import datetime
+from importlib import import_module
 import time
 from urllib.parse import urljoin
-import datetime
-from django.utils import timezone
-import itsdangerous
-from importlib import import_module
-import pytest_socket
 
 from django.contrib.auth.models import Group
-from django.core.exceptions import ValidationError
+from django.contrib.contenttypes.models import ContentType
 from django.conf import settings as django_conf_settings
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from furl import furl
+import itsdangerous
+import jwe
+import jwt
+import pytest
+import pytest_socket
+from unittest import mock
 
-from website import settings, mails
-from website.preprints.tasks import (
-    on_preprint_updated,
-    update_or_create_preprint_identifiers,
-    update_or_enqueue_on_preprint_updated,
-    should_update_preprint_identifiers
-)
-from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
-from website.identifiers.utils import request_identifiers
 from framework.auth import signing
 from framework.celery_tasks import handlers
 from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, postcommit_celery_queue
-from framework.exceptions import PermissionsError, HTTPError
+from framework.exceptions import PermissionsError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, Subject
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
-
-from osf.utils.permissions import READ, WRITE, ADMIN
-from osf.utils.workflows import DefaultStates, RequestTypes
-from tests.base import assert_datetime_equal, OsfTestCase
-from tests.utils import assert_preprint_logs
-
-SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
-
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -53,8 +37,25 @@ from osf_tests.factories import (
     PreprintRequestFactory,
     NodeFactory,
 )
+from osf.utils.permissions import READ, WRITE, ADMIN
+from osf.utils.workflows import DefaultStates, RequestTypes, ReviewStates
+from tests.base import assert_datetime_equal, OsfTestCase
+from tests.utils import assert_preprint_logs
+from website import settings, mails
+from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
+from website.identifiers.utils import request_identifiers
+from website.preprints.tasks import (
+    on_preprint_updated,
+    update_or_create_preprint_identifiers,
+    update_or_enqueue_on_preprint_updated,
+    should_update_preprint_identifiers
+)
+
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 pytestmark = pytest.mark.django_db
+
 
 @pytest.fixture()
 def user():
@@ -281,9 +282,10 @@ class TestPreprintCreation:
 
     def test_creator_is_added_as_contributor(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs(),
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -296,9 +298,10 @@ class TestPreprintCreation:
 
     def test_default_region_set_to_user_settings_osfstorage_default(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -307,9 +310,10 @@ class TestPreprintCreation:
 
     def test_root_folder_created_automatically(self, fake):
         user = UserFactory()
-        preprint = Preprint(
+        preprint = Preprint.create(
             title=fake.bs,
             creator=user,
+            description=fake.bs(),
             provider=PreprintProviderFactory()
         )
         preprint.save()
@@ -2428,3 +2432,303 @@ class TestWithdrawnPreprint:
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable
         assert crossref_client.get_status(preprint_pre_mod) == 'unavailable'
+
+
+@pytest.mark.django_db
+class TestPreprintVersionWithModeration:
+
+    @pytest.fixture()
+    def creator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def moderator(self, preprint_pre_mod, preprint_post_mod):
+        provider_moderator = AuthUserFactory()
+        preprint_pre_mod.provider.add_to_group(provider_moderator, 'moderator')
+        preprint_pre_mod.provider.save()
+        preprint_post_mod.provider.add_to_group(provider_moderator, 'moderator')
+        preprint_post_mod.provider.save()
+        return provider_moderator
+
+    @pytest.fixture()
+    def unpublished_preprint_pre_mod(self):
+        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_pre_mod(self):
+        return PreprintFactory(reviews_workflow='pre-moderation')
+
+    @pytest.fixture()
+    def unpublished_preprint_post_mod(self):
+        return PreprintFactory(reviews_workflow='post-moderation', is_published=False)
+
+    @pytest.fixture()
+    def preprint_post_mod(self):
+        return PreprintFactory(reviews_workflow='post-moderation')
+
+    @pytest.fixture()
+    def make_withdrawal_request(self, creator):
+        def withdrawal_request(target):
+            request = PreprintRequestFactory(
+                creator=creator,
+                target=target,
+                request_type=RequestTypes.WITHDRAWAL.value,
+                machine_state=DefaultStates.INITIAL.value)
+            request.run_submit(creator)
+            return request
+        return withdrawal_request
+
+    def test_unpublished_preprint_pre_mod_accept(self, unpublished_preprint_pre_mod, creator, moderator):
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
+
+        unpublished_preprint_pre_mod.run_submit(creator)
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
+        guid_obj = unpublished_preprint_pre_mod.get_guid()
+        assert guid_obj.object_id == unpublished_preprint_pre_mod.pk
+        assert guid_obj.referent == unpublished_preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        unpublished_preprint_pre_mod.run_accept(moderator, 'comment')
+        assert unpublished_preprint_pre_mod.is_published is True
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
+        guid_obj = unpublished_preprint_pre_mod.get_guid()
+        assert guid_obj.object_id == unpublished_preprint_pre_mod.pk
+        assert guid_obj.referent == unpublished_preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+    def test_unpublished_preprint_pre_mod_reject(self, unpublished_preprint_pre_mod, creator, moderator):
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
+
+        unpublished_preprint_pre_mod.run_submit(creator)
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
+        guid_obj = unpublished_preprint_pre_mod.get_guid()
+        assert guid_obj.object_id == unpublished_preprint_pre_mod.pk
+        assert guid_obj.referent == unpublished_preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
+        assert unpublished_preprint_pre_mod.is_published is False
+        assert unpublished_preprint_pre_mod.machine_state == ReviewStates.REJECTED.value
+        assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
+        assert guid_obj.object_id == unpublished_preprint_pre_mod.pk
+        assert guid_obj.referent == unpublished_preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+    def test_unpublished_version_pre_mod_submit_and_accept(self, preprint_pre_mod, creator, moderator):
+        assert preprint_pre_mod.is_published is True
+        assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
+
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.INITIAL.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_pre_mod.pk
+        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_submit(creator)
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.PENDING.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_pre_mod.pk
+        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_accept(moderator, 'comment')
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+    def test_new_version_pre_mod_submit_and_reject(self, preprint_pre_mod, creator, moderator):
+        assert preprint_pre_mod.is_published is True
+        assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
+
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.INITIAL.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_pre_mod.pk
+        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_submit(creator)
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.PENDING.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_pre_mod.pk
+        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_reject(moderator, 'comment')
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.REJECTED.value
+        assert new_version.versioned_guids.first().is_rejected is True
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_pre_mod.pk
+        assert guid_obj.referent == preprint_pre_mod
+
+    def test_unpublished_preprint_post_mod_submit_and_accept(self, unpublished_preprint_post_mod, creator, moderator):
+        assert unpublished_preprint_post_mod.is_published is False
+        assert unpublished_preprint_post_mod.machine_state == ReviewStates.INITIAL.value
+
+        unpublished_preprint_post_mod.run_submit(creator)
+        assert unpublished_preprint_post_mod.is_published is True
+        assert unpublished_preprint_post_mod.machine_state == ReviewStates.PENDING.value
+        guid_obj = unpublished_preprint_post_mod.get_guid()
+        assert guid_obj.object_id == unpublished_preprint_post_mod.pk
+        assert guid_obj.referent == unpublished_preprint_post_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        unpublished_preprint_post_mod.run_accept(moderator, 'comment')
+        assert unpublished_preprint_post_mod.is_published is True
+        assert unpublished_preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
+        guid_obj = unpublished_preprint_post_mod.get_guid()
+        assert guid_obj.object_id == unpublished_preprint_post_mod.pk
+        assert guid_obj.referent == unpublished_preprint_post_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+    def test_unpublished_new_version_post_mod_submit_and_accept(self, preprint_post_mod, creator, moderator):
+        assert preprint_post_mod.is_published is True
+        assert preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_post_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        assert new_version.is_published is False
+        assert new_version.machine_state == ReviewStates.INITIAL.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == preprint_post_mod.pk
+        assert guid_obj.referent == preprint_post_mod
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_submit(creator)
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.PENDING.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+        new_version.run_accept(moderator, 'comment')
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        guid_obj = new_version.get_guid()
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
+        assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
+
+    def test_preprint_withdrawal_request_pre_mod(self, make_withdrawal_request, moderator, preprint_pre_mod):
+        assert preprint_pre_mod.is_published is True
+        assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request = make_withdrawal_request(preprint_pre_mod)
+        preprint_pre_mod.reload()
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert preprint_pre_mod.is_published is True
+        assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request.run_accept(moderator, 'comment')
+        preprint_pre_mod.reload()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
+        assert preprint_pre_mod.is_retracted is True
+        assert preprint_pre_mod.is_published is True
+        assert preprint_pre_mod.machine_state == ReviewStates.WITHDRAWN.value
+
+    def test_preprint_withdrawal_request_post_mod(self, make_withdrawal_request, moderator, preprint_post_mod):
+        assert preprint_post_mod.is_published is True
+        assert preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request = make_withdrawal_request(preprint_post_mod)
+        preprint_post_mod.reload()
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert preprint_post_mod.is_published is True
+        assert preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request.run_accept(moderator, 'comment')
+        preprint_post_mod.reload()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
+        assert preprint_post_mod.is_retracted is True
+        assert preprint_post_mod.is_published is True
+        assert preprint_post_mod.machine_state == ReviewStates.WITHDRAWN.value
+
+    def test_preprint_version_withdrawal_request_pre_mod(self, make_withdrawal_request, creator, moderator, preprint_pre_mod):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_pre_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        new_version.run_submit(creator)
+        new_version.run_accept(moderator, 'comment')
+        new_version.reload()
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request = make_withdrawal_request(new_version)
+        new_version.reload()
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request.run_accept(moderator, 'comment')
+        new_version.reload()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
+        assert new_version.is_retracted is True
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.WITHDRAWN.value
+
+    def test_preprint_version_withdrawal_request_post_mod(self, make_withdrawal_request, creator, moderator, preprint_post_mod):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint_post_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        new_version.run_submit(creator)
+        new_version.run_accept(moderator, 'comment')
+        new_version.reload()
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request = make_withdrawal_request(new_version)
+        new_version.reload()
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.ACCEPTED.value
+        withdrawal_request.run_accept(moderator, 'comment')
+        new_version.reload()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
+        assert new_version.is_retracted is True
+        assert new_version.is_published is True
+        assert new_version.machine_state == ReviewStates.WITHDRAWN.value
+
+class TestEmberRedirect(OsfTestCase):
+
+    def test_ember_redirect_to_versioned_guid(self):
+        pp = PreprintFactory(filename='test.pdf', finish=True)
+
+        res = self.app.get(f'preprints/provider/{pp.get_guid()._id}/')
+
+        assert res.status_code == 302
+        assert res.location == f'{pp._id}'

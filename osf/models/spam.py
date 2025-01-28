@@ -190,6 +190,8 @@ class SpamMixin(models.Model):
         pass
 
     def do_check_spam(self, author, author_email, content, request_headers):
+        from osf.models.preprint import Preprint
+
         if self.is_hammy:
             return
         if self.is_spammy:
@@ -200,9 +202,12 @@ class SpamMixin(models.Model):
             'user_agent': request_headers.get('User-Agent'),
             'referer': request_headers.get('Referer'),
         }
-
+        if isinstance(self, Preprint):
+            guid__id = self._id
+        else:
+            guid__id = self.guids.first()._id
         check_resource_for_domains_postcommit(
-            self.guids.first()._id,
+            guid__id,
             content,
         )
 
@@ -211,7 +216,7 @@ class SpamMixin(models.Model):
                 request_kwargs[key] = ensure_str(value)
 
             check_resource_with_spam_services(
-                self.guids.first()._id,
+                guid__id,
                 content,
                 author,
                 author_email,

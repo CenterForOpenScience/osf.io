@@ -2,6 +2,14 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.02.0 (2025-01-27)
+====================
+- DOI Versioning - BE Release
+
+25.01.0 (2025-01-21)
+====================
+- Institutional Access Curator - BE Release
+
 24.11.0 (2024-12-11)
 ====================
 - Institutional Dashboard Project Bugfix Release

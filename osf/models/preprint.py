@@ -4,7 +4,7 @@ import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
-from django.db import models
+from django.db import models, IntegrityError
 from django.db.models import Q
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
@@ -15,8 +15,9 @@ from guardian.shortcuts import get_objects_for_user
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 
+from framework import sentry
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
 
 from .subject import Subject
@@ -42,7 +43,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -51,10 +52,13 @@ from framework.sentry import log_exception
 from osf.exceptions import (
     PreprintStateError,
     InvalidTagError,
-    TagNotFoundError
+    TagNotFoundError,
+    UserStateError,
+    ValidationValueError,
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
+from api.providers.workflows import Workflows
 
 logger = logging.getLogger(__name__)
 
@@ -106,11 +110,49 @@ class PreprintManager(models.Manager):
         # TODO: Remove need for .distinct using correct subqueries
         return ret.distinct('id', 'created') if include_non_public else ret
 
+    def preprint_versions_permissions_query(self, user=None, allow_contribs=True, public_only=False):
+        include_non_public = user and not user.is_anonymous and not public_only
+        if include_non_public:
+            moderator_for = get_objects_for_user(user, 'view_submissions', PreprintProvider, with_superuser=False)
+            admin_user_query = Q(id__in=get_objects_for_user(user, 'admin_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+            reviews_user_query = Q(is_public=True, provider__in=moderator_for)
+            if allow_contribs:
+                contrib_user_query = ~Q(
+                    machine_state__in=[
+                        DefaultStates.PENDING.value,
+                        DefaultStates.REJECTED.value
+                    ]
+                ) & Q(id__in=get_objects_for_user(user, 'read_preprint', self.filter(Q(preprintcontributor__user_id=user.id)), with_superuser=False))
+                query = (self.no_user_query | contrib_user_query | admin_user_query | reviews_user_query)
+            else:
+                query = (self.no_user_query | admin_user_query | reviews_user_query)
+        else:
+            moderator_for = PreprintProvider.objects.none()
+            query = self.no_user_query
 
-class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
+        if not moderator_for.exists():
+            query = query & Q(Q(date_withdrawn__isnull=True) | Q(ever_public=True))
+        return query & ~Q(machine_state=DefaultStates.INITIAL.value)
+
+class PublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_published=True)
+
+class RejectedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(actions__to_state='rejected')
+
+class EverPublishedPreprintManager(PreprintManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(date_published__isnull=False)
+
+class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     objects = PreprintManager()
+    published_objects = PublishedPreprintManager()
+    ever_published_objects = EverPublishedPreprintManager()
+    rejected_objects = RejectedPreprintManager()
     # Preprint fields that trigger a check to the spam filter on save
     SPAM_CHECK_FIELDS = {
         'title',
@@ -268,6 +310,174 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
     def __unicode__(self):
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
+
+    @classmethod
+    def create(cls, provider, title, creator, description):
+        """Customized creation process to support preprint versions and versioned guid.
+        """
+        # Step 1: Create the preprint obj
+        preprint = cls(
+            provider=provider,
+            title=title,
+            creator=creator,
+            description=description,
+        )
+        preprint.save(guid_ready=False)
+        # Step 2: Create the base guid obj
+        base_guid_obj = Guid.objects.create()
+        base_guid_obj.referent = preprint
+        base_guid_obj.object_id = preprint.pk
+        base_guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+        base_guid_obj.save()
+        # Step 3: Create a new entry in the `GuidVersionsThrough` table to store version information
+        versioned_guid = GuidVersionsThrough(
+            referent=base_guid_obj.referent,
+            object_id=base_guid_obj.object_id,
+            content_type=base_guid_obj.content_type,
+            version=VersionedGuidMixin.INITIAL_VERSION_NUMBER,
+            guid=base_guid_obj
+        )
+        versioned_guid.save()
+        preprint.save(guid_ready=True, first_save=True)
+
+        return preprint
+
+    def get_last_not_rejected_version(self):
+        """Get the last version that is not rejected.
+        """
+        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
+
+    def has_unpublished_pending_version(self):
+        """Check if preprint has pending unpublished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
+
+    def has_initiated_but_unfinished_version(self):
+        """Check if preprint has initiated but unfinished version.
+        Note: use `.check_unfinished_or_unpublished_version()` if checking both types
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'initial'
+
+    def check_unfinished_or_unpublished_version(self):
+        """Check and return the "initiated but unfinished version" and "unfinished or unpublished version".
+        """
+        last_not_rejected_version = self.get_last_not_rejected_version()
+        if last_not_rejected_version.date_published:
+            return None, None
+        if last_not_rejected_version.machine_state == 'initial':
+            return last_not_rejected_version, None
+        if last_not_rejected_version.machine_state == 'pending':
+            return None, last_not_rejected_version
+        return None, None
+
+    @classmethod
+    def create_version(cls, create_from_guid, auth):
+        """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
+        but `create_version` always finds the latest version and creates a new version from it. In addition, this
+        creates an "incomplete" new preprint version object using the model class and returns both the new object and
+        the data to be updated. The API, more specifically `PreprintCreateVersionSerializer` must call `.update()` to
+        "completely finish" the new preprint version object creation.
+        """
+
+        # Use `Guid.load()` instead of `VersionedGuid.load()` to retrieve the base guid obj, which always points to the
+        # latest (ever-published) version.
+        guid_obj = Guid.load(create_from_guid)
+        latest_version = cls.load(guid_obj._id)
+        if not latest_version:
+            sentry.log_message(f'Preprint not found: [guid={guid_obj._id}, create_from_guid={create_from_guid}]')
+            return None, None
+        if not latest_version.has_permission(auth.user, ADMIN):
+            sentry.log_message(f'ADMIN permission for the latest version is required to create a new version: '
+                               f'[user={auth.user._id}, guid={guid_obj._id}, latest_version={latest_version._id}]')
+            raise PermissionsError
+        unfinished_version, unpublished_version = latest_version.check_unfinished_or_unpublished_version()
+        if unpublished_version:
+            logger.error('Failed to create a new version due to unpublished pending version already exists: '
+                         f'[version={unpublished_version.version}, '
+                         f'_id={unpublished_version._id}, '
+                         f'state={unpublished_version.machine_state}].')
+            raise UnpublishedPendingPreprintVersionExists
+        if unfinished_version:
+            logger.warning(f'Use existing initiated but unfinished version instead of creating a new one: '
+                           f'[version={unfinished_version.version}, '
+                           f'_id={unfinished_version._id}, '
+                           f'state={unfinished_version.machine_state}].')
+            return unfinished_version, None
+
+        # Note: version number bumps from the last version number instead of the latest version number
+        last_version_number = guid_obj.versions.order_by('-version').first().version
+
+        # Prepare the data to clone/update
+        data_to_update = {
+            'subjects': [el for el in latest_version.subjects.all().values_list('_id', flat=True)],
+            'tags': latest_version.tags.all().values_list('name', flat=True),
+            'original_publication_date': latest_version.original_publication_date,
+            'custom_publication_citation': latest_version.custom_publication_citation,
+            'article_doi': latest_version.article_doi, 'has_coi': latest_version.has_coi,
+            'conflict_of_interest_statement': latest_version.conflict_of_interest_statement,
+            'has_data_links': latest_version.has_data_links, 'why_no_data': latest_version.why_no_data,
+            'data_links': latest_version.data_links,
+            'has_prereg_links': latest_version.has_prereg_links,
+            'why_no_prereg': latest_version.why_no_prereg, 'prereg_links': latest_version.prereg_links,
+        }
+        if latest_version.license:
+            data_to_update['license_type'] = latest_version.license.node_license
+            data_to_update['license'] = {
+                'copyright_holders': latest_version.license.copyright_holders,
+                'year': latest_version.license.year
+            }
+
+        # Create a preprint obj for the new version
+        preprint = cls(
+            provider=latest_version.provider,
+            title=latest_version.title,
+            creator=auth.user,
+            description=latest_version.description,
+        )
+        preprint.save(guid_ready=False)
+        # Create a new entry in the `GuidVersionsThrough` table to store version information, which must happen right
+        # after the first `.save()` of the new preprint version object, which enables `preprint._id` to be computed.
+        guid_version = GuidVersionsThrough(
+            referent=preprint,
+            object_id=guid_obj.object_id,
+            content_type=guid_obj.content_type,
+            version=last_version_number + 1,
+            guid=guid_obj
+        )
+        guid_version.save()
+        preprint.save(guid_ready=True, first_save=True)
+
+        # Add contributors
+        for contributor in latest_version.contributor_set.exclude(user=preprint.creator):
+            try:
+                preprint.add_contributor(
+                    contributor.user,
+                    permissions=contributor.permission,
+                    visible=contributor.visible,
+                    save=True
+                )
+            except (ValidationValueError, UserStateError) as e:
+                sentry.log_exception(e)
+                sentry.log_message(f'Contributor was not added to new preprint version due to error: '
+                                   f'[preprint={preprint._id}, user={contributor.user._id}]')
+        # Add affiliated institutions
+        for institution in latest_version.affiliated_institutions.all():
+            preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
+
+        # Update Guid obj to point to the new version if there is no moderation
+        if not preprint.provider.reviews_workflow:
+            guid_obj.referent = preprint
+            guid_obj.object_id = preprint.pk
+            guid_obj.content_type = ContentType.objects.get_for_model(preprint)
+            guid_obj.save()
+
+        if latest_version.node:
+            preprint.set_supplemental_node(latest_version.node, auth, save=False, ignore_node_permissions=True)
+
+        return preprint, data_to_update
 
     @property
     def is_deleted(self):
@@ -476,6 +686,17 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         return csl
 
+    @property
+    def is_latest_version(self):
+        return self.guids.exists()
+
+    def get_preprint_versions(self, include_rejected=True):
+        guids = self.versioned_guids.first().guid.versions.all()
+        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
+        if include_rejected is False:
+            preprint_versions = [p for p in preprint_versions if p.machine_state != 'rejected']
+        return preprint_versions
+
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
         return web_url_for(view_name, pid=self._id,
                            _absolute=_absolute, _guid=_guid, *args, **kwargs)
@@ -639,7 +860,33 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return None
 
     def save(self, *args, **kwargs):
-        first_save = not bool(self.pk)
+        """Customize preprint save process, which has three steps.
+
+        1. Initial: this save happens before guid and versioned guid are created for the preprint; this save
+        creates the pk; after this save, none of `guids`, `versioned_guids` or `._id` is available.
+        2. First: this save happens and must happen right after versioned guid have been created; this is the
+        same "first save" as it was before preprint became versioned; the only change is that `pk` already exists
+        3. This is the case for all subsequent saves after initial and first save.
+
+        Note: When creating a preprint or new version , must use Preprint.create() or Preprint.create_version()
+        respectively, which handles the save process automatically.
+        """
+        initial_save = not kwargs.pop('guid_ready', True)
+        if initial_save:
+            # Save when guid and versioned guid are not ready
+            return super().save(*args, **kwargs)
+
+        # Preprint must have PK and _id set before continue
+        if not bool(self.pk):
+            err_msg = 'Preprint must have pk!'
+            sentry.log_message(err_msg)
+            raise IntegrityError(err_msg)
+        if not self._id:
+            err_msg = 'Preprint must have _id!'
+            sentry.log_message(err_msg)
+            raise IntegrityError(err_msg)
+
+        first_save = kwargs.pop('first_save', False)
         saved_fields = self.get_dirty_fields() or []
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
@@ -764,11 +1011,11 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['tags'])
             return True
 
-    def set_supplemental_node(self, node, auth, save=False):
+    def set_supplemental_node(self, node, auth, save=False, ignore_node_permissions=False):
         if not self.has_permission(auth.user, WRITE):
             raise PermissionsError('You must have write permissions to set a supplemental node.')
 
-        if not node.has_permission(auth.user, WRITE):
+        if not node.has_permission(auth.user, WRITE) and not ignore_node_permissions:
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
 
         if node.is_deleted:
@@ -922,7 +1169,9 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             log_exception(e)
 
     def update_search(self):
-        update_share(self)
+        # Only update share if the preprint is the latest version (i.e. has `guids`)
+        if self.is_latest_version:
+            update_share(self)
         from website import search
         try:
             search.search.update_preprint(self, bulk=False, async_update=True)
@@ -1281,6 +1530,74 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             )
         if save:
             self.save()
+
+    def run_submit(self, user):
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'submit' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+        """
+        ret = super().run_submit(user=user)
+        provider = self.provider
+        reviews_workflow = provider.reviews_workflow
+        # Only post moderation is relevant for Preprint, and hybrid moderation is included for integrity purpose.
+        need_guid_update = any(
+            [
+                reviews_workflow == Workflows.POST_MODERATION.value,
+                reviews_workflow == Workflows.HYBRID_MODERATION.value and
+                any([
+                    provider.get_group('moderator') in user.groups.all(),
+                    provider.get_group('admin') in user.groups.all()
+                ])
+            ]
+        )
+        # Only update the base guid obj to refer to the new version 1) if the provider is post-moderation, or 2) if the
+        # provider is hybrid-moderation and if the user who submits the preprint is a moderator or admin.
+        if need_guid_update:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+        return ret
+
+    def run_accept(self, user, comment, **kwargs):
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'accept' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_accept(user=user, comment=comment, **kwargs)
+        reviews_workflow = self.provider.reviews_workflow
+        if reviews_workflow == Workflows.PRE_MODERATION.value or reviews_workflow == Workflows.HYBRID_MODERATION.value:
+            base_guid_obj = self.versioned_guids.first().guid
+            base_guid_obj.referent = self
+            base_guid_obj.object_id = self.pk
+            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+            base_guid_obj.save()
+
+        versioned_guid = self.versioned_guids.first()
+        if versioned_guid.is_rejected:
+            versioned_guid.is_rejected = False
+            versioned_guid.save()
+        return ret
+
+    def run_reject(self, user, comment):
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'reject' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_reject(user=user, comment=comment)
+        versioned_guid = self.versioned_guids.first()
+        versioned_guid.is_rejected = True
+        versioned_guid.save()
+        return ret
 
 @receiver(post_save, sender=Preprint)
 def create_file_node(sender, instance, **kwargs):

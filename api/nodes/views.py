@@ -128,7 +128,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationCreateSerializer,
 )
-from api.requests.permissions import NodeRequestPermission
+from api.requests.permissions import NodeRequestPermission, InstitutionalAdminRequestTypePermission
 from api.requests.serializers import NodeRequestSerializer, NodeRequestCreateSerializer
 from api.requests.views import NodeRequestMixin
 from api.resources import annotations as resource_annotations
@@ -2262,7 +2262,7 @@ class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, Prepri
         node = self.get_node()
         # Permissions on the node are handled by the permissions_classes
         # Permissions on the list objects are handled by the query
-        return self.preprints_queryset(node.preprints.all(), auth_user)
+        return self.preprints_queryset(node.preprints.all(), auth_user, latest_only=True)
 
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -2273,6 +2273,7 @@ class NodeRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         NodeRequestPermission,
+        InstitutionalAdminRequestTypePermission,
     )
 
     required_read_scopes = [CoreScopes.NODE_REQUESTS_READ]

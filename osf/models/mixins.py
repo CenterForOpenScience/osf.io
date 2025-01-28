@@ -296,8 +296,8 @@ class CategoryMixin(models.Model):
 class AffiliatedInstitutionMixin(models.Model):
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, log=True):
-        if not user.is_affiliated_with_institution(inst):
+    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False):
+        if not user.is_affiliated_with_institution(inst) and not ignore_user_affiliation:
             raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
@@ -1344,7 +1344,7 @@ class ContributorMixin(models.Model):
         return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False):
+                        send_email=None, auth=None, log=True, save=False, make_curator=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1355,6 +1355,7 @@ class ContributorMixin(models.Model):
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
+        :param bool make_curator incicates whether the user should be an institituional curator
         :returns: Whether contributor was added
         """
         send_email = send_email or self.contributor_email_template
@@ -1400,16 +1401,24 @@ class ContributorMixin(models.Model):
                 )
             if save:
                 self.save()
-
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(self,
-                                                       contributor=contributor,
-                                                       auth=auth, email_template=send_email, permissions=permissions)
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth,
+                    email_template=send_email,
+                    permissions=permissions
+                )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
+
+            if make_curator:
+                contributor_obj.is_curator = True
+                contributor_obj.save()
+
             return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1857,7 +1866,11 @@ class ContributorMixin(models.Model):
         if visible and not self.contributor_class.objects.filter(**kwargs).exists():
             set_visible_kwargs = kwargs
             set_visible_kwargs['visible'] = False
-            self.contributor_class.objects.filter(**set_visible_kwargs).update(visible=True)
+            contribs = self.contributor_class.objects.filter(**set_visible_kwargs)
+            if self.guardian_object_type == 'node' and contribs.filter(is_curator=True).exists():
+                raise ValueError('Curators cannot be made bibliographic contributors')
+            contribs.update(visible=True)
+
         elif not visible and self.contributor_class.objects.filter(**kwargs).exists():
             num_visible_kwargs = self.contributor_kwargs
             num_visible_kwargs['visible'] = True

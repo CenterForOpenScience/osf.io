@@ -270,7 +270,8 @@ def _decrypt_and_decode_jwt_payload():
 
 
 def _get_authenticated_resource(resource_id):
-    resource = AbstractNode.load(resource_id) or Preprint.load(resource_id)
+    resource, _ = Guid.load_referent(resource_id)
+
     if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
 
@@ -480,9 +481,9 @@ def create_waterbutler_log(payload, **kwargs):
             auth = payload['auth']
             # Don't log download actions
             if payload['action'] in DOWNLOAD_ACTIONS:
-                guid = Guid.load(payload['metadata'].get('nid'))
-                if guid:
-                    node = guid.referent
+                guid_id = payload['metadata'].get('nid')
+
+                node, _ = Guid.load_referent(guid_id)
                 return {'status': 'success'}
 
             user = OSFUser.load(auth['id'])
@@ -841,7 +842,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
     guid = kwargs.get('guid')
-    guid_target = getattr(Guid.load(guid), 'referent', None)
+    guid_target, _ = Guid.load_referent(guid)
     target = guid_target or kwargs.get('node') or kwargs['project']
 
     provider_safe = markupsafe.escape(provider)

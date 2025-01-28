@@ -205,12 +205,9 @@ def forgot_password_form():
 
 
 def resolve_guid_download(guid, provider=None):
-    try:
-        guid = Guid.objects.get(_id=guid.lower())
-    except Guid.DoesNotExist:
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    resource = guid.referent
 
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
@@ -292,14 +289,13 @@ def resolve_guid(guid, suffix=None):
     if 'revision' in request.args:
         return resolve_guid_download(guid)
 
-    # Retrieve guid data if present, error if missing
-    try:
-        resource = Guid.objects.get(_id=guid.lower()).referent
-    except Guid.DoesNotExist:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
+    # Retrieve resource and version from a guid str
+    resource, version = Guid.load_referent(guid)
     if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if version and guid != resource._id:
+        return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
 
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)

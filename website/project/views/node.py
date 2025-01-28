@@ -830,7 +830,7 @@ def _view_project(node, auth, primary=False,
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
-            'visible_preprints': serialize_preprints(node, user),
+            'visible_preprints': serialize_preprints(node, user, latest_only=True),
             'institutions': get_affiliated_institutions(node) if node else [],
             'has_draft_registrations': node.has_active_draft_registrations,
             'access_requests_enabled': node.access_requests_enabled,
@@ -967,7 +967,10 @@ def serialize_collections(collection_submissions, auth):
                                                                                          collection_submission.collection)))]
 
 
-def serialize_preprints(node, user):
+def serialize_preprints(node, user, latest_only=False):
+    preprints = Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+    if latest_only:
+        preprints = [preprint for preprint in preprints if preprint.is_latest_version]
     return [
         {
             'title': preprint.title,
@@ -980,8 +983,7 @@ def serialize_preprints(node, user):
                 'workflow': preprint.provider.reviews_workflow},
             'url': preprint.url,
             'absolute_url': preprint.absolute_url
-        } for preprint in
-        Preprint.objects.can_view(base_queryset=node.preprints, user=user).filter(date_withdrawn__isnull=True)
+        } for preprint in preprints
     ]
 
 

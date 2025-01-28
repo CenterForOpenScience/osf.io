@@ -515,3 +515,9 @@ COLLECTION_SUBMISSION_TRANSITIONS = [
 class RequestTypes(ChoiceEnum):
     ACCESS = 'access'
     WITHDRAWAL = 'withdrawal'
+
+@unique
+class NodeRequestTypes(ChoiceEnum):
+    ACCESS = 'access'
+    WITHDRAWAL = 'withdrawal'
+    INSTITUTIONAL_REQUEST = 'institutional_request'
