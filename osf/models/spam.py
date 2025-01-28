@@ -216,7 +216,7 @@ class SpamMixin(models.Model):
                 request_kwargs[key] = ensure_str(value)
 
             check_resource_with_spam_services(
-                self.guids.first()._id,
+                guid__id,
                 content,
                 author,
                 author_email,
