@@ -15,9 +15,8 @@ from osf.utils.workflows import DefaultStates
 from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 
-
 @pytest.fixture()
-def user(self):
+def user():
     return AuthUserFactory()
 
 @pytest.mark.django_db

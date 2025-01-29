@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_contributors_detail import (
-    TestContributorDetail,
+    ContributorDetailMixin,
     TestNodeContributorPartialUpdate,
     TestNodeContributorDelete
 )
@@ -20,8 +20,8 @@ from osf.utils import permissions
 def user():
     return AuthUserFactory(given_name='Dawn')
 
-
-class TestDraftContributorDetail(TestContributorDetail):
+@pytest.mark.django_db
+class TestDraftContributorDetail(ContributorDetailMixin):
     @pytest.fixture()
     def project_public(self, user, title, description, category):
         # Defining "project public" as a draft reg, overriding TestContributorDetail

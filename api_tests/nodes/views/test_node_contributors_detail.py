@@ -14,9 +14,7 @@ from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed
 
 
-@pytest.mark.django_db
-@pytest.mark.enable_implicit_clean
-class TestContributorDetail:
+class ContributorDetailMixin:
 
     @pytest.fixture()
     def user(self):
@@ -68,6 +66,9 @@ class TestContributorDetail:
     def url_private(self, node, user_id):
         return f'/{API_BASE}nodes/{node._id}/contributors/{user_id}/'
 
+@pytest.mark.django_db
+@pytest.mark.enable_implicit_clean
+class TestContributorDetail(ContributorDetailMixin):
     def test_get_public_contributor_detail(self, app, user, project_public, project_private, url_public):
         res = app.get(url_public)
         assert res.status_code == 200
