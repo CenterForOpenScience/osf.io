@@ -66,7 +66,7 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, NodeRegistrationsList, NodeLogList,
+    NodeMixin, NodeContributorRemoveMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
@@ -309,7 +309,7 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
         return context
 
 
-class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
+class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMixin, NodeContributorRemoveMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
@@ -322,12 +322,21 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
     permission_classes = (
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
 
-# error that user permission still. Check NodeContributorDetail where remove group
-# can be fixed with get_node(check_object_permission=False)
+    def get_resource(self):
+        return self.get_node()
+
+    def delete(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context(self)
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
+
 
 class RegistrationBibliographicContributorsList(NodeBibliographicContributorsList, RegistrationMixin):
 
