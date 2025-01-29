@@ -19,7 +19,7 @@ from unittest import mock
 from framework.auth import signing
 from framework.celery_tasks import handlers
 from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue, postcommit_celery_queue
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
