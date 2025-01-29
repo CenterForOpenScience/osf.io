@@ -236,6 +236,9 @@
                 public: true,
             },
         },
+        wopi: {
+            onlyoffice_url: ${ wopi_onlyoffice | sjson, n },
+        },
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
       if (window.contextVars.file.path && !window.contextVars.file.path.startsWith('/')) {
