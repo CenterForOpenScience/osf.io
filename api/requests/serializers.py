@@ -18,7 +18,7 @@ from osf.models import (
 )
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
-from website import settings
+from website import language, settings
 from website.mails import send_mail, NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -186,20 +186,21 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             if not recipient.is_affiliated_with_institution(institution):
                 raise PermissionDenied(f"User {recipient._id} is not affiliated with the institution.")
 
-            if validated_data['comment']:
-                send_mail(
-                    to_addr=recipient.username,
-                    mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-                    user=recipient,
-                    sender=sender,
-                    bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
-                    reply_to=sender.username if validated_data['reply_to'] else None,
-                    recipient=recipient,
-                    comment=validated_data['comment'],
-                    institution=institution,
-                    osf_url=settings.DOMAIN,
-                    node=node_request.target,
-                )
+            comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
+
+            send_mail(
+                to_addr=recipient.username,
+                mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+                user=recipient,
+                sender=sender,
+                bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
+                reply_to=sender.username if validated_data['reply_to'] else None,
+                recipient=recipient,
+                comment=comment,
+                institution=institution,
+                osf_url=settings.DOMAIN,
+                node=node_request.target,
+            )
 
         return node_request
 
