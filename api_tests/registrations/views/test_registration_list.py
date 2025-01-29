@@ -1913,6 +1913,68 @@ class TestRegistrationBulkUpdate:
         assert registration_two.is_pending_embargo_termination is True
 
 
+class TestRegistrationContributors(ApiTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+
+        self.project = ProjectFactory(is_public=False, creator=self.user)
+        self.registration_project = RegistrationFactory(
+            creator=self.user, project=self.project)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_registration_project = RegistrationFactory(
+            creator=self.user, project=self.public_project, is_public=True)
+        self.contributor = AuthUserFactory()
+    
+    def add_contributor_request(self, permission='write', expect_errors=False):
+        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/'
+        attrs = {
+            "permission": permission,
+            "bibliographic": True
+        }
+        relationships = {
+            "users": {
+                "data": {
+                    "type": "users",
+                    "id": self.contributor._id
+                }
+            }
+        }
+        payload = {'data': {'attributes': attrs, 'relationships': relationships, 'type': 'contributors'}}
+        return self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=expect_errors)
+
+    def test_add_contributor(self):
+        res = self.add_contributor_request()
+        assert res.status_code == 201
+        assert res.json['data']['embeds']['users']['data']['id'] == self.contributor._id
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
+
+        res = self.add_contributor_request(expect_errors=True)
+        assert res.status_code == 400
+        assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
+
+        res = self.add_contributor_request('read', True)
+        assert res.status_code == 400
+        assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_read').exists() is False
+
+    
+    def test_remove_contributor(self):
+        self.add_contributor_request()
+        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/{self.contributor._id}/'
+        res = self.app.delete_json_api(url, auth=self.user.auth)
+        assert res.status_code == 204
+        assert self.contributor.groups.exists() is False
+
+        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 404
+        assert f'{self.contributor.email} cannot be found in the list of contributors.' in res.json['errors'][0]['detail']
+        assert self.contributor.groups.exists() is False
+
+
 class TestRegistrationListFiltering(
         RegistrationListFilteringMixin,
         ApiTestCase):
