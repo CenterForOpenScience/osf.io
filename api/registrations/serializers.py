@@ -21,6 +21,7 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
+    NodeContributorsCreateSerializer,
     RegistrationProviderRelationshipField,
     get_license_details,
 )
@@ -916,6 +917,16 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+
+class RegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, RegistrationContributorsSerializer):
+    """
+    Overrides RegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+
+    id and index redefined because of the two serializers we've inherited
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+    index = ser.IntegerField(required=False, source='_order')
 
 
 class RegistrationFileSerializer(OsfStorageFileSerializer):
