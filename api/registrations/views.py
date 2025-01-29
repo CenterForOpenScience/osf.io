@@ -309,7 +309,7 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
         return context
 
 
-class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMixin, NodeContributorRemoveMixin, RegistrationMixin, UserMixin):
+class RegistrationContributorDetail(BaseContributorDetail, NodeContributorRemoveMixin, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
