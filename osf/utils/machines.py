@@ -126,7 +126,17 @@ class ReviewsMachine(BaseMachine):
         self.machineable.save()
 
     def resubmission_allowed(self, ev):
-        return self.machineable.provider.reviews_workflow == Workflows.PRE_MODERATION.value
+        """Allow resubmission 1) if the preprint uses the PRE_MODERATION workflow, or 2) if it uses the POST_MODERATION
+        workflow and is in a pending state.
+        """
+        workflow = self.machineable.provider.reviews_workflow
+        result = any(
+            [
+                workflow == Workflows.PRE_MODERATION.value,
+                workflow == Workflows.POST_MODERATION.value and self.machineable.machine_state == 'pending'
+            ]
+        )
+        return result
 
     def perform_withdraw(self, ev):
         self.machineable.date_withdrawn = self.action.created if self.action is not None else timezone.now()
@@ -201,7 +211,9 @@ class NodeRequestMachine(BaseMachine):
 
         if ev.event.name == DefaultTriggers.ACCEPT.value:
             if not self.machineable.target.is_contributor(self.machineable.creator):
-                contributor_permissions = ev.kwargs.get('permissions', permissions.READ)
+                contributor_permissions = (
+                    self.machineable.requested_permissions or ev.kwargs.get('permissions') or permissions.READ
+                )
                 try:
                     self.machineable.target.add_contributor(
                         self.machineable.creator,
