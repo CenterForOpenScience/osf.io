@@ -297,12 +297,24 @@ class AffiliatedInstitutionMixin(models.Model):
 
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False):
+    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False, notify=True):
         if not user.is_affiliated_with_institution(inst) and not ignore_user_affiliation:
             raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
+            if notify and getattr(self, 'type', False) == 'osf.node':
+                for user, _ in self.get_admin_contributors_recursive(unique_users=True):
+                    mails.send_mail(
+                        user.username,
+                        mails.PROJECT_AFFILIATION_CHANGED,
+                        **{
+                            'user': user,
+                            'node': self,
+                            'institution_added': [inst],
+                            'current_affiliations': list(self.affiliated_institutions.all()),
+                        },
+                    )
         if log:
             params = self.log_params
             params['institution'] = {
@@ -315,7 +327,7 @@ class AffiliatedInstitutionMixin(models.Model):
                 auth=Auth(user)
             )
 
-    def remove_affiliated_institution(self, inst, user, save=False, log=True):
+    def remove_affiliated_institution(self, inst, user, save=False, log=True, notify=True):
         if self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.remove(inst)
             if log:
@@ -332,6 +344,20 @@ class AffiliatedInstitutionMixin(models.Model):
             if save:
                 self.save()
             self.update_search()
+
+            if notify and getattr(self, 'type', False) == 'osf.node':
+                for user, _ in self.get_admin_contributors_recursive(unique_users=True):
+                    mails.send_mail(
+                        user.username,
+                        mails.PROJECT_AFFILIATION_CHANGED,
+                        **{
+                            'user': user,
+                            'node': self,
+                            'institution_removed': [inst],
+                            'current_affiliations': list(self.affiliated_institutions.all()),
+                        },
+                    )
+
             return True
         return False
 
