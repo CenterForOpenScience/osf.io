@@ -1418,7 +1418,11 @@ class NodeStorageProviderSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_id(obj):
-        return f'{obj.node._id}:{obj.provider}'
+        from addons.base.models import BaseAddonSettings
+        if not obj.provider_settings or issubclass(type(obj.provider_settings), BaseAddonSettings):
+            return f'{obj.node._id}:{obj.provider}'
+        else:
+            return obj.provider_settings.gv_data.resource_id
 
     def get_absolute_url(self, obj):
         return absolute_reverse(

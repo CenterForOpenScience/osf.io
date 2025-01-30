@@ -1,14 +1,17 @@
+from __future__ import annotations
 import base64
 import hashlib
 import hmac
 import re
 import urllib
-
+from typing import TYPE_CHECKING
 from django.utils import timezone
 
-from osf.models import OSFUser, AbstractNode
 from osf.utils import permissions as osf_permissions
 from website import settings
+
+if TYPE_CHECKING:
+    from osf.models import AbstractNode, OSFUser
 
 _AUTH_HEADER_REGEX = re.compile(
     r'^HMAC-SHA256 SignedHeaders=(?P<headers>[\w;-]*)&Signature=(?P<signature>[^\W_]*$)'

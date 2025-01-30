@@ -1,3 +1,4 @@
+import itertools
 import pytz
 import markupsafe
 import logging
@@ -11,6 +12,7 @@ from django.utils.functional import cached_property
 from guardian.shortcuts import assign_perm, get_perms, remove_perm, get_group_perms
 
 from api.providers.workflows import Workflows, PUBLIC_STATES
+from api.waffle.utils import flag_is_active
 from framework import status
 from framework.auth import Auth
 from framework.auth.core import get_user
@@ -32,6 +34,7 @@ from .validators import validate_title
 from .tag import Tag
 from osf.utils import sanitize
 from .validators import validate_subject_hierarchy, validate_email, expand_subject_hierarchy
+from osf import features
 from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.machines import (
@@ -54,8 +57,8 @@ from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license
 
-
 logger = logging.getLogger(__name__)
+
 
 class Versioned(models.Model):
     """A Model mixin class that saves delta versions."""
@@ -98,7 +101,6 @@ class Versioned(models.Model):
 
 
 class Loggable(models.Model):
-
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
@@ -148,7 +150,6 @@ class Loggable(models.Model):
 
 
 class TitleMixin(models.Model):
-
     title = models.TextField(validators=[validate_title])
 
     @property
@@ -194,7 +195,6 @@ class TitleMixin(models.Model):
 
 
 class DescriptionMixin(models.Model):
-
     description = models.TextField(blank=True, default='')
 
     @property
@@ -294,7 +294,6 @@ class CategoryMixin(models.Model):
 
 
 class AffiliatedInstitutionMixin(models.Model):
-
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
     def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False, notify=True):
@@ -366,7 +365,7 @@ class AffiliatedInstitutionMixin(models.Model):
 
 class NodeLicenseMixin(models.Model):
     node_license = models.ForeignKey('NodeLicenseRecord', related_name='nodes',
-                                         on_delete=models.SET_NULL, null=True, blank=True)
+                                     on_delete=models.SET_NULL, null=True, blank=True)
 
     @property
     def license(self):
@@ -397,7 +396,6 @@ class NodeLicenseMixin(models.Model):
 
 
 class Taggable(models.Model):
-
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
@@ -488,11 +486,12 @@ class Taggable(models.Model):
 
 
 class AddonModelMixin(models.Model):
-
     # from addons.base.apps import BaseAddonConfig
     settings_type = None
     ADDONS_AVAILABLE = sorted([config for config in apps.get_app_configs() if config.name.startswith('addons.') and
-        config.label != 'base'], key=lambda config: config.name)
+                               config.label != 'base'], key=lambda config: config.name)
+    # These addon configurations will continue to live in the OSF for the foreseeable future
+    OSF_HOSTED_ADDONS = ['forward', 'osfstorage', 'twofactor', 'wiki']
 
     class Meta:
         abstract = True
@@ -506,6 +505,14 @@ class AddonModelMixin(models.Model):
         return self.get_addons()
 
     def get_addons(self):
+        request, user_id = get_request_and_user_id()
+        if flag_is_active(request, features.ENABLE_GV):
+            osf_addons = filter(
+                lambda x: x is not None,
+                (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
+            )
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id))
+
         return [_f for _f in [
             self.get_addon(config.short_name)
             for config in self.ADDONS_AVAILABLE
@@ -533,6 +540,12 @@ class AddonModelMixin(models.Model):
         return self.add_addon(name, *args, **kwargs)
 
     def get_addon(self, name, is_deleted=False):
+        # Avoid test-breakages by avoiding early access to the request context
+        if name not in self.OSF_HOSTED_ADDONS:
+            request, user_id = get_request_and_user_id()
+            if flag_is_active(request, features.ENABLE_GV):
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
+
         try:
             settings_model = self._settings_model(name)
         except LookupError:
@@ -619,7 +632,6 @@ class AddonModelMixin(models.Model):
 
 
 class NodeLinkMixin(models.Model):
-
     class Meta:
         abstract = True
 
@@ -814,7 +826,8 @@ class MachineableMixin(models.Model):
         abstract = True
 
     # NOTE: machine_state should rarely/never be modified directly -- use the state transition methods below
-    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(), default=DefaultStates.INITIAL.value)
+    machine_state = models.CharField(max_length=15, db_index=True, choices=DefaultStates.choices(),
+                                     default=DefaultStates.INITIAL.value)
 
     date_last_transitioned = models.DateTimeField(null=True, blank=True, db_index=True)
 
@@ -896,7 +909,8 @@ class ReviewableMixin(MachineableMixin):
     """
     TriggersClass = ReviewTriggers
 
-    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(), default=ReviewStates.INITIAL.value)
+    machine_state = models.CharField(max_length=15, db_index=True, choices=ReviewStates.choices(),
+                                     default=ReviewStates.INITIAL.value)
 
     class Meta:
         abstract = True
@@ -929,6 +943,7 @@ class GuardianMixin(models.Model):
         * Be defined in self.group_format
         * Use `self` and `group` as format params. E.g: model_{self.id}_{group}
     """
+
     class Meta:
         abstract = True
 
@@ -1064,7 +1079,6 @@ class ReviewProviderMixin(GuardianMixin):
 
 
 class TaxonomizableMixin(models.Model):
-
     class Meta:
         abstract = True
 
@@ -1074,7 +1088,8 @@ class TaxonomizableMixin(models.Model):
     def subject_hierarchy(self):
         if self.subjects.exists():
             return [
-                s.object_hierarchy for s in self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
+                s.object_hierarchy for s in
+                self.subjects.exclude(children__in=self.subjects.all()).select_related('parent')
             ]
         return []
 
@@ -1102,7 +1117,8 @@ class TaxonomizableMixin(models.Model):
             if not self.has_permission(auth.user, WRITE):
                 raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
         elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(self.collection.groups[ADMIN], self.collection):
+            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(
+                    self.collection.groups[ADMIN], self.collection):
                 raise PermissionsError('Only admins can change subjects.')
         return
 
@@ -1228,6 +1244,7 @@ class ContributorMixin(models.Model):
     Works for both AbstractNodes, Preprints, and DraftRegistrations. Only
     AbstractNodes support groups and hierarchies, so there are overrides for this.
     """
+
     class Meta:
         abstract = True
 
@@ -1371,7 +1388,7 @@ class ContributorMixin(models.Model):
 
         if not contrib_to_add.is_registered and not contrib_to_add.unclaimed_records:
             raise UserStateError('This contributor cannot be added. If the problem persists please report it '
-                                       'to ' + language.SUPPORT_LINK)
+                                 'to ' + language.SUPPORT_LINK)
 
         if self.is_contributor(contrib_to_add):
             if permissions is None:
@@ -1530,7 +1547,7 @@ class ContributorMixin(models.Model):
 
             if contributor.is_registered:
                 contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     permissions=permissions, send_email=send_email, save=True)
+                                                   permissions=permissions, send_email=send_email, save=True)
             else:
                 if not full_name:
                     raise ValueError(
@@ -1550,7 +1567,7 @@ class ContributorMixin(models.Model):
 
             if contributor and contributor.is_registered:
                 self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                    send_email=send_email, permissions=permissions, save=True)
+                                     send_email=send_email, permissions=permissions, save=True)
             else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
@@ -1614,7 +1631,8 @@ class ContributorMixin(models.Model):
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
-            admins = OSFUser.objects.filter(id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
+            admins = OSFUser.objects.filter(
+                id__in=self._get_admin_contributors_query(self._contributors.all()).values_list('user_id', flat=True))
             if not admins.count() > 1:
                 # has only one admin
                 admin = admins.first()
@@ -2018,6 +2036,7 @@ class SpamOverrideMixin(SpamMixin):
     """
     Contains overrides to SpamMixin that are common to the node and preprint models
     """
+
     class Meta:
         abstract = True
 
@@ -2147,11 +2166,11 @@ class SpamOverrideMixin(SpamMixin):
 
     def check_spam_user(self, user):
         if (
-            settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
-            and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
+                settings.SPAM_ACCOUNT_SUSPENSION_ENABLED
+                and (timezone.now() - user.date_confirmed) <= settings.SPAM_ACCOUNT_SUSPENSION_THRESHOLD
         ) or (
-            settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
-            and self.spam_data['oopspam_data']['Details']['isIPBlocked']
+                settings.SPAM_AUTOBAN_IP_BLOCK and self.spam_data.get('oopspam_data', None)
+                and self.spam_data['oopspam_data']['Details']['isIPBlocked']
         ):
             self.suspend_spam_user(user)
 
@@ -2211,8 +2230,10 @@ class SpamOverrideMixin(SpamMixin):
         if settings.SPAM_THROTTLE_AUTOBAN:
             creator = self.creator
             yesterday = timezone.now() - timezone.timedelta(days=1)
-            node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
-            preprint_spam_count = creator.preprints.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM], created__gt=yesterday).count()
+            node_spam_count = creator.all_nodes.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM],
+                                                       created__gt=yesterday).count()
+            preprint_spam_count = creator.preprints.filter(spam_status__in=[SpamStatus.FLAGGED, SpamStatus.SPAM],
+                                                           created__gt=yesterday).count()
 
             if (node_spam_count + preprint_spam_count) > settings.SPAM_CREATION_THROTTLE_LIMIT:
                 self.suspend_spam_user(creator)
@@ -2269,7 +2290,7 @@ class RegistrationResponseMixin(models.Model):
 
 
 class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, ContributorMixin,
-        NodeLicenseMixin, Taggable, TaxonomizableMixin, AffiliatedInstitutionMixin):
+                          NodeLicenseMixin, Taggable, TaxonomizableMixin, AffiliatedInstitutionMixin):
 
     def set_editable_attribute(self, fieldname, resource, alternative_resource=None):
         """
@@ -2301,7 +2322,8 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
         else:
             return []
 
-    def copy_editable_fields(self, resource, alternative_resource=None, include_contributors=True, save=True, excluded_attributes=None):
+    def copy_editable_fields(self, resource, alternative_resource=None, include_contributors=True, save=True,
+                             excluded_attributes=None):
         """
         This method copies various editable fields from the 'resource' object to the current object. Includes, title,
         description, category, contributors, node_license, tags, subjects, and affiliated_institutions.
@@ -2331,7 +2353,8 @@ class EditableFieldsMixin(TitleMixin, DescriptionMixin, CategoryMixin, Contribut
 
         self.tags.add(*self.stage_m2m_values('all_tags', resource, alternative_resource))
         self.subjects.add(*self.stage_m2m_values('subjects', resource, alternative_resource))
-        self.affiliated_institutions.add(*self.stage_m2m_values('affiliated_institutions', resource, alternative_resource))
+        self.affiliated_institutions.add(
+            *self.stage_m2m_values('affiliated_institutions', resource, alternative_resource))
 
         if save:
             self.save()

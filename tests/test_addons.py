@@ -15,6 +15,7 @@ from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
+from framework.sessions import get_session
 from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
@@ -59,9 +60,9 @@ class TestAddonAuth(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
-        self.session = SessionStore()
+        self.session = get_session()
         self.session['auth_user_id'] = self.user._id
-        self.session.create()
+        self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session.session_key).decode()
         self.configure_addon()
         self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
@@ -84,19 +85,39 @@ class TestAddonAuth(OsfTestCase):
         self.user_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
-            action='download',
-            nid=self.node._id,
-            metrics={'uri': settings.MFR_SERVER_URL},
-            provider=self.node_addon.config.short_name), **kwargs),
-            'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM).encode(), self.JWE_KEY)}
+        options = {
+            'payload': jwe.encrypt(
+                data=jwt.encode(
+                    payload={
+                        'data': {
+                            'action': 'download',
+                            'nid': self.node._id,
+                            'metrics': {'uri': settings.MFR_SERVER_URL},
+                            'provider': self.node_addon.config.short_name,
+                            **kwargs
+                        },
+                        'exp': timezone.now() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+                    },
+                    key=settings.WATERBUTLER_JWT_SECRET,
+                    algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+                ).encode(),
+                key=self.JWE_KEY
+            )
+        }
+
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithms=[settings.WATERBUTLER_JWT_ALGORITHM])['data']
+        data = jwt.decode(
+            jwe.decrypt(
+                res.json['payload'].encode('utf-8'),
+                self.JWE_KEY
+            ),
+            settings.WATERBUTLER_JWT_SECRET,
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
+        )['data']
         assert data['auth'] == views.make_auth(self.user)
         assert data['credentials'] == self.node_addon.serialize_waterbutler_credentials()
         assert data['settings'] == self.node_addon.serialize_waterbutler_settings()
@@ -109,6 +130,7 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url(action='render')
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 200
+
     def test_auth_render_action_requires_read_permission(self):
         node = ProjectFactory(is_public=False)
         url = self.build_url(action='render', nid=node._id)
@@ -126,17 +148,17 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 403
 
-    def test_auth_missing_args(self):
-        url = self.build_url(cookie=None)
-        res = self.app.get(url)
-        assert res.status_code == 401
-
-    def test_auth_bad_cookie(self):
-        url = self.build_url(cookie=self.cookie)
+    def test_auth_cookie(self):
+        url = self.build_url()
+        self.app.set_cookie(key=settings.COOKIE_NAME, value=self.cookie)
         res = self.app.get(url)
         assert res.status_code == 200
+
         data = jwt.decode(
-            jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY),
+            jwe.decrypt(
+                res.json['payload'].encode('utf-8'),
+                self.JWE_KEY
+            ),
             settings.WATERBUTLER_JWT_SECRET,
             algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
         )['data']
@@ -148,21 +170,29 @@ class TestAddonAuth(OsfTestCase):
         observed_url.port = expected_url.port
         assert expected_url == observed_url
 
-    def test_auth_cookie(self):
-        url = self.build_url(cookie=self.cookie[::-1])
+    def test_auth_bad_cookie(self):
+        url = self.build_url()
+        self.app.set_cookie(key=settings.COOKIE_NAME, value=self.cookie[::-1])
         res = self.app.get(url)
-        assert res.status_code == 401
+        self.assertEqual(res.status_code, 302) # redirect to CAS if cannot extract cookie
 
     def test_auth_missing_addon(self):
         url = self.build_url(provider='queenhub')
         res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth)
+        assert res.status_code == 400
+
+    def test_auth_missing_args(self):
+        url = self.build_url(action=None)
+        res = self.app.get(url)
         assert res.status_code == 400
 
     @mock.patch('addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
-        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, )
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'})
+        self.assertEqual(res.status_code, 403)
         assert res.status_code == 403
 
     def test_action_render_marks_version_as_seen(self):
@@ -1016,32 +1046,37 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        assert views.check_resource_permissions(self.node, Auth(user=self.user), 'upload')
+        assert views._check_resource_permissions(self.node, Auth(user=self.user), 'upload')
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
         self.node.save()
-        views.check_resource_permissions(self.node, Auth(), 'download')
+        assert views._check_resource_permissions(self.node, Auth(), 'download')
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
-        views.check_resource_permissions(self.node, Auth(private_key=link.key), 'download')
+        assert views._check_resource_permissions(self.node, Auth(private_key=link.key), 'download')
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
-        assert not views.check_resource_permissions(self.node, Auth(user=user2), 'download')
+        with self.assertRaises(HTTPError) as exc_info:
+            views._check_resource_permissions(self.node, Auth(user=user2), 'download')
+        assert exc_info.exception.code == 403
 
     def test_not_has_permission_not_logged_in(self):
-        assert not views.check_resource_permissions(self.node, Auth(), 'download')
+        with self.assertRaises(HTTPError) as exc_info:
+            views._check_resource_permissions(self.node, Auth(), 'download')
+        assert exc_info.exception.code == 403
 
     def test_has_permission_on_parent_node_upload_pass_if_registration(self):
         component_admin = AuthUserFactory()
-        ProjectFactory(creator=component_admin, parent=self.node)
+        component = ProjectFactory(creator=component_admin, parent=self.node)
         registration = RegistrationFactory(project=self.node)
 
-        component_registration = registration._nodes.first()
+        component_registration = registration._nodes.get(registered_from=component) # first()
+        assert registration.has_permission(self.user, WRITE)
         assert not component_registration.has_permission(self.user, WRITE)
-        assert views.check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
+        assert views._check_resource_permissions(component_registration, Auth(user=self.user), 'upload')
 
     def test_has_permission_on_parent_node_metadata_pass_if_registration(self):
         component_admin = AuthUserFactory()
@@ -1050,21 +1085,23 @@ class TestCheckAuth(OsfTestCase):
         component_registration = RegistrationFactory(project=component, creator=component_admin)
 
         assert not component_registration.has_permission(self.user, READ)
-        assert views.check_resource_permissions(component_registration, Auth(user=self.user), 'metadata')
+        assert views._check_resource_permissions(component_registration, Auth(user=self.user), 'metadata')
 
     def test_has_permission_on_parent_node_upload_fail_if_not_registration(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, parent=self.node)
 
         assert not component.has_permission(self.user, WRITE)
-        assert not views.check_resource_permissions(component, Auth(user=self.user), 'upload')
+        with self.assertRaises(HTTPError) as exc_info:
+            views._check_resource_permissions(component, Auth(user=self.user), 'upload')
+        assert exc_info.exception.code == 403
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
         assert not component.has_permission(self.user, WRITE)
-        assert views.check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
+        assert views._check_resource_permissions(component, Auth(user=self.user), 'copyfrom')
 
 
 class TestCheckOAuth(OsfTestCase):
@@ -1073,107 +1110,50 @@ class TestCheckOAuth(OsfTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
+        self.headers_patcher = mock.patch('addons.base.views.request.headers')
+        self.mock_headers = self.headers_patcher.start()
+        self.mock_headers.return_value = {'Authorization': 'Bearer oauth'}
+        self.addCleanup(mock.patch.stopall)
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
+    def tearDown(self):
+        # inherited tearDown blows up if mock is running
+        self.headers_patcher.stop()
+        super().tearDown()
+
     @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_not_authenticated(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+    def test_user_has_permission__token_not_authenticated(self, mock_get_client):
         mock_cas_response = cas.CasResponse(authenticated=False)
         mock_get_client.return_value.profile.return_value = mock_cas_response
+        with self.assertRaises(HTTPError) as context:
+            views._check_resource_permissions(self.node, Auth(self.user), 'download')
+        assert context.exception.code ==  403
 
-        assert not component.has_permission(self.user, WRITE)
-        with pytest.raises(HTTPError) as exc_info:
-           views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert exc_info.value.code == 403
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__write(self, mock_get_scopes):
+        mock_get_scopes.return_value = [self.node.file_read_scope]
+        assert self.node.has_permission(self.user, WRITE)
+        with self.assertRaises(HTTPError) as context:
+            views._check_resource_permissions(self.node, Auth(self.user), 'upload')
+        assert context.exception.code == 403
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_no_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                            attributes={'accessTokenScope': {}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
 
-        assert not component.has_permission(self.user, WRITE)
-        with pytest.raises(HTTPError) as exc_info:
-             views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert exc_info.value.code == 403
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__private_read_forbidden(self, mock_get_scopes):
+        self.node.is_public = False
+        self.node.save()
+        mock_get_scopes.return_value = [self.node.file_write_scope]
+        assert self.node.has_permission(self.user, READ)
+        with self.assertRaises(HTTPError) as context:
+            views._check_resource_permissions(self.node, Auth(self.user), 'download')
+        assert context.exception.code == 403
 
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_public_irrelevant_scope_allowed(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(
-            creator=component_admin,
-            is_public=True,
-            parent=self.node
-        )
-        mock_cas_response = cas.CasResponse(
-            authenticated=True,
-            status=None,
-            user=self.user._id,
-            attributes={'accessTokenScope': {'osf.users.all_read'}}
-        )
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        assert not component.has_permission(self.user, WRITE)
-        assert views.authenticate_via_oauth_bearer_token(component, 'download')
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_private_irrelevant_scope_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        assert not component.has_permission(self.user, WRITE)
-        with pytest.raises(HTTPError) as exc_info:
-            views.authenticate_via_oauth_bearer_token(component, 'download')
-        assert exc_info.value.code == 403
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_decommissioned_scope_no_error(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {
-                                       'decommissioned.scope+write',
-                                       'osf.nodes.data_read',
-                                   }})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        assert not component.has_permission(self.user, WRITE)
-        assert views.authenticate_via_oauth_bearer_token(component, 'download')
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_write_scope_read_action(self, mock_get_client, mock_parse_auth_header):
-        component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_write'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        assert not component.has_permission(self.user, WRITE)
-        assert views.authenticate_via_oauth_bearer_token(component, 'download')
-
-    @mock.patch('framework.auth.cas.parse_auth_header')
-    @mock.patch('framework.auth.cas.get_client')
-    def test_has_permission_read_scope_write_action_forbidden(self, mock_get_client, mock_parse_auth_header):
-        component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
-        mock_cas_response = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data_read'}})
-        mock_get_client.return_value.profile.return_value = mock_cas_response
-
-        assert component.has_permission(self.user, WRITE)
-        with pytest.raises(HTTPError) as exc_info:
-            views.authenticate_via_oauth_bearer_token(component, 'upload')
-        assert exc_info.value.code == 403
+    @mock.patch('addons.base.views._get_token_scopes_from_cas')
+    def test_user_has_permission__token_lacks_scope__public_read_allowed(self, mock_get_scopes):
+        self.node.is_public = True
+        self.node.save()
+        mock_get_scopes.return_value = []
+        assert self.node.has_permission(self.user, READ)
+        assert views._check_resource_permissions(self.node, Auth(self.user), 'download')
 
 
 def assert_urls_equal(url1, url2):
@@ -1359,7 +1339,6 @@ class TestAddonFileViews(OsfTestCase):
         location = furl(resp.location)
         assert location.url == file_node.generate_waterbutler_url(format='pdf', action='download', direct=None, version='')
 
-
     def test_action_download_redirects_to_download_with_path_uppercase(self):
         file_node = self.get_uppercased_ext_test_file()
         guid = file_node.get_guid(create=True)
@@ -1481,7 +1460,6 @@ class TestAddonFileViews(OsfTestCase):
             auth=self.user.auth,
 
         )
-
         assert resp.status_code == 400
 
     @mock.patch('website.views.stream_emberapp')
@@ -1542,6 +1520,7 @@ class TestAddonFileViews(OsfTestCase):
             auth=self.user.auth,
         )
 
+        self.assertEqual(resp.status_code, 401)
         assert resp.status_code == 401
 
     def test_resolve_folder_raise(self):
@@ -1603,11 +1582,7 @@ class TestAddonFileViews(OsfTestCase):
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
 
-        registered_node = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        registered_node = RegistrationFactory(project=self.project)
 
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         view_url = self.project.web_url_for('addon_view_or_download_file', provider=file_node.provider, path=file_node.copied_from._id)
@@ -1618,11 +1593,7 @@ class TestAddonFileViews(OsfTestCase):
     def test_archived_from_url_without_copied_from(self, mock_archive):
         file_node = self.get_test_file()
 
-        registered_node = self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        registered_node = RegistrationFactory(project=self.project)
         archived_from_url = views.get_archived_from_url(registered_node, file_node)
         assert not archived_from_url
 
@@ -1631,12 +1602,9 @@ class TestAddonFileViews(OsfTestCase):
         file_node = self.get_test_file()
         second_file_node = self.get_second_test_file()
         file_node.copied_from = second_file_node
-        self.project.register_node(
-            schema=get_default_metaschema(),
-            auth=Auth(self.user),
-            draft_registration=DraftRegistrationFactory(branched_from=self.project),
-        )
+        RegistrationFactory(project=self.project)
         trashed_node = second_file_node.delete()
+        self.assertFalse(trashed_node.copied_from)
         assert not trashed_node.copied_from
 
     @mock.patch('website.archiver.tasks.archive')
