@@ -1,4 +1,4 @@
-from django.db import IntegrityError, transaction
+from django.db import transaction
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -208,34 +208,21 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
         request_type = validated_data['request_type']
         comment = validated_data.get('comment', '')
         requested_permissions = validated_data.get('requested_permissions')
-        try:
-            with transaction.atomic():
-                node_request, _ = NodeRequest.objects.update_or_create(
-                    target=node,
-                    creator=creator,
-                    defaults={
-                        'comment': comment,
-                        'machine_state': DefaultStates.INITIAL.value,
-                        'request_type': request_type,
-                        'requested_permissions': requested_permissions,
-                    },
-                )
-                node_request.save()
-        except IntegrityError:
-            # if INSTITUTIONAL_REQUEST updates and restarts the request, transforms basic assess to institutional
-            with transaction.atomic():
-                if request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
-                    raise Conflict(f"Users may not have more than one {request_type} request per node.")
+        with transaction.atomic():
+            node_request, created = NodeRequest.objects.update_or_create(
+                target=node,
+                creator=creator,
+                defaults={
+                    'comment': comment,
+                    'machine_state': DefaultStates.INITIAL.value,
+                    'request_type': request_type,
+                    'requested_permissions': requested_permissions,
+                },
+            )
+            if not created and request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+                raise Conflict(f"Users may not have more than one {request_type} request per node.")
 
-                node_request = NodeRequest.objects.get(
-                    target=node,
-                    creator=creator,
-                )
-                node_request.comment = comment
-                node_request.machine_state = DefaultStates.INITIAL.value
-                node_request.requested_permissions = requested_permissions
-                node_request.request_type = request_type
-                node_request.save()
+            node_request.save()
 
         node_request.run_submit(creator)
         return node_request
