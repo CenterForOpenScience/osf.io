@@ -393,9 +393,6 @@ class TestInstitutionRelationshipNodes:
 
             assert res.status_code == 201
             mocked_send_mail.assert_called_once()
-            call_args = mocked_send_mail.call_args[1]
-            assert institution in call_args['institution_added']
-            assert {current_institution, institution} == set(call_args['current_affiliations'])
 
     def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
         current_institution = InstitutionFactory()
@@ -418,7 +415,5 @@ class TestInstitutionRelationshipNodes:
             assert res.status_code == 204
 
             call_args = mocked_send_mail.call_args[1]
-            assert call_args['current_affiliations'] == [current_institution]
-            assert call_args['institution_removed'] == [institution]
             assert call_args['user'] == admin
             assert node_public == call_args['node']

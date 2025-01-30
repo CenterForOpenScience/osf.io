@@ -221,8 +221,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_added=[institution_one],
-                current_affiliations=[institution_one]
             )
 
             second_call_args = mocked_send_mail.call_args_list[1]
@@ -231,8 +229,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_added=[institution_two],
-                current_affiliations=[institution_one, institution_two]
             )
 
     @mock.patch('website.mails.settings.USE_EMAIL', True)
@@ -255,8 +251,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_removed=[institution_one],
-                current_affiliations=[]
             )
 
         assert res.status_code == 200
@@ -316,8 +310,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_added=[institution_two],
-                current_affiliations=[institution_one, institution_two]
             )
 
         assert res.status_code == 200
@@ -345,8 +337,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_removed=[institution_one],
-                current_affiliations=[]
             )
             second_call_args = mocked_send_mail.call_args_list[1]
             assert second_call_args == mock.call(
@@ -354,8 +344,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_added=[institution_two],
-                current_affiliations=[institution_two]
             )
 
         assert res.status_code == 200
@@ -381,8 +369,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_added=[institution_two],
-                current_affiliations=[institution_one, institution_two]
             )
 
         assert res.status_code == 201
@@ -413,8 +399,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 mails.PROJECT_AFFILIATION_CHANGED,
                 user=user,
                 node=node,
-                institution_removed=[institution_one],
-                current_affiliations=[]
             )
 
         assert res.status_code == 204
