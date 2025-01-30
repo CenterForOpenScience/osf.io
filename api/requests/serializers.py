@@ -210,13 +210,15 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
         requested_permissions = validated_data.get('requested_permissions')
         try:
             with transaction.atomic():
-                node_request = NodeRequest.objects.create(
+                node_request, _ = NodeRequest.objects.update_or_create(
                     target=node,
                     creator=creator,
-                    comment=comment,
-                    machine_state=DefaultStates.INITIAL.value,
-                    request_type=request_type,
-                    requested_permissions=requested_permissions,
+                    defaults={
+                        'comment': comment,
+                        'machine_state': DefaultStates.INITIAL.value,
+                        'request_type': request_type,
+                        'requested_permissions': requested_permissions,
+                    },
                 )
                 node_request.save()
         except IntegrityError:

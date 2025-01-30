@@ -7,6 +7,7 @@ from api_tests.requests.mixins import NodeRequestTestMixin
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
 from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
+from framework.auth import Auth
 
 
 @pytest.mark.django_db
@@ -441,3 +442,52 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 201
         node_request.refresh_from_db()
         assert node_request.machine_state == 'pending'
+
+    def test_requester_can_resubmit_after_approval(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that a requester can submit another access request for the same node.
+        """
+        # Create the first request
+        app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_accept(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+
+        project.remove_contributor(node_request.creator, Auth(node_request.creator))
+        node_request = project.requests.get()
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+    def test_requester_can_resubmit_after_2_approvals(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that a requester can submit another access request for the same node.
+        """
+        # Create the first request
+        app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_accept(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+
+        project.remove_contributor(node_request.creator, Auth(node_request.creator))
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+        # Accepted request can violate node, but we will just update the current one
+        assert project.requests.all().count() == 1
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+        assert project.requests.all().count() == 1
