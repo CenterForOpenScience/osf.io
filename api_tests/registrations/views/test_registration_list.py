@@ -12,7 +12,7 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema
+from osf.models import RegistrationSchema, Registration
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -1928,7 +1928,7 @@ class TestRegistrationContributors(ApiTestCase):
             creator=self.user, project=self.public_project, is_public=True)
         self.contributor = AuthUserFactory()
     
-    def add_contributor_request(self, permission='write', expect_errors=False):
+    def add_contributor_request(self, auth_user, contributor, permission='write', expect_errors=False):
         url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/'
         attrs = {
             "permission": permission,
@@ -1938,41 +1938,123 @@ class TestRegistrationContributors(ApiTestCase):
             "users": {
                 "data": {
                     "type": "users",
-                    "id": self.contributor._id
+                    "id": contributor._id
                 }
             }
         }
         payload = {'data': {'attributes': attrs, 'relationships': relationships, 'type': 'contributors'}}
-        return self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=expect_errors)
+        return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
+
+    def remove_contributor_request(self, auth_user, contributor, expect_errors=False):
+        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/{contributor._id}/'
+        return self.app.delete_json_api(url, auth=auth_user.auth, expect_errors=expect_errors)
+
+    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):        
+        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/'
+        payload = {
+            "data": {
+                "id": self.public_registration_project._id,
+                "attributes": attributes,
+                "relationships": {},
+                "type": "registrations"
+            }
+        }
+        return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def test_add_contributor(self):
-        res = self.add_contributor_request()
+        res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
         assert res.status_code == 201
         assert res.json['data']['embeds']['users']['data']['id'] == self.contributor._id
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
 
-        res = self.add_contributor_request(expect_errors=True)
+        res = self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
 
-        res = self.add_contributor_request('read', True)
+        res = self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='read',
+            expect_errors=True
+        )
+    
         assert res.status_code == 400
         assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_read').exists() is False
 
-    
     def test_remove_contributor(self):
-        self.add_contributor_request()
-        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/{self.contributor._id}/'
-        res = self.app.delete_json_api(url, auth=self.user.auth)
+        self.add_contributor_request(self.user, self.contributor)
+        res = self.remove_contributor_request(self.user, self.contributor)
         assert res.status_code == 204
         assert self.contributor.groups.exists() is False
 
-        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
+        res = self.remove_contributor_request(self.user, self.contributor, expect_errors=True)
         assert res.status_code == 404
         assert f'{self.contributor.email} cannot be found in the list of contributors.' in res.json['errors'][0]['detail']
         assert self.contributor.groups.exists() is False
+
+    def test_contributor_can_edit_title_if_has_permission(self):
+        TITLE = 'New Title'
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='read'
+        )
+        res = self.update_attribute_request(
+            auth_user=self.contributor,
+            expect_errors=True, 
+            title=TITLE
+        )
+        assert res.status_code == 403
+        assert self.public_registration_project.title != TITLE
+        
+        self.remove_contributor_request(auth_user=self.user, contributor=self.contributor)
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='write'
+        )
+        res = self.update_attribute_request(auth_user=self.contributor, title=TITLE)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['title'] == TITLE
+        assert Registration.objects.get(id=self.public_registration_project.id).title == TITLE
+
+    def test_contributor_cannot_edit_contributors(self):
+        for permission in ['read', 'write']:
+            contributor_to_add = AuthUserFactory()
+            contributor_to_remove = AuthUserFactory()
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=self.contributor,
+                permission=permission
+            )
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=contributor_to_remove,
+                permission=permission
+            )
+
+            res = self.add_contributor_request(
+                auth_user=self.contributor,
+                contributor=contributor_to_add,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+            res = self.remove_contributor_request(
+                auth_user=self.contributor,
+                contributor=contributor_to_remove,
+                expect_errors=True
+            )
+            assert res.status_code == 403
+
+            self.remove_contributor_request(self.user, self.contributor)
+            self.remove_contributor_request(self.user, contributor_to_remove)
 
 
 class TestRegistrationListFiltering(

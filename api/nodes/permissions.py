@@ -190,6 +190,15 @@ class ContributorDetailPermissions(permissions.BasePermission):
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
+    
+    def has_permission(self, request, view):
+        auth = get_user_auth(request)
+        context = request.parser_context['kwargs']
+        resource = self.load_resource(context, view)
+        if request.method == 'POST' and not resource.has_permission(auth.user, osf_permissions.ADMIN):
+            return False
+
+        return super().has_permission(request, view)
 
     def has_object_permission(self, request, view, obj):
         assert_resource_type(obj, self.acceptable_models)
