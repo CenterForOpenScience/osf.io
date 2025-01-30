@@ -129,8 +129,14 @@ class TestProjectViews(OsfTestCase):
         user1_contrib.save()
         url = self.project.api_url_for('project_remove_contributor')
         res = self.app.post(
-            url, json={'contributorID': self.user2._id,
-                  'nodeIDs': [self.project._id]}, auth=self.auth
+            url,
+            json={
+                'contributorID': self.user2._id,
+                'nodeIDs': [
+                    self.project._id
+                ]
+            },
+            auth=self.auth
         )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert res.json['message_long'] == 'Must have at least one bibliographic contributor'
@@ -142,7 +148,6 @@ class TestProjectViews(OsfTestCase):
         user1_contrib.save()
         ret = self.project.remove_contributor(contributor=self.user2, auth=self.consolidate_auth1)
         assert not ret
-        self.project.reload()
         assert self.project.is_contributor(self.user2)
 
     def test_can_view_nested_project_as_admin(self):
@@ -166,10 +171,11 @@ class TestProjectViews(OsfTestCase):
         assert 'parent project'in res.text
 
     def test_edit_description(self):
-        url = f'/api/v1/project/{self.project._id}/edit/'
-        self.app.post(url,
-                           json={'name': 'description', 'value': 'Deep-fried'},
-                           auth=self.auth)
+        self.app.post(
+            f'/api/v1/project/{self.project._id}/edit/',
+            json={'name': 'description', 'value': 'Deep-fried'},
+            auth=self.auth
+        )
         self.project.reload()
         assert self.project.description == 'Deep-fried'
 
@@ -197,7 +203,6 @@ class TestProjectViews(OsfTestCase):
         project = ProjectFactory(creator=self.user1, is_public=True)
         user2 = UserFactory()
         user3 = UserFactory()
-        url = f'/api/v1/project/{project._id}/contributors/'
 
         dict2 = add_contributor_json(user2)
         dict3 = add_contributor_json(user3)
@@ -211,7 +216,7 @@ class TestProjectViews(OsfTestCase):
         })
 
         self.app.post(
-            url,
+            f'/api/v1/project/{project._id}/contributors/',
             json={
                 'users': [dict2, dict3],
                 'node_ids': [project._id],
@@ -346,22 +351,38 @@ class TestProjectViews(OsfTestCase):
     def test_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {'contributorID': self.user2._id,
-                   'nodeIDs': [self.project._id]}
-        self.app.post(url, json=payload,
-                      auth=self.auth, follow_redirects=True)
+        self.app.post(
+            url,
+            json={
+                'contributorID': self.user2._id,
+                'nodeIDs': [
+                    self.project._id
+                ]
+            },
+            auth=self.auth,
+            follow_redirects=True
+        )
         self.project.reload()
         assert self.user2._id not in self.project.contributors
         # A log event was added
         assert self.project.logs.latest().action == 'contributor_removed'
 
+
     def test_multiple_project_remove_contributor(self):
         url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {'contributorID': self.user2._id,
-                   'nodeIDs': [self.project._id, self.project2._id]}
-        res = self.app.post(url, json=payload,
-                            auth=self.auth, follow_redirects=True)
+        res = self.app.post(
+            url,
+            json={
+                'contributorID': self.user2._id,
+                'nodeIDs': [
+                    self.project._id,
+                    self.project2._id
+                ]
+            },
+            auth=self.auth,
+            follow_redirects=True
+        )
         self.project.reload()
         self.project2.reload()
         assert self.user2._id not in self.project.contributors
@@ -374,36 +395,54 @@ class TestProjectViews(OsfTestCase):
     def test_private_project_remove_self_not_admin(self):
         url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
-        payload = {'contributorID': self.user2._id,
-                   'nodeIDs': [self.project._id]}
-        res = self.app.post(url, json=payload,
-                            auth=self.auth2, follow_redirects=True)
+        res = self.app.post(
+            url,
+            json={
+                'contributorID': self.user2._id,
+                'nodeIDs': [
+                    self.project._id
+                ]
+            },
+            auth=self.auth2,
+            follow_redirects=True
+        )
         self.project.reload()
         assert res.status_code == 200
         assert res.json['redirectUrl'] == '/dashboard/'
         assert self.user2._id not in self.project.contributors
 
     def test_public_project_remove_self_not_admin(self):
-        url = self.project.api_url_for('project_remove_contributor')
         # user2 removes self
         self.public_project = ProjectFactory(creator=self.user1, is_public=True)
         self.public_project.add_contributor(self.user2, auth=Auth(self.user1))
         self.public_project.save()
-        payload = {'contributorID': self.user2._id,
-                   'nodeIDs': [self.public_project._id]}
-        res = self.app.post(url, json=payload,
-                            auth=self.auth2)
+        res = self.app.post(
+            self.project.api_url_for('project_remove_contributor'),
+            json={
+                'contributorID': self.user2._id,
+                'nodeIDs': [
+                    self.public_project._id
+                ]
+            },
+            auth=self.auth2
+        )
         self.public_project.reload()
         assert res.status_code == 200
         assert res.json['redirectUrl'] == '/' + self.public_project._id + '/'
         assert self.user2._id not in self.public_project.contributors
 
     def test_project_remove_other_not_admin(self):
-        url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {'contributorID': self.user1._id,
-                   'nodeIDs': [self.project._id]}
-        res = self.app.post(url, json=payload, auth=self.auth2)
+        res = self.app.post(
+            self.project.api_url_for('project_remove_contributor'),
+            json={
+                'contributorID': self.user1._id,
+                'nodeIDs': [
+                    self.project._id
+                ]
+            },
+            auth=self.auth2
+        )
         self.project.reload()
         assert res.status_code == 403
         expected_message = (
@@ -415,12 +454,16 @@ class TestProjectViews(OsfTestCase):
         assert self.user1 in self.project.contributors
 
     def test_project_remove_fake_contributor(self):
-        url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {'contributorID': 'badid',
-                   'nodeIDs': [self.project._id]}
-        res = self.app.post(url, json=payload,
-                            auth=self.auth, follow_redirects=True)
+        res = self.app.post(
+            self.project.api_url_for('project_remove_contributor'),
+            json={
+                'contributorID': 'badid',
+                'nodeIDs': [self.project._id]
+            },
+            auth=self.auth,
+            follow_redirects=True
+        )
         self.project.reload()
         # Assert the contributor id was invalid
         assert res.status_code == 400
@@ -428,12 +471,18 @@ class TestProjectViews(OsfTestCase):
         assert 'badid' not in self.project.contributors
 
     def test_project_remove_self_only_admin(self):
-        url = self.project.api_url_for('project_remove_contributor')
         # User 1 removes user2
-        payload = {'contributorID': self.user1._id,
-                   'nodeIDs': [self.project._id]}
-        res = self.app.post(url, json=payload,
-                            auth=self.auth, follow_redirects=True)
+        res = self.app.post(
+            self.project.api_url_for('project_remove_contributor'),
+            json={
+                'contributorID': self.user1._id,
+                'nodeIDs': [
+                    self.project._id
+                ]
+            },
+            auth=self.auth,
+            follow_redirects=True
+        )
 
         self.project.reload()
         assert res.status_code == 400
@@ -458,8 +507,10 @@ class TestProjectViews(OsfTestCase):
             save=True,
         )
 
-        url = project.api_url_for('get_node_contributors_abbrev')
-        res = self.app.get(url, auth=self.auth)
+        res = self.app.get(
+            project.api_url_for('get_node_contributors_abbrev'),
+            auth=self.auth
+        )
         assert len(project.contributors) == 4
         assert len(res.json['contributors']) == 3
         assert len(res.json['others_count']) == 1
@@ -468,10 +519,16 @@ class TestProjectViews(OsfTestCase):
         assert res.json['contributors'][2]['separator'] == ' &'
 
     def test_edit_node_title(self):
-        url = f'/api/v1/project/{self.project._id}/edit/'
         # The title is changed though posting form data
-        self.app.post(url, json={'name': 'title', 'value': 'Bacon'},
-                           auth=self.auth, follow_redirects=True)
+        self.app.post(
+            f'/api/v1/project/{self.project._id}/edit/',
+            json={
+                'name': 'title',
+                'value': 'Bacon'
+            },
+            auth=self.auth,
+            follow_redirects=True
+        )
         self.project.reload()
         # The title was changed
         assert self.project.title == 'Bacon'
@@ -479,8 +536,13 @@ class TestProjectViews(OsfTestCase):
         assert self.project.logs.latest().action == 'edit_title'
 
     def test_add_tag(self):
-        url = self.project.api_url_for('project_add_tag')
-        self.app.post(url, json={'tag': "foo'ta#@%#%^&g?"}, auth=self.auth)
+        self.app.post(
+            self.project.api_url_for('project_add_tag'),
+            json={
+                'tag': "foo'ta#@%#%^&g?"
+            },
+            auth=self.auth
+        )
         self.project.reload()
         assert "foo'ta#@%#%^&g?" in self.project.tags.values_list('name', flat=True)
         assert "foo'ta#@%#%^&g?" == self.project.logs.latest().params['tag']
