@@ -35,6 +35,12 @@ class DraftNode(AbstractNode):
         """
         return
 
+    def can_view(self, auth):
+        return self.registered_draft.first().can_view(auth)
+
+    def can_edit(self, auth=None, user=None):
+        return self.registered_draft.first().can_edit(auth, user)
+
     def convert_draft_node_to_node(self, auth):
         self.recast('osf.node')
         self.save()

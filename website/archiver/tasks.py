@@ -1,5 +1,7 @@
 import requests
 import json
+
+from furl import furl
 from rest_framework import status as http_status
 
 import celery
@@ -161,7 +163,8 @@ def make_copy_request(job_pk, url, data):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
-    res = requests.post(url, data=json.dumps(data))
+    cookie = furl(url).query.params.get('cookie')
+    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie})
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 

@@ -17,7 +17,6 @@ from website.settings import DISK_SAVING_MODE
 from osf.utils import sanitize
 from osf.utils.permissions import WRITE_NODE
 
-
 logger = logging.getLogger(__name__)
 
 FOLDER = 'folder'
@@ -30,6 +29,7 @@ DEFAULT_PERMISSIONS = {
     'view': True,
     'edit': False,
 }
+
 
 def default_urls(node_api, short_name):
     return {
@@ -150,8 +150,8 @@ def sort_by_name(hgrid_data):
 
 
 class NodeFileCollector:
-
     """A utility class for creating rubeus formatted node data"""
+
     def __init__(self, node, auth, **kwargs):
         NodeRelation = apps.get_model('osf.NodeRelation')
         self.node = node.child if isinstance(node, NodeRelation) else node
@@ -187,7 +187,8 @@ class NodeFileCollector:
             node._nodes
             .filter(is_deleted=False)
             .annotate(is_linked_node=Exists(linked_node_sqs))
-            .annotate(has_write_perm=Case(When(id__in=can_write, then=Value(1)), default=Value(0), output_field=IntegerField()))
+            .annotate(has_write_perm=Case(When(id__in=can_write, then=Value(1)), default=Value(0),
+                                          output_field=IntegerField()))
             .order_by('_parents')
         )
 

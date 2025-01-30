@@ -1,5 +1,4 @@
 from rest_framework import status as http_status
-import waffle
 import requests
 from urllib.parse import (
     urlencode,
@@ -9,6 +8,7 @@ from urllib.parse import (
 
 from flask import redirect, request
 
+from api.waffle.utils import flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 from osf.models import ExternalAccount
@@ -48,12 +48,15 @@ def oauth_connect(service_name, auth):
 
 @must_be_logged_in
 def oauth_callback(service_name, auth):
-    if waffle.flag_is_active(request, features.ENABLE_GV):
-        _forward_to_addon_service()
-        return {}
+    provider = get_service(service_name)
+    if flag_is_active(request, features.ENABLE_GV):
+        if provider._oauth_version == 1:
+            _forward_to_addon_service('oauth1')
+        elif provider._oauth_version == 2:
+            _forward_to_addon_service('oauth2')
+        return {'enable_gv': True}
 
     user = auth.user
-    provider = get_service(service_name)
 
     # Retrieve permanent credentials from provider
     if not provider.auth_callback(user=user):
@@ -67,12 +70,17 @@ def oauth_callback(service_name, auth):
 
     return {}
 
-def _forward_to_addon_service():
+def _forward_to_addon_service(oauth_version):
     code = request.args.get('code')
     state = request.args.get('state')
+    oauth_token = request.args.get('oauth_token')
+    oauth_verifier = request.args.get('oauth_verifier')
     query_params = {
         'code': code,
         'state': state,
+        'oauth_token': oauth_token,
+        'oauth_verifier': oauth_verifier,
     }
-    gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path='/v1/oauth/callback', query=urlencode(query_params)))
-    requests.get(gv_url)
+
+    gv_url = urlunparse(urlparse(GRAVYVALET_URL)._replace(path=f'/v1/{oauth_version}/callback', query=urlencode(query_params)))
+    requests.get(gv_url, cookies=request.cookies)

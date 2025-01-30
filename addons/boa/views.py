@@ -5,13 +5,16 @@ from django.core.exceptions import ValidationError
 from flask import request
 from rest_framework import status as http_status
 
+from addons.base.views import _get_authenticated_resource, _check_resource_permissions
 from addons.base import generic_views
 from addons.boa.models import BoaProvider
 from addons.boa.serializer import BoaSerializer
 from addons.boa.tasks import submit_to_boa
 from api.base.utils import waterbutler_api_url_for
+from api.waffle.utils import flag_is_active
 from framework.auth.decorators import must_be_logged_in
 from framework.celery_tasks.handlers import enqueue_task
+from osf import features
 from osf.models import ExternalAccount, AbstractNode
 from osf.utils import permissions
 from website import settings as osf_settings
@@ -74,16 +77,30 @@ def boa_submit_job(node_addon, **kwargs):
 
     req_params = request.json
 
-    # Boa addon configuration
-    provider = node_addon.external_account.provider_id
-    parts = provider.rsplit(':', 1)
-    host, username = parts[0], parts[1]
-    password = node_addon.external_account.oauth_key
+    if flag_is_active(request, features.ENABLE_GV):
+        project_guid = req_params['data']['nodeId']
+        resource = _get_authenticated_resource(project_guid)
 
-    # User and project
+        auth = kwargs['auth']
+        action = 'upload'
+        _check_resource_permissions(resource, auth, action)
+
+        addon_credentials = resource.serialize_waterbutler_credentials('boa')
+
+        host = addon_credentials['host']
+        username = addon_credentials['username']
+        password = addon_credentials['password']
+    else:
+        # Boa addon configuration from OSF addons
+        provider = node_addon.external_account.provider_id
+        parts = provider.rsplit(':', 1)
+        host, username = parts[0], parts[1]
+        password = node_addon.external_account.oauth_key
+        project_guid = req_params['data']['nodeId']
+
+    # User
     user = kwargs['auth'].user
     user_guid = user._id
-    project_guid = req_params['data']['nodeId']
 
     # Query file
     file_name = req_params['data']['name']

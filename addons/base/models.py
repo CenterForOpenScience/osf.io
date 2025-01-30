@@ -377,6 +377,10 @@ class BaseNodeSettings(BaseAddonSettings):
         """Whether the node has added credentials for this addon."""
         return False
 
+    @property
+    def display_name(self):
+        return self.short_name
+
     def to_json(self, user):
         ret = super().to_json(user)
         ret.update({
@@ -581,7 +585,7 @@ class BaseStorageAddon:
             **kwargs
         )
 
-        res = requests.get(metadata_url)
+        res = requests.get(metadata_url, cookies={settings.COOKIE_NAME: kwargs.get('cookie')})
 
         if res.status_code != 200:
             raise HTTPError(res.status_code, data={'error': res.json()})
