@@ -407,7 +407,7 @@ class TestProjectContributorViews(OsfTestCase):
             follow_redirects=True
         )
         self.project.reload()
-        assert self.user2._id not in self.project.contributors
+        assert self.curator._id not in self.project.contributors
         # A log event was added
         assert self.project.logs.latest().action == 'curator_removed'
 

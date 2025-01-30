@@ -214,14 +214,16 @@ class NodeRequestMachine(BaseMachine):
                 contributor_permissions = (
                     self.machineable.requested_permissions or ev.kwargs.get('permissions') or permissions.READ
                 )
+                make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+                visible = False if make_curator else ev.kwargs.get('visible', True)
                 try:
                     self.machineable.target.add_contributor(
                         self.machineable.creator,
                         auth=Auth(ev.kwargs['user']),
                         permissions=contributor_permissions,
-                        visible=ev.kwargs.get('visible', True),
+                        visible=visible,
                         send_email=f'{self.machineable.request_type}_request',
-                        make_curator=self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value,
+                        make_curator=make_curator,
                     )
                 except IntegrityError as e:
                     if 'Curators cannot be made bibliographic contributors' in str(e):
