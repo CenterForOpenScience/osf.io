@@ -105,6 +105,18 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         }
 
     @pytest.fixture()
+    def create_payload_non_institutional_access(self, institution_without_access, user_with_affiliation_on_institution_without_access):
+        return {
+            'data': {
+                'attributes': {
+                    'comment': 'Wanna Philly Philly?',
+                    'request_type': NodeRequestTypes.ACCESS.value,
+                },
+                'type': 'node-requests'
+            }
+        }
+
+    @pytest.fixture()
     def node_with_disabled_access_requests(self, institution):
         node = NodeFactory()
         node.access_requests_enabled = False
@@ -408,6 +420,23 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert node_request.machine_state == 'rejected'
 
         # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+    def test_requester_can_after_access_resubmit(self, app, project, institutional_admin, url, create_payload_non_institutional_access, create_payload):
+        """
+        Test that a requester can submit another access request, then institutional access for the same node.
+        """
+        # Create the first request a basic request_type == `access` request
+        app.post_json_api(url, create_payload_non_institutional_access, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_reject(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'rejected'
+
+        # Attempt to create a second request, refresh and update as institutional
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
         node_request.refresh_from_db()
