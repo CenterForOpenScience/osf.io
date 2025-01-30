@@ -311,8 +311,6 @@ class AffiliatedInstitutionMixin(models.Model):
                         **{
                             'user': user,
                             'node': self,
-                            'institution_added': [inst],
-                            'current_affiliations': list(self.affiliated_institutions.all()),
                         },
                     )
         if log:
@@ -353,8 +351,6 @@ class AffiliatedInstitutionMixin(models.Model):
                         **{
                             'user': user,
                             'node': self,
-                            'institution_removed': [inst],
-                            'current_affiliations': list(self.affiliated_institutions.all()),
                         },
                     )
 
