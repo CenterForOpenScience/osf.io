@@ -221,21 +221,20 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 )
                 node_request.save()
         except IntegrityError:
-            # if INSTITUTIONAL_REQUEST updates and restarts the request
+            # if INSTITUTIONAL_REQUEST updates and restarts the request, transforms basic assess to institutional
             with transaction.atomic():
-                if request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
-                    node_request = NodeRequest.objects.filter(
-                        target=node,
-                        creator=creator,
-                        request_type=NodeRequestTypes.INSTITUTIONAL_REQUEST.value,
-                    ).first()
-                else:
+                if request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
                     raise Conflict(f"Users may not have more than one {request_type} request per node.")
-                if node_request:
-                    node_request.comment = comment
-                    node_request.machine_state = DefaultStates.INITIAL.value
-                    node_request.requested_permissions = requested_permissions
-                    node_request.save()
+
+                node_request = NodeRequest.objects.get(
+                    target=node,
+                    creator=creator,
+                )
+                node_request.comment = comment
+                node_request.machine_state = DefaultStates.INITIAL.value
+                node_request.requested_permissions = requested_permissions
+                node_request.request_type = request_type
+                node_request.save()
 
         node_request.run_submit(creator)
         return node_request
