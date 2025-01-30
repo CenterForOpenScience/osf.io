@@ -1377,7 +1377,7 @@ class ContributorMixin(models.Model):
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
-        :param bool make_curator incicates whether the user should be an institituional curator
+        :param bool make_curator indicates whether the user should be an institutional curator
         :returns: Whether contributor was added
         """
         send_email = send_email or self.contributor_email_template
@@ -1404,7 +1404,7 @@ class ContributorMixin(models.Model):
             kwargs = self.contributor_kwargs
             kwargs['user'] = contrib_to_add
             contributor_obj, created = self.contributor_class.objects.get_or_create(**kwargs)
-            contributor_obj.visible = visible
+            contributor_obj.visible = visible and not make_curator
 
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
