@@ -34,13 +34,6 @@
     </script>
     % endif
 
-    % if settings.DATACITE_REPO_ID:
-    <script>
-    const tracker = require('js/components/tracker')
-    tracker.init(settings.DATACITE_REPO_ID)
-    </script>
-    % endif
-
     <!-- Metadata tags-->
     <meta name="dc.title" content="${self.title_meta()}" />
     <meta name="dc.type" content="collection" />
@@ -290,6 +283,16 @@
                             projectId: ${ keen['private']['project_id'] | sjson, n },
                             writeKey: ${ keen['private']['write_key'] | sjson, n },
                         },
+                    },
+                });
+            </script>
+        % endif
+
+        % if settings.DATACITE_USAGE_TRACKER_REPO_ID:
+            <script>
+                window.contextVars = $.extend(true, {}, window.contextVars, {
+                    dataciteTracker: {
+                        repoId: ${ settings.DATACITE_USAGE_TRACKER_REPO_ID | sjson, n },
                     },
                 });
             </script>

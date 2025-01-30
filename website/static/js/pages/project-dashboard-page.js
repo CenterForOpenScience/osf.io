@@ -42,9 +42,11 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationList('#citationList');
         new CitationWidget('#citationStyleInput', '#citationText');
     }
+
     if (data.node.identifiers.doi) {
         tracker.trackView(data.node.identifiers.doi);
     }
+
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
 
@@ -105,6 +107,7 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
+
     // activate bootstrap popovers
     $('[data-toggle="popover"]').popover();
     // Allows dropdown elements to persist after being clicked
