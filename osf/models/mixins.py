@@ -1688,7 +1688,8 @@ class ContributorMixin(models.Model):
         if log:
             params = self.log_params
             params['contributors'] = [contributor._id]
-            if getattr(contributor, 'is_curator', False):
+
+            if getattr(contrib_obj, 'is_curator', False):
                 action = self.log_class.CURATOR_REMOVED
             else:
                 action = self.log_class.CONTRIB_REMOVED
