@@ -71,7 +71,7 @@ from api.comments.serializers import (
 )
 from api.draft_registrations.serializers import DraftRegistrationSerializer, DraftRegistrationDetailSerializer
 from api.draft_registrations.permissions import DraftRegistrationPermission
-from api.files.serializers import FileSerializer, OsfStorageFileSerializer
+from api.files.serializers import FileSerializer, OsfStorageFileSerializer, GitlabFileSerializer
 from api.files import annotations as file_annotations
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
@@ -1130,6 +1130,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     def serializer_class(self):
         if self.kwargs[self.provider_lookup_url_kwarg] == 'osfstorage':
             return OsfStorageFileSerializer
+        if self.kwargs[self.provider_lookup_url_kwarg] == 'gitlab':
+            # use source='modified' explicitly for gitlab sorting
+            return GitlabFileSerializer
         return FileSerializer
 
     def get_resource(self):
