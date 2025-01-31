@@ -426,7 +426,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request.refresh_from_db()
         assert node_request.machine_state == 'pending'
 
-    def test_requester_can_after_access_resubmit(self, app, project, institutional_admin, url, create_payload_non_institutional_access, create_payload):
+    def test_requester_can_make_insti_request_after_access_resubmit(self, app, project, institutional_admin, url, create_payload_non_institutional_access, create_payload):
         """
         Test that a requester can submit another access request, then institutional access for the same node.
         """
