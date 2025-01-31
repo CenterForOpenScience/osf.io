@@ -651,6 +651,12 @@ class WaterButlerMixin:
 
             try:
                 file_obj = base_class.objects.get(**query)
+                # it is needed to update modified attribute explicitly in case
+                # there will be another commit for the file so it will have another update date
+                # somehow it is not updated for gitlab implicitly using .
+                if attrs.get('provider') == 'gitlab' and attrs.get('modified_utc'):
+                    file_obj.modified = attrs.get('modified_utc')
+
             except base_class.DoesNotExist:
                 # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
                 file_obj = base_class(target=node, _path=_path, provider=base_class._provider)

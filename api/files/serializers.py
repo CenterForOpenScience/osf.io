@@ -415,6 +415,16 @@ class FileSerializer(BaseFileSerializer):
             raise NotImplementedError()
 
 
+class GitlabFileSerializer(FileSerializer):
+    date_modified = VersionedDateTimeField(
+        source='modified',
+        read_only=True,
+        help_text='Timestamp when the file was last modified',
+        required=False,
+        allow_null=True,
+    )
+
+
 class OsfStorageFileSerializer(FileSerializer):
     """ Overrides `filterable_fields` to make `last_touched` non-filterable
     """
