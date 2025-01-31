@@ -50,7 +50,7 @@ class TestRegistrationList(ApiTestCase):
         self.url = f'/{API_BASE}registrations/'
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(
+        self.public_registration = RegistrationFactory(
             creator=self.user, project=self.public_project, is_public=True)
         self.user_two = AuthUserFactory()
 
@@ -107,7 +107,7 @@ class TestRegistrationList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert self.registration_project._id in ids
-        assert self.public_registration_project._id in ids
+        assert self.public_registration._id in ids
         assert self.public_project._id not in ids
         assert self.project._id not in ids
 
@@ -123,7 +123,7 @@ class TestSparseRegistrationList(ApiTestCase):
         self.url = f'/{API_BASE}sparse/registrations/'
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(
+        self.public_registration = RegistrationFactory(
             creator=self.user, project=self.public_project, is_public=True)
         self.user_two = AuthUserFactory()
 
@@ -167,7 +167,7 @@ class TestSparseRegistrationList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert self.registration_project._id in ids
-        assert self.public_registration_project._id in ids
+        assert self.public_registration._id in ids
         assert self.public_project._id not in ids
         assert self.project._id not in ids
 
@@ -1924,12 +1924,12 @@ class TestRegistrationContributors(ApiTestCase):
             creator=self.user, project=self.project)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_registration_project = RegistrationFactory(
+        self.public_registration = RegistrationFactory(
             creator=self.user, project=self.public_project, is_public=True)
         self.contributor = AuthUserFactory()
     
     def add_contributor_request(self, auth_user, contributor, permission='write', expect_errors=False):
-        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/'
+        url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/'
         attrs = {
             "permission": permission,
             "bibliographic": True
@@ -1942,18 +1942,24 @@ class TestRegistrationContributors(ApiTestCase):
                 }
             }
         }
-        payload = {'data': {'attributes': attrs, 'relationships': relationships, 'type': 'contributors'}}
+        payload = {
+            'data': {
+                'attributes': attrs,
+                'relationships': relationships,
+                'type': 'contributors'
+            }
+        }
         return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def remove_contributor_request(self, auth_user, contributor, expect_errors=False):
-        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/contributors/{contributor._id}/'
+        url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'
         return self.app.delete_json_api(url, auth=auth_user.auth, expect_errors=expect_errors)
 
     def update_attribute_request(self, auth_user, expect_errors=True, **attributes):        
-        url = f'/{API_BASE}registrations/{self.public_registration_project._id}/'
+        url = f'/{API_BASE}registrations/{self.public_registration._id}/'
         payload = {
             "data": {
-                "id": self.public_registration_project._id,
+                "id": self.public_registration._id,
                 "attributes": attributes,
                 "relationships": {},
                 "type": "registrations"
@@ -1965,7 +1971,7 @@ class TestRegistrationContributors(ApiTestCase):
         res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
         assert res.status_code == 201
         assert res.json['data']['embeds']['users']['data']['id'] == self.contributor._id
-        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
 
         res = self.add_contributor_request(
             auth_user=self.user,
@@ -1974,7 +1980,7 @@ class TestRegistrationContributors(ApiTestCase):
         )
         assert res.status_code == 400
         assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
-        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_write').exists()
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
 
         res = self.add_contributor_request(
             auth_user=self.user,
@@ -1985,7 +1991,7 @@ class TestRegistrationContributors(ApiTestCase):
     
         assert res.status_code == 400
         assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
-        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration_project.id}_read').exists() is False
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
 
     def test_remove_contributor(self):
         self.add_contributor_request(self.user, self.contributor)
@@ -2011,7 +2017,7 @@ class TestRegistrationContributors(ApiTestCase):
             title=TITLE
         )
         assert res.status_code == 403
-        assert self.public_registration_project.title != TITLE
+        assert self.public_registration.title != TITLE
         
         self.remove_contributor_request(auth_user=self.user, contributor=self.contributor)
         self.add_contributor_request(
@@ -2022,7 +2028,7 @@ class TestRegistrationContributors(ApiTestCase):
         res = self.update_attribute_request(auth_user=self.contributor, title=TITLE)
         assert res.status_code == 200
         assert res.json['data']['attributes']['title'] == TITLE
-        assert Registration.objects.get(id=self.public_registration_project.id).title == TITLE
+        assert Registration.objects.get(id=self.public_registration.id).title == TITLE
 
     def test_contributor_cannot_edit_contributors(self):
         for permission in ['read', 'write']:

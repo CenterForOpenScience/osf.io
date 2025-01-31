@@ -361,19 +361,6 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
             raise PermissionDenied(str(err))
 
 
-class NodeContributorRemoveMixin:
-    
-    # remove contributor's permissions
-    def perform_destroy(self, instance):
-        node = self.get_resource()
-        auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and instance.visible:
-            raise ValidationError('Must have at least one visible contributor')
-        removed = node.remove_contributor(instance, auth)
-        if not removed:
-            raise ValidationError('Must have at least one registered admin contributor')
-
-
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
     """
@@ -514,7 +501,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         return context
 
 
-class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeContributorRemoveMixin, NodeMixin, UserMixin):
+class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
     """
     permission_classes = (
@@ -539,6 +526,15 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context
+    
+    def perform_destroy(self, instance):
+        node = self.get_resource()
+        auth = get_user_auth(self.request)
+        if node.visible_contributors.count() == 1 and instance.visible:
+            raise ValidationError('Must have at least one visible contributor')
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):

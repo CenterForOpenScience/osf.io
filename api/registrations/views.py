@@ -66,7 +66,7 @@ from api.registrations.serializers import (
 from api.nodes.filters import NodesFilterMixin
 
 from api.nodes.views import (
-    NodeMixin, NodeContributorRemoveMixin, NodeRegistrationsList, NodeLogList,
+    NodeMixin, NodeRegistrationsList, NodeLogList,
     NodeCommentsList, NodeStorageProvidersList, NodeFilesList, NodeFileDetail,
     NodeInstitutionsList, NodeForksList, NodeWikiList, LinkedNodesList,
     NodeViewOnlyLinksList, NodeViewOnlyLinkDetail, NodeCitationDetail, NodeCitationStyleDetail,
@@ -309,7 +309,7 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
         return context
 
 
-class RegistrationContributorDetail(BaseContributorDetail, NodeContributorRemoveMixin, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
+class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
@@ -336,6 +336,15 @@ class RegistrationContributorDetail(BaseContributorDetail, NodeContributorRemove
         context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context
+
+    def perform_destroy(self, instance):
+        node = self.get_resource()
+        auth = get_user_auth(self.request)
+        if node.visible_contributors.count() == 1 and instance.visible:
+            raise ValidationError('Must have at least one visible contributor')
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class RegistrationBibliographicContributorsList(NodeBibliographicContributorsList, RegistrationMixin):
