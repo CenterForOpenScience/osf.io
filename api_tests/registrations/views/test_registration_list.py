@@ -1927,18 +1927,18 @@ class TestRegistrationContributors(ApiTestCase):
         self.public_registration = RegistrationFactory(
             creator=self.user, project=self.public_project, is_public=True)
         self.contributor = AuthUserFactory()
-    
+
     def add_contributor_request(self, auth_user, contributor, permission='write', expect_errors=False):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/'
         attrs = {
-            "permission": permission,
-            "bibliographic": True
+            'permission': permission,
+            'bibliographic': True
         }
         relationships = {
-            "users": {
-                "data": {
-                    "type": "users",
-                    "id": contributor._id
+            'users': {
+                'data': {
+                    'type': 'users',
+                    'id': contributor._id
                 }
             }
         }
@@ -1955,14 +1955,14 @@ class TestRegistrationContributors(ApiTestCase):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'
         return self.app.delete_json_api(url, auth=auth_user.auth, expect_errors=expect_errors)
 
-    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):        
+    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):     
         url = f'/{API_BASE}registrations/{self.public_registration._id}/'
         payload = {
-            "data": {
-                "id": self.public_registration._id,
-                "attributes": attributes,
-                "relationships": {},
-                "type": "registrations"
+            'data': {
+                'id': self.public_registration._id,
+                'attributes': attributes,
+                'relationships': {},
+                'type': 'registrations'
             }
         }
         return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
@@ -1988,7 +1988,7 @@ class TestRegistrationContributors(ApiTestCase):
             permission='read',
             expect_errors=True
         )
-    
+
         assert res.status_code == 400
         assert f'{self.contributor.fullname} is already a contributor.' in res.json['errors'][0]['detail']
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
@@ -2013,12 +2013,12 @@ class TestRegistrationContributors(ApiTestCase):
         )
         res = self.update_attribute_request(
             auth_user=self.contributor,
-            expect_errors=True, 
+            expect_errors=True,
             title=TITLE
         )
         assert res.status_code == 403
         assert self.public_registration.title != TITLE
-        
+
         self.remove_contributor_request(auth_user=self.user, contributor=self.contributor)
         self.add_contributor_request(
             auth_user=self.user,

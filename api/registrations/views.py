@@ -292,9 +292,9 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return RegistrationContributorsCreateSerializer
-        
+
         return self.serializer_class
-    
+
     def post(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
 
@@ -330,7 +330,7 @@ class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMi
 
     def delete(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
-    
+
     def get_serializer_context(self):
         context = super().get_serializer_context(self)
         context['resource'] = self.get_resource()

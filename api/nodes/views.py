@@ -526,7 +526,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context
-    
+
     def perform_destroy(self, instance):
         node = self.get_resource()
         auth = get_user_auth(self.request)

@@ -190,7 +190,7 @@ class ContributorDetailPermissions(permissions.BasePermission):
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])
-    
+
     def has_permission(self, request, view):
         auth = get_user_auth(request)
         context = request.parser_context['kwargs']
