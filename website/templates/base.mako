@@ -288,11 +288,11 @@
             </script>
         % endif
 
-        % if settings.DATACITE_USAGE_TRACKER_REPO_ID:
+        % if settings.DATACITE_TRACKER_REPO_ID:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
                     dataciteTracker: {
-                        repoId: ${ settings.DATACITE_USAGE_TRACKER_REPO_ID | sjson, n },
+                        repoId: ${ settings.DATACITE_TRACKER_REPO_ID | sjson, n },
                     },
                 });
             </script>
