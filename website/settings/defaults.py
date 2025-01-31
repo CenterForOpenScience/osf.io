@@ -344,7 +344,10 @@ DATACITE_USERNAME = None
 DATACITE_PASSWORD = None
 DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
-DATACITE_USAGE_TRACKER_REPO_ID = None
+
+
+# OSF's RepoId on Datacite to track stats for DOIs. See https://support.datacite.org/docs/datacite-usage-tracker.
+DATACITE_TRACKER_REPO_ID = None
 
 # crossref
 CROSSREF_USERNAME = None

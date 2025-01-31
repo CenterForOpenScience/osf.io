@@ -1,4 +1,4 @@
-const {Tracker} = require('@datacite/datacite-tracker');
+const {Tracker} = require('datacite-tracker/src');
 
 var tracker;
 
