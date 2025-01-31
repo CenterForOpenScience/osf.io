@@ -285,7 +285,7 @@ class GuidVersionsThrough(BaseModel):
     created = NonNaiveDateTimeField(db_index=True, auto_now_add=True)
     referent = GenericForeignKey()
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField(null=True, blank=True)
+    object_id = models.PositiveIntegerField(null=True, blank=True, db_index=True)
     guid = models.ForeignKey('Guid', related_name='versions', on_delete=models.CASCADE)
     version = models.PositiveIntegerField(null=True, blank=True)
     is_rejected = models.BooleanField(default=False)
