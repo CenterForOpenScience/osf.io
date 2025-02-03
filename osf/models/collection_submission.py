@@ -219,7 +219,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             )
 
     def _validate_remove(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         force = event_data.kwargs.get('force')
         if force:
             return
