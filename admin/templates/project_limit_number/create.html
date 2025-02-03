@@ -310,9 +310,9 @@
                         tableDiv += `
                             <tr>
                                 <td>`+ (item.guid || '') +`</td>
-                                <td>`+ (item.eppn || '') +`</td>
-                                <td>`+ (item.username || '') +`</td>
-                                <td>`+ (item.fullname || '') +`</td>
+                                <td style="word-break: break-word !important;">`+ (item.eppn || '') +`</td>
+                                <td style="word-break: break-word !important;">`+ (item.username || '') +`</td>
+                                <td style="word-break: break-word !important;">`+ (item.fullname || '') +`</td>
                                 <td>`+ item.created_project_number +`</td>
                                 <td>`+ project_limit_number +` </td>
                             </tr>
