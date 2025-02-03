@@ -77,7 +77,7 @@
                             <li><a href="${node['url']}addons/" class="subnav-header">Add-ons</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions']):
+                        % if not node['is_registration']:
                             <li><a href="${node['url']}settings/" class="subnav-header">Settings</a></li>
                         % endif
                     % endif
