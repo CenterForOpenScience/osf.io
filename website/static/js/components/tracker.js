@@ -1,24 +1,43 @@
-const {Tracker} = require('datacite-tracker/src');
+let dataciteConfig = {};
+function init(repoId){
+    dataciteConfig.repoId=repoId;
+}
 
-var tracker;
-
-function init (repoId) {
-    if (repoId) {
-        tracker = Tracker({repoId});
+function getRepoId() {
+    if (dataciteConfig.repoId) {
+        return dataciteConfig.repoId;
     } else {
-        tracker = Tracker();
+        return window.contextVars.dataciteTracker.repoId;
     }
 }
 
-function trackView(doi) {
-    if (tracker === undefined) {
-        init(window.contextVars.dataciteTracker.repoId);
+function trackView(metricName, doi) {
+    if (!doi || doi.trim().length === 0) {
+        return;
     }
+    const repoID = getRepoId();
 
-    tracker.trackMetric('view', {doi: doi});
+    const payload = {
+        n: metricName,
+        u: window.location.href,
+        i: repoID,
+        p: doi,
+    };
+    const r = new XMLHttpRequest();
+    r.open('POST', `https://analytics.datacite.org/api/metric`, true);
+    r.setRequestHeader('Content-Type', 'application/json');
+    r.send(JSON.stringify(payload));
+    r.onreadystatechange = () => {
+        if (r.readyState !== 4)
+            return;
+        if (r.status === 400) {
+            console.error('[DataCiteTracker] ' + r.responseText);
+        }
+
+    };
 }
 
 module.exports = {
-    init: init,
-    trackView: trackView
+    trackView: trackView,
+    init: init
 };

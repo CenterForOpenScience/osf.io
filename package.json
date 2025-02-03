@@ -12,7 +12,6 @@
     "@centerforopenscience/markdown-it-toc": "~1.1.1",
     "@centerforopenscience/markdown-it-video": "1.0.0",
     "@centerforopenscience/osf-style": "1.9.0",
-    "datacite-tracker": "https://github.com/datacite/datacite-tracker",
     "URIjs": "^1.14.1",
     "assets-webpack-plugin": "^2.3.0",
     "babel-core": "^6.0.0",
