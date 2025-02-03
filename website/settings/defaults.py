@@ -347,7 +347,7 @@ DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in producti
 
 
 # OSF's RepoId on Datacite to track stats for DOIs. See https://support.datacite.org/docs/datacite-usage-tracker.
-DATACITE_TRACKER_REPO_ID = '123'
+DATACITE_TRACKER_REPO_ID = None
 
 # crossref
 CROSSREF_USERNAME = None
