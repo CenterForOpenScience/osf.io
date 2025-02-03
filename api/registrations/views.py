@@ -332,7 +332,7 @@ class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMi
         return super().destroy(request, *args, **kwargs)
 
     def get_serializer_context(self):
-        context = super().get_serializer_context(self)
+        context = super().get_serializer_context()
         context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context

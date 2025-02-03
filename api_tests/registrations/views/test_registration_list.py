@@ -1955,7 +1955,7 @@ class TestRegistrationContributors(ApiTestCase):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'
         return self.app.delete_json_api(url, auth=auth_user.auth, expect_errors=expect_errors)
 
-    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):     
+    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/'
         payload = {
             'data': {

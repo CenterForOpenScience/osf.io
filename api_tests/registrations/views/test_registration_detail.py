@@ -527,7 +527,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.json['data']['attributes']['category'] == ''
         assert res.json['data']['attributes']['description'] == ''
         assert res.json['data']['attributes']['tags'] == []
-        assert res.json['data']['attributes']['title'] == private_registration.title
+        assert res.json['data']['attributes']['title'] == 'New title'
         assert res.json['data']['attributes']['node_license']['copyright_holders'] == []
         assert res.json['data']['attributes']['node_license']['year'] == ''
         assert res.json['data']['attributes']['custom_citation'] == ''
@@ -577,6 +577,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
     def test_registration_fields_are_read_only(self):
         writeable_fields = [
+            'title',
             'type',
             'public',
             'draft_registration',
@@ -600,6 +601,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
     def test_registration_detail_fields_are_read_only(self):
         writeable_fields = [
+            'title',
             'type',
             'public',
             'draft_registration',
