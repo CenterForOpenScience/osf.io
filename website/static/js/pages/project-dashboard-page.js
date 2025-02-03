@@ -107,7 +107,6 @@ var institutionLogos = {
 
 
 $(document).ready(function () {
-
     // activate bootstrap popovers
     $('[data-toggle="popover"]').popover();
     // Allows dropdown elements to persist after being clicked

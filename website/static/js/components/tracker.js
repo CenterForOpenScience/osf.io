@@ -1,26 +1,9 @@
-let dataciteConfig = {};
-function init(repoId){
-    dataciteConfig.repoId=repoId;
-}
-
-function getRepoId() {
-    if (dataciteConfig.repoId) {
-        return dataciteConfig.repoId;
-    } else {
-        return window.contextVars.dataciteTracker.repoId;
-    }
-}
-
-function trackView(metricName, doi) {
-    if (!doi || doi.trim().length === 0) {
-        return;
-    }
-    const repoID = getRepoId();
+function trackView(doi) {
 
     const payload = {
-        n: metricName,
+        n: 'view',
         u: window.location.href,
-        i: repoID,
+        i: window.contextVars.dataciteTrackerRepoId,
         p: doi,
     };
     const r = new XMLHttpRequest();
@@ -39,5 +22,4 @@ function trackView(metricName, doi) {
 
 module.exports = {
     trackView: trackView,
-    init: init
 };

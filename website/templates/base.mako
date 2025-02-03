@@ -291,9 +291,7 @@
         % if settings.DATACITE_TRACKER_REPO_ID:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
-                    dataciteTracker: {
-                        repoId: ${ settings.DATACITE_TRACKER_REPO_ID | sjson, n },
-                    },
+                    dataciteTrackerRepoId: ${ settings.DATACITE_TRACKER_REPO_ID | sjson, n },
                 });
             </script>
         % endif
