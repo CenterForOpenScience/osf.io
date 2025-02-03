@@ -2671,7 +2671,7 @@ class TestUserListView(AdminTestCase):
         )
 
         # Create users
-        self.users = [AuthUserFactory(username=f'user{item}@test.com') for item in range(15)]  # Create 15 users for pagination testing
+        self.users = [AuthUserFactory(username=f'user{item}@test.com') for item in range(105)]  # Create 105 users for pagination testing
 
         self.projects = []
         # Affiliate users with institution and add extended data
@@ -2997,8 +2997,8 @@ class TestUserListView(AdminTestCase):
         response = self.view.post(request)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         response_data = json.loads(response.content)
-        self.assertEqual(len(response_data['user_list']), 10)
-        self.assertEqual(response_data['total'], 15)
+        self.assertEqual(len(response_data['user_list']), 100)
+        self.assertEqual(response_data['total'], 105)
 
     def test_post_last_page(self):
         """Test requesting last page"""
@@ -3021,7 +3021,7 @@ class TestUserListView(AdminTestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         response_data = json.loads(response.content)
         self.assertEqual(len(response_data['user_list']), 5)
-        self.assertEqual(response_data['total'], 15)
+        self.assertEqual(response_data['total'], 105)
 
     def test_post_page_larger_than_last_page(self):
         """Test requesting page that has larger than the last page number"""
@@ -3242,7 +3242,7 @@ class TestUserListView(AdminTestCase):
             [],
             []
         )
-        self.assertEqual(count, 15)  # All users
+        self.assertEqual(count, 105)  # All users
 
     def test_count_users_with_logic_condition(self):
         """Test counting users with logic condition"""
@@ -3266,7 +3266,7 @@ class TestUserListView(AdminTestCase):
             [],
             ['%@test.com']
         )
-        self.assertEqual(count, 15)
+        self.assertEqual(count, 105)
 
     @patch('django.db.connection.cursor')
     def test_count_users_database_error_handling(self, mock_cursor):
@@ -3292,7 +3292,7 @@ class TestUserListView(AdminTestCase):
             [],
             []
         )
-        self.assertEqual(len(user_list), 10)  # First page should have 10 users
+        self.assertEqual(len(user_list), 100)  # First page should have 100 users
         for user in user_list:
             self.assertIn('guid', user)
             self.assertIn('username', user)
@@ -3309,7 +3309,7 @@ class TestUserListView(AdminTestCase):
             [],
             []
         )
-        # Second page should have 5 users (total 15 users)
+        # Second page should have 5 users (total 105 users)
         self.assertEqual(len(user_list), 5)
         for user in user_list:
             self.assertIn('guid', user)

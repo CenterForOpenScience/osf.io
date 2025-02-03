@@ -791,7 +791,7 @@ class UpdateProjectLimitNumberSettingView(RdmPermissionMixin, UserPassesTestMixi
 
 class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
     """ User list quota info screen for an institution that is not using NII Storage. """
-    paginate_by = 10
+    paginate_by = 100
     institution_id = None
     raise_exception = True
 
@@ -1025,8 +1025,8 @@ class UserListView(RdmPermissionMixin, UserPassesTestMixin, View):
             WHERE ui.institution_id = %s
                 {}
                 ORDER BY guid ASC
-                LIMIT 10
-                OFFSET (%s - 1) * 10
+                LIMIT 100
+                OFFSET (%s - 1) * 100
             """
 
         if len(include_osf_user_query) > 0:
