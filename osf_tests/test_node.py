@@ -2248,16 +2248,19 @@ class TestSetPrivacy:
                 registration.set_privacy('public', Auth(project.creator))
 
     def test_set_privacy(self, node, auth):
+        last_logged_before_method_call = node.last_logged
         node.set_privacy('public', auth=auth)
+        assert node.logs.first().action == NodeLog.MADE_PUBLIC
+        assert last_logged_before_method_call == node.last_logged
         node.save()
         assert bool(node.is_public) is True
-        assert node.logs.first().action == NodeLog.MADE_PUBLIC
         assert node.keenio_read_key != ''
         node.set_privacy('private', auth=auth)
         node.save()
         assert bool(node.is_public) is False
-        assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert node.keenio_read_key == ''
+        assert node.logs.first().action == NodeLog.MADE_PRIVATE
+        assert last_logged_before_method_call == node.last_logged
 
     @mock.patch('osf.models.queued_mail.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
@@ -2400,12 +2403,15 @@ class TestNodeSpam:
                 assert project.is_public is True
 
     def test_flag_spam_make_node_private(self, project):
+        last_logged_before_method_call = project.last_logged
         project.set_privacy('public')
         assert project.is_public
         with mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True):
             project.flag_spam()
         assert project.is_spammy
         assert project.is_public is False
+        assert project.logs.first().action == 'flag_spam'
+        assert last_logged_before_method_call == project.last_logged
 
     def test_flag_spam_do_not_make_node_private(self, project):
         project.set_privacy('public')

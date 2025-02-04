@@ -486,7 +486,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
-    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
         user = None
         if auth:
             user = auth.user
@@ -497,7 +497,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
 
         log = PreprintLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, preprint=self
+            params=params, preprint=self, should_hide=should_hide
         )
 
         log.save()
@@ -868,6 +868,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth,
                 save=False,
+                should_hide=True
             )
         if save:
             self.save()

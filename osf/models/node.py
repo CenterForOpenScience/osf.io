@@ -1280,6 +1280,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
                 auth=auth,
                 save=False,
+                should_hide=True
             )
         if save:
             self.save()

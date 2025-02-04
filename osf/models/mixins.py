@@ -101,7 +101,7 @@ class Loggable(models.Model):
 
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
-    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
         AbstractNode = apps.get_model('osf.AbstractNode')
         OSFUser = apps.get_model('osf.OSFUser')
         user = None
@@ -118,7 +118,8 @@ class Loggable(models.Model):
 
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=original_node
+            params=params, node=self, original_node=original_node,
+            should_hide=should_hide
         )
 
         if log_date:
@@ -2046,9 +2047,9 @@ class SpamOverrideMixin(SpamMixin):
             action=self.log_class.CONFIRM_SPAM,
             params={**self.log_params, 'was_public': was_public},
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2066,9 +2067,9 @@ class SpamOverrideMixin(SpamMixin):
             action=self.log_class.CONFIRM_HAM,
             params=self.log_params,
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2181,9 +2182,9 @@ class SpamOverrideMixin(SpamMixin):
                 action=self.log_class.FLAG_SPAM,
                 params={**self.log_params, 'was_public': was_public},
                 auth=None,
-                save=False
+                save=False,
+                should_hide=True
             )
-            log.should_hide = True
             log.save()
 
         if settings.SPAM_THROTTLE_AUTOBAN:
