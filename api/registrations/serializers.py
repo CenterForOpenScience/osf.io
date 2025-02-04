@@ -917,6 +917,30 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+    
+    def update(self, instance, validated_data):
+        index = None
+        if '_order' in validated_data:
+            index = validated_data.pop('_order')
+
+        auth = Auth(self.context['request'].user)
+        node = self.context['resource']
+
+        if 'bibliographic' in validated_data:
+            bibliographic = validated_data.get('bibliographic')
+        else:
+            bibliographic = node.get_visible(instance.user)
+        permission = validated_data.get('permission') or instance.permission
+        try:
+            if index is not None:
+                node.move_contributor(instance.user, auth, index, save=True)
+            node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
+        except node.state_error as e:
+            raise exceptions.ValidationError(detail=str(e))
+        except ValueError as e:
+            raise exceptions.ValidationError(detail=str(e))
+        instance.refresh_from_db()
+        return instance
 
 
 class RegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, RegistrationContributorsSerializer):

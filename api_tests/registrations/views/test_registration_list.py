@@ -1955,7 +1955,7 @@ class TestRegistrationContributors(ApiTestCase):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'
         return self.app.delete_json_api(url, auth=auth_user.auth, expect_errors=expect_errors)
 
-    def update_attribute_request(self, auth_user, expect_errors=True, **attributes):
+    def update_registration_attribute_request(self, auth_user, expect_errors=True, **attributes):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/'
         payload = {
             'data': {
@@ -1963,6 +1963,21 @@ class TestRegistrationContributors(ApiTestCase):
                 'attributes': attributes,
                 'relationships': {},
                 'type': 'registrations'
+            }
+        }
+        return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
+
+    def update_contributor_attribute_request(self, auth_user, contributor, permission='read', bibliographic=False, expect_errors=True):
+        url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'
+        payload = {
+            'data': {
+                'id': f'{self.public_registration._id}-{contributor._id}',
+                'attributes': {
+                    'permission': permission,
+                    'bibliographic': bibliographic
+                },
+                'relationships': {},
+                'type': 'contributors'
             }
         }
         return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
@@ -2011,7 +2026,7 @@ class TestRegistrationContributors(ApiTestCase):
             contributor=self.contributor,
             permission='read'
         )
-        res = self.update_attribute_request(
+        res = self.update_registration_attribute_request(
             auth_user=self.contributor,
             expect_errors=True,
             title=TITLE
@@ -2025,7 +2040,7 @@ class TestRegistrationContributors(ApiTestCase):
             contributor=self.contributor,
             permission='write'
         )
-        res = self.update_attribute_request(auth_user=self.contributor, title=TITLE)
+        res = self.update_registration_attribute_request(auth_user=self.contributor, title=TITLE)
         assert res.status_code == 200
         assert res.json['data']['attributes']['title'] == TITLE
         assert Registration.objects.get(id=self.public_registration.id).title == TITLE
@@ -2061,6 +2076,31 @@ class TestRegistrationContributors(ApiTestCase):
 
             self.remove_contributor_request(self.user, self.contributor)
             self.remove_contributor_request(self.user, contributor_to_remove)
+
+    def test_only_admin_can_update_permissions_and_bibliographic_status(self):
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='read'
+        )
+        res = self.update_contributor_attribute_request(
+            self.user,
+            self.contributor,
+            permission='write',
+            bibliographic=True
+        )
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['permission'] == 'write'
+        assert res.json['data']['attributes']['bibliographic'] == True
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
+        assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
+
+        res = self.update_contributor_attribute_request(
+            self.contributor,
+            self.contributor,
+            permission='read'
+        )
+        assert res.status_code == 403
 
 
 class TestRegistrationListFiltering(

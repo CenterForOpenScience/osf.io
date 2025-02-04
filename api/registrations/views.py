@@ -309,7 +309,7 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
         return context
 
 
-class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
+class RegistrationContributorDetail(BaseContributorDetail, mixins.UpdateModelMixin, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
@@ -327,6 +327,9 @@ class RegistrationContributorDetail(BaseContributorDetail, mixins.DestroyModelMi
 
     def get_resource(self):
         return self.get_node()
+    
+    def patch(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
     def delete(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
