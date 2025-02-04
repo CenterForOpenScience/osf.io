@@ -2091,7 +2091,7 @@ class TestRegistrationContributors(ApiTestCase):
         )
         assert res.status_code == 200
         assert res.json['data']['attributes']['permission'] == 'write'
-        assert res.json['data']['attributes']['bibliographic'] == True
+        assert res.json['data']['attributes']['bibliographic'] is True
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
 
