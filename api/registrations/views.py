@@ -327,7 +327,7 @@ class RegistrationContributorDetail(BaseContributorDetail, mixins.UpdateModelMix
 
     def get_resource(self):
         return self.get_node()
-    
+
     def patch(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
 

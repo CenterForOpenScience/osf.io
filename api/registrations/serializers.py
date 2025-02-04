@@ -917,7 +917,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
-    
+
     def update(self, instance, validated_data):
         index = None
         if '_order' in validated_data:
