@@ -146,6 +146,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     version = ser.IntegerField(read_only=True)
     is_latest_version = ser.BooleanField(read_only=True)
 
+    versions = RelationshipField(
+        related_view='preprints:preprint-versions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        read_only=True,
+    )
+
     citation = NoneIfWithdrawal(
         RelationshipField(
             related_view='preprints:preprint-citation',
