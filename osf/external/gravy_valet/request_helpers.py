@@ -90,7 +90,7 @@ def get_addon(gv_addon_pk, requested_resource, requesting_user, addon_type: str)
     )
 
 
-def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
+def iterate_accounts_for_user(requesting_user, addon_type=None):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Returns an iterator of JSONAPIResultEntries representing all of the AuthorizedStorageAccounts for a user.'''
     user_result = get_gv_result(
         endpoint_url=USER_LIST_ENDPOINT,

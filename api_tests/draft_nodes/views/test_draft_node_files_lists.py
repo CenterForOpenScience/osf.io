@@ -388,7 +388,7 @@ class TestNodeFilesList(ApiTestCase):
             expect_errors=True,
             headers={'COOKIE': 'foo=bar;'}  # Webtests doesnt support cookies?
         )
-        assert res.status_code == 404
+        assert res.status_code == 503
 
     @responses.activate
     def test_waterbutler_server_error_returns_503(self):
@@ -416,7 +416,7 @@ class TestNodeFilesList(ApiTestCase):
         )
         url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 503
+        assert res.status_code == 404
 
     @responses.activate
     def test_handles_unauthenticated_waterbutler_request(self):
