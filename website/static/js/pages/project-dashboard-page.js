@@ -788,10 +788,10 @@ $(document).ready(function () {
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
             truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
-            //Nishi Test
+            //#47039　Add　Start
             truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
             truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
-            //nishi Test
+            //#47039　Add　End
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
