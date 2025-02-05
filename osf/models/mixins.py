@@ -103,7 +103,7 @@ class Versioned(models.Model):
 class Loggable(models.Model):
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
-    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
         AbstractNode = apps.get_model('osf.AbstractNode')
         OSFUser = apps.get_model('osf.OSFUser')
         user = None
@@ -120,7 +120,8 @@ class Loggable(models.Model):
 
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=original_node
+            params=params, node=self, original_node=original_node,
+            should_hide=should_hide
         )
 
         if log_date:
@@ -134,11 +135,14 @@ class Loggable(models.Model):
     def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
             log_date = log.date if hasattr(log, 'date') else log.created
-            self.last_logged = log_date.replace(tzinfo=pytz.utc)
+            last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            recent_log = self.logs.first()
+            recent_log = self.logs.latest('created')
             log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
-            self.last_logged = log_date
+            last_logged = log_date
+
+        if not log.should_hide:
+            self.last_logged = last_logged
 
         if save:
             self.save()
@@ -2090,15 +2094,15 @@ class SpamOverrideMixin(SpamMixin):
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.is_public
-        self.set_privacy('private', auth=None, log=False, save=False, force=True)
+        self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
             params={**self.log_params, 'was_public': was_public},
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2116,9 +2120,9 @@ class SpamOverrideMixin(SpamMixin):
             action=self.log_class.CONFIRM_HAM,
             params=self.log_params,
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2226,14 +2230,14 @@ class SpamOverrideMixin(SpamMixin):
         super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             was_public = self.is_public
-            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True)
+            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True, should_hide=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
                 params={**self.log_params, 'was_public': was_public},
                 auth=None,
-                save=False
+                save=False,
+                should_hide=True
             )
-            log.should_hide = True
             log.save()
 
         if settings.SPAM_THROTTLE_AUTOBAN:

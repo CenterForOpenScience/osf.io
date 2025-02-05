@@ -1229,8 +1229,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeStateError(
                     'This project exceeds private project storage limits and thus cannot be converted into a private project.')
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True,
-                    force=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True, force=False, should_hide=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1298,6 +1297,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
                 auth=auth,
                 save=False,
+                should_hide=should_hide
             )
         if save:
             self.save()
