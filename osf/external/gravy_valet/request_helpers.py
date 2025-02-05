@@ -1,14 +1,14 @@
+import dataclasses
+import enum
+import logging
+import typing
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
-import logging
-import dataclasses
-import typing
-
-from . import auth_helpers
 import requests
 from requests.exceptions import RequestException
 
 from website import settings
+from . import auth_helpers
 
 logger = logging.getLogger(__name__)
 
@@ -27,14 +27,20 @@ USER_DETAIL_ENDPOINT = f'{API_BASE}user-references/{{pk}}'
 
 RESOURCE_LIST_ENDPOINT = f'{API_BASE}resource-references'
 RESOURCE_DETAIL_ENDPOINT = f'{API_BASE}resource-references/{{pk}}'
-
-ACCOUNT_EXTERNAL_SERVICE_PATH = 'external_storage_service'
-ACCOUNT_OWNER_PATH = 'base_account.account_owner'
-ADDON_EXTERNAL_SERVICE_PATH = 'base_account.external_storage_service'
-ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
-ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
+ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH = 'external_storage_service'
 ACCOUNT_EXTERNAL_COMPUTING_SERVICE_PATH = 'external_computing_service'
+ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH = 'external_citation_service'
+ACCOUNT_EXTERNAL_SERVICE_ENDPOINT = f'{API_BASE}external-{{addon_type}}-services'
+ACCOUNT_OWNER_PATH = 'base_account.account_owner'
+ADDON_EXTERNAL_STORAGE_SERVICE_PATH = 'base_account.external_storage_service'
+ADDON_EXTERNAL_CITATIONS_SERVICE_PATH = 'base_account.external_citation_service'
 ADDON_EXTERNAL_COMPUTING_SERVICE_PATH = 'base_account.external_computing_service'
+
+
+class AddonType(enum.StrEnum):
+    STORAGE = enum.auto()
+    CITATION = enum.auto()
+    COMPUTING = enum.auto()
 
 CITATION_ITEM_TYPE_ALIASES = {
     'COLLECTION': 'folder',
@@ -47,7 +53,7 @@ def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
     return get_gv_result(
         endpoint_url=ACCOUNT_ENDPOINT.format(pk=gv_account_pk),
         requesting_user=requesting_user,
-        params={'include': ACCOUNT_EXTERNAL_SERVICE_PATH},
+        params={'include': ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH},
     )
 
 
@@ -80,7 +86,7 @@ def get_addon(gv_addon_pk, requested_resource, requesting_user, addon_type: str)
         endpoint_url=ADDON_ENDPOINT.format(pk=gv_addon_pk, addon_type=addon_type),
         requesting_user=requesting_user,
         requested_resource=requested_resource,
-        params={'include': ADDON_EXTERNAL_SERVICE_PATH},
+        params={'include': ADDON_EXTERNAL_STORAGE_SERVICE_PATH},
     )
 
 
@@ -96,7 +102,7 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
         requesting_user=requesting_user,
-        params={'include': f'{ACCOUNT_EXTERNAL_SERVICE_PATH}'}
+        params={'include': f'{ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH}'}
     )
     yield from iterate_gv_results(
         endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
@@ -110,7 +116,7 @@ def iterate_accounts_for_user(requesting_user):  # -> typing.Iterator[JSONAPIRes
     )
 
 
-def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typing.Iterator[JSONAPIResultEntry]
+def iterate_addons_for_resource(requested_resource, requesting_user, addon_type=None):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Returns an iterator of JSONAPIResultEntires representing all of the ConfiguredStorageAddons for a resource.'''
     resource_result = get_gv_result(
         endpoint_url=RESOURCE_LIST_ENDPOINT,
@@ -120,24 +126,27 @@ def iterate_addons_for_resource(requested_resource, requesting_user):  # -> typi
     )
     if not resource_result:
         return None
-    yield from iterate_gv_results(
-        endpoint_url=resource_result.get_related_link('configured_storage_addons'),
-        requesting_user=requesting_user,
-        requested_resource=requested_resource,
-        params={'include': f'{ADDON_EXTERNAL_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
-    )
-    yield from iterate_gv_results(
-        endpoint_url=resource_result.get_related_link('configured_citation_addons'),
-        requesting_user=requesting_user,
-        requested_resource=requested_resource,
-        params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
-    )
-    yield from iterate_gv_results(
-        endpoint_url=resource_result.get_related_link('configured_computing_addons'),
-        requesting_user=requesting_user,
-        requested_resource=requested_resource,
-        params={'include': f'{ADDON_EXTERNAL_COMPUTING_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
-    )
+    if not addon_type or addon_type == AddonType.STORAGE:
+        yield from iterate_gv_results(
+            endpoint_url=resource_result.get_related_link('configured_storage_addons'),
+            requesting_user=requesting_user,
+            requested_resource=requested_resource,
+            params={'include': f'{ADDON_EXTERNAL_STORAGE_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        )
+    if not addon_type or addon_type == AddonType.CITATION:
+        yield from iterate_gv_results(
+            endpoint_url=resource_result.get_related_link('configured_citation_addons'),
+            requesting_user=requesting_user,
+            requested_resource=requested_resource,
+            params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        )
+    if not addon_type or addon_type == AddonType.COMPUTING:
+        yield from iterate_gv_results(
+            endpoint_url=resource_result.get_related_link('configured_computing_addons'),
+            requesting_user=requesting_user,
+            requested_resource=requested_resource,
+            params={'include': f'{ADDON_EXTERNAL_COMPUTING_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+        )
 
 
 def get_waterbutler_config(gv_addon_pk, requested_resource, requesting_user, addon_type):  # -> JSONAPIResultEntry
@@ -246,10 +255,12 @@ def _make_gv_request(
     assert not (request_method == 'GET' and json_data is not None)
     try:
         response = requests.request(url=endpoint_url, headers=auth_headers, params=params, method=request_method, json=json_data)
-    except RequestException:
+    except RequestException as e:
+        logger.error(f"Cannot reach GravyValet: {e}")
         return None
     if not response.ok:
         # log error to Sentry
+        logger.error(f"GV request failed with status code {response.status_code}: {response.content}")
         pass
     return response
 
