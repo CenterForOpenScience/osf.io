@@ -766,7 +766,6 @@ $(document).ready(function () {
 
     // Wiki widget markdown rendering
     if (ctx.wikiWidget) {
-        console.log('aaa');
         // Render math in the wiki widget
         var markdownElement = $('#markdownRender');
         mathrender.mathjaxify(markdownElement);
@@ -789,6 +788,9 @@ $(document).ready(function () {
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
             truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
+            //Nishi Test
+            truncatedText = "<span style=\"color\: #fa0000\">aa<\/span>"
+            //nishi Test
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
