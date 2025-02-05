@@ -482,14 +482,14 @@ class AddonModelMixin(models.Model):
     def addons(self):
         return self.get_addons()
 
-    def get_addons(self):
+    def get_addons(self, service_type: str | None = None):
         request, user_id = get_request_and_user_id()
         if flag_is_active(request, features.ENABLE_GV):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
-            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id))
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type))
 
         return [_f for _f in [
             self.get_addon(config.short_name)
