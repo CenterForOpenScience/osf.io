@@ -837,7 +837,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
             return self.SPAM_CHECK_FIELDS
         return self.SPAM_CHECK_FIELDS.intersection(saved_fields)
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False, force=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False, force=False, should_hide=False):
         """Set the permissions for this preprint - mainly for spam purposes.
 
         :param permissions: A string, either 'public' or 'private'
@@ -868,7 +868,7 @@ class Preprint(DirtyFieldsMixin, GuidMixin, IdentifierMixin, ReviewableMixin, Ba
                 },
                 auth=auth,
                 save=False,
-                should_hide=True
+                should_hide=should_hide
             )
         if save:
             self.save()
