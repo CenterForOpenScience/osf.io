@@ -538,3 +538,14 @@ class PreprintMakePublic(PreprintMixin, View):
             messages.error(self.request, str(e))
 
         return redirect(self.get_success_url())
+
+
+class PreprintResyncCrossRefView(PreprintMixin, View):
+    """ Allows an authorized user to run resync with CrossRef for a single object.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.request_identifier_update('doi', create=True)
+        return redirect(self.get_success_url())
