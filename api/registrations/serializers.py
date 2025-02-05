@@ -923,7 +923,7 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
         return update_contributors_permissions_and_bibliographic_status(
             self,
             instance,
-            validated_data
+            validated_data,
         )
 
 

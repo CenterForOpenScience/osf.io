@@ -18,7 +18,7 @@ from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
-    update_contributors_permissions_and_bibliographic_status
+    update_contributors_permissions_and_bibliographic_status,
 )
 from api.base.versioning import get_kebab_snake_case_field
 from api.institutions.utils import update_institutions
@@ -1272,7 +1272,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return update_contributors_permissions_and_bibliographic_status(
             self,
             instance,
-            validated_data
+            validated_data,
         )
 
 
