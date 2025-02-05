@@ -1,6 +1,5 @@
-from furl import furl
-import waffle
 import itertools
+from furl import furl
 from rest_framework import status as http_status
 import logging
 import math
@@ -33,7 +32,7 @@ from website.project.model import has_anonymous_link
 from osf.utils import permissions
 from osf.metadata.tools import pls_gather_metadata_file
 
-from api.waffle.utils import storage_i18n_flag_active
+from api.waffle.utils import storage_i18n_flag_active, flag_is_active
 
 logger = logging.getLogger(__name__)
 ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
@@ -206,12 +205,9 @@ def forgot_password_form():
 
 
 def resolve_guid_download(guid, provider=None):
-    try:
-        guid = Guid.objects.get(_id=guid.lower())
-    except Guid.DoesNotExist:
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    resource = guid.referent
 
     suffix = request.view_args.get('suffix')
     if suffix and suffix.startswith('osfstorage/files/'):  # legacy route
@@ -293,14 +289,13 @@ def resolve_guid(guid, suffix=None):
     if 'revision' in request.args:
         return resolve_guid_download(guid)
 
-    # Retrieve guid data if present, error if missing
-    try:
-        resource = Guid.objects.get(_id=guid.lower()).referent
-    except Guid.DoesNotExist:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
+    # Retrieve resource and version from a guid str
+    resource, version = Guid.load_referent(guid)
     if not resource or not resource.deep_url:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
+
+    if version and guid != resource._id:
+        return redirect(f'/{resource._id}/{suffix}' if suffix else f'/{resource._id}/', code=302)
 
     if isinstance(resource, DraftNode):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
@@ -324,32 +319,30 @@ def resolve_guid(guid, suffix=None):
             return use_ember_app()
 
     # Stream to ember app if resource has emberized view
-    addon_paths = [f'files/{addon.short_name}' for addon in settings.ADDONS_AVAILABLE_DICT.values() if 'storage' in addon.categories] + ['files']
-
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and waffle.flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
+    elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
         return use_ember_app()
 
-    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and waffle.flag_is_active(request, features.EMBER_REGISTRATION_FILES):
+    elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
-    elif isinstance(resource, Node) and clean_suffix and any(path.startswith(clean_suffix) for path in addon_paths) and waffle.flag_is_active(request, features.EMBER_PROJECT_FILES):
+    elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('files') and flag_is_active(request, features.EMBER_PROJECT_FILES):
         return use_ember_app()
 
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('metadata'):
         return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
-        if isinstance(resource.target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(resource.target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             return use_ember_app()
-        if isinstance(resource.target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(resource.target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             return use_ember_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.

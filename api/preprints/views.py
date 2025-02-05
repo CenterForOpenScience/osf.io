@@ -5,12 +5,14 @@ from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
 from rest_framework import permissions as drf_permissions
 
+from framework import sentry
 from framework.auth.oauth_scopes import CoreScopes
 from osf.models import (
-    ReviewAction,
+    Institution,
     Preprint,
     PreprintContributor,
-    Institution,
+    ReviewAction,
+    VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
 
@@ -20,7 +22,7 @@ from api.actions.views import get_review_actions_queryset
 from api.base.pagination import PreprintContributorPagination
 from api.base.exceptions import Conflict
 from api.base.views import JSONAPIBaseView, WaterButlerMixin
-from api.base.filters import ListFilterMixin, PreprintFilterMixin
+from api.base.filters import ListFilterMixin, PreprintAsTargetFilterMixin, PreprintFilterMixin
 from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
@@ -35,6 +37,7 @@ from api.citations.utils import render_citation
 from api.preprints.serializers import (
     PreprintSerializer,
     PreprintCreateSerializer,
+    PreprintCreateVersionSerializer,
     PreprintCitationSerializer,
     PreprintContributorDetailSerializer,
     PreprintContributorsSerializer,
@@ -58,6 +61,7 @@ from api.preprints.permissions import (
     PreprintFilesPermissions,
     PreprintInstitutionPermissionList,
 )
+from api.providers.workflows import Workflows
 from api.nodes.permissions import ContributorOrPublic
 from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.requests.permissions import PreprintRequestPermission
@@ -68,20 +72,60 @@ from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
 
 
+class PreprintOldVersionsImmutableMixin:
+    """Override method to reject modify requests for old preprint versions (except for withdrawal)"""
+
+    @staticmethod
+    def is_edit_allowed(preprint):
+        if preprint.is_latest_version or preprint.machine_state == 'initial':
+            return True
+        if preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
+            if preprint.machine_state == 'pending':
+                return True
+            if preprint.machine_state == 'rejected' and preprint.version == VersionedGuidMixin.INITIAL_VERSION_NUMBER:
+                return True
+        return False
+
+    def handle_request(self, request, method, *args, **kwargs):
+        preprint = self.get_preprint(check_object_permissions=False)
+        if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
+            return method(request, *args, **kwargs)
+        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
+        sentry.log_message(message)
+        raise Conflict(detail=message)
+
+    def update(self, request, *args, **kwargs):
+        return self.handle_request(request, super().update, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+        return self.handle_request(request, super().create, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        return self.handle_request(request, super().destroy, *args, **kwargs)
+
+
 class PreprintMixin(NodeMixin):
     serializer_class = PreprintSerializer
     preprint_lookup_url_kwarg = 'preprint_id'
 
     def get_preprint(self, check_object_permissions=True, ignore_404=False):
-        qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
-        try:
-            preprint = qs.select_for_update().get() if check_select_for_update(self.request) else qs.select_related('node').get()
-        except Preprint.DoesNotExist:
+        preprint_lookup_data = self.kwargs[self.preprint_lookup_url_kwarg].split('_v')
+
+        base_guid_id = preprint_lookup_data[0]
+        preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
+        if preprint_version:
+            qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id, versioned_guids__version=preprint_version)
+        else:
+            qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
+
+        preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
+        if not preprint:
+            sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:
                 return
             raise NotFound
-
         if preprint.deleted is not None:
+            sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
             raise NotFound
 
         # May raise a permission denied
@@ -156,7 +200,60 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         )
 
 
-class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+    # These permissions are not checked for the list of preprints, permissions handled by the query
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+
+    parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)
+
+    required_read_scopes = [CoreScopes.PREPRINTS_READ]
+    required_write_scopes = [CoreScopes.PREPRINTS_WRITE]
+
+    serializer_class = PreprintSerializer
+
+    ordering = ('-created')
+    ordering_fields = ('created', 'date_last_transitioned')
+    view_category = 'preprints'
+    view_name = 'preprint-versions'
+    metric_map = {
+        'downloads': PreprintDownload,
+        'views': PreprintView,
+    }
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return PreprintCreateVersionSerializer
+        else:
+            return PreprintSerializer
+
+    def get_queryset(self):
+        preprint = Preprint.load(self.kwargs.get('preprint_id'))
+        if not preprint:
+            sentry.log_message(f'Preprint not found: [preprint_id={self.kwargs.get('preprint_id')}]')
+            raise NotFound
+        version_ids = preprint.versioned_guids.first().guid.versions.values_list('object_id', flat=True)
+        qs = Preprint.objects.filter(id__in=version_ids)
+
+        auth = get_user_auth(self.request)
+        auth_user = getattr(auth, 'user', None)
+
+        # Permissions on the list objects are handled by the query
+        public_only = self.metrics_requested
+        qs = qs.filter(Preprint.objects.preprint_versions_permissions_query(auth_user, public_only=public_only))
+
+        return qs
+
+    def create(self, request, *args, **kwargs):
+        request.data['type'] = 'preprints'
+        request.data['create_from_guid'] = kwargs.get('preprint_id')
+        return super().create(request, *args, **kwargs)
+
+
+class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -204,7 +301,7 @@ class PreprintDetail(PreprintMetricsViewMixin, JSONAPIBaseView, generics.Retriev
         return res
 
 
-class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
@@ -232,7 +329,7 @@ class PreprintNodeRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, 
         return obj
 
 
-class PreprintCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
+class PreprintCitationDetail(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_list).
     """
     permission_classes = (
@@ -342,7 +439,7 @@ class PreprintIdentifierList(IdentifierList, PreprintMixin):
         return self.get_preprint(check_object_permissions=check_object_permissions)
 
 
-class PreprintContributorsList(NodeContributorsList, PreprintMixin):
+class PreprintContributorsList(PreprintOldVersionsImmutableMixin, NodeContributorsList, PreprintMixin):
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -386,7 +483,7 @@ class PreprintContributorsList(NodeContributorsList, PreprintMixin):
         return context
 
 
-class PreprintContributorDetail(NodeContributorDetail, PreprintMixin):
+class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContributorDetail, PreprintMixin):
 
     permission_classes = (
         ContributorDetailPermissions,
@@ -463,7 +560,7 @@ class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
         return self.get_preprint()
 
 
-class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
+class PreprintSubjectsRelationship(PreprintOldVersionsImmutableMixin, SubjectRelationshipBaseView, PreprintMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
     """
     permission_classes = (
@@ -493,7 +590,7 @@ class PreprintSubjectsRelationship(SubjectRelationshipBaseView, PreprintMixin):
         return obj
 
 
-class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintMixin):
+class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintAsTargetFilterMixin, PreprintMixin):
     """Action List *Read-only*
 
     Actions represent state changes and/or comments on a reviewable object (e.g. a preprint)
@@ -624,7 +721,6 @@ class PreprintFilesList(NodeFilesList, PreprintMixin):
     def get_resource(self):
         return get_object_or_error(Preprint, self.kwargs['preprint_id'], self.request)
 
-
 class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, PreprintRequestMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -681,7 +777,7 @@ class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilter
         return self.get_resource().affiliated_institutions.all()
 
 
-class PreprintInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
+class PreprintInstitutionsRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     """ """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

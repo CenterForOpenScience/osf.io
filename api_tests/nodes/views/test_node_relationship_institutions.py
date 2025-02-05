@@ -1,4 +1,5 @@
 import pytest
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -7,9 +8,11 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
+from website import mails
+
 
 @pytest.mark.django_db
-class TestNodeRelationshipInstitutions:
+class RelationshipInstitutionsTestMixin:
 
     @pytest.fixture()
     def institution_one(self):
@@ -28,137 +31,166 @@ class TestNodeRelationshipInstitutions:
         return InstitutionFactory()
 
     @pytest.fixture()
-    def resource_factory(self):
-        return NodeFactory
-
-    @pytest.fixture()
-    def make_resource_url(self):
-        def make_resource_url(node):
-            return f'/{API_BASE}nodes/{node._id}/relationships/institutions/'
-        return make_resource_url
+    def resource_url(self, node):
+        return f'/{API_BASE}nodes/{node._id}/relationships/institutions/'
 
     @pytest.fixture()
     def user(self, institution_one, institution_two):
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution_one)
-        user.add_or_update_affiliated_institution(institution_two)
-        user.save()
-        return user
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution_one)
+        user_auth.add_or_update_affiliated_institution(institution_two)
+        user_auth.save()
+        return user_auth
 
     @pytest.fixture()
     def write_contrib(self, write_contrib_institution):
-        write_contrib = AuthUserFactory()
-        write_contrib.add_or_update_affiliated_institution(write_contrib_institution)
-        write_contrib.save()
-        return write_contrib
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(write_contrib_institution)
+        user_auth.save()
+        return user_auth
 
     @pytest.fixture()
     def read_contrib(self, read_contrib_institution):
-        read_contrib = AuthUserFactory()
-        read_contrib.add_or_update_affiliated_institution(read_contrib_institution)
-        read_contrib.save()
-        return read_contrib
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(read_contrib_institution)
+        user_auth.save()
+        return user_auth
+
+    @pytest.fixture()
+    def unauthorized_user_with_affiliation(self, read_contrib_institution):
+        unauthorized_user = AuthUserFactory()
+        unauthorized_user.add_or_update_affiliated_institution(read_contrib_institution)
+        unauthorized_user.save()
+        return unauthorized_user
+
+    @pytest.fixture()
+    def affiliated_admin(self, node, institution_one):
+        admin = AuthUserFactory()
+        admin.add_or_update_affiliated_institution(institution_one)
+        admin.save()
+        node.add_contributor(
+            admin,
+            permissions=permissions.ADMIN
+        )
+
+        return admin
+
+    @pytest.fixture()
+    def unauthorized_user_without_affiliation(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def node(self, user, write_contrib, read_contrib):
-        node = NodeFactory(creator=user)
-        node.add_contributor(
+        project = NodeFactory(creator=user)
+        project.add_contributor(
             write_contrib,
-            permissions=permissions.WRITE)
-        node.add_contributor(read_contrib, permissions=permissions.READ)
-        node.save()
-        return node
+            permissions=permissions.WRITE
+        )
+        project.add_contributor(
+            read_contrib,
+            permissions=permissions.READ
+        )
+        project.save()
+        return project
+
+    @pytest.fixture()
+    def public_node(self, user):
+        return NodeFactory(
+            creator=user,
+            is_public=True,
+        )
 
     @pytest.fixture()
     def node_institutions_url(self, node):
         return f'/{API_BASE}nodes/{node._id}/relationships/institutions/'
 
     @pytest.fixture()
-    def create_payload(self):
-        def payload(*institution_ids):
-            data = []
-            for id_ in institution_ids:
-                data.append({'type': 'institutions', 'id': id_})
-            return {'data': data}
-        return payload
+    def public_node_institutions_url(self, public_node):
+        return f'/{API_BASE}nodes/{public_node._id}/relationships/institutions/'
 
-    def test_node_errors(
-            self, app, user, institution_one, resource_factory,
-            create_payload, node_institutions_url):
+    def create_payload(self, institutions):
+        return {
+            'data': [
+                {'type': 'institutions', 'id': institution._id} for institution in institutions
+            ]
+        }
 
-        #   test_node_with_no_permissions
-        unauthorized_user = AuthUserFactory()
-        unauthorized_user.add_or_update_affiliated_institution(institution_one)
-        unauthorized_user.save()
+class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
+
+    def test_node_with_no_permissions(self, app, unauthorized_user_with_affiliation, institution_one, node_institutions_url):
         res = app.put_json_api(
             node_institutions_url,
-            create_payload([institution_one._id]),
-            auth=unauthorized_user.auth,
+            self.create_payload([institution_one]),
+            auth=unauthorized_user_with_affiliation.auth,
             expect_errors=True,
         )
         assert res.status_code == 403
 
-    #   test_user_with_no_institution
-        unauthorized_user = AuthUserFactory()
-        res = app.put_json_api(node_institutions_url,
-            create_payload(institution_one._id),
+    def test_user_with_no_institution(self, app, unauthorized_user_without_affiliation, institution_one, node_institutions_url):
+        res = app.put_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one]),
             expect_errors=True,
-            auth=unauthorized_user.auth
+            auth=unauthorized_user_without_affiliation.auth
         )
         assert res.status_code == 403
 
-    #   test_institution_does_not_exist
+    def test_institution_does_not_exist(self, app, user, institution_one, node_institutions_url):
         res = app.put_json_api(
             node_institutions_url,
-            create_payload('not_an_id'),
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': '∆'
+                    }
+                ]
+            },
             expect_errors=True,
             auth=user.auth
         )
-
         assert res.status_code == 404
 
-    #   test_wrong_type
+    def test_wrong_type(self, app, user, institution_one, node_institutions_url):
         res = app.put_json_api(
             node_institutions_url,
-            {'data': [{'type': 'not_institution', 'id': institution_one._id}]},
+            {
+                'data': [
+                    {
+                        'type': 'not_institution', 'id': institution_one._id
+                    }
+                ]
+            },
             expect_errors=True,
             auth=user.auth
         )
-
         assert res.status_code == 409
 
-    #   test_remove_institutions_with_no_permissions
+    def test_remove_institutions_with_no_permissions(self, app, user, institution_one, node_institutions_url):
         res = app.put_json_api(
             node_institutions_url,
-            create_payload(),
+            self.create_payload([]),
             expect_errors=True
         )
         assert res.status_code == 401
 
-    #   test_retrieve_private_node_no_auth
+    def test_retrieve_private_node_no_auth(self, app, user, institution_one, node_institutions_url):
         res = app.get(node_institutions_url, expect_errors=True)
         assert res.status_code == 401
 
-    def test_get_public_node(self, app, node, node_institutions_url):
-        node.is_public = True
-        node.save()
-
-        res = app.get(
-            node_institutions_url
-        )
-
+    def test_get_public_node(self, app, node, public_node_institutions_url):
+        res = app.get(public_node_institutions_url)
         assert res.status_code == 200
         assert res.json['data'] == []
 
     def test_user_with_institution_and_permissions(
-            self, app, user, institution_one,
-            institution_two, node, node_institutions_url, create_payload):
+            self, app, user, institution_one, institution_two, node, node_institutions_url):
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
         res = app.post_json_api(
             node_institutions_url,
-            create_payload(institution_one._id, institution_two._id),
+            self.create_payload([institution_one, institution_two]),
             auth=user.auth
         )
 
@@ -168,71 +200,80 @@ class TestNodeRelationshipInstitutions:
 
         assert institution_one._id in ret_institutions
         assert institution_two._id in ret_institutions
-
-        node.reload()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    def test_user_with_institution_and_permissions_through_patch(
-            self, app, user, institution_one, institution_two,
-            node, node_institutions_url, create_payload):
-        assert institution_one not in node.affiliated_institutions.all()
-        assert institution_two not in node.affiliated_institutions.all()
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
+    def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
+                                                                 node, node_institutions_url):
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth
+            )
+            assert res.status_code == 200
+            assert mocked_send_mail.call_count == 2
 
-        res = app.put_json_api(
-            node_institutions_url,
-            create_payload(institution_one._id, institution_two._id),
-            auth=user.auth
-        )
+            first_call_args = mocked_send_mail.call_args_list[0]
+            assert first_call_args == mock.call(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
-        assert res.status_code == 200
-        data = res.json['data']
-        ret_institutions = [inst['id'] for inst in data]
+            second_call_args = mocked_send_mail.call_args_list[1]
+            assert second_call_args == mock.call(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
-        assert institution_one._id in ret_institutions
-        assert institution_two._id in ret_institutions
-
-        node.reload()
-        assert institution_one in node.affiliated_institutions.all()
-        assert institution_two in node.affiliated_institutions.all()
-
-    def test_remove_institutions_with_affiliated_user(
-            self, app, user, institution_one, node, node_institutions_url):
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
+    def test_remove_institutions_with_affiliated_user(self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        res = app.put_json_api(
-            node_institutions_url,
-            {'data': []},
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.put_json_api(
+                node_institutions_url,
+                {
+                    'data': []
+                },
+                auth=user.auth
+            )
+
+            mocked_send_mail.assert_called_with(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
         assert res.status_code == 200
-        node.reload()
         assert node.affiliated_institutions.count() == 0
 
-    def test_using_post_making_no_changes_returns_201(
-            self, app, user, institution_one,
-            node, node_institutions_url, create_payload):
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
+    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        res = app.post_json_api(
-            node_institutions_url,
-            create_payload(institution_one._id),
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+            mocked_send_mail.assert_not_called()
 
         assert res.status_code == 201
-        node.reload()
         assert institution_one in node.affiliated_institutions.all()
 
-    def test_put_not_admin_but_affiliated(
-            self, app, institution_one,
-            node, node_institutions_url,
-            create_payload):
+    def test_put_not_admin_but_affiliated(self, app, institution_one, node, node_institutions_url):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution_one)
         user.save()
@@ -241,100 +282,130 @@ class TestNodeRelationshipInstitutions:
 
         res = app.put_json_api(
             node_institutions_url,
-            create_payload(institution_one._id),
+            self.create_payload([institution_one]),
             auth=user.auth
         )
 
-        node.reload()
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
 
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_through_patch_one_inst_to_node_with_inst(
-            self, app, user, institution_one, institution_two,
-            node, node_institutions_url, create_payload):
+            self, app, user, institution_one, institution_two, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        res = app.patch_json_api(
-            node_institutions_url,
-            create_payload(institution_one._id, institution_two._id),
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth
+            )
+            assert mocked_send_mail.call_count == 1
+            first_call_args = mocked_send_mail.call_args_list[0]
+            assert first_call_args == mock.call(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
         assert res.status_code == 200
-        node.reload()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_through_patch_one_inst_while_removing_other(
-            self, app, user, institution_one, institution_two,
-            node, node_institutions_url, create_payload):
+            self, app, user, institution_one, institution_two, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        res = app.patch_json_api(
-            node_institutions_url,
-            create_payload(institution_two._id),
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_two]),
+                auth=user.auth
+            )
+            assert mocked_send_mail.call_count == 2
+            first_call_args = mocked_send_mail.call_args_list[0]
+            assert first_call_args == mock.call(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
+            second_call_args = mocked_send_mail.call_args_list[1]
+            assert second_call_args == mock.call(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
         assert res.status_code == 200
-        node.reload()
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_one_inst_with_post_to_node_with_inst(
-            self, app, user, institution_one, institution_two,
-            node, node_institutions_url, create_payload):
+            self, app, user, institution_one, institution_two, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        res = app.post_json_api(
-            node_institutions_url,
-            create_payload(institution_two._id),
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_two]),
+                auth=user.auth
+            )
+            mocked_send_mail.assert_called_with(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
         assert res.status_code == 201
-        node.reload()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    def test_delete_nothing(
-            self, app, user, node_institutions_url, create_payload):
+    def test_delete_nothing(self, app, user, node_institutions_url):
         res = app.delete_json_api(
             node_institutions_url,
-            create_payload(),
+            self.create_payload([]),
             auth=user.auth
         )
         assert res.status_code == 204
 
-    def test_delete_existing_inst(
-            self, app, user, institution_one, node,
-            node_institutions_url, create_payload):
+    @mock.patch('website.mails.settings.USE_EMAIL', True)
+    def test_delete_existing_inst(self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
-        assert institution_one in node.affiliated_institutions.all()
 
-        res = app.delete_json_api(
-            node_institutions_url,
-            create_payload(institution_one._id),
-            auth=user.auth
-        )
+        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+            res = app.delete_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+            mocked_send_mail.assert_called_with(
+                user.username,
+                mails.PROJECT_AFFILIATION_CHANGED,
+                user=user,
+                node=node,
+            )
 
         assert res.status_code == 204
-        node.reload()
         assert institution_one not in node.affiliated_institutions.all()
 
     def test_delete_not_affiliated_and_affiliated_insts(
-            self, app, user, institution_one, institution_two,
-            node, node_institutions_url, create_payload):
+            self, app, user, institution_one, institution_two, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
@@ -342,112 +413,99 @@ class TestNodeRelationshipInstitutions:
 
         res = app.delete_json_api(
             node_institutions_url,
-            create_payload(institution_one._id, institution_two._id),
+            self.create_payload([institution_one, institution_two]),
             auth=user.auth,
         )
 
         assert res.status_code == 204
-        node.reload()
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-    def test_delete_user_is_admin(
-            self, app, user, institution_one, node,
-            make_resource_url, create_payload):
+    def test_delete_user_is_admin(self, app, user, institution_one, node, resource_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
-        url = make_resource_url(node)
-
         res = app.delete_json_api(
-            url,
-            create_payload(institution_one._id),
+            resource_url,
+            self.create_payload([institution_one]),
             auth=user.auth
         )
 
         assert res.status_code == 204
 
-    def test_delete_user_is_read_write(
-            self, app, institution_one, node,
-            node_institutions_url, create_payload):
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution_one)
-        user.save()
-        node.add_contributor(user)
-        node.affiliated_institutions.add(institution_one)
-        node.save()
-
+    def test_delete_user_is_read_write(self, app, affiliated_admin, institution_one, node, node_institutions_url):
         res = app.delete_json_api(
             node_institutions_url,
-            create_payload(institution_one._id),
-            auth=user.auth
+            self.create_payload([institution_one]),
+            auth=affiliated_admin.auth
         )
 
         assert res.status_code == 204
 
-    def test_delete_user_is_read_only(
-            self, app, institution_one, node,
-            node_institutions_url, create_payload):
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution_one)
-        user.save()
-        node.add_contributor(user, permissions=permissions.READ)
+    def test_delete_user_is_read_only(self, app, institution_one, node, node_institutions_url):
+        user_auth = AuthUserFactory()
+        user_auth.add_or_update_affiliated_institution(institution_one)
+        user_auth.save()
+        node.add_contributor(user_auth, permissions=permissions.READ)
         node.affiliated_institutions.add(institution_one)
         node.save()
 
         res = app.delete_json_api(
             node_institutions_url,
-            create_payload(institution_one._id),
-            auth=user.auth,
+            self.create_payload([institution_one]),
+            auth=user_auth.auth,
             expect_errors=True
         )
 
         assert res.status_code == 403
 
-    def test_delete_user_is_admin_but_not_affiliated_with_inst(
-            self, app, institution_one, resource_factory, create_payload, make_resource_url):
-        user = AuthUserFactory()
-        node = resource_factory(creator=user)
-        node.affiliated_institutions.add(institution_one)
-        node.save()
-        assert institution_one in node.affiliated_institutions.all()
+    def test_delete_user_is_admin_but_not_affiliated_with_inst(self, app, institution_one):
+        user_auth = AuthUserFactory()
+        project = NodeFactory(creator=user_auth)
+        project.affiliated_institutions.add(institution_one)
+        project.save()
+        assert institution_one in project.affiliated_institutions.all()
 
-        url = make_resource_url(node)
         res = app.delete_json_api(
-            url,
-            create_payload(institution_one._id),
-            auth=user.auth,
+            f'/{API_BASE}nodes/{project._id}/relationships/institutions/',
+            self.create_payload([institution_one]),
+            auth=user_auth.auth,
         )
 
         assert res.status_code == 204
-        node.reload()
-        assert institution_one not in node.affiliated_institutions.all()
+        assert institution_one not in project.affiliated_institutions.all()
 
-    def test_admin_can_add_affiliated_institution(
-            self, app, user, institution_one, node, node_institutions_url):
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': institution_one._id
-            }]
-        }
-        res = app.post_json_api(node_institutions_url, payload, auth=user.auth)
-        node.reload()
+    def test_admin_can_add_affiliated_institution(self, app, user, institution_one, node, node_institutions_url):
+        res = app.post_json_api(
+            node_institutions_url,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    }
+                ]
+            },
+            auth=user.auth
+        )
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
 
     def test_admin_can_remove_admin_affiliated_institution(
             self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': institution_one._id
-            }]
-        }
         res = app.delete_json_api(
-            node_institutions_url, payload, auth=user.auth)
-        node.reload()
+            node_institutions_url,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    }
+                ]
+            },
+            auth=user.auth
+        )
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
 
@@ -455,31 +513,35 @@ class TestNodeRelationshipInstitutions:
             self, app, user, read_contrib_institution, node, node_institutions_url):
         node.affiliated_institutions.add(read_contrib_institution)
         node.save()
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': read_contrib_institution._id
-            }]
-        }
         res = app.delete_json_api(
-            node_institutions_url, payload, auth=user.auth)
-        node.reload()
+            node_institutions_url,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': read_contrib_institution._id
+                    }
+                ]
+            },
+            auth=user.auth
+        )
         assert res.status_code == 204
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
     def test_read_write_contributor_can_add_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': write_contrib_institution._id
-            }]
-        }
         res = app.post_json_api(
             node_institutions_url,
-            payload,
-            auth=write_contrib.auth)
-        node.reload()
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': write_contrib_institution._id
+                    }
+                ]
+            },
+            auth=write_contrib.auth
+        )
         assert res.status_code == 201
         assert write_contrib_institution in node.affiliated_institutions.all()
 
@@ -487,91 +549,103 @@ class TestNodeRelationshipInstitutions:
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
         node.affiliated_institutions.add(write_contrib_institution)
         node.save()
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': write_contrib_institution._id
-            }]
-        }
         res = app.delete_json_api(
             node_institutions_url,
-            payload,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': write_contrib_institution._id
+                    }
+                ]
+            },
             auth=write_contrib.auth)
-        node.reload()
         assert res.status_code == 204
         assert write_contrib_institution not in node.affiliated_institutions.all()
 
-    def test_contribs_cannot_perform_action(
+    def test_read_write_contributor_cannot_remove_admin_affiliated_institution(
             self, app, write_contrib, read_contrib,
             institution_one, read_contrib_institution,
             node, node_institutions_url):
 
-        #   test_read_write_contributor_cannot_remove_admin_affiliated_institution
         node.affiliated_institutions.add(institution_one)
         node.save()
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': institution_one._id
-            }]
-        }
         res = app.delete_json_api(
             node_institutions_url,
-            payload,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    }
+                ]
+            },
             auth=write_contrib.auth,
-            expect_errors=True)
-        node.reload()
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert institution_one in node.affiliated_institutions.all()
 
-    #   test_read_only_contributor_cannot_remove_admin_affiliated_institution
+    def test_read_only_contributor_cannot_remove_admin_affiliated_institution(
+            self, app, write_contrib, read_contrib,
+            institution_one, read_contrib_institution,
+            node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': institution_one._id
-            }]
-        }
         res = app.delete_json_api(
             node_institutions_url,
-            payload,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': institution_one._id
+                    }
+                ]
+            },
             auth=read_contrib.auth,
-            expect_errors=True)
-        node.reload()
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert institution_one in node.affiliated_institutions.all()
 
-    #   test_read_only_contributor_cannot_add_affiliated_institution
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': read_contrib_institution._id
-            }]
-        }
+    def test_read_only_contributor_cannot_add_affiliated_institution(
+            self, app, write_contrib, read_contrib, institution_one, read_contrib_institution, node,
+            node_institutions_url):
+
         res = app.post_json_api(
             node_institutions_url,
-            payload,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': read_contrib_institution._id
+                    }
+                ]
+            },
             auth=read_contrib.auth,
-            expect_errors=True)
-        node.reload()
+            expect_errors=True
+        )
         assert res.status_code == 403
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
-    #   test_read_only_contributor_cannot_remove_affiliated_institution
+    def test_read_only_contributor_cannot_remove_affiliated_institution(
+            self, app, write_contrib, read_contrib,
+            institution_one, read_contrib_institution,
+            node, node_institutions_url):
+
         node.affiliated_institutions.add(read_contrib_institution)
         node.save()
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': read_contrib_institution._id
-            }]
-        }
         res = app.delete_json_api(
             node_institutions_url,
-            payload,
+            {
+                'data': [
+                    {
+                        'type': 'institutions',
+                        'id': read_contrib_institution._id
+                    }
+                ]
+            },
             auth=read_contrib.auth,
             expect_errors=True)
-        node.reload()
         assert res.status_code == 403
         assert read_contrib_institution in node.affiliated_institutions.all()

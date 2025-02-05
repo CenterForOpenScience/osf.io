@@ -106,7 +106,7 @@ def expect_preprint_ingest_request(mock_share_responses, preprint, *, delete=Fal
     # and postcommit-task handling (so on_preprint_updated actually runs)
     with expect_ingest_request(
         mock_share_responses,
-        preprint._id,
+        preprint.get_guid()._id,
         token=preprint.provider.access_token,
         delete=delete,
         count=count,

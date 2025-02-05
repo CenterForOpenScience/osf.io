@@ -157,7 +157,10 @@ class TestFakeGV:
         assert json_data['relationships']['external_storage_service']['data']['id'] == account_one.external_storage_service.pk
 
     def test_addon_route(self, fake_gv, addon_one):
-        gv_addon_detail_url = gv_requests.ADDON_ENDPOINT.format(pk=addon_one.pk)
+        gv_addon_detail_url = gv_requests.ADDON_ENDPOINT.format(
+            pk=addon_one.pk,
+            addon_type='configured-storage-addons',
+        )
         with fake_gv.run_fake():
             resp = requests.get(gv_addon_detail_url)
         assert resp.status_code == HTTPStatus.OK
@@ -296,7 +299,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.BAD_REQUEST
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__noncontributor__public_resource(self, fake_gv, noncontributor, resource, configured_addon, subpath):
+    def test_validate_resource__noncontributor__public_resource(self, fake_gv, noncontributor, resource,
+                                                                configured_addon, subpath):
         resource.is_public = True
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -314,7 +318,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__noncontributor__private_resource(self, fake_gv, noncontributor, resource, configured_addon, subpath):
+    def test_validate_resource__noncontributor__private_resource(self, fake_gv, noncontributor, resource,
+                                                                 configured_addon, subpath):
         resource.is_public = False
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -332,7 +337,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.FORBIDDEN
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__unauthenticated_user__public_resource(self, fake_gv, resource, configured_addon, subpath):
+    def test_validate_resource__unauthenticated_user__public_resource(self, fake_gv, resource, configured_addon,
+                                                                      subpath):
         resource.is_public = True
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -349,7 +355,8 @@ class TestHMACValidation:
         assert resp.status_code == HTTPStatus.OK
 
     @pytest.mark.parametrize('subpath', ['', '/configured_storage_addons'])
-    def test_validate_resource__unauthenticated_user__private_resource(self, fake_gv, resource, configured_addon, subpath):
+    def test_validate_resource__unauthenticated_user__private_resource(self, fake_gv, resource, configured_addon,
+                                                                       subpath):
         resource.is_public = False
         resource.save()
         base_url = gv_requests.RESOURCE_DETAIL_ENDPOINT.format(pk=configured_addon.resource_pk)
@@ -371,7 +378,7 @@ class TestRequestHelpers:
 
     @pytest.fixture
     def fake_gv(self):
-        #validate_headers == True by default
+        # validate_headers == True by default
         return gv_fakes.FakeGravyValet()
 
     @pytest.fixture
@@ -420,6 +427,7 @@ class TestRequestHelpers:
                 gv_addon_pk=external_account.pk,
                 requested_resource=resource,
                 requesting_user=contributor,
+                addon_type='configured-storage-addons',
             )
         retrieved_id = result.resource_id
         assert retrieved_id == configured_addon.pk
@@ -478,7 +486,8 @@ class TestRequestHelpers:
             for retrieved_addon in addons_iterator:
                 configured_addon = expected_addons.pop(retrieved_addon.resource_id)
                 assert retrieved_addon.get_attribute('display_name') == configured_addon.display_name
-                assert retrieved_addon.get_included_member('base_account').resource_id == configured_addon.base_account.pk
+                assert retrieved_addon.get_included_member(
+                    'base_account').resource_id == configured_addon.base_account.pk
                 assert retrieved_addon.get_included_attribute(
                     include_path=('base_account', 'external_storage_service'),
                     attribute_name='display_name'
@@ -523,7 +532,6 @@ class TestEphemeralSettings:
         ephemeral_config = translations.make_ephemeral_user_settings(account_data, requesting_user=contributor)
         assert ephemeral_config.short_name == 'box'
         assert ephemeral_config.gv_id == fake_box_account.pk
-        assert ephemeral_config.config.name == 'addons.box'
 
     def test_make_ephemeral_node_settings(self, contributor, project, fake_box_addon, fake_gv):
         with fake_gv.run_fake():
@@ -531,14 +539,14 @@ class TestEphemeralSettings:
                 gv_addon_pk=fake_box_addon.pk,
                 requesting_user=contributor,
                 requested_resource=project,
+                addon_type='configured-storage-addons',
             )
-        ephemeral_config = translations.make_ephemeral_node_settings(
-            addon_data, requesting_user=contributor, requested_resource=project
-        )
-        assert ephemeral_config.short_name == 'box'
-        assert ephemeral_config.gv_id == fake_box_addon.pk
-        assert ephemeral_config.config.name == 'addons.box'
-        assert ephemeral_config.serialize_waterbutler_settings() == {
-            'folder': fake_box_addon.root_folder,
-            'service': 'box'
-        }
+            ephemeral_config = translations.make_ephemeral_node_settings(
+                addon_data, requesting_user=contributor, requested_resource=project
+            )
+            assert ephemeral_config.short_name == 'box'
+            assert ephemeral_config.gv_id == fake_box_addon.pk
+            assert ephemeral_config.serialize_waterbutler_settings() == {
+                'folder': fake_box_addon.root_folder.split(':')[1],
+                'service': 'box'
+            }
