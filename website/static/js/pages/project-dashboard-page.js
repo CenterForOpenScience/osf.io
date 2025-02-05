@@ -789,7 +789,8 @@ $(document).ready(function () {
             var truncatedText = $.truncate(renderedText, {length: 401});
             truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
             //Nishi Test
-            truncatedText = "<u><span style=\"color\: #fa0000\">aa<\/span></u>"
+            truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
+            truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
             //nishi Test
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
