@@ -24,4 +24,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/reindex_elastic_preprint/$', views.PreprintReindexElastic.as_view(), name='reindex-elastic-preprint'),
     re_path(r'^(?P<guid>\w+)/approve_withdrawal/$', views.PreprintApproveWithdrawalRequest.as_view(), name='approve-withdrawal'),
     re_path(r'^(?P<guid>\w+)/reject_withdrawal/$', views.PreprintRejectWithdrawalRequest.as_view(), name='reject-withdrawal'),
+    re_path(r'^(?P<guid>\w+)/resync_crossref/$', views.PreprintResyncCrossRefView.as_view(), name='resync-crossref'),
 ]
