@@ -87,6 +87,7 @@ class Registration(AbstractNode):
     }
 
     WRITABLE_WHITELIST = [
+        'title',
         'article_doi',
         'description',
         'is_public',

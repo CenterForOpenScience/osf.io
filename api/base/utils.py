@@ -8,6 +8,7 @@ from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import QuerySet
 from rest_framework import fields
+from rest_framework import exceptions
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
@@ -300,3 +301,31 @@ def toggle_view_by_flag(flag_name, old_view, new_view):
         # in `api_tests.base.test_views` and `api.base.serializers.RelationshipField`
         _view_by_flag.view_class = new_view.view_class  # type: ignore[attr-defined]
     return _view_by_flag
+
+
+def update_contributors_permissions_and_bibliographic_status(serializer, instance, validated_data):
+    '''
+    Helper function for serializers to update permissions of contributors and their bibliographic status
+    '''
+    index = None
+    if '_order' in validated_data:
+        index = validated_data.pop('_order')
+
+    auth = Auth(serializer.context['request'].user)
+    node = serializer.context['resource']
+
+    if 'bibliographic' in validated_data:
+        bibliographic = validated_data.get('bibliographic')
+    else:
+        bibliographic = node.get_visible(instance.user)
+    permission = validated_data.get('permission') or instance.permission
+    try:
+        if index is not None:
+            node.move_contributor(instance.user, auth, index, save=True)
+        node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
+    except node.state_error as e:
+        raise exceptions.ValidationError(detail=str(e))
+    except ValueError as e:
+        raise exceptions.ValidationError(detail=str(e))
+    instance.refresh_from_db()
+    return instance

@@ -1,4 +1,4 @@
-from rest_framework import generics, permissions as drf_permissions
+from rest_framework import generics, mixins, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -58,6 +58,7 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer,
     RegistrationContributorsSerializer,
+    RegistrationContributorsCreateSerializer,
     RegistrationCreateSerializer,
     RegistrationStorageProviderSerializer,
 )
@@ -267,7 +268,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return context
 
 
-class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserMixin):
+class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_list).
     """
     view_category = 'registrations'
@@ -282,16 +283,33 @@ class RegistrationContributorsList(BaseContributorList, RegistrationMixin, UserM
     permission_classes = (
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
 
+    def get_resource(self):
+        return self.get_node(check_object_permissions=False)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return RegistrationContributorsCreateSerializer
+
+        return self.serializer_class
+
+    def post(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+
     def get_default_queryset(self):
-        node = self.get_node(check_object_permissions=False)
+        node = self.get_resource()
         return node.contributor_set.all().prefetch_related('user__guids')
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
 
-class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, UserMixin):
+
+class RegistrationContributorDetail(BaseContributorDetail, mixins.UpdateModelMixin, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
@@ -304,9 +322,32 @@ class RegistrationContributorDetail(BaseContributorDetail, RegistrationMixin, Us
     permission_classes = (
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
+
+    def get_resource(self):
+        return self.get_node()
+
+    def patch(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['resource'] = self.get_resource()
+        context['default_email'] = 'default'
+        return context
+
+    def perform_destroy(self, instance):
+        node = self.get_resource()
+        auth = get_user_auth(self.request)
+        if node.visible_contributors.count() == 1 and instance.visible:
+            raise ValidationError('Must have at least one visible contributor')
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class RegistrationBibliographicContributorsList(NodeBibliographicContributorsList, RegistrationMixin):

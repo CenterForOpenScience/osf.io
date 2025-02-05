@@ -2139,6 +2139,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     continue
             # Title, description, and category have special methods for logging purposes
             if key == 'title':
+                # not all nodes have this attribute but it's possible to update their title (e.g. Registration)
+                if not hasattr(self, 'is_bookmark_collection'):
+                    self.set_title(title=value, auth=auth, save=False)
+                    continue
                 if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
                 else:

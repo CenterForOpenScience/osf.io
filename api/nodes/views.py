@@ -524,21 +524,20 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
     def get_resource(self):
         return self.get_node()
 
-    # overrides DestroyAPIView
-    def perform_destroy(self, instance):
-        node = self.get_resource()
-        auth = get_user_auth(self.request)
-        if len(node.visible_contributors) == 1 and instance.visible:
-            raise ValidationError('Must have at least one visible contributor')
-        removed = node.remove_contributor(instance, auth)
-        if not removed:
-            raise ValidationError('Must have at least one registered admin contributor')
-
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['resource'] = self.get_resource()
         context['default_email'] = 'default'
         return context
+
+    def perform_destroy(self, instance):
+        node = self.get_resource()
+        auth = get_user_auth(self.request)
+        if node.visible_contributors.count() == 1 and instance.visible:
+            raise ValidationError('Must have at least one visible contributor')
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
