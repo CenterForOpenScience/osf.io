@@ -380,12 +380,13 @@ class TestNodeFilesList(ApiTestCase):
     # This test is skipped because it was wrongly configured in the first place
     # The reason OSF returns a 404 is not because WB returns a file when OSF expects a folder
     # But because the addon itself is not configured for the node
-    @pytest.mark.skip('ENG-7256')
+    @pytest.mark.skip('TODO: ENG-7256')
     @responses.activate
     def test_notfound_node_folder_returns_file(self):
         self._prepare_mock_wb_response(
             provider='github', files=[{'name': 'NewFile'}],
             folder=False, path='/')
+
         url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/github/'
         res = self.app.get(
             url, auth=self.user.auth,
@@ -408,8 +409,10 @@ class TestNodeFilesList(ApiTestCase):
 
     @responses.activate
     def test_waterbutler_invalid_data_returns_503(self):
-        # TODO: if WB returns 400, we would instead return 404 instead of 503
-        # because of the change in get_file_object(); We should handle this more gracefully
+        # TODO: ENG-7256 -if WB returns 400, we should return 503
+        # However because of the change in get_file_object(), we can't distinguish
+        # between a 400 that's caused by an addon not found and a more general 400 meaning invalid data was passed
+        # We should handle this more gracefully
         wb_url = waterbutler_api_url_for(self.draft_node._id, _internal=True, provider='github', path='/', meta=True, base_url=self.draft_node.osfstorage_region.waterbutler_url)
         self.add_github()
         responses.add(
