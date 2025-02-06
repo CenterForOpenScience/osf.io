@@ -87,6 +87,10 @@ class TestPreprintDetail:
         return f'/{API_BASE}preprints/{unpublished_preprint._id}/'
 
     @pytest.fixture()
+    def versions_url(self, preprint):
+        return f'/{API_BASE}preprints/{preprint._id}/versions/'
+
+    @pytest.fixture()
     def res(self, app, url):
         return app.get(url)
 
@@ -94,7 +98,7 @@ class TestPreprintDetail:
     def data(self, res):
         return res.json['data']
 
-    def test_preprint_detail(self, app, user, preprint, url, res, data):
+    def test_preprint_detail(self, app, user, preprint, url, versions_url, res, data):
         #   test_preprint_detail_success
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
@@ -112,6 +116,13 @@ class TestPreprintDetail:
 
         #   test no node attached to preprint
         assert data['relationships']['node'].get('data', None) is None
+
+        #  test versions in relationships
+        assert data['relationships']['versions']['links']['related']['href'].endswith(versions_url)
+
+        #  test versions in links
+        #TODO: Remove this assertion once https://openscience.atlassian.net/browse/ENG-7174 has been released
+        assert data['links']['preprint_versions'].endswith(versions_url)
 
         #   test_preprint_node_deleted doesn't affect preprint
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
