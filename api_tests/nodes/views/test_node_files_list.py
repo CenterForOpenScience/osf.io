@@ -386,7 +386,7 @@ class TestNodeFilesList(ApiTestCase):
         )
         url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 503
+        assert res.status_code == 404
 
     @responses.activate
     def test_handles_unauthenticated_waterbutler_request(self):
