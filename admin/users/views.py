@@ -559,7 +559,6 @@ class UserDraftRegistrationsList(UserMixin, ListView):
     permission_required = 'osf.view_draftregistration'
     raise_exception = True
     ordering = ('-created')
-    form_class = UserSearchForm
     paginate_by = 25
 
     def get_queryset(self):

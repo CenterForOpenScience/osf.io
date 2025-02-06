@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>{{ draft_registration.type|cut:'osf.'|title }}: {{draft_registration.guid}} </title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        <div class="row">
+            <h2>Draft Registration: <b>{{ draft_registration.title }}</b> <a href="{{ draft_registration.absolute_url }}"> ({{draft_registration.guid}})</a> </h2>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Guid</td>
+                        <td>{{ draft_registration.guid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Url</td>
+                        <td><a href="{{ draft_registration.absolute_url }}">{{ draft_registration.absolute_url }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Title</td>
+                        <td>{{ draft_registration.title }}</td>
+                    </tr>
+                    <tr>
+                        <td>Creator</td>
+                        <td><a href="{{ draft_registration.creator | reverse_user }}">{{ draft_registration.creator }}</a></td>
+                    </tr>
+                    <tr>
+                        <td>Deleted</td>
+                        <td>{{ draft_registration.deleted }}</td>
+                    </tr>
+                    <tr>
+                        <td>Public</td>
+                        <td>{{ draft_registration.is_public }}</td>
+                    </tr>
+                    <tr>
+                        <td>Provider</td>
+                        {% if draft_registration.provider %}
+                            <td><a href="{{ draft_registration | reverse_registration_provider }}">{{ draft_registration.provider.name }}</a></td>
+                        {% else %}
+                            <td>None</td>
+                        {% endif %}
+                    </tr>
+                    {% include "draft_registrations/contributors.html" with draft_registration=draft_registration %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

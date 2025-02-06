@@ -1,0 +1,29 @@
+{% load node_extras %}
+
+<tr>
+    <td>Contributors</td>
+    <td>
+        <table class="table table-bordered table-hover">
+            <thead>
+                <tr>
+                    <td>Email</td>
+                    <td>Name</td>
+                    <td>Permissions</td>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in draft_registration.contributors %}
+                    <tr>
+                        <td>
+                            <a href="{{ user | reverse_user }}">
+                                {{ user }}
+                            </a>
+                        </td>
+                        <td>{{ user.fullname }}</td>
+                        <td>{% get_permissions user draft_registration %}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </td>
+</tr>

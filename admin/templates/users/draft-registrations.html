@@ -16,7 +16,7 @@
         {% for draft_registration in draft_registrations %}
         <tr>
             <td>
-                <a href="{{ draft_registration | reverse_node }}"
+                <a href="{{ draft_registration | reverse_draft_registration }}"
                    class="btn btn-primary">
                     {{ draft_registration.guid }}
                 </a>
