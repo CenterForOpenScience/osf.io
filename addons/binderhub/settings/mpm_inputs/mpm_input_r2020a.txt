@@ -1,0 +1,327 @@
+"########################################################################
+## Configuration File for Installing or Downloading R2020a MathWorks Products
+########################################################################
+##
+## Use this file to configure the installation or download of MathWorks 
+## products and support packages from the command line using the
+## MATLAB Package Manager (mpm).
+##
+## To configure your MATLAB installation or download:
+##
+## 1. Set configuration parameters by uncommenting lines that
+##    start with a single '#' and updating the values. The
+##    comments above each parameter describe the valid values.
+##
+## 2. Run mpm from the command line, using the --inputfile option
+##    to specify the full path to this configuration file.
+##
+##    Install products:
+##    mpm install --inputfile <full_path_to_this_file>
+##
+##    Download products without installing:
+##    mpm download --inputfile <full_path_to_this_file>
+##
+## You can download template input files for all supported releases from
+## https://github.com/mathworks-ref-arch/matlab-dockerfile/blob/main/MPM.md
+##
+########################################################################
+
+
+########################################################################
+## INSTALLATION OR DOWNLOAD FOLDER
+########################################################################
+##
+## When installing products using 'mpm install':
+##
+##   Specify the full path to the folder where you want to install the
+##   products. When adding products or support packages to an 
+##   existing MATLAB installation, specify the full path to the folder
+##   where MATLAB is installed.
+##
+##   Example:
+##   (Linux) destinationFolder=/usr/local/MATLAB/RXXXX
+##   (Windows) destinationFolder=C:\\Program Files\\MATLAB\\RXXXX
+##   (Mac) destinationFolder=/Applications/MATLAB_RXXXX.app
+##
+## When downloading products using 'mpm download':
+##
+##   Specify the full path to the folder where you want to download the
+##   products. For 'mpm download', this option is required.
+##
+##   Example:
+##   (Linux/Mac) destinationFolder=/home/<USER>/downloads/mathworks
+##   (Windows) destinationFolder=C:\\Users\\<USER>\\Downloads\\MathWorks
+##
+## Set the desired value for destinationFolder and
+## uncomment the following line.
+
+# destinationFolder=
+
+
+########################################################################
+## PRODUCTS
+########################################################################
+##
+## Uncomment the lines for the products you want to install or download.
+
+#product.5G_Toolbox
+#product.AUTOSAR_Blockset
+#product.Aerospace_Blockset
+#product.Aerospace_Toolbox
+#product.Antenna_Toolbox
+#product.Audio_Toolbox
+#product.Automated_Driving_Toolbox
+#product.Bioinformatics_Toolbox
+#product.Communications_Toolbox
+#product.Computer_Vision_Toolbox
+#product.Control_System_Toolbox
+#product.Curve_Fitting_Toolbox
+#product.DSP_System_Toolbox
+#product.Data_Acquisition_Toolbox
+#product.Database_Toolbox
+#product.Datafeed_Toolbox
+#product.Deep_Learning_Toolbox
+#product.Econometrics_Toolbox
+#product.Embedded_Coder
+#product.Filter_Design_HDL_Coder
+#product.Financial_Instruments_Toolbox
+#product.Financial_Toolbox
+#product.Fixed-Point_Designer
+#product.Fuzzy_Logic_Toolbox
+#product.GPU_Coder
+#product.Global_Optimization_Toolbox
+#product.HDL_Coder
+#product.HDL_Verifier
+#product.Image_Acquisition_Toolbox
+#product.Image_Processing_Toolbox
+#product.Instrument_Control_Toolbox
+#product.LTE_Toolbox
+#product.MATLAB
+#product.MATLAB_Coder
+#product.MATLAB_Compiler
+#product.MATLAB_Compiler_SDK
+#product.MATLAB_Parallel_Server
+#product.MATLAB_Report_Generator
+#product.Mapping_Toolbox
+#product.Mixed-Signal_Blockset
+#product.Model_Predictive_Control_Toolbox
+#product.Model-Based_Calibration_Toolbox
+#product.Motor_Control_Blockset
+#product.Navigation_Toolbox
+#product.OPC_Toolbox
+#product.Optimization_Toolbox
+#product.Parallel_Computing_Toolbox
+#product.Partial_Differential_Equation_Toolbox
+#product.Phased_Array_System_Toolbox
+#product.Polyspace_Code_Prover
+#product.Polyspace_Code_Prover_Server
+#product.Powertrain_Blockset
+#product.Predictive_Maintenance_Toolbox
+#product.RF_Blockset
+#product.RF_Toolbox
+#product.ROS_Toolbox
+#product.Reinforcement_Learning_Toolbox
+#product.Risk_Management_Toolbox
+#product.Robotics_System_Toolbox
+#product.Robust_Control_Toolbox
+#product.Sensor_Fusion_and_Tracking_Toolbox
+#product.SerDes_Toolbox
+#product.Signal_Processing_Toolbox
+#product.SimBiology
+#product.SimEvents
+#product.Simscape
+#product.Simscape_Driveline
+#product.Simscape_Electrical
+#product.Simscape_Fluids
+#product.Simscape_Multibody
+#product.Simulink
+#product.Simulink_3D_Animation
+#product.Simulink_Check
+#product.Simulink_Coder
+#product.Simulink_Compiler
+#product.Simulink_Control_Design
+#product.Simulink_Coverage
+#product.Simulink_Design_Optimization
+#product.Simulink_Design_Verifier
+#product.Simulink_Desktop_Real-Time
+#product.Simulink_PLC_Coder
+#product.Simulink_Real-Time
+#product.Simulink_Report_Generator
+#product.Simulink_Requirements
+#product.Simulink_Test
+#product.SoC_Blockset
+#product.Spreadsheet_Link
+#product.Stateflow
+#product.Statistics_and_Machine_Learning_Toolbox
+#product.Symbolic_Math_Toolbox
+#product.System_Composer
+#product.System_Identification_Toolbox
+#product.Text_Analytics_Toolbox
+#product.Trading_Toolbox
+#product.Vehicle_Dynamics_Blockset
+#product.Vehicle_Network_Toolbox
+#product.Vision_HDL_Toolbox
+#product.WLAN_Toolbox
+#product.Wavelet_Toolbox
+#product.Wireless_HDL_Toolbox
+
+
+########################################################################
+## SUPPORT PACKAGES
+########################################################################
+##
+## Uncomment the lines for the support packages you want to install or download.
+
+#product._GPU_Coder_Support_Package_for_NVIDIA_GPUs_
+#product.Aerospace_Blockset_CubeSat_Simulation_Library
+#product.Automated_Driving_Toolbox_Interface_for_Unreal_Engine_4_Projects
+#product.Bioinformatics_Toolbox_Interface_for_Bowtie_Aligner
+#product.Communications_Toolbox_Library_for_the_Bluetooth_Protocol
+#product.Communications_Toolbox_Library_for_the_NFC_Protocol
+#product.Communications_Toolbox_Library_for_the_ZigBee_Protocol
+#product.Communications_Toolbox_Support_Package_for_Analog_Devices_ADALM-Pluto_Radio
+#product.Communications_Toolbox_Support_Package_for_RTL-SDR_Radio
+#product.Communications_Toolbox_Support_Package_for_USRP_Embedded_Series_Radio
+#product.Communications_Toolbox_Support_Package_for_USRP_Radio
+#product.Communications_Toolbox_Support_Package_for_Xilinx_Zynq-Based_Radio
+#product.Computer_Vision_Toolbox_OCR_Language_Data
+#product.Computer_Vision_Toolbox_OpenCV_Interface
+#product.Computer_Vision_Toolbox_OpenCV_Interface_for_Simulink
+#product.Computer_Vision_Toolbox_Support_Package_for_Xilinx_Zynq-Based_Hardware
+#product.Data_Acquisition_Toolbox_Support_Package_for_Analog_Devices_ADALM1000_Hardware
+#product.Data_Acquisition_Toolbox_Support_Package_for_Digilent_Analog_Discovery_Hardware
+#product.Data_Acquisition_Toolbox_Support_Package_for_Measurement_Computing_Hardware
+#product.Data_Acquisition_Toolbox_Support_Package_for_National_Instruments_NI-DAQmx_Devices
+#product.Data_Acquisition_Toolbox_Support_Package_for_Windows_Sound_Cards
+#product.Database_Toolbox_Interface_for_Apache_Cassandra_Database
+#product.Database_Toolbox_Interface_for_MongoDB
+#product.Database_Toolbox_Interface_for_Neo4j_Bolt_Protocol
+#product.Deep_Learning_Toolbox_Converter_for_ONNX_Model_Format
+#product.Deep_Learning_Toolbox_Importer_for_Caffe_Models
+#product.Deep_Learning_Toolbox_Importer_for_Tensorflow-Keras_Models
+#product.Deep_Learning_Toolbox_Model_Quantization_Library
+#product.Deep_Learning_Toolbox_Model_for_AlexNet_Network
+#product.Deep_Learning_Toolbox_Model_for_DarkNet-19_Network
+#product.Deep_Learning_Toolbox_Model_for_DarkNet-53_Network
+#product.Deep_Learning_Toolbox_Model_for_DenseNet-201_Network
+#product.Deep_Learning_Toolbox_Model_for_GoogLeNet_Network
+#product.Deep_Learning_Toolbox_Model_for_Inception-ResNet-v2_Network
+#product.Deep_Learning_Toolbox_Model_for_Inception-v3_Network
+#product.Deep_Learning_Toolbox_Model_for_MobileNet-v2_Network
+#product.Deep_Learning_Toolbox_Model_for_NASNet-Large_Network
+#product.Deep_Learning_Toolbox_Model_for_NASNet-Mobile_Network
+#product.Deep_Learning_Toolbox_Model_for_Places365-GoogLeNet_Network
+#product.Deep_Learning_Toolbox_Model_for_ResNet-101_Network
+#product.Deep_Learning_Toolbox_Model_for_ResNet-18_Network
+#product.Deep_Learning_Toolbox_Model_for_ResNet-50_Network
+#product.Deep_Learning_Toolbox_Model_for_ShuffleNet_Network
+#product.Deep_Learning_Toolbox_Model_for_VGG-16_Network
+#product.Deep_Learning_Toolbox_Model_for_VGG-19_Network
+#product.Deep_Learning_Toolbox_Model_for_Xception_Network
+#product.Embedded_Coder_Interface_to_QEMU_Emulator
+#product.Embedded_Coder_Support_Package_for_ARM_Cortex-A_Processors
+#product.Embedded_Coder_Support_Package_for_ARM_Cortex-M_Processors
+#product.Embedded_Coder_Support_Package_for_ARM_Cortex-R_Processors
+#product.Embedded_Coder_Support_Package_for_BeagleBone_Black_Hardware
+#product.Embedded_Coder_Support_Package_for_Intel_SoC_Devices
+#product.Embedded_Coder_Support_Package_for_PX4_Autopilots
+#product.Embedded_Coder_Support_Package_for_STMicroelectronics_Discovery_Boards
+#product.Embedded_Coder_Support_Package_for_Texas_Instruments_C2000_F28M3x_Concerto_Processors
+#product.Embedded_Coder_Support_Package_for_Texas_Instruments_C2000_Processors
+#product.Embedded_Coder_Support_Package_for_Xilinx_Zynq_Platform
+#product.Ephemeris_Data_for_Aerospace_Toolbox
+#product.GPU_Coder_Interface_for_Deep_Learning_Libraries
+#product.GUIDE_to_App_Designer_Migration_Tool_for_MATLAB
+#product.Geoid_Data_for_Aerospace_Toolbox
+#product.HDL_Coder_Support_Package_for_Intel_FPGA_Boards
+#product.HDL_Coder_Support_Package_for_Intel_SoC_Devices
+#product.HDL_Coder_Support_Package_for_Xilinx_FPGA_Boards
+#product.HDL_Coder_Support_Package_for_Xilinx_Zynq_Platform
+#product.HDL_Verifier_Support_Package_for_Intel_FPGA_Boards
+#product.HDL_Verifier_Support_Package_for_Microsemi_FPGA_Boards
+#product.HDL_Verifier_Support_Package_for_Xilinx_FPGA_Boards
+#product.Image_Acquisition_Toolbox_Support_Package_for_DCAM_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_Hamamatsu_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_Kinect_for_Windows_Sensor
+#product.Image_Acquisition_Toolbox_Support_Package_for_Matrox_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_National_Instruments_Frame_Grabbers
+#product.Image_Acquisition_Toolbox_Support_Package_for_OS_Generic_Video_Interface
+#product.Image_Acquisition_Toolbox_Support_Package_for_Point_Grey_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_QImaging_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_Teledyne_DALSA_Sapera_Hardware
+#product.Image_Acquisition_Toolbox_Support_Package_for_Velodyne_LiDAR_Sensors
+#product.Image_Processing_Toolbox_Hyperspectral_Imaging_Library
+#product.Image_Processing_Toolbox_Image_Data
+#product.Instrument_Control_Toolbox_Support_Package_for_Keysight_(Agilent)_IO_Libraries_and_VISA_Interface
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-845x_I2C/SPI_Interface
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-DCPower_Power_Supplies
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-DMM_Digital_Multimeters
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-FGEN_Function_Generators
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-SCOPE_Oscilloscopes
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_NI-SWITCH_Hardware
+#product.Instrument_Control_Toolbox_Support_Package_for_National_Instruments_VISA_and_ICP_Interfaces
+#product.Instrument_Control_Toolbox_Support_Package_for_Rohde_Schwarz_VISA_Interface
+#product.Instrument_Control_Toolbox_Support_Package_for_Total_Phase_Aardvark_I2C/SPI_Interface
+#product.MATLAB_Basemap_Data_-_bluegreen
+#product.MATLAB_Basemap_Data_-_colorterrain
+#product.MATLAB_Basemap_Data_-_grayland
+#product.MATLAB_Basemap_Data_-_grayterrain
+#product.MATLAB_Basemap_Data_-_landcover
+#product.MATLAB_Client_for_MATLAB_Production_Server
+#product.MATLAB_Coder_Interface_for_Deep_Learning_Libraries
+#product.MATLAB_Support_Package_for_Android_Sensors
+#product.MATLAB_Support_Package_for_Apple_iOS_Sensors
+#product.MATLAB_Support_Package_for_Arduino_Hardware
+#product.MATLAB_Support_Package_for_BeagleBone_Black_Hardware
+#product.MATLAB_Support_Package_for_IP_Cameras
+#product.MATLAB_Support_Package_for_LEGO_MINDSTORMS_EV3_Hardware
+#product.MATLAB_Support_Package_for_Raspberry_Pi_Hardware
+#product.MATLAB_Support_Package_for_USB_Webcams
+#product.MATLAB_Support_for_MinGW-w64_C/C++_Compiler
+#product.Mixed-Signal_Blockset_Models
+#product.Parallel_Computing_Toolbox_plugin_for_MATLAB_Parallel_Server_with_AWS_Batch
+#product.Parallel_Computing_Toolbox_plugin_for_MATLAB_Parallel_Server_with_Grid_Engine
+#product.Parallel_Computing_Toolbox_plugin_for_MATLAB_Parallel_Server_with_IBM_Platform_LSF
+#product.Parallel_Computing_Toolbox_plugin_for_MATLAB_Parallel_Server_with_PBS
+#product.Parallel_Computing_Toolbox_plugin_for_MATLAB_Parallel_Server_with_Slurm
+#product.Powertrain_Blockset_Drive_Cycle_Data
+#product.RF_Blockset_Models_for_Analog_Devices_RF_Transceivers
+#product.ROS_Toolbox_Interface_for_ROS_Custom_Messages
+#product.ROS_Toolbox_Support_Package_for_TurtleBot-Based_Robots
+#product.SerDes_Toolbox_Interface_for_SiSoft_Quantum_Channel_Designer_and_QSI_Software
+#product.Simulink_Coder_Support_Package_for_ARM_Cortex-based_VEX_Microcontroller
+#product.Simulink_Coder_Support_Package_for_BeagleBone_Blue_Hardware
+#product.Simulink_Coder_Support_Package_for_NXP_FRDM-K64F_Board
+#product.Simulink_Coder_Support_Package_for_NXP_FRDM-KL25Z_Board
+#product.Simulink_Coder_Support_Package_for_STMicroelectronics_Nucleo_Boards
+#product.Simulink_Coder_Support_Package_for_VEX_EDR_V5_Robot_Brain
+#product.Simulink_Real-Time_QNX_Target_Support
+#product.Simulink_Support_Package_for_Android_Devices
+#product.Simulink_Support_Package_for_Apple_iOS_Devices
+#product.Simulink_Support_Package_for_Arduino_Hardware
+#product.Simulink_Support_Package_for_LEGO_MINDSTORMS_EV3_Hardware
+#product.Simulink_Support_Package_for_Parrot_Minidrones
+#product.Simulink_Support_Package_for_Raspberry_Pi_Hardware
+#product.SoC_Blockset_Support_Package_for_Intel_Devices
+#product.SoC_Blockset_Support_Package_for_Xilinx_Devices
+#product.Source_control_integration_with_Microsoft(R)_Source-Code_Control_Interface_(MSSCCI)_for_MATLAB_and_Simulink
+#product.Text_Analytics_Toolbox_Model_for_fastText_English_16_Billion_Token_Word_Embedding
+#product.Vehicle_Dynamics_Blockset_Interface_for_Unreal_Engine_4_Projects
+#product.Vehicle_Dynamics_Blockset_Maneuver_Data
+#product.Vehicle_Network_Toolbox_Support_Package_for_Kvaser_CAN_devices
+#product.Vehicle_Network_Toolbox_Support_Package_for_National_Instruments_NI-XNET_CAN_devices
+#product.Vehicle_Network_Toolbox_Support_Package_for_PEAK-System_CAN_devices
+#product.Vehicle_Network_Toolbox_Support_Package_for_Vector_CAN_devices
+#product.WINNER_II_Channel_Model_for_Communications_Toolbox
+
+
+########################################################################
+## CHECKSUM
+########################################################################
+##
+## NOTE: DO NOT edit this field. MathWorks uses this field to
+## check the integrity of the input file. Changing the value
+## of the checksum field invalidates this input file.
+
+?checksum=UjIwMjBh
+"

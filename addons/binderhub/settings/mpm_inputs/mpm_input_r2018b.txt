@@ -1,0 +1,165 @@
+"########################################################################
+## Configuration File for Installing or Downloading R2018b MathWorks Products
+########################################################################
+##
+## Use this file to configure the installation or download of MathWorks 
+## products from the command line using the MATLAB Package Manager (mpm).
+##
+## To configure your MATLAB installation or download:
+##
+## 1. Set configuration parameters by uncommenting lines that
+##    start with a single '#' and updating the values. The
+##    comments above each parameter describe the valid values.
+##
+## 2. Run mpm from the command line, using the --inputfile option
+##    to specify the full path to this configuration file.
+##    
+##    Install products:
+##    mpm install --inputfile <full_path_to_this_file>
+##
+##    Download products without installing:
+##    mpm download --inputfile <full_path_to_this_file>
+##
+## You can download template input files for all supported releases from
+## https://github.com/mathworks-ref-arch/matlab-dockerfile/blob/main/MPM.md
+##
+########################################################################
+
+
+########################################################################
+## INSTALLATION OR DOWNLOAD FOLDER
+########################################################################
+##
+## When installing products using 'mpm install':
+##
+##   Specify the full path to the folder where you want to install the
+##   products. When adding products to an existing MATLAB installation,
+##   specify the full path to the folder where MATLAB is installed.
+##
+##   Example:
+##   (Linux) destinationFolder=/usr/local/MATLAB/RXXXX
+##   (Windows) destinationFolder=C:\\Program Files\\MATLAB\\RXXXX
+##   (Mac) destinationFolder=/Applications/MATLAB_RXXXX.app
+##
+## When downloading products using 'mpm download':
+##
+##   Specify the full path to the folder where you want to download the
+##   products. For 'mpm download', this option is required.
+##
+##   Example:
+##   (Linux/Mac) destinationFolder=/home/<USER>/downloads/mathworks
+##   (Windows) destinationFolder=C:\\Users\\<USER>\\Downloads\\MathWorks
+##
+## Set the desired value for destinationFolder and
+## uncomment the following line.
+
+# destinationFolder=
+
+
+########################################################################
+## PRODUCTS
+########################################################################
+##
+## Uncomment the lines for the products you want to install or download.
+
+#product.5G_Toolbox
+#product.Aerospace_Blockset
+#product.Aerospace_Toolbox
+#product.Antenna_Toolbox
+#product.Audio_System_Toolbox
+#product.Automated_Driving_System_Toolbox
+#product.Bioinformatics_Toolbox
+#product.Communications_Toolbox
+#product.Computer_Vision_System_Toolbox
+#product.Control_System_Toolbox
+#product.Curve_Fitting_Toolbox
+#product.DSP_System_Toolbox
+#product.Data_Acquisition_Toolbox
+#product.Database_Toolbox
+#product.Datafeed_Toolbox
+#product.Deep_Learning_Toolbox
+#product.Econometrics_Toolbox
+#product.Embedded_Coder
+#product.Filter_Design_HDL_Coder
+#product.Financial_Instruments_Toolbox
+#product.Financial_Toolbox
+#product.Fixed-Point_Designer
+#product.Fuzzy_Logic_Toolbox
+#product.GPU_Coder
+#product.Global_Optimization_Toolbox
+#product.HDL_Coder
+#product.HDL_Verifier
+#product.Image_Acquisition_Toolbox
+#product.Image_Processing_Toolbox
+#product.Instrument_Control_Toolbox
+#product.LTE_HDL_Toolbox
+#product.LTE_Toolbox
+#product.MATLAB
+#product.MATLAB_Coder
+#product.MATLAB_Compiler
+#product.MATLAB_Compiler_SDK
+#product.MATLAB_Distributed_Computing_Server
+#product.MATLAB_Report_Generator
+#product.Mapping_Toolbox
+#product.Model_Predictive_Control_Toolbox
+#product.Model-Based_Calibration_Toolbox
+#product.OPC_Toolbox
+#product.Optimization_Toolbox
+#product.Parallel_Computing_Toolbox
+#product.Partial_Differential_Equation_Toolbox
+#product.Phased_Array_System_Toolbox
+#product.Polyspace_Bug_Finder
+#product.Polyspace_Code_Prover
+#product.Powertrain_Blockset
+#product.Predictive_Maintenance_Toolbox
+#product.RF_Blockset
+#product.RF_Toolbox
+#product.Risk_Management_Toolbox
+#product.Robotics_System_Toolbox
+#product.Robust_Control_Toolbox
+#product.Sensor_Fusion_and_Tracking_Toolbox
+#product.Signal_Processing_Toolbox
+#product.SimBiology
+#product.SimEvents
+#product.Simscape
+#product.Simscape_Driveline
+#product.Simscape_Electrical
+#product.Simscape_Fluids
+#product.Simscape_Multibody
+#product.Simulink
+#product.Simulink_3D_Animation
+#product.Simulink_Check
+#product.Simulink_Coder
+#product.Simulink_Control_Design
+#product.Simulink_Coverage
+#product.Simulink_Design_Optimization
+#product.Simulink_Design_Verifier
+#product.Simulink_Desktop_Real-Time
+#product.Simulink_PLC_Coder
+#product.Simulink_Real-Time
+#product.Simulink_Report_Generator
+#product.Simulink_Requirements
+#product.Simulink_Test
+#product.Spreadsheet_Link
+#product.Stateflow
+#product.Statistics_and_Machine_Learning_Toolbox
+#product.Symbolic_Math_Toolbox
+#product.System_Identification_Toolbox
+#product.Text_Analytics_Toolbox
+#product.Trading_Toolbox
+#product.Vehicle_Dynamics_Blockset
+#product.Vehicle_Network_Toolbox
+#product.Vision_HDL_Toolbox
+#product.WLAN_Toolbox
+#product.Wavelet_Toolbox
+
+
+########################################################################
+## CHECKSUM
+########################################################################
+##
+## NOTE: DO NOT edit this field. MathWorks uses this field to
+## check the integrity of the input file. Changing the value
+## of the checksum field invalidates this input file.
+
+?checksum=UjIwMThi"
