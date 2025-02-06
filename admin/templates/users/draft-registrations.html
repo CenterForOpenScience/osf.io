@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% load node_extras %}
+{% include "util/pagination.html" with items=page status=status %}
+{% block content %}
+<table class="table table-striped table-hover table-responsive">
+    <thead>
+        <tr>
+            <th>GUID</th>
+            <th>Title</th>
+            <th>Date created</th>
+            <th>Public</th>
+            <th>Contributors</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for draft_registration in draft_registrations %}
+        <tr>
+            <td>
+                <a href="{{ draft_registration | reverse_node }}"
+                   class="btn btn-primary">
+                    {{ draft_registration.guid }}
+                </a>
+            </td>
+            <td>
+                {{draft_registration.title}}
+            </td>
+            <td>
+                {{ draft_registration.created| date }}
+            </td>
+            <td>
+                {{ draft_registration.is_public }}
+            </td>
+            <td>
+                {% for user in draft_registration.contributors %}
+                    <a href="{{ user | reverse_user }}">{{ user.username }}</a>{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

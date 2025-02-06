@@ -552,3 +552,30 @@ class UserReindexElastic(UserMixin, View):
             action_flag=REINDEX_ELASTIC
         )
         return redirect(self.get_success_url())
+
+
+class UserDraftRegistrationsList(UserMixin, ListView):
+    template_name = 'users/draft-registrations.html'
+    permission_required = 'osf.view_draftregistration'
+    raise_exception = True
+    ordering = ('-created')
+    form_class = UserSearchForm
+    paginate_by = 25
+
+    def get_queryset(self):
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return self.get_object().draft_registrations_active.annotate(
+            guid=F('_id')
+        ).order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        draft_registrations = self.get_queryset()
+        page_size = self.get_paginate_by(draft_registrations)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(draft_registrations, page_size)
+        return super().get_context_data(
+            **kwargs,
+            **{
+                'page': page,
+                'draft_registrations': query_set
+            }
+        )
