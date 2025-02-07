@@ -44,19 +44,19 @@ BINDERHUB_DEPLOYMENT_IMAGES = [
 ]
 
 MATLAB_RELEASES = [
-    "R2024b",
-    "R2024a",
-    "R2023b",
-    "R2023a",
-    "R2022b",
-    "R2022a",
+    'R2024b',
+    'R2024a',
+    'R2023b',
+    'R2023a',
+    'R2022b',
+    'R2022a',
 ]
 
 MATLAB_PRODUCTNAMES_MAP = {
-    "R2024b": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2024b.txt'),
-    "R2024a": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2024a.txt'),
-    "R2023b": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2023b.txt'),
-    "R2023a": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2023a.txt'),
-    "R2022b": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2022b.txt'),
-    "R2022a": gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2022a.txt'),
+    'R2024b': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2024b.txt'),
+    'R2024a': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2024a.txt'),
+    'R2023b': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2023b.txt'),
+    'R2023a': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2023a.txt'),
+    'R2022b': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2022b.txt'),
+    'R2022a': gen_product_name_list('addons/binderhub/settings/mpm_inputs/mpm_input_r2022a.txt'),
 }

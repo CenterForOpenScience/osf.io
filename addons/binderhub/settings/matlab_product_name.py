@@ -1,16 +1,16 @@
 import re
 
-product_line_pattern = re.compile(r"^#product[.](.+)$")
+product_line_pattern = re.compile(r'^#product[.](.+)$')
 
 def match_product_line(str):
     return re.match(product_line_pattern, str)
 
 def is_valid_product_line(match):
-    return match != None and len(match.groups()) == 1
+    return match is not None and len(match.groups()) == 1
 
 def product_name_key(product_name):
     head_char = product_name[0]
-    return head_char.upper() if head_char.isalpha() else "_"
+    return head_char.upper() if head_char.isalpha() else '_'
 
 
 def gen_product_name_list(product_name_filepath):

@@ -29,8 +29,8 @@ from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 from .models import (
     BinderHubToken,
     CustomBaseImage,
+    InvalidUpdateDirectiveError,
     ServerAnnotation,
-    camel_to_snake,
     get_default_binderhub,
     fill_binderhub_secrets,
 )
@@ -464,7 +464,7 @@ def create_custom_base_image(**kwargs):
 def collect_ancestor_nodes(node):
     def _rec(node, level):
         parents = [(level, rel.parent) for rel in node._parents.filter(is_node_link=False)]
-        return chain(parents, chain.from_iterable([_rec(p, level+1) for (_, p) in parents]))
+        return chain(parents, chain.from_iterable([_rec(p, level + 1) for (_, p) in parents]))
     return _rec(node, 1)
 
 # It returns a list that consists of following 3 things:
@@ -476,6 +476,7 @@ def collect_ancestor_nodes(node):
 # The graph is directed and cyclic but is never reflective.
 def collect_relative_nodes(node):
     visited = set()
+
     def _rec(node, level):
         if node in visited:
             return
@@ -483,7 +484,7 @@ def collect_relative_nodes(node):
             visited.add(node)
             yield (level, node)
             for parent_node in [rel.parent for rel in node._parents.all()]:
-                yield from _rec(parent_node, level+1)
+                yield from _rec(parent_node, level + 1)
     return sorted(list(_rec(node, 0)), key=lambda x: x[0])
 
 @must_be_valid_project

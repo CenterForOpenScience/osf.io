@@ -186,7 +186,7 @@ class CustomBaseImage(BaseModel):
             dict: Old values of updated fields { field_name: old_value }
         """
         if not self.is_valid_camel_update_directive(update_directive):
-            raise InvalidUpdateDirectiveError("Invalid update directive")
+            raise InvalidUpdateDirectiveError('Invalid update directive')
 
         changed_fields = {}
 

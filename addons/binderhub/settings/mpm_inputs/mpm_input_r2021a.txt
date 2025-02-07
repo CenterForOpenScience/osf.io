@@ -2,7 +2,7 @@
 ## Configuration File for Installing or Downloading R2021a MathWorks Products
 ########################################################################
 ##
-## Use this file to configure the installation or download of MathWorks 
+## Use this file to configure the installation or download of MathWorks
 ## products and support packages from the command line using the
 ## MATLAB Package Manager (mpm).
 ##
@@ -14,7 +14,7 @@
 ##
 ## 2. Run mpm from the command line, using the --inputfile option
 ##    to specify the full path to this configuration file.
-##    
+##
 ##    Install products:
 ##    mpm install --inputfile <full_path_to_this_file>
 ##
@@ -34,7 +34,7 @@
 ## When installing products using 'mpm install':
 ##
 ##   Specify the full path to the folder where you want to install the
-##   products. When adding products or support packages to an 
+##   products. When adding products or support packages to an
 ##   existing MATLAB installation, specify the full path to the folder
 ##   where MATLAB is installed.
 ##

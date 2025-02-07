@@ -2,7 +2,7 @@
 ## Configuration File for Installing or Downloading R2018b MathWorks Products
 ########################################################################
 ##
-## Use this file to configure the installation or download of MathWorks 
+## Use this file to configure the installation or download of MathWorks
 ## products from the command line using the MATLAB Package Manager (mpm).
 ##
 ## To configure your MATLAB installation or download:
@@ -13,7 +13,7 @@
 ##
 ## 2. Run mpm from the command line, using the --inputfile option
 ##    to specify the full path to this configuration file.
-##    
+##
 ##    Install products:
 ##    mpm install --inputfile <full_path_to_this_file>
 ##
