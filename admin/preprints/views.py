@@ -538,3 +538,40 @@ class PreprintMakePublic(PreprintMixin, View):
             messages.error(self.request, str(e))
 
         return redirect(self.get_success_url())
+
+class PreprintUnwithdrawView(PreprintMixin, View):
+    """ Allows authorized users to unwithdraw a preprint that was previously withdrawn.
+    """
+    permission_required = ('osf.change_node')
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        if preprint.machine_state != 'withdrawn':
+            messages.error(request, f'Preprint {preprint._id} is not withdrawn')
+            return redirect(self.get_success_url())
+
+        withdraw_action = preprint.actions.filter(to_state='withdrawn').last()
+        last_action = preprint.actions.last()
+
+        preprint.withdrawal_justification = ''
+        preprint.date_withdrawn = None
+
+        if withdraw_action:
+            preprint.machine_state = withdraw_action.from_state
+            withdraw_action.delete()
+        else:
+            if last_action:
+                preprint.machine_state = last_action.to_state
+            else:
+                # Default to put it back in moderation if we don't know where it came from
+                preprint.machine_state = 'pending'
+        
+        preprint.requests.all().delete()
+        
+        from osf.utils.migrations import disable_auto_now_fields
+        with disable_auto_now_fields():
+            preprint.save()
+
+        messages.success(request, f'Successfully unwithdrawn preprint {preprint._id}')
+        return redirect(self.get_success_url())
