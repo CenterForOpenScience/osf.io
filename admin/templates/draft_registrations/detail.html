@@ -54,6 +54,12 @@
                         {% endif %}
                     </tr>
                     {% include "draft_registrations/contributors.html" with draft_registration=draft_registration %}
+                    <tr>
+                        <td>Node storage usage</td>
+                        <td>
+                            <b>Current usage:</b> {{ draft_registration.storage_usage }}<br>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>

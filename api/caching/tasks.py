@@ -172,6 +172,12 @@ def get_storage_usage_total(target_obj):
 
 def update_storage_usage(target):
     Preprint = apps.get_model('osf.preprint')
+    DraftRegistration = apps.get_model('osf.draftregistration')
+
+    # draft registrations don't inherit from GuidMixin, so they don't have guid.
+    # for fetching files we use AbstractNode instances, this is why we use branched_from property
+    if isinstance(target, DraftRegistration):
+        enqueue_postcommit_task(update_storage_usage_cache, (target.branched_from.id, target.branched_from._id), {}, celery=True)
 
     if settings.ENABLE_STORAGE_USAGE_CACHE and not isinstance(target, Preprint) and not target.is_quickfiles:
         enqueue_postcommit_task(update_storage_usage_cache, (target.id, target._id), {}, celery=True)
