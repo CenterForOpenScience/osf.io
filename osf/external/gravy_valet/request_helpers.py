@@ -99,21 +99,24 @@ def iterate_accounts_for_user(requesting_user, addon_type=None):  # -> typing.It
     )
     if not user_result:
         return None
-    yield from iterate_gv_results(
-        endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
-        requesting_user=requesting_user,
-        params={'include': f'{ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH}'}
-    )
-    yield from iterate_gv_results(
-        endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
-        requesting_user=requesting_user,
-        params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH}'}
-    )
-    yield from iterate_gv_results(
-        endpoint_url=user_result.get_related_link('authorized_computing_accounts'),
-        requesting_user=requesting_user,
-        params={'include': f'{ACCOUNT_EXTERNAL_COMPUTING_SERVICE_PATH}'}
-    )
+    if not addon_type or addon_type == AddonType.STORAGE:
+        yield from iterate_gv_results(
+            endpoint_url=user_result.get_related_link('authorized_storage_accounts'),
+            requesting_user=requesting_user,
+            params={'include': f'{ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH}'}
+        )
+    if not addon_type or addon_type == AddonType.CITATION:
+        yield from iterate_gv_results(
+            endpoint_url=user_result.get_related_link('authorized_citation_accounts'),
+            requesting_user=requesting_user,
+            params={'include': f'{ACCOUNT_EXTERNAL_CITATION_SERVICE_PATH}'}
+        )
+    if not addon_type or addon_type == AddonType.COMPUTING:
+        yield from iterate_gv_results(
+            endpoint_url=user_result.get_related_link('authorized_computing_accounts'),
+            requesting_user=requesting_user,
+            params={'include': f'{ACCOUNT_EXTERNAL_COMPUTING_SERVICE_PATH}'}
+        )
 
 
 def iterate_addons_for_resource(requested_resource, requesting_user, addon_type=None):  # -> typing.Iterator[JSONAPIResultEntry]
