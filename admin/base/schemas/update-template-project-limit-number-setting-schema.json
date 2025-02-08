@@ -1,0 +1,44 @@
+{
+  "type": "object",
+  "properties": {
+    "template_name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 255
+    },
+    "attribute_list": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": ["integer", "null"]
+          },
+          "attribute_name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "setting_type": {
+            "type": "integer",
+            "enum": [1, 2, 3, 4, 5, 6]
+          },
+          "attribute_value": {
+            "type": ["null", "string"]
+          }
+        },
+        "required": [
+          "attribute_name",
+          "setting_type"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "template_name",
+    "attribute_list"
+  ],
+  "additionalProperties": false
+}

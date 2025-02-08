@@ -28,6 +28,7 @@
     window.contextVars = $.extend(true, {}, window.contextVars, {
         storageRegions: ${ storage_regions | sjson, n },
         storageFlagIsActive: ${ storage_flag_is_active | sjson, n },
+        canCreateProject: ${ can_create_project | sjson, n}
     });
 </script>
 </%def>

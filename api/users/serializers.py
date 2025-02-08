@@ -12,7 +12,7 @@ from api.base.serializers import (
     Link, LinksField, TypeField, RelationshipField, JSONAPIListField,
     WaterbutlerLink, ShowIfCurrentUser,
 )
-from api.base.utils import default_node_list_queryset
+from api.base.utils import default_node_list_queryset, check_user_can_create_project
 from osf.models import Registration, Node
 from api.base.utils import absolute_reverse, get_user_auth, waterbutler_api_url_for, is_deprecated, hashids
 from api.files.serializers import QuickFilesSerializer
@@ -102,6 +102,7 @@ class UserSerializer(JSONAPISerializer):
     education = JSONAPIListField(required=False, source='schools')
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
+    can_create_new_project = ser.SerializerMethodField()
 
     links = HideIfDisabled(LinksField(
         {
@@ -228,6 +229,9 @@ class UserSerializer(JSONAPISerializer):
             except Exception:
                 pass
         return region_id
+
+    def get_can_create_new_project(self, obj):
+        return check_user_can_create_project(obj)
 
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)

@@ -7622,3 +7622,48 @@ msgstr ""
 
 msgid "Download failed."
 msgstr ""
+
+msgid "%s is being used."
+msgstr ""
+
+msgid "The attribute list is invalid."
+msgstr ""
+
+msgid "The attribute list is required."
+msgstr ""
+
+msgid "The template not exist."
+msgstr ""
+
+msgid "The template name is required."
+msgstr ""
+
+msgid "The template name already exists."
+msgstr ""
+
+msgid "The attribute name is required."
+msgstr ""
+
+msgid "The setting type is required."
+msgstr ""
+
+msgid "The attribute value is required."
+msgstr ""
+
+msgid "The setting not exist."
+msgstr ""
+
+msgid "The setting name is required."
+msgstr ""
+
+msgid "The setting name is invalid."
+msgstr ""
+
+msgid "The setting name already exists."
+msgstr ""
+
+msgid "The project limit number is invalid."
+msgstr ""
+
+msgid "The new project cannot be created due to the created project number is greater than or equal the project number can create."
+msgstr ""

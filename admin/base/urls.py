@@ -53,6 +53,7 @@ urlpatterns = [
                 include('admin.user_identification_information.urls', namespace='user_identification_information')),
             url(r'^user_identification_information_admin/',
                 include('admin.user_identification_information_admin.urls', namespace='user_identification_information_admin')),
+            url(r'^project_limit_number/', include('admin.project_limit_number.urls', namespace='project_limit_number')),
         ]),
     ),
 ]

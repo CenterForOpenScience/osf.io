@@ -1237,3 +1237,14 @@ class BaseFileVersionsThroughFactory(DjangoModelFactory):
 class RdmFileTimestamptokenVerifyResultFactory(DjangoModelFactory):
     class Meta:
         model = models.RdmFileTimestamptokenVerifyResult
+
+
+class ProjectLimitNumberTemplateFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.ProjectLimitNumberTemplate
+
+    template_name = factory.Faker('word')
+    is_availability = factory.Faker('boolean')
+    used_setting_number = factory.Faker('random_int', min=0, max=100)
+    is_deleted = factory.Faker('boolean')
+    modified = factory.Faker('date_this_year')
