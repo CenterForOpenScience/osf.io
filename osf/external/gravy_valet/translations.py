@@ -162,27 +162,27 @@ class EphemeralNodeSettings:
     def folder_id(self):
         return self.gv_data.get_attribute('root_folder')
 
-    # def serialize_waterbutler_credentials(self):
-    #     # sufficient for most OAuth services, including Box
-    #     # TODO: Define per-service translation (and/or common schemes)
-    #     if self._credentials is None:
-    #         self._fetch_wb_config()
-    #     return self._credentials
+    def serialize_waterbutler_credentials(self):
+        # sufficient for most OAuth services, including Box
+        # TODO: Define per-service translation (and/or common schemes)
+        if self._credentials is None:
+            self._fetch_wb_config()
+        return self._credentials
 
-    # def serialize_waterbutler_settings(self):
-    #     if self._config is None:
-    #         self._fetch_wb_config()
-    #     return self._config
+    def serialize_waterbutler_settings(self):
+        if self._config is None:
+            self._fetch_wb_config()
+        return self._config
 
-    # def _fetch_wb_config(self):
-    #     result = gv_requests.get_waterbutler_config(
-    #         gv_addon_pk=self.gv_data.resource_id,
-    #         requested_resource=self.configured_resource,
-    #         requesting_user=self.active_user,
-    #         addon_type=self.gv_data.resource_type,
-    #     )
-    #     self._credentials = result.get_attribute('credentials')
-    #     self._config = result.get_attribute('config')
+    def _fetch_wb_config(self):
+        result = gv_requests.get_waterbutler_config(
+            gv_addon_pk=self.gv_data.resource_id,
+            requested_resource=self.configured_resource,
+            requesting_user=self.active_user,
+            addon_type=self.gv_data.resource_type,
+        )
+        self._credentials = result.get_attribute('credentials')
+        self._config = result.get_attribute('config')
 
     def create_waterbutler_log(self, *args, **kwargs):
         pass

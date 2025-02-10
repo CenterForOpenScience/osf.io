@@ -231,7 +231,7 @@ def get_auth(auth, **kwargs):
     waterbutler_settings = None
     waterbutler_credentials = None
     file_version = file_node = None
-    if provider_name == 'osfstorage':
+    if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
         file_version, file_node = _get_osfstorage_file_version_and_node(
             file_path=waterbutler_data.get('path'), file_version_id=waterbutler_data.get('version')
         )
@@ -241,7 +241,7 @@ def get_auth(auth, **kwargs):
     else:
         result = request_helpers.get_waterbutler_config(
             gv_addon_pk=f'{waterbutler_data['nid']}:{waterbutler_data['provider']}',
-            requested_resource=AbstractNode.load(waterbutler_data['nid']),
+            requested_resource=resource,
             requesting_user=auth.user,
             addon_type='configured-storage-addons',
         )
