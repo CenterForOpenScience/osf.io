@@ -34,5 +34,7 @@ def collect_file_trees(auth, node, **kwargs):
 def grid_data(auth, node, **kwargs):
     """View that returns the formatted data for rubeus.js/hgrid
     """
+    if flag_is_active(request, features.ENABLE_GV):
+        return {'data': {}}
     data = request.args.to_dict()
     return {'data': rubeus.to_hgrid(node, auth, **data)}
