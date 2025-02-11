@@ -29,6 +29,8 @@
     "contributor_added":    "${user} added ${contributors} as contributor(s) to ${node}",
     "contributor_removed":  "${user} removed ${contributors} as contributor(s) from ${node}",
     "contributors_reordered":   "${user} reordered contributors for ${node}",
+    "curator_added":    "${user} added ${contributors} as curator(s) to ${node}",
+    "curator_removed":    "${user} removed ${contributors} as curator(s) to ${node}",
     "permissions_updated":   "${user} changed permissions for ${node}",
     "made_contributor_visible":     "${user} made non-bibliographic contributor ${contributors} a bibliographic contributor on ${node}",
     "made_contributor_invisible":   "${user} made bibliographic contributor ${contributors} a non-bibliographic contributor on ${node}",

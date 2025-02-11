@@ -147,6 +147,7 @@ class TestPreprintView:
         assert preprint._id not in response_ids
 
     def test_confirm_spam(self, flagged_preprint, superuser, mock_akismet):
+        last_logged_before_method_call = flagged_preprint.last_logged
         request = RequestFactory().post('/fake_path')
         request.user = superuser
 
@@ -160,8 +161,11 @@ class TestPreprintView:
         assert flagged_preprint.is_spam
         assert flagged_preprint.is_spam
         assert not flagged_preprint.is_public
+        assert flagged_preprint.logs.first().action == 'confirm_spam'
+        assert last_logged_before_method_call == flagged_preprint.last_logged
 
     def test_confirm_ham(self, preprint, superuser, mock_akismet):
+        last_logged_before_method_call = preprint.last_logged
         request = RequestFactory().post('/fake_path')
         request.user = superuser
 
@@ -172,6 +176,8 @@ class TestPreprintView:
 
         assert preprint.spam_status == SpamStatus.HAM
         assert preprint.is_public
+        assert preprint.logs.first().action == 'confirm_ham'
+        assert last_logged_before_method_call == preprint.last_logged
 
     def test_valid_but_insufficient_view_permissions(self, user, preprint, plain_view):
         view_permission = Permission.objects.get(codename='view_preprint')

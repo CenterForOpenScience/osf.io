@@ -539,6 +539,28 @@ class PreprintMakePublic(PreprintMixin, View):
 
         return redirect(self.get_success_url())
 
+
+class PreprintResyncCrossRefView(PreprintMixin, View):
+    """ Allows an authorized user to run resync with CrossRef for a single object.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.request_identifier_update('doi', create=True)
+        return redirect(self.get_success_url())
+
+
+class PreprintMakePublishedView(PreprintMixin, View):
+    """ Allows an authorized user to make a preprint published.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.set_published(True, request, True)
+        return redirect(self.get_success_url())
+
 class PreprintUnwithdrawView(PreprintMixin, View):
     """ Allows authorized users to unwithdraw a preprint that was previously withdrawn.
     """

@@ -22,8 +22,10 @@
                     {% include "preprints/mark_spam.html" with preprint=preprint %}
                     {% include "preprints/reindex_preprint_share.html" with preprint=preprint %}
                     {% include "preprints/reindex_preprint_elastic.html" with preprint=preprint %}
+                    {% include "preprints/resync_crossref.html" with preprint=preprint %}
                     {% include "preprints/make_private.html" with preprint=preprint %}
                     {% include "preprints/make_public.html" with preprint=preprint %}
+                    {% include "preprints/make_published.html" with preprint=preprint %}
                 </div>
             </div>
         </div>

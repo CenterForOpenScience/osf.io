@@ -86,6 +86,8 @@ class CrossRefClient(AbstractIdentifierClient):
         preprint - preprint to build posted_content for
         element - namespace element to use when building parts of the XML structure
         """
+        from osf.models import SpamStatus
+
         posted_content = element.posted_content(
             element.group_title(preprint.provider.name),
             type='preprint'
@@ -94,7 +96,8 @@ class CrossRefClient(AbstractIdentifierClient):
         if status == 'public':
             posted_content.append(element.contributors(*self._crossref_format_contributors(element, preprint)))
 
-        title = element.title(remove_control_characters(preprint.title)) if status == 'public' else element.title('')
+        private_title = 'REMOVED DUE TO POLICY VIOLATIONS' if preprint.spam_status == SpamStatus.SPAM else 'WITHDRAWN'
+        title = element.title(remove_control_characters(preprint.title)) if status == 'public' else element.title(private_title)
         posted_content.append(element.titles(title))
 
         posted_content.append(element.posted_date(*self._crossref_format_date(element, preprint.date_published)))

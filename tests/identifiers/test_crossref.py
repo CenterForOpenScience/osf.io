@@ -196,7 +196,6 @@ class TestCrossRefClient:
         assert not root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
 
         assert root.find('.//{%s}group_title' % crossref.CROSSREF_NAMESPACE).text == preprint.provider.name
-        assert not root.find('.//{%s}title' % crossref.CROSSREF_NAMESPACE).text
         assert not root.find('.//{%s}abstract/' % crossref.JATS_NAMESPACE)
         assert not root.find('.//{%s}license_ref' % crossref.CROSSREF_ACCESS_INDICATORS)
 
@@ -349,3 +348,25 @@ class TestCrossRefClient:
         contributors = root.find('.//{%s}contributors' % crossref.CROSSREF_NAMESPACE)
         assert contributors.find('.//{%s}institution_name' % crossref.CROSSREF_NAMESPACE).text == institution.name
         assert contributors.find('.//{%s}institution_id' % crossref.CROSSREF_NAMESPACE).text == institution.ror_uri
+
+    def test_public_preprint_title_is_composed_correctly(self, crossref_client, preprint):
+        preprint.title = 'My Title'
+        preprint.save()
+
+        xml = crossref_client.build_metadata(preprint)
+        assert '<titles><title>My Title</title></titles>' in str(xml)
+
+    def test_private_preprint_title_is_composed_correctly(self, crossref_client, preprint):
+        preprint.title = 'My Title'
+        preprint.is_public = False
+        preprint.save()
+        xml = crossref_client.build_metadata(preprint)
+        assert '<titles><title>WITHDRAWN</title></titles>' in str(xml)
+
+    def test_spam_preprint_title_is_composed_correctly(self, crossref_client, preprint):
+        preprint.title = 'My Title'
+        preprint.save()
+
+        preprint.confirm_spam(save=True)
+        xml = crossref_client.build_metadata(preprint)
+        assert '<titles><title>REMOVED DUE TO POLICY VIOLATIONS</title></titles>' in str(xml)

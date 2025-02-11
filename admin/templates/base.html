@@ -160,6 +160,16 @@
                   </ul>
               </div>
           {% endif %}
+          {% if perms.osf.view_draftregistration %}
+              <li><a role="button" data-toggle="collapse" href="#collapseDraftRegistrations">
+                  <i class='fa fa-caret-down'></i> Draft Registrations
+              </a></li>
+              <div class="collapse" id="collapseDraftRegistrations">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'draft_registrations:search' %}"><i class='fa fa-link'></i> <span>Search Draft Registrations</span></a></li>
+                  </ul>
+              </div>
+          {% endif %}
           {% if perms.osf.view_spam %}
             <li><a href="{% url 'comments:comments' %}"><i class='fa fa-link'></i> <span>Flagged Comments</span></a></li>
           {% endif %}

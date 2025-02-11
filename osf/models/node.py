@@ -1229,8 +1229,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeStateError(
                     'This project exceeds private project storage limits and thus cannot be converted into a private project.')
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True,
-                    force=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True, force=False, should_hide=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1298,6 +1297,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
                 auth=auth,
                 save=False,
+                should_hide=should_hide
             )
         if save:
             self.save()
@@ -2139,6 +2139,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     continue
             # Title, description, and category have special methods for logging purposes
             if key == 'title':
+                # not all nodes have this attribute but it's possible to update their title (e.g. Registration)
+                if not hasattr(self, 'is_bookmark_collection'):
+                    self.set_title(title=value, auth=auth, save=False)
+                    continue
                 if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
                 else:

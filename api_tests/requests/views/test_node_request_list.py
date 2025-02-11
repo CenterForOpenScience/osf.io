@@ -4,7 +4,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
 
-from osf_tests.factories import NodeFactory, NodeRequestFactory
+from osf_tests.factories import NodeFactory, NodeRequestFactory, InstitutionFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
 
 
@@ -123,3 +123,39 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         ids = [result['id'] for result in res.json['data']]
         assert initial_node_request._id not in ids
         assert node_request.machine_state == 'pending' and node_request._id in ids
+
+    def test_requester_can_make_access_request_after_insti_access_accepted(self, app, project, noncontrib, admin, url, create_payload):
+        """
+        Test that a requester can submit another access request, then institutional access for the same node.
+        """
+        create_payload['data']['attributes']['request_type'] = NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+        institution = InstitutionFactory(institutional_request_access_enabled=True)
+        create_payload['data']['relationships'] = {
+            'institution': {
+                'data': {
+                    'id': institution._id,
+                    'type': 'institutions'
+                }
+            }
+        }
+        noncontrib.add_or_update_affiliated_institution(institution)
+        group = institution.get_group('institutional_admins')
+        group.user_set.add(noncontrib)
+        group.save()
+        # Create the first request a basic request_type == `institutional_request` request
+        app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        node_request = project.requests.get()
+        node_request.run_accept(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+        assert node_request.request_type == 'institutional_request'
+
+        project.remove_contributor(noncontrib, auth=noncontrib)
+        create_payload['data']['attributes']['request_type'] = NodeRequestTypes.ACCESS.value
+
+        # Attempt to create a second request, refresh and update as institutional
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+        assert node_request.request_type == 'institutional_request'
