@@ -567,8 +567,6 @@ class PreprintUnwithdrawView(PreprintMixin, View):
                 # Default to put it back in moderation if we don't know where it came from
                 preprint.machine_state = 'pending'
 
-        preprint.requests.all().delete()
-
         from osf.utils.migrations import disable_auto_now_fields
         with disable_auto_now_fields():
             preprint.save()
