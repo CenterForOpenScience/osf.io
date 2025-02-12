@@ -56,7 +56,6 @@ from website import settings, search
 class NodeMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        breakpoint()
         return AbstractNode.objects.filter(
             guids___id=self.kwargs['guid']
         ).annotate(
