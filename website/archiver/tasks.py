@@ -35,6 +35,7 @@ from osf.models import (
     AbstractNode,
     DraftRegistration,
 )
+from osf.utils.requests import get_current_request
 
 
 def create_app_context():
@@ -127,6 +128,8 @@ def stat_addon(addon_short_name, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
+    request = get_current_request()
+    request.user = user
     src_addon = src.get_addon(addon_name)
     if hasattr(src_addon, 'configured') and not src_addon.configured:
         # Addon enabled but not configured - no file trees, nothing to archive.
