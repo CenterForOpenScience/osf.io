@@ -1741,7 +1741,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     user_id=log.user_id,
                     original_node_id=log.original_node_id
                 )
-                # after registration creation we clone logs from project to id, including spam logs
+                # after registration creation we clone logs from project to it, including spam logs
                 # and if project is public, cloned logs will have was_public = True
                 # however registration is private until all approvals, thus we shouldn't run set_privacy
                 if is_registration and instance.action in [log.FLAG_SPAM, log.CONFIRM_SPAM]:
