@@ -208,6 +208,8 @@ def archive_addon(addon_short_name, job_pk):
         params['revision'] = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
+    request = get_current_request()
+    request.user = user
     src_provider = src.get_addon(addon_short_name)
     folder_name_nfd, folder_name_nfc = normalize_unicode_filenames(src_provider.archive_folder_name)
     rename = f'{folder_name_nfd}{rename_suffix}'
