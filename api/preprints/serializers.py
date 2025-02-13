@@ -225,7 +225,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
             'preprint_versions': 'get_preprint_versions',
-            'preprint_doi': 'get_preprint_doi_url',
         },
     )
 
@@ -284,17 +283,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def get_current_user_permissions(self, obj):
         user = self.context['request'].user
         return obj.get_permissions(user)[::-1]
-
-    def get_preprint_doi_url(self, obj):
-        doi = None
-        doi_identifier = obj.get_identifier('doi')
-        if doi_identifier:
-            doi = doi_identifier.value
-        # if a preprint hasn't been published yet, don't show the DOI prematurely
-        elif obj.is_published:
-            client = obj.get_doi_client()
-            doi = client.build_doi(preprint=obj) if client else None
-        return f'https://doi.org/{doi}' if doi else None
 
     def update(self, preprint, validated_data):
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
