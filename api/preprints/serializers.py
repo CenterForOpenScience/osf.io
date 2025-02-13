@@ -113,7 +113,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
+    doi = ser.CharField(source='article_doi', required=False, allow_null=True, allow_blank=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
@@ -497,14 +497,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'article_doi' in validated_data:
+            article_doi = validated_data['article_doi']
             doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
-            if validated_data['article_doi'] == doi:
+            if article_doi == doi:
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'
                            f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
 
-            preprint.article_doi = validated_data['article_doi']
+            preprint.article_doi = article_doi if article_doi else None
             save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
