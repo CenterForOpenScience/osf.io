@@ -2,7 +2,7 @@ import re
 from packaging.version import Version
 
 from rest_framework import generics
-from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated
+from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework import permissions as drf_permissions
 
 from framework import sentry
@@ -70,6 +70,7 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBaseView
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
+from osf.models import Guid
 
 
 class PreprintOldVersionsImmutableMixin:
@@ -517,6 +518,13 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
         context['resource'] = self.get_preprint()
         context['default_email'] = 'preprint'
         return context
+
+    def patch(self, *args, **kwargs):
+        preprint = Guid.load(kwargs.get('preprint_id')).referent
+        user = self.get_user()
+        if self.machine_state == 'initial' and preprint.creator_id == user.id:
+            raise ValidationError('Have another admin contributor to edit your permission after you’ve submitted your preprint')
+        return super().patch(*args, **kwargs)
 
 
 class PreprintBibliographicContributorsList(PreprintContributorsList):
