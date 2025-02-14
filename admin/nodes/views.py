@@ -25,6 +25,7 @@ from admin.notifications.views import detect_duplicate_notifications, delete_sel
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
+from framework.auth import Auth
 
 from osf.exceptions import NodeStateError
 from osf.models import (
@@ -673,7 +674,8 @@ class NodeMakePublic(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         try:
-            node.set_privacy('public')
+            auth = Auth(request.user._wrapped, private_key=None)
+            node.set_privacy('public', auth=auth)
         except NodeStateError as e:
             messages.error(request, str(e))
         return redirect(self.get_success_url())

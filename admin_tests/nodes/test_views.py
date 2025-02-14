@@ -6,6 +6,7 @@ import datetime
 
 from osf.models import AdminLogEntry, NodeLog, AbstractNode, RegistrationApproval
 from admin.nodes.views import (
+    NodeConfirmSpamView,
     NodeDeleteView,
     NodeRemoveContributorView,
     NodeView,
@@ -21,7 +22,7 @@ from admin.nodes.views import (
     ApprovalBacklogListView,
     ConfirmApproveBacklogView
 )
-from admin_tests.utilities import setup_log_view, setup_view
+from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
 from website import settings
 from django.utils import timezone
@@ -112,6 +113,31 @@ class TestNodeView(AdminTestCase):
 
         response = NodeView.as_view()(request, guid=guid)
         assert response.status_code == 200
+
+    def test_node_spam_ham_workflow_if_node_is_private(self):
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        node = ProjectFactory()
+        guid = node._id
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
+        assert not node.is_public
+        node = handle_post_view_request(request, NodeConfirmHamView(), node, guid)
+        assert not node.is_public
+
+    def test_node_spam_ham_workflow_if_node_is_public(self):
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        node = ProjectFactory()
+        node.set_privacy('public')
+        guid = node._id
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
+        assert not node.is_public
+        node = handle_post_view_request(request, NodeConfirmHamView(), node, guid)
+        assert node.is_public
 
 
 class TestNodeDeleteView(AdminTestCase):
