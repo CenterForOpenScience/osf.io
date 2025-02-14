@@ -32,6 +32,7 @@ from osf.models import (
     NodeLog,
     AbstractNode,
     Registration,
+    RegistrationApproval,
     SpamStatus
 )
 from osf.models.admin_log_entry import (
@@ -46,6 +47,8 @@ from osf.models.admin_log_entry import (
     REINDEX_ELASTIC,
 )
 from osf.utils.permissions import ADMIN
+
+from scripts.approve_registrations import approve_past_pendings
 
 from website import settings, search
 
@@ -333,6 +336,41 @@ class DoiBacklogListView(RegistrationListView):
     def get_queryset(self):
         # Django template does not like attributes with underscores for some reason, so we annotate.
         return Registration.find_doi_backlog().annotate(guid=F('guids___id'))
+
+
+class ApprovalBacklogListView(RegistrationListView):
+    """ Allows authorized users to view a list of registrations that have not yet been approved.
+    """
+    template_name = 'nodes/registration_approval_list.html'
+    permission_required = 'osf.view_registrationapproval'
+
+    def get_queryset(self):
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return RegistrationApproval.find_approval_backlog()
+
+    def get_context_data(self, **kwargs):
+        queryset = self.get_queryset()
+        page_size = self.get_paginate_by(queryset)
+        paginator, page, queryset, is_paginated = self.paginate_queryset(queryset, page_size)
+        return {
+            'queryset': queryset,
+            'page': page,
+        }
+
+
+class ConfirmApproveBacklogView(RegistrationListView):
+    template_name = 'nodes/registration_approval_list.html'
+    permission_required = 'osf.view_registrationapproval'
+
+    def get_success_url(self):
+        return reverse('nodes:approval-backlog-list')
+
+    def post(self, request, *args, **kwargs):
+        data = dict(request.POST)
+        data.pop('csrfmiddlewaretoken', None)
+        approvals = RegistrationApproval.objects.filter(_id__in=list(data.keys()))
+        approve_past_pendings(approvals, dry_run=False)
+        return redirect(self.get_success_url())
 
 
 class RegistrationUpdateEmbargoView(NodeMixin, View):

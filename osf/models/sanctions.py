@@ -769,6 +769,18 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
 
     initiated_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.CASCADE)
 
+    @staticmethod
+    def find_approval_backlog():
+        """
+        These are registration requests that are waiting for approval within REGISTRATION_APPROVAL_TIME time
+        """
+        return RegistrationApproval.objects.filter(
+            state=RegistrationApproval.UNAPPROVED,
+            end_date__gte=timezone.now()
+        ).annotate(
+            guid=models.F('_id')
+        ).order_by('-initiation_date')
+
     def _get_registration(self):
         return self.registrations.first()
 
