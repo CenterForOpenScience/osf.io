@@ -331,7 +331,7 @@ class TestPreprintView:
         assert preprint.provider == provider_one
         assert subject_osf in preprint.subjects.all()
 
-    def test_preprint_spam_ham_workflow_if_node_is_public(self, preprint, superuser):
+    def test_preprint_spam_ham_workflow_if_preprint_is_public(self, preprint, superuser):
         request = RequestFactory().post('/fake_path')
         request.user = superuser
         preprint = handle_post_view_request(request, views.PreprintConfirmSpamView(), preprint, preprint._id)
@@ -339,7 +339,7 @@ class TestPreprintView:
         preprint = handle_post_view_request(request, views.PreprintConfirmHamView(), preprint, preprint._id)
         assert preprint.is_public
 
-    def test_preprint_spam_ham_workflow_if_node_is_private(self, preprint, superuser):
+    def test_preprint_spam_ham_workflow_if_preprint_is_private(self, preprint, superuser):
         preprint.set_privacy('private')
         preprint.refresh_from_db()
         request = RequestFactory().post('/fake_path')
