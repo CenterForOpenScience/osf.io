@@ -33,7 +33,7 @@ from framework import status
 from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
-from framework.sentry import log_exception, log_message
+from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
 from .contributor import Contributor
@@ -2468,8 +2468,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         request = get_current_request()
         # This is to avoid making multiple requests to GV
         # within the lifespan of one request on the OSF side
-        log_message(f'the request is {request}')
-        log_message(f'the user of the request is {request.user}')
         try:
             gv_addons = request.gv_addons
         except AttributeError:
