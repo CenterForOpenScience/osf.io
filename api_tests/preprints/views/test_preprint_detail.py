@@ -120,10 +120,6 @@ class TestPreprintDetail:
         #  test versions in relationships
         assert data['relationships']['versions']['links']['related']['href'].endswith(versions_url)
 
-        #  test versions in links
-        #TODO: Remove this assertion once https://openscience.atlassian.net/browse/ENG-7174 has been released
-        assert data['links']['preprint_versions'].endswith(versions_url)
-
         #   test_preprint_node_deleted doesn't affect preprint
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
         deleted_preprint = PreprintFactory(project=deleted_node, creator=user)
