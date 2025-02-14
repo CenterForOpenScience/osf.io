@@ -2468,10 +2468,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         request = get_current_request()
         # This is to avoid making multiple requests to GV
         # within the lifespan of one request on the OSF side
-        from osf.utils.requests import DummyRequest
-        if isinstance(request, DummyRequest):
-            logger.info(f'the request is {request}')
-            logger.info(f'the user of the request is {request.user}')
+        log_exception(f'the request is {request}')
+        log_exception(f'the user of the request is {request.user}')
         try:
             gv_addons = request.gv_addons
         except AttributeError:
