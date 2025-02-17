@@ -15,6 +15,7 @@ from osf.models import (
     VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
+from osf.utils.workflows import DefaultStates
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
@@ -70,7 +71,6 @@ from api.requests.views import PreprintRequestMixin
 from api.subjects.views import BaseResourceSubjectsList, SubjectRelationshipBaseView
 from api.base.metrics import PreprintMetricsViewMixin
 from osf.metrics import PreprintDownload, PreprintView
-from osf.models import Guid
 
 
 class PreprintOldVersionsImmutableMixin:
@@ -520,11 +520,28 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
         return context
 
     def patch(self, *args, **kwargs):
-        preprint = Guid.load(kwargs.get('preprint_id')).referent
+        preprint = self.get_resource()
         user = self.get_user()
-        if self.machine_state == 'initial' and preprint.creator_id == user.id:
-            raise ValidationError('Have another admin contributor to edit your permission after you’ve submitted your preprint')
+        if preprint.machine_state == DefaultStates.INITIAL.value and preprint.creator_id == user.id:
+            raise ValidationError(
+                'You cannot change your permission setting at this time. '
+                'Have another admin contributor to edit your permission after you’ve submitted your preprint',
+            )
         return super().patch(*args, **kwargs)
+
+    def perform_destroy(self, instance):
+        preprint = self.get_resource()
+        auth = get_user_auth(self.request)
+        if preprint.visible_contributors.count() == 1 and instance.visible:
+            raise ValidationError('Must have at least one visible contributor')
+        if preprint.machine_state == DefaultStates.INITIAL.value and preprint.creator_id == instance.user.id == auth.user.id:
+            raise ValidationError(
+                'You cannot delete yourself at this time. '
+                'Have another admin contributor to do that after you’ve submitted your preprint',
+            )
+        removed = preprint.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError('Must have at least one registered admin contributor')
 
 
 class PreprintBibliographicContributorsList(PreprintContributorsList):

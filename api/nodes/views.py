@@ -535,14 +535,6 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         auth = get_user_auth(self.request)
         if node.visible_contributors.count() == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
-        if (
-            isinstance(node, Preprint) and node.machine_state == 'initial'
-            and node.creator_id == instance.user.id == auth.user.id
-        ):
-            raise ValidationError(
-                'You cannot delete yourself at this time. '
-                'Have another admin contributor to do that after you’ve submitted your preprint',
-            )
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
