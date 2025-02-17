@@ -41,4 +41,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/make_public/$', views.NodeMakePublic.as_view(), name='make-public'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_notifications/$', views.NodeRemoveNotificationView.as_view(), name='node-remove-notifications'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_moderation_state/$', views.NodeUpdateModerationStateView.as_view(), name='node-update-mod-state'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/resync_datacite/$', views.NodeResyncDataCiteView.as_view(), name='resync-datacite'),
 ]
