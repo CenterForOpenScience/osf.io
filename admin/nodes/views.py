@@ -719,3 +719,14 @@ class RemoveStuckRegistrationsView(NodeMixin, TemplateView):
                                     ' if the problem persists get a developer to fix it.')
 
         return redirect(self.get_success_url())
+
+
+class NodeResyncDataCiteView(NodeMixin, View):
+    """ Allows an authorized user to run resync with DataCite for a single registration object.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        registration.request_identifier_update('doi', create=True)
+        return redirect(self.get_success_url())
