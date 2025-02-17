@@ -80,7 +80,7 @@
                                     <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and user['can_create_project'] and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
@@ -89,7 +89,7 @@
                                     </li>
                                     %endif
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and user['can_create_project'] and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
                                             ${ _(language.TEMPLATE_ACTION) | n }
@@ -731,7 +731,8 @@ ${parent.javascript_bottom()}
             },
         },
         customCitations: ${ custom_citations | sjson, n },
-        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n },
+        canCreateProject: ${ user['can_create_project'] | sjson, n}
     });
 </script>
 

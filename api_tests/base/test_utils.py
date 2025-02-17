@@ -2,7 +2,12 @@
 from nose.tools import *  # noqa:
 import mock  # noqa
 import unittest
-
+import pytest
+from osf.models import ProjectLimitNumberSetting, AbstractNode, ProjectLimitNumberDefault
+from osf_tests.factories import UserFactory, InstitutionFactory
+from osf.models.project_limit_number_setting_attribute import ProjectLimitNumberSettingAttribute
+from osf.models.project_limit_number_template import ProjectLimitNumberTemplate
+from osf.models.project_limit_number_template_attribute import ProjectLimitNumberTemplateAttribute
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
 from api.base import utils as api_utils
@@ -115,3 +120,113 @@ class TestFlaskDjangoIntegration:
             assert_true(
                 False, 'Unexpected Exception from push_status_message when called '
                 'from the v2 API with type "error"')
+
+
+@pytest.mark.django_db
+class TestCheckUserCanCreateProject:
+
+    @pytest.fixture
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture
+    def institution(self):
+        return InstitutionFactory()
+
+    def test_without_user_cannot_create(self):
+        assert not api_utils.check_user_can_create_project(None)
+
+    def test_user_without_institution_can_create(self, user):
+        assert api_utils.check_user_can_create_project(user)
+
+    def test_user_with_no_limit(self, user, institution):
+        user.affiliated_institutions.add(institution)
+
+        ProjectLimitNumberDefault.objects.create(
+            institution=institution,
+            project_limit_number=-1
+        )
+
+        assert api_utils.check_user_can_create_project(user)
+
+    def test_user_under_limit(self, user, institution):
+        user.affiliated_institutions.add(institution)
+
+        ProjectLimitNumberDefault.objects.create(
+            institution=institution,
+            project_limit_number=5
+        )
+
+        with mock.patch.object(AbstractNode.objects, 'filter') as mock_filter:
+            mock_filter.return_value.count.return_value = 3
+            assert api_utils.check_user_can_create_project(user)
+
+    def test_user_at_limit(self, user, institution):
+        user.affiliated_institutions.add(institution)
+
+        ProjectLimitNumberDefault.objects.create(
+            institution=institution,
+            project_limit_number=5
+        )
+
+        with mock.patch.object(AbstractNode.objects, 'filter') as mock_filter:
+            mock_filter.return_value.count.return_value = 5
+            assert not api_utils.check_user_can_create_project(user)
+
+    def test_user_matches_setting_condition(self, user, institution):
+        user.affiliated_institutions.add(institution)
+        template = ProjectLimitNumberTemplate.objects.create(template_name='Demo')
+        template_attribute = ProjectLimitNumberTemplateAttribute.objects.create(
+            template=template, attribute_name='sn', setting_type=1
+        )
+        setting = ProjectLimitNumberSetting.objects.create(
+            template=template,
+            institution=institution,
+            project_limit_number=10,
+            is_availability=True,
+            priority=1,
+        )
+        ProjectLimitNumberSettingAttribute.objects.create(
+            setting=setting, attribute=template_attribute, attribute_value='demo'
+        )
+
+        with mock.patch('api.base.utils.check_logic_condition') as mock_check:
+            mock_check.return_value = True
+            with mock.patch.object(AbstractNode.objects, 'filter') as mock_filter:
+                # Can't create project
+                mock_filter.return_value.count.return_value = 10
+                assert not api_utils.check_user_can_create_project(user)
+                # Can create project
+                mock_filter.return_value.count.return_value = 9
+                assert api_utils.check_user_can_create_project(user)
+
+    def test_user_no_matching_setting(self, user, institution):
+        user.affiliated_institutions.add(institution)
+
+        ProjectLimitNumberDefault.objects.create(
+            institution=institution, project_limit_number=5
+        )
+        template = ProjectLimitNumberTemplate.objects.create(template_name='Demo')
+        template_attribute = ProjectLimitNumberTemplateAttribute.objects.create(
+            template=template, attribute_name='sn', setting_type=1
+        )
+        setting = ProjectLimitNumberSetting.objects.create(
+            template=template,
+            institution=institution,
+            project_limit_number=10,
+            is_availability=True,
+            priority=1,
+        )
+        ProjectLimitNumberSettingAttribute.objects.create(
+            setting=setting, attribute=template_attribute, attribute_value='demo'
+        )
+
+        with mock.patch('api.base.utils.check_logic_condition') as mock_check:
+            mock_check.return_value = False
+            with mock.patch.object(AbstractNode.objects, 'filter') as mock_filter:
+                # can't create project
+                mock_filter.return_value.count.return_value = 5
+                assert not api_utils.check_user_can_create_project(user)
+                # can create project
+                mock_filter.return_value.count.return_value = 4
+                assert api_utils.check_user_can_create_project(user)

@@ -40,7 +40,7 @@ from api.base.throttling import (
     AddContributorThrottle,
     BurstRateThrottle,
 )
-from api.base.utils import default_node_list_permission_queryset
+from api.base.utils import default_node_list_permission_queryset, check_user_can_create_project, LIMITED_ERROR
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.versioning import DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION
 from api.base.views import JSONAPIBaseView
@@ -330,6 +330,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = serializer.save(creator=user)
         if mapcore_sync_is_enabled():
             group_key = mapcore_sync_map_new_group(node.creator, node)
@@ -816,6 +822,12 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         serializer.save(creator=user, parent=self.get_node())
 
 
@@ -1091,6 +1103,12 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
         user = get_user_auth(self.request).user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = self.get_node()
         try:
             fork = serializer.save(node=node)

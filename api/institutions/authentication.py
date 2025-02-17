@@ -86,6 +86,16 @@ class InstitutionAuthentication(BaseAuthentication):
                     "organizationalUnit": "",  # ou
                     "jaOrganizationName": "",  # jao
                     "jaOrganizationalUnitName": "",  # jaou
+                    "eduPersonAffiliation": "",
+                    "eduPersonPrincipalName": "",
+                    "eduPersonScopedAffiliation": "",
+                    "eduPersonTargetedID": "",
+                    "eduPersonAssurance": "",
+                    "eduPersonUniqueId": "",
+                    "eduPersonOrcid": "",
+                    "gakuninScopedPersonalUniqueCode": "",
+                    "gakuninIdentityAssuranceOrganization": "",
+                    "gakuninIdentityAssuranceMethodReference": "",
                 }
             }
         }
@@ -126,6 +136,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 val = obj.get(key)
                 if val is not None:
                     ret = val
+                else:
+                    ret = ''
                 if val:
                     break
             return ret
@@ -164,6 +176,36 @@ class InstitutionAuthentication(BaseAuthentication):
         organization_name_ja = get_next(p_user, 'jao', 'jaOrganizationName')
         # affiliation: 'jaou' is friendlyName
         organizational_unit_ja = get_next(p_user, 'jaou', 'jaOrganizationalUnitName')
+
+        # edu_person_affiliation: 'eduPersonAffiliation' is friendlyName
+        edu_person_affiliation = get_next(p_user, 'edu_person_affiliation', 'eduPersonAffiliation')
+        # edu_person_scoped_affiliation: 'eduPersonScopedAffiliation' is friendlyName
+        edu_person_scoped_affiliation = get_next(p_user, 'edu_person_scoped_affiliation', 'eduPersonScopedAffiliation')
+        # edu_person_targeted_id: 'eduPersonTargetedID' is friendlyName
+        edu_person_targeted_id = get_next(p_user, 'edu_person_targeted_id', 'eduPersonTargetedID')
+        # edu_person_assurance: 'eduPersonAssurance' is friendlyName
+        edu_person_assurance = get_next(p_user, 'edu_person_assurance', 'eduPersonAssurance')
+        # edu_person_unique_id: 'eduPersonUniqueId' is friendlyName
+        edu_person_unique_id = get_next(p_user, 'edu_person_unique_id', 'eduPersonUniqueId')
+        # edu_person_orcid: 'eduPersonOrcid' is friendlyName
+        edu_person_orcid = get_next(p_user, 'edu_person_orcid', 'eduPersonOrcid')
+        # groups: 'isMemberOf' is friendlyName
+        groups = get_next(p_user, 'groups', 'isMemberOf')
+        # gakunin_scoped_personal_unique_code: 'gakuninScopedPersonalUniqueCode' is friendlyName
+        gakunin_scoped_personal_unique_code = get_next(
+            p_user, 'gakunin_scoped_personal_unique_code',
+            'gakuninScopedPersonalUniqueCode',
+        )
+        # gakunin_identity_assurance_organization: 'gakuninIdentityAssuranceOrganization' is friendlyName
+        gakunin_identity_assurance_organization = get_next(
+            p_user, 'gakunin_identity_assurance_organization',
+            'gakuninIdentityAssuranceOrganization',
+        )
+        # gakunin_identity_assurance_method_reference: 'gakuninIdentityAssuranceMethodReference' is friendlyName
+        gakunin_identity_assurance_method_reference = get_next(
+            p_user, 'gakunin_identity_assurance_method_reference',
+            'gakuninIdentityAssuranceMethodReference',
+        )
 
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
@@ -394,6 +436,20 @@ class InstitutionAuthentication(BaseAuthentication):
                 'organizational_unit': organizational_unit,
                 'organization_name_ja': organization_name_ja,
                 'organizational_unit_ja': organizational_unit_ja,
+                'groups': groups,
+                'family_name': family_name,
+                'given_name': given_name,
+                'edu_person_affiliation': edu_person_affiliation,
+                'edu_person_scoped_affiliation': edu_person_scoped_affiliation,
+                'edu_person_targeted_id': edu_person_targeted_id,
+                'edu_person_assurance': edu_person_assurance,
+                'edu_person_unique_id': edu_person_unique_id,
+                'edu_person_orcid': edu_person_orcid,
+                'family_name_ja': family_name_ja,
+                'given_name_ja': given_name_ja,
+                'gakunin_scoped_personal_unique_code': gakunin_scoped_personal_unique_code,
+                'gakunin_identity_assurance_organization': gakunin_identity_assurance_organization,
+                'gakunin_identity_assurance_method_reference': gakunin_identity_assurance_method_reference,
             },
         )
 

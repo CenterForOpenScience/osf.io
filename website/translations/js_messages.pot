@@ -8960,3 +8960,207 @@ msgstr ""
 msgid "Could not GET wiki menu pages"
 msgstr ""
 
+#: website/static/vendor/bower_components/MathJax/config/AM_HTMLorMML-full.js:55
+#: website/static/vendor/bower_components/MathJax/config/Accessible-full.js:77
+#: website/static/vendor/bower_components/MathJax/config/MML_HTMLorMML-full.js:55
+#: website/static/vendor/bower_components/MathJax/config/TeX-AMS-MML_HTMLorMML-full.js:69
+#: website/static/vendor/bower_components/MathJax/config/TeX-MML-AM_HTMLorMML-full.js:75
+#: website/static/vendor/bower_components/MathJax/jax/output/CommonHTML/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/HTML-CSS/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/NativeMML/jax.js:19
+#: website/static/vendor/bower_components/MathJax/jax/output/SVG/autoload/mglyph.js:19
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/CommonHTML/autoload/mglyph.js:55
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/HTML-CSS/autoload/mglyph.js:47
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/HTML-CSS/autoload/mglyph.js:66
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/NativeMML/jax.js:201
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/output/SVG/autoload/mglyph.js:79
+msgid "MathML"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/extensions/HelpDialog.js:19
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/HelpDialog.js:165
+msgid "HelpDialog"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/MathMenu.js:1084
+msgid "CloseAboutDialog"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/extensions/MathMenu.js:1182
+msgid "NoOriginalForm"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:82
+msgid "UnknownNodeType"
+msgstr ""
+
+#: website/static/vendor/bower_components/MathJax/unpacked/jax/input/MathML/jax.js:345
+msgid "CantCreateXMLParser"
+msgstr ""
+
+msgid "Do you want to active account?"
+msgstr ""
+
+msgid "Active"
+msgstr ""
+
+msgid "Sent"
+msgstr ""
+
+msgid "Error"
+msgstr ""
+
+msgid "Invitation failed"
+msgstr ""
+
+# rdm-institutional-storage-page.js
+msgid "Unable to delete location %1$s"
+msgstr ""
+
+msgid "Export Data"
+msgstr ""
+
+msgid "Cannot export data."
+msgstr ""
+
+msgid "Export data in background."
+msgstr ""
+
+msgid "Export data failed."
+msgstr ""
+
+msgid "Export data successfully."
+msgstr ""
+
+msgid "Error occurred while exporting data."
+msgstr ""
+
+msgid "Stop Export Data"
+msgstr ""
+
+msgid "Cannot stop exporting data."
+msgstr ""
+
+msgid "Stop exporting in background."
+msgstr ""
+
+msgid "Stop exporting successfully."
+msgstr ""
+
+msgid "Error occurred while stopping export data."
+msgstr ""
+
+msgid "Restore Export Data"
+msgstr ""
+
+msgid "Restore completed."
+msgstr ""
+
+msgid "Stop Restore Export Data"
+msgstr ""
+
+msgid "Stopped restoring data process."
+msgstr ""
+
+msgid "Delete Permanently"
+msgstr ""
+
+msgid "Are you sure you want to permanently delete these export data?"
+msgstr ""
+
+# message from export/restore process
+msgid "The equivalent process is running"
+msgstr ""
+
+msgid "The export data files are corrupted"
+msgstr ""
+
+msgid "Permission denied for this institution"
+msgstr ""
+
+msgid "Permission denied for this storage"
+msgstr ""
+
+msgid "Permission denied for this export storage location"
+msgstr ""
+
+msgid "Permission denied for this export process"
+msgstr ""
+
+msgid "Cannot connect to the export data storage location"
+msgstr ""
+
+msgid "Cannot connect to source storage"
+msgstr ""
+
+msgid "Cannot connect to destination storage"
+msgstr ""
+
+msgid "Cannot check in this time. The process is {status}."
+msgstr ""
+
+msgid "Cannot stop this export process"
+msgstr ""
+
+msgid "Cannot abort this export process"
+msgstr ""
+
+msgid "Cannot be restored because export data does not exist"
+msgstr ""
+
+msgid "Institution does not exist"
+msgstr ""
+
+msgid "Download as file for %1$s logs"
+msgstr ""
+
+msgid "Downloading"
+msgstr ""
+
+msgid "Download failed."
+msgstr ""
+
+msgid "%s is being used."
+msgstr ""
+
+msgid "The attribute list is invalid."
+msgstr ""
+
+msgid "The attribute list is required."
+msgstr ""
+
+msgid "The template not exist."
+msgstr ""
+
+msgid "The template name is required."
+msgstr ""
+
+msgid "The template name already exists."
+msgstr ""
+
+msgid "The attribute name is required."
+msgstr ""
+
+msgid "The setting type is required."
+msgstr ""
+
+msgid "The attribute value is required."
+msgstr ""
+
+msgid "The setting not exist."
+msgstr ""
+
+msgid "The setting name is required."
+msgstr ""
+
+msgid "The setting name is invalid."
+msgstr ""
+
+msgid "The setting name already exists."
+msgstr ""
+
+msgid "The project limit number is invalid."
+msgstr ""
+
+msgid "The new project cannot be created due to the created project number is greater than or equal the project number can create."
+msgstr ""
