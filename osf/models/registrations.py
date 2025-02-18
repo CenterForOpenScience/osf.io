@@ -4,7 +4,7 @@ import html
 from urllib.parse import urljoin
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -551,34 +551,35 @@ class Registration(AbstractNode):
                             True if the embargo is being terminated early
 
         """
-        if not self.is_embargoed:
-            raise NodeStateError('This node is not under active embargo')
+        with transaction.atomic():
+            self.refresh_from_db()
 
-        action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED
-        self.registered_from.add_log(
-            action=action,
-            params={
-                'project': self._id,
-                'node': self.registered_from._id,
-                'registration': self._id,
-            },
-            auth=None,
-            save=True
-        )
-        self.embargo.mark_as_completed()
-        #refresh in order to honor state change
-        self.refresh_from_db()
-        if self.is_pending_embargo_termination:
-            self.embargo_termination_approval.accept()
-
-        for node in self.node_and_primary_descendants():
-            node.set_privacy(
-                self.PUBLIC,
+            if not self.is_embargoed:
+                raise NodeStateError('This node is not under active embargo')
+            
+            action = NodeLog.EMBARGO_COMPLETED if not forced else NodeLog.EMBARGO_TERMINATED
+            self.registered_from.add_log(
+                action=action,
+                params={
+                    'project': self._id,
+                    'node': self.registered_from._id,
+                    'registration': self._id,
+                },
                 auth=None,
-                log=False,
                 save=True
             )
-        return True
+            self.embargo.mark_as_completed()
+            self.refresh_from_db()
+            if self.is_pending_embargo_termination:
+                self.embargo_termination_approval.accept()
+            for node in self.node_and_primary_descendants():
+                node.set_privacy(
+                    self.PUBLIC,
+                    auth=None,
+                    log=False,
+                    save=True
+                )
+            return True
 
     def get_contributor_registration_response_keys(self):
         """
