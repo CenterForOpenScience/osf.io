@@ -906,13 +906,14 @@ def gather_agents(focus):
 def gather_qualified_attributions(focus):
     _contributor_set = getattr(focus.dbmodel, 'contributor_set', None)
     if _contributor_set is not None:
-        for _contributor in _contributor_set.filter(visible=True).select_related('user'):
+        for index, _contributor in enumerate(_contributor_set.filter(visible=True).select_related('user')):
             _osfrole_ref = OSF_CONTRIBUTOR_ROLES.get(_contributor.permission)
             if _osfrole_ref is not None:
                 _attribution_ref = rdflib.BNode()
                 yield (PROV.qualifiedAttribution, _attribution_ref)
                 yield (_attribution_ref, PROV.agent, OsfFocus(_contributor.user))
                 yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
+                yield (_attribution_ref, PROV.qualifiedOrder, index)
 
 
 @gather.er(OSF.affiliation)

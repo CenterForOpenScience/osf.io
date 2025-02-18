@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.db import IntegrityError
 
+from api.share.utils import update_share
 from framework import forms, status
 from framework.auth import cas
 from framework.auth.core import get_user, generate_verification_key
@@ -257,6 +258,8 @@ def project_contributors_post(auth, node, **kwargs):
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
 
+    if node.is_public:
+        update_share(node)
     return {
         'status': 'success',
         'contributors': profile_utils.serialize_contributors(
@@ -315,6 +318,8 @@ def project_manage_contributors(auth, node, **kwargs):
             kind='success',
             trust=False
         )
+    if node.is_public:
+        update_share(node)
     # Else stay on current page
     return {}
 
@@ -371,6 +376,9 @@ def project_remove_contributor(auth, **kwargs):
                 redirect_url = {'redirectUrl': node.url}
             else:
                 redirect_url = {'redirectUrl': web_url_for('dashboard')}
+
+        if node.is_public:
+            update_share(node)
     return redirect_url
 
 
