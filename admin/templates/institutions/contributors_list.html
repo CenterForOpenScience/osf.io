@@ -22,18 +22,6 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <form id="add-moderators-form" action="{% url 'institutions:add_admin_or_moderator' institution.id %}" method="post">
-                    {% csrf_token %}
-                    <label>Add moderator by guid: </label>
-                    <input type="text" name="add-moderators-form">
-                    <input type="submit" name="mod" value="Add Moderator" class="form-button btn btn-success">
-                    <input type="submit" name="admin" value="Add Admin" class="form-button btn btn-success">
-                </form>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="col-md-12">
                 <form id="remove-moderators-form" action="{% url 'institutions:remove_admins_and_moderators' institution.id %}" method="post">
                     {% csrf_token %}
                     <table class="table table-striped">
