@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.conf import settings as django_conf_settings
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.test import RequestFactory
 from furl import furl
 import itsdangerous
 import jwe
@@ -23,6 +24,8 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.auth.core import Auth
 from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
+from admin_tests.utilities import setup_view
+from api.preprints.views import PreprintContributorDetail
 from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf_tests.factories import (
@@ -2723,6 +2726,7 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.WITHDRAWN.value
 
+
 class TestEmberRedirect(OsfTestCase):
 
     def test_ember_redirect_to_versioned_guid(self):
@@ -2732,3 +2736,58 @@ class TestEmberRedirect(OsfTestCase):
 
         assert res.status_code == 302
         assert res.location == f'{pp._id}'
+
+
+@pytest.mark.django_db
+class TestPreprintCreatorStateChangings:
+
+    @pytest.fixture()
+    def creator(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def unpublished_preprint_pre_mod(self):
+        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
+
+    def test_preprint_initial_creator_removal(self, creator, unpublished_preprint_pre_mod):
+        new_version = PreprintFactory.create_version(
+            create_from=unpublished_preprint_pre_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        request = RequestFactory().delete('/fake_path')
+        request.user = creator
+        request.query_params = {}
+        view = PreprintContributorDetail()
+        view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
+        try:
+            view.perform_destroy(request)
+        except Exception as error:
+            assert error.args[0] == ('You cannot delete yourself at this time. '
+                                     'Have another admin contributor to do that after you’ve submitted your preprint')
+        else:
+            assert False
+
+    def test_preprint_initial_creator_update(self, creator, unpublished_preprint_pre_mod):
+        new_version = PreprintFactory.create_version(
+            create_from=unpublished_preprint_pre_mod,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        request = RequestFactory().patch('/fake_path')
+        request.user = creator
+        request.query_params = {}
+        view = PreprintContributorDetail()
+        view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
+        try:
+            view.patch(request)
+        except Exception as error:
+            assert error.args[0] == ('You cannot change your permission setting at this time. '
+                                     'Have another admin contributor to edit your permission '
+                                     'after you’ve submitted your preprint')
+        else:
+            assert False
