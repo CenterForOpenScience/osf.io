@@ -225,13 +225,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         allow_null=True,
     )
 
-    # TODO: Remove 'preprint_versions' once https://openscience.atlassian.net/browse/ENG-7174 has been released
     links = LinksField(
         {
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
-            'preprint_versions': 'get_preprint_versions',
             'preprint_doi': 'get_preprint_doi_url',
         },
     )
@@ -263,16 +261,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
         return 'preprints:preprint-relationships-subjects'
-
-    # TODO: Remove this method once https://openscience.atlassian.net/browse/ENG-7174 has been released
-    def get_preprint_versions(self, obj):
-        return absolute_reverse(
-            'preprints:preprint-versions',
-            kwargs={
-                'preprint_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
 
     def get_preprint_url(self, obj):
         return absolute_reverse(
