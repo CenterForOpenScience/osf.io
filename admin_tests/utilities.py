@@ -46,3 +46,10 @@ def setup_log_view(view, request, *args, **kwargs):
     view.args = args
     view.kwargs = kwargs
     return view
+
+
+def handle_post_view_request(request, view, obj, guid):
+    view = setup_view(view, request, guid=guid)
+    view.post(request)
+    obj.refresh_from_db()
+    return obj
