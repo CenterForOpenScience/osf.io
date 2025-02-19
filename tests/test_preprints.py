@@ -2760,13 +2760,19 @@ class TestPreprintCreatorStateChangings:
         request = RequestFactory().delete('/fake_path')
         request.user = creator
         request.query_params = {}
+        request.parser_context = {
+            'kwargs': {
+                'preprint_id': new_version._id,
+                'user_id': creator._id
+            },
+        }
         view = PreprintContributorDetail()
         view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
         try:
             view.perform_destroy(request)
         except Exception as error:
             assert error.args[0] == ('You cannot delete yourself at this time. '
-                                     'Have another admin contributor to do that after you’ve submitted your preprint')
+                                     'Have another admin contributor do that after you’ve submitted your preprint')
         else:
             assert False
 
@@ -2781,13 +2787,19 @@ class TestPreprintCreatorStateChangings:
         request = RequestFactory().patch('/fake_path')
         request.user = creator
         request.query_params = {}
+        request.parser_context = {
+            'kwargs': {
+                'preprint_id': new_version._id,
+                'user_id': creator._id
+            },
+        }
         view = PreprintContributorDetail()
         view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
         try:
             view.patch(request)
         except Exception as error:
             assert error.args[0] == ('You cannot change your permission setting at this time. '
-                                     'Have another admin contributor to edit your permission '
+                                     'Have another admin contributor edit your permission '
                                      'after you’ve submitted your preprint')
         else:
             assert False

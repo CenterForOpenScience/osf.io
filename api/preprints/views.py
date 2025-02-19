@@ -525,7 +525,7 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
         if preprint.machine_state == DefaultStates.INITIAL.value and preprint.creator_id == user.id:
             raise ValidationError(
                 'You cannot change your permission setting at this time. '
-                'Have another admin contributor to edit your permission after you’ve submitted your preprint',
+                'Have another admin contributor edit your permission after you’ve submitted your preprint',
             )
         return super().patch(*args, **kwargs)
 
@@ -537,7 +537,7 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
         if preprint.machine_state == DefaultStates.INITIAL.value and preprint.creator_id == instance.user.id == auth.user.id:
             raise ValidationError(
                 'You cannot delete yourself at this time. '
-                'Have another admin contributor to do that after you’ve submitted your preprint',
+                'Have another admin contributor do that after you’ve submitted your preprint',
             )
         removed = preprint.remove_contributor(instance, auth)
         if not removed:
