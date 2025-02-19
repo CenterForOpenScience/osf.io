@@ -21,6 +21,7 @@ from osf_tests.factories import (
 from tests.base import get_default_metaschema
 
 from osf.models import NodeRequest
+from django.contrib.auth.models import Group
 
 from osf.migrations import update_provider_auth_groups
 
@@ -600,3 +601,82 @@ class TestRegistriesModerationSubmissions:
         # ham the project creator
         user.confirm_ham(save=True)
         assert user.spam_status == 4
+
+    def test_registration_privacy_after_spam_and_ham(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+
+        def run_subtest(privacy, is_embargo, should_be_public):
+            user = AuthUserFactory()
+            user.is_staff = True
+            user.groups.add(Group.objects.get(name='osf_admin'))
+            user.save()
+            node = ProjectFactory(creator=user)
+
+            node.set_privacy(privacy)
+            node.confirm_spam(save=True)
+            node.confirm_ham(save=True)
+
+            # register the project
+            if is_embargo:
+                one_month_from_now = datetime.datetime.now() + datetime.timedelta(seconds=1)
+                embargo = EmbargoFactory(end_date=one_month_from_now, user=user)
+                registration = embargo.target_registration
+                registration.provider = provider
+                registration.update_moderation_state()
+                registration.save()
+            else:
+                registration = RegistrationFactory(provider=provider, project=node, creator=user)
+
+            registration.confirm_spam(save=True)
+            registration.confirm_ham(save=True)
+
+            # approve the project
+            registration.require_approval(user=registration.creator)
+            registration.registration_approval.accept()
+            registration.refresh_from_db()
+            if is_embargo:
+                assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+            else:
+                assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+            if is_embargo:
+                registration.sanction.accept()
+                registration.refresh_from_db()
+                assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+            # approve in moderation
+            actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+            actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
+            actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+            assert resp.status_code == 201
+            assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+            registration.refresh_from_db()
+
+            if is_embargo:
+                assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+            else:
+                assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+
+            assert registration.is_public == should_be_public
+
+        run_subtest(
+            privacy='private',
+            is_embargo=True,
+            should_be_public=False
+        )
+        run_subtest(
+            privacy='public',
+            is_embargo=True,
+            should_be_public=False
+        )
+        run_subtest(
+            privacy='private',
+            is_embargo=False,
+            should_be_public=True
+        )
+        run_subtest(
+            privacy='public',
+            is_embargo=False,
+            should_be_public=True
+        )
