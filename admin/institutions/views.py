@@ -164,40 +164,7 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
         kwargs.setdefault('logohost', settings.OSF_URL)
         return super().get_context_data(**kwargs)
 
-class InstitutionAdminAndModeratorList(PermissionRequiredMixin, ListView):
-    permission_required = 'osf.view_institution'
-    template_name = 'institutions/contributors_list.html'
-    raise_exception = True
-
-    def get_queryset(self):
-        return Institution.objects.get(id=self.kwargs['institution_id'])
-
-    def get_context_data(self, **kwargs):
-        institution = Institution.objects.get(id=self.kwargs['institution_id'])
-        context = super().get_context_data(**kwargs)
-        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
-        context['institution'] = institution
-        context['admins'] = admin_group.user_set.all()
-        context['moderators'] = institution.contributors.exclude(id__in=admin_group.user_set.values_list('id', flat=True))
-        return context
-    #
-    # def get_context_data(self, **kwargs):
-    #     institution = Institution.objects.get(id=self.kwargs['institution_id'])
-    #     context = super().get_context_data(**kwargs)
-    #     group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
-    #     context['institution'] = institution
-    #     context['moderators'] = group.user_set.all()
-    #     context['contributors'] = institution.contributors.all()
-    #     for i in context['contributors']:
-    #         print(type(i))
-    #         print(i.fullname, i._id)
-    #     print('moderators')
-    #     for i in context['moderators']:
-    #         print(type(i))
-    #         print(i.fullname, i._id)
-    #     return context
-
-class InstitutionAddAdminOrModerator(PermissionRequiredMixin, ListView):
+class InstitutionAdminAndModeratorBaseView(PermissionRequiredMixin, ListView):
     permission_required = 'osf.change_institution'
     template_name = 'institutions/edit_moderators.html'
     raise_exception = True
@@ -213,6 +180,14 @@ class InstitutionAddAdminOrModerator(PermissionRequiredMixin, ListView):
         context['admins'] = admin_group.user_set.all()
         context['moderators'] = institution.contributors.exclude(id__in=admin_group.user_set.values_list('id', flat=True))
         return context
+
+
+class InstitutionListAndAddAdminOrModerator(InstitutionAdminAndModeratorBaseView):
+
+    def get_permission_required(self):
+        if self.request.method == 'GET':
+            return ('osf.view_institution',)
+        return (self.permission_required,)
 
     def post(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
@@ -236,23 +211,7 @@ class InstitutionAddAdminOrModerator(PermissionRequiredMixin, ListView):
 
         return redirect('institutions:add_admin_or_moderator', institution_id=institution.id)
 
-class InstitutionRemoveAdminOrModerator(PermissionRequiredMixin, ListView):
-    permission_required = 'osf.change_institution'
-    template_name = 'institutions/edit_moderators.html'
-    raise_exception = True
-
-    def get_queryset(self):
-        return Institution.objects.get(id=self.kwargs['institution_id'])
-
-    def get_context_data(self, **kwargs):
-        institution = Institution.objects.get(id=self.kwargs['institution_id'])
-        context = super().get_context_data(**kwargs)
-        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
-        context['institution'] = institution
-        context['admins'] = admin_group.user_set.all()
-        context['moderators'] = institution.contributors.exclude(
-            id__in=admin_group.user_set.values_list('id', flat=True))
-        return context
+class InstitutionRemoveAdminOrModerator(InstitutionAdminAndModeratorBaseView):
 
     def post(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
