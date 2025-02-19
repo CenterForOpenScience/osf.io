@@ -913,7 +913,7 @@ def gather_qualified_attributions(focus):
                 yield (PROV.qualifiedAttribution, _attribution_ref)
                 yield (_attribution_ref, PROV.agent, OsfFocus(_contributor.user))
                 yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
-                yield (_attribution_ref, PROV.qualifiedOrder, index)
+                yield (_attribution_ref, OSF.order, index)
 
 
 @gather.er(OSF.affiliation)
