@@ -9,6 +9,8 @@ urlpatterns = [
     re_path(r'^known_spam$', views.NodeKnownSpamList.as_view(), name='known-spam'),
     re_path(r'^known_ham$', views.NodeKnownHamList.as_view(), name='known-ham'),
     re_path(r'^doi_backlog_list/$', views.DoiBacklogListView.as_view(), name='doi-backlog-list'),
+    re_path(r'^approval_backlog_list/$', views.ApprovalBacklogListView.as_view(), name='approval-backlog-list'),
+    re_path(r'^confirm_approve_backlog_list/$', views.ConfirmApproveBacklogView.as_view(), name='confirm-approve-backlog-list'),
     re_path(r'^registration_list/$', views.RegistrationListView.as_view(), name='registrations'),
     re_path(r'^stuck_registration_list/$', views.StuckRegistrationListView.as_view(), name='stuck-registrations'),
     re_path(r'^ia_backlog_list/$', views.RegistrationBacklogListView.as_view(), name='ia-backlog-list'),
@@ -39,4 +41,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/make_public/$', views.NodeMakePublic.as_view(), name='make-public'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_notifications/$', views.NodeRemoveNotificationView.as_view(), name='node-remove-notifications'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_moderation_state/$', views.NodeUpdateModerationStateView.as_view(), name='node-update-mod-state'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/resync_datacite/$', views.NodeResyncDataCiteView.as_view(), name='resync-datacite'),
 ]

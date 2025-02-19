@@ -8,6 +8,7 @@
 {% endblock title %}
 {% block content %}
     <h2>List of Registrations</h2>
+{% include "util/pagination.html" with items=page status=status %}
 <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
