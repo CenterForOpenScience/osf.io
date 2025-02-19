@@ -843,35 +843,44 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_qualified_attributions(self.projectfocus), {
             (self.projectfocus.iri, PROV.qualifiedAttribution, _attribution_admin),
             (_attribution_admin, PROV.agent, self.userfocus__admin),
+            (_attribution_admin, OSF.order, Literal(0)),
             (_attribution_admin, DCAT.hadRole, OSF['admin-contributor']),
             (self.projectfocus.iri, PROV.qualifiedAttribution, _attribution_readwrite),
+            (_attribution_readwrite, OSF.order, Literal(1)),
             (_attribution_readwrite, PROV.agent, self.userfocus__readwrite),
             (_attribution_readwrite, DCAT.hadRole, OSF['write-contributor']),
             (self.projectfocus.iri, PROV.qualifiedAttribution, _attribution_readonly),
+            (_attribution_readonly, OSF.order, Literal(2)),
             (_attribution_readonly, PROV.agent, self.userfocus__readonly),
             (_attribution_readonly, DCAT.hadRole, OSF['readonly-contributor']),
         })
         assert_triples(osf_gathering.gather_qualified_attributions(self.registrationfocus), {
             (self.registrationfocus.iri, PROV.qualifiedAttribution, _attribution_admin),
             (_attribution_admin, PROV.agent, self.userfocus__admin),
+            (_attribution_admin, OSF.order, Literal(0)),
             (_attribution_admin, DCAT.hadRole, OSF['admin-contributor']),
             (self.registrationfocus.iri, PROV.qualifiedAttribution, _attribution_readwrite),
             (_attribution_readwrite, PROV.agent, self.userfocus__readwrite),
             (_attribution_readwrite, DCAT.hadRole, OSF['write-contributor']),
+            (_attribution_readwrite, OSF.order, Literal(1)),
             (self.registrationfocus.iri, PROV.qualifiedAttribution, _attribution_readonly),
             (_attribution_readonly, PROV.agent, self.userfocus__readonly),
             (_attribution_readonly, DCAT.hadRole, OSF['readonly-contributor']),
+            (_attribution_readonly, OSF.order, Literal(2)),
         })
         assert_triples(osf_gathering.gather_qualified_attributions(self.preprintfocus), {
             (self.preprintfocus.iri, PROV.qualifiedAttribution, _attribution_admin),
             (_attribution_admin, PROV.agent, self.userfocus__admin),
             (_attribution_admin, DCAT.hadRole, OSF['admin-contributor']),
+            (_attribution_admin, OSF.order, Literal(0)),
             (self.preprintfocus.iri, PROV.qualifiedAttribution, _attribution_readwrite),
             (_attribution_readwrite, PROV.agent, self.userfocus__readwrite),
+            (_attribution_readwrite, OSF.order, Literal(1)),
             (_attribution_readwrite, DCAT.hadRole, OSF['write-contributor']),
             (self.preprintfocus.iri, PROV.qualifiedAttribution, _attribution_readonly),
             (_attribution_readonly, PROV.agent, self.userfocus__readonly),
             (_attribution_readonly, DCAT.hadRole, OSF['readonly-contributor']),
+            (_attribution_readonly, OSF.order, Literal(2)),
         })
 
     def test_gather_storage_byte_count(self):
