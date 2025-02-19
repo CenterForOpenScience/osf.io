@@ -2,6 +2,9 @@ import dataclasses
 from dataclasses import asdict, InitVar
 from typing import TYPE_CHECKING
 
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
+
 import markupsafe
 
 from . import request_helpers as gv_requests
@@ -251,6 +254,15 @@ class EphemeralNodeSettings:
             relationships=json_data['relationships'],
             addon_type=self.gv_data.resource_type
         )
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        try:
+            return super()._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
+        except HTTPError as e:
+            # The Dataverse API returns a 404 if the dataset has no published files
+            if self.short_name == 'dataverse' and e.code == http_status.HTTP_404_NOT_FOUND and version == 'latest-published':
+                return []
+            raise
 
 def get_settings_class(addon_type):
     if addon_type == gv_requests.AddonType.STORAGE:
