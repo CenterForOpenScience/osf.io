@@ -22,7 +22,7 @@
         </div>
         <div class="row">
             <div class="col-md-12">
-                <form id="add-moderators-form" action="{% url 'institutions:add_admin_or_moderator' institution.id %}" method="post">
+                <form id="add-moderators-form" action="{% url 'institutions:list_and_add_admin_or_moderator' institution.id %}" method="post">
                     {% csrf_token %}
                     <label>Add moderator by guid: </label>
                     <input type="text" name="add-moderators-form">

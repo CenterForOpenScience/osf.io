@@ -197,7 +197,7 @@ class InstitutionListAndAddAdminOrModerator(InstitutionAdminAndModeratorBaseView
         target_user = OSFUser.load(data['add-moderators-form'][0])
         if target_user is None:
             messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
-            return redirect('institutions:add_admin_or_moderator', institution_id=institution.id)
+            return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
 
         if 'admin' in data:
             admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
@@ -209,7 +209,7 @@ class InstitutionListAndAddAdminOrModerator(InstitutionAdminAndModeratorBaseView
 
         messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
 
-        return redirect('institutions:add_admin_or_moderator', institution_id=institution.id)
+        return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
 
 class InstitutionRemoveAdminOrModerator(InstitutionAdminAndModeratorBaseView):
 
@@ -236,7 +236,7 @@ class InstitutionRemoveAdminOrModerator(InstitutionAdminAndModeratorBaseView):
             admin_names = ' ,'.join(admins.values_list('fullname', flat=True))
             messages.success(request, f'The following admins were successfully removed: {admin_names}')
 
-        return redirect('institutions:add_admin_or_moderator', institution_id=institution.id)
+        return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
 
 class DeleteInstitution(PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_institution'
