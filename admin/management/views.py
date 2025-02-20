@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.http import HttpResponse
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
+from admin.management.tasks import resync_crossref, resync_datacite
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from osf.management.commands.daily_reporters_go import daily_reporters_go
@@ -137,8 +138,25 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
             messages.success(request, 'Monthly reporters successfully went.')
         return redirect(reverse('management:commands'))
 
+
 class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
     def post(self, request):
         ingest_cedar_metadata_templates()
         messages.success(request, 'Cedar templates have been successfully imported from Cedar Workbench.')
+        return redirect(reverse('management:commands'))
+
+
+class BulkResyncCrossRef(ManagementCommandPermissionView):
+
+    def post(self, request):
+        resync_crossref.apply_async()
+        messages.success(request, 'Resyncing with CrossRef!')
+        return redirect(reverse('management:commands'))
+
+
+class BulkResyncDataCite(ManagementCommandPermissionView):
+
+    def post(self, request):
+        resync_datacite.apply_async()
+        messages.success(request, 'Resyncing with DataCite!')
         return redirect(reverse('management:commands'))
