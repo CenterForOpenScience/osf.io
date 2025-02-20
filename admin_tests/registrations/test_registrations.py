@@ -131,7 +131,6 @@ class TestRegistrationSpamHam:
         embargoed_registration_from_changed_to_public_project.registration_approval.refresh_from_db()
         assert embargoed_registration_from_changed_to_public_project.registration_approval.state == 'approved'
 
-
     def test_unapproved_registration_task_after_spam(self, embargoed_registration_from_changed_to_public_project):
         embargoed_registration_from_changed_to_public_project.registration_approval.state = 'unapproved'
         embargoed_registration_from_changed_to_public_project.registration_approval.initiation_date -= timedelta(3)
