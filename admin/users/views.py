@@ -1,4 +1,5 @@
 import pytz
+from admin.base import settings
 from furl import furl
 from datetime import datetime, timedelta
 from django.db.models import F
@@ -478,7 +479,7 @@ class GetUserConfirmationLink(GetUserLink):
 class GetPasswordResetLink(GetUserLink):
     def get_link(self, user):
         user.verification_key_v2 = generate_verification_key(verification_type='password')
-        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
+        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(minutes=settings.osf_settings.EXPIRATION_TIME_DICT)
         user.save()
 
         return furl(DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
@@ -515,13 +516,12 @@ class ResetPasswordView(UserMixin, View):
         user = get_user(email)
         url = furl(DOMAIN)
 
-        user.verification_key_v2 = generate_verification_key(verification_type='password')
+        user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
         user.save()
         url.add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-
         send_mail(
             subject='Reset OSF Password',
-            message=f'Follow this link to reset your password: {url.url}',
+            message=f'Follow this link to reset your password: {url.url}\n Note: this link will expire in 12 hours',
             from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )
