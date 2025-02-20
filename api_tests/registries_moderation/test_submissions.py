@@ -14,12 +14,14 @@ from osf_tests.factories import (
     NodeRequestFactory,
     EmbargoFactory,
     RetractionFactory,
+    ProjectFactory
 )
 
 
 from tests.base import get_default_metaschema
 
 from osf.models import NodeRequest
+from django.contrib.auth.models import Group
 
 from osf.migrations import update_provider_auth_groups
 
@@ -561,3 +563,203 @@ class TestRegistriesModerationSubmissions:
         assert resp.json['data']['attributes']['comment'] == expected_comment
         persisted_action = registration.actions.get(trigger=force_withdraw_trigger)
         assert persisted_action.comment == expected_comment
+
+    def test_rejected_submission_doesnt_break_ham_functionality(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+        user = AuthUserFactory()
+        node = ProjectFactory(creator=user)
+
+        # set the project public
+        node.set_privacy('public')
+        assert node.is_public
+
+        # spam the project
+        node.confirm_spam(save=True)
+
+        # ham the project
+        node.confirm_ham(save=True)
+
+        # register the project
+        registration = RegistrationFactory(provider=provider, project=node, creator=user)
+
+        # approve the project
+        registration.require_approval(user=registration.creator)
+        registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        # reject the project in moderation
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'Worst registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.REJECT_SUBMISSION.db_name
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
+
+        # ham the project creator
+        user.confirm_ham(save=True)
+        assert user.spam_status == 4
+
+    def test_private_project_with_embargo_still_private_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+        user = AuthUserFactory()
+        user.is_staff = True
+        user.groups.add(Group.objects.get(name='osf_admin'))
+        user.save()
+        node = ProjectFactory(creator=user)
+
+        node.set_privacy('private')
+        node.confirm_spam(save=True)
+        node.confirm_ham(save=True)
+
+        # register the project
+        one_month_from_now = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        embargo = EmbargoFactory(end_date=one_month_from_now, user=user)
+        registration = embargo.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+
+        registration.confirm_spam(save=True)
+        registration.confirm_ham(save=True)
+
+        # approve the project
+        registration.require_approval(user=registration.creator)
+        registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+
+        registration.sanction.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        # approve in moderation
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        registration.refresh_from_db()
+
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+        assert registration.is_public is False
+
+    def test_public_project_with_embargo_is_private_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+        user = AuthUserFactory()
+        user.is_staff = True
+        user.groups.add(Group.objects.get(name='osf_admin'))
+        user.save()
+        node = ProjectFactory(creator=user)
+
+        node.set_privacy('public')
+        node.confirm_spam(save=True)
+        node.confirm_ham(save=True)
+
+        # register the project
+        one_month_from_now = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        embargo = EmbargoFactory(end_date=one_month_from_now, user=user)
+        registration = embargo.target_registration
+        registration.provider = provider
+        registration.update_moderation_state()
+        registration.save()
+
+        registration.confirm_spam(save=True)
+        registration.confirm_ham(save=True)
+
+        # approve the project
+        registration.require_approval(user=registration.creator)
+        registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
+
+        registration.sanction.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        # approve in moderation
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        registration.refresh_from_db()
+
+        assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
+        assert registration.is_public is False
+
+    def test_private_project_without_embargo_is_public_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+        user = AuthUserFactory()
+        user.is_staff = True
+        user.groups.add(Group.objects.get(name='osf_admin'))
+        user.save()
+        node = ProjectFactory(creator=user)
+
+        node.set_privacy('private')
+        node.confirm_spam(save=True)
+        node.confirm_ham(save=True)
+
+        # register the project
+        registration = RegistrationFactory(provider=provider, project=node, creator=user)
+
+        registration.confirm_spam(save=True)
+        registration.confirm_ham(save=True)
+
+        # approve the project
+        registration.require_approval(user=registration.creator)
+        registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        # approve in moderation
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        registration.refresh_from_db()
+
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert registration.is_public is True
+
+    def test_public_project_without_embargo_is_public_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
+        user = AuthUserFactory()
+        user.is_staff = True
+        user.groups.add(Group.objects.get(name='osf_admin'))
+        user.save()
+        node = ProjectFactory(creator=user)
+
+        node.set_privacy('public')
+        node.confirm_spam(save=True)
+        node.confirm_ham(save=True)
+
+        # register the project
+        registration = RegistrationFactory(provider=provider, project=node, creator=user)
+
+        registration.confirm_spam(save=True)
+        registration.confirm_ham(save=True)
+
+        # approve the project
+        registration.require_approval(user=registration.creator)
+        registration.registration_approval.accept()
+        registration.refresh_from_db()
+        assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
+
+        # approve in moderation
+        actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
+        actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
+
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        assert resp.status_code == 201
+        assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
+        registration.refresh_from_db()
+
+        assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        assert registration.is_public is True
