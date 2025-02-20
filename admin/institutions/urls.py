@@ -15,9 +15,4 @@ urlpatterns = [
     re_path(r'^(?P<institution_id>[0-9]+)/cannot_delete/$', views.CannotDeleteInstitution.as_view(), name='cannot_delete'),
     re_path(r'^(?P<institution_id>[0-9]+)/nodes/$', views.InstitutionNodeList.as_view(), name='nodes'),
     re_path(r'^(?P<institution_id>[0-9]+)/register/$', views.InstitutionalMetricsAdminRegister.as_view(), name='register_metrics_admin'),
-    re_path(r'^(?P<institution_id>[0-9]+)/list_and_add_admin_or_moderator/$', views.InstitutionListAndAddAdminOrModerator.as_view(),
-            name='list_and_add_admin_or_moderator'),
-    re_path(r'^(?P<institution_id>[0-9]+)/remove_admins_and_moderators/$', views.InstitutionRemoveAdminOrModerator.as_view(),
-            name='remove_admins_and_moderators'),
-
 ]
