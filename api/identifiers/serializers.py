@@ -58,29 +58,29 @@ class RegistrationIdentifierSerializer(JSONAPISerializer):
     def create(self, validated_data):
         node = self.context['view'].get_node()
         auth = get_user_auth(self.context['request'])
-        if validated_data.get('category', None) == 'doi':
-            if node.get_identifier('doi'):
-                raise exceptions.ValidationError('A DOI already exists for this resource.')
-            try:
-                identifiers = get_or_create_identifiers(node)
-            except HTTPError:
-                raise exceptions.ValidationError('Error response from client.')
-            except TypeError:
-                raise ServiceUnavailableError()
-            for category, value in identifiers.items():
-                node.set_identifier_value(category, value)
-            node.add_log(
-                NodeLog.EXTERNAL_IDS_ADDED,
-                params={
-                    'parent_node': node.parent_id,
-                    'node': node._id,
-                    'identifiers': identifiers,
-                },
-                auth=auth,
-            )
-            return node.identifiers.get(category='doi')
-        else:
-            raise exceptions.ValidationError('You can only mint a DOI, not a different type of identifier.')
+
+        if node.get_identifier('doi'):
+            raise exceptions.ValidationError('A DOI already exists for this resource.')
+        if node.get_identifier('ark'):
+            raise exceptions.ValidationError('A ARK already exists for this resource.')
+        try:
+            identifiers = get_or_create_identifiers(node)
+        except HTTPError:
+            raise exceptions.ValidationError('Error response from client.')
+        except TypeError:
+            raise ServiceUnavailableError()
+        for category, value in identifiers.items():
+            node.set_identifier_value(category, value)
+        node.add_log(
+            NodeLog.EXTERNAL_IDS_ADDED,
+            params={
+                'parent_node': node.parent_id,
+                'node': node._id,
+                'identifiers': identifiers,
+            },
+            auth=auth,
+        )
+        return node.identifiers.get(category='doi')
 
 
 class NodeIdentifierSerializer(RegistrationIdentifierSerializer):

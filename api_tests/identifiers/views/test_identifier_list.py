@@ -495,10 +495,16 @@ class TestNodeIdentifierCreate:
             )
         )
 
-        # Can only mint DOI's
         res = app.post_json_api(identifier_url, ark_payload, auth=user.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You can only mint a DOI, not a different type of identifier.'
+        assert res.status_code == 201
+        assert res.json['data']['attributes']['category'] == 'doi'
+        assert res.json['data']['attributes']['value'] == resource.get_identifier_value('doi')
+        assert res.json['data']['id'] == resource.identifiers.first()._id
+        assert res.json['data']['type'] == 'identifiers'
+        assert resource.logs.first().action == 'external_ids_added'
+        assert resource.identifiers.count() == 1
+
+        resource.identifiers.all().delete()
 
         res = app.post_json_api(identifier_url, identifier_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 201
