@@ -476,11 +476,9 @@ class GetUserConfirmationLink(GetUserLink):
 
 class GetPasswordResetLink(GetUserLink):
     def get_link(self, user):
-        if user.verification_key_v2:
-            ttl = user.verification_key_v2['expires'] - datetime.now(UTC)
-            if ttl < timedelta(minutes=10):
-                user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
-                user.save()
+        if not user.verification_key_v2 or (user.verification_key_v2['expires'] - datetime.now(UTC) < timedelta(minutes=10)):
+            user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
+            user.save()
 
         return furl(DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
