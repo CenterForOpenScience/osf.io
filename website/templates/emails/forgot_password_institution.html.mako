@@ -9,6 +9,8 @@
     <br>
     ${reset_link}<br>
     <br>
+    Note this link will expire in 10 minutes.<br>
+    <br>
     If you did not request to set a password for OSF or have issues logging in, contact support@osf.io.
     <br>
     <br>

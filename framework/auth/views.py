@@ -85,10 +85,6 @@ def _reset_password_get(auth, uid=None, token=None, institutional=False):
         }
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
-    # refresh the verification key (v2)
-    user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-    user_obj.save()
-
     # override routes.py login_url to redirect to dashboard
     service_url = web_url_for('dashboard', _absolute=True)
 
