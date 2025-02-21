@@ -619,6 +619,40 @@ class TestPreprintUpdate:
         preprint_detail = app.get(url, auth=user.auth).json['data']
         assert preprint_detail['links']['doi'] == 'https://doi.org/10.1234/test'
 
+    @responses.activate
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated', mock.Mock())
+    def test_update_article_doi_different_formats(self, app, user, preprint, url):
+        responses.add(
+            responses.Response(
+                responses.POST,
+                CROSSREF_URL,
+                content_type='text/html;charset=ISO-8859-1',
+                status=200,
+            ),
+        )
+        dois = [
+            ('10.1234/', False),
+            ('10.1234/test', False),
+            ('doi.org/10.1234/test', False),
+            ('https://10.1234/test', False),
+            ('https://doi.org/10.1234/', False),
+            ('https://doi.org/10.1234/test', False),
+            ('10.1234', True),
+            ('9.1234/test', True),
+            ('https://doi.org/9.1234/test', True),
+            ('https://doi.org/9.1234/', True),
+            ('https://9.1234/test', True),
+            ('doi.org/9.1234/test', True),
+            ('9.1234', True),
+        ]
+        for doi, expect_error in dois:
+            update_payload = build_preprint_update_payload(
+                preprint._id,
+                attributes={'doi': doi}
+            )
+            res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=expect_error)
+            assert res.status_code == 400 if expect_error else 200
+
     def test_title_has_a_512_char_limit(self, app, user, preprint, url):
         new_title = 'a' * 513
         update_title_payload = build_preprint_update_payload(

@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -41,7 +43,7 @@ from api.institutions.utils import update_institutions_if_user_associated
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
-from osf.exceptions import NodeStateError, PreprintStateError
+from osf.exceptions import NodeStateError, PreprintStateError, ValidationValueError
 from osf.models import (
     BaseFileNode,
     Preprint,
@@ -49,6 +51,7 @@ from osf.models import (
     Node,
     NodeLicense,
 )
+from osf.models.validators import validate_doi
 from osf.utils import permissions as osf_permissions
 
 
@@ -492,6 +495,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail=f'The `article_doi` "{doi}" is already associated with this'
                            f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
+
+            if article_doi:
+                try:
+                    validate_doi(article_doi)
+                except ValidationValueError:
+                    # try to strip redundant data and save it in the correct format
+                    matches = re.findall('10\\.\\S*\\/', article_doi)
+                    article_doi = matches[0] if matches else None
+                    if not article_doi:
+                        raise exceptions.ValidationError('The `article_doi` format is incorrect')
 
             preprint.article_doi = article_doi if article_doi else None
             save_preprint = True
