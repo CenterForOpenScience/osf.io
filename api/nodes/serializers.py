@@ -11,7 +11,7 @@ from api.base.serializers import (
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, BaseAPISerializer,
-    HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
+    HideIfWikiDisabled,
     ValuesListField, TargetField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
@@ -210,7 +210,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # list if it doesn't expose user data
     non_anonymized_fields = [
         'access_requests_enabled',
-        'analytics_key',
         'category',
         'children',
         'collection',
@@ -274,7 +273,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
-    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
     template_from = ser.CharField(
         required=False, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
