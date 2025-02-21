@@ -1,11 +1,7 @@
 from django.urls import NoReverseMatch
 from django.contrib import messages
 from django.shortcuts import redirect
-from django.views.generic import (
-    View,
-    ListView,
-    FormView,
-)
+from django.views.generic import FormView
 from django.urls import reverse_lazy
 from admin.base.forms import GuidForm
 from django.contrib.auth.mixins import PermissionRequiredMixin
