@@ -22,7 +22,7 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 
-from admin_tests.utilities import setup_view, setup_log_view
+from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
 from admin.preprints import views
 
@@ -330,6 +330,24 @@ class TestPreprintView:
         preprint.refresh_from_db()
         assert preprint.provider == provider_one
         assert subject_osf in preprint.subjects.all()
+
+    def test_preprint_spam_ham_workflow_if_preprint_is_public(self, preprint, superuser):
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        preprint = handle_post_view_request(request, views.PreprintConfirmSpamView(), preprint, preprint._id)
+        assert not preprint.is_public
+        preprint = handle_post_view_request(request, views.PreprintConfirmHamView(), preprint, preprint._id)
+        assert preprint.is_public
+
+    def test_preprint_spam_ham_workflow_if_preprint_is_private(self, preprint, superuser):
+        preprint.set_privacy('private')
+        preprint.refresh_from_db()
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        preprint = handle_post_view_request(request, views.PreprintConfirmSpamView(), preprint, preprint._id)
+        assert not preprint.is_public
+        preprint = handle_post_view_request(request, views.PreprintConfirmHamView(), preprint, preprint._id)
+        assert not preprint.is_public
 
 
 @pytest.mark.urls('admin.base.urls')
