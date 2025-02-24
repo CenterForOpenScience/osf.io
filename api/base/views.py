@@ -503,6 +503,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    DEFAULT_OPERATORS = ('eq', 'ne', 'exact')
 
     ordering = ('-user__modified',)
 
@@ -533,23 +534,35 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            if operation['op'] not in ['eq', 'exact']:
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq', 'exact'])
+
             # operation['value'] should be 'admin', 'write', or 'read'
             query_val = operation['value'].lower().strip()
             if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             # This endpoint should only be returning *contributors* not group members
             resource = self.get_resource()
-            if query_val == READ:
-                # If read, return all contributors
-                return Q(user_id__in=resource.contributors.values_list('id', flat=True))
-            elif query_val == WRITE:
-                # If write, return members of write and admin groups, both groups have write perms
-                return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
-            elif query_val == ADMIN:
-                # If admin, return only members of admin group
-                return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
+            if operation['op'] == 'eq':
+                if query_val == READ:
+                    # If read, return all contributors
+                    return Q(user_id__in=resource.contributors.values_list('id', flat=True))
+                elif query_val == WRITE:
+                    # If write, return members of write and admin groups, both groups have write perms
+                    return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
+                elif query_val == ADMIN:
+                    # If admin, return only members of admin group
+                    return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
+            elif operation['op'] == 'exact':
+                if query_val == READ:
+                    # If read, return only members of read group
+                    return Q(user_id__in=resource.get_group(READ).user_set.values_list('id', flat=True))
+                elif query_val == WRITE:
+                    # If write, return only members of write group
+                    return Q(user_id__in=resource.get_group(WRITE).user_set.values_list('id', flat=True))
+                elif query_val == ADMIN:
+                    # If admin, return only members of admin group
+                    return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
         return super().build_query_from_field(field_name, operation)
 
 
