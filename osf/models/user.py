@@ -1956,27 +1956,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return is_spam
 
-    def _get_addon_from_gv(self, gv_pk, requesting_user_id):
-        requesting_user = OSFUser.load(requesting_user_id)
-        if requesting_user and requesting_user != self:
-            raise ValueError('Cannot get user addons for a user other than self')
-
-        gv_account_data = gv_requests.get_account(
-            gv_account_pk=gv_pk,
-            requesting_user=self,
-        )
-        return gv_translations.make_ephemeral_node_settings(
-            gv_account_data=gv_account_data,
-            requesting_user=self,
-        )
-
-    def _get_addons_from_gv(self, requesting_user_id):
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
         requesting_user = OSFUser.load(requesting_user_id)
         if requesting_user and requesting_user != self:
             raise ValueError('Cannot get user addons for a user other than self')
 
         all_user_account_data = gv_requests.iterate_accounts_for_user(
             requesting_user=self,
+            addon_type=service_type,
         )
         for account_data in all_user_account_data:
             yield gv_translations.make_ephemeral_user_settings(
