@@ -73,7 +73,7 @@ class IdentifierMixin(models.Model):
         raise NotImplementedError()
 
     @property
-    def has_registration_doi(self):
+    def has_doi_identifier(self):
         return self.identifiers.filter(
             category='doi',
             deleted__isnull=True,
