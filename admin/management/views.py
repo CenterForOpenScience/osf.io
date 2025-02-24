@@ -2,14 +2,15 @@ from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
+from django.utils import timezone
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
-from admin.management.tasks import resync_crossref, resync_datacite
 from osf.management.commands.manage_switch_flags import manage_waffle
 from osf.management.commands.update_registration_schemas import update_registration_schemas
 from osf.management.commands.daily_reporters_go import daily_reporters_go
 from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
+from osf.management.commands.sync_doi_metadata import sync_doi_metadata
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -146,17 +147,13 @@ class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
         return redirect(reverse('management:commands'))
 
 
-class BulkResyncCrossRef(ManagementCommandPermissionView):
+class BulkResync(ManagementCommandPermissionView):
 
     def post(self, request):
-        resync_crossref.apply_async()
-        messages.success(request, 'Resyncing with CrossRef!')
-        return redirect(reverse('management:commands'))
-
-
-class BulkResyncDataCite(ManagementCommandPermissionView):
-
-    def post(self, request):
-        resync_datacite.apply_async()
-        messages.success(request, 'Resyncing with DataCite!')
+        sync_doi_metadata(
+            modified_date=timezone.now(),
+            batch_size=None,
+            dry_run=False
+        )
+        messages.success(request, 'Resyncing with CrossRef and DataCite! It will take some time.')
         return redirect(reverse('management:commands'))
