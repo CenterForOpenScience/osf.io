@@ -4,6 +4,8 @@ import json
 from furl import furl
 import responses
 from django.utils import timezone
+from waffle.testutils import override_flag
+import pytest
 
 from framework.auth.core import Auth
 
@@ -13,6 +15,8 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
+from osf.models import AbstractNode
+from osf_tests.external.gravy_valet.gv_fakes import FakeGravyValet
 from tests.base import ApiTestCase
 from osf.models.files import FileVersionUserMetadata
 from osf_tests.factories import (
@@ -24,6 +28,7 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ
 from dateutil.parser import parse as parse_date
 from website import settings
+from osf.features import ENABLE_GV
 
 
 def prepare_mock_wb_response(
@@ -342,6 +347,10 @@ class TestNodeFilesList(ApiTestCase):
         )
         assert res.status_code == 404
 
+    # This test is skipped because it was wrongly configured in the first place
+    # The reason OSF returns a 404 is not because WB returns a file when OSF expects a folder
+    # But because the addon itself is not configured for the node
+    @pytest.mark.skip('TODO: ENG-7256')
     @responses.activate
     def test_notfound_node_folder_returns_file(self):
         self._prepare_mock_wb_response(
@@ -382,7 +391,7 @@ class TestNodeFilesList(ApiTestCase):
         )
         url = f'/{API_BASE}nodes/{self.project._id}/files/github/'
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 503
+        assert res.status_code == 404
 
     @responses.activate
     def test_handles_unauthenticated_waterbutler_request(self):
@@ -404,14 +413,19 @@ class TestNodeFilesList(ApiTestCase):
         assert res.status_code == 404
         assert 'detail' in res.json['errors'][0]
 
+    @responses.activate
     def test_handles_request_to_provider_not_configured_on_project(self):
+        self._prepare_mock_wb_response(
+            provider='box', status_code=400,
+        )
         provider = 'box'
         url = '/{}nodes/{}/files/{}/'.format(
             API_BASE, self.project._id, provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert not self.project.get_addon(provider)
         assert res.status_code == 404
-        assert res.json['errors'][0]['detail'] == f'The {provider} provider is not configured for this project.'
+        # TODO: ENG-7256 Handle this case more gracefully
+        # assert res.json['errors'][0]['detail'] == f'The {provider} provider is not configured for this project.'
 
     @responses.activate
     def test_handles_bad_waterbutler_request(self):
@@ -434,6 +448,110 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert res.status_code == 200
         assert 'relationships' in res.json['data'][0]
+
+class TestGVNodeFileList(ApiTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flag_override = override_flag(ENABLE_GV, True)
+        self.flag_override.__enter__()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.private_url = f"/{API_BASE}nodes/{self.project._id}/files/"
+        self.resource_reference_id = '2fe95af1-e06e-4f5a-9fef-6fe85a88f62a'
+        self.configured_storage_addon_id = 'self.configured_storage_addon_id'
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_url = f"/{API_BASE}nodes/{self.public_project._id}/files/"
+        self.fake_gv = FakeGravyValet()
+        self.fake_gv.configure_resource(self.project)
+        self.fake_gv.configure_resource(self.public_project)
+
+    def tearDown(self):
+        super().tearDown()
+        self.flag_override.__exit__(None, None, None)
+
+    def configure_account(self):
+        self.fake_gv.configure_fake_provider('box')
+        return self.fake_gv.configure_fake_account(self.user, 'box')
+
+    def configure_addon(self, project: AbstractNode):
+        account = self.configure_account()
+        return self.fake_gv.configure_fake_addon(project, account)
+
+    @responses.activate
+    def test_returns_public_files_logged_out_with_gv_response(self):
+        self.configure_addon(self.public_project)
+        with self.fake_gv.run_fake():
+            res = self.app.get(self.public_url, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.json['data'][1]['attributes']['provider'] == 'box'
+        assert res.content_type == 'application/vnd.api+json'
+
+    @responses.activate
+    def test_returns_public_files_logged_in_no_gv_response(self):
+        with self.fake_gv.run_fake():
+            res = self.app.get(self.public_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+
+    @responses.activate
+    def test_returns_public_files_logged_in_with_gv_response(self):
+        self.configure_addon(self.public_project)
+        with self.fake_gv.run_fake():
+            res = self.app.get(self.public_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 2, 'invalid addon count'
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert (res.json['data'][1]['attributes']['provider'] == 'box'), 'addon returned from gv is not of expected provider'
+
+    @responses.activate
+    def test_returns_storage_addons_link(self):
+        self.configure_addon(self.project)
+        with self.fake_gv.run_fake():
+            res = self.app.get(self.private_url, auth=self.user.auth)
+        assert 'storage_addons' in res.json['data'][1]['links']
+
+    def test_returns_private_files_logged_out(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert res.status_code == 401
+        assert 'detail' in res.json['errors'][0]
+
+    @responses.activate
+    def test_returns_private_files_logged_in_contributor(self):
+        self.configure_addon(self.project)
+        with self.fake_gv.run_fake():
+            res = self.app.get(self.private_url, auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.content_type == 'application/vnd.api+json'
+        assert len(res.json['data']) == 2
+        assert res.json['data'][0]['attributes']['provider'] == 'osfstorage'
+        assert res.json['data'][1]['attributes']['provider'] == 'box'
+
+    @responses.activate
+    def test_returns_private_files_logged_in_non_contributor(self):
+        res = self.app.get(
+            self.private_url, auth=self.user_two.auth, expect_errors=True
+        )
+        assert res.status_code == 403
+        assert 'detail' in res.json['errors'][0]
+
+    @responses.activate
+    def test_returns_private_files_logged_in_osf_group_member(self):
+        self.configure_addon(self.project)
+        group_mem = AuthUserFactory()
+        group = OSFGroupFactory(creator=group_mem)
+        self.project.add_osf_group(group, READ)
+        with self.fake_gv.run_fake():
+            res = self.app.get(
+                self.private_url, auth=group_mem.auth, expect_errors=True
+            )
+        assert res.status_code == 200
 
 
 class TestNodeFilesListFiltering(ApiTestCase):

@@ -31,7 +31,7 @@ from website import settings as website_settings
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
-from addons.base.views import get_authenticated_resource
+from addons.base.views import _get_authenticated_resource
 from framework.exceptions import HTTPError
 
 # stolen from^W^Winspired by DRF
@@ -769,7 +769,7 @@ class TestFileVersionView:
         assert resource.is_retracted is True
 
         with pytest.raises(HTTPError) as excinfo:
-            get_authenticated_resource(resource._id)
+            _get_authenticated_resource(resource._id)
 
         assert excinfo.value.code == 410
 

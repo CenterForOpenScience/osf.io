@@ -1,5 +1,7 @@
 import requests
 import json
+
+from furl import furl
 from rest_framework import status as http_status
 
 import celery
@@ -10,6 +12,7 @@ from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
 
 from api.base.utils import waterbutler_api_url_for
+from api.waffle.utils import flag_is_active
 
 from website.archiver import (
     ARCHIVER_SUCCESS,
@@ -33,6 +36,9 @@ from osf.models import (
     AbstractNode,
     DraftRegistration,
 )
+from osf import features
+from osf.utils.requests import get_current_request
+from osf.external.gravy_valet import request_helpers, translations
 
 
 def create_app_context():
@@ -105,6 +111,19 @@ class ArchiverTask(celery.Task):
         dst.save()
         archiver_signals.archive_fail.send(dst, errors=errors)
 
+def get_addon_from_gv(src_node, addon_name, requesting_user):
+    addon_data = request_helpers.get_addon(
+        gv_addon_pk=f'{src_node._id}:{addon_name}',
+        requested_resource=src_node,
+        requesting_user=requesting_user,
+        addon_type='configured-storage-addons'
+    )
+    return translations.make_ephemeral_node_settings(
+        gv_addon_data=addon_data,
+        requested_resource=src_node,
+        requesting_user=requesting_user
+    )
+
 
 @celery_app.task(base=ArchiverTask, ignore_result=False)
 @logged('stat_addon')
@@ -125,7 +144,12 @@ def stat_addon(addon_short_name, job_pk):
     create_app_context()
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
-    src_addon = src.get_addon(addon_name)
+
+    src_addon = None
+    if addon_name != 'osfstorage' and flag_is_active(get_current_request(), features.ENABLE_GV):
+        src_addon = get_addon_from_gv(src, addon_name, user)
+    else:
+        src_addon = src.get_addon(addon_name)
     if hasattr(src_addon, 'configured') and not src_addon.configured:
         # Addon enabled but not configured - no file trees, nothing to archive.
         return AggregateStatResult(src_addon._id, addon_short_name)
@@ -161,7 +185,8 @@ def make_copy_request(job_pk, url, data):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info(f"Sending copy request for addon: {data['provider']} on node: {dst._id}")
-    res = requests.post(url, data=json.dumps(data))
+    cookie = furl(url).query.params.get('cookie')
+    res = requests.post(url, data=json.dumps(data), cookies={settings.COOKIE_NAME: cookie})
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
         raise HTTPError(res.status_code)
 
@@ -202,7 +227,11 @@ def archive_addon(addon_short_name, job_pk):
         params['revision'] = 'latest' if addon_short_name.split('-')[-1] == 'draft' else 'latest-published'
         rename_suffix = ' (draft)' if addon_short_name.split('-')[-1] == 'draft' else ' (published)'
         addon_short_name = 'dataverse'
-    src_provider = src.get_addon(addon_short_name)
+    src_provider = None
+    if addon_short_name != 'osfstorage' and flag_is_active(get_current_request(), features.ENABLE_GV):
+        src_provider = get_addon_from_gv(src, addon_short_name, user)
+    else:
+        src_provider = src.get_addon(addon_short_name)
     folder_name_nfd, folder_name_nfc = normalize_unicode_filenames(src_provider.archive_folder_name)
     rename = f'{folder_name_nfd}{rename_suffix}'
     url = waterbutler_api_url_for(src._id, addon_short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)

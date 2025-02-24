@@ -1,5 +1,4 @@
 import datetime
-from rest_framework import status as http_status
 import os
 import uuid
 import markupsafe
@@ -11,10 +10,12 @@ from flask import request
 from furl import furl
 import jwe
 import jwt
+from osf.external.gravy_valet.translations import EphemeralNodeSettings
 import waffle
 from django.db import transaction
 from django.contrib.contenttypes.models import ContentType
 from elasticsearch import exceptions as es_exceptions
+from rest_framework import status as http_status
 
 from api.caching.tasks import update_storage_usage_with_size
 
@@ -24,6 +25,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import enqueue_update_analytics
 
+from api.waffle.utils import flag_is_active
 from framework import sentry
 from framework.auth import Auth
 from framework.auth import cas
@@ -32,7 +34,7 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_s
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
-from framework.routing import json_renderer, proxy_url
+from framework.routing import proxy_url
 from framework.transactions.handlers import no_auto_transaction
 from website import mails
 from website import settings
@@ -45,7 +47,6 @@ from osf.models import (
     BaseFileVersionsThrough,
     OSFUser,
     AbstractNode,
-    DraftNode,
     Preprint,
     Node,
     NodeLog,
@@ -57,7 +58,7 @@ from osf.models import (
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
-from osf.utils.requests import requests_retry_session
+from osf.external.gravy_valet import request_helpers
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -118,6 +119,25 @@ This content has been removed."""}
 
 WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
+_READ_ACTIONS = frozenset([
+    'revisions',
+    'metadata',
+    'download',
+    'render',
+    'export',
+    'copyfrom',
+])
+_WRITE_ACTIONS = frozenset([
+    'create_folder',
+    'upload',
+    'delete',
+    'copy',
+    'move',
+    'copyto',
+    'moveto',
+    'movefrom',
+])
+
 
 @decorators.must_have_permission(permissions.WRITE)
 @decorators.must_not_be_registration
@@ -149,102 +169,10 @@ def get_addon_user_config(**kwargs):
     return addon.to_json(user)
 
 
-permission_map = {
-    'create_folder': permissions.WRITE,
-    'revisions': permissions.READ,
-    'metadata': permissions.READ,
-    'download': permissions.READ,
-    'render': permissions.READ,
-    'export': permissions.READ,
-    'upload': permissions.WRITE,
-    'delete': permissions.WRITE,
-    'copy': permissions.WRITE,
-    'move': permissions.WRITE,
-    'copyto': permissions.WRITE,
-    'moveto': permissions.WRITE,
-    'copyfrom': permissions.READ,
-    'movefrom': permissions.WRITE,
-}
-
-
-def get_permission_for_action(action):
-    """Retrieve the permission level required for a given action."""
-    permission = permission_map.get(action)
-    if not permission:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message='Invalid action specified.')
-    return permission
-
-
-def check_resource_permissions(resource, auth, action):
-    """Check if the user has the required permission on the resource."""
-
-    # Users attempting to register projects with components might not have
-    # `write` permissions for all components. This will result in a 403 for
-    # all `upload` actions as well as `copyfrom` actions if the component
-    # in question is not public. To get around this, we have to recursively
-    # check the node's parent node to determine if they have `write`
-    # permissions up the stack.
-    # TODO(hrybacki): is there a way to tell if this is for a registration?
-    # All nodes being registered that receive the `upload` action will have
-    # `node.is_registration` == True. However, we have no way of telling if
-    # `copyfrom` actions are originating from a node being registered.
-    # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
-
-    required_permission = get_permission_for_action(action)
-    if isinstance(resource, Registration):
-        return _check_registration_permissions(resource, auth, required_permission, action)
-    elif isinstance(resource, Node):
-        return _check_node_permissions(resource, auth, required_permission, action)
-    elif isinstance(resource, Preprint):
-        return _check_preprint_permissions(resource, auth, required_permission)
-    elif isinstance(resource, DraftNode):
-        draft_registration = resource.registered_draft.first()
-        return _check_draft_registration_permissions(draft_registration, auth, required_permission)
-    else:
-        raise NotImplementedError()
-
-
-def _check_registration_permissions(registration, auth, permission, action):
-    if permission == permissions.READ:
-        return registration.can_view(auth) or registration.registered_from.can_view(auth)
-    if action in ('copyfrom', 'upload'):
-        return _check_hierarchical_write_permissions(resource=registration, auth=auth)
-    return registration.can_edit(auth)
-
-
-def _check_node_permissions(node, auth, permission, action):
-    if permission == permissions.READ:
-        return node.can_view(auth)
-    if node.can_edit(auth):
-        return True
-    if action == 'copyfrom':
-        return _check_hierarchical_write_permissions(resource=node, auth=auth)
-
-
-def _check_preprint_permissions(preprint, auth, permission):
-    if permission == permissions.READ:
-        return preprint.can_view_files(auth)
-    return preprint.can_edit(auth)
-
-
-def _check_draft_registration_permissions(draft_registration, auth, permission):
-    if permission == permissions.READ:
-        return draft_registration.can_view(auth)
-    return draft_registration.can_edit(auth)
-
-
-def _check_hierarchical_write_permissions(resource, auth):
-    permissions_resource = resource
-    while permissions_resource:
-        if permissions_resource.can_edit(auth):
-            return True
-        permissions_resource = permissions_resource.parent_node
-    return False
-
 def _download_is_from_mfr(waterbutler_data):
-    metrics_data = waterbutler_data['metrics']
-    uri = metrics_data['uri']
-    is_render_uri = furl(uri or '').query.params.get('mode') == 'render'
+    metrics_data = waterbutler_data.get('metrics', {})
+    uri = metrics_data.get('uri', '')
+    is_render_uri = furl(uri).query.params.get('mode') == 'render'
     return (
         # This header is sent for download requests that
         # originate from MFR, e.g. for the code pygments renderer
@@ -255,6 +183,7 @@ def _download_is_from_mfr(waterbutler_data):
         is_render_uri
     )
 
+
 def make_auth(user):
     if user is not None:
         return {
@@ -263,100 +192,6 @@ def make_auth(user):
             'name': user.fullname,
         }
     return {}
-
-def authenticate_via_oauth_bearer_token(resource, action):
-    authorization = request.headers.get('Authorization')
-    client = cas.get_client()
-
-    try:
-        access_token = cas.parse_auth_header(authorization)
-        cas_resp = client.profile(access_token)
-    except cas.CasError as err:
-        sentry.log_exception(err)
-        return json_renderer(err)  # Assuming json_renderer wraps the error in a Response
-
-    permission = get_permission_for_action(action)
-    if permission == permissions.READ:
-        if resource.can_view_files():
-            return OSFUser.load(cas_resp.user)
-        required_scope = resource.file_read_scope
-    else:
-        required_scope = resource.file_write_scope
-
-    token = cas_resp.attributes.get('accessTokenScope')
-    if not token or not cas_resp.authenticated:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    normalize_scopes = oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope'])
-    if required_scope not in normalize_scopes:
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-    return OSFUser.load(cas_resp.user)
-
-
-def decrypt_and_decode_jwt_payload():
-    try:
-        payload_encrypted = request.args.get('payload', '').encode('utf-8')
-        payload_decrypted = jwe.decrypt(payload_encrypted, WATERBUTLER_JWE_KEY)
-        return jwt.decode(
-            payload_decrypted,
-            settings.WATERBUTLER_JWT_SECRET,
-            options={'require': ['exp']},
-            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM],
-        )['data']
-    except (jwt.InvalidTokenError, KeyError) as err:
-        sentry.log_message(str(err))
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
-
-
-def get_authenticated_resource(resource_id):
-    resource, _ = Guid.load_referent(resource_id)
-
-    if not resource:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
-
-    if resource.deleted:
-        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
-
-    if getattr(resource, 'is_retracted', False):
-        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been retracted.')
-
-    return resource
-
-
-def _get_osfstorage_file_version(file_node: OsfStorageFileNode, version_string: str = None) -> FileVersion:
-    if not (file_node and file_node.is_file):
-        return None
-
-    try:
-        return FileVersion.objects.select_related('region').get(
-            basefilenode=file_node,
-            identifier=version_string or str(file_node.versions.count())
-        )
-    except FileVersion.DoesNotExist:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
-
-
-def _get_osfstorage_file_node(file_path: str) -> OsfStorageFileNode:
-    if not file_path:
-        return None
-
-    file_id = file_path.strip('/')
-    return OsfStorageFileNode.load(file_id)
-
-
-def authenticate_user_if_needed(auth, waterbutler_data, resource):
-    if auth.user:
-        return  # User is already authenticated
-
-    if 'cookie' in waterbutler_data:
-        auth.user = OSFUser.from_cookie(waterbutler_data.get('cookie'))
-        if not auth.user:
-            raise HTTPError(http_status.HTTP_401_UNAUTHORIZED, 'Invalid user cookie.')
-
-    authorization = request.headers.get('Authorization')
-    if authorization and authorization.startswith('Bearer '):
-        auth.user = authenticate_via_oauth_bearer_token(resource, waterbutler_data['action'])
 
 
 @collect_auth
@@ -386,84 +221,212 @@ def get_auth(auth, **kwargs):
         HTTPError: If authentication fails, the node does not exist, the action is not allowed, or
                    any required data for authentication is missing from the request.
     """
+    waterbutler_data = _decrypt_and_decode_jwt_payload()
+    resource = _get_authenticated_resource(waterbutler_data['nid'])
 
-    # Decrypt and decode the JWT payload from the request
-    waterbutler_data = decrypt_and_decode_jwt_payload()
-
-    # Authenticate the resource based on the node_id and handle potential draft nodes
-    resource = get_authenticated_resource(waterbutler_data.get('nid'))
-    # Authenticate the user using cookie or Oauth if possible
-    authenticate_user_if_needed(auth, waterbutler_data, resource)
-
-    # Verify the user has permission to perform the requested action on the node
     action = waterbutler_data['action']
-    if not check_resource_permissions(resource, auth, action):
-        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    _check_resource_permissions(resource, auth, action)
 
-    # Validate provider, exclude Preprints that don't have `get_addon`.
-    if not isinstance(resource, Preprint):
-        provider = resource.get_addon(waterbutler_data['provider'])
-        if not provider:
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    provider_name = waterbutler_data['provider']
+    waterbutler_settings = None
+    waterbutler_credentials = None
+    file_version = file_node = None
+    if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
+        file_version, file_node = _get_osfstorage_file_version_and_node(
+            file_path=waterbutler_data.get('path'), file_version_id=waterbutler_data.get('version')
+        )
+        waterbutler_settings, waterbutler_credentials = _get_waterbutler_configs(
+            resource=resource, provider_name=provider_name, file_version=file_version,
+        )
     else:
-        provider = None
+        result = request_helpers.get_waterbutler_config(
+            gv_addon_pk=f'{waterbutler_data['nid']}:{waterbutler_data['provider']}',
+            requested_resource=resource,
+            requesting_user=auth.user,
+            addon_type='configured-storage-addons',
+        )
+        waterbutler_settings = result.get_attribute('config')
+        waterbutler_credentials = result.get_attribute('credentials')
 
-    # Get the file version from Waterbutler data, which is used for file-specific actions
-    file_node = None
-    fileversion = None
-
-    if waterbutler_data['provider'] == 'osfstorage':
-        file_node = _get_osfstorage_file_node(waterbutler_data.get('path'))
-        fileversion = _get_osfstorage_file_version(file_node, waterbutler_data.get('version'))
-
-    # Fetch Waterbutler credentials and settings for the resource
-    credentials, waterbutler_settings = get_waterbutler_data(
-        resource,
-        waterbutler_data,
-        fileversion,
-        provider
+    _enqueue_metrics(
+        file_version=file_version,
+        file_node=file_node,
+        action=action,
+        auth=auth,
+        from_mfr=_download_is_from_mfr(waterbutler_data),
     )
-
-    if fileversion:
-        # Trigger any file-specific signals based on the action taken (e.g., file viewed, downloaded)
-        if action == 'render':
-            file_signals.file_viewed.send(auth=auth, fileversion=fileversion, file_node=file_node)
-        elif action == 'download' and not _download_is_from_mfr(waterbutler_data):
-            file_signals.file_downloaded.send(auth=auth, fileversion=fileversion, file_node=file_node)
 
     # Construct the response payload including the JWT
-    return construct_payload(
-        auth,
-        resource,
-        credentials,
-        waterbutler_settings
+    return _construct_payload(
+        auth=auth,
+        resource=resource,
+        credentials=waterbutler_credentials,
+        waterbutler_settings=waterbutler_settings
     )
 
 
-def get_waterbutler_data(resource, waterbutler_data, fileversion, provider):
-    provider_name = waterbutler_data.get('provider')
-    if isinstance(resource, Preprint):
-        credentials = resource.serialize_waterbutler_credentials()
-        waterbutler_settings = resource.serialize_waterbutler_settings()
-    elif fileversion:
-        credentials = fileversion.region.waterbutler_credentials
-        waterbutler_settings = fileversion.serialize_waterbutler_settings(
-            node_id=provider.owner._id,
-            root_id=provider.root_node._id,
-        )
-    elif waffle.flag_is_active(request, features.ENABLE_GV):
-        data = requests_retry_session(
-            f'{settings.DOMAIN}/v1/configured_storage_addon/{provider_name}/waterbutler-config'
-        )
-        credentials, waterbutler_settings = data['data']
+def _decrypt_and_decode_jwt_payload():
+    try:
+        payload_encrypted = request.args.get('payload', '').encode('utf-8')
+        payload_decrypted = jwe.decrypt(payload_encrypted, WATERBUTLER_JWE_KEY)
+        return jwt.decode(
+            payload_decrypted,
+            settings.WATERBUTLER_JWT_SECRET,
+            options={'require_exp': True},
+            algorithms=[settings.WATERBUTLER_JWT_ALGORITHM]
+        )['data']
+    except (jwt.InvalidTokenError, KeyError) as err:
+        sentry.log_message(str(err))
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+
+def _get_authenticated_resource(resource_id):
+    resource, _ = Guid.load_referent(resource_id)
+
+    if not resource:
+        raise HTTPError(http_status.HTTP_404_NOT_FOUND, message='Resource not found.')
+
+    if resource.deleted:
+        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been deleted.')
+
+    if getattr(resource, 'is_retracted', False):
+        raise HTTPError(http_status.HTTP_410_GONE, message='Resource has been retracted.')
+
+    return resource
+
+
+def _check_resource_permissions(resource, auth, action):
+    """Check if the user has the required permission on the resource."""
+    required_permission = _get_permission_for_action(action)
+    _confirm_token_scope(resource, required_permission)
+    if required_permission == permissions.READ:
+        has_resource_permissions = resource.can_view_files(auth=auth)
     else:
-        credentials = resource.serialize_waterbutler_credentials(provider.short_name)
-        waterbutler_settings = resource.serialize_waterbutler_settings(provider.short_name)
+        has_resource_permissions = resource.can_edit(auth=auth)
 
-    return credentials, waterbutler_settings
+    if not (has_resource_permissions or _check_hierarchical_permissions(resource, auth, action)):
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+    return True
 
 
-def construct_payload(auth, resource, credentials, waterbutler_settings):
+def _get_permission_for_action(action):
+    if action in _READ_ACTIONS:
+        return permissions.READ
+    if action in _WRITE_ACTIONS:
+        return permissions.WRITE
+    raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message='Invalid action specified.')
+
+
+def _confirm_token_scope(resource, required_permission):
+    auth_header = request.headers.get('Authorization')
+    if not (auth_header and auth_header.startswith('Bearer ')):
+        return  # No token, no scope conflict
+
+    if required_permission == permissions.READ:
+        if resource.can_view_files(auth=None):
+            return  # Always allow read actions for public files/valid VOL
+        required_scope = resource.file_read_scope
+    else:
+        required_scope = resource.file_write_scope
+
+    if required_scope not in _get_token_scopes_from_cas(auth_header):
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN, 'Provided token has insufficient scope for this action'
+        )
+
+
+def _get_token_scopes_from_cas(auth_header):
+    client = cas.get_client()
+    try:
+        access_token = cas.parse_auth_header(auth_header)
+        cas_resp = client.profile(access_token)
+    except cas.CasError as e:
+        sentry.log_exception(e)
+        raise HTTPError(http_status.HTTP_403_FORBIDDEN)
+
+    if not cas_resp.authenticated:
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN, 'Failed to authenticate via provided Bearer Token'
+        )
+
+    return oauth_scopes.normalize_scopes(cas_resp.attributes.get('accessTokenScope', []))
+
+
+def _check_hierarchical_permissions(resource, auth, action):
+    # Users attempting to register projects with components might not have
+    # `write` permissions for all components. This will result in a 403 for
+    # all `upload` actions as well as `copyfrom` actions if the component
+    # in question is not public. To get around this, we have to recursively
+    # check the node's parent node to determine if they have `write`
+    # permissions up the stack.
+    if not isinstance(resource, AbstractNode):
+        return False
+
+    supported_actions = ['copyfrom']
+    if isinstance(resource, Registration):
+        supported_actions.append('upload')
+
+    if action not in supported_actions:
+        return False
+
+    permissions_resource = resource.parent_node
+    while permissions_resource:
+        # Keeping legacy behavior of checking `can_edit` even though `copyfrom` is a READ action
+        if permissions_resource.can_edit(auth=auth):
+            return True
+        permissions_resource = permissions_resource.parent_node
+
+    return False
+
+def _get_waterbutler_configs(resource, provider_name, file_version):
+    try:
+        addon_settings = resource.serialize_waterbutler_settings(provider_name)
+    except AttributeError:  # No addon configured on resource for provider
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested Provider unavailable')
+    if file_version:
+        # Override credentials and settings with values for correct storage region
+        addon_credentials = file_version.region.waterbutler_credentials
+        addon_settings.update(file_version.region.waterbutler_settings)
+    else:
+        addon_credentials = resource.serialize_waterbutler_credentials(provider_name)
+
+    return addon_settings, addon_credentials
+
+
+def _get_osfstorage_file_version_and_node(
+    file_path: str,
+    file_version_id: str = None
+):  # -> tuple[FileVersion, OsfStorageFileNode]
+    if not file_path:
+        return None, None
+
+    file_node = OsfStorageFileNode.load(file_path.strip('/'))
+    if not (file_node and file_node.is_file):
+        return None, None
+
+    try:
+        file_version = FileVersion.objects.select_related('region').get(
+            basefilenode=file_node,
+            identifier=file_version_id or str(file_node.versions.count())
+        )
+    except FileVersion.DoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, 'Requested File Version unavailable')
+
+    return file_version, file_node
+
+
+def _enqueue_metrics(file_version, file_node, action, auth, from_mfr=False):
+    if not file_version:
+        return
+
+    if action == 'render':
+        file_signals.file_viewed.send(auth=auth, fileversion=file_version, file_node=file_node)
+    elif action == 'download' and not from_mfr:
+        file_signals.file_downloaded.send(auth=auth, fileversion=file_version, file_node=file_node)
+    return
+
+
+def _construct_payload(auth, resource, credentials, waterbutler_settings):
 
     if isinstance(resource, Registration):
         callback_url = resource.api_url_for(
@@ -900,10 +863,15 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if hasattr(target, 'get_addon'):
-
         node_addon = target.get_addon(provider)
-
-        if not isinstance(node_addon, BaseStorageAddon):
+        if flag_is_active(request, features.ENABLE_GV):
+            if not isinstance(node_addon, EphemeralNodeSettings) and provider != 'osfstorage':
+                object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
+                    'message_short': 'Bad Request',
+                    'message_long': f'The {provider_safe} add-on containing {path_safe} is no longer connected to {object_text}.'
+                })
+        elif not isinstance(node_addon, BaseStorageAddon):
             object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
                 'message_short': 'Bad Request',
@@ -960,10 +928,10 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     # There's no download action redirect to the Ember front-end file view and create guid.
     if action != 'download':
-        if isinstance(target, Node) and waffle.flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
+        if isinstance(target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
-        if isinstance(target, Registration) and waffle.flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
+        if isinstance(target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             guid = file_node.get_guid(create=True)
             return redirect(f'{settings.DOMAIN}{guid._id}/')
 

@@ -37,9 +37,6 @@ def get_file_object(target, path, provider, request):
             obj = get_object_or_error(model, Q(target_object_id=target.pk, target_content_type=content_type, _id=path.strip('/')), request)
         return obj
 
-    if isinstance(target, AbstractNode) and not target.get_addon(provider) or not target.get_addon(provider).configured:
-        raise NotFound(f'The {provider} provider is not configured for this project.')
-
     view_only = request.query_params.get('view_only', default=None)
     base_url = None
     if hasattr(target, 'osfstorage_region'):
@@ -58,7 +55,7 @@ def get_file_object(target, path, provider, request):
     if waterbutler_request.status_code == 401:
         raise PermissionDenied
 
-    if waterbutler_request.status_code == 404:
+    if waterbutler_request.status_code == 404 or waterbutler_request.status_code == 400:
         raise NotFound
 
     if is_server_error(waterbutler_request.status_code):

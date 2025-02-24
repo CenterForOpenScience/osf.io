@@ -1,10 +1,10 @@
 from django.db import models
-import waffle
 from jsonschema import validate, ValidationError as JsonSchemaValidationError, SchemaError, Draft7Validator
 from website.util import api_v2_url
 
 from .base import BaseModel, ObjectIDMixin
 from .validators import RegistrationResponsesValidator
+from api.waffle.utils import flag_is_active
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.exceptions import ValidationValueError, ValidationError
 
@@ -34,7 +34,7 @@ def allow_egap_admins(queryset, request):
     Allows egap admins to see EGAP registrations as visible, should be deleted when when the EGAP registry goes
     live.
     """
-    if hasattr(request, 'user') and not waffle.flag_is_active(request, EGAP_ADMINS):
+    if hasattr(request, 'user') and not flag_is_active(request, EGAP_ADMINS):
         return queryset.exclude(name='EGAP Registration')
     return queryset
 

@@ -231,6 +231,19 @@ $(document).ready(function () {
         var urlFilesGrid = nodeApiUrl + 'files/grid/';
         var promise = m.request({ method: 'GET', config: $osf.setXHRAuthorization, url: urlFilesGrid});
         promise.then(function (data) {
+            var newComponentElem = document.getElementById('newComponent');
+            if (window.contextVars.node.isPublic) {
+                m.mount(
+                    document.getElementById('shareButtonsPopover'),
+                    m.component(
+                        SocialShare.ShareButtonsPopover,
+                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
+                    )
+                );
+            }
+            if (newComponentElem) {
+                m.mount(newComponentElem, AddComponentButton);
+            }
             var fangornOpts = {
                 divID: 'treeGrid',
                 filesData: data.data,
@@ -293,20 +306,6 @@ $(document).ready(function () {
                 }
             };
             var filebrowser = new Fangorn(fangornOpts);
-            var newComponentElem = document.getElementById('newComponent');
-            if (window.contextVars.node.isPublic) {
-                m.mount(
-                    document.getElementById('shareButtonsPopover'),
-                    m.component(
-                        SocialShare.ShareButtonsPopover,
-                        {title: window.contextVars.node.title, url: window.location.href, type: 'link'}
-                    )
-                );
-            }
-            if (newComponentElem) {
-                m.mount(newComponentElem, AddComponentButton);
-            }
-
             window.contextVars.node.activeAddons = data.data[0].activeAddons;
             return promise;
         }, function(xhr, textStatus, error) {

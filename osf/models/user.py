@@ -34,6 +34,10 @@ from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
                                        MergeConflictError)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
+from osf.external.gravy_valet import (
+    request_helpers as gv_requests,
+    translations as gv_translations,
+)
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
@@ -1951,6 +1955,21 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.save()
 
         return is_spam
+
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
+        requesting_user = OSFUser.load(requesting_user_id)
+        if requesting_user and requesting_user != self:
+            raise ValueError('Cannot get user addons for a user other than self')
+
+        all_user_account_data = gv_requests.iterate_accounts_for_user(
+            requesting_user=self,
+            addon_type=service_type,
+        )
+        for account_data in all_user_account_data:
+            yield gv_translations.make_ephemeral_user_settings(
+                gv_account_data=account_data,
+                requesting_user=self,
+            )
 
     def _validate_admin_status_for_gdpr_delete(self, resource):
         """
