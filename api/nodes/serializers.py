@@ -1173,6 +1173,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<node._id>'},
     )
 
+    is_curator = ser.BooleanField(read_only=True)
+
     class Meta:
         type_ = 'contributors'
 
