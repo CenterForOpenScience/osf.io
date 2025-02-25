@@ -2880,45 +2880,6 @@ class TestNodeContributorFiltering:
         user_three = AuthUserFactory()
         project.add_contributor(user_two, permissions.WRITE)
         project.add_contributor(user_three, permissions.READ, visible=False)
-        #   test_filtering_permission_field_admin
-        filter_url = f'{url}?filter[permission]=admin'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
-
-        #   test_filtering_permission_field_write
-        filter_url = f'{url}?filter[permission]=write'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 2
-
-        #   test_filtering_permission_field_read
-        filter_url = f'{url}?filter[permission]=read'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 3
-
-        # test filtering permission exact admin
-        filter_url = f'{url}?filter[permission][exact]=admin'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
-
-        # test filtering permission exact write
-        filter_url = f'{url}?filter[permission][exact]=write'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == permissions.WRITE
-
-        # test filtering permission exact read
-        filter_url = f'{url}?filter[permission][exact]=read'
-        res = app.get(filter_url, auth=user.auth, expect_errors=True)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes'].get('permission') == permissions.READ
 
         #   test_filtering_node_with_only_bibliographic_contributors
         # no filter
@@ -2971,3 +2932,64 @@ class TestNodeContributorFiltering:
         res = app.get(filter_url, auth=user.auth)
         assert len(res.json['data']) == 1
         assert not res.json['data'][0]['attributes'].get('bibliographic', None)
+
+    def test_filtering_permission_field_admin(self, app, user, project, url):
+
+        user_two = AuthUserFactory()
+        user_three = AuthUserFactory()
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
+
+        # test_filtering_permission_field_admin
+        filter_url = f'{url}?filter[permission]=admin'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
+
+        # test filtering permission exact admin
+        filter_url = f'{url}?filter[permission][exact]=admin'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.ADMIN
+
+    def test_filtering_permission_field_write(self, app, user, project, url):
+
+        user_two = AuthUserFactory()
+        user_three = AuthUserFactory()
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
+
+        # test_filtering_permission_field_write
+        filter_url = f'{url}?filter[permission]=write'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+
+        # test filtering permission exact write
+        filter_url = f'{url}?filter[permission][exact]=write'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.WRITE
+
+    def test_filtering_permission_field_read(self, app, user, project, url):
+
+        user_two = AuthUserFactory()
+        user_three = AuthUserFactory()
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
+
+        # test_filtering_permission_field_read
+        filter_url = f'{url}?filter[permission]=read'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 3
+
+        # test filtering permission exact read
+        filter_url = f'{url}?filter[permission][exact]=read'
+        res = app.get(filter_url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['attributes'].get('permission') == permissions.READ

@@ -549,7 +549,9 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
                     return Q(user_id__in=resource.contributors.values_list('id', flat=True))
                 elif query_val == WRITE:
                     # If write, return members of write and admin groups, both groups have write perms
-                    return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
+                    write_ids = resource.get_group(WRITE).user_set.values_list('id', flat=True)
+                    admin_ids = resource.get_group(ADMIN).user_set.values_list('id', flat=True)
+                    return Q(user_id__in=(write_ids | admin_ids))
                 elif query_val == ADMIN:
                     # If admin, return only members of admin group
                     return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
