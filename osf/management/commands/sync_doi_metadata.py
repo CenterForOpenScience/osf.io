@@ -12,7 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 @app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=60 * 5)
-def sync_identifier_doi(identifier_id):
+def sync_identifier_doi(identifier_id, delay=0):
+    time.sleep(delay)
+
     identifier = Identifier.objects.get(id=identifier_id)
     identifier.referent.request_identifier_update('doi')
     identifier.save()
@@ -34,19 +36,20 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                 f'{identifiers.count()} identifiers to mint')
 
-    synced_dois = 0
-    for identifier in identifiers:
+    delay = 0
+    for record_number, identifier in enumerate(identifiers, 1):
         if dry_run:
             logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
                         f' doi minting for {identifier.value} started')
             continue
 
-        if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
-            sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
+        # in order to not reach rate limits that CrossRef and DataCite have, we increase delay after each
+        # rate_limit records by 5 minutes
+        if not record_number % rate_limit:
+            delay += 60 * 5
 
-        synced_dois += 1
-        if not synced_dois % rate_limit:
-            time.sleep(60 * 5)
+        if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
+            sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id, 'delay': delay})
 
 
 class Command(BaseCommand):
