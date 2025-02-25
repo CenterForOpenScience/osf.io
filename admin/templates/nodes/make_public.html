@@ -1,7 +1,14 @@
 {% if not node.is_public and perms.osf.change_node %}
+    {% if node.is_registration and node.is_embargoed %}
+    <a data-toggle="modal" class="btn btn-warning disabled">
+        Make Public
+    </a>
+    {% else %}
     <a data-toggle="modal" data-target="#confirmMakePrivate" class="btn btn-warning">
         Make Public
     </a>
+    {% endif %}
+
     <div class="modal" id="confirmMakePrivate">
         <div class="modal-dialog">
             <div class="modal-content">
