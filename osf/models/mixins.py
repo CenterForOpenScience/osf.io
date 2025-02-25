@@ -52,7 +52,7 @@ from osf.utils.workflows import (
     ReviewTriggers,
 )
 
-from osf.utils.requests import get_request_and_user_id
+from osf.utils.requests import get_request_and_user_id, get_current_request
 from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license
@@ -490,6 +490,23 @@ class AddonModelMixin(models.Model):
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
             return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type))
+
+        return [_f for _f in [
+            self.get_addon(config.short_name)
+            for config in self.ADDONS_AVAILABLE
+        ] if _f]
+
+    def get_addons_for_self(self):
+        """
+        This refers to the model self, not the user making the request.
+        """
+        request = get_current_request()
+        if flag_is_active(request, features.ENABLE_GV):
+            osf_addons = filter(
+                lambda x: x is not None,
+                (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
+            )
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=self._id))
 
         return [_f for _f in [
             self.get_addon(config.short_name)

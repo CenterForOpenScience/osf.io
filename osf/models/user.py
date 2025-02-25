@@ -720,7 +720,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
-        return all(addon.can_be_merged for addon in self.get_addons())
+        return all(addon.can_be_merged for addon in self.get_addons_for_self())
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
