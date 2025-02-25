@@ -114,6 +114,10 @@ class EphemeralUserSettings:
     def can_be_merged(self):
         return True
 
+    @property
+    def public_id(self):
+        return None
+
 @dataclasses.dataclass
 class EphemeralNodeSettings:
     """Minimalist dataclass for storing/translating the actually used properties of NodeSettings."""
