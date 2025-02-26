@@ -433,6 +433,30 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         registration.refresh_from_db()
         assert registration.is_deleted is False
 
+    def test_embargo_completion_with_failed_privacy_change(self):
+        # Create a registration with an embargo
+        user = AuthUserFactory()
+        node = NodeFactory(creator=user)
+        registration = RegistrationFactory(creator=user, project=node)
+        
+        # Set up embargo with end date in the past
+        embargo_end_date = timezone.now() + datetime.timedelta(days=5)
+        registration.embargo_registration(user, embargo_end_date)
+        registration.embargo.end_date = timezone.now() - datetime.timedelta(days=1)
+        registration.embargo.state = Embargo.APPROVED
+        registration.embargo.save()
+        
+        # Run the embargo termination script with a failing set_privacy
+        with mock.patch('osf.models.AbstractNode.set_privacy', side_effect=Exception('DB Error')):
+            from scripts.embargo_registrations import main
+            main(dry_run=False)
+        
+        # Verify the state - embargo completed but registration still private
+        registration.refresh_from_db()
+        registration.embargo.refresh_from_db()
+        assert registration.embargo.state == Embargo.APPROVED
+        assert registration.is_public
+
 
 @pytest.mark.enable_bookmark_creation
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):

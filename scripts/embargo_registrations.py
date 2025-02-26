@@ -107,7 +107,10 @@ def should_be_embargoed(embargo):
 def run_main(dry_run=True):
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
-    main(dry_run=dry_run)
+    with transaction.atomic():
+        main(dry_run=dry_run)
+        if dry_run:
+            raise RuntimeError('Dry run, rolling back transaction')
 
 if __name__ == '__main__':
     main(False)
