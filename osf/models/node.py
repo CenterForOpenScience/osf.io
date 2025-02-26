@@ -2482,18 +2482,25 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         try:
             gv_addons = request.gv_addons
         except AttributeError:
-            request.gv_addons = self._get_addons_from_gv(requesting_user_id)
-            gv_addons = request.gv_addons
+            requesting_user = OSFUser.load(requesting_user_id)
+            services = gv_translations.get_external_services(requesting_user)
+            for service in services:
+                if service.short_name == gv_pk:
+                    break
+            else:
+                return None
+            gv_addons = request.gv_addons = self._get_addons_from_gv(requesting_user_id, service.type)
 
         for item in gv_addons:
             if item.short_name == gv_pk:
                 return item
 
-    def _get_addons_from_gv(self, requesting_user_id):
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
         requesting_user = OSFUser.load(requesting_user_id)
         all_node_addon_data = gv_requests.iterate_addons_for_resource(
             requested_resource=self,
-            requesting_user=requesting_user
+            requesting_user=requesting_user,
+            addon_type=service_type
         )
         return [
             gv_translations.make_ephemeral_node_settings(

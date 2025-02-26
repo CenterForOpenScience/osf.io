@@ -58,6 +58,7 @@ from osf.models import (
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
+from osf.external.gravy_valet import request_helpers
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -227,15 +228,25 @@ def get_auth(auth, **kwargs):
     _check_resource_permissions(resource, auth, action)
 
     provider_name = waterbutler_data['provider']
+    waterbutler_settings = None
+    waterbutler_credentials = None
     file_version = file_node = None
-    if provider_name == 'osfstorage':
+    if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
         file_version, file_node = _get_osfstorage_file_version_and_node(
             file_path=waterbutler_data.get('path'), file_version_id=waterbutler_data.get('version')
         )
-
-    waterbutler_settings, waterbutler_credentials = _get_waterbutler_configs(
-        resource=resource, provider_name=provider_name, file_version=file_version,
-    )
+        waterbutler_settings, waterbutler_credentials = _get_waterbutler_configs(
+            resource=resource, provider_name=provider_name, file_version=file_version,
+        )
+    else:
+        result = request_helpers.get_waterbutler_config(
+            gv_addon_pk=f'{waterbutler_data['nid']}:{waterbutler_data['provider']}',
+            requested_resource=resource,
+            requesting_user=auth.user,
+            addon_type='configured-storage-addons',
+        )
+        waterbutler_settings = result.get_attribute('config')
+        waterbutler_credentials = result.get_attribute('credentials')
 
     _enqueue_metrics(
         file_version=file_version,

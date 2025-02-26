@@ -1,7 +1,9 @@
 import dataclasses
-import enum
 from dataclasses import asdict, InitVar
 from typing import TYPE_CHECKING
+
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
 
 import markupsafe
 
@@ -10,10 +12,6 @@ from . import request_helpers as gv_requests
 if TYPE_CHECKING:
     from osf.models import OSFUser, Node
 
-class AddonType(enum.StrEnum):
-    STORAGE = enum.auto()
-    CITATION = enum.auto()
-    COMPUTING = enum.auto()
 
 def make_ephemeral_user_settings(gv_account_data, requesting_user):
     include_path = f'external_{gv_account_data.resource_type.split('-')[1]}_service'
@@ -40,6 +38,20 @@ def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, 
         wb_key=config.wb_key,
     )
 
+_services = None
+
+def get_external_services(requesting_user):
+    global _services
+    if _services:
+        return _services
+    _services = []
+    for addon_type in gv_requests.AddonType:
+        srv = [EphemeralAddonConfig(service) for service in gv_requests.iterate_gv_results(
+            endpoint_url=gv_requests.ACCOUNT_EXTERNAL_SERVICE_ENDPOINT.format(addon_type=addon_type),
+            requesting_user=requesting_user,
+        )]
+        _services += srv
+    return _services
 
 @dataclasses.dataclass
 class EphemeralAddonConfig:
@@ -53,6 +65,7 @@ class EphemeralAddonConfig:
     has_widget: bool = dataclasses.field(init=False, default=False)
     icon_url: str = dataclasses.field(init=False)
     wb_key: str = dataclasses.field(init=False)
+    type: str = dataclasses.field(init=False)
 
     @property
     def added_default(self):
@@ -65,6 +78,7 @@ class EphemeralAddonConfig:
         self.has_widget = gv_data.resource_type == 'external-citation-services'
         self.icon_url = gv_data.get_attribute('icon_url')
         self.wb_key = gv_data.get_attribute('wb_key')
+        self.type = gv_data.resource_type.split('-')[1]
 
     def to_json(self):
         return asdict(self)
@@ -103,6 +117,10 @@ class EphemeralUserSettings:
     @property
     def can_be_merged(self):
         return True
+
+    @property
+    def public_id(self):
+        return None
 
 @dataclasses.dataclass
 class EphemeralNodeSettings:
@@ -245,8 +263,17 @@ class EphemeralNodeSettings:
             addon_type=self.gv_data.resource_type
         )
 
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        try:
+            return super()._get_fileobj_child_metadata(filenode, user, cookie=cookie, version=version)
+        except HTTPError as e:
+            # The Dataverse API returns a 404 if the dataset has no published files
+            if self.short_name == 'dataverse' and e.code == http_status.HTTP_404_NOT_FOUND and version == 'latest-published':
+                return []
+            raise
+
 def get_settings_class(addon_type):
-    if addon_type == AddonType.STORAGE:
+    if addon_type == gv_requests.AddonType.STORAGE:
         return _get_storage_settings_class()
 
     return EphemeralNodeSettings

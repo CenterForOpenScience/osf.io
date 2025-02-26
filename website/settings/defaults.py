@@ -585,15 +585,15 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
                 'args': ('email_digest',),
             },
-            'refresh_addons': {
-                'task': 'scripts.refresh_addon_tokens',
-                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
-                'kwargs': {'dry_run': False, 'addons': {
-                    'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
-                    'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
-                }},
-            },
+            # 'refresh_addons': {  # Handled by GravyValet now
+            #     'task': 'scripts.refresh_addon_tokens',
+            #     'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
+            #     'kwargs': {'dry_run': False, 'addons': {
+            #         'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+            #         'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+            #         'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            #     }},
+            # },
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
