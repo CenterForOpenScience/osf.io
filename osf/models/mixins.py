@@ -52,7 +52,7 @@ from osf.utils.workflows import (
     ReviewTriggers,
 )
 
-from osf.utils.requests import get_request_and_user_id, get_current_request
+from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
 from website import settings, mails, language
 from website.project.licenses import set_license
@@ -482,31 +482,25 @@ class AddonModelMixin(models.Model):
     def addons(self):
         return self.get_addons()
 
-    def get_addons(self, service_type: str | None = None):
-        request, user_id = get_request_and_user_id()
-        if flag_is_active(request, features.ENABLE_GV):
+    def get_addons(self, service_type: str | None = None, in_request_context: bool = True):
+        '''
+        This gets all a user's addons whether that user is the model user (self.) or the user making the request (the
+        user signing off on whatever auth mechicanism such as token or basic auth.
+
+        service_type is the addon type such as "storage" or "citations"
+        in_request_context is the addon for the requesting user? or is it outside the request context.
+        '''
+        if in_request_context:
+            request, user_id = get_request_and_user_id()
+        else:
+            user_id = self._id
+
+        if not in_request_context or (in_request_context and flag_is_active(request, features.ENABLE_GV)):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
             return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type))
-
-        return [_f for _f in [
-            self.get_addon(config.short_name)
-            for config in self.ADDONS_AVAILABLE
-        ] if _f]
-
-    def get_addons_for_self(self):
-        """
-        This refers to the model self, not the user making the request.
-        """
-        request = get_current_request()
-        if flag_is_active(request, features.ENABLE_GV):
-            osf_addons = filter(
-                lambda x: x is not None,
-                (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
-            )
-            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=self._id))
 
         return [_f for _f in [
             self.get_addon(config.short_name)
