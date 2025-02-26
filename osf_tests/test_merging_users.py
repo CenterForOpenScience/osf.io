@@ -222,7 +222,8 @@ class TestUserMerging(OsfTestCase):
     def test_merge_unconfirmed(self):
         self._add_unconfirmed_user()
         unconfirmed_username = self.unconfirmed.username
-        self.user.merge_user(self.unconfirmed)
+        with override_flag(ENABLE_GV, active=True):
+            self.user.merge_user(self.unconfirmed)
 
         assert self.unconfirmed.is_merged is True
         assert self.unconfirmed.merged_by == self.user
