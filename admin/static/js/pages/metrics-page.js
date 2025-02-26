@@ -27,9 +27,9 @@ keenAnalysis.ready(function() {
     $('#preprints-tab')[0].onclick = function() {
         Metrics.PreprintMetrics();
     };
-    $('#downloads-tab')[0].onclick = function() {
-        Metrics.DownloadMetrics();
-    };
+    // $('#downloads-tab')[0].onclick = function() {
+    //     Metrics.DownloadMetrics();
+    // };
     $('#preprints-range')[0].onclick = function() {
         Metrics.RenderPreprintMetrics({
             start: $('#start-date')[0].value,
