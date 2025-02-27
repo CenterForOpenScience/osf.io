@@ -11,7 +11,10 @@ from framework.celery_tasks import app
 logger = logging.getLogger(__name__)
 
 
-@app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=60 * 5)
+RATE_LIMIT_RETRY_DELAY = 60 * 5
+
+
+@app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
 def sync_identifier_doi(identifier_id, delay=0):
     time.sleep(delay)
 
@@ -46,7 +49,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
         # in order to not reach rate limits that CrossRef and DataCite have, we increase delay after each
         # rate_limit records by 5 minutes
         if not record_number % rate_limit:
-            delay += 60 * 5
+            delay += RATE_LIMIT_RETRY_DELAY
 
         if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
             sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id, 'delay': delay})
