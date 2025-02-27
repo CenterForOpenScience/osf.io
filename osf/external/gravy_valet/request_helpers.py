@@ -119,13 +119,14 @@ def iterate_accounts_for_user(requesting_user, addon_type=None):  # -> typing.It
         )
 
 
-def iterate_addons_for_resource(requested_resource, requesting_user, addon_type=None):  # -> typing.Iterator[JSONAPIResultEntry]
+def iterate_addons_for_resource(requested_resource, requesting_user, addon_type=None, auth=None):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Returns an iterator of JSONAPIResultEntires representing all of the ConfiguredStorageAddons for a resource.'''
     resource_result = get_gv_result(
         endpoint_url=RESOURCE_LIST_ENDPOINT,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         params={'filter[resource_uri]': requested_resource.get_semantic_iri()},
+        auth=auth,
     )
     if not resource_result:
         return None
@@ -134,21 +135,24 @@ def iterate_addons_for_resource(requested_resource, requesting_user, addon_type=
             endpoint_url=resource_result.get_related_link('configured_storage_addons'),
             requesting_user=requesting_user,
             requested_resource=requested_resource,
-            params={'include': f'{ADDON_EXTERNAL_STORAGE_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+            params={'include': f'{ADDON_EXTERNAL_STORAGE_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'},
+            auth=auth,
         )
     if not addon_type or addon_type == AddonType.CITATION:
         yield from iterate_gv_results(
             endpoint_url=resource_result.get_related_link('configured_citation_addons'),
             requesting_user=requesting_user,
             requested_resource=requested_resource,
-            params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+            params={'include': f'{ADDON_EXTERNAL_CITATIONS_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'},
+            auth=auth,
         )
     if not addon_type or addon_type == AddonType.COMPUTING:
         yield from iterate_gv_results(
             endpoint_url=resource_result.get_related_link('configured_computing_addons'),
             requesting_user=requesting_user,
             requested_resource=requested_resource,
-            params={'include': f'{ADDON_EXTERNAL_COMPUTING_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'}
+            params={'include': f'{ADDON_EXTERNAL_COMPUTING_SERVICE_PATH},{ACCOUNT_OWNER_PATH}'},
+            auth=auth,
         )
 
 
@@ -166,6 +170,7 @@ def get_gv_result(
     requested_resource=None,
     request_method='GET',
     params: dict = None,
+    auth=None
 ):  # -> JSONAPIResultEntry
     '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
     response = _make_gv_request(
@@ -174,6 +179,7 @@ def get_gv_result(
         requested_resource=requested_resource,
         request_method=request_method,
         params=params,
+        auth=auth,
     )
     if not response:
         return
@@ -194,6 +200,7 @@ def get_raw_gv_result(
         requested_resource=None,
         request_method='GET',
         params: dict = None,
+        auth=None,
 ):
     '''Processes the result of a request to a GravyValet detail endpoint into a single JSONAPIResultEntry.'''
     response = _make_gv_request(
@@ -202,6 +209,7 @@ def get_raw_gv_result(
         requested_resource=requested_resource,
         request_method=request_method,
         params=params,
+        auth=auth
     )
     if not response:
         return {}
@@ -217,6 +225,7 @@ def iterate_gv_results(
     requested_resource=None,
     request_method='GET',
     params: dict = None,
+    auth=None
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
     response = _make_gv_request(
@@ -224,7 +233,8 @@ def iterate_gv_results(
         requesting_user=requesting_user,
         requested_resource=requested_resource,
         request_method=request_method,
-        params=params
+        params=params,
+        auth=auth
     )
     if not response:
         return
@@ -244,6 +254,7 @@ def _make_gv_request(
     request_method='GET',
     params: dict = None,
     json_data: dict = None,
+    auth=None,
 ):
     '''Generates HMAC-Signed auth headers and makes a request to GravyValet, returning the result.'''
     full_url = urlunparse(urlparse(endpoint_url)._replace(query=urlencode(params or {})))
@@ -253,6 +264,7 @@ def _make_gv_request(
         additional_headers=auth_helpers.make_permissions_headers(
             requesting_user=requesting_user,
             requested_resource=requested_resource,
+            auth=auth,
         ) | {'content-type': 'application/vnd.api+json'}
     )
     assert not (request_method == 'GET' and json_data is not None)
@@ -278,6 +290,7 @@ def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) 
         requesting_user=auth.user,
         requested_resource=project,
         params={'filter[resource_uri]': project_url},
+        auth=auth
     )
     if not resource_references_response:
         return {}
@@ -287,7 +300,8 @@ def get_gv_citation_url_list_for_project(auth, project, request=None, pid=None) 
         requesting_user=auth.user,
         requested_resource=project,
         request_method='GET',
-        params={}
+        params={},
+        auth=auth
     )
     return {
         addon['attributes']['external_service_name']: addon for addon in addon_list
@@ -317,7 +331,8 @@ def _invoke_gv_citation_operation_invocations(auth, addon, project, list_id):
         requested_resource=project,
         request_method='POST',
         params={},
-        json_data={'data': data}
+        json_data={'data': data},
+        auth=auth
     )
     return gv_response
 
@@ -336,7 +351,7 @@ def citation_list_gv_request(auth, request, addon_short_name, list_id, show):
         auth=auth,
         addon=addon,
         project=project,
-        list_id=list_id
+        list_id=list_id,
     )
     if gv_response.status_code == 201:
         attributes_dict = gv_response.json()['data']['attributes']
