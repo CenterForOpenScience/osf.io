@@ -1552,10 +1552,11 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
     def get_queryset(self):
         node = self.get_node()
+        auth = get_user_auth(self.request)
         return [
             self.get_provider_item(addon, node=node)
             for addon
-            in node.get_addons('storage')
+            in node.get_addons('storage', auth)
             if addon.config.has_hgrid_files
             and addon.configured
         ]

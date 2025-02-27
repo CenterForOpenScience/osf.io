@@ -59,7 +59,8 @@ def _get_signed_components(
 
 def make_permissions_headers(
     requesting_user: OSFUser | None = None,
-    requested_resource: AbstractNode | None = None
+    requested_resource: AbstractNode | None = None,
+    auth=None,
 ) -> dict:
     osf_permissions_headers = {}
     if requesting_user:
@@ -71,6 +72,9 @@ def make_permissions_headers(
             user_permissions = ';'.join(requested_resource.get_permissions(requesting_user))
         if (not requesting_user or not user_permissions) and requested_resource.is_public:
             user_permissions = osf_permissions.READ
+        osf_permissions_headers[PERMISSIONS_HEADER] = user_permissions
+    if auth and auth.private_link and auth.private_link.nodes.contains(requested_resource):
+        user_permissions = osf_permissions.READ
         osf_permissions_headers[PERMISSIONS_HEADER] = user_permissions
     return osf_permissions_headers
 
