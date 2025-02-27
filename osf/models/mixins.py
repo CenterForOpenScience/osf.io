@@ -482,9 +482,20 @@ class AddonModelMixin(models.Model):
     def addons(self):
         return self.get_addons()
 
-    def get_addons(self, service_type: str | None = None):
-        request, user_id = get_request_and_user_id()
-        if flag_is_active(request, features.ENABLE_GV):
+    def get_addons(self, service_type: str | None = None, in_request_context: bool = True):
+        '''
+        This gets all a user's addons whether that user is the model user (self.) or the user making the request (the
+        user signing off on whatever auth mechicanism such as token or basic auth.
+
+        service_type is the addon type such as "storage" or "citations"
+        in_request_context is the addon for the requesting user? or is it outside the request context.
+        '''
+        if in_request_context:
+            request, user_id = get_request_and_user_id()
+        else:
+            user_id = self._id
+
+        if not in_request_context or (in_request_context and flag_is_active(request, features.ENABLE_GV)):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
