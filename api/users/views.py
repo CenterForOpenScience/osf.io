@@ -830,8 +830,8 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.save()
             except exceptions.ChangePasswordError as error:
                 return JsonResponse(
-                    error.messages,
-                    status=status.HTTP_400_BAD_REQUEST,
+                    {'errors': [{'detail': message} for message in error.messages]},
+                    status=400,
                     content_type='application/vnd.api+json; application/json',
                 )
 
