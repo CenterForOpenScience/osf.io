@@ -1099,17 +1099,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :rtype: list
         :returns: Changed fields from the user save
         """
-        issues = []
         had_existing_password = bool(self.has_usable_password() and self.is_confirmed)
         if self.username == raw_password:
-            issues.append('Password cannot be the same as your email address')
-        elif len(raw_password) < 8:
-            issues.append('Password should be at least eight characters')
-        elif len(raw_password) > 256:
-            issues.append('Password should not be longer than 256 characters')
-
-        if issues:
-            raise ChangePasswordError(issues)
+            raise ChangePasswordError(['Password cannot be the same as your email address'])
 
         super().set_password(raw_password)
         if had_existing_password and notify:

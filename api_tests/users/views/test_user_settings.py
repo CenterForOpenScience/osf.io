@@ -258,18 +258,12 @@ class TestResetPassword:
                 'attributes': {
                     'uid': user_one._id,
                     'token': user_one.verification_key_v2['token'],
-                    'password': '!',
+                    'password': user_one.username,
                 }
             }
         }
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password should be at least eight characters'
-
-        payload['data']['attributes']['password'] = '!' * 257
-        res = app.post_json_api(url, payload, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Password should not be longer than 256 characters'
 
 
 @pytest.mark.django_db
