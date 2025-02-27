@@ -4,6 +4,8 @@ import datetime
 import logging
 
 from django.core.management.base import BaseCommand
+from datacite.errors import DataCiteServerError
+from website.identifiers.clients.exceptions import CrossRefRateLimitError
 from osf.models import Identifier
 
 from framework.celery_tasks import app
@@ -19,9 +21,26 @@ def sync_identifier_doi(identifier_id, delay=0):
     time.sleep(delay)
 
     identifier = Identifier.objects.get(id=identifier_id)
-    identifier.referent.request_identifier_update('doi')
-    identifier.save()
-    logger.info(f' doi update for {identifier.value} complete')
+    try:
+        identifier.referent.request_identifier_update('doi')
+        identifier.save()
+        logger.info(f' doi update for {identifier.value} complete')
+    except CrossRefRateLimitError as err:
+        logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {err}')
+        raise
+    except DataCiteServerError as err:
+        # the first param is status code, the second one is text
+        # see create_identifier.metadata_post call in datacite.py
+        status_code, text = err.args
+        if status_code == 429:
+            logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {text}')
+        else:
+            logger.warning(f'Doi update for {identifier.value} failed. Error: {text}')
+
+        raise
+    except Exception as err:
+        logger.warning(f'Doi update for {identifier.value} failed because of an unexpected error: {err}')
+        raise
 
 
 def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
