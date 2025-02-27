@@ -2464,7 +2464,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     force=True
                 )
 
-    def _get_addon_from_gv(self, gv_pk, requesting_user_id):
+    def _get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
         request = get_current_request()
         # This is to avoid making multiple requests to GV
         # within the lifespan of one request on the OSF side
@@ -2478,24 +2478,25 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     break
             else:
                 return None
-            gv_addons = request.gv_addons = self._get_addons_from_gv(requesting_user_id, service.type)
+            gv_addons = request.gv_addons = self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
 
         for item in gv_addons:
             if item.short_name == gv_pk:
                 return item
 
-    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None, auth=None):
         requesting_user = OSFUser.load(requesting_user_id)
         all_node_addon_data = gv_requests.iterate_addons_for_resource(
             requested_resource=self,
             requesting_user=requesting_user,
-            addon_type=service_type
+            addon_type=service_type,
+            auth=auth
         )
         return [
             gv_translations.make_ephemeral_node_settings(
                 gv_addon_data=addon_data,
                 requested_resource=self,
-                requesting_user=requesting_user
+                requesting_user=requesting_user,
             )
             for addon_data in all_node_addon_data
         ]
