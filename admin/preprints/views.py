@@ -594,6 +594,4 @@ class PreprintUnwithdrawView(PreprintMixin, View):
             req = preprint.requests.filter(machine_state=DefaultStates.ACCEPTED.value).first()
             req.delete()
             preprint.save()
-
-        messages.success(request, f'Successfully unwithdrawn preprint {preprint._id}')
         return redirect(self.get_success_url())

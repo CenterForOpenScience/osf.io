@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog
+from osf.models import Preprint, PreprintLog, PreprintRequest
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -565,6 +565,34 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.target.refresh_from_db()
         assert withdrawal_request.machine_state == DefaultStates.REJECTED.value
         assert not withdrawal_request.target.withdrawal_justification
+
+    def test_can_unwithdraw_preprint(self, withdrawal_request, submitter, preprint, admin):
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        original_comment = withdrawal_request.comment
+
+        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        request.POST = {'action': 'approve'}
+        request.user = admin
+
+        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        assert response.status_code == 302
+
+        withdrawal_request.refresh_from_db()
+        withdrawal_request.target.refresh_from_db()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        assert original_comment == withdrawal_request.target.withdrawal_justification
+
+        # Store PreprintRequest ID before deletion
+        withdrawal_request_id = withdrawal_request.id
+        request_unwithdraw = RequestFactory().post(reverse('preprints:unwithdraw', kwargs={'guid': preprint._id}))
+        request_unwithdraw.user = admin
+        response_unwithdraw = views.PreprintUnwithdrawView.as_view()(request_unwithdraw, guid=preprint._id)
+        assert response_unwithdraw.status_code == 302
+
+        assert not PreprintRequest.objects.filter(id=withdrawal_request_id).exists()
+        preprint.refresh_from_db()
+        assert preprint.date_withdrawn is None
+        assert preprint.withdrawal_justification == ''
 
     def test_permissions_errors(self, user, submitter):
         # with auth, no permissions
