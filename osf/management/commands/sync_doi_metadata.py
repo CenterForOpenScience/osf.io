@@ -18,16 +18,19 @@ RATE_LIMIT_RETRY_DELAY = 60 * 5
 
 @app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
 def sync_identifier_doi(identifier_id, delay=0):
-    time.sleep(delay)
-
     identifier = Identifier.objects.get(id=identifier_id)
-    try:
+
+    def run_sync(delay_time):
+        time.sleep(delay_time)
         identifier.referent.request_identifier_update('doi')
         identifier.save()
-        logger.info(f' doi update for {identifier.value} complete')
+        logger.info(f'Doi update for {identifier.value} complete')
+
+    try:
+        run_sync(delay)
+        return
     except CrossRefRateLimitError as err:
         logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {err}')
-        raise
     except DataCiteServerError as err:
         # the first param is status code, the second one is text
         # see create_identifier.metadata_post call in datacite.py
@@ -36,11 +39,10 @@ def sync_identifier_doi(identifier_id, delay=0):
             logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {text}')
         else:
             logger.warning(f'Doi update for {identifier.value} failed. Error: {text}')
-
-        raise
     except Exception as err:
         logger.warning(f'Doi update for {identifier.value} failed because of an unexpected error: {err}')
-        raise
+
+    run_sync(RATE_LIMIT_RETRY_DELAY)
 
 
 def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
