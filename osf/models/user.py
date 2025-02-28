@@ -1956,7 +1956,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return is_spam
 
-    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None, auth=None):
         requesting_user = OSFUser.load(requesting_user_id)
         if requesting_user and requesting_user != self:
             raise ValueError('Cannot get user addons for a user other than self')
