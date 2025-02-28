@@ -29,7 +29,7 @@ var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
-
+const tracker = require('js/components/tracker');
 
 // Listen for the nodeLoad event (prevents multiple requests for data)
 $('body').on('nodeLoad', function(event, data) {
@@ -42,6 +42,11 @@ $('body').on('nodeLoad', function(event, data) {
         new CitationList('#citationList');
         new CitationWidget('#citationStyleInput', '#citationText');
     }
+
+    if (data.node.identifiers.doi) {
+        tracker.trackView(data.node.identifiers.doi);
+    }
+
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data, {categories: nodeCategories, currentUserRequestState: currentUserRequestState});
 
