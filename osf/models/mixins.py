@@ -377,9 +377,10 @@ class Taggable(models.Model):
     tags = models.ManyToManyField('Tag', related_name='%(class)s_tagged')
 
     def update_tags(self, new_tags, auth=None, save=True, log=True, system=False):
+        good_new_tags = self._filter_tags(new_tags)
         old_tags = set(self.tags.values_list('name', flat=True))
-        to_add = (set(new_tags) - old_tags)
-        to_remove = (old_tags - set(new_tags))
+        to_add = (set(good_new_tags) - old_tags)
+        to_remove = (old_tags - set(good_new_tags))
         if to_add:
             self.add_tags(to_add, auth=auth, save=save, log=log, system=system)
         if to_remove:
@@ -392,7 +393,7 @@ class Taggable(models.Model):
         """
         if not system and not auth:
             raise ValueError('Must provide auth if adding a non-system tag')
-        for tag in tags:
+        for tag in self._filter_tags(tags):
             tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
             self.tags.add(tag_instance)
             # TODO: Logging belongs in on_tag_added hook
@@ -429,6 +430,8 @@ class Taggable(models.Model):
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
         if not system and not auth:
             raise ValueError('Must provide auth if adding a non-system tag')
+        if not tag:
+            raise ValueError('Tag name should be non-empty')
 
         if not isinstance(tag, Tag):
             tag_instance, created = Tag.all_tags.get_or_create(name=tag, system=system)
@@ -458,6 +461,10 @@ class Taggable(models.Model):
 
     def on_tag_added(self, tag):
         pass
+
+    def _filter_tags(self, tags_from_user):
+        # discard falsy tags like ''
+        return filter(None, tags_from_user)
 
     class Meta:
         abstract = True

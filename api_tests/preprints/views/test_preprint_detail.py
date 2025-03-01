@@ -697,6 +697,20 @@ class TestPreprintUpdate:
         preprint.reload()
         assert preprint.tags.count() == 0
 
+        # Filter empty tags
+        update_tags_payload = build_preprint_update_payload(
+            preprint._id,
+            attributes={
+                'tags': ['', 'foo']
+            }
+        )
+        res = app.patch_json_api(url, update_tags_payload, auth=user.auth)
+
+        assert res.status_code == 200
+        preprint.reload()
+        actual_tags = list(preprint.tags.all().values_list('name', flat=True))
+        assert actual_tags == ['foo']
+
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_update_contributors(
             self, mock_update_doi_metadata, app, user, preprint, url):
