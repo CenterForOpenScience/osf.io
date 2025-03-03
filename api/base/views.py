@@ -4,7 +4,7 @@ from packaging.version import Version
 from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Q, When, Case
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
@@ -468,11 +468,15 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
-    ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_node_list_queryset(model_cls=self.model_class)
+
+    def get_ordering(self):
+        if self.request.query_params.get('_order', None) == 'component_order':
+            return ''
+        return '-modified'
 
     # overrides GenericAPIView
     def get_queryset(self):
@@ -485,7 +489,10 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         auth = get_user_auth(self.request)
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
             .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by('-modified')
+        order = '-modified'
+        if self.request.query_params.get('_order', None) == 'component_order':
+            order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(node_pks)])
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by(order)
 
 
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):

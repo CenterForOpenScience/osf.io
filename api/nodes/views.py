@@ -11,7 +11,7 @@ from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions, exceptions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT
+from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT, HTTP_200_OK
 
 from addons.base.exceptions import InvalidAuthError
 from api.addons.serializers import NodeAddonFolderSerializer
@@ -2358,3 +2358,73 @@ class NodeCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView, ListFi
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
+    """
+    View for Node components reorder.
+
+    PATCH:
+        {
+            "data": [
+                {
+                    "type": "nodes",
+                    "id": <child_node_id>,
+                    "attributes":
+                        {
+                            "_order": <int>
+                        }
+                },
+                {
+                    "type": "nodes",
+                    "id": <child_node_id>,
+                    "attributes":
+                        {
+                            "_order": <int>
+                        }
+                }
+                ]
+        }
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    view_category = 'nodes'
+    view_name = 'node-reorder-components'
+
+    def get_object(self):
+        return self.get_node()
+
+    def patch(self, request, *args, **kwargs):
+        node = self.get_object()
+        node_relations = (
+            node.node_relations
+            .select_related('child')
+            .filter(child__is_deleted=False)
+        )
+        deleted_node_relation_ids = list(
+            node.node_relations.select_related('child')
+            .filter(child__is_deleted=True)
+            .values_list('pk', flat=True)
+        )
+
+        sorted_data = sorted(request.data, key=lambda x: x['_order'])
+
+        new_node_relation_ids = list(node_relations.values_list('id', flat=True))
+        for node_pos in sorted_data:
+            child_node_id = self.get_node(node_id=node_pos.get('id')).id
+            node_relation_obj = node_relations.filter(child_id=child_node_id)
+            if node_relation_obj.exists():
+                node_relation_id = node_relation_obj.first().id
+                new_node_relation_ids.remove(node_relation_id)
+                new_node_relation_ids.insert(node_pos['_order'], node_relation_id)
+
+        node.set_noderelation_order(new_node_relation_ids + deleted_node_relation_ids)
+        node.save()
+        return Response(status=HTTP_200_OK)
