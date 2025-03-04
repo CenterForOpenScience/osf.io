@@ -7,6 +7,7 @@
 {% endblock title %}
 
 {% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/keen-dashboards.css" />
     <script>
         var metricsUrl = '{{ metrics_url }}';
         if ('{{ keen_ready }}' == 'True') {
@@ -26,12 +27,12 @@
     <div>
         <!-- Nav tabs -->
         <ul class="nav nav-tabs" role="tablist">
-<!--            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>-->
+            <li role="presentation" class="active" id="user-tab"><a href="#user-data" role="tab" data-toggle="tab">User Data</a></li>
             <li role="presentation" id="institution-tab"><a href="#institution-metrics" role="tab" data-toggle="tab">Institution Metrics</a></li>
             <li role="presentation" id="raw-numbers-tab"><a href="#raw-numbers" role="tab" data-toggle="tab">Raw Numbers</a></li>
             <li role="presentation" id="addons-tab"><a href="#addons" role="tab" data-toggle="tab">Addons</a></li>
             <li role="presentation" id="preprints-tab"><a href="#preprints" role="tab" data-toggle="tab">Preprints</a></li>
-<!--            <li role="presentation" id="downloads-tab"><a href="#downloads" role="tab" data-toggle="tab">Downloads</a></li>-->
+            <li role="presentation" id="downloads-tab"><a href="#downloads" role="tab" data-toggle="tab">Downloads</a></li>
         </ul>
 
         <!-- Tab panes -->
@@ -194,9 +195,6 @@
                                 <div class="chart-title">
                                     Yesterday's Node logs by user
                                     <a id="reload-node-logs" class="glyphicon glyphicon-refresh"></a>
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="yesterdays-node-logs-by-user"></div>
                                 </div>
                                 <div class="chart-notes">
                                     The last day of node logs by user, if a user had over 100 node logs.
@@ -413,7 +411,7 @@
                                     <span class="caret"></span>
                                 </button>
                                 <ul class="dropdown-menu pull-right">
-<!--                                    <li><a href="#downloads">Downloads</a></li>-->
+                                    <li><a href="#downloads">Downloads</a></li>
                                     <li><a href="#projects">Projects - Top Level</a></li>
                                     <li><a href="#nodes">Nodes - Projects & Components</a></li>
                                     <li><a href="#registered-projects">Registered Projects</a></li>
