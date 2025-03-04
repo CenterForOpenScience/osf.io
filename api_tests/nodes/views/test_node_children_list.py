@@ -302,6 +302,39 @@ class TestNodeChildrenListFiltering:
 
 
 @pytest.mark.django_db
+class TestNodeChildrenListOrdering:
+
+    def test_node_child_ordering(self, app, user):
+        project = ProjectFactory(creator=user)
+
+        title_one, title_two = fake.bs(), fake.bs()
+        NodeFactory(title=title_one, parent=project)
+        NodeFactory(title=title_two, parent=project)
+        component_order = [el.child._id for el in project.node_relations.all()]
+
+        url = '/{}nodes/{}/children/?_order=component_order'.format(
+            API_BASE,
+            project._id,
+        )
+        res = app.get(url, auth=user.auth)
+
+        ids = [node['id'] for node in res.json['data']]
+        assert component_order == ids
+
+        # Change order
+        project.set_noderelation_order(project.get_noderelation_order()[::-1])
+        project.save()
+        component_order = [el.child._id for el in project.node_relations.all()]
+
+        assert component_order != ids
+        res = app.get(url, auth=user.auth)
+
+        ids = [node['id'] for node in res.json['data']]
+
+        assert component_order == ids
+
+
+@pytest.mark.django_db
 class TestNodeChildCreate:
 
     @pytest.fixture()
