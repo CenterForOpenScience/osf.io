@@ -11,7 +11,7 @@ from api.base.serializers import (
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, BaseAPISerializer,
-    HideIfWikiDisabled,
+    HideIfWikiDisabled, ShowIfAdminScopeOrAnonymous,
     ValuesListField, TargetField,
 )
 from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
@@ -210,6 +210,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     # list if it doesn't expose user data
     non_anonymized_fields = [
         'access_requests_enabled',
+        'analytics_key',
         'category',
         'children',
         'collection',
@@ -282,6 +283,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                   'and some information will not change. By default, the description will '
                   'be cleared and the project will be made private.',
     )
+    # 'analytics_key' can be removed after another version release.
+    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, default=''))
     current_user_can_comment = ser.SerializerMethodField(help_text='Whether the current user is allowed to post comments')
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
