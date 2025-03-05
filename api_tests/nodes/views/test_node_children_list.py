@@ -312,10 +312,7 @@ class TestNodeChildrenListOrdering:
         NodeFactory(title=title_two, parent=project)
         component_order = [el.child._id for el in project.node_relations.all()]
 
-        url = '/{}nodes/{}/children/?_order=component_order'.format(
-            API_BASE,
-            project._id,
-        )
+        url = f'/{API_BASE}nodes/{project._id}/children/?sort=_order'
         res = app.get(url, auth=user.auth)
 
         ids = [node['id'] for node in res.json['data']]
