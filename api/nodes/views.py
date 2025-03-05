@@ -2423,7 +2423,7 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
         if duplicates:
             raise ValidationError(
                 [f"Item {item} appears multiple times with the same _order value." for item in duplicates.keys()],
-                HTTP_409_CONFLICT
+                HTTP_409_CONFLICT,
             )
 
         # Count nodes with different _order values
@@ -2432,7 +2432,7 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
         if duplicates:
             raise ValidationError(
                 [f"Item {item} appears multiple times with different _order values." for item in duplicates.keys()],
-                HTTP_409_CONFLICT
+                HTTP_409_CONFLICT,
             )
 
         # Count duplicate _order values
@@ -2441,7 +2441,7 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
         if duplicates:
             raise ValidationError(
                 [f"Multiple items have the same _order value {order}." for order in duplicates.keys()],
-                HTTP_409_CONFLICT
+                HTTP_409_CONFLICT,
             )
 
         new_node_relation_ids = list(node_relations.values_list('id', flat=True))
