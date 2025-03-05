@@ -1,18 +1,18 @@
 import re
 import typing
+from collections import Counter
 
 import dataclasses
 
 from packaging.version import Version
 from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
-from django.http import JsonResponse
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions, exceptions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, MethodNotAllowed, NotAuthenticated
 from rest_framework.response import Response
-from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT, HTTP_200_OK, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_202_ACCEPTED, HTTP_204_NO_CONTENT, HTTP_200_OK, HTTP_409_CONFLICT
 
 from addons.base.exceptions import InvalidAuthError
 from api.addons.serializers import NodeAddonFolderSerializer
@@ -2414,28 +2414,58 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
             .filter(child__is_deleted=True)
             .values_list('pk', flat=True),
         )
-
+        errors = []
         sorted_data = sorted(request.data, key=lambda x: x['_order'])
 
+        # Count nodes with same _order value
+        node_order_count = Counter([(el['id'], el['_order']) for el in sorted_data])
+        duplicates = {key[0]: count for key, count in node_order_count.items() if count > 1}
+        if duplicates:
+            raise ValidationError(
+                [f"Item {item} appears multiple times with the same _order value." for item in duplicates.keys()],
+                HTTP_409_CONFLICT
+            )
+
+        # Count nodes with different _order values
+        node_count = Counter([el['id'] for el in sorted_data])
+        duplicates = {key: count for key, count in node_count.items() if count > 1}
+        if duplicates:
+            raise ValidationError(
+                [f"Item {item} appears multiple times with different _order values." for item in duplicates.keys()],
+                HTTP_409_CONFLICT
+            )
+
+        # Count duplicate _order values
+        _order_count = Counter([el['_order'] for el in sorted_data])
+        duplicates = {key: count for key, count in _order_count.items() if count > 1}
+        if duplicates:
+            raise ValidationError(
+                [f"Multiple items have the same _order value {order}." for order in duplicates.keys()],
+                HTTP_409_CONFLICT
+            )
+
         new_node_relation_ids = list(node_relations.values_list('id', flat=True))
-        errors = []
         for node_pos in sorted_data:
+            node_order = node_pos.get('_order')
+            node_id = node_pos.get('id')
+
+            if node_order > len(node_relations) - 1:
+                errors.append(f"Item {node_id} has _order {node_order} which is higher than the list length.")
+            if node_order < 0:
+                errors.append(f"Item {node_id} has _order {node_order} which is lower than zero.")
+
             try:
-                child_node_id = self.get_node(node_id=node_pos.get('id')).id
+                child_node_id = self.get_node(node_id=node_id).id
                 node_relation_obj = node_relations.filter(child_id=child_node_id)
                 if node_relation_obj.exists():
                     node_relation_id = node_relation_obj.first().id
                     new_node_relation_ids.remove(node_relation_id)
-                    new_node_relation_ids.insert(node_pos['_order'], node_relation_id)
+                    new_node_relation_ids.insert(node_order, node_relation_id)
             except NotFound:
-                errors.append(node_pos.get('id'))
+                errors.append(f'The {node_id} node is not a component of the {node._id} node')
 
         if errors:
-            return JsonResponse(
-                {'errors': [{'detail': f'The {node_id} node is not a component of the {node._id} node'} for node_id in errors]},
-                status=HTTP_400_BAD_REQUEST,
-                content_type='application/vnd.api+json; application/json',
-            )
+            raise ValidationError(errors)
         node.set_noderelation_order(new_node_relation_ids + deleted_node_relation_ids)
         node.save()
         return Response(status=HTTP_200_OK)

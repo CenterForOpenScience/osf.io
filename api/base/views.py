@@ -468,15 +468,17 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
+    default_ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_node_list_queryset(model_cls=self.model_class)
 
     def get_ordering(self):
-        if self.request.query_params.get('_order', None) == 'component_order':
+        #  Return empty string to prevent ordering by default ordering as sorting by _order handled by get_queryset
+        if self.request.query_params.get('sort', None) == '_order':
             return ''
-        return '-modified'
+        return self.default_ordering
 
     # overrides GenericAPIView
     def get_queryset(self):
@@ -489,10 +491,11 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         auth = get_user_auth(self.request)
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
             .values_list('child__pk', flat=True)
-        order = '-modified'
-        if self.request.query_params.get('_order', None) == 'component_order':
+        if self.request.query_params.get('sort', None) == '_order':
+            # Order by the order of the node_relations
             order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(node_pks)])
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by(order)
+            return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by(order)
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link)
 
 
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
