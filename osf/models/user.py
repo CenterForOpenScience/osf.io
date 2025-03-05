@@ -1729,7 +1729,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            if project_id not in self.unclaimed_records and VersionedGuidMixin.GUID_VERSION_DELIMITER in project_id:
+            if VersionedGuidMixin.GUID_VERSION_DELIMITER in project_id:
                 guid, version = Guid.split_guid(project_id)
                 records_key_for_current_guid = [key for key in self.unclaimed_records.keys() if guid in key]
                 if records_key_for_current_guid is not []:
