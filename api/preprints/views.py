@@ -116,10 +116,16 @@ class PreprintMixin(NodeMixin):
         preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
         if preprint_version:
             qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id, versioned_guids__version=preprint_version)
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         else:
-            qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
+            # when pre-moderation is on, we should look for the preprint
+            # in all objects as it isn't published, not in published_objects
+            qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
+            if preprint and preprint.provider.reviews_workflow != Workflows.PRE_MODERATION.value:
+                qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
+                preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
 
-        preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         if not preprint:
             sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:

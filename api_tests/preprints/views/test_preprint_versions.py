@@ -154,6 +154,14 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=user_write.auth, expect_errors=True)
         assert res.status_code == 403
 
+    def test_not_published_preprint_in_pre_moderation_without_version_is_visible(self):
+        id = self.pre_mod_preprint._id.split('_')[0]
+        res = self.app.get(f'/{API_BASE}preprints/{id}/', auth=self.user.auth)
+        assert res.status_code == 200
+
+    def test_incorrect_preprint_id_without_version_returns_404(self):
+        res = self.app.get(f'/{API_BASE}preprints/1234/', auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 404
 
 class TestPreprintVersionsListRetrieve(ApiTestCase):
 
