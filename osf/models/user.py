@@ -26,6 +26,7 @@ from django.db.models.signals import post_save
 from django.utils import timezone
 from guardian.shortcuts import get_objects_for_user
 
+from framework import sentry
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
 from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
@@ -1000,8 +1001,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 user_id=self._id,
                 username=self.username
             )
-        except mailchimp_utils.OSFError:
-            pass
+        except mailchimp_utils.OSFError as error:
+            sentry.log_exception(error)
+            sentry.log_message(error)
+        except Exception as error:
+            sentry.log_exception(error)
+            sentry.log_message(error)
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
@@ -1020,8 +1025,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
         self.is_disabled = False
         self.requested_deactivation = False
-        from website.mailchimp_utils import subscribe_on_confirm
-        subscribe_on_confirm(self)
+        from website.mailchimp_utils import subscribe_on_confirm, OSFError
+        try:
+            subscribe_on_confirm(self)
+        except OSFError as error:
+            sentry.log_exception(error)
+            sentry.log_message(error)
+        except Exception as error:
+            sentry.log_exception(error)
+            sentry.log_message(error)
         signals.user_account_reactivated.send(self)
 
     def update_is_active(self):
