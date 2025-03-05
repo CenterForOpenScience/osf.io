@@ -40,7 +40,7 @@ from osf.external.gravy_valet import (
 )
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet, VersionedGuidMixin, Guid
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
@@ -67,6 +67,7 @@ SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 logger = logging.getLogger(__name__)
 
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
+
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -1661,13 +1662,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors or group members for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None, provided_pid=None):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
+        :param str provided_pid: The given pid for claim_origin object. This is necessary for processing versioned preprints,
+         the _id for a preprint always indicates the latest version.
         :returns: The added record
         """
 
@@ -1691,7 +1694,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     f'Referrer does not have permission to add a contributor to {claim_origin._id}'
                 )
 
-        pid = str(claim_origin._id)
+        pid = provided_pid or str(claim_origin._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
@@ -1726,6 +1729,23 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
+            if project_id not in self.unclaimed_records and VersionedGuidMixin.GUID_VERSION_DELIMITER in project_id:
+                guid, version = Guid.split_guid(project_id)
+                records_key_for_current_guid = [key for key in self.unclaimed_records.keys() if guid in key]
+                if records_key_for_current_guid is not []:
+                    records_key_for_current_guid.sort(
+                        key=lambda x: int(x.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]),
+                        reverse=True
+                    )
+                    record_info = self.unclaimed_records[records_key_for_current_guid[0]]
+                    return self.add_unclaimed_record(
+                        claim_origin=Guid.load(project_id).referent,
+                        referrer=OSFUser.load(record_info['referrer_id']),
+                        given_name=record_info.get('name', None),
+                        email=record_info.get('email', None),
+                        provided_pid=project_id,
+                    )
+
             raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}')
 
     def get_claim_url(self, project_id, external=False):
