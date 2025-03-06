@@ -605,6 +605,13 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
             raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
         if not preprint:
             raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
+        for contributor in preprint.contributor_set.filter(user__is_registered=False):
+            contributor.user.add_unclaimed_record(
+                claim_origin=preprint,
+                referrer=auth.user,
+                email=contributor.user.email,
+                given_name=contributor.user.fullname,
+            )
         if data_to_update:
             return self.update(preprint, data_to_update)
         return preprint
