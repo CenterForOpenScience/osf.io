@@ -757,6 +757,9 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
         if not email:
             raise ValidationError('Request must include email in query params.')
 
+        institutional = bool(request.query_params.get('institutional', None))
+        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+
         status_message = (
             f'If there is an OSF account associated with {email}, an email with instructions on how to '
             f'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
@@ -781,11 +784,11 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
                 mails.send_mail(
                     to_addr=email,
-                    mail=mails.FORGOT_PASSWORD,
+                    mail=mail_template,
                     reset_link=reset_link,
                     can_change_preferences=False,
                 )
-        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind})
+        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
