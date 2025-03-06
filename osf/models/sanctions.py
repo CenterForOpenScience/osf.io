@@ -632,6 +632,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         # self.state = Sanction.COMPLETED
         self.to_COMPLETED()
 
+    def mark_as_approved(self):
+        self.to_APPROVED()
+
 class Retraction(EmailApprovableSanction):
     """
     Retraction object for public registrations.
