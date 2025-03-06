@@ -7,6 +7,8 @@
     <br>
     ${reset_link}<br>
     <br>
+    Note this link will expire in 10 minutes.<br>
+    <br>
     Center for Open Science<br>
 
 

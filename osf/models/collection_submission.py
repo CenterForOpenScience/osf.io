@@ -74,7 +74,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         return bool(self.collection.provider) and self.collection.provider.reviews_workflow == 'hybrid-moderation'
 
     def is_submitted_by_moderator_contributor(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         if user is None:
             return False
         if not self.guid.referent.is_contributor(user):
@@ -92,7 +92,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         self.machine_state = new_state.value
 
     def _notify_contributors_pending(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         for contributor in self.guid.referent.contributors:
             try:
                 claim_url = f'{settings.DOMAIN}/{contributor.get_claim_url(self.guid.referent._id)}'
@@ -169,7 +169,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         )
 
     def _validate_accept(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         if user is None:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
@@ -184,7 +184,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     to_addr=contributor.username,
                     mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
                     user=contributor,
-                    submitter=event_data.kwargs['user'],
+                    submitter=event_data.kwargs.get('user'),
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                     collection=self.collection,
                     node=self.guid.referent,
@@ -197,7 +197,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if force:
             return
 
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         if user is None:
             raise PermissionsError(f'{user} must have moderator permissions.')
 
@@ -214,12 +214,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 collection=self.collection,
                 node=self.guid.referent,
-                rejection_justification=event_data.kwargs['comment'],
+                rejection_justification=event_data.kwargs.get('comment'),
                 osf_contact_email=settings.OSF_CONTACT_EMAIL,
             )
 
     def _validate_remove(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         force = event_data.kwargs.get('force')
         if force:
             return
@@ -237,7 +237,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if force:
             return
 
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
@@ -273,8 +273,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     to_addr=contributor.username,
                     mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(self.collection, self.guid.referent),
                     user=contributor,
-                    rejection_justification=event_data.kwargs['comment'],
-                    remover=event_data.kwargs['user'],
+                    rejection_justification=event_data.kwargs.get('comment'),
+                    remover=event_data.kwargs.get('user'),
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                     collection=self.collection,
                     node=self.guid.referent,
@@ -286,7 +286,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     to_addr=contributor.username,
                     mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
                     user=contributor,
-                    remover=event_data.kwargs['user'],
+                    remover=event_data.kwargs.get('user'),
                     is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                     collection=self.collection,
                     node=self.guid.referent,
@@ -294,7 +294,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 )
 
     def _validate_resubmit(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         if user is None:
             raise PermissionsError(f'{user} must have admin permissions.')
 
@@ -303,7 +303,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             raise PermissionsError(f'{user} must have admin permissions.')
 
     def _validate_cancel(self, event_data):
-        user = event_data.kwargs['user']
+        user = event_data.kwargs.get('user')
         force = event_data.kwargs.get('force')
         if force:
             return
@@ -324,7 +324,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 to_addr=contributor.username,
                 mail=mails.COLLECTION_SUBMISSION_CANCEL(self.collection, self.guid.referent),
                 user=contributor,
-                remover=event_data.kwargs['user'],
+                remover=event_data.kwargs.get('user'),
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 collection=self.collection,
                 node=self.guid.referent,

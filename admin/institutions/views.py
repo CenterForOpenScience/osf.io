@@ -166,7 +166,7 @@ class InstitutionNodeList(PermissionRequiredMixin, ListView):
 
 class InstitutionAdminAndModeratorBaseView(PermissionRequiredMixin, ListView):
     permission_required = 'osf.change_institution'
-    template_name = 'institutions/edit_moderators.html'
+    template_name = 'institutions/edit_admins.html'
     raise_exception = True
 
     def get_queryset(self):
@@ -178,11 +178,10 @@ class InstitutionAdminAndModeratorBaseView(PermissionRequiredMixin, ListView):
         admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
         context['institution'] = institution
         context['admins'] = admin_group.user_set.all()
-        context['moderators'] = institution.contributors.exclude(id__in=admin_group.user_set.values_list('id', flat=True))
         return context
 
 
-class InstitutionListAndAddAdminOrModerator(InstitutionAdminAndModeratorBaseView):
+class InstitutionListAndAddAdmin(InstitutionAdminAndModeratorBaseView):
 
     def get_permission_required(self):
         if self.request.method == 'GET':
@@ -194,24 +193,19 @@ class InstitutionListAndAddAdminOrModerator(InstitutionAdminAndModeratorBaseView
         data = dict(request.POST)
         del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
 
-        target_user = OSFUser.load(data['add-moderators-form'][0])
+        target_user = OSFUser.load(data['add-admins-form'][0])
         if target_user is None:
-            messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
-            return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
+            messages.error(request, f'User for guid: {data["add-admins-form"][0]} could not be found')
+            return redirect('institutions:list_and_add_admin', institution_id=institution.id)
 
-        if 'admin' in data:
-            admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
-            admin_group.user_set.add(target_user)
-            target_type = 'admin'
-        else:
-            institution.contributors.add(target_user)
-            target_type = 'moderator'
+        admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
+        admin_group.user_set.add(target_user)
 
-        messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
+        messages.success(request, f'The following admin was successfully added: {target_user.fullname} ({target_user.username})')
 
-        return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
+        return redirect('institutions:list_and_add_admin', institution_id=institution.id)
 
-class InstitutionRemoveAdminOrModerator(InstitutionAdminAndModeratorBaseView):
+class InstitutionRemoveAdmin(InstitutionAdminAndModeratorBaseView):
 
     def post(self, request, *args, **kwargs):
         institution = Institution.objects.get(id=self.kwargs['institution_id'])
@@ -220,23 +214,15 @@ class InstitutionRemoveAdminOrModerator(InstitutionAdminAndModeratorBaseView):
 
         to_be_removed = list(data.keys())
         removed_admins = [admin.replace('Admin-', '') for admin in to_be_removed if 'Admin-' in admin]
-        removed_moderators = [moderator.replace('Moderator-', '') for moderator in to_be_removed if
-                              'Moderator-' in moderator]
-        moderators = OSFUser.objects.filter(id__in=removed_moderators)
         admins = OSFUser.objects.filter(id__in=removed_admins)
         admin_group = Group.objects.filter(name__startswith=f'institution_{institution._id}').first()
         admin_group.user_set.remove(*admins)
-        institution.contributors.remove(*moderators)
-
-        if moderators:
-            moderator_names = ' ,'.join(moderators.values_list('fullname', flat=True))
-            messages.success(request, f'The following moderators were successfully removed: {moderator_names}')
 
         if admins:
             admin_names = ' ,'.join(admins.values_list('fullname', flat=True))
             messages.success(request, f'The following admins were successfully removed: {admin_names}')
 
-        return redirect('institutions:list_and_add_admin_or_moderator', institution_id=institution.id)
+        return redirect('institutions:list_and_add_admin', institution_id=institution.id)
 
 class DeleteInstitution(PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_institution'

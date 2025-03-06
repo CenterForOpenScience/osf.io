@@ -899,7 +899,7 @@ class TestResetPassword(OsfTestCase):
         request_url_path = res.request.path
         assert 'resetpassword' in request_url_path
         assert self.user._id in request_url_path
-        assert self.user.verification_key_v2['token'] not in request_url_path
+        assert self.user.verification_key_v2['token'] in request_url_path
 
         # check verification_key_v2 for OSF is destroyed and verification_key for CAS is in place
         self.user.reload()

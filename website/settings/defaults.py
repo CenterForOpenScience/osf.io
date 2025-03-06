@@ -39,7 +39,8 @@ with open(os.path.join(APP_PATH, 'package.json')) as fobj:
 
 # Expiration time for verification key
 EXPIRATION_TIME_DICT = {
-    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
+    'password': 10,    # 10 minutes for forgot and reset password
+    'password_admin': 12* 60, # 12 hours in minutes for reset password sent from admin
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }
@@ -345,6 +346,10 @@ DATACITE_PASSWORD = None
 DATACITE_URL = 'https://mds.datacite.org'
 DATACITE_PREFIX = '10.70102'  # Datacite's test DOI prefix -- update in production
 
+
+# OSF's RepoId on Datacite to track stats for DOIs. See https://support.datacite.org/docs/datacite-usage-tracker.
+DATACITE_TRACKER_REPO_ID = None
+
 # crossref
 CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
@@ -582,15 +587,15 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
                 'args': ('email_digest',),
             },
-            'refresh_addons': {
-                'task': 'scripts.refresh_addon_tokens',
-                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
-                'kwargs': {'dry_run': False, 'addons': {
-                    'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
-                    'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-                    'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
-                }},
-            },
+            # 'refresh_addons': {  # Handled by GravyValet now
+            #     'task': 'scripts.refresh_addon_tokens',
+            #     'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
+            #     'kwargs': {'dry_run': False, 'addons': {
+            #         'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
+            #         'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
+            #         'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
+            #     }},
+            # },
             'retract_registrations': {
                 'task': 'scripts.retract_registrations',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m

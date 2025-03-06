@@ -41,7 +41,7 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL,
     UNFLAG_SPAM,
 )
-
+from osf.utils.workflows import DefaultStates
 from website import search
 
 
@@ -591,7 +591,7 @@ class PreprintUnwithdrawView(PreprintMixin, View):
 
         from osf.utils.migrations import disable_auto_now_fields
         with disable_auto_now_fields():
+            req = preprint.requests.filter(machine_state=DefaultStates.ACCEPTED.value).first()
+            req.delete()
             preprint.save()
-
-        messages.success(request, f'Successfully unwithdrawn preprint {preprint._id}')
         return redirect(self.get_success_url())

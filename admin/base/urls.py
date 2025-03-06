@@ -37,6 +37,7 @@ urlpatterns = [
             re_path(r'^registration_schemas/', include('admin.registration_schemas.urls', namespace='registration_schemas')),
             re_path(r'^cedar_metadata_templates/', include('admin.cedar.urls', namespace='cedar_metadata_templates')),
             re_path(r'^draft_registrations/', include('admin.draft_registrations.urls', namespace='draft_registrations')),
+            re_path(r'^files/', include('admin.files.urls', namespace='files')),
         ]),
     ),
 ]

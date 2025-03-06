@@ -508,14 +508,14 @@ class AddonModelMixin(models.Model):
     def addons(self):
         return self.get_addons()
 
-    def get_addons(self):
+    def get_addons(self, service_type: str | None = None):
         request, user_id = get_request_and_user_id()
         if flag_is_active(request, features.ENABLE_GV):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
-            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id))
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type))
 
         return [_f for _f in [
             self.get_addon(config.short_name)
@@ -2094,6 +2094,14 @@ class SpamOverrideMixin(SpamMixin):
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.is_public
+        # the approach below helps to update to public true on ham just the objects that were public before were spammed
+        is_public_changings = self.logs.filter(action__in=['made_public', 'made_private'])
+        if is_public_changings:
+            latest_privacy_edit_time = is_public_changings.latest('created').created
+            last_spam_log = self.logs.filter(action__in=['confirm_spam', 'flag_spam'],
+                                                 created__gt=latest_privacy_edit_time)
+            if last_spam_log:
+                was_public = last_spam_log.latest().params.get('was_public', was_public)
         self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(

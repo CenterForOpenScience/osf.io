@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -486,14 +488,23 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'article_doi' in validated_data:
             article_doi = validated_data['article_doi']
+            # use different regex from what we use in validate_doi as we should find and set full correct doi string.
+            # it should start with "10." and have at least one group of any characters with a not required slash
+            # e.g. 10.12/, 10.1234/test, 10.798797789/test/, 10.1234/test1/test2/random
+            # e.g.2. from http://doi.com/10.32/test/random we fetch 10.32/test/random
+            stripped_article_doi = re.search(r'10\.\w+\/(\w*\/?)+', article_doi)
+            if not stripped_article_doi:
+                raise exceptions.ValidationError('The `article_doi` format is incorrect')
+
+            stripped_article_doi = stripped_article_doi.group()
             doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
-            if article_doi == doi:
+            if doi.startswith(stripped_article_doi):
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'
                            f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
 
-            preprint.article_doi = article_doi if article_doi else None
+            preprint.article_doi = stripped_article_doi
             save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
