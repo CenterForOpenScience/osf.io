@@ -13,7 +13,7 @@ from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
 from osf.metrics.utils import YearMonth
-from osf.models import Preprint, Node, Registration
+from osf.models import Preprint, Node, Registration, AbstractNode, Guid, GuidMetadataRecord
 
 
 class ManagementCommands(TemplateView):
@@ -141,4 +141,18 @@ class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
     def post(self, request):
         ingest_cedar_metadata_templates()
         messages.success(request, 'Cedar templates have been successfully imported from Cedar Workbench.')
+        return redirect(reverse('management:commands'))
+
+class SetEmptyResourceTypeGeneralForDataarchiveRegistrations(ManagementCommandPermissionView):
+    def post(self, request):
+        registration_ids = list(
+            AbstractNode.objects.filter(type='osf.registration', provider___id='dataarchive').values_list('id', flat=True)
+        )
+        guid_ids = list(
+            Guid.objects.filter(content_type__model='abstractnode', object_id__in=registration_ids).
+            values_list('id', flat=True)
+        )
+        GuidMetadataRecord.objects.filter(guid_id__in=guid_ids, resource_type_general='').update(
+            resource_type_general='Dataset'
+        )
         return redirect(reverse('management:commands'))
