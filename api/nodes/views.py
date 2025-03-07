@@ -1556,7 +1556,7 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
         return [
             self.get_provider_item(addon, node=node)
             for addon
-            in node.get_addons('storage', auth)
+            in node.get_addons('storage', auth=auth)
             if addon.config.has_hgrid_files
             and addon.configured
         ]
