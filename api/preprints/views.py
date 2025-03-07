@@ -134,6 +134,11 @@ class PreprintMixin(NodeMixin):
         if preprint.deleted is not None:
             sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
             raise NotFound
+
+        # May raise a permission denied
+        if check_object_permissions:
+            self.check_object_permissions(self.request, preprint)
+
         if (
             preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and
             not preprint.actions.filter(to_state='accepted').exists() and
@@ -141,10 +146,6 @@ class PreprintMixin(NodeMixin):
             not preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
         ):
             raise NotFound
-
-        # May raise a permission denied
-        if check_object_permissions:
-            self.check_object_permissions(self.request, preprint)
 
         return preprint
 
