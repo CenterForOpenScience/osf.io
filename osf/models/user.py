@@ -1669,8 +1669,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
-        :param str provided_pid: The given pid for claim_origin object. This is necessary for processing versioned preprints,
-         the _id for a preprint always indicates the latest version.
+        :param str provided_pid: The given pid for claim_origin object.
         :returns: The added record
         """
 
