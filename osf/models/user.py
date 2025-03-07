@@ -40,7 +40,7 @@ from osf.external.gravy_valet import (
 )
 from osf.utils.requests import get_current_request
 from osf.exceptions import reraise_django_validation_errors, UserStateError
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet, VersionedGuidMixin, Guid
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
 from .institution import Institution
@@ -1729,23 +1729,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         try:
             return self.unclaimed_records[project_id]
         except KeyError:  # reraise as ValueError
-            if VersionedGuidMixin.GUID_VERSION_DELIMITER in project_id:
-                guid, version = Guid.split_guid(project_id)
-                records_key_for_current_guid = [key for key in self.unclaimed_records.keys() if guid in key]
-                if records_key_for_current_guid is not []:
-                    records_key_for_current_guid.sort(
-                        key=lambda x: int(x.split(VersionedGuidMixin.GUID_VERSION_DELIMITER)[1]),
-                        reverse=True
-                    )
-                    record_info = self.unclaimed_records[records_key_for_current_guid[0]]
-                    return self.add_unclaimed_record(
-                        claim_origin=Guid.load(project_id).referent,
-                        referrer=OSFUser.load(record_info['referrer_id']),
-                        given_name=record_info.get('name', None),
-                        email=record_info.get('email', None),
-                        provided_pid=project_id,
-                    )
-
             raise ValueError(f'No unclaimed record for user {self._id} on node {project_id}')
 
     def get_claim_url(self, project_id, external=False):
