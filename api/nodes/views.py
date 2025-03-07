@@ -71,11 +71,9 @@ from api.logs.serializers import NodeLogSerializer, NodeLogDownloadSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
-    IsAdminContributor,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
-    AdminContributorOrPublic,
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
@@ -685,7 +683,10 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     Use DraftRegistrationsList endpoint instead.
     """
     permission_classes = (
-        IsAdminContributor,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -721,7 +722,10 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsAdminContributor,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        ContributorOrPublic,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -749,7 +753,10 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     permission_classes = (
-        AdminContributorOrPublic,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
