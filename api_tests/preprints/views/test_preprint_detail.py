@@ -21,7 +21,7 @@ from osf.models import (
     PreprintLog
 )
 from osf.utils import permissions as osf_permissions
-from osf.utils.permissions import WRITE
+from osf.utils.permissions import WRITE, ADMIN
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
     PreprintFactory,
@@ -147,6 +147,7 @@ class TestPreprintDetail:
     def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
         # test_retracted_fields
         url = f'/{API_BASE}preprints/{preprint_pre_mod._id}/'
+        preprint_pre_mod.add_contributor(user, ADMIN)
         res = app.get(url, auth=user.auth)
         data = res.json['data']
 

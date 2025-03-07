@@ -137,7 +137,8 @@ class PreprintMixin(NodeMixin):
         if (
             preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and
             not preprint.actions.filter(to_state='accepted').exists() and
-            not preprint.contributors.filter(id=self.request.user.id).exists()
+            not preprint.contributors.filter(id=self.request.user.id).exists() and
+            not preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
         ):
             raise NotFound
 
