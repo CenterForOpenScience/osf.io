@@ -1665,13 +1665,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors or group members for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None, provided_pid=None):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
+        :param str provided_pid: The given pid for claim_origin object.
         :returns: The added record
         """
 
@@ -1695,7 +1696,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                     f'Referrer does not have permission to add a contributor to {claim_origin._id}'
                 )
 
-        pid = str(claim_origin._id)
+        pid = provided_pid or str(claim_origin._id)
         referrer_id = str(referrer._id)
         if email:
             clean_email = email.lower().strip()
