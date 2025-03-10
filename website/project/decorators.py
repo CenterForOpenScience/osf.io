@@ -332,7 +332,7 @@ def must_have_addon(addon_name, model):
             else:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-            addon = owner.get_addon(addon_name)
+            addon = owner.get_addon(addon_name, auth=kwargs.get('auth'))
             if addon is None:
                 raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 

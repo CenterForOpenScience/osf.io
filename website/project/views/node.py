@@ -743,7 +743,7 @@ def _view_project(node, auth, primary=False,
 
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     anonymous = has_anonymous_link(node, auth)
-    addons = list(node.get_addons())
+    addons = list(node.get_addons(service_type='citation', auth=auth))
     widgets, configs, js, css = _render_addons(addons)
     redirect_url = node.url + '?view_only=None'
 

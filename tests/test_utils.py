@@ -553,10 +553,7 @@ class TestUserSignals:
     ):
         with mock.patch.object(settings, 'USE_CELERY', True):
             with override_flag(features.ENABLE_GV, active=True):
-                fake_gv = FakeGravyValet()
-                fake_gv._get_or_create_user_entry(old_user)
-                with fake_gv.run_fake():
-                    user.merge_user(old_user)
+                user.merge_user(old_user)
 
         mock_publish_user_status_change().__enter__().publish.assert_called_once_with(
             body={
