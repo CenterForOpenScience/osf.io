@@ -508,14 +508,25 @@ class AddonModelMixin(models.Model):
     def addons(self):
         return self.get_addons()
 
-    def get_addons(self, service_type: str | None = None):
-        request, user_id = get_request_and_user_id()
-        if flag_is_active(request, features.ENABLE_GV):
+    def get_addons(self, service_type: str | None = None, in_request_context: bool = True, auth=None):
+        '''
+        This gets all a user's addons whether that user is the model user (self.) or the user making the request (the
+        user signing off on whatever auth mechicanism such as token or basic auth.
+
+        service_type is the addon type such as "storage" or "citations"
+        in_request_context is the addon for the requesting user? or is it outside the request context.
+        '''
+        if in_request_context:
+            request, user_id = get_request_and_user_id()
+        else:
+            user_id = self._id
+
+        if not in_request_context or (in_request_context and flag_is_active(request, features.ENABLE_GV)):
             osf_addons = filter(
                 lambda x: x is not None,
                 (self.get_addon(addon) for addon in self.OSF_HOSTED_ADDONS)
             )
-            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type))
+            return itertools.chain(osf_addons, self._get_addons_from_gv(requesting_user_id=user_id, service_type=service_type, auth=auth))
 
         return [_f for _f in [
             self.get_addon(config.short_name)
@@ -543,12 +554,12 @@ class AddonModelMixin(models.Model):
             return addon
         return self.add_addon(name, *args, **kwargs)
 
-    def get_addon(self, name, is_deleted=False):
+    def get_addon(self, name, is_deleted=False, auth=None):
         # Avoid test-breakages by avoiding early access to the request context
         if name not in self.OSF_HOSTED_ADDONS:
             request, user_id = get_request_and_user_id()
             if flag_is_active(request, features.ENABLE_GV):
-                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id)
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth)
 
         try:
             settings_model = self._settings_model(name)

@@ -1,6 +1,6 @@
 import abc
 
-from unittest import mock
+from unittest import mock, skip
 import pytest
 import pytz
 import datetime
@@ -12,7 +12,7 @@ from osf.utils.permissions import ADMIN
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import mock_auth
 from addons.base import exceptions
-from osf_tests.conftest import request_context
+
 
 pytestmark = pytest.mark.django_db
 
@@ -53,6 +53,7 @@ class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_mergability(self):
         assert self.user_settings.can_be_merged
 
+    @skip('This is now done by GravyValet')
     def test_merge_user_settings(self):
         other_node = ProjectFactory()
         other_user = other_node.creator

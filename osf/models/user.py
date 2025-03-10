@@ -29,10 +29,12 @@ from guardian.shortcuts import get_objects_for_user
 from framework import sentry
 from framework.auth import Auth, signals, utils
 from framework.auth.core import generate_verification_key
-from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError,
-                                       InvalidTokenError,
-                                       MergeConfirmedRequiredError,
-                                       MergeConflictError)
+from framework.auth.exceptions import (
+    ChangePasswordError,
+    ExpiredTokenError,
+    InvalidTokenError,
+    MergeConfirmedRequiredError,
+)
 from framework.exceptions import PermissionsError
 from framework.sessions.utils import remove_sessions_for_user
 from osf.external.gravy_valet import (
@@ -718,11 +720,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def contributed(self):
         return self.nodes.all()
 
-    @property
-    def can_be_merged(self):
-        """The ability of the `merge_user` method to fully merge the user"""
-        return all(addon.can_be_merged for addon in self.get_addons())
-
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
         a contributor on any project. if the registered user and this account
@@ -738,9 +735,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
-        # Fail if the other user has conflicts.
-        if not user.can_be_merged:
-            raise MergeConflictError('Users cannot be merged')
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():
@@ -814,15 +808,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # FOREIGN FIELDS
         self.external_accounts.add(*user.external_accounts.values_list('pk', flat=True))
-
-        # - addons
-        # Note: This must occur before the merged user is removed as a
-        #       contributor on the nodes, as an event hook is otherwise fired
-        #       which removes the credentials.
-        for addon in user.get_addons():
-            user_settings = self.get_or_add_addon(addon.config.short_name)
-            user_settings.merge(addon)
-            user_settings.save()
 
         # - projects where the user was a contributor (group member only are not included).
         for node in user.contributed:
@@ -1968,7 +1953,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         return is_spam
 
-    def _get_addons_from_gv(self, requesting_user_id, service_type=None):
+    def _get_addons_from_gv(self, requesting_user_id, service_type=None, auth=None):
         requesting_user = OSFUser.load(requesting_user_id)
         if requesting_user and requesting_user != self:
             raise ValueError('Cannot get user addons for a user other than self')
