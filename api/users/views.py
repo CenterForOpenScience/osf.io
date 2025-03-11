@@ -26,7 +26,7 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
+from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
@@ -751,6 +751,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
     serializer_class = UserResetPasswordSerializer
     view_category = 'users'
     view_name = 'request-reset-password'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
 
     def get(self, request, *args, **kwargs):
         email = request.query_params.get('email', None)
