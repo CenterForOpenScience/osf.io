@@ -47,6 +47,7 @@ urlpatterns = [
     re_path(r'^(?P<node_id>\w+)/relationships/linked_nodes/$', views.NodeLinkedNodesRelationship.as_view(), name=views.NodeLinkedNodesRelationship.view_name),
     re_path(r'^(?P<node_id>\w+)/relationships/linked_registrations/$', views.NodeLinkedRegistrationsRelationship.as_view(), name=views.NodeLinkedRegistrationsRelationship.view_name),
     re_path(r'^(?P<node_id>\w+)/relationships/subjects/$', views.NodeSubjectsRelationship.as_view(), name=views.NodeSubjectsRelationship.view_name),
+    re_path(r'^(?P<node_id>\w+)/reorder_components/$', views.NodeReorderComponents.as_view(), name=views.NodeReorderComponents.view_name),
     re_path(r'^(?P<node_id>\w+)/requests/$', views.NodeRequestListCreate.as_view(), name=views.NodeRequestListCreate.view_name),
     re_path(r'^(?P<node_id>\w+)/settings/$', views.NodeSettings.as_view(), name=views.NodeSettings.view_name),
     re_path(r'^(?P<node_id>\w+)/storage/$', views.NodeStorage.as_view(), name=views.NodeStorage.view_name),
