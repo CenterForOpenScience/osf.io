@@ -204,7 +204,6 @@ class TestNodeContributorDetail(TestContributorDetail):
             app,
             user,
             project_public,
-            make_resource_url,
             url_public):
         res = app.get(url_public, auth=user.auth)
         data = res.json['data']
@@ -215,7 +214,7 @@ class TestNodeContributorDetail(TestContributorDetail):
         project_public.add_contributor(
             other_contributor, auth=Auth(user), save=True)
 
-        other_contributor_detail = make_resource_url(project_public._id, other_contributor._id)
+        other_contributor_detail = self.make_resource_url(project_public._id, other_contributor._id)
 
         res = app.get(other_contributor_detail, auth=user.auth)
         assert res.json['data']['attributes']['is_curator'] is False
@@ -224,7 +223,7 @@ class TestNodeContributorDetail(TestContributorDetail):
         project_public.add_contributor(
             curator_contributor, auth=Auth(user), save=True, make_curator=True, visible=False)
 
-        curator_contributor_detail = make_resource_url(project_public._id, curator_contributor._id)
+        curator_contributor_detail = self.make_resource_url(project_public._id, curator_contributor._id)
 
         res = app.get(curator_contributor_detail, auth=user.auth)
         assert res.json['data']['attributes']['is_curator'] is True
