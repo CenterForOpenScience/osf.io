@@ -197,6 +197,39 @@ class TestContributorDetail(ContributorDetailMixin):
         assert res.json['data']['attributes']['index'] == 1
 
 
+class TestNodeContributorDetail(TestContributorDetail):
+
+    def test_detail_includes_is_curator(
+            self,
+            app,
+            user,
+            project_public,
+            make_resource_url,
+            url_public):
+        res = app.get(url_public, auth=user.auth)
+        data = res.json['data']
+        assert 'is_curator' in data['attributes'].keys()
+        assert data['attributes']['is_curator'] is False
+
+        other_contributor = AuthUserFactory()
+        project_public.add_contributor(
+            other_contributor, auth=Auth(user), save=True)
+
+        other_contributor_detail = make_resource_url(project_public._id, other_contributor._id)
+
+        res = app.get(other_contributor_detail, auth=user.auth)
+        assert res.json['data']['attributes']['is_curator'] is False
+
+        curator_contributor = AuthUserFactory()
+        project_public.add_contributor(
+            curator_contributor, auth=Auth(user), save=True, make_curator=True, visible=False)
+
+        curator_contributor_detail = make_resource_url(project_public._id, curator_contributor._id)
+
+        res = app.get(curator_contributor_detail, auth=user.auth)
+        assert res.json['data']['attributes']['is_curator'] is True
+
+
 @pytest.mark.django_db
 class TestNodeContributorPartialUpdate:
 
