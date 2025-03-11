@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.05.0 (2025-03-11)
+====================
+
+- Bugfix and Improvements - BE Release
+
 25.04.1 (2025-02-27)
 ====================
 - D'oh! Actually include the code this time.
