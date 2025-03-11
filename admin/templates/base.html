@@ -134,6 +134,17 @@
                   </div>
               </li>
           {% endif %}
+          {% if perms.osf.view_file %}
+                <li><a role="button" data-toggle="collapse" href="#collapseFiles">
+                  <i class='fa fa-caret-down'></i> Files</a></li>
+            <li>
+                <div class="collapse" id="collapseFiles">
+                    <ul class="sidebar-menu sidebar-menu-inner">
+                        <li><a href="{% url 'files:search' %}"><i class='fa fa-link'></i><span>Search Files</span> </a></li>
+                    </ul>
+                </div>
+            </li>
+          {% endif %}
           {% if perms.osf.view_osfuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseUsers">
                   <i class='fa fa-caret-down'></i> Users
@@ -157,6 +168,17 @@
                       <li><a href="{% url 'nodes:stuck-registrations' %}"><i class='fa fa-link'></i> <span>Stuck Registrations</span></a></li>
                       <li><a href="{% url 'nodes:ia-backlog-list' %}"><i class='fa fa-link'></i> <span>IA Backlog</span></a></li>
                       <li><a href="{% url 'nodes:doi-backlog-list' %}"><i class='fa fa-link'></i> <span>DOI Backlog</span></a></li>
+                      <li><a href="{% url 'nodes:approval-backlog-list' %}"><i class='fa fa-link'></i> <span>Approval Backlog</span></a></li>
+                  </ul>
+              </div>
+          {% endif %}
+          {% if perms.osf.view_draftregistration %}
+              <li><a role="button" data-toggle="collapse" href="#collapseDraftRegistrations">
+                  <i class='fa fa-caret-down'></i> Draft Registrations
+              </a></li>
+              <div class="collapse" id="collapseDraftRegistrations">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      <li><a href="{% url 'draft_registrations:search' %}"><i class='fa fa-link'></i> <span>Search Draft Registrations</span></a></li>
                   </ul>
               </div>
           {% endif %}

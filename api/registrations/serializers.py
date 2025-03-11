@@ -21,6 +21,7 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeLicenseSerializer,
     NodeContributorsSerializer,
+    NodeContributorsCreateSerializer,
     RegistrationProviderRelationshipField,
     get_license_details,
 )
@@ -30,6 +31,7 @@ from api.base.serializers import (
     ShowIfVersion, VersionedDateTimeField, ValuesListField,
     HideIfWithdrawalOrWikiDisabled,
 )
+from api.base.utils import update_contributors_permissions_and_bibliographic_status
 from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
@@ -83,7 +85,7 @@ class RegistrationSerializer(NodeSerializer):
 
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
-    title = ser.CharField(read_only=True)
+    title = ser.CharField(required=False)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category_choices = NodeSerializer.category_choices
     category_choices_string = NodeSerializer.category_choices_string
@@ -916,6 +918,23 @@ class RegistrationContributorsSerializer(NodeContributorsSerializer):
                 'version': self.context['request'].parser_context['kwargs']['version'],
             },
         )
+
+    def update(self, instance, validated_data):
+        return update_contributors_permissions_and_bibliographic_status(
+            self,
+            instance,
+            validated_data,
+        )
+
+
+class RegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, RegistrationContributorsSerializer):
+    """
+    Overrides RegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
+
+    id and index redefined because of the two serializers we've inherited
+    """
+    id = IDField(source='_id', required=False, allow_null=True)
+    index = ser.IntegerField(required=False, source='_order')
 
 
 class RegistrationFileSerializer(OsfStorageFileSerializer):

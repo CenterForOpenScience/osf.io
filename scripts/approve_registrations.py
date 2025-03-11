@@ -27,12 +27,7 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
-def main(dry_run=True):
-    approvals_past_pending = models.RegistrationApproval.objects.filter(
-        state=models.RegistrationApproval.UNAPPROVED,
-        initiation_date__lt=timezone.now() - settings.REGISTRATION_APPROVAL_TIME
-    )
-
+def approve_past_pendings(approvals_past_pending, dry_run=True):
     for registration_approval in approvals_past_pending:
         if dry_run:
             logger.warning('Dry run mode')
@@ -71,6 +66,14 @@ def main(dry_run=True):
                 sentry.log_message(str(err))
                 logger.exception(err)
                 transaction.savepoint_rollback(sid)
+
+
+def main(dry_run=True):
+    approvals_past_pending = models.RegistrationApproval.objects.filter(
+        state=models.RegistrationApproval.UNAPPROVED,
+        initiation_date__lt=timezone.now() - settings.REGISTRATION_APPROVAL_TIME
+    )
+    approve_past_pendings(approvals_past_pending, dry_run)
 
 
 @celery_app.task(name='scripts.approve_registrations')

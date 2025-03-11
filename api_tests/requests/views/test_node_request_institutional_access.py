@@ -6,7 +6,9 @@ from api_tests.requests.mixins import NodeRequestTestMixin
 
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
+from website import language
 from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
+from framework.auth import Auth
 
 
 @pytest.mark.django_db
@@ -99,6 +101,18 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
                             'type': 'users'
                         }
                     }
+                },
+                'type': 'node-requests'
+            }
+        }
+
+    @pytest.fixture()
+    def create_payload_non_institutional_access(self, institution_without_access, user_with_affiliation_on_institution_without_access):
+        return {
+            'data': {
+                'attributes': {
+                    'comment': 'Wanna Philly Philly?',
+                    'request_type': NodeRequestTypes.ACCESS.value,
                 },
                 'type': 'node-requests'
             }
@@ -395,3 +409,122 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         )
         assert res.status_code == 403
         assert f"{node_with_disabled_access_requests._id} does not have Access Requests enabled" in res.json['errors'][0]['detail']
+
+    @mock.patch('api.requests.serializers.send_mail')
+    def test_placeholder_text_when_comment_is_empty(
+            self,
+            mock_mail,
+            app,
+            project,
+            institutional_admin,
+            url,
+            user_with_affiliation,
+            create_payload,
+            institution
+    ):
+        """
+        Test that the placeholder text is used when the comment field is empty or None.
+        """
+        # Test with empty comment
+        create_payload['data']['attributes']['comment'] = ''
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+
+        mock_mail.assert_called_with(
+            to_addr=user_with_affiliation.username,
+            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            user=user_with_affiliation,
+            bcc_addr=None,
+            reply_to=None,
+            **{
+                'sender': institutional_admin,
+                'recipient': user_with_affiliation,
+                'comment': language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT,
+                'institution': institution,
+                'osf_url': mock.ANY,
+                'node': project,
+            }
+        )
+
+    def test_requester_can_resubmit(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that a requester can submit another access request for the same node.
+        """
+        # Create the first request
+        app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_reject(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'rejected'
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+    def test_requester_can_make_insti_request_after_access_resubmit(self, app, project, institutional_admin, url, create_payload_non_institutional_access, create_payload):
+        """
+        Test that a requester can submit another access request, then institutional access for the same node.
+        """
+        # Create the first request a basic request_type == `access` request
+        app.post_json_api(url, create_payload_non_institutional_access, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_reject(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'rejected'
+
+        # Attempt to create a second request, refresh and update as institutional
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+    def test_requester_can_resubmit_after_approval(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that a requester can submit another access request for the same node.
+        """
+        # Create the first request
+        app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_accept(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+
+        project.remove_contributor(node_request.creator, Auth(node_request.creator))
+        node_request = project.requests.get()
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+    def test_requester_can_resubmit_after_2_approvals(self, app, project, institutional_admin, url, create_payload):
+        """
+        Test that a requester can submit another access request for the same node.
+        """
+        # Create the first request
+        app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        node_request = project.requests.get()
+        node_request.run_accept(project.creator, 'test comment2')
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'accepted'
+
+        project.remove_contributor(node_request.creator, Auth(node_request.creator))
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+
+        # Accepted request can violate node, but we will just update the current one
+        assert project.requests.all().count() == 1
+
+        # Attempt to create a second request
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        assert res.status_code == 201
+        node_request.refresh_from_db()
+        assert node_request.machine_state == 'pending'
+        assert project.requests.all().count() == 1

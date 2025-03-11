@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load node_extras %}
+{% block title %}
+    <title>File</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <table class="table table-striped">
+                <h2>File: <b>{{ object.name }}</b></h2>
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Guid</td>
+                        <td>{{ guid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ object.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Provider</td>
+                        <td>{{ object.provider }}</td>
+                    </tr>
+                    <tr>
+                        <td>Version</td>
+                        <td>{{ version }}</td>
+                    </tr>
+                    {% if node_id %}
+                    <tr>
+                       <td>Parent</td>
+                        <td>
+                         <a href="{{ node | reverse_node }}">
+                            {{ node.title }}
+                        </a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if file_metadata %}
+                    <tr>
+                       <td>File Metadata</td>
+                        <td>
+                         <b>Title:</b>
+                            <p>{{file_metadata.title}}</p>
+                         <b>Description:</b>
+                            <p>{{file_metadata.description}}</p>
+                         <b>Resource type:</b>
+                            <p>{{file_metadata.resource_type_general}}</p>
+                         <b>Resource language:</b>
+                            <p>{{file_metadata.language}}</p>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    <tr>
+                        <td>Date Created</td>
+                        <td>{{ object.created | date }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date Modified</td>
+                        <td>{{ object.modified | date }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock content %}

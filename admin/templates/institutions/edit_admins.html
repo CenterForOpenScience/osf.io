@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Institution contributors</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            {% if messages %}
+            <ul>
+                {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ institution.name }}</h2>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <form id="add-admins-form" action="{% url 'institutions:list_and_add_admin' institution.id %}" method="post">
+                    {% csrf_token %}
+                    <label>Add admin by guid: </label>
+                    <input type="text" name="add-admins-form">
+                    <input type="submit" name="admin" value="Add Admin" class="form-button btn btn-success">
+                </form>
+            </div>
+        </div>
+        <hr>
+        <div class="row">
+            <div class="col-md-12">
+                <form id="remove-admins-form" action="{% url 'institutions:remove_admins' institution.id %}" method="post">
+                   {% csrf_token %}
+                    <table class="table table-striped">
+                        <th></th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        {% for admin in admins %}
+                            <tr>
+                                <td><input type='checkbox' name="Admin-{{admin.id}}"></td>
+                                <td>{{ admin.fullname }} ({{admin.username}})</td>
+                                <td>Admin</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    <input class="form-button btn btn-danger" type="submit" value="Remove Admins" />
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

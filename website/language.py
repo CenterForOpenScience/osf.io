@@ -214,3 +214,4 @@ DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are
 #log out and revisit the link to confirm emails
 CONFIRM_ALTERNATE_EMAIL_ERROR = 'The email address has <b>NOT</b> been added to your account. Please log out and revisit the link in your email. Thank you.'
 SWITCH_VALIDATOR_ERROR = 'You do not have the ability to edit this field at this time.'
+EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT = 'User has left custom message field empty'

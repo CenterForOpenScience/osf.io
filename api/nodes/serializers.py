@@ -18,6 +18,7 @@ from api.base.settings import ADDONS_FOLDER_CONFIGURABLE
 from api.base.utils import (
     absolute_reverse, get_object_or_error,
     get_user_auth, is_truthy,
+    update_contributors_permissions_and_bibliographic_status,
 )
 from api.base.versioning import get_kebab_snake_case_field
 from api.institutions.utils import update_institutions
@@ -1268,28 +1269,11 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
     def update(self, instance, validated_data):
-        index = None
-        if '_order' in validated_data:
-            index = validated_data.pop('_order')
-
-        auth = Auth(self.context['request'].user)
-        node = self.context['resource']
-
-        if 'bibliographic' in validated_data:
-            bibliographic = validated_data.get('bibliographic')
-        else:
-            bibliographic = node.get_visible(instance.user)
-        permission = validated_data.get('permission') or instance.permission
-        try:
-            if index is not None:
-                node.move_contributor(instance.user, auth, index, save=True)
-            node.update_contributor(instance.user, permission, bibliographic, auth, save=True)
-        except node.state_error as e:
-            raise exceptions.ValidationError(detail=str(e))
-        except ValueError as e:
-            raise exceptions.ValidationError(detail=str(e))
-        instance.refresh_from_db()
-        return instance
+        return update_contributors_permissions_and_bibliographic_status(
+            self,
+            instance,
+            validated_data,
+        )
 
 
 class NodeLinksSerializer(JSONAPISerializer):
