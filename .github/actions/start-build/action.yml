@@ -23,7 +23,7 @@ runs:
     shell: bash
     run: |
       sudo apt update
-      sudo apt-get install libxml2-dev libxslt-dev python-dev
+      sudo apt-get install libxml2-dev libxslt-dev python3
   - name: Copy Settings
     shell: bash
     run: |

@@ -14,7 +14,7 @@ env:
 
 jobs:
   build-cache:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - id: cache-objects
@@ -31,7 +31,7 @@ jobs:
         rm -rf node_modules  ## TODO remove this later
 
   addons:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
       checks: write
@@ -58,7 +58,7 @@ jobs:
       uses: ./.github/actions/gen-report
 
   website:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
       checks: write
@@ -85,7 +85,7 @@ jobs:
       uses: ./.github/actions/gen-report
 
   api1_and_js:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
       checks: write
@@ -114,7 +114,7 @@ jobs:
         uses: ./.github/actions/gen-report
 
   api2:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
       checks: write
@@ -141,7 +141,7 @@ jobs:
       uses: ./.github/actions/gen-report
 
   api3_and_osf:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     permissions:
       checks: write
     needs: build-cache
