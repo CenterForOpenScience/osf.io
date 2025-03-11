@@ -245,7 +245,7 @@ class TestResetPassword:
                 }
             }
         }
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token'})
         assert res.status_code == 400
 
     def test_post_invalid_password(self, app, url, user_one):
@@ -262,8 +262,30 @@ class TestResetPassword:
                 }
             }
         }
-        res = app.post_json_api(url, payload, expect_errors=True)
+
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token'})
         assert res.status_code == 400
+
+    def test_throrrle(self, app, url, user_one):
+        encoded_email = urllib.parse.quote(user_one.email)
+        url = f'{url}?email={encoded_email}'
+        res = app.get(url)
+        user_one.reload()
+        payload = {
+            'data': {
+                'attributes': {
+                    'uid': user_one._id,
+                    'token': user_one.verification_key_v2['token'],
+                    'password': "12345",
+                }
+            }
+        }
+
+        res = app.post_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 429
+
+        res = app.get(url, expect_errors=True)
+        assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'
 
 
 @pytest.mark.django_db
