@@ -1,4 +1,4 @@
-from django.db import IntegrityError
+from django.db import transaction, IntegrityError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 
@@ -18,7 +18,7 @@ from osf.models import (
 )
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
-from website import settings
+from website import language, settings
 from website.mails import send_mail, NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -186,20 +186,21 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             if not recipient.is_affiliated_with_institution(institution):
                 raise PermissionDenied(f"User {recipient._id} is not affiliated with the institution.")
 
-            if validated_data['comment']:
-                send_mail(
-                    to_addr=recipient.username,
-                    mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-                    user=recipient,
-                    sender=sender,
-                    bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
-                    reply_to=sender.username if validated_data['reply_to'] else None,
-                    recipient=recipient,
-                    comment=validated_data['comment'],
-                    institution=institution,
-                    osf_url=settings.DOMAIN,
-                    node=node_request.target,
-                )
+            comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
+
+            send_mail(
+                to_addr=recipient.username,
+                mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+                user=recipient,
+                sender=sender,
+                bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
+                reply_to=sender.username if validated_data['reply_to'] else None,
+                recipient=recipient,
+                comment=comment,
+                institution=institution,
+                osf_url=settings.DOMAIN,
+                node=node_request.target,
+            )
 
         return node_request
 
@@ -208,18 +209,31 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
         request_type = validated_data['request_type']
         comment = validated_data.get('comment', '')
         requested_permissions = validated_data.get('requested_permissions')
-        try:
-            node_request = NodeRequest.objects.create(
-                target=node,
-                creator=creator,
-                comment=comment,
-                machine_state=DefaultStates.INITIAL.value,
-                request_type=request_type,
-                requested_permissions=requested_permissions,
-            )
+        with transaction.atomic():
+            try:
+                node_request, created = NodeRequest.objects.update_or_create(
+                    target=node,
+                    creator=creator,
+                    request_type=request_type,
+                    defaults={
+                        'comment': comment,
+                        'machine_state': DefaultStates.INITIAL.value,
+                        'requested_permissions': requested_permissions,
+                    },
+                )
+                if not created and request_type != NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
+                    raise Conflict(f"Users may not have more than one {request_type} request per node.")
+            except (NodeRequest.MultipleObjectsReturned, IntegrityError):
+                node_request = NodeRequest.objects.filter(
+                    target=node,
+                    creator=creator,
+                ).order_by('-created').first()
+                node_request.comment = comment
+                node_request.requested_permissions = requested_permissions
+                node_request.machine_state = DefaultStates.INITIAL.value
+                node_request.request_type = request_type
+
             node_request.save()
-        except IntegrityError:
-            raise Conflict(f"Users may not have more than one {request_type} request per node.")
 
         node_request.run_submit(creator)
         return node_request

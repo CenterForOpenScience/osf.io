@@ -39,7 +39,8 @@ with open(os.path.join(APP_PATH, 'package.json')) as fobj:
 
 # Expiration time for verification key
 EXPIRATION_TIME_DICT = {
-    'password': 24 * 60,    # 24 hours in minutes for forgot and reset password
+    'password': 10,    # 10 minutes for forgot and reset password
+    'password_admin': 12* 60, # 12 hours in minutes for reset password sent from admin
     'confirm': 24 * 60,     # 24 hours in minutes for confirm account and email
     'claim': 30 * 24 * 60   # 30 days in minutes for claim contributor-ship
 }

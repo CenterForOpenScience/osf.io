@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -113,7 +115,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = ser.CharField(source='article_doi', required=False, allow_null=True)
+    doi = ser.CharField(source='article_doi', required=False, allow_null=True, allow_blank=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
@@ -145,6 +147,12 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_last_transitioned = NoneIfWithdrawal(VersionedDateTimeField(read_only=True))
     version = ser.IntegerField(read_only=True)
     is_latest_version = ser.BooleanField(read_only=True)
+
+    versions = RelationshipField(
+        related_view='preprints:preprint-versions',
+        related_view_kwargs={'preprint_id': '<_id>'},
+        read_only=True,
+    )
 
     citation = NoneIfWithdrawal(
         RelationshipField(
@@ -224,7 +232,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             'self': 'get_preprint_url',
             'html': 'get_absolute_html_url',
             'doi': 'get_article_doi_url',
-            'preprint_versions': 'get_preprint_versions',
             'preprint_doi': 'get_preprint_doi_url',
         },
     )
@@ -256,15 +263,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     def subjects_self_view(self):
         # Overrides TaxonomizableSerializerMixin
         return 'preprints:preprint-relationships-subjects'
-
-    def get_preprint_versions(self, obj):
-        return absolute_reverse(
-            'preprints:preprint-versions',
-            kwargs={
-                'preprint_id': obj._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
 
     def get_preprint_url(self, obj):
         return absolute_reverse(
@@ -489,14 +487,24 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             save_preprint = True
 
         if 'article_doi' in validated_data:
+            article_doi = validated_data['article_doi']
+            # use different regex from what we use in validate_doi as we should find and set full correct doi string.
+            # it should start with "10." and have at least one group of any characters with a not required slash
+            # e.g. 10.12/, 10.1234/test, 10.798797789/test/, 10.1234/test1/test2/random
+            # e.g.2. from http://doi.com/10.32/test/random we fetch 10.32/test/random
+            stripped_article_doi = re.search(r'10\.\w+\/(\w*\/?)+', article_doi)
+            if not stripped_article_doi:
+                raise exceptions.ValidationError('The `article_doi` format is incorrect')
+
+            stripped_article_doi = stripped_article_doi.group()
             doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
-            if validated_data['article_doi'] == doi:
+            if doi.startswith(stripped_article_doi):
                 raise exceptions.ValidationError(
                     detail=f'The `article_doi` "{doi}" is already associated with this'
                            f' preprint please enter a peer-reviewed publication\'s DOI',
                 )
 
-            preprint.article_doi = validated_data['article_doi']
+            preprint.article_doi = stripped_article_doi
             save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:

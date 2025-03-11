@@ -4,8 +4,9 @@ from unittest import mock
 import pytz
 import datetime
 
-from osf.models import AdminLogEntry, NodeLog, AbstractNode
+from osf.models import AdminLogEntry, NodeLog, AbstractNode, RegistrationApproval
 from admin.nodes.views import (
+    NodeConfirmSpamView,
     NodeDeleteView,
     NodeRemoveContributorView,
     NodeView,
@@ -17,9 +18,11 @@ from admin.nodes.views import (
     NodeConfirmHamView,
     AdminNodeLogView,
     RestartStuckRegistrationsView,
-    RemoveStuckRegistrationsView
+    RemoveStuckRegistrationsView,
+    ApprovalBacklogListView,
+    ConfirmApproveBacklogView
 )
-from admin_tests.utilities import setup_log_view, setup_view
+from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
 from website import settings
 from django.utils import timezone
@@ -31,7 +34,9 @@ from django.contrib.contenttypes.models import ContentType
 from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
-from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory
+from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationApprovalFactory
+
+from website.settings import REGISTRATION_APPROVAL_TIME
 
 
 def patch_messages(request):
@@ -108,6 +113,31 @@ class TestNodeView(AdminTestCase):
 
         response = NodeView.as_view()(request, guid=guid)
         assert response.status_code == 200
+
+    def test_node_spam_ham_workflow_if_node_is_private(self):
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        node = ProjectFactory()
+        guid = node._id
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
+        assert not node.is_public
+        node = handle_post_view_request(request, NodeConfirmHamView(), node, guid)
+        assert not node.is_public
+
+    def test_node_spam_ham_workflow_if_node_is_public(self):
+        superuser = AuthUserFactory()
+        superuser.is_superuser = True
+        node = ProjectFactory()
+        node.set_privacy('public')
+        guid = node._id
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        node = handle_post_view_request(request, NodeConfirmSpamView(), node, guid)
+        assert not node.is_public
+        node = handle_post_view_request(request, NodeConfirmHamView(), node, guid)
+        assert node.is_public
 
 
 class TestNodeDeleteView(AdminTestCase):
@@ -431,3 +461,58 @@ class TestRemoveStuckRegistrationsView(AdminTestCase):
         self.registration.refresh_from_db()
         assert self.registration.is_deleted
         assert self.registration.deleted is not None
+
+
+class TestApprovalBacklogListView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.request = RequestFactory().post('/fake_path')
+        self.view = setup_log_view(ApprovalBacklogListView(), self.request)
+
+    def request_approval(self, timedelta, should_display=False):
+        now = timezone.now()
+        RegistrationApprovalFactory(
+            initiation_date=now + timedelta,
+            end_date=now + timedelta + REGISTRATION_APPROVAL_TIME
+        )
+        res = self.view.get(self.request)
+        is_displayed_in_queryset = res.context_data['queryset'].exists()
+        assert is_displayed_in_queryset is should_display
+
+    def test_not_expired_approvals_are_shown(self):
+        # we show all approvals in admin if now <= end_date (approval did not expire)
+        # as end_date = initiation_date + REGISTRATION_APPROVAL_TIME
+        self.request_approval(timezone.timedelta(days=-3), should_display=False)
+        self.request_approval(timezone.timedelta(days=-2), should_display=False)
+        self.request_approval(timezone.timedelta(days=-1, hours=-23, minutes=-59), should_display=True)
+        self.request_approval(timezone.timedelta(days=-1, hours=-23, minutes=-59, seconds=59), should_display=True)
+        self.request_approval(timezone.timedelta(days=-1), should_display=True)
+        self.request_approval(timezone.timedelta(minutes=-15), should_display=True)
+        self.request_approval(timezone.timedelta(minutes=15), should_display=True)
+        self.request_approval(timezone.timedelta(days=1), should_display=True)
+        self.request_approval(timezone.timedelta(days=1, hours=23, minutes=59), should_display=True)
+        self.request_approval(timezone.timedelta(days=2), should_display=True)
+        self.request_approval(timezone.timedelta(days=3), should_display=True)
+
+
+class TestConfirmApproveBacklogView(AdminTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_request_approval_is_approved(self):
+        now = timezone.now()
+        self.approval = RegistrationApprovalFactory(
+            initiation_date=now - timezone.timedelta(days=1),
+            end_date=now + timezone.timedelta(days=1)
+        )
+        assert RegistrationApproval.objects.first().state == RegistrationApproval.UNAPPROVED
+        request = RequestFactory().post('/fake_path', data={f'{self.approval._id}': '[on]'})
+        view = setup_log_view(ConfirmApproveBacklogView(), request)
+        view.post(request)
+        assert RegistrationApproval.objects.first().state == RegistrationApproval.APPROVED

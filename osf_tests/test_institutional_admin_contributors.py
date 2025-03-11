@@ -1,4 +1,6 @@
 import pytest
+from unittest import mock
+
 
 from osf.models import Contributor
 from osf_tests.factories import (
@@ -8,6 +10,9 @@ from osf_tests.factories import (
     NodeRequestFactory
 )
 from django.db.utils import IntegrityError
+from osf.utils.workflows import NodeRequestTypes
+from osf.utils import permissions
+from osf.utils.workflows import DefaultStates
 
 @pytest.mark.django_db
 class TestContributorModel:
@@ -114,3 +119,53 @@ class TestContributorModel:
         assert saved_curator.node == project
         assert saved_curator.visible is False
         assert saved_curator.is_curator is True
+
+    def test_requested_permissions_or_default(self, app, project, institutional_admin):
+        """
+        Test that `self.machineable.requested_permissions` is used for contributor permissions if present,
+        otherwise the default from `ev.kwargs['permissions']` is used.
+        """
+        node_request = project.requests.create(
+            creator=institutional_admin,
+            request_type=NodeRequestTypes.ACCESS.value,
+            requested_permissions=permissions.ADMIN,  # Explicitly set permissions
+            machine_state=DefaultStates.PENDING.value,
+        )
+
+        with mock.patch('osf.models.Node.add_contributor') as mock_add_contributor:
+            node_request.run_accept(
+                user=project.creator,
+                comment='test comment',
+            )
+            mock_add_contributor.assert_called_once_with(
+                institutional_admin,
+                auth=mock.ANY,
+                permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
+                visible=True,
+                send_email='access_request',
+                make_curator=False,
+            )
+
+    def test_requested_permissions_is_used(self, app, project, institutional_admin):
+
+        node_request = project.requests.create(
+            creator=institutional_admin,
+            request_type=NodeRequestTypes.ACCESS.value,
+            requested_permissions=permissions.ADMIN,  # Explicitly set permissions
+            machine_state=DefaultStates.PENDING.value,
+        )
+
+        with mock.patch('osf.models.Node.add_contributor') as mock_add_contributor:
+            node_request.run_accept(
+                user=project.creator,
+                comment='test comment',
+                permissions=permissions.WRITE  # Default permissions to use if requested_permissions is None
+            )
+            mock_add_contributor.assert_called_once_with(
+                institutional_admin,
+                auth=mock.ANY,
+                permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
+                visible=True,
+                send_email='access_request',
+                make_curator=False,
+            )

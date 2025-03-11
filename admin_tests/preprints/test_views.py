@@ -8,7 +8,7 @@ from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog
+from osf.models import Preprint, PreprintLog, PreprintRequest
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -22,7 +22,7 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 
-from admin_tests.utilities import setup_view, setup_log_view
+from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
 from admin.preprints import views
 
@@ -147,6 +147,7 @@ class TestPreprintView:
         assert preprint._id not in response_ids
 
     def test_confirm_spam(self, flagged_preprint, superuser, mock_akismet):
+        last_logged_before_method_call = flagged_preprint.last_logged
         request = RequestFactory().post('/fake_path')
         request.user = superuser
 
@@ -160,8 +161,11 @@ class TestPreprintView:
         assert flagged_preprint.is_spam
         assert flagged_preprint.is_spam
         assert not flagged_preprint.is_public
+        assert flagged_preprint.logs.first().action == 'confirm_spam'
+        assert last_logged_before_method_call == flagged_preprint.last_logged
 
     def test_confirm_ham(self, preprint, superuser, mock_akismet):
+        last_logged_before_method_call = preprint.last_logged
         request = RequestFactory().post('/fake_path')
         request.user = superuser
 
@@ -172,6 +176,8 @@ class TestPreprintView:
 
         assert preprint.spam_status == SpamStatus.HAM
         assert preprint.is_public
+        assert preprint.logs.first().action == 'confirm_ham'
+        assert last_logged_before_method_call == preprint.last_logged
 
     def test_valid_but_insufficient_view_permissions(self, user, preprint, plain_view):
         view_permission = Permission.objects.get(codename='view_preprint')
@@ -324,6 +330,24 @@ class TestPreprintView:
         preprint.refresh_from_db()
         assert preprint.provider == provider_one
         assert subject_osf in preprint.subjects.all()
+
+    def test_preprint_spam_ham_workflow_if_preprint_is_public(self, preprint, superuser):
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        preprint = handle_post_view_request(request, views.PreprintConfirmSpamView(), preprint, preprint._id)
+        assert not preprint.is_public
+        preprint = handle_post_view_request(request, views.PreprintConfirmHamView(), preprint, preprint._id)
+        assert preprint.is_public
+
+    def test_preprint_spam_ham_workflow_if_preprint_is_private(self, preprint, superuser):
+        preprint.set_privacy('private')
+        preprint.refresh_from_db()
+        request = RequestFactory().post('/fake_path')
+        request.user = superuser
+        preprint = handle_post_view_request(request, views.PreprintConfirmSpamView(), preprint, preprint._id)
+        assert not preprint.is_public
+        preprint = handle_post_view_request(request, views.PreprintConfirmHamView(), preprint, preprint._id)
+        assert not preprint.is_public
 
 
 @pytest.mark.urls('admin.base.urls')
@@ -541,6 +565,57 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.target.refresh_from_db()
         assert withdrawal_request.machine_state == DefaultStates.REJECTED.value
         assert not withdrawal_request.target.withdrawal_justification
+
+    def test_can_unwithdraw_preprint(self, withdrawal_request, submitter, preprint, admin):
+        assert withdrawal_request.machine_state == DefaultStates.PENDING.value
+        original_comment = withdrawal_request.comment
+
+        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        request.POST = {'action': 'approve'}
+        request.user = admin
+
+        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        assert response.status_code == 302
+
+        withdrawal_request.refresh_from_db()
+        withdrawal_request.target.refresh_from_db()
+        assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        assert original_comment == withdrawal_request.target.withdrawal_justification
+
+        # Store PreprintRequest ID before deletion
+        withdrawal_request_id = withdrawal_request.id
+        request_unwithdraw = RequestFactory().post(reverse('preprints:unwithdraw', kwargs={'guid': preprint._id}))
+        request_unwithdraw.user = admin
+        response_unwithdraw = views.PreprintUnwithdrawView.as_view()(request_unwithdraw, guid=preprint._id)
+        assert response_unwithdraw.status_code == 302
+
+        assert not PreprintRequest.objects.filter(id=withdrawal_request_id).exists()
+        preprint.refresh_from_db()
+        assert preprint.date_withdrawn is None
+        assert preprint.withdrawal_justification == ''
+
+        new_withdrawal_request = PreprintRequestFactory(
+            creator=submitter,
+            target=preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value,
+        )
+        new_withdrawal_request.run_submit(submitter)
+
+        assert new_withdrawal_request.machine_state == DefaultStates.PENDING.value
+        original_comment = new_withdrawal_request.comment
+
+        new_request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        new_request.POST = {'action': 'approve'}
+        new_request.user = admin
+
+        response = views.PreprintApproveWithdrawalRequest.as_view()(new_request, guid=preprint._id)
+        assert response.status_code == 302
+
+        new_withdrawal_request.refresh_from_db()
+        new_withdrawal_request.target.refresh_from_db()
+        assert new_withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
+        assert original_comment == new_withdrawal_request.target.withdrawal_justification
 
     def test_permissions_errors(self, user, submitter):
         # with auth, no permissions

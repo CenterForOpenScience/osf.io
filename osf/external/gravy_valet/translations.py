@@ -67,6 +67,10 @@ class EphemeralAddonConfig:
     wb_key: str = dataclasses.field(init=False)
     type: str = dataclasses.field(init=False)
 
+    @property
+    def added_default(self):
+        return []
+
     def __post_init__(self, gv_data: gv_requests.JSONAPIResultEntry):
         self.short_name = gv_data.get_attribute('external_service_name')
         self.full_name = gv_data.get_attribute('display_name')

@@ -41,7 +41,7 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL,
     UNFLAG_SPAM,
 )
-
+from osf.utils.workflows import DefaultStates
 from website import search
 
 
@@ -537,4 +537,61 @@ class PreprintMakePublic(PreprintMixin, View):
         except PreprintStateError as e:
             messages.error(self.request, str(e))
 
+        return redirect(self.get_success_url())
+
+
+class PreprintResyncCrossRefView(PreprintMixin, View):
+    """ Allows an authorized user to run resync with CrossRef for a single object.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.request_identifier_update('doi', create=True)
+        return redirect(self.get_success_url())
+
+
+class PreprintMakePublishedView(PreprintMixin, View):
+    """ Allows an authorized user to make a preprint published.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        preprint.set_published(True, request, True)
+        return redirect(self.get_success_url())
+
+class PreprintUnwithdrawView(PreprintMixin, View):
+    """ Allows authorized users to unwithdraw a preprint that was previously withdrawn.
+    """
+    permission_required = ('osf.change_node')
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        if preprint.machine_state != 'withdrawn':
+            messages.error(request, f'Preprint {preprint._id} is not withdrawn')
+            return redirect(self.get_success_url())
+
+        withdraw_action = preprint.actions.filter(to_state='withdrawn').last()
+        last_action = preprint.actions.last()
+
+        preprint.withdrawal_justification = ''
+        preprint.date_withdrawn = None
+
+        if withdraw_action:
+            preprint.machine_state = withdraw_action.from_state
+            withdraw_action.delete()
+        else:
+            if last_action:
+                preprint.machine_state = last_action.to_state
+            else:
+                # Default to put it back in moderation if we don't know where it came from
+                preprint.machine_state = 'pending'
+
+        from osf.utils.migrations import disable_auto_now_fields
+        with disable_auto_now_fields():
+            req = preprint.requests.filter(machine_state=DefaultStates.ACCEPTED.value).first()
+            req.delete()
+            preprint.save()
         return redirect(self.get_success_url())

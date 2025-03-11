@@ -1,6 +1,5 @@
-import pytz
 from furl import furl
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from django.db.models import F
 from django.views.defaults import page_not_found
 from django.views.generic import (
@@ -477,9 +476,9 @@ class GetUserConfirmationLink(GetUserLink):
 
 class GetPasswordResetLink(GetUserLink):
     def get_link(self, user):
-        user.verification_key_v2 = generate_verification_key(verification_type='password')
-        user.verification_key_v2['expires'] = datetime.utcnow().replace(tzinfo=pytz.utc) + timedelta(hours=48)
-        user.save()
+        if not user.verification_key_v2 or (user.verification_key_v2['expires'] - datetime.now(UTC) < timedelta(minutes=10)):
+            user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
+            user.save()
 
         return furl(DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
 
@@ -515,13 +514,12 @@ class ResetPasswordView(UserMixin, View):
         user = get_user(email)
         url = furl(DOMAIN)
 
-        user.verification_key_v2 = generate_verification_key(verification_type='password')
+        user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
         user.save()
         url.add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-
         send_mail(
             subject='Reset OSF Password',
-            message=f'Follow this link to reset your password: {url.url}',
+            message=f'Follow this link to reset your password: {url.url}\n Note: this link will expire in 12 hours',
             from_email=OSF_SUPPORT_EMAIL,
             recipient_list=[email]
         )
@@ -552,3 +550,29 @@ class UserReindexElastic(UserMixin, View):
             action_flag=REINDEX_ELASTIC
         )
         return redirect(self.get_success_url())
+
+
+class UserDraftRegistrationsList(UserMixin, ListView):
+    template_name = 'users/draft-registrations.html'
+    permission_required = 'osf.view_draftregistration'
+    raise_exception = True
+    ordering = ('-created')
+    paginate_by = 25
+
+    def get_queryset(self):
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return self.get_object().draft_registrations_active.annotate(
+            guid=F('_id')
+        ).order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        draft_registrations = self.get_queryset()
+        page_size = self.get_paginate_by(draft_registrations)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(draft_registrations, page_size)
+        return super().get_context_data(
+            **kwargs,
+            **{
+                'page': page,
+                'draft_registrations': query_set
+            }
+        )

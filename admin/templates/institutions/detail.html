@@ -59,6 +59,9 @@
                     <div class="col-md-12">
                         <a class="btn btn-link" href={% url 'institutions:register_metrics_admin' institution.id %}>Create Moderator/Admin</a>
                     </div>
+                    <div class="col-md-12">
+                        <a class="btn btn-link" href={% url 'institutions:list_and_add_admin' institution.id %}>Contributors list</a>
+                    </div>
                 {% endif %}
             </div>
         </div>

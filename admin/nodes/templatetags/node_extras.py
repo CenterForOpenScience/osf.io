@@ -6,7 +6,9 @@ from osf.models import (
     AbstractNode,
     Contributor,
     Preprint,
-    PreprintContributor
+    PreprintContributor,
+    DraftRegistration,
+    DraftRegistrationContributor
 )
 
 from osf.models.spam import SpamStatus
@@ -58,6 +60,11 @@ def reverse_schema_response(value):
 
 
 @register.filter
+def reverse_draft_registration(value):
+    return reverse('draft_registrations:detail', kwargs={'draft_registration_id': value._id})
+
+
+@register.filter
 def order_by(queryset, args):
     args = [x.strip() for x in args.split(',')]
     return queryset.order_by(*args)
@@ -69,6 +76,8 @@ def get_permissions(user, resource):
         return Contributor.objects.get(user=user, node=resource).permission
     elif isinstance(resource, Preprint):
         return PreprintContributor.objects.get(user=user, preprint=resource).permission
+    elif isinstance(resource, DraftRegistration):
+        return DraftRegistrationContributor.objects.get(user=user, draft_registration=resource).permission
 
 
 @register.simple_tag

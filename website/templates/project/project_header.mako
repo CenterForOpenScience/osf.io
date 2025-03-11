@@ -61,6 +61,11 @@
                             % endif
                         % endfor
 
+                        <li id="projectNavComponents">
+                            <a href="${node['url']}components/" class="subnav-header">
+                                Components
+                            </a>
+                        </li>
                         % if node['is_public'] or user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}analytics/" class="subnav-header">Analytics</a></li>
                         % endif

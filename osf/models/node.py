@@ -1229,8 +1229,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 raise NodeStateError(
                     'This project exceeds private project storage limits and thus cannot be converted into a private project.')
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True,
-                    force=False):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False, check_addons=True, force=False, should_hide=False):
         """Set the permissions for this node. Also, based on meeting_creation, queues
         an email to user about abilities of public projects.
 
@@ -1298,6 +1297,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 },
                 auth=auth,
                 save=False,
+                should_hide=should_hide
             )
         if save:
             self.save()
@@ -1455,7 +1455,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_schema.add(schema)
 
         # Clone each log from the original node for this registration.
-        self.clone_logs(registered)
+        self.clone_logs(registered, is_registration=True)
 
         registered.access_requests_enabled = False
 
@@ -1720,14 +1720,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         return forked
 
-    def clone_logs(self, node, page_size=100):
+    def clone_logs(self, node, is_registration=False, page_size=100):
         paginator = Paginator(self.logs.order_by('pk').all(), page_size)
         for page_num in paginator.page_range:
             page = paginator.page(page_num)
             # Instantiate NodeLogs "manually"
             # because BaseModel#clone() is too slow for large projects
-            logs_to_create = [
-                NodeLog(
+            logs_to_create = []
+            for log in page:
+                instance = NodeLog(
                     _id=bson.ObjectId(),
                     action=log.action,
                     date=log.date,
@@ -1740,8 +1741,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     user_id=log.user_id,
                     original_node_id=log.original_node_id
                 )
-                for log in page
-            ]
+                # after registration creation we clone logs from project to it, including spam logs
+                # and if project is public, cloned logs will have was_public = True
+                # however registration is private until all approvals, thus we shouldn't run set_privacy
+                if is_registration and instance.action in [log.FLAG_SPAM, log.CONFIRM_SPAM]:
+                    instance.params['was_public'] = False
+
+                logs_to_create.append(instance)
+
             NodeLog.objects.bulk_create(logs_to_create)
 
     def use_as_template(self, auth, changes=None, top_level=True, parent=None):
@@ -2139,6 +2146,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     continue
             # Title, description, and category have special methods for logging purposes
             if key == 'title':
+                # not all nodes have this attribute but it's possible to update their title (e.g. Registration)
+                if not hasattr(self, 'is_bookmark_collection'):
+                    self.set_title(title=value, auth=auth, save=False)
+                    continue
                 if not self.is_bookmark_collection or not self.is_quickfiles:
                     self.set_title(title=value, auth=auth, save=False)
                 else:

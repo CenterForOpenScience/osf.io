@@ -55,6 +55,9 @@ from osf.utils.workflows import (
     ApprovalStates,
     SanctionTypes
 )
+from api.caching.tasks import update_storage_usage
+from api.caching import settings as cache_settings
+from api.caching.utils import storage_usage_cache
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 from website.identifiers.tasks import update_doi_metadata_on_change
@@ -87,6 +90,7 @@ class Registration(AbstractNode):
     }
 
     WRITABLE_WHITELIST = [
+        'title',
         'article_doi',
         'description',
         'is_public',
@@ -1459,6 +1463,16 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             self.save()
 
         return updated
+
+    @property
+    def storage_usage(self):
+        key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.branched_from._id)
+        storage_usage_total = storage_usage_cache.get(key)
+        if storage_usage_total is not None:
+            return storage_usage_total
+
+        update_storage_usage(self)  # sets cache
+        return storage_usage_cache.get(key)
 
 
 class DraftRegistrationUserObjectPermission(UserObjectPermissionBase):

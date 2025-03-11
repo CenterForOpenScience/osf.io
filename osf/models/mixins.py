@@ -103,7 +103,7 @@ class Versioned(models.Model):
 class Loggable(models.Model):
     last_logged = NonNaiveDateTimeField(db_index=True, null=True, blank=True, default=timezone.now)
 
-    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None):
+    def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
         AbstractNode = apps.get_model('osf.AbstractNode')
         OSFUser = apps.get_model('osf.OSFUser')
         user = None
@@ -120,7 +120,8 @@ class Loggable(models.Model):
 
         log = NodeLog(
             action=action, user=user, foreign_user=foreign_user,
-            params=params, node=self, original_node=original_node
+            params=params, node=self, original_node=original_node,
+            should_hide=should_hide
         )
 
         if log_date:
@@ -134,11 +135,14 @@ class Loggable(models.Model):
     def _complete_add_log(self, log, action, user=None, save=True):
         if self.logs.count() == 1:
             log_date = log.date if hasattr(log, 'date') else log.created
-            self.last_logged = log_date.replace(tzinfo=pytz.utc)
+            last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
-            recent_log = self.logs.first()
+            recent_log = self.logs.latest('created')
             log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
-            self.last_logged = log_date
+            last_logged = log_date
+
+        if not log.should_hide:
+            self.last_logged = last_logged
 
         if save:
             self.save()
@@ -296,12 +300,22 @@ class CategoryMixin(models.Model):
 class AffiliatedInstitutionMixin(models.Model):
     affiliated_institutions = models.ManyToManyField('Institution', related_name='nodes')
 
-    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False):
+    def add_affiliated_institution(self, inst, user, log=True, ignore_user_affiliation=False, notify=True):
         if not user.is_affiliated_with_institution(inst) and not ignore_user_affiliation:
             raise UserNotAffiliatedError(f'User is not affiliated with {inst.name}')
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
+            if notify and getattr(self, 'type', False) == 'osf.node':
+                for user, _ in self.get_admin_contributors_recursive(unique_users=True):
+                    mails.send_mail(
+                        user.username,
+                        mails.PROJECT_AFFILIATION_CHANGED,
+                        **{
+                            'user': user,
+                            'node': self,
+                        },
+                    )
         if log:
             params = self.log_params
             params['institution'] = {
@@ -314,7 +328,7 @@ class AffiliatedInstitutionMixin(models.Model):
                 auth=Auth(user)
             )
 
-    def remove_affiliated_institution(self, inst, user, save=False, log=True):
+    def remove_affiliated_institution(self, inst, user, save=False, log=True, notify=True):
         if self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.remove(inst)
             if log:
@@ -331,6 +345,18 @@ class AffiliatedInstitutionMixin(models.Model):
             if save:
                 self.save()
             self.update_search()
+
+            if notify and getattr(self, 'type', False) == 'osf.node':
+                for user, _ in self.get_admin_contributors_recursive(unique_users=True):
+                    mails.send_mail(
+                        user.username,
+                        mails.PROJECT_AFFILIATION_CHANGED,
+                        **{
+                            'user': user,
+                            'node': self,
+                        },
+                    )
+
             return True
         return False
 
@@ -1366,7 +1392,7 @@ class ContributorMixin(models.Model):
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
-        :param bool make_curator incicates whether the user should be an institituional curator
+        :param bool make_curator indicates whether the user should be an institutional curator
         :returns: Whether contributor was added
         """
         send_email = send_email or self.contributor_email_template
@@ -1393,19 +1419,27 @@ class ContributorMixin(models.Model):
             kwargs = self.contributor_kwargs
             kwargs['user'] = contrib_to_add
             contributor_obj, created = self.contributor_class.objects.get_or_create(**kwargs)
-            contributor_obj.visible = visible
+            contributor_obj.visible = visible and not make_curator
 
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
             self.add_permission(contrib_to_add, permissions, save=True)
+            if make_curator:
+                contributor_obj.is_curator = True
             contributor_obj.save()
 
             if log:
                 params = self.log_params
                 params['contributors'] = [contrib_to_add._id]
+
+                if getattr(contributor_obj, 'is_curator', False):
+                    action = self.log_class.CURATOR_ADDED
+                else:
+                    action = self.log_class.CONTRIB_ADDED
+
                 self.add_log(
-                    action=self.log_class.CONTRIB_ADDED,
+                    action=action,
                     params=params,
                     auth=auth,
                     save=False,
@@ -1425,11 +1459,6 @@ class ContributorMixin(models.Model):
             if getattr(self, 'get_identifier_value', None) and self.get_identifier_value('doi'):
                 request, user_id = get_request_and_user_id()
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
-
-            if make_curator:
-                contributor_obj.is_curator = True
-                contributor_obj.save()
-
             return contrib_to_add
 
     def add_contributors(self, contributors, auth=None, log=True, save=False):
@@ -1688,8 +1717,14 @@ class ContributorMixin(models.Model):
         if log:
             params = self.log_params
             params['contributors'] = [contributor._id]
+
+            if getattr(contrib_obj, 'is_curator', False):
+                action = self.log_class.CURATOR_REMOVED
+            else:
+                action = self.log_class.CONTRIB_REMOVED
+
             self.add_log(
-                action=self.log_class.CONTRIB_REMOVED,
+                action=action,
                 params=params,
                 auth=auth,
                 save=False,
@@ -2070,15 +2105,23 @@ class SpamOverrideMixin(SpamMixin):
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
         was_public = self.is_public
-        self.set_privacy('private', auth=None, log=False, save=False, force=True)
+        # the approach below helps to update to public true on ham just the objects that were public before were spammed
+        is_public_changings = self.logs.filter(action__in=['made_public', 'made_private'])
+        if is_public_changings:
+            latest_privacy_edit_time = is_public_changings.latest('created').created
+            last_spam_log = self.logs.filter(action__in=['confirm_spam', 'flag_spam'],
+                                                 created__gt=latest_privacy_edit_time)
+            if last_spam_log:
+                was_public = last_spam_log.latest().params.get('was_public', was_public)
+        self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
             params={**self.log_params, 'was_public': was_public},
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2096,9 +2139,9 @@ class SpamOverrideMixin(SpamMixin):
             action=self.log_class.CONFIRM_HAM,
             params=self.log_params,
             auth=None,
-            save=False
+            save=False,
+            should_hide=True
         )
-        log.should_hide = True
         log.save()
         if save:
             self.save()
@@ -2206,14 +2249,14 @@ class SpamOverrideMixin(SpamMixin):
         super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
             was_public = self.is_public
-            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True)
+            self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True, should_hide=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
                 params={**self.log_params, 'was_public': was_public},
                 auth=None,
-                save=False
+                save=False,
+                should_hide=True
             )
-            log.should_hide = True
             log.save()
 
         if settings.SPAM_THROTTLE_AUTOBAN:
