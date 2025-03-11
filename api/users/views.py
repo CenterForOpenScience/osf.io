@@ -803,7 +803,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 clean_email,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                destination=destination
+                destination=destination,
             )
 
         else:
@@ -816,7 +816,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 fullname=fullname,
                 external_identity=external_identity,
                 campaign=None,
-                accepted_terms_of_service=accepted_terms_of_service
+                accepted_terms_of_service=accepted_terms_of_service,
             )
             # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
             user.save()
@@ -826,14 +826,14 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 user.username,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                destination=destination
+                destination=destination,
             )
 
         # Don't go anywhere
         return JsonResponse(
             {
                 'external_id_provider': external_id_provider,
-                'auth_user_fullname': fullname
+                'auth_user_fullname': fullname,
             },
             status=status.HTTP_200_OK,
             content_type='application/vnd.api+json; application/json',
