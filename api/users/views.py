@@ -1,4 +1,3 @@
-from furl import furl
 import pytz
 from urllib.parse import urlencode
 
@@ -74,10 +73,9 @@ from api.users.serializers import (
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
-from framework.auth import campaigns
 from framework import sentry
 from framework.auth.core import get_user, generate_verification_key
-from framework.auth.views import send_confirm_email_async, check_service_url_with_proxy_campaign, ensure_external_identity_uniqueness
+from framework.auth.views import send_confirm_email_async, ensure_external_identity_uniqueness
 from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
@@ -765,33 +763,10 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         external_id_provider = request.data.get('auth_user_external_id_provider', None)
         external_id = request.data.get('auth_user_external_id', None)
         fullname = request.data.get('auth_user_fullname', None)
-        service_url = request.data.get('service_url', None)
         accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
 
         if request.data.get('auth_user_external_first_login', False) is not True:
             raise HTTPError(status.HTTP_401_UNAUTHORIZED)
-
-        # TODO: @cslzchen use user tags instead of destination
-        destination = 'dashboard'
-        for campaign in campaigns.get_campaigns():
-            if campaign != 'institution':
-                # Handle different url encoding schemes between `furl` and `urlparse/urllib`.
-                # OSF use `furl` to parse service url during service validation with CAS. However, `web_url_for()` uses
-                # `urlparse/urllib` to generate service url. `furl` handles `urlparser/urllib` generated urls while ` but
-                # not vice versa.
-                campaign_url = furl(campaigns.campaign_url_for(campaign)).url
-                external_campaign_url = furl(campaigns.external_campaign_url_for(campaign)).url
-                if campaigns.is_proxy_login(campaign):
-                    # proxy campaigns: OSF Preprints and branded ones
-                    if check_service_url_with_proxy_campaign(str(service_url), campaign_url, external_campaign_url):
-                        destination = campaign
-                        # continue to check branded preprints even service url matches osf preprints
-                        if campaign != 'osf-preprints':
-                            break
-                elif service_url.startswith(campaign_url):
-                    # osf campaigns: ERPC
-                    destination = campaign
-                    break
 
         clean_email = request.data.get('email', None)
         user = get_user(email=clean_email)
@@ -821,7 +796,6 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 clean_email,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                destination=destination,
             )
 
         else:
@@ -844,7 +818,6 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 user.username,
                 external_id_provider=external_id_provider,
                 external_id=external_id,
-                destination=destination,
             )
 
         # Don't go anywhere
