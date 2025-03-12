@@ -2,6 +2,8 @@ import pytz
 
 from django.apps import apps
 from django.db.models import F
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.throttling import UserRateThrottle
 
@@ -791,6 +793,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
+    @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -3,11 +3,13 @@ import pytest
 import urllib
 
 from api.base.settings.defaults import API_BASE
+from api.base.settings import CSRF_COOKIE_NAME
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
+from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
 from website import mails, settings
@@ -183,6 +185,10 @@ class TestResetPassword:
     def url(self):
         return f'/{API_BASE}users/reset_password/'
 
+    @pytest.fixture
+    def csrf_token(self):
+        return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
+
     def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
@@ -205,7 +211,8 @@ class TestResetPassword:
             assert res.status_code == 200
             assert not mock_send_mail.called
 
-    def test_post(self, app, url, user_one):
+    def test_post(self, app, url, user_one, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
@@ -220,22 +227,24 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload)
+        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         user_one.reload()
         assert res.status_code == 200
         assert user_one.check_password('password2')
 
-    def test_post_empty_payload(self, app, url):
+    def test_post_empty_payload(self, app, url, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         payload = {
             'data': {
                 'attributes': {
                 }
             }
         }
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_post_invalid_token(self, app, url, user_one):
+    def test_post_invalid_token(self, app, url, user_one, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         payload = {
             'data': {
                 'attributes': {
@@ -245,10 +254,11 @@ class TestResetPassword:
                 }
             }
         }
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token'})
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_post_invalid_password(self, app, url, user_one):
+    def test_post_invalid_password(self, app, url, user_one, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
@@ -263,7 +273,7 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token'})
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
     def test_throrrle(self, app, url, user_one):
@@ -276,7 +286,7 @@ class TestResetPassword:
                 'attributes': {
                     'uid': user_one._id,
                     'token': user_one.verification_key_v2['token'],
-                    'password': "12345",
+                    'password': '12345',
                 }
             }
         }
