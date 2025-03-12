@@ -433,6 +433,18 @@ class UserChangePasswordSerializer(BaseAPISerializer):
         type_ = 'user_passwords'
 
 
+class ExternalLoginSerialiser(BaseAPISerializer):
+    email = ser.CharField(write_only=True, required=True)
+    auth_user_external_first_login = ser.BooleanField(write_only=True, required=True)
+    auth_user_fullname = ser.CharField(write_only=True, required=True)
+    external_id_provider = ser.CharField(write_only=True, required=False)
+    external_id = ser.CharField(write_only=True, required=False)
+    accepted_terms_of_service = ser.BooleanField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'external_login'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
