@@ -165,8 +165,9 @@ class TestPreprintDetail:
         assert res.status_code == 404
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        res = app.get(url, auth=moderator.auth)
-        assert res.status_code == 200
+        # moderator can't see preprint with initial machine state. see test_moderator_does_not_see_initial_preprint
+        res = app.get(url, auth=moderator.auth, expect_errors=True)
+        assert res.status_code == 404
 
         ## retracted and ever_public (True)
         preprint_pre_mod.ever_public = True
