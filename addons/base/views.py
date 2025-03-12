@@ -863,7 +863,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if hasattr(target, 'get_addon'):
-        node_addon = target.get_addon(provider)
+        node_addon = target.get_addon(provider, auth=auth)
         if flag_is_active(request, features.ENABLE_GV):
             if not isinstance(node_addon, EphemeralNodeSettings) and provider != 'osfstorage':
                 object_text = markupsafe.escape(getattr(target, 'project_or_component', 'this object'))

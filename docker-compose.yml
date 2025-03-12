@@ -160,6 +160,7 @@ services:
       - mfr_requirements_local_bin_vol:/usr/local/bin
       - wb_tmp_vol:/tmp
     stdin_open: true
+    network_mode: "host"
 
   unoconv:
     image: centerforopenscience/unoconv
