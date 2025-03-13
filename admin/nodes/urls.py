@@ -35,6 +35,8 @@ urlpatterns = [
         name='remove-user'),
     re_path(r'^(?P<guid>[a-z0-9]+)/modify_storage_usage/$', views.NodeModifyStorageUsage.as_view(),
         name='adjust-storage-usage'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/modify_storage_region/$', views.NodeModifyStorageRegion.as_view(),
+        name='adjust-storage-region'),
     re_path(r'^(?P<guid>[a-z0-9]+)/recalculate_node_storage/$', views.NodeRecalculateStorage.as_view(),
         name='recalculate-node-storage'),
     re_path(r'^(?P<guid>[a-z0-9]+)/make_private/$', views.NodeMakePrivate.as_view(), name='make-private'),

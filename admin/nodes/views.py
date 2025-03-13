@@ -1,5 +1,6 @@
 import pytz
 from datetime import datetime
+
 from framework import status
 
 from django.utils import timezone
@@ -25,6 +26,7 @@ from admin.notifications.views import detect_duplicate_notifications, delete_sel
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
+from addons.osfstorage.models import Region
 
 from osf.exceptions import NodeStateError
 from osf.models import (
@@ -105,7 +107,11 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
-            'duplicates': detailed_duplicates
+            'duplicates': detailed_duplicates,
+            'regions': Region.objects.all().only('name', 'id'),
+            'current_region_id': node._settings_model('osfstorage').objects.filter(
+                owner=node.id
+            ).values_list('region_id', flat=True)[0],
         })
 
         return context
@@ -626,6 +632,40 @@ class NodeModifyStorageUsage(NodeMixin, View):
             node.custom_storage_usage_limit_public = new_public_cap
 
         node.save()
+        return redirect(self.get_success_url())
+
+
+class NodeModifyStorageRegion(NodeMixin, View):
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        new_region_id = request.POST.get('new-region-id')
+        apply_to_all = request.POST.get('apply_to_all_children')
+        osfs_settings = node._settings_model('osfstorage').objects.filter(owner=node.id).first()
+
+        if osfs_settings and new_region_id != osfs_settings.region_id:
+            osfs_settings.region_id = new_region_id
+            osfs_settings.save()
+        if apply_to_all:
+            all_child_ids = request.POST.get('all_child_ids', '').split(',')
+            child_nodes = AbstractNode.objects.filter(id__in=[
+                int(child_id) for child_id in all_child_ids if child_id.isdigit()
+            ])
+        else:
+            children_ids = [key.split('-')[1] for key in request.POST if key.startswith('children-')]
+            child_nodes = AbstractNode.objects.filter(id__in=children_ids)
+
+        for child_node in child_nodes:
+            if child_node.has_permission(request.user, 'osf.change_node'):
+                child_osfs_settings = child_node._settings_model('osfstorage').objects.filter(
+                    owner=child_node.id).first()
+                if child_osfs_settings and new_region_id != child_osfs_settings.region_id:
+                    child_osfs_settings.region_id = new_region_id
+                    child_osfs_settings.save()
+            else:
+                messages.error(request, f'You do not have permission to change the region for {child_node.title}.')
+
         return redirect(self.get_success_url())
 
 

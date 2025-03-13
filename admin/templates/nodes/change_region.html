@@ -1,0 +1,80 @@
+{% load node_extras %}
+<tr>
+    <td>Storage Region</td>
+    <td>
+        <form  action="{% url 'nodes:adjust-storage-region' node.guid %}" method="post">
+            {% csrf_token %}
+            <select name="new-region-id" id="new-region-id">
+                {% for region in regions %}
+                    <option value="{{ region.id }}" {% if region.id == current_region_id %}selected{% endif %}>
+                        {{ region.name }}
+                    </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+            {% if node.children.all %}
+                <div>
+                    <label>
+                        <input type="checkbox" id="parentCheckbox" name="apply_to_all_children">
+                        <strong>Change for all child nodes</strong>
+                    </label>
+
+                    <input type="hidden" id="allChildIds" name="all_child_ids" value="{% for child in node.children.all %}{{ child.id }},{% endfor %}">
+
+                    <div class="child-checkboxes">
+                        {% paginate  node.children.all 10 as children_page %}
+
+                        {% for child in children_page %}
+                            <label>
+                                <input type="checkbox" class="child-checkbox" name="children-{{ child.id }}" value="{{ child.id }}">
+                                {{ child.title }}
+                            </label><br>
+                        {% endfor %}
+
+                        <div class="pagination">
+                            {% if children_page.has_previous %}
+                                <a href="?page=1">First</a>
+                                <a href="?page={{ children_page.previous_page_number }}">Previous</a>
+                            {% endif %}
+
+                            <span>Page {{ children_page.number }} of {{ children_page.paginator.num_pages }}</span>
+
+                            {% if children_page.has_next %}
+                                <a href="?page={{ children_page.next_page_number }}">Next</a>
+                                <a href="?page={{ children_page.paginator.num_pages }}">Last</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </form>
+    </td>
+</tr>
+
+<script>
+    document.getElementById("parentCheckbox").addEventListener("change", function () {
+        let isChecked = this.checked;
+
+        let checkboxes = document.querySelectorAll(".child-checkbox");
+        checkboxes.forEach(checkbox => checkbox.checked = isChecked);
+        let hiddenInput = document.getElementById("allChildIds");
+
+        if (isChecked) {
+            hiddenInput.value = hiddenInput.dataset.allChildIds;
+        } else {
+            hiddenInput.value = '';
+        }
+    });
+    document.querySelector("form").addEventListener("submit", function () {
+        let hiddenInput = document.getElementById("allChildIds");
+        let selectedIds = [...document.querySelectorAll(".child-checkbox:checked")].map(cb => cb.value);
+
+        // If "Change for all child nodes" is checked, use all IDs
+        if (document.getElementById("parentCheckbox").checked) {
+            selectedIds = hiddenInput.dataset.allChildIds.split(",");
+        }
+
+        hiddenInput.value = selectedIds.join(",");
+    });
+</script>

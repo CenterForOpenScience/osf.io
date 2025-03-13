@@ -98,6 +98,7 @@
                         <td>IA url</td>
                         <td>{{ node.ia_url }}</td>
                     </tr>
+                    {% include "nodes/change_region.html" with node=node regions=regions current_region_id=current_region_id%}
                     {% include "nodes/contributors.html" with node=node %}
                     {% include "nodes/spam_status.html" with resource=node %}
                     {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registrations.all %}
