@@ -13,7 +13,7 @@ class FileSearchView(PermissionRequiredMixin, FormView):
     """ Allows authorized users to search for a specific file by guid.
     """
     template_name = 'files/search.html'
-    permission_required = 'osf.view_file'
+    permission_required = 'osf.view_basefilenode'
     raise_exception = True
     form_class = GuidForm
 
@@ -40,7 +40,7 @@ class FileMixin(PermissionRequiredMixin):
 class FileView(FileMixin, GuidView):
     """ Allows authorized users to view file info."""
     template_name = 'files/file.html'
-    permission_required = 'osf.view_file'
+    permission_required = 'osf.view_basefilenode'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
