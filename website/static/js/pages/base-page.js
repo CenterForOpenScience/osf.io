@@ -19,7 +19,7 @@ var NavbarControl = require('js/navbarControl');
 var AlertManager = require('js/alertsManager');
 var Raven = require('raven-js');
 var moment = require('moment');
-var KeenTracker = require('js/keen');
+var MetricsTracker = require('js/metrics');
 var DevModeControls = require('js/devModeControls');
 var bootbox = require('bootbox');
 
@@ -254,7 +254,7 @@ $(function() {
 
     //Don't track PhantomJS visits with KeenIO
     if (!(/PhantomJS/.test(navigator.userAgent))){
-        KeenTracker.getInstance().trackPageView();
+        MetricsTracker.getInstance().trackPageView();
     }
 
     confirmEmails(window.contextVars.currentUser.emailsToAdd);

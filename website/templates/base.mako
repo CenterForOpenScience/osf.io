@@ -271,23 +271,6 @@
             });
         </script>
 
-        % if keen['public']['project_id']:
-            <script>
-                window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keen: {
-                        public: {
-                            projectId: ${ keen['public']['project_id'] | sjson, n },
-                            writeKey: ${ keen['public']['write_key'] | sjson, n },
-                        },
-                        private: {
-                            projectId: ${ keen['private']['project_id'] | sjson, n },
-                            writeKey: ${ keen['private']['write_key'] | sjson, n },
-                        },
-                    },
-                });
-            </script>
-        % endif
-
         % if settings.DATACITE_TRACKER_REPO_ID:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
