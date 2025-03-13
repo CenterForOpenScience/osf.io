@@ -2,7 +2,7 @@ from rest_framework import generics, mixins, permissions as drf_permissions
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
-from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
+from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord, GuidMetadataRecord
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
 
@@ -214,7 +214,10 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         # A user have admin perms on the draft to register
         if draft.has_permission(user, ADMIN):
             try:
-                serializer.save(draft=draft)
+                obj = serializer.save(draft=draft)
+                if obj.provider._id == 'dataarchive':
+                    guid_metadata_record = GuidMetadataRecord(guid=obj.guids.first(), resource_type_general='Dataset')
+                    guid_metadata_record.save()
             except ValidationError as e:
                 log_exception(e)
                 raise e
