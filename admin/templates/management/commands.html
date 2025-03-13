@@ -125,6 +125,19 @@
                     </nav>
                 </form>
             </section>
+            <section>
+                <h4><u>Resync with CrossRef and DataCite</u></h4>
+                <p>
+                    Use this management command to resync all preprints with CrossRef and public nodes/registrations with DataCite.
+                </p>
+                <form method="post"
+                      action="{% url 'management:bulk-resync'%}">
+                    {% csrf_token %}
+                    <nav>
+                        <input class="btn btn-success" type="submit" value="Run" />
+                    </nav>
+                </form>
+            </section>
         </div>
     </section>
 {% endblock %}
