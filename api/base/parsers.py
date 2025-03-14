@@ -142,7 +142,7 @@ class JSONAPIParser(JSONParser):
                 parsed.update(relationships)
         return parsed
 
-    def parse(self, stream, media_type=None, parser_context=None):
+    def parse(self, stream, media_type=None, parser_context=None, is_bulk=False):
         """
         Parses the incoming bytestream as JSON and returns the resulting data.
         """
@@ -153,7 +153,7 @@ class JSONAPIParser(JSONParser):
         data = result.get('data', {})
 
         if data:
-            if is_bulk_request(parser_context['request']):
+            if is_bulk_request(parser_context['request']) or is_bulk:
                 if not isinstance(data, list):
                     raise ParseError('Expected a list of items but got type "dict".')
 
@@ -356,3 +356,15 @@ class SearchParser(JSONAPIParser):
                     else:
                         res['query']['bool']['filter'].append({'term': {key: val}})
         return res
+
+
+class JSONAPIListParser(JSONAPIParser):
+    media_type = 'application/json'
+
+    # Overrides JSONAPIParser
+    def parse(self, stream, media_type=None, parser_context=None):
+        """
+        Parses the incoming bytestream as JSON and returns the resulting data.
+        """
+        result = super().parse(stream, media_type=media_type, parser_context=parser_context, is_bulk=True)
+        return result

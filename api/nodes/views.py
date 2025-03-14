@@ -31,6 +31,7 @@ from api.base.exceptions import (
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
 from api.base.parsers import (
+    JSONAPIListParser,
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParser,
@@ -2398,6 +2399,7 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
 
     view_category = 'nodes'
     view_name = 'node-reorder-components'
+    parser_classes = (JSONAPIListParser,)
 
     def get_object(self):
         return self.get_node()
