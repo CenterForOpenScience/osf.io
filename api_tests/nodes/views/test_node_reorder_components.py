@@ -89,13 +89,13 @@ class TestNodeReorderComponents:
     def test_reorder_components_admin(
             self, app, project, admin_contrib, children, url, payload_asc, payload_desc
     ):
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         project.reload()
         component_order = [el.child._id for el in project.node_relations.all()]
         assert res.status_code == 200
         assert component_order == [each._id for each in children]
 
-        res = app.put_json_api(url, payload_desc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.put_json_api(url, payload_desc, auth=admin_contrib.auth, expect_errors=True)
         project.reload()
         component_order = [el.child._id for el in project.node_relations.all()]
         assert res.status_code == 200
@@ -104,17 +104,17 @@ class TestNodeReorderComponents:
     def test_reorder_components_write_read(
             self, app, write_contrib, read_contrib, url, payload_asc
     ):
-        res = app.patch_json_api(url, payload_asc, auth=write_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=write_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-        res = app.patch_json_api(url, payload_asc, auth=read_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_reorder_invalid_component(
             self, app, project, admin_contrib, url, payload_asc
     ):
         payload_asc['data'][0]['id'] = '12345'
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == f'The 12345 node is not a component of the {project._id} node'
 
@@ -123,7 +123,7 @@ class TestNodeReorderComponents:
     ):
         payload_asc['data'][0]['id'] = '12345'
         payload_asc['data'][1]['id'] = '12345'
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Item 12345 appears multiple times with different _order values.'
 
@@ -134,7 +134,7 @@ class TestNodeReorderComponents:
         payload_asc['data'][0]['attributes']['_order'] = 1
         payload_asc['data'][1]['id'] = '12345'
         payload_asc['data'][1]['attributes']['_order'] = 1
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Item 12345 appears multiple times with the same _order value.'
 
@@ -142,12 +142,12 @@ class TestNodeReorderComponents:
             self, app, project, admin_contrib, url, payload_asc
     ):
         payload_asc['data'][0]['attributes']['_order'] = -1
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == f'Item {payload_asc['data'][0]['id']} has _order -1 which is lower than zero.'
 
         payload_asc['data'][0]['attributes']['_order'] = 5
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == f'Item {payload_asc['data'][0]['id']} has _order 5 which is higher than the list length.'
 
@@ -156,6 +156,6 @@ class TestNodeReorderComponents:
     ):
         payload_asc['data'][0]['attributes']['_order'] = 1
         payload_asc['data'][1]['attributes']['_order'] = 1
-        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
+        res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Multiple items have the same _order value 1.'
