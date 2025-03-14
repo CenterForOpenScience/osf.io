@@ -1,18 +1,12 @@
 'use strict';
 
 var $  = require('jquery');
-var keenAnalysis = require('keen-analysis');
 var Metrics = require('js/metrics/metrics');
 
 
 
-keenAnalysis.ready(function() {
-
+$( document ).ready(function() {
     Metrics.UserGainMetrics();
-
-    $('#reload-node-logs')[0].onclick = function() {
-        Metrics.NodeLogsPerUser();
-    };
 
     $('#institution-tab')[0].onclick = function() {
         Metrics.InstitutionMetrics();
