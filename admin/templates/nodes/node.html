@@ -98,14 +98,14 @@
                         <td>IA url</td>
                         <td>{{ node.ia_url }}</td>
                     </tr>
-                    {% include "nodes/change_region.html" with node=node regions=regions current_region_id=current_region_id%}
+                    {% include "nodes/change_region.html" %}
                     {% include "nodes/contributors.html" with node=node %}
                     {% include "nodes/spam_status.html" with resource=node %}
                     {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registrations.all %}
                     {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
                     {% include "nodes/retraction.html" with retraction=node.retraction %}
                     {% include "nodes/registrations.html" with registrations=node.registrations.all %}
-                    {% include "nodes/children.html" with children=node.children.all %}
+                    {% include "nodes/children.html" with children=node.descendants.all %}
                     {% include "nodes/embargo.html" with embargo=node.embargo is_registration=node.is_registration%}
                     {% include "nodes/embargo_termination_approval.html" with embargo_termination_approval=node.embargo_termination_approval %}
                     {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}

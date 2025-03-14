@@ -13,17 +13,17 @@
             </select>
 
             <button type="submit" class="btn btn-primary">Submit</button>
-            {% if node.children.all %}
+            {% if node.descendants.all %}
                 <div>
                     <label>
                         <input type="checkbox" id="parentCheckbox" name="apply_to_all_children">
                         <strong>Change for all child nodes</strong>
                     </label>
 
-                    <input type="hidden" id="allChildIds" name="all_child_ids" value="{% for child in node.children.all %}{{ child.id }},{% endfor %}">
+                    <input type="hidden" id="allChildIds" name="all_child_ids" value="{% for child in node.descendants.all %}{{ child.id }},{% endfor %}">
 
                     <div class="child-checkboxes">
-                        {% paginate  node.children.all 10 as children_page %}
+                        {% paginate  node.descendants.all 10 as children_page %}
 
                         {% for child in children_page %}
                             <label>
@@ -70,7 +70,6 @@
         let hiddenInput = document.getElementById("allChildIds");
         let selectedIds = [...document.querySelectorAll(".child-checkbox:checked")].map(cb => cb.value);
 
-        // If "Change for all child nodes" is checked, use all IDs
         if (document.getElementById("parentCheckbox").checked) {
             selectedIds = hiddenInput.dataset.allChildIds.split(",");
         }

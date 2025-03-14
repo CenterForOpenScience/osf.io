@@ -657,7 +657,7 @@ class NodeModifyStorageRegion(NodeMixin, View):
             child_nodes = AbstractNode.objects.filter(id__in=children_ids)
 
         for child_node in child_nodes:
-            if child_node.has_permission(request.user, 'osf.change_node'):
+            if child_node.has_permission(request.user, ADMIN):
                 child_osfs_settings = child_node._settings_model('osfstorage').objects.filter(
                     owner=child_node.id).first()
                 if child_osfs_settings and new_region_id != child_osfs_settings.region_id:
