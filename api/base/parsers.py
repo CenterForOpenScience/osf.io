@@ -359,7 +359,7 @@ class SearchParser(JSONAPIParser):
 
 
 class JSONAPIListParser(JSONAPIParser):
-    media_type = 'application/json'
+    media_type = 'application/vnd.api+json'
 
     # Overrides JSONAPIParser
     def parse(self, stream, media_type=None, parser_context=None):
