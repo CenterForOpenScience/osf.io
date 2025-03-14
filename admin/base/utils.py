@@ -140,6 +140,7 @@ def change_embargo_date(registration, user, end_date):
 
     if registration.embargo:
         registration.embargo.end_date = end_date
+        registration.embargo.mark_as_approved()
     else:
         registration._initiate_embargo(
             user,
