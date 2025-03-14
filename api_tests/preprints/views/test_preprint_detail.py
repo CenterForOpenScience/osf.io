@@ -631,6 +631,8 @@ class TestPreprintUpdate:
             ),
         )
         dois = [
+            ('', False),
+            (None, False),
             ('10.1235/', False),
             ('10.1235/test', False),
             ('doi.org/10.1235/test', False),

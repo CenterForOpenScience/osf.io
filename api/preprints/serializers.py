@@ -486,7 +486,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             self.set_field(preprint.set_description, description, auth)
             save_preprint = True
 
-        if 'article_doi' in validated_data:
+        if validated_data.get('article_doi'):
             article_doi = validated_data['article_doi']
             # use different regex from what we use in validate_doi as we should find and set full correct doi string.
             # it should start with "10." and have at least one group of any characters with a not required slash
@@ -505,6 +505,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
 
             preprint.article_doi = stripped_article_doi
+            save_preprint = True
+        else:
+            preprint.article_doi = None
             save_preprint = True
 
         if 'license_type' in validated_data or 'license' in validated_data:
