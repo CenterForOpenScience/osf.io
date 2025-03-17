@@ -29,6 +29,11 @@ class AddAdminOrModerator(TemplateView):
             messages.error(request, f'User for guid: {data["add-moderators-form"][0]} could not be found')
             return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
 
+        groups = [provider.format_group(name) for name in provider.groups.keys()]
+        if target_user.has_groups(groups):
+            messages.error(request, f'User with guid: {data["add-moderators-form"][0]} is already a moderator or admin')
+            return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
+
         if 'admin' in data:
             provider.add_to_group(target_user, 'admin')
             target_type = 'admin'
