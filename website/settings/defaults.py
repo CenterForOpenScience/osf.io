@@ -586,7 +586,7 @@ class CeleryConfig:
             },
             'daily-emails': {
                 'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
+                'schedule': crontab(minute='*'),  # Daily at 12 a.m. EST
                 'args': ('email_digest',),
             },
             # 'refresh_addons': {  # Handled by GravyValet now

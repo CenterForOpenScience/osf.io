@@ -271,6 +271,7 @@ class TokenApprovableSanction(Sanction):
 
         self.approval_state[user._id] = {
             'has_approved': approved,
+            'has_rejected': False,
             'node_id': node._id,
             'approval_token': tokens.encode({
                 'user_id': user.id,
@@ -576,6 +577,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         if user is None and event_data.args:
             user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
+        self.approval_state[user._id]['has_rejected'] = True
 
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
@@ -726,6 +728,7 @@ class Retraction(EmailApprovableSanction):
         if user is None and event_data.args:
             user = event_data.args[0]
 
+        self.approval_state[user._id]['has_rejected'] = True
         NodeLog = apps.get_model('osf.NodeLog')
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
@@ -901,6 +904,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
+
+        self.approval_state[user._id]['has_rejected'] = True
         NodeLog = apps.get_model('osf.NodeLog')
 
         registered_from = self.target_registration.registered_from
@@ -1012,5 +1017,9 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
 
     def _on_reject(self, event_data):
         # Just forget this ever happened.
+        user = event_data.kwargs.get('user')
+        if user is None and event_data.args:
+            user = event_data.args[0]
+        self.approval_state[user._id]['has_rejected'] = True
         self.target_registration.embargo_termination_approval = None
         self.target_registration.save()
