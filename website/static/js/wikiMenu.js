@@ -105,3 +105,15 @@ function WikiMenu(data, wikiID, canEdit) {
 }
 
 module.exports = WikiMenu;
+
+//nishi
+window.addEventListener('load', function() {
+    // URLのアンカー（#以降の部分）を取得
+    var urlHash = location.hash;
+    console.log('Test1' + urlHash);
+    // URLにアンカーが存在する場合
+    if(urlHash){
+        window.location.hash = urlHash
+    }
+  });
+//nishi
