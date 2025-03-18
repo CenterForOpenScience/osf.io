@@ -1,5 +1,5 @@
 {% if not node.parent or node.is_registration %}
-    {% if node.is_public and node.has_doi_identifier %}
+    {% if node.is_public %}
         <a data-toggle="modal" data-target="#confirmResyncDataCite" class="btn btn-info">
             Resync with DataCite
         </a>
