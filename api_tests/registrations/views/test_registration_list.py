@@ -12,7 +12,7 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
-from osf.models import RegistrationSchema, Registration
+from osf.models import RegistrationSchema, Registration, GuidMetadataRecord
 from osf_tests.factories import (
     EmbargoFactory,
     ProjectFactory,
@@ -110,6 +110,32 @@ class TestRegistrationList(ApiTestCase):
         assert self.public_registration._id in ids
         assert self.public_project._id not in ids
         assert self.project._id not in ids
+
+    def test_osf_registration_metadata_on_creation(self):
+        self.user.is_superuser = True
+        self.user.save()
+        self.project.add_contributor(self.user, permissions='admin')
+        draft_reg = DraftRegistrationFactory(branched_from=self.project, user=self.user)
+        req = self.app.post_json_api('/v2/registrations/', {'data': {
+            'attributes': {'draft_registration': draft_reg._id, 'type': 'registrations'}
+        }}, auth=self.user.auth, expect_errors=True)
+        data = req.json['data']
+        metadata_record = GuidMetadataRecord.objects.filter(guid___id=data['id']).first()
+        assert metadata_record is None
+
+    def test_dataarchive_registration_metadata_on_creation(self):
+        self.user.is_superuser = True
+        self.user.save()
+        self.project.add_contributor(self.user, permissions='admin')
+        draft_reg = DraftRegistrationFactory(branched_from=self.project, user=self.user)
+        draft_reg.provider._id = 'dataarchive'
+        draft_reg.provider.save()
+        req = self.app.post_json_api('/v2/registrations/', {'data': {
+            'attributes': {'draft_registration': draft_reg._id, 'type': 'registrations'}
+        }}, auth=self.user.auth, expect_errors=True)
+        data = req.json['data']
+        metadata_record = GuidMetadataRecord.objects.filter(guid___id=data['id']).first()
+        assert metadata_record.resource_type_general == 'Dataset' if metadata_record else False
 
 class TestSparseRegistrationList(ApiTestCase):
 

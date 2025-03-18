@@ -215,8 +215,17 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
         if draft.has_permission(user, ADMIN):
             try:
                 obj = serializer.save(draft=draft)
-                if obj.provider._id == 'dataarchive':
-                    guid_metadata_record = GuidMetadataRecord(guid=obj.guids.first(), resource_type_general='Dataset')
+                guid = obj.guids.first()
+                guid_metadata_record = GuidMetadataRecord.objects.filter(guid=guid).first()
+                if obj.provider._id == 'dataarchive' and not guid_metadata_record:
+                    guid_metadata_record = GuidMetadataRecord(guid=guid, resource_type_general='Dataset')
+                    guid_metadata_record.save()
+                    # breakpoint()
+                elif (
+                    obj.provider._id == 'dataarchive' and guid_metadata_record
+                    and not guid_metadata_record.resource_type_general
+                ):
+                    guid_metadata_record.resource_type_general = 'Dataset'
                     guid_metadata_record.save()
             except ValidationError as e:
                 log_exception(e)
