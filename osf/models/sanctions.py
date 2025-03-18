@@ -577,7 +577,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         if user is None and event_data.args:
             user = event_data.args[0]
         NodeLog = apps.get_model('osf.NodeLog')
-        self.approval_state[user._id]['has_rejected'] = True
+        if user._id in self.approval_state:
+            self.approval_state[user._id]['has_rejected'] = True
 
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
@@ -728,7 +729,8 @@ class Retraction(EmailApprovableSanction):
         if user is None and event_data.args:
             user = event_data.args[0]
 
-        self.approval_state[user._id]['has_rejected'] = True
+        if user._id in self.approval_state:
+            self.approval_state[user._id]['has_rejected'] = True
         NodeLog = apps.get_model('osf.NodeLog')
         parent_registration = self.target_registration
         parent_registration.registered_from.add_log(
@@ -905,7 +907,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if user is None and event_data.args:
             user = event_data.args[0]
 
-        self.approval_state[user._id]['has_rejected'] = True
+        if user._id in self.approval_state:
+            self.approval_state[user._id]['has_rejected'] = True
         NodeLog = apps.get_model('osf.NodeLog')
 
         registered_from = self.target_registration.registered_from
@@ -1020,6 +1023,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         user = event_data.kwargs.get('user')
         if user is None and event_data.args:
             user = event_data.args[0]
-        self.approval_state[user._id]['has_rejected'] = True
+        if user._id in self.approval_state:
+            self.approval_state[user._id]['has_rejected'] = True
         self.target_registration.embargo_termination_approval = None
         self.target_registration.save()
