@@ -56,6 +56,10 @@ def get_admin_read_permissions():
         'view_management',
         'view_notabledomain',
         'view_cedarmetadatatemplate',
+        'view_draftregistration',
+        'view_basefilenode',
+        'view_registration',
+        'view_registrationapproval',
     ])
 
 
@@ -98,6 +102,7 @@ def get_admin_write_permissions():
         'change_notabledomain',
         'delete_notabledomain',
         'change_cedarmetadatatemplate',
+        'change_registrationapproval'
     ])
 
 
