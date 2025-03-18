@@ -1102,7 +1102,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         had_existing_password = bool(self.has_usable_password() and self.is_confirmed)
         if self.username == raw_password:
             raise ChangePasswordError(['Password cannot be the same as your email address'])
-
         super().set_password(raw_password)
         if had_existing_password and notify:
             mails.send_mail(

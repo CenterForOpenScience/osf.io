@@ -90,7 +90,7 @@ from osf.models import (
     Email,
     Tag,
 )
-from website import mails, settings
+from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
@@ -763,11 +763,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
         institutional = bool(request.query_params.get('institutional', None))
         mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
 
-        status_message = (
-            f'If there is an OSF account associated with {email}, an email with instructions on how to '
-            f'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
-            'you should have, please contact OSF Support. '
-        )
+        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
