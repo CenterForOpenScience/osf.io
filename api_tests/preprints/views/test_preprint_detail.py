@@ -641,6 +641,8 @@ class TestPreprintUpdate:
             ('https://10.1235/test', False),
             ('https://doi.org/10.1235/', False),
             ('https://doi.org/10.1235/test', False),
+            ('https://doi.org/10.1235/osf.io/12345', False),
+            ('https://doi.org/10.1235/test-1234-01-02', False),
             ('10.1235', True),
             ('9.1234/test', True),
             ('https://doi.org/9.1234/test', True),
@@ -681,7 +683,9 @@ class TestPreprintUpdate:
             ('10.123/456/789', '10.123/456/789'),
             ('10.word/', '10.word/'),
             ('word.10.1234/word2', '10.1234/word2'),
-            ('10.word/word2/', '10.word/word2/')
+            ('10.word/word2/', '10.word/word2/'),
+            ('https://doi.org/10.1235/osf.io/12345', '10.1235/osf.io/12345'),
+            ('https://doi.org/10.1235/test-1234-01-02', '10.1235/test-1234-01-02'),
         ]
         for doi, stripped_doi in original_and_stripped_dois:
             update_payload = build_preprint_update_payload(
