@@ -492,7 +492,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             # it should start with "10." and have at least one group of any characters with a not required slash
             # e.g. 10.12/, 10.1234/test, 10.798797789/test/, 10.1234/test1/test2/random
             # e.g.2. from http://doi.com/10.32/test/random we fetch 10.32/test/random
-            stripped_article_doi = re.search(r'10\.\w+\/(\w*\/?)+', article_doi)
+            stripped_article_doi = re.search(r'10\.\w+\/([\w\-\.]*\/?)+', article_doi)
             if not stripped_article_doi:
                 raise exceptions.ValidationError('The `article_doi` format is incorrect')
 
