@@ -125,13 +125,13 @@
                     </nav>
                 </form>
             </section>
-            <section>
-                <h4><u>Resync with CrossRef and DataCite</u></h4>
+             <section>
+                <h4><u>Set dataarchive Registrations to 'Dataset'</u></h4>
                 <p>
-                    Use this management command to resync all preprints with CrossRef and public nodes/registrations with DataCite.
+                    Use this management command to set dataarchive registration resourcetype with no choice previously to 'Dataset'.
                 </p>
                 <form method="post"
-                      action="{% url 'management:bulk-resync'%}">
+                      action="{% url 'management:set_empty_resource_type_general_for_dataarchive_registrations'%}">
                     {% csrf_token %}
                     <nav>
                         <input class="btn btn-success" type="submit" value="Run" />
