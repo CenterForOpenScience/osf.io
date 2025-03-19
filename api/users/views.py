@@ -2,6 +2,8 @@ import pytz
 
 from django.apps import apps
 from django.db.models import F
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.throttling import UserRateThrottle
 
@@ -26,7 +28,7 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
+from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
@@ -47,6 +49,7 @@ from api.users.serializers import (
     UserDetailSerializer,
     UserIdentitiesSerializer,
     UserInstitutionsRelationshipSerializer,
+    UserResetPasswordSerializer,
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
@@ -61,7 +64,7 @@ from api.users.serializers import (
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
-from framework.auth.core import get_user
+from framework.auth.core import generate_verification_key, get_user
 from framework.auth.views import send_confirm_email_async
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
@@ -85,9 +88,13 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
+    Tag,
 )
-from website import mails, settings
+from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
+from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
+from framework.auth import exceptions
+
 
 class UserMixin:
     """Mixin with convenience methods for retrieving the current user based on the
@@ -723,6 +730,118 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.save()
         remove_sessions_for_user(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
+    """
+    View for handling reset password requests.
+
+    GET:
+    - Takes an email as a query parameter.
+    - If the email is associated with an OSF account, sends an email with instructions to reset the password.
+    - If the email is not provided or invalid, returns a validation error.
+    - If the user has recently requested a password reset, returns a throttling error.
+
+    POST:
+    - Takes uid, token, and new password in the request data.
+    - Verifies the token and resets the password if valid.
+    - If the token is invalid or expired, returns an error.
+    - If the request data is incomplete, returns a validation error.
+    """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = UserResetPasswordSerializer
+    view_category = 'users'
+    view_name = 'request-reset-password'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
+
+    def get(self, request, *args, **kwargs):
+        email = request.query_params.get('email', None)
+        if not email:
+            raise ValidationError('Request must include email in query params.')
+
+        institutional = bool(request.query_params.get('institutional', None))
+        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+
+        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
+        kind = 'success'
+        # check if the user exists
+        user_obj = get_user(email=email)
+
+        if user_obj:
+            # rate limit forgot_password_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
+                                 'before trying again.'
+                kind = 'error'
+                return Response({'message': status_message, 'kind': kind}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            elif user_obj.is_active:
+                # new random verification key (v2)
+                user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
+                reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
+                mails.send_mail(
+                    to_addr=email,
+                    mail=mail_template,
+                    reset_link=reset_link,
+                    can_change_preferences=False,
+                )
+        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uid = request.data.get('uid', None)
+        token = request.data.get('token', None)
+        password = request.data.get('password', None)
+        if not (uid and token and password):
+            error_data = {
+                'message_short': 'Invalid Request.',
+                'message_long': 'The request must include uid, token, and password.',
+            }
+            return JsonResponse(
+                error_data,
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        user_obj = OSFUser.load(uid)
+        if not (user_obj and user_obj.verify_password_token(token=token)):
+            error_data = {
+                'message_short': 'Invalid Request.',
+                'message_long': 'The requested URL is invalid, has expired, or was already used',
+            }
+            return JsonResponse(
+                error_data,
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        else:
+            # clear verification key (v2)
+            user_obj.verification_key_v2 = {}
+            # new verification key (v1) for CAS
+            user_obj.verification_key = generate_verification_key(verification_type=None)
+            try:
+                user_obj.set_password(password)
+                osf4m_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Osf4m.value, system=True)
+                osf4m_claimed_tag, created = Tag.all_tags.get_or_create(name=CampaignClaimedTags.Osf4m.value, system=True)
+                if user_obj.all_tags.filter(id=osf4m_source_tag.id, system=True).exists():
+                    user_obj.add_system_tag(osf4m_claimed_tag)
+                user_obj.save()
+            except exceptions.ChangePasswordError as error:
+                return JsonResponse(
+                    {'errors': [{'detail': message} for message in error.messages]},
+                    status=400,
+                    content_type='application/vnd.api+json; application/json',
+                )
+
+        return Response(
+            status=status.HTTP_200_OK,
+            content_type='application/vnd.api+json; application/json',
+        )
 
 
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):

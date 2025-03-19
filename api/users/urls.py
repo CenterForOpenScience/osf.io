@@ -4,6 +4,7 @@ from . import views
 app_name = 'osf'
 
 urlpatterns = [
+    re_path(r'^reset_password/$', views.ResetPassword.as_view(), name=views.ResetPassword.view_name),
     re_path(r'^$', views.UserList.as_view(), name=views.UserList.view_name),
     re_path(r'^(?P<user_id>\w+)/$', views.UserDetail.as_view(), name=views.UserDetail.view_name),
     re_path(r'^(?P<user_id>\w+)/addons/$', views.UserAddonList.as_view(), name=views.UserAddonList.view_name),
