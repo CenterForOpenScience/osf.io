@@ -1571,7 +1571,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             user: The user triggering this transition.
             comment: Text describing why.
         """
-        ret = super().run_accept(user=user, comment=comment, **kwargs)
+        ret = None if kwargs.get('skip_parent_run_accept') else super().run_accept(user=user, comment=comment, **kwargs)
         reviews_workflow = self.provider.reviews_workflow
         if reviews_workflow == Workflows.PRE_MODERATION.value or reviews_workflow == Workflows.HYBRID_MODERATION.value:
             base_guid_obj = self.versioned_guids.first().guid
