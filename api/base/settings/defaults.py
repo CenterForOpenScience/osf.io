@@ -458,7 +458,7 @@ OPENSSL_VERIFY_RESULT_OK = 'OK'
 VERIFY_ROOT_CERTIFICATE = 'root_cert_verifycate.pem'
 # timestamp request const
 REQUEST_HEADER = {'Content-Type': 'application/timestamp-query'}
-TIME_STAMP_AUTHORITY_URL = 'http://eswg.jnsa.org/freetsa'
+TIME_STAMP_AUTHORITY_URL = 'https://www.langedge.jp/tsa'
 ERROR_HTTP_STATUS = [400, 401, 402, 403, 500, 502, 503, 504]
 REQUEST_TIME_OUT = 5
 RETRY_COUNT = 3
