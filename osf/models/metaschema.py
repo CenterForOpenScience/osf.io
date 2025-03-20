@@ -201,6 +201,19 @@ class RegistrationSchemaBlock(ObjectIDMixin, BaseModel):
     message_required_if = models.TextField(null=True)
     enabled_if = models.TextField(null=True)
     suggestion = models.TextField(null=True)
+    auto_value = models.BooleanField(default=False)
+    auto_date = models.BooleanField(default=False)
+    auto_title = models.BooleanField(default=False)
+    hide_projectmetadata = models.BooleanField(default=False)
+    retrieval_title = models.TextField(null=True)
+    retrieval_date = models.TextField(null=True)
+    concealment_page_navigator = models.BooleanField(default=False)
+    required_all_check = models.TextField(null=True)
+    multi_language = models.BooleanField(default=False)
+    retrieval_version = models.TextField(null=True)
+    readonly = models.BooleanField(default=False)
+    sentence = models.BooleanField(default=False)
+    row_addition_caption = models.TextField(null=True)
 
     @property
     def absolute_api_v2_url(self):
