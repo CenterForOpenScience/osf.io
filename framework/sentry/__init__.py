@@ -41,7 +41,7 @@ def get_session_data():
 
 def log_exception(exception: Exception, skip_session=False):
     if not enabled:
-        logger.warning('Sentry called to log exception, but is not active')
+        logger.warning(f'Sentry called to log exception, but is not active: {str(exception)}')
         return None
     extra = {
         'session': {} if skip_session else get_session_data(),
@@ -55,7 +55,8 @@ def log_exception(exception: Exception, skip_session=False):
 def log_message(message, skip_session=False, extra_data=None, level=logging.ERROR):
     if not enabled:
         logger.warning(
-            'Sentry called to log message, but is not active: %s' % message
+            f'Sentry called to log message, but is not active: {message}. '
+            f'Extra data: {extra_data}'
         )
         return None
     extra = {
