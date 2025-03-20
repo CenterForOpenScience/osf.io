@@ -64,8 +64,9 @@ class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
         if (
             metadata_record.resource_type_general == ''
             and metadata_record.guid.content_type_id == ContentType.objects.get_for_model(osfdb.Registration).id
-            and osfdb.Registration.objects.get(id=metadata_record.guid.object_id).provider._id == 'dataarchive'
         ):
-            metadata_record.resource_type_general = 'Dataset'
+            registration = osfdb.Registration.objects.filter(id=metadata_record.guid.object_id).first()
+            if registration and registration.provider and registration.provider._id == 'dataarchive':
+                metadata_record.resource_type_general = 'Dataset'
         self.check_object_permissions(self.request, metadata_record)
         return metadata_record
