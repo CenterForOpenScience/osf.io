@@ -83,7 +83,7 @@ function WikiMenu(data, wikiID, canEdit) {
                 columns.push({
                     folderIcons: true,
                     custom: function() {
-                        return m('a.fg-file-links', {href: item.data.page.url}, item.data.page.name);
+                        return m('a.fg-file-links', {href: item.data.page.url}, m.trust(item.data.page.name));
                     }
                 });
             }
