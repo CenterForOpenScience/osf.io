@@ -60,7 +60,7 @@ class CustomItemMetadataDetail(JSONAPIBaseView, rest_framework.generics.Retrieve
             )
         except osfdb.base.InvalidGuid:
             raise Http404
-        # return 'resource_type_general'='Dataset' if Registration provider is 'dataarchive'
+        # return 'resource_type_general'='Dataset' if Registration provider is  'dataarchive'
         if (
             metadata_record.resource_type_general == ''
             and metadata_record.guid.content_type_id == ContentType.objects.get_for_model(osfdb.Registration).id
