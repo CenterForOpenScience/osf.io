@@ -167,18 +167,8 @@ class SetEmptyResourceTypeGeneralForDataarchiveRegistrations(ManagementCommandPe
             Guid.objects.filter(content_type__model='abstractnode', object_id__in=registration_ids).
             values_list('id', flat=True)
         )
-        guid_ids_with_metadata = list(
-            GuidMetadataRecord.objects.filter(guid_id__in=guid_ids).values_list('guid_id', flat=True)
-        )
-        # create metadata records if there is default ''
+        # update metadata records if there is default ''
         GuidMetadataRecord.objects.filter(guid_id__in=guid_ids, resource_type_general='').update(
             resource_type_general='Dataset'
         )
-        guid_ids_with_no_metadata = set(guid_ids) - set(guid_ids_with_metadata)
-        # create metadata records if there was no previously
-        if guid_ids_with_no_metadata:
-            GuidMetadataRecord.objects.bulk_create(
-                [GuidMetadataRecord(guid_id=guid_id_with_no_metadata, resource_type_general='Dataset')
-                 for guid_id_with_no_metadata in guid_ids_with_no_metadata]
-            )
         return redirect(reverse('management:commands'))
