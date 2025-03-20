@@ -1124,6 +1124,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
     view_name = 'external-login-confirm-email'
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
 
+    @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

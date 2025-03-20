@@ -1,5 +1,8 @@
 import pytest
+from django.middleware import csrf
+
 from api.base.settings.defaults import API_BASE
+from api.base.settings import CSRF_COOKIE_NAME
 from osf.models import OSFUser
 
 
@@ -40,25 +43,33 @@ class TestConfirmExternalLogin:
     def url(self):
         return f'/{API_BASE}users/external_login_comfirm_email/'
 
-    def test_confirm_external_login(self, app, payload, user_one, url):
-        res = app.post_json_api(url, payload)
+    @pytest.fixture
+    def csrf_token(self):
+        return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
+
+    def test_confirm_external_login(self, app, payload, user_one, url, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
         user_one.refresh_from_db()
         assert user_one.external_identity['orcid']['1234'] == 'VERIFIED'
 
-    def test_invalid_user(self, app, payload, url):
+    def test_invalid_user(self, app, payload, url, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         payload['data']['attributes']['uid'] = 'invalid'
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User not found.'
 
-    def test_invalid_token(self, app, payload, user_one, url):
+    def test_invalid_token(self, app, payload, user_one, url, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         payload['data']['attributes']['token'] = 'invalid'
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Invalid token.'
 
-    def test_invalid_destination(self, app, payload, user_one, url):
+    def test_invalid_destination(self, app, payload, user_one, url, csrf_token):
+        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         del payload['data']['attributes']['destination']
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 400
