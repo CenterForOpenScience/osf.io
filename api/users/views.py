@@ -1,4 +1,5 @@
 import pytz
+from urllib.parse import urlencode
 
 from django.apps import apps
 from django.db.models import F
@@ -28,7 +29,13 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle
+from api.base.throttling import (
+    SendEmailThrottle,
+    SendEmailDeactivationThrottle,
+    NonCookieAuthThrottle,
+    BurstRateThrottle,
+    RootAnonThrottle,
+)
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
@@ -60,14 +67,18 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
     UserMessageSerializer,
+    ExternalLoginConfirmEmailSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
-from framework.auth.core import generate_verification_key, get_user
-from framework.auth.views import send_confirm_email_async
+from framework import sentry
+from framework.auth.core import get_user, generate_verification_key
+from framework.auth.views import send_confirm_email_async, ensure_external_identity_uniqueness
+from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
+from framework.celery_tasks.handlers import enqueue_task
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
@@ -1102,3 +1113,80 @@ class UserMessageView(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'users'
     view_name = 'user-messages'
+
+
+class ExternalLoginConfirmEmailView(generics.CreateAPIView):
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = ExternalLoginConfirmEmailSerializer
+    view_category = 'users'
+    view_name = 'external-login-confirm-email'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uid = request.data.get('uid', None)
+        token = request.data.get('token', None)
+        destination = request.data.get('destination', None)
+
+        user = OSFUser.load(uid)
+        if not user:
+            sentry.log_message('external_login_confirm_email_get::400 - Cannot find user')
+            raise ValidationError('User not found.')
+
+        if not destination:
+            sentry.log_message('external_login_confirm_email_get::400 - bad destination')
+            raise ValidationError('Bad destination.')
+
+        if token not in user.email_verifications:
+            sentry.log_message('external_login_confirm_email_get::400 - bad token')
+            raise ValidationError('Invalid token.')
+
+        verification = user.email_verifications[token]
+        email = verification['email']
+        provider = list(verification['external_identity'].keys())[0]
+        provider_id = list(verification['external_identity'][provider].keys())[0]
+
+        if provider not in user.external_identity:
+            sentry.log_message('external_login_confirm_email_get::400 - Auth error...wrong provider')
+            raise ValidationError('Wrong provider.')
+
+        external_status = user.external_identity[provider][provider_id]
+
+        try:
+            ensure_external_identity_uniqueness(provider, provider_id, user)
+        except ValidationError as e:
+            sentry.log_message('external_login_confirm_email_get::403 - Validation Error')
+            raise ValidationError(str(e))
+
+        if not user.is_registered:
+            user.register(email)
+
+        if not user.emails.filter(address=email.lower()).exists():
+            user.emails.create(address=email.lower())
+
+        user.date_last_logged_in = timezone.now()
+        user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.social[provider.lower()] = provider_id
+        del user.email_verifications[token]
+        user.verification_key = generate_verification_key()
+        user.save()
+
+        service_url = request.build_absolute_uri()
+
+        if external_status == 'CREATE':
+            service_url += '&{}'.format(urlencode({'new': 'true'}))
+        elif external_status == 'LINK':
+            mails.send_mail(
+                user=user,
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
+            )
+
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
+        return Response(status=status.HTTP_200_OK)
