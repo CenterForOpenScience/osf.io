@@ -3,7 +3,6 @@ import time
 import datetime
 import logging
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from datacite.errors import DataCiteServerError
 from website.identifiers.clients.exceptions import CrossRefRateLimitError
@@ -40,6 +39,26 @@ def sync_identifier_doi(identifier_id):
     time.sleep(RATE_LIMIT_RETRY_DELAY)
 
 
+@app.task(name='osf.management.commands.sync_registration_doi_metadata', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def sync_registration_doi(registration_id, registration_guid):
+    try:
+        registration_item = Registration.objects.get(id=registration_id)
+        registration_item.request_identifier_update('doi')
+        logger.info(f'Doi update for Registration({registration_guid}) complete')
+    except DataCiteServerError as err:
+        # the first param is status code, the second one is text
+        # see create_identifier.metadata_post call in datacite.py
+        status_code, text = err.args
+        if status_code == 429:
+            logger.warning(f'Doi update for Registration({registration_guid}) failed because of rate limit: {text}')
+        else:
+            logger.warning(f'Doi update for Registration({registration_guid}) failed. Error: {text}')
+    except Exception as err:
+        logger.warning(f'Doi update for Registration({registration_guid}) failed because of an unexpected error: {err}')
+
+    time.sleep(RATE_LIMIT_RETRY_DELAY)
+
+
 @app.task(name='osf.management.commands.sync_doi_metadata_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
 def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
     identifiers = Identifier.objects.filter(
@@ -71,24 +90,24 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
 
 @app.task(name='osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
 def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
-    identifiers = Identifier.objects.filter(
-        category='doi',
+    registrations = Registration.objects.filter(
+        is_public=True,
         deleted__isnull=True,
         modified__lte=modified_date,
-        object_id__isnull=False,
-        content_type_id=ContentType.objects.get_for_model(Registration).id
+        provider___id='dataarchive'
     )
     if batch_size:
-        identifiers = identifiers[:batch_size]
+        registrations = registrations[:batch_size]
         rate_limit = batch_size if batch_size > rate_limit else rate_limit
 
     logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
-                f'{identifiers.count()} identifiers to mint')
+                f'{registrations.count()} identifiers to mint')
 
-    for record_number, identifier in enumerate(identifiers, 1):
+    for record_number, registration_item in enumerate(registrations, 1):
+        registration_guid = registration_item._id
         if dry_run:
             logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
-                        f' doi minting for {identifier.value} started')
+                        f' doi minting for Registration({registration_guid}) started')
             continue
 
         # in order to not reach rate limits that CrossRef and DataCite have, we make delay
@@ -96,13 +115,15 @@ def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=
             time.sleep(RATE_LIMIT_RETRY_DELAY)
 
         # check if registration is 'dataarchive' and with empty metadata
-        if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted
-        and identifier.referent.provider and identifier.referent.provider._id == 'dataarchive') or sync_private:
+        if not registration_item.is_retracted or sync_private:
             metadata_record = GuidMetadataRecord.objects.for_guid(
-                identifier.referent
+                registration_item
             )
             if metadata_record.resource_type_general == '':
-                sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
+                sync_registration_doi.apply_async(kwargs={
+                    'registration_id': registration_item.id,
+                    'registration_guid': registration_guid
+                })
 
 
 class Command(BaseCommand):
