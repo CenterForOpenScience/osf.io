@@ -10,7 +10,7 @@ from osf.management.commands.update_registration_schemas import update_registrat
 from osf.management.commands.daily_reporters_go import daily_reporters_go
 from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
-from osf.management.commands.sync_doi_metadata import sync_doi_metadata
+from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -156,4 +156,16 @@ class BulkResync(ManagementCommandPermissionView):
             'dry_run': False
         })
         messages.success(request, 'Resyncing with CrossRef and DataCite! It will take some time.')
+        return redirect(reverse('management:commands'))
+
+
+class EmptyMetadataDataarchiveRegistrationBulkResync(ManagementCommandPermissionView):
+
+    def post(self, request):
+        sync_doi_empty_metadata_dataarchive_registrations.apply_async(kwargs={
+            'modified_date': timezone.now(),
+            'batch_size': None,
+            'dry_run': False
+        })
+        messages.success(request, 'Resyncing with DataCite! It will take some time.')
         return redirect(reverse('management:commands'))

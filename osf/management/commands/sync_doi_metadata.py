@@ -3,11 +3,11 @@ import time
 import datetime
 import logging
 
+from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from datacite.errors import DataCiteServerError
 from website.identifiers.clients.exceptions import CrossRefRateLimitError
-from osf.models import Identifier
-
+from osf.models import GuidMetadataRecord, Identifier, Registration
 from framework.celery_tasks import app
 
 logger = logging.getLogger(__name__)
@@ -67,6 +67,42 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
 
         if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
             sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
+
+
+@app.task(name='osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
+    identifiers = Identifier.objects.filter(
+        category='doi',
+        deleted__isnull=True,
+        modified__lte=modified_date,
+        object_id__isnull=False,
+        content_type_id=ContentType.objects.get_for_model(Registration).id
+    )
+    if batch_size:
+        identifiers = identifiers[:batch_size]
+        rate_limit = batch_size if batch_size > rate_limit else rate_limit
+
+    logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
+                f'{identifiers.count()} identifiers to mint')
+
+    for record_number, identifier in enumerate(identifiers, 1):
+        if dry_run:
+            logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
+                        f' doi minting for {identifier.value} started')
+            continue
+
+        # in order to not reach rate limits that CrossRef and DataCite have, we make delay
+        if not record_number % rate_limit:
+            time.sleep(RATE_LIMIT_RETRY_DELAY)
+
+        # check if registration is 'dataarchive' and with empty metadata
+        if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted
+        and identifier.referent.provider and identifier.referent.provider._id == 'dataarchive') or sync_private:
+            metadata_record = GuidMetadataRecord.objects.for_guid(
+                identifier.referent
+            )
+            if metadata_record.resource_type_general == '':
+                sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
 
 
 class Command(BaseCommand):
