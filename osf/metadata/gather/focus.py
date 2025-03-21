@@ -10,12 +10,13 @@ class Focus:
     iri: URIRef
     rdftype: URIRef  # TODO: allow multiple types, but don't make a big deal about it
 
-    def __init__(self, iri, rdftype):
+    def __init__(self, iri, rdftype, provider_id=None):
         assert (iri and rdftype)
         assert isinstance(iri, URIRef)
         assert isinstance(rdftype, URIRef)
         self.iri = iri
         self.rdftype = rdftype
+        self.provider_id = provider_id
 
     def __eq__(self, other):
         return (
