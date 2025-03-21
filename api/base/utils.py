@@ -180,7 +180,7 @@ def default_node_list_permission_queryset(user, model_cls, **annotations):
     qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
     if annotations:
         qs = qs.annotate(**annotations)
-    return qs
+    return qs.filter(deleted=None)
 
 
 def extend_querystring_params(url, params):
