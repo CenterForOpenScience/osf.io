@@ -559,6 +559,7 @@ class PreprintMakePublishedView(PreprintMixin, View):
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.set_published(True, request, True)
+        preprint.run_accept(request.user, '', skip_parent_run_accept=True)
         return redirect(self.get_success_url())
 
 class PreprintUnwithdrawView(PreprintMixin, View):
