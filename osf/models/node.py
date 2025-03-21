@@ -2497,6 +2497,12 @@ class Node(AbstractNode):
         """For v1 compat"""
         return False
 
+    @property
+    def guid(self):
+        """Return node's GUID if it exists, otherwise return None."""
+        guid = self.guids.first()
+        return guid._id if guid else guid
+
 def remove_addons(auth, resource_object_list):
     for config in AbstractNode.ADDONS_AVAILABLE:
         try:

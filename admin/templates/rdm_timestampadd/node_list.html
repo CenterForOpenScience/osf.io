@@ -37,6 +37,7 @@
                     </script>
                 </th>
                 {% endif %}
+                <th>{% trans "Node id" %}</th>
                 <th>{% trans "GUID" %}</th>
                 <th>
                     {% trans "Title" %}
@@ -63,6 +64,9 @@
                        class="btn btn-primary">
                         {{ node.id }}
                     </a>
+                </td>
+                <td>
+                    {{ node.guid }}
                 </td>
                 <td>
                     <a href="{% url 'timestampadd:timestamp_add' institution_id=institution.id guid=node.root.id %}">
