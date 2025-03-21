@@ -448,10 +448,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=guid_obj
         )
         guid_version.save()
-        preprint.save(guid_ready=True, first_save=True)
+        preprint.save(guid_ready=True, first_save=True, set_creator_as_contributor=False)
 
         # Add contributors
-        for contributor in latest_version.contributor_set.exclude(user=preprint.creator):
+        for contributor in latest_version.contributor_set.all():
             try:
                 preprint.add_contributor(
                     contributor.user,
@@ -887,6 +887,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise IntegrityError(err_msg)
 
         first_save = kwargs.pop('first_save', False)
+        set_creator_as_contributor = kwargs.pop('set_creator_as_contributor', True)
         saved_fields = self.get_dirty_fields() or []
 
         if not first_save and ('ever_public' in saved_fields and saved_fields['ever_public']):
@@ -906,7 +907,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if first_save:
             self._set_default_region()
             self.update_group_permissions()
-            self._add_creator_as_contributor()
+            # exception is a new preprint version because we must inherit contributors ordering from the last version
+            # thus no need to set creator as the first contributor immediately
+            if set_creator_as_contributor:
+                self._add_creator_as_contributor()
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)
