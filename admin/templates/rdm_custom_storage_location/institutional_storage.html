@@ -17,7 +17,16 @@
 {% endblock title %}
 
 {% block content %}
-<h2>{% trans "Institutional Storage " %}<small>({{ institution.name }})</small></h2>
+<h2>
+    {% trans "Institutional Storage " %}
+    <small style="word-wrap: break-word">
+        ({{ institution.name }})
+         <button data-toggle="modal" data-target="#settingInfoModal" class="btn btn-primary" type="button" style="margin-top: -2px"
+               {% if disable_view_setting_info %}disabled{% endif %}>
+            {% trans "View Setting Info" %}
+        </button>
+    </small>
+</h2>
 
 <div id="content-main">
     <form role="form" id="institutional_storage_form">
@@ -71,6 +80,7 @@
     {% for provider_item in providers %}
     {% include provider_item.modal_path %}
     {% endfor %}
+    {% include "rdm_custom_storage_location/setting_info_modal.html" %}
 
 </div>
 

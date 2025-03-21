@@ -4005,3 +4005,18 @@ msgstr "作成したプロジェクト数が作成可能なプロジェクトの
 
 msgid "attribute_value is required."
 msgstr "プロジェクト制限数が不正です。"
+
+msgid "View Setting Info"
+msgstr "設定情報を表示"
+
+msgid "%(providerName)s Setting Information"
+msgstr "%(providerName)s設定情報"
+
+msgid "authorized_by"
+msgstr "承認者"
+
+msgid "Yes@encrypt_uploads"
+msgstr "有効化する"
+
+msgid "No@encrypt_uploads"
+msgstr "有効化しない"

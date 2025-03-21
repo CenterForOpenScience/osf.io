@@ -3965,3 +3965,18 @@ msgstr ""
 
 msgid "attribute_value is required."
 msgstr ""
+
+msgid "View Setting Info"
+msgstr ""
+
+msgid "%(providerName)s Setting Information"
+msgstr ""
+
+msgid "authorized_by"
+msgstr "Authorized by"
+
+msgid "Yes@encrypt_uploads"
+msgstr "Yes"
+
+msgid "No@encrypt_uploads"
+msgstr "No"

@@ -1,0 +1,50 @@
+{% load i18n %}
+<div class="modal fade" id="settingInfoModal" tabindex="-1" role="dialog" aria-labelledby="setting_info_modal_label">
+    <div class="modal-dialog modal-md" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h3 id="setting_info_modal_label">
+                    {% blocktrans with providerName=selected_provider_full_name %}{{ providerName }} Setting Information{% endblocktrans %}
+                </h3>
+            </div>
+            <div class="modal-body">
+                <div class='row'>
+                    <div class='col-sm-12'>
+                        <table class="table table-striped table-hover table-responsive" style="margin-bottom: 0">
+                            <thead>
+                                <tr>
+                                    <th class="wrap-cell" style="width: 35%">{% trans "Field" %}</th>
+                                    <th class="wrap-cell">{% trans "Value" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for key, value in storage.items %}
+                                    <tr id="setting_info_modal_{{ key }}">
+                                        <td class="wrap-cell">{% trans value.field_name %}</td>
+                                        {% if key == "encrypt_uploads" %}
+                                            <td class="wrap-cell">
+                                                {% if value.value %}
+                                                    {% trans "Yes@encrypt_uploads" %}
+                                                {% else %}
+                                                    {% trans "No@encrypt_uploads" %}
+                                                {% endif %}
+                                            </td>
+                                        {% else %}
+                                            <td class="wrap-cell">{{ value.value }}</td>
+                                        {% endif %}
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">{% trans "OK" %}</button>
+            </div>
+        </div>
+    </div>
+</div>

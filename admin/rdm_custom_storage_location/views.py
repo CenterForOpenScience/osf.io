@@ -71,14 +71,25 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
             raise Http404
 
         region = None
+        disable_view_setting_info = False
         if Region.objects.filter(_id=institution._id).exists():
             region = Region.objects.get(_id=institution._id)
         else:
             region = Region.objects.first()
             region.name = ''
+            disable_view_setting_info = True
 
         provider_name = region.waterbutler_settings['storage']['provider']
         provider_name = provider_name if provider_name != 'filesystem' else 'osfstorage'
+
+        # Disable view setting info button if institution's storage provider is not supported or institution does not have institution storage
+        disable_view_setting_info = disable_view_setting_info or provider_name in settings.UNSUPPORTED_VIEW_SETTING_INFO_PROVIDERS
+
+        # Get storage information
+        try:
+            storage_information = utils.get_institutional_storage_information(provider_name, region, institution)
+        except Exception:
+            storage_information = {}
 
         kwargs['institution'] = institution
         kwargs['region'] = region
@@ -86,6 +97,9 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         kwargs['selected_provider_short_name'] = provider_name
         kwargs['have_storage_name'] = utils.have_storage_name(provider_name)
         kwargs['osf_domain'] = osf_settings.DOMAIN
+        kwargs['selected_provider_full_name'] = region.provider_full_name
+        kwargs['disable_view_setting_info'] = disable_view_setting_info
+        kwargs['storage'] = storage_information
         return kwargs
 
 
