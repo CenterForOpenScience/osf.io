@@ -235,6 +235,14 @@ msgid ""
 "browser menu."
 msgstr ""
 
+#: addons/metadata/static/metadata-fields.js:247
+#: addons/metadata/static/metadata-fields.js:257
+msgid "Show Items"
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:254
+msgid "Hide Items"
+msgstr ""
 #: addons/metadata/static/metadata-fields.js:213
 msgid "Clear"
 msgstr ""
@@ -312,6 +320,10 @@ msgstr ""
 
 #: addons/metadata/static/metadataNodeConfig.js:113
 msgid "Could not GET metadata settings"
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:1187
+msgid "File size exceeds the maximum allowed size."
 msgstr ""
 
 #: addons/metadata/static/metadataNodeConfig.js:156
