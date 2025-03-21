@@ -91,10 +91,10 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
 @app.task(name='osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
 def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
     registrations = Registration.objects.filter(
+        provider___id='dataarchive',
         is_public=True,
         deleted__isnull=True,
-        modified__lte=modified_date,
-        provider___id='dataarchive'
+        modified__lte=modified_date
     )
     if batch_size:
         registrations = registrations[:batch_size]
