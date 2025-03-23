@@ -84,6 +84,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
+    IsAdminContributorToRegisterDrafts,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -756,6 +757,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
         # GRDM-50321 Project Metadata should be available to non-admins.
         # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
         # Therefore, the project metadata should be available to non-admins.
+        IsAdminContributorToRegisterDrafts,
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,

@@ -337,3 +337,22 @@ class NodeLinksShowIfVersion(ShowIfVersion):
         max_version = '2.0'
         deprecated_message = 'This feature is deprecated as of version 2.1'
         super(NodeLinksShowIfVersion, self).__init__(min_version, max_version, deprecated_message)
+
+
+# GRDM-50321 Project Metadata should be available to non-admins.
+class IsAdminContributorToRegisterDrafts(permissions.BasePermission):
+
+    acceptable_models = (AbstractNode, DraftRegistration,)
+
+    def has_object_permission(self, request, view, obj):
+        """
+        To make changes, user must be an admin contributor. Admin group membership is not sufficient.
+        """
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+        if request.method != 'POST':
+            if request.method in permissions.SAFE_METHODS:
+                return obj.is_public or obj.can_view(auth)
+            else:
+                return obj.has_permission(auth.user, osf_permissions.WRITE)
+        return obj.is_admin_contributor(auth.user)
