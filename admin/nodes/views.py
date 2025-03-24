@@ -643,7 +643,6 @@ class NodeMakePrivate(NodeMixin, View):
         node = self.get_object()
 
         node.is_public = False
-        node.keenio_read_key = ''
 
         # After set permissions callback
         for addon in node.get_addons():

@@ -275,20 +275,6 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-KEEN = {
-    'public': {
-        'project_id': None,
-        'master_key': 'changeme',
-        'write_key': '',
-        'read_key': '',
-    },
-    'private': {
-        'project_id': '',
-        'write_key': '',
-        'read_key': '',
-    },
-}
-
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
@@ -450,7 +436,6 @@ class CeleryConfig:
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
-        'osf.management.commands.cumulative_plos_metrics',
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
@@ -555,7 +540,6 @@ class CeleryConfig:
         'osf.management.commands.delete_legacy_quickfiles_nodes',
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'osf.management.commands.sync_doi_metadata',
-        'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',

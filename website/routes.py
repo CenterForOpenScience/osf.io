@@ -150,16 +150,6 @@ def get_globals():
         'profile_url': cas.get_profile_url(),
         'enable_institutions': settings.ENABLE_INSTITUTIONS,
         'page_route_name': request.url_rule.endpoint.replace('__', '.'),
-        'keen': {
-            'public': {
-                'project_id': settings.KEEN['public']['project_id'],
-                'write_key': settings.KEEN['public']['write_key'],
-            },
-            'private': {
-                'project_id': settings.KEEN['private']['project_id'],
-                'write_key': settings.KEEN['private']['write_key'],
-            },
-        },
         'institutional_landing_flag': flag_is_active(request, features.INSTITUTIONAL_LANDING_FLAG),
         'maintenance': maintenance.get_maintenance(),
         'recaptcha_site_key': settings.RECAPTCHA_SITE_KEY,
