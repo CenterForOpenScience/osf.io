@@ -86,6 +86,8 @@ services:
     ports:
       - 5432:5432
     environment:
+      POSTGRES_DB: osf
+      POSTGRES_HOST_AUTH_METHOD: trust
       POSTGRES_INITDB_SQL: |
         SELECT 'CREATE DATABASE gravyvalet' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'gravyvalet')\gexec
     volumes:
@@ -534,9 +536,11 @@ services:
     command:
       - /bin/bash
       - -c
-      - pip install -r requirements/dev-requirements.txt &&
-        (python3 -m compileall /usr/local/lib/python3.12 || true) &&
-        rm -Rf /python3.12/* &&
+      - python -m venv /tmp/venv
+        && /tmp/venv/bin/pip install poetry==1.8.3 &&
+        /tmp/venv/bin/poetry config virtualenvs.create false --local &&
+        /tmp/venv/bin/poetry install --no-root --with dev --without release --compile --sync &&
+        rm -rf /python3.12/* &&
         cp -Rf -p /usr/local/lib/python3.12 /
     restart: 'no'
     volumes:
@@ -551,6 +555,38 @@ services:
     depends_on:
       - postgres
       - api
+    env_file:
+      - .docker-compose.gv.env
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+    volumes:
+      - gv_requirements_vol:/usr/local/lib/python3.12
+    stdin_open: true
+
+  gv_worker:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command: python -m celery --app app worker --uid daemon -l info
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - api
+      - rabbitmq
+    env_file:
+      - .docker-compose.gv.env
+    environment:
+      DJANGO_SETTINGS_MODULE: app.settings
+    volumes:
+      - gv_requirements_vol:/usr/local/lib/python3.12
+    stdin_open: true
+
+  gv_beat:
+    image: quay.io/centerforopenscience/gravyvalet:develop
+    command: python -m celery --app app beat --uid daemon -l info
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - api
+      - rabbitmq
     env_file:
       - .docker-compose.gv.env
     environment:
