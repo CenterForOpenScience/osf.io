@@ -656,6 +656,7 @@ class WaterButlerMixin:
                 file_obj.update(None, attrs, user=self.request.user, save=False)
             else:
                 file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
+                file_obj.update(None, attrs, user=self.request.user, save=False)
                 objs_to_create[base_class].append(file_obj)
 
         bulk_update(file_objs)
