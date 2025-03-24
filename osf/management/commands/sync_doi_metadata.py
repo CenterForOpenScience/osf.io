@@ -93,10 +93,6 @@ def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=
                 f'{identifiers.count()} identifiers to mint')
 
     for record_number, identifier in enumerate(identifiers, 1):
-        if dry_run:
-            logger.info(f'{"[DRY RUN]: " if dry_run else ""}'
-                        f' doi minting for {identifier.value} started')
-            continue
 
         # in order to not reach rate limits that CrossRef and DataCite have, we make delay
         if not record_number % rate_limit:
@@ -107,6 +103,9 @@ def sync_doi_empty_metadata_dataarchive_registrations(modified_date, batch_size=
                 identifier.referent
             )
             if metadata_record.resource_type_general == '':
+                if dry_run:
+                    logger.info(f"[DRY RUN]:  doi minting for {identifier.value} started")
+                    continue
                 sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
 
 
