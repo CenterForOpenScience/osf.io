@@ -21,7 +21,7 @@ var MetricsTracker = (function() {
           }
     }
 
-    function _createOrUpdateKeenSession() {
+    function _createOrUpdateMetricsSession() {
         var expDate = new Date();
         var expiresInMinutes = 25;
         expDate.setTime(expDate.getTime() + (expiresInMinutes * 60 * 1000));
@@ -52,7 +52,7 @@ var MetricsTracker = (function() {
 
     function _logPageview() {
         const url = new URL('/_/metrics/events/counted_usage/', window.contextVars.apiV2Domain);
-        const sessionId = _createOrUpdateKeenSession();
+        const sessionId = _createOrUpdateMetricsSession();
         const data = {
             type: 'counted-usage',
             attributes: {
