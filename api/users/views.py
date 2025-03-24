@@ -1227,10 +1227,12 @@ class ConfirmEmailView(generics.CreateAPIView):
         try:
             user.confirm_email(token, merge=is_merge)
         except exceptions.EmailConfirmTokenError as e:
-            return JsonResponse(status=status.HTTP_400_BAD_REQUEST, data={
-                'message_short': e.message_short,
-                'message_long': str(e)
-            })
+            return JsonResponse(
+                status=status.HTTP_400_BAD_REQUEST, data={
+                    'message_short': e.message_short,
+                    'message_long': str(e),
+                },
+            )
 
         if is_initial_confirmation:
             user.update_date_last_login()
@@ -1245,7 +1247,7 @@ class ConfirmEmailView(generics.CreateAPIView):
                 'cas_url': cas.get_login_url(
                     request.build_absolute_uri(),
                     username=user.username,
-                    verification_key=user.verification_key
-                )
-            }
+                    verification_key=user.verification_key,
+                ),
+            },
         )
