@@ -274,20 +274,6 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-KEEN = {
-    'public': {
-        'project_id': None,
-        'master_key': 'changeme',
-        'write_key': '',
-        'read_key': '',
-    },
-    'private': {
-        'project_id': '',
-        'write_key': '',
-        'read_key': '',
-    },
-}
-
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 

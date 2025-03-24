@@ -252,7 +252,7 @@ $(function() {
         }
     }
 
-    //Don't track PhantomJS visits with KeenIO
+    //Don't track PhantomJS visits with metrics
     if (!(/PhantomJS/.test(navigator.userAgent))){
         MetricsTracker.getInstance().trackPageView();
     }
