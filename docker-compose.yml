@@ -540,11 +540,11 @@ services:
         && /tmp/venv/bin/pip install poetry==1.8.3 &&
         /tmp/venv/bin/poetry config virtualenvs.create false --local &&
         /tmp/venv/bin/poetry install --no-root --with dev --without release --compile --sync &&
-        rm -rf /python3.12/* &&
-        cp -Rf -p /usr/local/lib/python3.12 /
+        rm -rf /python3.13/* &&
+        cp -Rf -p /usr/local/lib/python3.13 /
     restart: 'no'
     volumes:
-      - gv_requirements_vol:/python3.12
+      - gv_requirements_vol:/python3.13
 
   gv:
     image: quay.io/centerforopenscience/gravyvalet:develop
@@ -560,7 +560,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
     volumes:
-      - gv_requirements_vol:/usr/local/lib/python3.12
+      - gv_requirements_vol:/usr/local/lib/python3.13
     stdin_open: true
 
   gv_worker:
@@ -576,7 +576,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
     volumes:
-      - gv_requirements_vol:/usr/local/lib/python3.12
+      - gv_requirements_vol:/usr/local/lib/python3.13
     stdin_open: true
 
   gv_beat:
@@ -592,7 +592,7 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: app.settings
     volumes:
-      - gv_requirements_vol:/usr/local/lib/python3.12
+      - gv_requirements_vol:/usr/local/lib/python3.13
     stdin_open: true
 
   pigeon:
