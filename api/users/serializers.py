@@ -451,6 +451,15 @@ class ExternalLoginConfirmEmailSerializer(BaseAPISerializer):
         type_ = 'external_login_confirm_email'
 
 
+class ConfirmEmailSerializer(BaseAPISerializer):
+    uid = ser.CharField(write_only=True, required=True)
+    token = ser.CharField(write_only=True, required=True)
+    is_merge = ser.BooleanField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'confirm_email'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()

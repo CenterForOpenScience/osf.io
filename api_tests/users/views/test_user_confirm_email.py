@@ -1,3 +1,4 @@
+
 import pytest
 from django.middleware import csrf
 
@@ -7,20 +8,14 @@ from osf.models import OSFUser
 
 
 @pytest.mark.django_db
-class TestConfirmExternalLogin:
+class TestConfirmEmail:
 
     @pytest.fixture()
     def user_one(self):
-        external_identity = {
-            'orcid': {
-                '1234': 'CREATE',
-            },
-        }
         user = OSFUser.create_unconfirmed(
             username='freddie@mercury.com',
-            password=None,
+            password='password',
             fullname='freddie@mercury.com',
-            external_identity=external_identity,
             campaign=None,
         )
 
@@ -34,25 +29,29 @@ class TestConfirmExternalLogin:
                 'attributes': {
                     'uid': user_one._id,
                     'token': user_one.get_confirmation_token(user_one.username),
-                    'destination': 'dashboard',
+                    'is_merge': False,
                 }
             }
         }
 
     @pytest.fixture()
     def url(self):
-        return f'/{API_BASE}users/external_login_confirm_email/'
+        return f'/{API_BASE}users/confirm_email/'
 
     @pytest.fixture
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    def test_confirm_external_login(self, app, payload, user_one, url, csrf_token):
+    def test_confirm_email(self, app, payload, user_one, url, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
         user_one.refresh_from_db()
-        assert user_one.external_identity['orcid']['1234'] == 'VERIFIED'
+        assert user_one.is_confirmed
+
+    def test_csrf_protection(self, app, payload, user_one, url):
+        res = app.post_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 403
 
     def test_invalid_user(self, app, payload, url, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
@@ -64,12 +63,5 @@ class TestConfirmExternalLogin:
     def test_invalid_token(self, app, payload, user_one, url, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         payload['data']['attributes']['token'] = 'invalid'
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'Invalid token.'
-
-    def test_invalid_destination(self, app, payload, user_one, url, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        del payload['data']['attributes']['destination']
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 400

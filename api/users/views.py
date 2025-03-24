@@ -68,11 +68,13 @@ from api.users.serializers import (
     UserChangePasswordSerializer,
     UserMessageSerializer,
     ExternalLoginConfirmEmailSerializer,
+    ConfirmEmailSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
 from framework import sentry
+from framework.auth import cas
 from framework.auth.core import get_user, generate_verification_key
 from framework.auth.views import send_confirm_email_async, ensure_external_identity_uniqueness
 from framework.auth.tasks import update_affiliation_for_orcid_sso_users
@@ -83,6 +85,7 @@ from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
 from osf.features import OSF_GROUPS
+from osf.utils.requests import check_select_for_update
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
 from rest_framework import status
@@ -1191,3 +1194,58 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
         return Response(status=status.HTTP_200_OK)
+
+
+class ConfirmEmailView(generics.CreateAPIView):
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = ConfirmEmailSerializer
+    view_category = 'users'
+    view_name = 'confirm-email'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uid = request.data.get('uid', None)
+        token = request.data.get('token', None)
+        is_merge = request.data.get('is_merge', None)
+
+        try:
+            if not is_merge or not check_select_for_update():
+                user = OSFUser.objects.get(guids___id=uid, guids___id__isnull=False)
+            else:
+                user = OSFUser.objects.filter(guids___id=uid, guids___id__isnull=False).select_for_update().get()
+        except OSFUser.DoesNotExist:
+            sentry.log_message('confirm_email_get::400 - Cannot find user')
+            raise ValidationError('User not found.')
+
+        is_initial_confirmation = not user.date_confirmed
+
+        try:
+            user.confirm_email(token, merge=is_merge)
+        except exceptions.EmailConfirmTokenError as e:
+            return JsonResponse(status=status.HTTP_400_BAD_REQUEST, data={
+                'message_short': e.message_short,
+                'message_long': str(e)
+            })
+
+        if is_initial_confirmation:
+            user.update_date_last_login()
+            user.save()
+
+        # new random verification key, allows CAS to authenticate the user w/o password one-time only.
+        user.verification_key = generate_verification_key()
+        user.save()
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'cas_url': cas.get_login_url(
+                    request.build_absolute_uri(),
+                    username=user.username,
+                    verification_key=user.verification_key
+                )
+            }
+        )
