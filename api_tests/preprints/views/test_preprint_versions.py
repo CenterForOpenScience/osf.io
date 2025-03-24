@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.fields import Field
+from django.utils import timezone
 
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.models import OsfStorageFile
@@ -51,6 +52,121 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         assert new_version.is_published is False
         assert new_version.machine_state == 'initial'
         assert new_version.files.count() == 0
+
+    def test_preprint_version_inherits_contributors_ordering_from_original(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        url = f'/{API_BASE}preprints/{self.post_mod_preprint._id}/contributors/'
+        contributors_res = self.app.get(url, auth=self.user.auth)
+        contributors = contributors_res.json['data']
+        # creator always becomes the first contributor in original preprint, then other contributors one by one
+        correct_contributors_ordering = [self.user, user1, user2, user3]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
+
+    def test_preprint_version_inherits_changed_contributors_ordering_from_previous_version(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        # ordering should become: user3, creator, user2, user1
+        contributor_id = f'{self.post_mod_preprint._id}-{user3._id}'
+        url = f'/{API_BASE}preprints/{self.post_mod_preprint._id}/contributors/{user3._id}/'
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user.auth, expect_errors=True)
+        assert res_patch.status_code == 200
+
+        # publish the latest version because Preprint.create_version will return an unfinished version
+        auth = Auth(user=self.user)
+        latest_version = self.post_mod_preprint.get_last_not_rejected_version()
+        latest_version.date_published = timezone.now()
+        latest_version.save()
+
+        new_version_v3, _ = Preprint.create_version(latest_version._id, auth)
+        assert new_version_v3._id != latest_version._id
+
+        url = f'/{API_BASE}preprints/{new_version_v3._id}/contributors/'
+        contributors = self.app.get(url, auth=self.user.auth).json['data']
+        correct_contributors_ordering = [user3, self.user, user1, user2]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
+
+    def test_preprint_version_inherits_new_contributors_from_previous_version(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        new_contributor = AuthUserFactory()
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': new_contributor._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        new_version_id = res.json['data']['id']
+        url = f'/{API_BASE}preprints/{new_version_id}/contributors/'
+
+        res = self.app.post_json_api(url, data, auth=self.user.auth)
+        assert res.status_code == 201
+
+        # publish the latest version because Preprint.create_version will return an unfinished version
+        auth = Auth(user=self.user)
+        latest_version = self.post_mod_preprint.get_last_not_rejected_version()
+        latest_version.date_published = timezone.now()
+        latest_version.save()
+
+        new_version_v3, _ = Preprint.create_version(latest_version._id, auth)
+        assert new_version_v3._id != latest_version._id
+
+        url = f'/{API_BASE}preprints/{new_version_v3._id}/contributors/'
+        contributors = self.app.get(url, auth=self.user.auth).json['data']
+        correct_contributors_ordering = [self.user, user1, user2, user3, new_contributor]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
 
     def test_non_relation_fields(self):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
