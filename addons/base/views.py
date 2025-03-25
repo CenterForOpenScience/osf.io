@@ -245,6 +245,8 @@ def get_auth(auth, **kwargs):
             requesting_user=auth.user,
             addon_type='configured-storage-addons',
         )
+        if not result:
+            raise HTTPError(http_status.HTTP_404_NOT_FOUND, 'Requested Provider is not configured for given node')
         waterbutler_settings = result.get_attribute('config')
         waterbutler_credentials = result.get_attribute('credentials')
 
