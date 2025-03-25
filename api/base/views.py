@@ -649,16 +649,15 @@ class WaterButlerMixin:
             if attrs['provider'] == 'dataverse':
                 query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
 
-            try:
-                file_obj = base_class.objects.get(**query)
-            except base_class.DoesNotExist:
-                # create method on BaseFileNode appends provider, bulk_create bypasses this step so it is added here
-                file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
-                objs_to_create[base_class].append(file_obj)
-            else:
+            qs = base_class.objects.filter(**query)
+            if qs.count() > 0:
+                file_obj = qs.first()
                 file_objs.append(file_obj)
-
-            file_obj.update(None, attrs, user=self.request.user, save=False)
+                file_obj.update(None, attrs, user=self.request.user, save=False)
+            else:
+                file_obj = base_class(target=node, _path=_path, provider=base_class._provider)
+                file_obj.update(None, attrs, user=self.request.user, save=False)
+                objs_to_create[base_class].append(file_obj)
 
         bulk_update(file_objs)
 
