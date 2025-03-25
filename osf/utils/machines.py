@@ -100,6 +100,11 @@ class BaseMachine(Machine):
         now = self.action.created if self.action is not None else timezone.now()
         self.machineable.date_last_transitioned = now
 
+    def workflow_is_none(self, ev):
+        """This condition allows transition only if provider workflow is None."""
+        workflow = self.machineable.provider.reviews_workflow
+        return workflow == Workflows.NONE.value
+
 
 class ReviewsMachine(BaseMachine):
     ActionClass = ReviewAction

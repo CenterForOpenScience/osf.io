@@ -136,6 +136,7 @@ class PreprintMixin(NodeMixin):
             raise NotFound
 
         is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
+        # FIXME: This will make newly created preprint invinsible for moderators
         if is_moderator and preprint.machine_state == 'initial':
             raise NotFound
 
