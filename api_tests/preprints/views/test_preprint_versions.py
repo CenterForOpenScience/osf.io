@@ -478,9 +478,6 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
         withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
-        print(pre_mod_preprint_v2.machine_state)
-        from osf.utils.workflows import ReviewStates
-        print(pre_mod_preprint_v2.machine_state == ReviewStates.WITHDRAWN.value)
 
         # accepted and withdrawn original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
