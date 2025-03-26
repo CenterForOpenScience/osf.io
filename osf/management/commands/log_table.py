@@ -7,13 +7,13 @@ from django.db import connection
 logger = logging.getLogger(__name__)
 
 
-GET_TABLES_SQL = '''
+GET_TABLES_SQL = """
 SELECT tablename
 FROM pg_catalog.pg_tables
 WHERE schemaname = 'public';
-'''
+"""
 
-CREATE_TABLE_SQL = '''
+CREATE_TABLE_SQL = """
 CREATE TABLE IF NOT EXISTS operation_log (
     log_id SERIAL PRIMARY KEY,
     table_name TEXT NOT NULL,
@@ -26,10 +26,9 @@ CREATE TABLE IF NOT EXISTS operation_log (
     query_start TIMESTAMP WITH TIME ZONE,
     log_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-'''
+"""
 
-TRIGGER_FUNCTION_SQL = '''
--- Trigger function to log metadata
+TRIGGER_FUNCTION_SQL = """
 CREATE OR REPLACE FUNCTION log_table_changes() RETURNS TRIGGER AS $$
 BEGIN
     INSERT INTO operation_log (
@@ -56,21 +55,27 @@ BEGIN
         current_query(),
         clock_timestamp()
     );
-    RETURN NULL;  -- Triggers on AFTER events don't modify the data
+    RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
-'''
+"""
 
-TRIGGER_SQL = '''
+TRIGGER_SQL = """
 CREATE TRIGGER change_logger
 AFTER INSERT OR UPDATE OR DELETE
 ON {}
 FOR EACH ROW EXECUTE FUNCTION log_table_changes();
-'''
+"""
 DROP_TRIGGER_SQL = 'DROP TRIGGER IF EXISTS change_logger ON {};'
 
+
 class Command(BaseCommand):
-    """Set storage regions for institutions.
+    """
+    Set up logging of all write operations to certain table.
+    This is implemented in 3 steps:
+        1. Create table named operation_log to store logs.
+        2. Create trigger function which writes these changes to operation_log table.
+        3. Create trigger for given table on every insert/update/delete.
     """
 
     def add_arguments(self, parser):
@@ -79,18 +84,17 @@ class Command(BaseCommand):
             '-d',
             '--delete',
             action='store_true',
-            help='delete trigger from current table'
+            help='Delete trigger from current table',
         )
         parser.add_argument(
             '-t',
             '--table_name',
             type=str,
             required=True,
-            help='Select the table to add the trigger to'
+            help='Select the table to add the trigger to',
         )
 
-    def handle(self, *args, delete, table_name, **options):
-        print(options)
+    def handle(self, *args, delete: bool, table_name: str, **options):
         with connection.cursor() as cursor:
             cursor.execute(GET_TABLES_SQL)
             tables = [row[0] for row in cursor.fetchall()]
