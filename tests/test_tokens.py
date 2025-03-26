@@ -71,7 +71,8 @@ class TestTokenHandler(OsfTestCase):
         mock_handlers.get.assert_called_once_with(action)
         mock_handlers.get.return_value.assert_called_with(
             self.payload,
-            self.encoded_token
+            self.encoded_token,
+            auth=None
         )
 
 class SanctionTokenHandlerBase(OsfTestCase):
