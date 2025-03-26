@@ -1,10 +1,12 @@
-from rest_framework import generics, mixins, permissions as drf_permissions
+from django.http import JsonResponse
+from rest_framework import generics, mixins, permissions as drf_permissions, status as http_status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
 from framework.auth.oauth_scopes import CoreScopes
 
 from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
 from osf.utils.permissions import WRITE_NODE
 from osf.utils.workflows import ApprovalStates
+from osf.utils.tokens import ApiTokenHendler, TokenHandlerNotFound
 
 from api.base import permissions as base_permissions
 from api.base import generic_bulk_views as bulk_views
@@ -61,6 +63,7 @@ from api.registrations.serializers import (
     RegistrationContributorsCreateSerializer,
     RegistrationCreateSerializer,
     RegistrationStorageProviderSerializer,
+    ConfirmRegistrationSerializer,
 )
 
 from api.nodes.filters import NodesFilterMixin
@@ -1038,3 +1041,37 @@ class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class ConfirmRegistrationAPIView(JSONAPIBaseView, generics.UpdateAPIView, RegistrationMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.ACTIONS_READ]
+    required_write_scopes = [CoreScopes.ACTIONS_WRITE]
+
+    view_category = 'registrations'
+    view_name = 'submit-registration-token'
+
+    serializer_class = ConfirmRegistrationSerializer
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        node = self.get_node()
+        encoded_token = request.data.get('token')
+        if encoded_token:
+            auth = get_user_auth(request)
+            handler = ApiTokenHendler.from_string(encoded_token, auth=auth)
+            try:
+                handler.to_response()
+            except TokenHandlerNotFound as e:
+                raise ValidationError(
+                    f'No token handler for action: {e.action} found',
+                )
+
+        return JsonResponse(status=http_status.HTTP_200_OK, data={'status': 'success', 'url': node.url})

@@ -32,6 +32,7 @@ from api.base.serializers import (
     HideIfWithdrawalOrWikiDisabled,
 )
 from api.base.utils import update_contributors_permissions_and_bibliographic_status
+from api.base.serializers import JSONAPISerializer
 from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
@@ -968,3 +969,10 @@ class RegistrationStorageProviderSerializer(NodeStorageProviderSerializer):
         kind='folder',
         never_embed=True,
     )
+
+
+class ConfirmRegistrationSerializer(JSONAPISerializer):
+    token = ser.CharField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'submit-registration-tokens'

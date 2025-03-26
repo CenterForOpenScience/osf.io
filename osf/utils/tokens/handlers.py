@@ -47,7 +47,6 @@ def retraction_handler(action, registration, registered_from):
     return None
 
 
-@must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     from osf.models import (
         Embargo,
@@ -112,3 +111,12 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
             'embargo_termination_approval': embargo_termination_handler,
             'retraction': retraction_handler,
         }[kind](action, registration, registered_from)
+
+
+@must_be_logged_in
+def web_sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
+    return sanction_handler(kind, action, payload, encoded_token, auth, **kwargs)
+
+
+def api_sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
+    return sanction_handler(kind, action, payload, encoded_token, auth, **kwargs)

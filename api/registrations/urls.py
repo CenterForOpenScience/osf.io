@@ -23,6 +23,7 @@ urlpatterns = [
     re_path(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.RegistrationFileDetail.as_view(), name=views.RegistrationFileDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/citation/$', views.RegistrationCitationDetail.as_view(), name=views.RegistrationCitationDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.RegistrationCitationStyleDetail.as_view(), name=views.RegistrationCitationStyleDetail.view_name),
+    re_path(r'^(?P<node_id>\w+)/confirm/$', views.ConfirmRegistrationAPIView.as_view(), name=views.ConfirmRegistrationAPIView.view_name),
     re_path(r'^(?P<node_id>\w+)/forks/$', views.RegistrationForksList.as_view(), name=views.RegistrationForksList.view_name),
     re_path(r'^(?P<node_id>\w+)/identifiers/$', views.RegistrationIdentifierList.as_view(), name=views.RegistrationIdentifierList.view_name),
     re_path(r'^(?P<node_id>\w+)/institutions/$', views.RegistrationInstitutionsList.as_view(), name=views.RegistrationInstitutionsList.view_name),

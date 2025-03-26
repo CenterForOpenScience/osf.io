@@ -1,6 +1,7 @@
 from typing import Any
 
 from rest_framework import status as http_status
+from rest_framework.exceptions import ValidationError
 import functools
 import jwt
 from flask import request
@@ -14,23 +15,24 @@ from osf.exceptions import TokenHandlerNotFound
 class TokenHandler:
 
     HANDLERS = {
-        'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
-        'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
-        'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
-        'reject_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
-        'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'approve'),
-        'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'reject'),
-        'approve_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
-        'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
+        'approve_registration_approval': functools.partial(handlers.web_sanction_handler, 'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.web_sanction_handler, 'registration', 'reject'),
+        'approve_embargo': functools.partial(handlers.web_sanction_handler, 'embargo', 'approve'),
+        'reject_embargo': functools.partial(handlers.web_sanction_handler, 'embargo', 'reject'),
+        'approve_embargo_termination_approval': functools.partial(handlers.web_sanction_handler, 'embargo_termination_approval', 'approve'),
+        'reject_embargo_termination_approval': functools.partial(handlers.web_sanction_handler, 'embargo_termination_approval', 'reject'),
+        'approve_retraction': functools.partial(handlers.web_sanction_handler, 'retraction', 'approve'),
+        'reject_retraction': functools.partial(handlers.web_sanction_handler, 'retraction', 'reject')
     }
 
-    def __init__(self, encoded_token=None, payload=None):
+    def __init__(self, encoded_token=None, payload=None, auth=None):
 
         self.encoded_token = encoded_token
         self.payload = payload
+        self.auth = auth
 
     @classmethod
-    def from_string(cls, encoded_token):
+    def from_string(cls, encoded_token, auth=None):
         try:
             payload = decode(encoded_token)
         except jwt.InvalidTokenError as e:
@@ -41,7 +43,7 @@ class TokenHandler:
                     'message_long': str(e)
                 }
             )
-        return cls(encoded_token=encoded_token, payload=payload)
+        return cls(encoded_token=encoded_token, payload=payload, auth=auth)
 
     @classmethod
     def from_payload(cls, payload):
@@ -52,9 +54,33 @@ class TokenHandler:
         action = self.payload.get('action', None)
         handler = self.HANDLERS.get(action)
         if handler:
-            return handler(self.payload, self.encoded_token)
+            return handler(self.payload, self.encoded_token, auth=self.auth)
         else:
             raise TokenHandlerNotFound(action=action)
+
+
+class ApiTokenHendler(TokenHandler):
+
+    HANDLERS = {
+        'approve_registration_approval': functools.partial(handlers.api_sanction_handler, 'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.api_sanction_handler, 'registration', 'reject'),
+        'approve_embargo': functools.partial(handlers.api_sanction_handler, 'embargo', 'approve'),
+        'reject_embargo': functools.partial(handlers.api_sanction_handler, 'embargo', 'reject'),
+        'approve_embargo_termination_approval': functools.partial(handlers.api_sanction_handler, 'embargo_termination_approval', 'approve'),
+        'reject_embargo_termination_approval': functools.partial(handlers.api_sanction_handler, 'embargo_termination_approval', 'reject'),
+        'approve_retraction': functools.partial(handlers.api_sanction_handler, 'retraction', 'approve'),
+        'reject_retraction': functools.partial(handlers.api_sanction_handler, 'retraction', 'reject')
+    }
+
+    @classmethod
+    def from_string(cls, encoded_token, auth):
+        try:
+            payload = decode(encoded_token)
+        except jwt.InvalidTokenError:
+            raise ValidationError(
+                'Invalid Token'
+            )
+        return cls(encoded_token=encoded_token, payload=payload, auth=auth)
 
 
 def process_token_or_pass(func):
