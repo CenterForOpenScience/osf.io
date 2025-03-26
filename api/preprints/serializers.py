@@ -1,5 +1,4 @@
 import re
-
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -115,7 +114,22 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = ser.CharField(source='article_doi', required=False, allow_null=True, allow_blank=True)
+    doi = ser.CharField(
+        source='article_doi',
+        required=False,
+        allow_null=True,
+        validators=[
+            ser.RegexValidator(
+                regex=r'^10\.\d{4,9}/[-._;()/:A-Z0-9]+$',
+                message=(
+                    'Invalid DOI format. A valid DOI starts with "10." followed by digits and a suffix '
+                    '(e.g., "10.1234/abcd.efg").'
+                ),
+                flags=re.IGNORECASE,
+            ),
+        ],
+    )
+
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
