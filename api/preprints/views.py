@@ -62,7 +62,7 @@ from api.preprints.permissions import (
     PreprintFilesPermissions,
     PreprintInstitutionPermissionList,
 )
-from api.providers.workflows import Workflows
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from api.nodes.permissions import ContributorOrPublic
 from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.requests.permissions import PreprintRequestPermission
@@ -135,19 +135,23 @@ class PreprintMixin(NodeMixin):
             sentry.log_message(f'Preprint deleted: [guid={base_guid_id}, version={preprint_version}]')
             raise NotFound
 
-        is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
-        # FIXME: This will make newly created preprint invinsible for moderators
-        if is_moderator and preprint.machine_state == 'initial':
-            raise NotFound
-
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
 
+        is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
+        is_contributor = preprint.contributors.filter(id=self.request.user.id).exists()
+
         if (
-            preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value and
-            not preprint.actions.filter(to_state='accepted').exists() and
-            not preprint.contributors.filter(id=self.request.user.id).exists() and
+            preprint.machine_state == DefaultStates.INITIAL.value and
+            not is_contributor and
+            is_moderator
+        ):
+            raise NotFound
+
+        if (
+            preprint.machine_state not in PUBLIC_STATES[preprint.provider.reviews_workflow] and
+            not is_contributor and
             not is_moderator
         ):
             raise NotFound
