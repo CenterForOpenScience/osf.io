@@ -15,7 +15,7 @@ from osf.models import (
     VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, ReviewStates
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
@@ -139,21 +139,20 @@ class PreprintMixin(NodeMixin):
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
 
-        is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
-        is_contributor = preprint.contributors.filter(id=self.request.user.id).exists()
-
+        user_is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
+        user_is_contributor = preprint.contributors.filter(id=self.request.user.id).exists()
         if (
             preprint.machine_state == DefaultStates.INITIAL.value and
-            not is_contributor and
-            is_moderator
+            not user_is_contributor and
+            user_is_moderator
         ):
             raise NotFound
 
-        if (
-            preprint.machine_state not in PUBLIC_STATES[preprint.provider.reviews_workflow] and
-            not is_contributor and
-            not is_moderator
-        ):
+        preprint_is_public = bool(
+            preprint.machine_state in PUBLIC_STATES[preprint.provider.reviews_workflow]
+            or preprint.machine_state == ReviewStates.WITHDRAWN.value,
+        )
+        if not preprint_is_public and not user_is_contributor and not user_is_moderator:
             raise NotFound
 
         return preprint

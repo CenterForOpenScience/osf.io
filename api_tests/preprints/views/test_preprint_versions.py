@@ -478,6 +478,9 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
         withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        print(pre_mod_preprint_v2.machine_state)
+        from osf.utils.workflows import ReviewStates
+        print(pre_mod_preprint_v2.machine_state == ReviewStates.WITHDRAWN.value)
 
         # accepted and withdrawn original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
@@ -643,6 +646,23 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         # preprint version
         res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth, expect_errors=True)
         assert res.status_code == 404
+
+    def test_moderator_can_contribute(self):
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.add_contributor(self.moderator, permissions.READ)
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{self.pre_mod_preprint._id.split('_')[0]}/', auth=self.moderator.auth, expect_errors=True)
+        assert res.status_code == 200
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth, expect_errors=True)
+        assert res.status_code == 200
 
 
 class TestPreprintVersionsListRetrieve(ApiTestCase):
