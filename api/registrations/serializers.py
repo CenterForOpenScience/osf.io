@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from api.base.exceptions import Conflict, InvalidModelValueError, JSONAPIException
-from api.base.serializers import is_anonymized
+from api.base.serializers import is_anonymized, BaseAPISerializer
 from api.base.utils import absolute_reverse, get_user_auth, is_truthy
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from website.project.model import NodeUpdateError
@@ -32,7 +32,6 @@ from api.base.serializers import (
     HideIfWithdrawalOrWikiDisabled,
 )
 from api.base.utils import update_contributors_permissions_and_bibliographic_status
-from api.base.serializers import JSONAPISerializer
 from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
@@ -971,7 +970,7 @@ class RegistrationStorageProviderSerializer(NodeStorageProviderSerializer):
     )
 
 
-class ConfirmRegistrationSerializer(JSONAPISerializer):
+class ConfirmRegistrationSerializer(BaseAPISerializer):
     token = ser.CharField(write_only=True, required=True)
 
     class Meta:
