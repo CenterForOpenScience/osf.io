@@ -208,54 +208,68 @@ class TestPreprintUpdateLicense:
         assert preprint.license.year == '2015'
         assert preprint.license.copyright_holders == ['Tonya Shepoly, Lucas Pucas']
 
-    def test_cannot_update_license(
+    def test_write_contrib_can_update_license(
             self,
             app,
             write_contrib,
-            read_contrib,
-            non_contrib,
             preprint,
             cc0_license,
             url
     ):
-
-        #   test_write_contrib_can_update_license
         data = self.make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
         res = app.patch_json_api(
-            url, data,
+            url,
+            data,
             auth=write_contrib.auth,
-            expect_errors=True)
+            expect_errors=True
+        )
         assert res.status_code == 200
         preprint.reload()
 
         assert preprint.license.node_license == cc0_license
 
-    #   test_read_contrib_cannot_update_license
+    def test_read_contrib_cannot_update_license(
+            self,
+            app,
+            read_contrib,
+            preprint,
+            cc0_license,
+            url
+    ):
         data = self.make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
-        res = self.make_request(
-            url, data,
+        res = app.patch_json_api(
+            url,
+            data,
             auth=read_contrib.auth,
             expect_errors=True
         )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
 
-    #   test_non_contrib_cannot_update_license
+    def test_non_contrib_cannot_update_license(
+            self,
+            preprint,
+            cc0_license,
+            url,
+            non_contrib,
+            app
+    ):
         data = self.make_payload(
             node_id=preprint._id,
             license_id=cc0_license._id
         )
 
         res = app.patch_json_api(
-            url, data,
+            url,
+            data,
             auth=non_contrib.auth,
             expect_errors=True
         )
@@ -272,7 +286,7 @@ class TestPreprintUpdateLicense:
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_update_error(
+    def test_update_preprint_with_invalid_license_for_provider(
             self,
             app,
             admin_contrib,
@@ -300,7 +314,16 @@ class TestPreprintUpdateLicense:
         assert res.json['errors'][0]['detail'] == 'Invalid license chosen for {}'.format(
             preprint_provider.name)
 
-    #   test_update_preprint_license_without_required_year_in_payload
+    def test_update_preprint_license_without_required_year_in_payload(
+            self,
+            app,
+            admin_contrib,
+            preprint,
+            preprint_provider,
+            mit_license,
+            no_license,
+            url,
+    ):
         data = self.make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
@@ -315,7 +338,16 @@ class TestPreprintUpdateLicense:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'year must be specified for this license'
 
-    #   test_update_preprint_license_without_required_copyright_holders_in_payload
+    def test_update_preprint_license_without_required_copyright_holders_in_payload(
+            self,
+            app,
+            admin_contrib,
+            preprint,
+            preprint_provider,
+            mit_license,
+            no_license,
+            url,
+    ):
         data = self.make_payload(
             node_id=preprint._id,
             license_id=no_license._id,
