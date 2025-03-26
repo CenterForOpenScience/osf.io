@@ -3,7 +3,7 @@ import pytest
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
-from osf.utils.permissions import WRITE
+from osf.utils.permissions import WRITE, ADMIN
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -128,6 +128,7 @@ class TestPreprintDetail:
     def test_withdrawn_preprint(self, app, user, moderator, preprint_pre_mod):
         # test_retracted_fields
         url = f'/{API_BASE}preprints/{preprint_pre_mod._id}/'
+        preprint_pre_mod.add_contributor(user, ADMIN)
         res = app.get(url, auth=user.auth)
         data = res.json['data']
 
@@ -145,8 +146,9 @@ class TestPreprintDetail:
         assert res.status_code == 404
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        res = app.get(url, auth=moderator.auth)
-        assert res.status_code == 200
+        # moderator can't see preprint with initial machine state. see test_moderator_does_not_see_initial_preprint
+        res = app.get(url, auth=moderator.auth, expect_errors=True)
+        assert res.status_code == 404
 
         ## retracted and ever_public (True)
         preprint_pre_mod.ever_public = True

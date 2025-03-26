@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.fields import Field
+from django.utils import timezone
 
 from addons.osfstorage import settings as osfstorage_settings
 from addons.osfstorage.models import OsfStorageFile
@@ -51,6 +52,121 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         assert new_version.is_published is False
         assert new_version.machine_state == 'initial'
         assert new_version.files.count() == 0
+
+    def test_preprint_version_inherits_contributors_ordering_from_original(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        url = f'/{API_BASE}preprints/{self.post_mod_preprint._id}/contributors/'
+        contributors_res = self.app.get(url, auth=self.user.auth)
+        contributors = contributors_res.json['data']
+        # creator always becomes the first contributor in original preprint, then other contributors one by one
+        correct_contributors_ordering = [self.user, user1, user2, user3]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
+
+    def test_preprint_version_inherits_changed_contributors_ordering_from_previous_version(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        # ordering should become: user3, creator, user2, user1
+        contributor_id = f'{self.post_mod_preprint._id}-{user3._id}'
+        url = f'/{API_BASE}preprints/{self.post_mod_preprint._id}/contributors/{user3._id}/'
+        data = {
+            'data': {
+                'id': contributor_id,
+                'type': 'contributors',
+                'attributes': {
+                    'index': 0
+                }
+            }
+        }
+        res_patch = self.app.patch_json_api(url, data, auth=self.user.auth, expect_errors=True)
+        assert res_patch.status_code == 200
+
+        # publish the latest version because Preprint.create_version will return an unfinished version
+        auth = Auth(user=self.user)
+        latest_version = self.post_mod_preprint.get_last_not_rejected_version()
+        latest_version.date_published = timezone.now()
+        latest_version.save()
+
+        new_version_v3, _ = Preprint.create_version(latest_version._id, auth)
+        assert new_version_v3._id != latest_version._id
+
+        url = f'/{API_BASE}preprints/{new_version_v3._id}/contributors/'
+        contributors = self.app.get(url, auth=self.user.auth).json['data']
+        correct_contributors_ordering = [user3, self.user, user1, user2]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
+
+    def test_preprint_version_inherits_new_contributors_from_previous_version(self):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        self.post_mod_preprint.add_contributor(user1)
+        self.post_mod_preprint.add_contributor(user2)
+        self.post_mod_preprint.add_contributor(user3)
+
+        # create a new version
+        res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
+        assert res.status_code == 201
+
+        new_contributor = AuthUserFactory()
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': new_contributor._id,
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        new_version_id = res.json['data']['id']
+        url = f'/{API_BASE}preprints/{new_version_id}/contributors/'
+
+        res = self.app.post_json_api(url, data, auth=self.user.auth)
+        assert res.status_code == 201
+
+        # publish the latest version because Preprint.create_version will return an unfinished version
+        auth = Auth(user=self.user)
+        latest_version = self.post_mod_preprint.get_last_not_rejected_version()
+        latest_version.date_published = timezone.now()
+        latest_version.save()
+
+        new_version_v3, _ = Preprint.create_version(latest_version._id, auth)
+        assert new_version_v3._id != latest_version._id
+
+        url = f'/{API_BASE}preprints/{new_version_v3._id}/contributors/'
+        contributors = self.app.get(url, auth=self.user.auth).json['data']
+        correct_contributors_ordering = [self.user, user1, user2, user3, new_contributor]
+        for returned_contributor, correct_contributor in list(zip(contributors, correct_contributors_ordering)):
+            returned_contributor_id = returned_contributor['embeds']['users']['data']['id']
+            assert returned_contributor_id == correct_contributor._id
 
     def test_non_relation_fields(self):
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=self.user.auth)
@@ -153,6 +269,380 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         self.post_mod_preprint.add_contributor(user_write, permissions.WRITE)
         res = self.app.post_json_api(self.post_mod_version_create_url, auth=user_write.auth, expect_errors=True)
         assert res.status_code == 403
+
+    def test_incorrect_preprint_id_without_version_returns_404(self):
+        res = self.app.get(f'/{API_BASE}preprints/1234/', auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_not_approved_preprint_in_pre_moderation_is_shown_for_contributors_only(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+        preprint_version_id = self.pre_mod_preprint._id
+
+        # unapproved original preprint is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'initial'
+
+        # unapproved preprint version is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_version_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'initial'
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+
+        # unapproved original preprint is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'initial'
+
+        # unapproved preprint version is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_version_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'initial'
+
+        random_user = AuthUserFactory()
+        # unapproved original preprint is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # unapproved preprint version is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_version_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_pending_preprint_in_pre_moderation_is_shown_for_contributors_only(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+
+        # pending original preprint is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+
+        # pending preprint version is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+        assert res.status_code == 200
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+
+        # pending original preprint is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+
+        # pending preprint version is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+
+        random_user = AuthUserFactory()
+        # pending original preprint is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # pending preprint version is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_pending_preprint_in_pre_moderation_withdrawn_is_shown_for_contributors_only(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        assert pre_mod_preprint_v2.machine_state == 'pending'
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=self.user,
+            target=pre_mod_preprint_v2,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(self.user)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+
+        # pending withdrawn original preprint is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # pending withdrawn preprint version is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+        assert res.status_code == 200
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+
+        # pending withdrawn original preprint is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # pending withdrawn preprint version is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        random_user = AuthUserFactory()
+        # pending withdrawn original preprint is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+        # pending withdrawn preprint version is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 403
+
+    def test_accepted_preprint_in_pre_moderation_but_not_withdrawn_is_shown_for_everyone(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+
+        # accepted original preprint is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+        # accepted preprint version is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+        assert res.status_code == 200
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+
+        # accepted original preprint is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+        # accepted preprint version is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+        random_user = AuthUserFactory()
+        # accepted original preprint is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+        # accepted preprint version is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+    def test_accepted_preprint_in_pre_moderation_and_withdrawn_is_shown_for_everyone(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=self.user,
+            target=pre_mod_preprint_v2,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(self.user)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+
+        # accepted and withdrawn original preprint is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # accepted and withdrawn preprint version is shown for owner
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+        assert res.status_code == 200
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+
+        # accepted and withdrawn original preprint is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # accepted and withdrawn preprint version is shown for contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        random_user = AuthUserFactory()
+        # accepted and withdrawn original preprint is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # accepted and withdrawn preprint version is hidden for non-contributors
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=random_user.auth, expect_errors=True)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+    def test_moderator_sees_pending_preprint(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'pending'
+
+    def test_moderator_sees_pending_withdrawn_preprint(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        assert pre_mod_preprint_v2.machine_state == 'pending'
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=self.user,
+            target=pre_mod_preprint_v2,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(self.user)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+    def test_moderator_sees_accepted_preprint(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'accepted'
+
+    def test_moderator_sees_withdrawn_preprint(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=self.user,
+            target=pre_mod_preprint_v2,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(self.user)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['reviews_state'] == 'withdrawn'
+
+    def test_moderator_does_not_see_initial_preprint(self):
+        preprint_id = self.pre_mod_preprint._id.split('_')[0]
+
+        contributor = AuthUserFactory()
+        self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.moderator.auth, expect_errors=True)
+        assert res.status_code == 404
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth, expect_errors=True)
+        assert res.status_code == 404
 
 
 class TestPreprintVersionsListRetrieve(ApiTestCase):

@@ -1,19 +1,24 @@
 $(document).ready(function() {
-    $("#embargo-update-form").submit(function (event) {
+    $("#embargo-update-form").on("submit", function (event) {
         event.preventDefault();
+
+        $("#date-validation").text('');
         $('#update-embargo-modal').modal('show');
     });
 
-    $("#embargo-update-modal").submit(function (event) {
-        var data = $('#embargo-update-form').serialize();
-        data["validation_only"]="False";
+    $("#update-embargo-modal").on("submit", function (event) {
+        event.preventDefault();
+
+        $(this).modal("hide");
+
         $.ajax({
             url: window.templateVars.updateEmbargoUrl,
             type: "post",
-            data: data,
-            success: function (response) {
-                location.reload();
-            }
+            data: $("#embargo-update-form").serialize(),
+        }).success(function (response) {
+            // reload page only after successfull response
+            // so errors can be displayed in case of fail
+            location.reload();
         }).fail(function (jqXHR, textStatus, error) {
             $("#date-validation").text(jqXHR.responseText);
         });
@@ -23,18 +28,4 @@ $(document).ready(function() {
         format: "mm/dd/yyyy",
         startDate: "+0d"
     })
-        .on("change", function (e) {
-            $("#embargo-update-submit").prop('disabled', false);
-            $("#date-validation").text('');
-            var data = $('#embargo-update-form').serialize();
-            data["validation_only"]="True";
-            $.ajax({
-                url: window.templateVars.updateEmbargoUrl,
-                type: "post",
-                data: data
-            }).fail(function (jqXHR, textStatus, error) {
-                $("#date-validation").text(jqXHR.responseText);
-                $("#embargo-update-submit").prop('disabled', true);
-            });
-        });
 });

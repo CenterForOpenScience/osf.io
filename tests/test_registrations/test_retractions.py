@@ -361,6 +361,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         assert self.registration.retraction.state == Retraction.UNAPPROVED
         self.registration.retraction.disapprove_retraction(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.retraction.approval_state.values()]) == 1
         assert self.registration.retraction.is_rejected
 
     def test_disapproval_adds_to_parent_projects_log(self):
@@ -372,6 +373,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         self.registration.retraction.disapprove_retraction(self.user, rejection_token)
         # Logs: Created, registered, retraction initiated, retraction cancelled
+        assert sum([val['has_rejected'] for val in self.registration.retraction.approval_state.values()]) == 1
         assert self.registration.registered_from.logs.count() == initial_project_logs + 2
 
     def test__on_complete_makes_project_and_components_public(self):

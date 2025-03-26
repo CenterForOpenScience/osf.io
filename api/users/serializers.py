@@ -433,6 +433,24 @@ class UserChangePasswordSerializer(BaseAPISerializer):
         type_ = 'user_passwords'
 
 
+class UserResetPasswordSerializer(BaseAPISerializer):
+    uid = ser.CharField(write_only=True, required=True)
+    token = ser.CharField(write_only=True, required=True)
+    password = ser.CharField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'user_reset_password'
+
+
+class ExternalLoginConfirmEmailSerializer(BaseAPISerializer):
+    uid = ser.CharField(write_only=True, required=True)
+    destination = ser.CharField(write_only=True, required=True)
+    token = ser.CharField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'external_login_confirm_email'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()

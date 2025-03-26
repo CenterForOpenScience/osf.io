@@ -168,8 +168,11 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         assert self.registration.is_pending_registration
 
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+
         with pytest.raises(PermissionsError):
             self.registration.registration_approval.reject(user=non_admin, token=rejection_token)
+
+        assert not sum([val['has_rejected'] for val in self.registration.registration_approval.approval_state.values()])
         assert self.registration.is_pending_registration
 
     def test_one_disapproval_cancels_registration_approval(self):
@@ -181,6 +184,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
 
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
         self.registration.registration_approval.reject(user=self.user, token=rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.registration_approval.approval_state.values()]) == 1
         assert self.registration.registration_approval.state == Sanction.REJECTED
         assert not self.registration.is_pending_registration
 
@@ -192,6 +196,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
         registered_from = self.registration.registered_from
         self.registration.registration_approval.reject(user=self.user, token=rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.registration_approval.approval_state.values()]) == 1
         # Logs: Created, registered, embargo initiated, embargo cancelled
         assert registered_from.logs.count() == initial_project_logs + 2
 
@@ -204,6 +209,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
         self.registration.registration_approval.reject(user=self.user, token=rejection_token)
         self.registration.reload()
+        assert sum([val['has_rejected'] for val in self.registration.registration_approval.approval_state.values()]) == 1
         assert self.registration.registration_approval.state == Sanction.REJECTED
         assert self.registration.is_deleted
 
@@ -231,6 +237,8 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         project_registration.reload()
         component_registration.reload()
         subcomponent_registration.reload()
+
+        assert sum([val['has_rejected'] for val in project_registration.registration_approval.approval_state.values()]) == 1
         assert project_registration.registration_approval.state == Sanction.REJECTED
         assert project_registration.is_deleted
         assert component_registration.is_deleted
