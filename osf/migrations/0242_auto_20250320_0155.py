@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0241_ensure_schema_mappings.py'),
+        ('osf', '0241_ensure_schema_mappings'),
     ]
 
     operations = [
