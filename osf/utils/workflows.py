@@ -252,13 +252,6 @@ DEFAULT_TRANSITIONS = [
     {
         'trigger': DefaultTriggers.SUBMIT.value,
         'source': [DefaultStates.INITIAL.value],
-        'conditions': 'workflow_is_none',
-        'dest': DefaultStates.ACCEPTED.value,
-        'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
-    },
-    {
-        'trigger': DefaultTriggers.SUBMIT.value,
-        'source': [DefaultStates.INITIAL.value],
         'dest': DefaultStates.PENDING.value,
         'after': ['save_action', 'update_last_transitioned', 'save_changes', 'notify_submit'],
     },
