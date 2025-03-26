@@ -760,12 +760,14 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        external_id_provider = request.data.get('auth_user_external_id_provider', None)
-        external_id = request.data.get('auth_user_external_id', None)
-        fullname = request.data.get('auth_user_fullname', None)
+        session = request.session
+        external_id_provider = session.get('auth_user_external_id_provider', None)
+        external_id = session.get('auth_user_external_id', None)
+        fullname = session.get('auth_user_fullname', None) or request.data.get('auth_user_fullname', None)
+
         accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
 
-        if request.data.get('auth_user_external_first_login', False) is not True:
+        if session.get('auth_user_external_first_login', False) is not True:
             raise HTTPError(status.HTTP_401_UNAUTHORIZED)
 
         clean_email = request.data.get('email', None)

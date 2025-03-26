@@ -1,7 +1,13 @@
+import itsdangerous
 import pytest
+from website import settings
 from api.base.settings.defaults import API_BASE
 from osf.models import OSFUser
 from osf_tests.factories import UserFactory
+from importlib import import_module
+from django.conf import settings as django_conf_settings
+
+SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 @pytest.mark.django_db
@@ -21,11 +27,7 @@ class TestExternalLogin:
             'data': {
                 'attributes': {
                     'email': 'freddie@mercury.com',
-                    'auth_user_external_first_login': True,
-                    'auth_user_fullname': 'external login',
-                    'accepted_terms_of_service': True,
-                    'auth_user_external_id_provider': 'orcid',
-                    'auth_user_external_id': '1234-1234-1234-1234'
+                    'accepted_terms_of_service': True
                 }
             }
         }
@@ -34,13 +36,26 @@ class TestExternalLogin:
     def url(self):
         return f'/{API_BASE}users/external_login/'
 
-    def test_external_login(self, app, payload, url):
+    @pytest.fixture()
+    def session_data(self):
+        session = SessionStore()
+        session['auth_user_external_id_provider'] = 'orcid'
+        session['auth_user_external_id'] = '1234-1234-1234-1234'
+        session['auth_user_fullname'] = 'external login'
+        session['auth_user_external_first_login'] = True
+        session.create()
+        cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(session.session_key).decode()
+        return cookie
+
+    def test_external_login(self, app, payload, url, session_data):
+        app.set_cookie(settings.COOKIE_NAME, str(session_data))
         res = app.post_json_api(url, payload)
         assert res.status_code == 200
         assert res.json == {'external_id_provider': 'orcid', 'auth_user_fullname': 'external login'}
         assert not OSFUser.objects.get(username='freddie@mercury.com').is_confirmed
 
-    def test_invalid_payload(self, app, url):
+    def test_invalid_payload(self, app, url, session_data):
+        app.set_cookie(settings.COOKIE_NAME, str(session_data))
         payload = {
             'data': {
                 'attributes': {
@@ -50,7 +65,8 @@ class TestExternalLogin:
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 400
 
-    def test_existing_user(self, app, payload, url, user_one):
+    def test_existing_user(self, app, payload, url, user_one, session_data):
+        app.set_cookie(settings.COOKIE_NAME, str(session_data))
         payload['data']['attributes']['email'] = user_one.username
         res = app.post_json_api(url, payload)
         assert res.status_code == 200
