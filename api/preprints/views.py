@@ -81,9 +81,7 @@ class PreprintOldVersionsImmutableMixin:
         if preprint.is_latest_version or preprint.machine_state == 'initial':
             return True
         if preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value:
-            if preprint.machine_state == 'pending':
-                return True
-            if preprint.machine_state == 'rejected' and preprint.version == VersionedGuidMixin.INITIAL_VERSION_NUMBER:
+            if preprint.machine_state == 'pending' or preprint.machine_state == 'rejected':
                 return True
         return False
 
