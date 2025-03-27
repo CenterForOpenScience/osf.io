@@ -17,6 +17,7 @@ class CollectionProviderForm(forms.ModelForm):
     study_design_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     data_type_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     disease_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
+    grade_levels_choices = forms.CharField(widget=forms.HiddenInput(), required=False)
     _id = forms.SlugField(
         required=True,
         help_text='URL Slug',
@@ -327,6 +328,36 @@ class CollectionProviderForm(forms.ModelForm):
             added_choices = set()
             removed_choices = set()
             choices = self.data.get('data_type_choices')
+            if choices:
+                added_choices = json.loads(choices)
+        return {'added': added_choices, 'removed': removed_choices}
+
+    def clean_grade_levels_choices(self):
+        if not self.data.get('grade_levels_choices'):
+            return {'added': [], 'removed': []}
+
+        collection_provider = self.instance
+        primary_collection = collection_provider.primary_collection
+        if primary_collection:  # Modifying an existing CollectionProvider
+            old_choices = {c.strip(' ') for c in primary_collection.grade_levels_choices}
+            updated_choices = {c.strip(' ') for c in json.loads(self.data.get('grade_levels_choices'))}
+            added_choices = updated_choices - old_choices
+            removed_choices = old_choices - updated_choices
+
+            active_removed_choices = set(
+                primary_collection.collectionsubmission_set.filter(
+                    data_type__in=removed_choices
+                ).values_list('grade_levels', flat=True)
+            )
+            if active_removed_choices:
+                raise forms.ValidationError(
+                    'Cannot remove the following choices for "grade_levels", as they are '
+                    f'currently in use: {active_removed_choices}'
+                )
+        else:  # Creating a new CollectionProvider
+            added_choices = set()
+            removed_choices = set()
+            choices = self.data.get('grade_levels_choices')
             if choices:
                 added_choices = json.loads(choices)
         return {'added': added_choices, 'removed': removed_choices}

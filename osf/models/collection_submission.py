@@ -48,6 +48,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         blank=True,
         max_length=127
     )
+    grade_levels = models.CharField(blank=True, max_length=127)
     machine_state = models.IntegerField(
         choices=CollectionSubmissionStates.int_field_choices(),
         default=CollectionSubmissionStates.IN_PROGRESS,
