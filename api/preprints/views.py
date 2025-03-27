@@ -12,7 +12,6 @@ from osf.models import (
     Preprint,
     PreprintContributor,
     ReviewAction,
-    VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
 from osf.utils.workflows import DefaultStates
