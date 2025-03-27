@@ -1,12 +1,8 @@
-import re
-
 from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
 from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError as DRFValidationError
-
-from website import settings
 
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.serializers import (
@@ -40,6 +36,7 @@ from api.nodes.serializers import (
 )
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
+from api.preprints.fields import DOIField
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
@@ -115,7 +112,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = ser.CharField(source='article_doi', required=False, allow_null=True, allow_blank=True)
+    doi = DOIField(source='article_doi', required=False, allow_null=True, allow_blank=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
@@ -301,9 +298,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if not preprint.has_permission(auth.user, osf_permissions.WRITE):
             raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
-        save_preprint = False
-        recently_published = False
-
         for field in ['conflict_of_interest_statement', 'why_no_data', 'why_no_prereg']:
             if field in validated_data:
                 value = validated_data[field]
@@ -357,7 +351,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_has_coi(auth, validated_data['has_coi'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -365,7 +358,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -373,7 +365,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_has_data_links(auth, validated_data['has_data_links'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -381,7 +372,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_why_no_data(auth, validated_data['why_no_data'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -389,20 +379,17 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_data_links(auth, validated_data['data_links'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
         else:
             if updated_has_data_links == 'no' and preprint.data_links:
                 preprint.update_data_links(auth, [])
-                save_preprint = True
 
         if 'has_prereg_links' in validated_data:
             require_admin_permission()
 
             try:
                 preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -410,7 +397,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -418,7 +404,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_prereg_links(auth, validated_data['prereg_links'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -426,7 +411,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             require_admin_permission()
             try:
                 preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
-                save_preprint = True
             except PreprintStateError as e:
                 raise exceptions.ValidationError(detail=str(e))
 
@@ -445,13 +429,11 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 f'Submit a preprint by creating a `submit` Action at {url}',
             )
 
-        save_preprint = False
         recently_published = False
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
             self.set_field(preprint.set_primary_file, primary_file, auth)
-            save_preprint = True
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -469,59 +451,30 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         if 'node' in validated_data:
             node = validated_data.pop('node', None)
             self.set_field(preprint.set_supplemental_node, node, auth)
-            save_preprint = True
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
             self.update_subjects(preprint, subjects, auth)
-            save_preprint = True
 
         if 'title' in validated_data:
             title = validated_data['title']
             self.set_field(preprint.set_title, title, auth)
-            save_preprint = True
 
         if 'description' in validated_data:
             description = validated_data['description']
             self.set_field(preprint.set_description, description, auth)
-            save_preprint = True
 
-        if validated_data.get('article_doi'):
-            article_doi = validated_data['article_doi']
-            # use different regex from what we use in validate_doi as we should find and set full correct doi string.
-            # it should start with "10." and have at least one group of any characters with a not required slash
-            # e.g. 10.12/, 10.1234/test, 10.798797789/test/, 10.1234/test1/test2/random
-            # e.g.2. from http://doi.com/10.32/test/random we fetch 10.32/test/random
-            stripped_article_doi = re.search(r'10\.\w+\/([\w\-\.]*\/?)+', article_doi)
-            if not stripped_article_doi:
-                raise exceptions.ValidationError('The `article_doi` format is incorrect')
-
-            stripped_article_doi = stripped_article_doi.group()
-            doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint._id)
-            if doi.startswith(stripped_article_doi):
-                raise exceptions.ValidationError(
-                    detail=f'The `article_doi` "{doi}" is already associated with this'
-                           f' preprint please enter a peer-reviewed publication\'s DOI',
-                )
-
-            preprint.article_doi = stripped_article_doi
-            save_preprint = True
-        else:
-            preprint.article_doi = None
-            save_preprint = True
+        preprint.article_doi = validated_data.get('article_doi')
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
             self.set_field(preprint.set_preprint_license, license_details, auth)
-            save_preprint = True
 
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
-            save_preprint = True
 
         if 'custom_publication_citation' in validated_data:
             preprint.custom_publication_citation = validated_data['custom_publication_citation'] or None
-            save_preprint = True
 
         if published is not None:
             if not preprint.primary_file:
@@ -529,12 +482,15 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='A valid primary_file must be set before publishing a preprint.',
                 )
             self.set_field(preprint.set_published, published, auth)
-            save_preprint = True
             recently_published = published
             preprint.set_privacy('public', log=False, save=True)
 
-        if save_preprint:
-            preprint.save()
+        try:
+            preprint.full_clean()
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=str(e))
+
+        preprint.save()
 
         if recently_published:
             for author in preprint.contributors:
