@@ -465,7 +465,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                                    f'[preprint={preprint._id}, user={contributor.user._id}]')
 
         # Add new version record for unregistered contributors
-        for contributor in preprint.contributor_set.filter(Q(user__is_registered=False) | Q(user__is_disabled=True)):
+        for contributor in preprint.contributor_set.filter(Q(user__is_registered=False) | Q(user__date_disabled__isnull=False)):
             try:
                 contributor.user.add_unclaimed_record(
                     claim_origin=preprint,
