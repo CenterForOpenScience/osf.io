@@ -67,6 +67,7 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
     UserMessageSerializer,
+    ExternalLoginSerialiser,
     ExternalLoginConfirmEmailSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
@@ -741,6 +742,98 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.save()
         remove_sessions_for_user(user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
+    """
+    View to handle email submission for first-time oauth-login user.
+    HTTP Method: POST
+    """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = ExternalLoginSerialiser
+    view_category = 'users'
+    view_name = 'external-login'
+
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session = request.session
+        external_id_provider = session.get('auth_user_external_id_provider', None)
+        external_id = session.get('auth_user_external_id', None)
+        fullname = session.get('auth_user_fullname', None) or request.data.get('auth_user_fullname', None)
+
+        accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
+
+        if session.get('auth_user_external_first_login', False) is not True:
+            raise HTTPError(status.HTTP_401_UNAUTHORIZED)
+
+        clean_email = request.data.get('email', None)
+        user = get_user(email=clean_email)
+        external_identity = {
+            external_id_provider: {
+                external_id: None,
+            },
+        }
+        try:
+            ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+        except ValidationError as e:
+            raise HTTPError(status.HTTP_403_FORBIDDEN, e.message)
+        if user:
+            # 1. update user oauth, with pending status
+            external_identity[external_id_provider][external_id] = 'LINK'
+            if external_id_provider in user.external_identity:
+                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+            else:
+                user.external_identity.update(external_identity)
+            if not user.accepted_terms_of_service and accepted_terms_of_service:
+                user.accepted_terms_of_service = timezone.now()
+            # 2. add unconfirmed email and send confirmation email
+            user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save()
+            send_confirm_email_async(
+                user,
+                clean_email,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+            )
+
+        else:
+            # 1. create unconfirmed user with pending status
+            external_identity[external_id_provider][external_id] = 'CREATE'
+            accepted_terms_of_service = timezone.now() if accepted_terms_of_service else None
+            user = OSFUser.create_unconfirmed(
+                username=clean_email,
+                password=None,
+                fullname=fullname,
+                external_identity=external_identity,
+                campaign=None,
+                accepted_terms_of_service=accepted_terms_of_service,
+            )
+            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
+            user.save()
+            # 3. send confirmation email
+            send_confirm_email_async(
+                user,
+                user.username,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+            )
+
+        # Don't go anywhere
+        return JsonResponse(
+            {
+                'external_id_provider': external_id_provider,
+                'auth_user_fullname': fullname,
+            },
+            status=status.HTTP_200_OK,
+            content_type='application/vnd.api+json; application/json',
+        )
 
 class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
     """

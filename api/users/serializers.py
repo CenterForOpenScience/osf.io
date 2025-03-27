@@ -451,6 +451,15 @@ class ExternalLoginConfirmEmailSerializer(BaseAPISerializer):
         type_ = 'external_login_confirm_email'
 
 
+class ExternalLoginSerialiser(BaseAPISerializer):
+    email = ser.CharField(write_only=True, required=True)
+    auth_user_fullname = ser.CharField(write_only=True, required=False)
+    accepted_terms_of_service = ser.BooleanField(write_only=True, required=True)
+
+    class Meta:
+        type_ = 'external_login'
+
+
 class UserSettingsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
