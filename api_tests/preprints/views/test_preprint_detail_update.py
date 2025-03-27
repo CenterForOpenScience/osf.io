@@ -44,6 +44,10 @@ class TestPreprintUpdate:
         return PreprintFactory(creator=user)
 
     @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def url(self, preprint):
         return f'/{API_BASE}preprints/{preprint._id}/'
 
@@ -51,7 +55,7 @@ class TestPreprintUpdate:
     def subject(self):
         return SubjectFactory()
 
-    def test_update_original_publication_date_to_none(self, app, preprint, url):
+    def test_update_original_publication_date_to_none(self, app, user, preprint, url):
         # Original pub date accidentally set, need to remove
         write_contrib = AuthUserFactory()
         preprint.add_contributor(write_contrib, WRITE, save=True)
@@ -632,7 +636,7 @@ class TestPreprintUpdate:
         update_payload = build_preprint_update_payload(
             preprint._id,
             attributes={'has_coi': True}
-        ),
+        )
 
         contrib = AuthUserFactory()
         preprint.add_contributor(contrib, READ)

@@ -130,8 +130,8 @@ class TestPreprintUpdateLicense:
             }
         }
 
-    def test_admin_update_license_with_invalid_id(self, app, admin_contrib, preprint, url, make_payload):
-        data = make_payload(
+    def test_admin_update_license_with_invalid_id(self, app, admin_contrib, preprint, url):
+        data = self.make_payload(
             node_id=preprint._id,
             license_id='thisisafakelicenseid'
         )

@@ -859,6 +859,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         else:
             return None
 
+    def full_clean(self):
+        super().full_clean()
+        if self.article_doi and self.provider:
+            expected_doi = settings.DOI_FORMAT.format(prefix=self.provider.doi_prefix, guid=self._id)
+            if expected_doi.startswith(self.article_doi):
+                raise ValidationError({
+                    'article_doi': (
+                        f'The `article_doi` "{expected_doi}" is already associated with this preprint; '
+                        'please enter a peer-reviewed publication\'s DOI.'
+                    )
+                })
+
     def save(self, *args, **kwargs):
         """Customize preprint save process, which has three steps.
 
