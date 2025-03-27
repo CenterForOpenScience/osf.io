@@ -1,5 +1,4 @@
-import re
-
+from django.core.exceptions import ValidationError
 from rest_framework import exceptions
 from rest_framework import serializers as ser
 from rest_framework.fields import empty
@@ -39,6 +38,7 @@ from api.nodes.serializers import (
 )
 from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
+from api.preprints.fields import DOIField
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
@@ -51,8 +51,6 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
-from django.core.exceptions import ValidationError
-
 
 class PrimaryFileRelationshipField(RelationshipField):
     def get_object(self, file_id):
@@ -89,20 +87,6 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
-class DOIField(ser.CharField):
-    def to_internal_value(self, data):
-        DOI_REGEX = re.compile(r'^10\.\d+\/[-._;()/:A-Z0-9]+$', re.IGNORECASE)
-
-        if data is None:
-            return None
-        # Strip known DOI prefixes and domains
-        cleaned = re.sub(r'^(?:https?://)?(?:dx\.)?(?:test\.)?(?:doi\.org/)?', '', data, flags=re.IGNORECASE)
-
-        if not DOI_REGEX.match(cleaned):
-            raise ValidationError('Invalid DOI format. Must be a valid DOI or DOI URL.')
-        return cleaned
-
-
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -129,12 +113,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = DOIField(
-        source='article_doi',
-        required=False,
-        allow_null=True,
-    )
-
+    doi = DOIField(source='article_doi', required=False, allow_null=True)
     title = ser.CharField(required=True, max_length=512)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     is_published = NoneIfWithdrawal(ser.BooleanField(required=False))
