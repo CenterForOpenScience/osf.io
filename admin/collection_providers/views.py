@@ -62,6 +62,8 @@ class CreateCollectionProvider(PermissionRequiredMixin, CreateView):
             self.object.primary_collection.data_type_choices.append(item)
         for item in form.cleaned_data['disease_choices']['added']:
             self.object.primary_collection.disease_choices.append(item)
+        for item in form.cleaned_data['grade_levels_choices']['added']:
+            self.object.primary_collection.grade_levels_choices.append(item)
         self.object.primary_collection.save()
         return super().form_valid(form)
 
@@ -188,6 +190,11 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         ))
         kwargs['data_type_choices'] = data_type_choices_html
 
+        grade_levels_choices_html = '<ul>{choices}</ul>'.format(choices=''.join(
+            f'<li>{choice}</li>' for choice in primary_collection.grade_levels_choices
+        ))
+        kwargs['grade_levels_choices'] = grade_levels_choices_html
+
         # get a dict of model fields so that we can set the initial value for the update form
         fields = model_to_dict(collection_provider)
         fields['collected_type_choices'] = json.dumps(primary_collection.collected_type_choices)
@@ -202,6 +209,7 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         fields['study_design_choices'] = json.dumps(primary_collection.study_design_choices)
         fields['data_type_choices'] = json.dumps(primary_collection.data_type_choices)
         fields['disease_choices'] = json.dumps(primary_collection.disease_choices)
+        fields['grade_levels_choices'] = json.dumps(primary_collection.grade_levels_choices)
 
         # compile html list of collected_type_choices
         if collection_provider.primary_collection:
@@ -262,7 +270,7 @@ class CollectionProviderChangeForm(PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         if self.object.primary_collection:
-            for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease']:
+            for choices_name in ['collected_type', 'status', 'issue', 'volume', 'program_area', 'school_type', 'study_design', 'data_type', 'disease', 'grade_levels']:
                 _process_collection_choices(self.object, choices_name, form)
         self.object.primary_collection.save()
         return super().form_valid(form)
@@ -402,6 +410,7 @@ class ImportCollectionProvider(ImportProviderView):
             provider.primary_collection.study_design_choices = primary_collection['fields']['study_design_choices']
             provider.primary_collection.disease_choices = primary_collection['fields']['disease_choices']
             provider.primary_collection.data_type_choices = primary_collection['fields']['data_type_choices']
+            provider.primary_collection.data_type_choices = primary_collection['fields']['grade_levels_choices']
             provider.primary_collection.save()
         if licenses:
             provider.licenses_acceptable.set(licenses)
