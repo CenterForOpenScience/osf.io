@@ -1,6 +1,4 @@
 import re
-from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
 
 from rest_framework import exceptions
 from rest_framework import serializers as ser
@@ -53,6 +51,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
+from django.core.exceptions import ValidationError
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -90,6 +89,20 @@ class PreprintLicenseRelationshipField(RelationshipField):
         raise exceptions.NotFound('Unable to find specified license.')
 
 
+class DOIField(ser.CharField):
+    def to_internal_value(self, data):
+        DOI_REGEX = re.compile(r'^10\.\d+\/[-._;()/:A-Z0-9]+$', re.IGNORECASE)
+
+        if data is None:
+            return None
+        # Strip known DOI prefixes and domains
+        cleaned = re.sub(r'^(?:https?://)?(?:dx\.)?(?:test\.)?(?:doi\.org/)?', '', data, flags=re.IGNORECASE)
+
+        if not DOI_REGEX.match(cleaned):
+            raise ValidationError('Invalid DOI format. Must be a valid DOI or DOI URL.')
+        return cleaned
+
+
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -116,20 +129,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     date_published = VersionedDateTimeField(read_only=True)
     original_publication_date = VersionedDateTimeField(required=False, allow_null=True)
     custom_publication_citation = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    doi = ser.CharField(
+    doi = DOIField(
         source='article_doi',
         required=False,
         allow_null=True,
-        validators=[
-            RegexValidator(
-                regex=r'^10\.\d{4,9}/[-._;()/:A-Z0-9]+$',
-                message=(
-                    'Invalid DOI format. A valid DOI starts with "10." followed by digits and a suffix '
-                    '(e.g., "10.1234/abcd.efg").'
-                ),
-                flags=re.IGNORECASE,
-            ),
-        ],
     )
 
     title = ser.CharField(required=True, max_length=512)
