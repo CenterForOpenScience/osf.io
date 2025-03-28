@@ -38,6 +38,7 @@ from osf.exceptions import NodeStateError
 from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
+from api.preprints.fields import DOIField
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
@@ -96,7 +97,7 @@ class RegistrationSerializer(NodeSerializer):
     access_requests_enabled = HideIfWithdrawal(ser.BooleanField(read_only=True))
     node_license = HideIfWithdrawal(NodeLicenseSerializer(required=False, source='license'))
     tags = HideIfWithdrawal(ValuesListField(attr_name='name', child=ser.CharField(), required=False))
-    article_doi = ser.CharField(required=False, allow_null=True)
+    article_doi = DOIField(required=False, allow_null=True)
     public = HideIfWithdrawal(
         ser.BooleanField(
             source='is_public',
