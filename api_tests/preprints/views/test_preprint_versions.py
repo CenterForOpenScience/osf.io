@@ -654,11 +654,11 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         pre_mod_preprint_v2.add_contributor(self.moderator, permissions.READ)
 
         # preprint
-        res = self.app.get(f'/{API_BASE}preprints/{self.pre_mod_preprint._id.split('_')[0]}/', auth=self.moderator.auth, expect_errors=True)
+        res = self.app.get(f'/{API_BASE}preprints/{self.pre_mod_preprint._id.split('_')[0]}/', auth=self.moderator.auth)
         assert res.status_code == 200
 
         # preprint version
-        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth, expect_errors=True)
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
         assert res.status_code == 200
 
 
