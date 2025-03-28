@@ -644,6 +644,23 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth, expect_errors=True)
         assert res.status_code == 404
 
+    def test_moderator_can_contribute(self):
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.add_contributor(self.moderator, permissions.READ)
+
+        # preprint
+        res = self.app.get(f'/{API_BASE}preprints/{self.pre_mod_preprint._id.split('_')[0]}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+
+        # preprint version
+        res = self.app.get(f'/{API_BASE}preprints/{pre_mod_preprint_v2._id}/', auth=self.moderator.auth)
+        assert res.status_code == 200
+
 
 class TestPreprintVersionsListRetrieve(ApiTestCase):
 
