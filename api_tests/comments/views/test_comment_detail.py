@@ -16,6 +16,8 @@ from osf_tests.factories import (
     PrivateLinkFactory,
 )
 from rest_framework import exceptions
+from waffle.testutils import override_flag
+from osf import features
 
 
 @pytest.mark.django_db
@@ -307,6 +309,19 @@ class CommentDetailMixin:
         )
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    def test_comment_update_disabled(
+            self, app, user,
+            public_url, public_comment_payload
+    ):
+        with override_flag(features.DISABLE_COMMENTS, active=True):
+            # test_public_node_only_contributor_commenter_can_update_comment
+            res = app.put_json_api(
+                public_url, public_comment_payload,
+                auth=user.auth,
+                expect_errors=True
+            )
+            assert res.status_code == 501
 
     def test_update_comment_misc(
             self, app, user, private_url,

@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
 
-from api.base.exceptions import Gone
+from api.base.exceptions import Gone, EndpointNotImplementedError
 from api.base import permissions as base_permissions
 from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
@@ -22,6 +22,8 @@ from framework.auth.oauth_scopes import CoreScopes
 from framework.exceptions import PermissionsError
 from osf.models import AbstractNode, Comment, BaseFileNode
 from addons.wiki.models import WikiPage
+import waffle
+from osf import features
 
 
 class CommentMixin:
@@ -86,6 +88,11 @@ class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, Comm
                 instance.delete(auth, save=True)
             except PermissionsError:
                 raise PermissionDenied('Not authorized to delete this comment.')
+
+    def update(self, request, *args, **kwargs):
+        if waffle.flag_is_active(self.request, features.DISABLE_COMMENTS):
+            raise EndpointNotImplementedError('Comment creation for OSF Projects has been discontinued.')
+        return super().update(request, *args, **kwargs)
 
 
 class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
