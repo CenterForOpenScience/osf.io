@@ -20,8 +20,6 @@
                         <strong>Change for all child nodes</strong>
                     </label>
 
-                    <input type="hidden" id="allChildIds" name="all_child_ids" value="{% for child in node.descendants.all %}{{ child.id }},{% endfor %}">
-
                     <div class="child-checkboxes">
                         {% paginate  node.descendants.all 10 as children_page %}
 
@@ -66,14 +64,5 @@
             hiddenInput.value = '';
         }
     });
-    document.querySelector("form").addEventListener("submit", function () {
-        let hiddenInput = document.getElementById("allChildIds");
-        let selectedIds = [...document.querySelectorAll(".child-checkbox:checked")].map(cb => cb.value);
 
-        if (document.getElementById("parentCheckbox").checked) {
-            selectedIds = hiddenInput.dataset.allChildIds.split(",");
-        }
-
-        hiddenInput.value = selectedIds.join(",");
-    });
 </script>

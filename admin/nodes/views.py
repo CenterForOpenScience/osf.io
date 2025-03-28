@@ -640,32 +640,20 @@ class NodeModifyStorageRegion(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         node = self.get_object()
-        new_region_id = request.POST.get('new-region-id')
-        apply_to_all = request.POST.get('apply_to_all_children')
-        osfs_settings = node._settings_model('osfstorage').objects.filter(owner=node.id).first()
+        apply_to_all_children = request.POST.get('apply_to_all_children')
+        # region = Region.objects.get(id=request.POST.get('new-region-id'))
 
-        if osfs_settings and new_region_id != osfs_settings.region_id:
-            osfs_settings.region_id = new_region_id
-            osfs_settings.save()
-        if apply_to_all:
-            all_child_ids = request.POST.get('all_child_ids', '').split(',')
-            child_nodes = AbstractNode.objects.filter(id__in=[
-                int(child_id) for child_id in all_child_ids if child_id.isdigit()
-            ])
+        if apply_to_all_children:
+            targets = node.node_and_primary_descendants()
         else:
-            children_ids = [key.split('-')[1] for key in request.POST if key.startswith('children-')]
-            child_nodes = AbstractNode.objects.filter(id__in=children_ids)
+            targets = [node]
+            children_keys = filter(lambda key: key.startswith('children-'), request.POST.keys())
+            children_ids = list(map(lambda id_: id_.split('-')[1], children_keys))
+            targets.extend(AbstractNode.objects.filter(id__in=children_ids))
 
-        for child_node in child_nodes:
-            if child_node.has_permission(request.user, ADMIN):
-                child_osfs_settings = child_node._settings_model('osfstorage').objects.filter(
-                    owner=child_node.id).first()
-                if child_osfs_settings and new_region_id != child_osfs_settings.region_id:
-                    child_osfs_settings.region_id = new_region_id
-                    child_osfs_settings.save()
-            else:
-                messages.error(request, f'You do not have permission to change the region for {child_node.title}.')
-
+        # from osf.management.commands.change_node_region import change_node_region
+        # for target in targets:
+        #     change_node_region(target, region, settings.GCS_CREDS)
         return redirect(self.get_success_url())
 
 
