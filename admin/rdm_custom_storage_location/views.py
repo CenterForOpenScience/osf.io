@@ -77,12 +77,13 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
         else:
             region = Region.objects.first()
             region.name = ''
+            # Disable view setting info button if institution have not set institution storage yet
             disable_view_setting_info = True
 
         provider_name = region.waterbutler_settings['storage']['provider']
         provider_name = provider_name if provider_name != 'filesystem' else 'osfstorage'
 
-        # Disable view setting info button if institution's storage provider is not supported or institution does not have institution storage
+        # Also disable view setting info button if institution's storage provider is not supported
         disable_view_setting_info = disable_view_setting_info or provider_name in settings.UNSUPPORTED_VIEW_SETTING_INFO_PROVIDERS
 
         # Get storage information

@@ -397,6 +397,7 @@ PROJECT_LIMIT_NUMBER = 10
 
 # Providers that does not support viewing setting information
 UNSUPPORTED_VIEW_SETTING_INFO_PROVIDERS = [
+    'osfstorage',
     'onedrivebusiness',
     'swift'
 ]
