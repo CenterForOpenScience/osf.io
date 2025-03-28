@@ -1,5 +1,6 @@
 import pytz
 from datetime import datetime
+
 from framework import status
 
 from django.utils import timezone
@@ -25,6 +26,7 @@ from admin.notifications.views import detect_duplicate_notifications, delete_sel
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
+from addons.osfstorage.models import Region
 
 from osf.exceptions import NodeStateError
 from osf.models import (
@@ -105,7 +107,11 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
-            'duplicates': detailed_duplicates
+            'duplicates': detailed_duplicates,
+            'regions': Region.objects.all().only('name', 'id'),
+            'current_region_id': node._settings_model('osfstorage').objects.filter(
+                owner=node.id
+            ).values_list('region_id', flat=True)[0],
         })
 
         return context
@@ -620,6 +626,28 @@ class NodeModifyStorageUsage(NodeMixin, View):
             node.custom_storage_usage_limit_public = new_public_cap
 
         node.save()
+        return redirect(self.get_success_url())
+
+
+class NodeModifyStorageRegion(NodeMixin, View):
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        apply_to_all_children = request.POST.get('apply_to_all_children')
+        # region = Region.objects.get(id=request.POST.get('new-region-id'))
+
+        if apply_to_all_children:
+            targets = node.node_and_primary_descendants()
+        else:
+            targets = [node]
+            children_keys = filter(lambda key: key.startswith('children-'), request.POST.keys())
+            children_ids = list(map(lambda id_: id_.split('-')[1], children_keys))
+            targets.extend(AbstractNode.objects.filter(id__in=children_ids))
+
+        # from osf.management.commands.change_node_region import change_node_region
+        # for target in targets:
+        #     change_node_region(target, region, settings.GCS_CREDS)
         return redirect(self.get_success_url())
 
 

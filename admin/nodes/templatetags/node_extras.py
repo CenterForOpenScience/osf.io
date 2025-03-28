@@ -1,6 +1,7 @@
 from django import template
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.core.paginator import Paginator
 
 from osf.models import (
     AbstractNode,
@@ -93,3 +94,10 @@ def get_spam_status(resource):
         return mark_safe('<span class="label label-danger">Spam</span>')
     elif resource.spam_status == SpamStatus.HAM:
         return mark_safe('<span class="label label-success">Ham</span>')
+
+@register.simple_tag(takes_context=True)
+def paginate(context, queryset, page_size):
+    request = context['request']
+    page = request.GET.get('page', 1)
+    paginator = Paginator(queryset, page_size)
+    return paginator.get_page(page)
