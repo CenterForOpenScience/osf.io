@@ -3,7 +3,8 @@ import typing
 from collections import Counter
 
 import dataclasses
-
+import waffle
+from osf import features
 from packaging.version import Version
 from django.apps import apps
 from django.db.models import F, Max, Q, Subquery
@@ -1665,6 +1666,8 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         return res
 
     def perform_create(self, serializer):
+        if waffle.flag_is_active(self.request, features.DISABLE_COMMENTS):
+            raise EndpointNotImplementedError('Comment creation for OSF Projects has been discontinued.')
         node = self.get_node()
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
