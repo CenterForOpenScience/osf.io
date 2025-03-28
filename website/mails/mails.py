@@ -230,7 +230,7 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='アカウントの統合確認 / Confirm account merge')
 REMOVED_EMAIL = Mail('email_removed', subject='GakuNin RDMアカウントのメールアドレス削除 / Email address removed from your GakuNin RDM account')
-PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリメールアドレスの変更 / Primary email changed')
+PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライマリメールアドレスの変更 / Primary email changed')
 
 
 # Contributor added confirmation emails
