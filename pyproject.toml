@@ -75,8 +75,6 @@ django-guardian = "2.4.0"
 django-webpack-loader = {git = "https://github.com/CenterForOpenScience/django-webpack-loader.git", rev = "6b62fef7d6bc9d25d7b7b7a303f4580ad24831a6"} # branch is feature/v1-webpack-stats
 django-sendgrid-v5 = "1.2.3" # metadata says python 3.10 not supported, but tests pass
 
-# Analytics requirements
-geoip2 = "4.7.0"
 # OSF models
 django-typed-models = "0.14.0"
 django-storages = "1.14.3"

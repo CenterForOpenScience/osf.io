@@ -258,7 +258,6 @@
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
                     emailsToAdd: ${ user_email_verifications | sjson, n },
-                    anon: ${ anon | sjson, n },
                 },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {
