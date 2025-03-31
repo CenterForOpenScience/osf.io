@@ -21,7 +21,6 @@ def sync_identifier_doi(identifier_id):
         identifier.referent.request_identifier_update('doi')
         identifier.save()
         logger.info(f'Doi update for {identifier.value} complete')
-        return
     except Exception as err:
         logger.warning(f'[{err.__class__.__name__}] Doi update for {identifier.value} failed because of error: {err}')
         sync_identifier_doi.retry(exc=err, countdown=RATE_LIMIT_RETRY_DELAY)
