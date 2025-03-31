@@ -665,7 +665,6 @@ class PreprintProviderFactory(DjangoModelFactory):
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
     share_source = factory.Sequence(lambda n: f'share source #{n}')
-    doi_prefix = factory.LazyFunction(lambda: f'10.{fake.random_int(min=1000, max=99999)}')
 
     class Meta:
         model = models.PreprintProvider

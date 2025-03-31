@@ -8,6 +8,7 @@ from website.settings import DOI_FORMAT, CROSSREF_URL
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
+    PreprintProviderFactory
 )
 from osf.utils.permissions import READ
 
@@ -36,7 +37,12 @@ class TestPreprintIdentifiers:
 
     @pytest.fixture()
     def preprint(self, user):
-        return PreprintFactory(creator=user)
+        return PreprintFactory(
+            creator=user,
+            provider=PreprintProviderFactory(
+                doi_prefix='10.1234/test'
+            )
+        )
 
     @pytest.fixture
     def url(self, preprint):
@@ -310,18 +316,39 @@ class TestPreprintIdentifiers:
             preprint,
             url
     ):
-        update_payload = build_preprint_update_payload(
-            preprint._id,
-            attributes={'doi': '10.1235/test'}
-        )
         resp = app.patch_json_api(
             url,
-            update_payload,
+            build_preprint_update_payload(
+                preprint._id,
+                attributes={'doi': '10.1235/test'}
+            ),
             auth=user.auth
         )
         assert resp.json['data']['attributes']['doi'] == '10.1235/test'
         resp = app.get(
             url,
+            auth=user.auth
+        )
+        assert resp.json['data']['attributes']['doi'] == '10.1235/test'
+
+    def test_dont_patch_over_article_doi(
+            self,
+            app,
+            user,
+            preprint_with_article_doi,
+            preprint_with_article_doi_url
+    ):
+        resp = app.patch_json_api(
+            preprint_with_article_doi_url,
+            build_preprint_update_payload(
+                preprint_with_article_doi._id,
+                attributes={}
+            ),
+            auth=user.auth
+        )
+        assert resp.json['data']['attributes']['doi'] == '10.1235/test'
+        resp = app.get(
+            preprint_with_article_doi_url,
             auth=user.auth
         )
         assert resp.json['data']['attributes']['doi'] == '10.1235/test'
