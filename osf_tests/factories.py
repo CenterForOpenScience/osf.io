@@ -665,6 +665,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
     share_source = factory.Sequence(lambda n: f'share source #{n}')
+    doi_prefix = factory.LazyFunction(lambda: f'10.{fake.random_int(min=1000, max=99999)}')
 
     class Meta:
         model = models.PreprintProvider
@@ -712,7 +713,6 @@ class PreprintFactory(DjangoModelFactory):
 
     @classmethod
     def _build(cls, target_class, *args, **kwargs):
-        creator = kwargs.pop('creator', None) or UserFactory()
         provider = kwargs.pop('provider', None) or PreprintProviderFactory()
 
         # pre Django 3 behavior
@@ -721,12 +721,15 @@ class PreprintFactory(DjangoModelFactory):
             provider.reviews_workflow = reviews_workflow
             provider.save()
 
-        project = kwargs.pop('project', None) or None
-        title = kwargs.pop('title', None) or 'Untitled'
-        description = kwargs.pop('description', None) or 'None'
-        is_public = kwargs.pop('is_public', True)
-        instance = target_class(provider=provider, title=title, description=description, creator=creator, node=project, is_public=is_public)
-        return instance
+        return target_class(
+            provider=provider,
+            title=kwargs.pop('title', None) or 'Untitled',
+            description=kwargs.pop('description', None) or 'None',
+            creator=kwargs.pop('creator', None) or UserFactory(),
+            node=kwargs.pop('project', None) or None,
+            is_public=kwargs.pop('is_public', True),
+            article_doi=kwargs.pop('article_doi', None)
+        )
 
     @classmethod
     def _create(cls, target_class, *args, **kwargs):
@@ -770,11 +773,11 @@ class PreprintFactory(DjangoModelFactory):
         user = kwargs.pop('creator', None) or instance.creator
         is_published = kwargs.pop('is_published', True)
         file_size = kwargs.pop('file_size', 1337)
-        doi = kwargs.pop('doi', None)
+        article_doi = kwargs.pop('article_doi', None)
         license_details = kwargs.pop('license_details', None)
         filename = kwargs.pop('filename', None) or 'preprint_file.txt'
         subjects = kwargs.pop('subjects', None) or [[SubjectFactory()._id]]
-        instance.article_doi = doi
+        instance.article_doi = article_doi
         machine_state = kwargs.pop('machine_state', 'initial')
 
         preprint_file = OsfStorageFile.create(

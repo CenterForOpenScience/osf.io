@@ -464,7 +464,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
             description = validated_data['description']
             self.set_field(preprint.set_description, description, auth)
 
-        preprint.article_doi = validated_data.get('article_doi')
+        if 'article_doi' in validated_data:
+            preprint.article_doi = validated_data['article_doi']
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
