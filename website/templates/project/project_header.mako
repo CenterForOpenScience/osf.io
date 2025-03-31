@@ -60,7 +60,13 @@
                                 </li>
                             % endif
                         % endfor
-
+                        % if node['is_registration']:
+                            <li id="projectNavRecentActivity">
+                                <a href="${node['url']}recent-activity/" class="subnav-header">
+                                    Recent Activity
+                                </a>
+                            </li>
+                        % endif
                         <li id="projectNavComponents">
                             <a href="${node['url']}components/" class="subnav-header">
                                 Components
@@ -74,15 +80,15 @@
                             <li><a href="${node['url']}registrations/" class="subnav-header">Registrations</a></li>
                         % endif
 
-                        % if user['is_contributor_or_group_member']:
+                        % if not node['link'] and user['is_contributor_or_group_member']:
                             <li><a href="${node['url']}contributors/" class="subnav-header">Contributors</a></li>
                         % endif
 
-                        % if permissions.WRITE in user['permissions'] and not node['is_registration']:
+                        % if permissions.WRITE in user['permissions'] and not node['is_registration'] and not node['link']:
                             <li><a href="${node['url']}addons/" class="subnav-header">Add-ons</a></li>
                         % endif
 
-                        % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions']):
+                        % if not node['link'] and (user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and permissions.WRITE in user['permissions'])):
                             <li><a href="${node['url']}settings/" class="subnav-header">Settings</a></li>
                         % endif
                     % endif

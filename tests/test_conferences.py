@@ -207,6 +207,7 @@ class TestProvisionNode(ContextTestCase):
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
+            cookies={settings.COOKIE_NAME: self.user.get_or_create_cookie().decode()},
         )
 
     @mock.patch('website.conferences.utils.waterbutler_api_url_for')
@@ -227,6 +228,7 @@ class TestProvisionNode(ContextTestCase):
         mock_put.assert_called_with(
             mock_get_url.return_value,
             data=self.content,
+            cookies={settings.COOKIE_NAME: self.user.get_or_create_cookie().decode()},
         )
 
     @mock.patch('website.conferences.utils.upload_attachments')

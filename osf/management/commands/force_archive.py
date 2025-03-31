@@ -32,12 +32,13 @@ from django.db.utils import IntegrityError
 from django.utils import timezone
 
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
+from framework import sentry
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
 from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER
+from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER, COOKIE_NAME
 from website.files.utils import attach_versions
 
 logger = logging.getLogger(__name__)
@@ -160,7 +161,8 @@ def perform_wb_copy(reg, node_settings):
         if SKIP_COLLISIONS:
             complete_archive_target(reg, node_settings.short_name)
             return
-    params = {'cookie': user.get_or_create_cookie().decode()}
+    cookie = user.get_or_create_cookie().decode()
+    params = {'cookie': cookie}
     data = {
         'action': 'copy',
         'path': '/',
@@ -169,9 +171,11 @@ def perform_wb_copy(reg, node_settings):
         'provider': ARCHIVE_PROVIDER,
     }
     url = waterbutler_api_url_for(src._id, node_settings.short_name, _internal=True, base_url=src.osfstorage_region.waterbutler_url, **params)
-    res = requests.post(url, data=json.dumps(data))
+    res = requests.post(url, data=json.dumps(data), cookies={COOKIE_NAME: cookie})
     if res.status_code not in (http_status.HTTP_200_OK, http_status.HTTP_201_CREATED, http_status.HTTP_202_ACCEPTED):
-        raise HTTPError(res.status_code)
+        http_exception = HTTPError(res.status_code)
+        sentry.log_exception(http_exception)
+        raise http_exception
 
 def manually_archive(tree, reg, node_settings, parent=None):
     if not isinstance(tree, list):

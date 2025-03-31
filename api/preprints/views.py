@@ -15,7 +15,7 @@ from osf.models import (
     VersionedGuidMixin,
 )
 from osf.utils.requests import check_select_for_update
-from osf.utils.workflows import DefaultStates
+from osf.utils.workflows import DefaultStates, ReviewStates
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import ReviewActionSerializer
@@ -62,7 +62,7 @@ from api.preprints.permissions import (
     PreprintFilesPermissions,
     PreprintInstitutionPermissionList,
 )
-from api.providers.workflows import Workflows
+from api.providers.workflows import Workflows, PUBLIC_STATES
 from api.nodes.permissions import ContributorOrPublic
 from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.requests.permissions import PreprintRequestPermission
@@ -116,10 +116,16 @@ class PreprintMixin(NodeMixin):
         preprint_version = preprint_lookup_data[1] if len(preprint_lookup_data) > 1 else None
         if preprint_version:
             qs = Preprint.objects.filter(versioned_guids__guid___id=base_guid_id, versioned_guids__version=preprint_version)
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         else:
-            qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
+            # when pre-moderation is on, we should look for the preprint
+            # in all objects as it isn't published, not in published_objects
+            qs = Preprint.objects.filter(guids___id=self.kwargs[self.preprint_lookup_url_kwarg], guids___id__isnull=False)
+            preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
+            if preprint and preprint.provider.reviews_workflow != Workflows.PRE_MODERATION.value:
+                qs = Preprint.published_objects.filter(versioned_guids__guid___id=base_guid_id).order_by('-versioned_guids__version')
+                preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
 
-        preprint = qs.select_for_update().first() if check_select_for_update(self.request) else qs.select_related('node').first()
         if not preprint:
             sentry.log_message(f'Preprint not found: [guid={base_guid_id}, version={preprint_version}]')
             if ignore_404:
@@ -132,6 +138,22 @@ class PreprintMixin(NodeMixin):
         # May raise a permission denied
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
+
+        user_is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
+        user_is_contributor = preprint.contributors.filter(id=self.request.user.id).exists()
+        if (
+            preprint.machine_state == DefaultStates.INITIAL.value and
+            not user_is_contributor and
+            user_is_moderator
+        ):
+            raise NotFound
+
+        preprint_is_public = bool(
+            preprint.machine_state in PUBLIC_STATES[preprint.provider.reviews_workflow]
+            or preprint.machine_state == ReviewStates.WITHDRAWN.value,
+        )
+        if not preprint_is_public and not user_is_contributor and not user_is_moderator:
+            raise NotFound
 
         return preprint
 

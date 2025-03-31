@@ -72,14 +72,6 @@ class IdentifierMixin(models.Model):
         """
         raise NotImplementedError()
 
-    @property
-    def has_doi_identifier(self):
-        return self.identifiers.filter(
-            category='doi',
-            deleted__isnull=True,
-            object_id__isnull=False,
-        ).exists()
-
     def get_doi_client(self):
         """Return a BaseIdentifierClient if proper
         settings are configured, else return None
