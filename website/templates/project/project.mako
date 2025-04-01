@@ -415,6 +415,11 @@
                                     </div>
                                 % endif
                                 <hr>
+                                % if collection['grade_levels']:
+                                    <div  style="padding-left: 30px;">
+                                        Grade Levels: <i>${collection['grade_levels']}</i>
+                                    </div>
+                                % endif
                             % elif collection['state'] == 'pending' and user['is_contributor_or_group_member']:
                                 % if user['is_admin']:
                                     <a class="fa fa-close collections-cancel-icon pull-right" collection_id=${collection['collection_id']} node_id=${collection['node_id']} aria-label="Cancel Submission Request Button"></a>
@@ -473,6 +478,11 @@
                                 % elif collection['data_type']:
                                     <div  style="padding-left: 30px;">
                                         Data Type: <i>${collection['data_type']}</i>
+                                    </div>
+                                % endif
+                                % if collection['grade_levels']:
+                                    <div  style="padding-left: 30px;">
+                                        Grade Levels: <i>${collection['grade_levels']}</i>
                                     </div>
                                 % endif
                                 <hr>

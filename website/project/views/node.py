@@ -956,6 +956,7 @@ def serialize_collections(collection_submissions, auth):
         'program_area': collection_submission.program_area,
         'disease': collection_submission.disease,
         'data_type': collection_submission.data_type,
+        'grade_levels': collection_submission.grade_levels,
         'state': collection_submission.state.db_name,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'is_public': collection_submission.collection.is_public,

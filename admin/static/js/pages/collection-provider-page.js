@@ -73,6 +73,14 @@ $('#tags-input-disease').on('itemRemoved', function(event) {
     $('#id_disease_choices').val(JSON.stringify($('#tags-input-disease').tagsinput('items')));
 });
 
+$('#tags-input-grade-levels').on('itemAdded', function(event) {
+    $('#id_grade_levels_choices').val(JSON.stringify($('#tags-input-grade-levels').tagsinput('items')));
+});
+
+$('#tags-input-grade-levels').on('itemRemoved', function(event) {
+    $('#id_grade_levels_choices').val(JSON.stringify($('#tags-input-grade-levels').tagsinput('items')));
+});
+
 
 $(document).ready(function() {
    var collectedTypeItems = JSON.parse($('#id_collected_type_choices').val());
@@ -118,5 +126,10 @@ $(document).ready(function() {
    var dataTypeItems = JSON.parse($('#id_data_type_choices').val());
    dataTypeItems.forEach(function(element){
        $('#tags-input-data-type').tagsinput('add', element)
+   });
+
+   var dataTypeItems = JSON.parse($('#id_grade_levels_choices').val());
+   dataTypeItems.forEach(function(element){
+       $('#tags-input-grade-levels').tagsinput('add', element)
    });
 });
