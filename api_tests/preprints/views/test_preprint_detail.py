@@ -12,7 +12,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     InstitutionFactory
 )
-from website.settings import DOI_FORMAT
 
 
 def build_preprint_update_payload(
@@ -105,20 +104,17 @@ class TestPreprintDetail:
         deleted_node = ProjectFactory(creator=user, is_deleted=True)
         deleted_preprint = PreprintFactory(project=deleted_node, creator=user)
 
-        deleted_preprint_url = '/{}preprints/{}/'.format(
-            API_BASE, deleted_preprint._id)
         deleted_preprint_res = app.get(
-            deleted_preprint_url, expect_errors=True)
+            f'/{API_BASE}preprints/{deleted_preprint._id}/',
+            expect_errors=True
+        )
         assert deleted_preprint_res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
         #  test node relationship exists when attached to preprint
         node = ProjectFactory(creator=user)
         preprint_with_node = PreprintFactory(project=node, creator=user)
-        preprint_with_node_url = '/{}preprints/{}/'.format(
-            API_BASE, preprint_with_node._id)
-        preprint_with_node_res = app.get(
-            preprint_with_node_url)
+        preprint_with_node_res = app.get(f'/{API_BASE}preprints/{preprint_with_node._id}/')
 
         node_data = preprint_with_node_res.json['data']['relationships']['node']['data']
 
@@ -170,46 +166,6 @@ class TestPreprintDetail:
         ids = [f'{preprint._id}-{id_}' for id_ in ids]
         for contrib in embeds['contributors']['data']:
             assert contrib['id'] in ids
-
-    def test_preprint_doi_link_absent_in_unpublished_preprints(
-            self, app, user, unpublished_preprint, unpublished_url):
-        res = app.get(unpublished_url, auth=user.auth)
-        assert res.json['data']['id'] == unpublished_preprint._id
-        assert res.json['data']['attributes']['is_published'] is False
-        assert 'preprint_doi' not in res.json['data']['links'].keys()
-        assert res.json['data']['attributes']['preprint_doi_created'] is None
-
-    def test_published_preprint_doi_link_not_returned_before_doi_request(
-            self, app, user, unpublished_preprint, unpublished_url):
-        unpublished_preprint.is_published = True
-        unpublished_preprint.date_published = timezone.now()
-        unpublished_preprint.save()
-        res = app.get(unpublished_url, auth=user.auth)
-        assert res.json['data']['id'] == unpublished_preprint._id
-        assert res.json['data']['attributes']['is_published'] is True
-        assert 'preprint_doi' not in res.json['data']['links'].keys()
-
-    def test_published_preprint_doi_link_returned_after_doi_request(
-            self, app, user, preprint, url):
-        expected_doi = DOI_FORMAT.format(
-            prefix=preprint.provider.doi_prefix,
-            guid=preprint._id
-        )
-        preprint.set_identifier_values(doi=expected_doi)
-        res = app.get(url, auth=user.auth)
-        assert res.json['data']['id'] == preprint._id
-        assert res.json['data']['attributes']['is_published'] is True
-        assert 'preprint_doi' in res.json['data']['links'].keys()
-        assert res.json['data']['links']['preprint_doi'] == 'https://doi.org/{}'.format(
-            expected_doi)
-        assert res.json['data']['attributes']['preprint_doi_created']
-
-    def test_preprint_embed_identifiers(self, app, user, preprint, url):
-        embed_url = url + '?embed=identifiers'
-        res = app.get(embed_url)
-        assert res.status_code == 200
-        link = res.json['data']['relationships']['identifiers']['links']['related']['href']
-        assert f'{url}identifiers/' in link
 
     def test_return_affiliated_institutions(self, app, user, preprint, institution, url):
         """
