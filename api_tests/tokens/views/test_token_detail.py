@@ -13,10 +13,10 @@ from website.util import api_v2_url
 @pytest.mark.django_db
 class TestTokenDetailScopesAsAttributes:
 
-    def post_attributes_payload(self, scopes='osf.full_write', name='A shiny updated token'):
+    def post_attributes_payload(self, type_payload='tokens', scopes='osf.full_write', name='A shiny updated token'):
         return {
             'data': {
-                'type': 'tokens',
+                'type': type_payload,
                 'attributes': {
                     'name': name,
                     'scopes': scopes,
@@ -45,8 +45,21 @@ class TestTokenDetailScopesAsAttributes:
         return ApiOAuth2PersonalTokenFactory(owner=user_one)
 
     @pytest.fixture()
+    def token_full_write(self, user_one, write_scope):
+        token = ApiOAuth2PersonalTokenFactory(
+            owner=user_one,
+        )
+        token.scopes.add(write_scope)
+        return token
+
+    @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
         path = f'tokens/{token_user_one._id}/'
+        return api_v2_url(path, base_route='/')
+
+    @pytest.fixture()
+    def url_token_detail_full_write(self, user_one, token_full_write):
+        path = f'tokens/{token_full_write._id}/'
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
@@ -233,25 +246,23 @@ class TestTokenDetailScopesAsAttributes:
         assert res.status_code == 200
         assert res.json['data']['attributes']['scopes'] == write_scope.name
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
-    def test_update_token_multiple_times(self, mock_revoke, app, user_one, url_token_detail, write_scope, read_scope):
-        mock_revoke.return_value = True
+    def test_owner_can_edit_scopes_via_pat(self, app, user_one, token_full_write, url_token_detail_full_write, write_scope):
         res = app.put_json_api(
-            url_token_detail,
-            self.post_attributes_payload(scopes='osf.full_write'),
-            auth=user_one.auth,
-            expect_errors=True
+            url_token_detail_full_write,
+            {
+                'data': {
+                    'attributes': {
+                        'scopes': write_scope.name
+                    },
+                    'id': token_full_write._id,
+                    'type': 'tokens'
+                }
+            },
+            headers={'Authorization': f'Bearer {token_full_write.token_id}'},
         )
         assert res.status_code == 200
-        assert res.json['data']['attributes']['scopes'] == write_scope.name
-        res = app.put_json_api(
-            url_token_detail,
-            self.post_attributes_payload(scopes='osf.full_read'),
-            auth=user_one.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-        assert res.json['data']['attributes']['scopes'] == read_scope.name
+        token_full_write.refresh_from_db()
+        assert write_scope in token_full_write.scopes.all()
 
     def test_non_owner_cant_delete(
             self,

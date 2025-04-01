@@ -59,7 +59,11 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.fixture()
     def read_scope(self):
-        return ApiOAuth2ScopeFactory()
+        return ApiOAuth2ScopeFactory(name='osf.full_read')
+
+    @pytest.fixture()
+    def private_scope(self):
+        return ApiOAuth2ScopeFactory(is_public=False)
 
     def test_owner_can_view(
             self,
@@ -328,14 +332,12 @@ class TestTokenDetailScopesAsRelationships:
             url_token_detail,
             token_user_one,
             user_one,
-            user_two
+            user_two,
+            private_scope
     ):
-        fake_scope = ApiOAuth2ScopeFactory()
-        fake_scope.is_public = False
-        fake_scope.save()
+        assert not private_scope.is_public
         nonsense_scope = self.post_payload(
-            name='A shiny invalid token',
-            scopes=fake_scope.name
+            scopes=private_scope.name
         )
         res = app.post_json_api(
             url_token_list,
@@ -377,15 +379,15 @@ class TestTokenDetailScopesAsRelationships:
             url_token_detail,
             user_one,
             app,
-            fake_scope
+            private_scope
     ):
-        nonsense_scope = self.post_payload(
+        private_scope = self.post_payload(
             name='A shiny invalid token',
-            scopes=fake_scope.name
+            scopes=private_scope.name
         )
         res = app.put_json_api(
             url_token_detail,
-            nonsense_scope,
+            private_scope,
             auth=user_one.auth,
             expect_errors=True
         )
