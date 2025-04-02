@@ -1,6 +1,8 @@
 from unittest import mock
 import pytest
 
+from api.scopes.serializers import SCOPES_RELATIONSHIP_VERSION
+from framework.auth.cas import CasResponse
 from osf_tests.factories import (
     ApiOAuth2PersonalTokenFactory,
     ApiOAuth2ScopeFactory,
@@ -54,7 +56,7 @@ class TestTokenDetailScopesAsAttributes:
 
     @pytest.fixture()
     def url_token_detail(self, user_one, token_user_one):
-        path = f'tokens/{token_user_one._id}/'
+        path = f'tokens/{token_user_one._id}/?version={SCOPES_RELATIONSHIP_VERSION}'
         return api_v2_url(path, base_route='/')
 
     @pytest.fixture()
@@ -77,7 +79,6 @@ class TestTokenDetailScopesAsAttributes:
         res = app.get(url_token_detail, auth=user_one.auth)
         assert res.status_code == 200
         assert res.json['data']['id'] == token_user_one._id
-        assert res.json['data']['attributes']['scopes'] == token_user_one.scopes.first().name
 
     def test_non_owner_cant_view(
             self,
@@ -90,14 +91,17 @@ class TestTokenDetailScopesAsAttributes:
         res = app.get(url_token_detail, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
 
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_returns_401_when_not_logged_in(
             self,
+            mock_method,
             app,
             url_token_detail,
             user_one,
             user_two,
             token_user_one
     ):
+        mock_method.return_value(True)
         res = app.get(url_token_detail, expect_errors=True)
         assert res.status_code == 401
 
@@ -129,14 +133,15 @@ class TestTokenDetailScopesAsAttributes:
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_updating_one_field_should_not_blank_others_on_patch_update(
             self,
-            mock_revoke,
+            mock_method,
             app,
-            token_user_one,
             url_token_detail,
+            token_user_one,
             user_one,
-            write_scope
+            write_scope,
+            read_scope
     ):
-        mock_revoke.return_value = True
+        mock_method.return_value(True)
         new_name = 'The token formerly known as Prince'
         res = app.patch_json_api(
             url_token_detail,
@@ -144,10 +149,20 @@ class TestTokenDetailScopesAsAttributes:
                 'data': {
                     'attributes': {
                         'name': new_name,
-                        'scopes': 'osf.full_write'
                     },
                     'id': token_user_one._id,
-                    'type': 'tokens'
+                    'type': 'tokens',
+                    'relationships': {
+                        'scopes': {
+                            'data': [
+                                {
+                                    'type': 'scopes',
+                                    'id': read_scope.name
+                                }
+                            ]
+
+                        }
+                    }
                 }
             },
             auth=user_one.auth
@@ -155,15 +170,19 @@ class TestTokenDetailScopesAsAttributes:
         token_user_one.reload()
         assert res.status_code == 200
         assert_dict_contains_subset(
-            {'owner': token_user_one.owner._id, 'name': new_name, 'scopes': f'{write_scope.name}'},
-            res.json['data']['attributes']
-        )
+            {
+                'name': new_name,
+            },
+            res.json['data']['attributes'])
         assert res.json['data']['id'] == token_user_one._id
+        assert res.json['data']['relationships']['owner']['data']['id'] == token_user_one.owner._id
+        assert len(res.json['data']['embeds']['scopes']['data']) == 1
+        assert res.json['data']['embeds']['scopes']['data'][0]['id'] == read_scope.name
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_updating_an_instance_does_not_change_the_number_of_instances(
             self,
-            mock_revoke,
+            mock_method,
             app,
             url_token_detail,
             url_token_list,
@@ -171,7 +190,7 @@ class TestTokenDetailScopesAsAttributes:
             user_one,
             write_scope
     ):
-        mock_revoke.return_value = True
+        mock_method.return_value(True)
         res = app.patch_json_api(
             url_token_detail,
             {
@@ -207,23 +226,21 @@ class TestTokenDetailScopesAsAttributes:
         token_user_one.reload()
         assert not token_user_one.is_active
 
-    def test_read_does_not_return_token_id(
-            self, app, url_token_detail, user_one):
+    def test_read_does_not_return_token_id(self, app, url_token_detail, user_one):
         res = app.get(url_token_detail, auth=user_one.auth)
         assert res.status_code == 200
         assert 'token_id' not in res.json['data']['attributes']
-        assert 'scopes' in res.json['data']['attributes']
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_update_token_does_not_return_token_id(
             self,
-            mock_revoke,
+            mock_method,
             app,
             url_token_detail,
             user_one,
             write_scope
     ):
-        mock_revoke.return_value = True
+        mock_method.return_value(True)
         res = app.put_json_api(
             url_token_detail,
             self.post_attributes_payload(scopes='osf.full_write'),
@@ -232,26 +249,55 @@ class TestTokenDetailScopesAsAttributes:
         )
         assert res.status_code == 200
         assert 'token_id' not in res.json['data']['attributes']
-        assert res.json['data']['attributes']['scopes'] == write_scope.name
 
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
-    def test_update_token(self, mock_revoke, app, user_one, url_token_detail, write_scope):
-        mock_revoke.return_value = True
+    def test_update_token(
+            self,
+            mock_method,
+            app,
+            user_one,
+            token_user_one,
+            url_token_detail,
+            write_scope,
+    ):
+        mock_method.return_value(True)
         res = app.put_json_api(
             url_token_detail,
-            self.post_attributes_payload(scopes='osf.full_write'),
+            self.post_attributes_payload(scopes=write_scope.name),
             auth=user_one.auth,
             expect_errors=True
         )
         assert res.status_code == 200
-        assert res.json['data']['attributes']['scopes'] == write_scope.name
+        assert res.json['data']['relationships']['scopes']
+        token_user_one.reload()
+        assert token_user_one.scopes.all().first().name == write_scope.name
 
-    def test_owner_can_edit_scopes_via_pat(self, app, user_one, token_full_write, url_token_detail_full_write, write_scope):
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_owner_can_edit_scopes_via_pat(
+            self,
+            mock_cas,
+            mock_method,
+            app,
+            user_one,
+            token_user_one,
+            token_full_write,
+            url_token_detail,
+            write_scope
+    ):
+        mock_method.return_value(True)
+        mock_cas.return_value = CasResponse(
+            authenticated=True,
+            user=user_one._id,
+            attributes={'accessTokenScope': [write_scope.name,]}
+        )
+
         res = app.put_json_api(
-            url_token_detail_full_write,
+            url_token_detail,
             {
                 'data': {
                     'attributes': {
+                        'name': token_user_one.name,
                         'scopes': write_scope.name
                     },
                     'id': token_full_write._id,
