@@ -615,6 +615,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def institutions_relationship_url(self):
         return self.absolute_api_v2_url + 'relationships/institutions/'
 
+    @property
+    def callbacks_url(self):
+        return self.absolute_api_v2_url + 'callbacks/'
+
     # For Comment API compatibility
     @property
     def target_type(self):
@@ -663,6 +667,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def api_url_for(self, view_name, _absolute=False, *args, **kwargs):
         return api_url_for(view_name, pid=self._primary_key, _absolute=_absolute, *args, **kwargs)
+
+    def api_v2_url_for(self, path_str, params=None, **kwargs):
+        return api_url_for(path_str, params=params, **kwargs)
 
     @property
     def project_or_component(self):
