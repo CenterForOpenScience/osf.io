@@ -1716,14 +1716,6 @@ def make_url_map(app):
             json_renderer,
         ),
         Rule(
-            [
-                '/registration/<pid>/callbacks/',
-            ],
-            'put',
-            project_views.register.registration_callbacks,
-            json_renderer,
-        ),
-        Rule(
             '/settings/addons/',
             'post',
             profile_views.user_choose_addons,
