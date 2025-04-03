@@ -22,15 +22,15 @@ class TestRegistrationCallbacks:
     @pytest.fixture()
     def payload(self):
         return {
-            "action": "copy",
-            "destination": {
-                "name": "Archive of OSF Storage",
+            'action': 'copy',
+            'destination': {
+                'name': 'Archive of OSF Storage',
             },
-            "errors": None,
-            "source": {
-                "provider": "osfstorage",
+            'errors': None,
+            'source': {
+                'provider': 'osfstorage',
             },
-            "time": time.time() + 1000
+            'time': time.time() + 1000
         }
 
     def sign_payload(self, payload):
