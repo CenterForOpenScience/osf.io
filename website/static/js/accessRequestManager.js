@@ -18,7 +18,7 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
     self.options = options;
     $.extend(self, accessRequest);
 
-    self.permission = ko.observable(accessRequest.permission);
+    self.permission = ko.observable(accessRequest.requested_permissions || 'read');
     self.requested_permissions = ko.observable(accessRequest.requested_permissions || 'read');
 
     self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);

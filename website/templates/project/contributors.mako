@@ -399,7 +399,6 @@
                     optionsText: optionsText.bind(permission)"
                 >
                 </select>
-                <span data-bind="text: permissionText()"></span>
             </div>
         </td>
         <td>
