@@ -1088,6 +1088,6 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
             registration.save()
             signals.archive_fail.send(
                 registration,
-                errors=[str(e)]
+                errors=[str(e)],
             )
             return Response(status=status.HTTP_200_OK)
