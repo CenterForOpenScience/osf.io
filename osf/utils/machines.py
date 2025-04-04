@@ -211,9 +211,7 @@ class NodeRequestMachine(BaseMachine):
 
         if ev.event.name == DefaultTriggers.ACCEPT.value:
             if not self.machineable.target.is_contributor(self.machineable.creator):
-                contributor_permissions = (
-                    ev.kwargs.get('permissions') or self.machineable.requested_permissions or permissions.READ
-                )
+                contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
                 make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
                 visible = False if make_curator else ev.kwargs.get('visible', True)
                 try:
