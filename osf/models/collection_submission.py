@@ -2,6 +2,7 @@ import logging
 
 from django.db import models
 from django.utils.functional import cached_property
+from framework import sentry
 from framework.exceptions import PermissionsError
 
 from .base import BaseModel
@@ -336,9 +337,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not self.guid.referent.is_public:
             self.guid.referent.set_privacy('public')
 
-    def _remove_from_search(self, event_data):
-        self.remove_from_index()
-
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
@@ -382,24 +380,31 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         path = f'/collections/{self.collection._id}/collection_submissions/{self.guid._id}/'
         return api_v2_url(path)
 
-    def update_index(self):
+    def update_search(self):
         if self.collection.is_public:
+            from api.share.utils import update_share
             from website.search.search import update_collected_metadata
+
+            # It will automatically determine if a referent is part of the collection
+            update_share(self.guid.referent)
+
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
                 logger.exception(e)
+                sentry.log_exception(e)
 
-    def remove_from_index(self):
+    def remove_from_index(self, *_):
         from website.search.search import update_collected_metadata
         try:
             update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
+            sentry.log_exception(e)
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
-        self.update_index()
+        self.update_search()
         return ret
 
 
