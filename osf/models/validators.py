@@ -390,6 +390,18 @@ class RegistrationResponsesValidator:
                 'type': 'string',
                 'description': question_text,
             }
+        elif question.block_type == 'single-select-pulldown-input':
+            # allow any option
+            return {
+                'type': 'string',
+                'description': question_text,
+            }
+        elif question.block_type == 'pulldown-input':
+            # allow any option
+            return {
+                'type': 'string',
+                'description': question_text,
+            }
         elif question.block_type == 'multi-select-input':
             return {
                 'type': 'array',
@@ -418,8 +430,10 @@ class RegistrationResponsesValidator:
                                      'e-rad-researcher-name-en-input',
                                      'e-rad-bunnya-input',
                                      'file-metadata-input', 'date-input',
+                                     'ad-metadata-input', 'date-input',
                                      'file-capacity-input', 'file-creators-input',
                                      'file-data-number-input',
+                                     'file-title-input',
                                      'file-url-input', 'file-institution-ja-input',
                                      'file-institution-en-input',
                                      'file-institution-id-input',

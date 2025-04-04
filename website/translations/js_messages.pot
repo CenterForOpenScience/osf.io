@@ -240,11 +240,11 @@ msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:235
 #: addons/metadata/static/metadata-fields.js:244
-msgid "Show example"
+msgid "Show Items"
 msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:248
-msgid "Hide example"
+msgid "Hide Items"
 msgstr ""
 
 #: addons/metadata/static/metadata-fields.js:583
@@ -319,6 +319,10 @@ msgstr ""
 
 #: addons/metadata/static/metadataNodeConfig.js:162
 msgid "Failed to configure add-on settings."
+msgstr ""
+
+#: addons/metadata/static/metadata-fields.js:1187
+msgid "File size exceeds the maximum allowed size."
 msgstr ""
 
 #: addons/twofactor/static/twoFactorUserConfig.js:148

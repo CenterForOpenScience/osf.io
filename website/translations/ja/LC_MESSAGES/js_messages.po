@@ -177,6 +177,14 @@ msgid ""
 "can break the association of the metadata you have added."
 msgstr "ファイルのリネーム、ファイルやディレクトリの移動、ディレクトリ階層の変更を行うと、入力したメタデータの関連付けが解除される場合があります。"
 
+#: addons/metadata/static/files.js:245
+msgid "Hide Items"
+msgstr "項目を非表示"
+
+#: addons/metadata/static/files.js:248
+msgid "Show Items"
+msgstr "項目を表示"
+
 #: addons/metadata/static/files.js:2177
 msgid "Edit File Metadata"
 msgstr "ファイルメタデータの編集"
