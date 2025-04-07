@@ -585,6 +585,37 @@ class TestDraftRegistrationContributorMethods():
             )
         assert str(exc_info.value) == f"{admin_user.fullname} is the only admin."
 
+    def test_remove_admin_permission(self, draft_registration, auth):
+        admin_user = auth.user
+        assert len(draft_registration.contributors) == 1
+        assert draft_registration.has_permission(admin_user, ADMIN) is True
+
+        new_contrib = factories.AuthUserFactory()
+        draft_registration.add_contributor(new_contrib, permissions=ADMIN, auth=auth)
+        assert draft_registration.has_permission(new_contrib, ADMIN) is True
+
+        # cannot remove self admin permission
+        with pytest.raises(DraftRegistrationStateError) as exc_info:
+            draft_registration.update_contributor(
+                admin_user,
+                WRITE,
+                draft_registration.get_visible(admin_user),
+                auth=auth,
+            )
+        assert str(exc_info.value) == (
+            'You cannot change your permission setting at this time. '
+            'Have another admin contributor edit your permission after you’ve submitted your preprint'
+        )
+
+        # but it should be possible to remove others admin permission
+        draft_registration.update_contributor(
+            admin_user,
+            WRITE,
+            draft_registration.get_visible(admin_user),
+            auth=Auth(new_contrib),
+        )
+        assert draft_registration.has_permission(admin_user, ADMIN) is False
+
     def test_update_contributor_non_admin_raises_error(self, draft_registration, auth):
         non_admin = factories.AuthUserFactory()
         draft_registration.add_contributor(
