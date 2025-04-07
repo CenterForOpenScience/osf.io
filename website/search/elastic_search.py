@@ -602,6 +602,7 @@ def serialize_collection_submission(collection_submission):
         'studyDesign': collection_submission.study_design,
         'disease': collection_submission.disease,
         'dataType': collection_submission.data_type,
+        'gradeLevels': collection_submission.grade_levels,
         'subjects': list(collection_submission.subjects.values_list('text', flat=True)),
         'title': getattr(obj, 'title', ''),
         'url': getattr(obj, 'url', ''),

@@ -57,6 +57,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
     study_design_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     disease_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     data_type_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
+    grade_levels_choices = ArrayField(models.CharField(max_length=127), blank=True, default=list)
     is_public = models.BooleanField(default=False, db_index=True)
     is_promoted = models.BooleanField(default=False, db_index=True)
     is_bookmark_collection = models.BooleanField(default=False, db_index=True)
@@ -161,8 +162,9 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         return user.has_perms(self.groups[perm], self)
 
     def collect_object(
-            self, obj, collector, collected_type=None, status=None, volume=None, issue=None,
-            program_area=None, school_type=None, study_design=None, data_type=None, disease=None):
+            self, obj, collector, collected_type=None, status=None, volume=None,
+            issue=None, program_area=None, school_type=None, study_design=None,
+            data_type=None, disease=None, grade_levels=None):
         """ Adds object to collection, creates CollectionSubmission reference
             Performs type / metadata validation. User permissions checked in view.
 
@@ -181,6 +183,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
         study_design = study_design or ''
         data_type = data_type or ''
         disease = disease or ''
+        grade_levels = grade_levels or ''
 
         if not self.collected_type_choices and collected_type:
             raise ValidationError('May not specify "type" for this collection')
@@ -236,6 +239,12 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             elif data_type not in self.data_type_choices:
                 raise ValidationError(f'"{data_type}" is not an acceptable "data_type" for this collection')
 
+        if grade_levels:
+            if not self.grade_levels_choices:
+                raise ValidationError('May not specify "grade_levels" for this collection')
+            elif grade_levels not in self.grade_levels_choices:
+                raise ValidationError(f'"{grade_levels}" is not an acceptable "grade_levels" for this collection')
+
         if not any([isinstance(obj, t.model_class()) for t in self.collected_types.all()]):
             # Not all objects have a content_type_pk, have to look the other way.
             # Ideally, all objects would, and we could do:
@@ -266,6 +275,7 @@ class Collection(DirtyFieldsMixin, GuidMixin, BaseModel, GuardianMixin):
             collection_submission.study_design = study_design
             collection_submission.data_type = data_type
             collection_submission.disease = disease
+            collection_submission.grade_levels = grade_levels
             collection_submission.save()
 
             return collection_submission
