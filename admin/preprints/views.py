@@ -43,6 +43,7 @@ from osf.models.admin_log_entry import (
 )
 from osf.utils.workflows import DefaultStates
 from website import search
+from website.preprints.tasks import on_preprint_updated
 
 
 class PreprintMixin(PermissionRequiredMixin):
@@ -559,6 +560,7 @@ class PreprintMakePublishedView(PreprintMixin, View):
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.set_published(True, request, True, True)
+        on_preprint_updated.apply_async(kwargs={'preprint_id': preprint._id})
         return redirect(self.get_success_url())
 
 class PreprintUnwithdrawView(PreprintMixin, View):
