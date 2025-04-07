@@ -1,11 +1,13 @@
 from rest_framework import status as http_status
 import logging
+from flask import request
+import waffle
 
 from django.db import transaction, connection
 from django.contrib.contenttypes.models import ContentType
 
 from framework.auth import get_or_create_user
-from framework.exceptions import HTTPError
+from framework.exceptions import HTTPError, ServiceDiscontinuedError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 from osf import features
@@ -14,7 +16,7 @@ from website import settings
 from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.ember_osf_web.decorators import ember_flag_is_active
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
+from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
 from website.mails import send_mail
 from website.util import web_url_for
 from website.util.metrics import CampaignSourceTags
@@ -27,6 +29,17 @@ def meeting_hook():
     """View function for email conference submission.
     """
     message = ConferenceMessage()
+
+    if waffle.flag_is_active(request, features.DISABLE_MEETINGS):
+        send_mail(
+            message.sender_email,
+            CONFERENCE_DEPRECATION,
+            fullname=message.sender_display,
+            support_email=settings.OSF_SUPPORT_EMAIL,
+            can_change_preferences=False,
+            logo=settings.OSF_MEETINGS_LOGO,
+        )
+        raise ServiceDiscontinuedError()
 
     try:
         message.verify()

@@ -333,6 +333,10 @@ CONFERENCE_FAILED = Mail(
     'conference_failed',
     subject='OSF Error: No files attached',
 )
+CONFERENCE_DEPRECATION = Mail(
+    'conference_deprecation',
+    subject='Meeting Service Discontinued',
+)
 
 DIGEST = Mail(
     'digest', subject='OSF Notifications',

@@ -1,6 +1,6 @@
 {% load node_extras %}
 
-{% if embargo %}
+{% if is_registration %}
     <tr>
         <td>Embargo</td>
         <td>
@@ -26,9 +26,9 @@
                         <td>Embargo End</td>
                         <td>
                             <form id="embargo-update-form" class="row">
-                                <div class="form-group row">
+                                <div>
                                     {% csrf_token %}
-                                    <div class="col-sm-1">
+                                    <div class="col-sm-3">
                                         <input id='datepicker' type='datetime' name="date" class="form-control" value='{{ embargo.end_date | date:"F j, Y P" }}' />
                                     </div>
                                     <div class="col-sm-1">
@@ -36,6 +36,7 @@
                                     </div>
                                 </div>
                             </form>
+                            <p id="date-validation"></p>
                         </td>
                     </tr>
                     <tr>
@@ -44,7 +45,9 @@
                     </tr>
                     <tr>
                         <td>Initiated by</td>
+                        {% if embargo %}
                         <td><a href="{{ embargo.initiated_by | reverse_user }}">{{ embargo.initiated_by }}</a></td>
+                        {% endif %}
                     </tr>
                     <tr>
                         <td>Approval State</td>

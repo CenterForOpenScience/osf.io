@@ -10,6 +10,7 @@ from celery.utils.log import get_task_logger
 from framework.celery_tasks import app as celery_app
 from framework.celery_tasks.utils import logged
 from framework.exceptions import HTTPError
+from framework import sentry
 
 from api.base.utils import waterbutler_api_url_for
 from api.waffle.utils import flag_is_active
@@ -51,23 +52,25 @@ def create_app_context():
 logger = get_task_logger(__name__)
 
 class ArchiverSizeExceeded(Exception):
-    def __init__(self, result, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    def __init__(self, result):
         self.result = result
+        super().__init__(result)
 
 
 class ArchiverStateError(Exception):
-    def __init__(self, info, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+
+    def __init__(self, info):
         self.info = info
+        super().__init__(info)
 
 
 class ArchivedFileNotFound(Exception):
-    def __init__(self, registration, missing_files, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
+    def __init__(self, registration, missing_files):
         self.draft_registration = DraftRegistration.objects.get(registered_node=registration)
         self.missing_files = missing_files
+        super().__init__(registration, missing_files)
 
 
 class ArchiverTask(celery.Task):
@@ -78,15 +81,19 @@ class ArchiverTask(celery.Task):
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         job = ArchiveJob.load(kwargs.get('job_pk'))
         if not job:
-            raise ArchiverStateError({
+            archiver_state_exc = ArchiverStateError({
                 'exception': exc,
                 'args': args,
                 'kwargs': kwargs,
                 'einfo': einfo,
             })
+            sentry.log_exception(archiver_state_exc)
+            raise archiver_state_exc
+
         if job.status == ARCHIVER_FAILURE:
             # already captured
             return
+
         src, dst, user = job.info()
         errors = []
         if isinstance(exc, ArchiverSizeExceeded):
@@ -107,8 +114,19 @@ class ArchiverTask(celery.Task):
             }
         else:
             dst.archive_status = ARCHIVER_UNCAUGHT_ERROR
-            errors = [einfo] if einfo else []
+            errors = [str(einfo)] if einfo else []
         dst.save()
+
+        sentry.log_message(
+            'An error occured while archiving node',
+            extra_data={
+                'source node guid': src._id,
+                'registration node guid': dst._id,
+                'task_id': task_id,
+                'errors': errors,
+            },
+        )
+
         archiver_signals.archive_fail.send(dst, errors=errors)
 
 def get_addon_from_gv(src_node, addon_name, requesting_user):

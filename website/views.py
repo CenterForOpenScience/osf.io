@@ -333,6 +333,9 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
         return use_ember_app()
 
+    elif isinstance(resource, Registration) and clean_suffix and (clean_suffix.startswith('recent-activity')):
+        return use_ember_app()
+
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('files') and flag_is_active(request, features.EMBER_PROJECT_FILES):
         return use_ember_app()
 
