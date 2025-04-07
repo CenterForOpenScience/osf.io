@@ -7,6 +7,7 @@ import logging
 import requests
 from django.db.models import QuerySet
 
+from .exceptions import CrossRefRateLimitError
 from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
@@ -247,7 +248,7 @@ class CrossRefClient(AbstractIdentifierClient):
             logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
-            requests.post(
+            response = requests.post(
                 self._build_url(
                     operation='doMDUpload',
                     login_id=username,
@@ -256,11 +257,12 @@ class CrossRefClient(AbstractIdentifierClient):
                 ),
                 files={'file': (f'{preprint._id}.xml', metadata)},
             )
+            if response.status_code == 429:
+                raise CrossRefRateLimitError(response.text)
 
-            # Don't wait for response to confirm doi because it arrives via email.
             return {'doi': doi}
-        else:
-            raise NotImplementedError()
+
+        raise NotImplementedError()
 
     def update_identifier(self, preprint, category):
         return self.create_identifier(preprint, category)

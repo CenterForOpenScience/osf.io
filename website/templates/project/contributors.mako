@@ -395,11 +395,10 @@
                 <div class="td-content" data-bind="visible: !$root.collapsed() ||  accessRequest.expanded()">
                 <select class="form-control input-sm" data-bind="
                     options: $parents[0].permissionList,
-                    value: requested_permissions,
+                    value: permission,
                     optionsText: optionsText.bind(permission)"
                 >
                 </select>
-                <span data-bind="text: permissionText()"></span>
             </div>
         </td>
         <td>
@@ -429,7 +428,10 @@
         <td data-bind="css: {'add-remove': !$root.collapsed()}">
             <div class="td-content" data-bind="visible: !$root.collapsed() || accessRequest.expanded()">
                 <button class="btn btn-success btn-sm m-l-md request-accept-button"
-                       data-bind="click: function() {respondToAccessRequest('accept')}"
+                       data-bind="click: function() {respondToAccessRequest('accept', {
+                           permissions: permission(),
+                           visible: visible()
+                       })}"
                 ><i class="fa fa-plus"></i> Add</button>
                 <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
                 <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>

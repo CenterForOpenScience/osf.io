@@ -277,7 +277,7 @@ def ember_app(path=None):
                     if guid_str:
                         preprint = Preprint.load(guid_str)
                         if preprint and preprint._id != guid_str:
-                            return redirect(preprint._id, code=302)
+                            return redirect(f"{settings.DOMAIN}preprints/{path_values[0]}/{preprint._id}", code=302)
                 # For all other cases, let ember app handle it
                 ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break

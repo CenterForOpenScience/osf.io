@@ -2,6 +2,7 @@ from dateutil.parser import isoparse
 from django.views.generic import TemplateView, View
 from django.contrib import messages
 from django.http import HttpResponse
+from django.utils import timezone
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 from osf.management.commands.manage_switch_flags import manage_waffle
@@ -9,6 +10,7 @@ from osf.management.commands.update_registration_schemas import update_registrat
 from osf.management.commands.daily_reporters_go import daily_reporters_go
 from osf.management.commands.monthly_reporters_go import monthly_reporters_go
 from osf.management.commands.fetch_cedar_metadata_templates import ingest_cedar_metadata_templates
+from osf.management.commands.sync_doi_metadata import sync_doi_metadata, sync_doi_empty_metadata_dataarchive_registrations
 from scripts.find_spammy_content import manage_spammy_content
 from django.urls import reverse
 from django.shortcuts import redirect
@@ -137,8 +139,33 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
             messages.success(request, 'Monthly reporters successfully went.')
         return redirect(reverse('management:commands'))
 
+
 class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
     def post(self, request):
         ingest_cedar_metadata_templates()
         messages.success(request, 'Cedar templates have been successfully imported from Cedar Workbench.')
+        return redirect(reverse('management:commands'))
+
+
+class BulkResync(ManagementCommandPermissionView):
+
+    def post(self, request):
+        sync_doi_metadata.apply_async(kwargs={
+            'modified_date': timezone.now(),
+            'batch_size': None,
+            'dry_run': False
+        })
+        messages.success(request, 'Resyncing with CrossRef and DataCite! It will take some time.')
+        return redirect(reverse('management:commands'))
+
+
+class EmptyMetadataDataarchiveRegistrationBulkResync(ManagementCommandPermissionView):
+
+    def post(self, request):
+        sync_doi_empty_metadata_dataarchive_registrations.apply_async(kwargs={
+            'modified_date': timezone.now(),
+            'batch_size': None,
+            'dry_run': False
+        })
+        messages.success(request, 'Resyncing with DataCite! It will take some time.')
         return redirect(reverse('management:commands'))
