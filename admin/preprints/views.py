@@ -18,6 +18,7 @@ from admin.nodes.views import NodeRemoveContributorView
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
+from api.providers.workflows import Workflows
 
 from osf.exceptions import PreprintStateError
 
@@ -560,7 +561,9 @@ class PreprintMakePublishedView(PreprintMixin, View):
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         preprint.set_published(True, request, True, True)
-        on_preprint_updated.apply_async(kwargs={'preprint_id': preprint._id})
+        if preprint.provider and preprint.provider.reviews_workflow == Workflows.POST_MODERATION.value:
+            on_preprint_updated.apply_async(kwargs={'preprint_id': preprint._id})
+
         return redirect(self.get_success_url())
 
 class PreprintUnwithdrawView(PreprintMixin, View):
