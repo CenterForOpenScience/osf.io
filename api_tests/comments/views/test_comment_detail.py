@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from addons.wiki.tests.factories import WikiFactory
 from api.base.settings.defaults import API_BASE
-from api.base.settings import osf_settings
+from website import settings as osf_settings
 from api_tests import utils as test_utils
 from framework.auth import core
 from osf.models import Guid
