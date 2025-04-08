@@ -535,6 +535,7 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
     def get_serializer_context(self):
         context = JSONAPIBaseView.get_serializer_context(self)
         context['resource'] = self.get_preprint()
+        context['user'] = self.get_user()
         context['default_email'] = 'preprint'
         return context
 

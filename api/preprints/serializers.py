@@ -626,18 +626,18 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
 
-    def update(self, instance, validated_data):
+    def validate_permission(self, value):
         preprint = self.context.get('resource')
+        user = self.context.get('user')
         if (
             preprint.machine_state == DefaultStates.INITIAL.value
-            and preprint.creator_id == instance.user.id
-            and 'permission' in validated_data
+            and preprint.creator_id == user.id
         ):
             raise ValidationError(
                 'You cannot change your permission setting at this time. '
                 'Have another admin contributor edit your permission after you’ve submitted your preprint',
             )
-        return super().update(instance, validated_data)
+        return value
 
 
 class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
