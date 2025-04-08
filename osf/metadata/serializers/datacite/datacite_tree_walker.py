@@ -113,6 +113,7 @@ class DataciteTreeWalker:
         self._visit_rights(self.root)
         self._visit_descriptions(self.root, self.basket.focus.iri)
         self._visit_funding_references(self.root)
+        self._visit_verified_links(self.root)
         self._visit_related(self.root)
 
     def _visit_identifier(self, parent_el, *, doi_override=None):
@@ -432,3 +433,20 @@ class DataciteTreeWalker:
             if isinstance(type_term, rdflib.URIRef) and type_term.startswith(DATACITE):
                 return without_namespace(type_term, DATACITE)
         return 'Text'
+
+    def _visit_verified_links(self, parent_el):
+        osf_item = self.basket.focus.dbmodel
+        verified_links = getattr(osf_item, 'verified_links', None)
+        resource_type = getattr(osf_item, 'link_resource_type', 'Text')
+
+        if verified_links and isinstance(verified_links, list):
+            related_identifiers_el = self.visit(parent_el, 'relatedIdentifiers', is_list=True)
+            for link in verified_links:
+                if link and isinstance(link, str) and smells_like_iri(link):
+                    self.visit(related_identifiers_el, 'relatedIdentifier', text=link, attrib={
+                        'relatedIdentifierType': 'URL',
+                        'relationType': 'IsReferencedBy',
+                        'resourceTypeGeneral': resource_type
+                    })
+                else:
+                    logger.warning('skipping non-URL verified link "%s"', link)
