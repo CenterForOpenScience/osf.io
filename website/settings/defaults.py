@@ -282,7 +282,6 @@ MISSING_FILE_NAME = 'untitled'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
-POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
 MAX_POPULAR_PROJECTS = 10
@@ -419,7 +418,6 @@ class CeleryConfig:
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
@@ -515,7 +513,6 @@ class CeleryConfig:
         'website.search.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
@@ -626,11 +623,6 @@ class CeleryConfig:
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-                'kwargs': {'dry_run': False}
-            },
-            'update_popular_nodes': {
-                'task': 'scripts.populate_popular_projects_and_registrations',
-                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'registration_schema_metrics': {

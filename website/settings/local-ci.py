@@ -84,7 +84,6 @@ locals().setdefault('ENABLE_VARNISH', os.environ.get('ENABLE_VARNISH') == 'True'
 
 NEW_AND_NOTEWORTHY_LINKS_NODE = 'helloo'
 POPULAR_LINKS_NODE = 'hiyah'
-POPULAR_LINKS_REGISTRATIONS = 'woooo'
 
 logging.getLogger('celery.app.trace').setLevel(logging.FATAL)
 
