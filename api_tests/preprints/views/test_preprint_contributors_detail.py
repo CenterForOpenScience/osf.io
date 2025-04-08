@@ -1022,6 +1022,33 @@ class TestPreprintContributorPartialUpdate:
         assert preprint.get_permissions(user_read_contrib) == [permissions.READ]
         assert not preprint.get_visible(user_read_contrib)
 
+    def test_patch_admin_self_initial_preprint(self, app, user, preprint):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint,
+            creator=user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+
+        contrib_id = f'{new_version._id}-{user._id}'
+        data = {
+            'data': {
+                'id': contrib_id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.WRITE,
+                    'bibliographic': True
+                }
+            }
+        }
+        url = f'/{API_BASE}preprints/{new_version._id}/contributors/{user._id}/'
+        res = app.patch_json_api(url, data, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+
+        new_version.reload()
+        assert permissions.ADMIN in new_version.get_permissions(user)
+
 
 @pytest.mark.django_db
 class TestPreprintContributorDelete:
@@ -1189,6 +1216,28 @@ class TestPreprintContributorDelete:
 
             preprint.reload()
             assert user not in preprint.contributors
+
+    def test_remove_self_creator_not_unique_admin_initial_preprint(
+            self, app, user, user_write_contrib, preprint):
+        new_version = PreprintFactory.create_version(
+            create_from=preprint,
+            creator=user,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+
+        new_version.add_permission(
+            user_write_contrib,
+            permissions.ADMIN,
+            save=True
+        )
+        assert len(new_version.contributors) == 2
+        assert new_version.creator_id == user.id
+
+        url = f'/{API_BASE}preprints/{new_version._id}/contributors/{user._id}/'
+        res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
 
     # @assert_logs(PreprintLog.CONTRIB_REMOVED, 'preprint')
     def test_can_remove_self_as_contributor_not_unique_admin(

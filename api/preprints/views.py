@@ -538,6 +538,22 @@ class PreprintContributorDetail(PreprintOldVersionsImmutableMixin, NodeContribut
         context['default_email'] = 'preprint'
         return context
 
+    def patch(self, request, *args, **kwargs):
+        preprint = self.get_resource()
+        user = self.get_user()
+
+        if (
+            preprint.machine_state == DefaultStates.INITIAL.value
+            and preprint.creator_id == user.id
+            and 'permission' in request.data
+        ):
+            raise ValidationError(
+                'You cannot change your permission setting at this time. '
+                'Have another admin contributor edit your permission after you’ve submitted your preprint',
+            )
+
+        return super().patch(request, *args, **kwargs)
+
     def perform_destroy(self, instance):
         preprint = self.get_resource()
         auth = get_user_auth(self.request)

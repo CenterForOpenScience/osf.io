@@ -1657,13 +1657,6 @@ class ContributorMixin(models.Model):
                 if (admin == user or getattr(admin, 'user', None) == user) and ADMIN != permission:
                     error_msg = f'{user.fullname} is the only admin.'
                     raise self.state_error(error_msg)
-            else:
-                if user.id == auth.user.id:
-                    error_msg = (
-                        'You cannot change your permission setting at this time. '
-                        'Have another admin contributor edit your permission after you’ve submitted your preprint'
-                    )
-                    raise self.state_error(error_msg)
             if not self.contributor_set.filter(user=user).exists():
                 raise ValueError(
                     f'User {user.fullname} not in contributors'
