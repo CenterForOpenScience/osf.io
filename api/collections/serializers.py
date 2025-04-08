@@ -76,6 +76,10 @@ class CollectionSerializer(JSONAPISerializer):
         child=ser.CharField(max_length=127),
         default=list(),
     )
+    grade_levels_choices = ser.ListField(
+        child=ser.CharField(max_length=127),
+        default=list(),
+    )
 
     links = LinksField({})
 
@@ -251,6 +255,7 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
     study_design = ser.CharField(required=False)
     data_type = ser.CharField(required=False)
     disease = ser.CharField(required=False)
+    grade_levels = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -286,6 +291,8 @@ class CollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPISerial
             obj.data_type = validated_data.pop('data_type')
         if 'disease' in validated_data:
             obj.disease = validated_data.pop('disease')
+        if 'grade_levels' in validated_data:
+            obj.grade_levels = validated_data.pop('grade_levels')
 
         obj.save()
         return obj
@@ -353,6 +360,7 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
     study_design = ser.CharField(required=False)
     date_type = ser.CharField(required=False)
     disease = ser.CharField(required=False)
+    grade_levels = ser.CharField(required=False)
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
@@ -388,6 +396,8 @@ class LegacyCollectionSubmissionSerializer(TaxonomizableSerializerMixin, JSONAPI
             obj.data_type = validated_data.pop('data_type')
         if 'disease' in validated_data:
             obj.disease = validated_data.pop('disease')
+        if 'grade_levels' in validated_data:
+            obj.grade_levels = validated_data.pop('grade_levels')
 
         obj.save()
         return obj

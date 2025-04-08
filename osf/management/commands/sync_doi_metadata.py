@@ -5,8 +5,6 @@ import logging
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
-from datacite.errors import DataCiteServerError
-from website.identifiers.clients.exceptions import CrossRefRateLimitError
 from osf.models import GuidMetadataRecord, Identifier, Registration
 from framework.celery_tasks import app
 
@@ -23,21 +21,9 @@ def sync_identifier_doi(identifier_id):
         identifier.referent.request_identifier_update('doi')
         identifier.save()
         logger.info(f'Doi update for {identifier.value} complete')
-        return
-    except CrossRefRateLimitError as err:
-        logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {err}')
-    except DataCiteServerError as err:
-        # the first param is status code, the second one is text
-        # see create_identifier.metadata_post call in datacite.py
-        status_code, text = err.args
-        if status_code == 429:
-            logger.warning(f'Doi update for {identifier.value} failed because of rate limit: {text}')
-        else:
-            logger.warning(f'Doi update for {identifier.value} failed. Error: {text}')
     except Exception as err:
-        logger.warning(f'Doi update for {identifier.value} failed because of an unexpected error: {err}')
-
-    time.sleep(RATE_LIMIT_RETRY_DELAY)
+        logger.warning(f'[{err.__class__.__name__}] Doi update for {identifier.value} failed because of error: {err}')
+        sync_identifier_doi.retry(exc=err, countdown=RATE_LIMIT_RETRY_DELAY)
 
 
 @app.task(name='osf.management.commands.sync_doi_metadata_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)

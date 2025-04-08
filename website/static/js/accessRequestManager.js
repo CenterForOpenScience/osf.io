@@ -18,7 +18,8 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
     self.options = options;
     $.extend(self, accessRequest);
 
-    self.permission = ko.observable(accessRequest.permission);
+    self.permission = ko.observable(accessRequest.requested_permissions || 'read');
+    self.requested_permissions = ko.observable(accessRequest.requested_permissions || 'read');
 
     self.permissionText = ko.observable(self.options.permissionMap[self.permission()]);
 
@@ -62,7 +63,7 @@ var AccessRequestModel = function(accessRequest, pageOwner, isRegistration, isPa
         $osf.trackClick('button', 'click', trigger + '-project-access');
         $osf.block();
         var requestUrl = $osf.apiV2Url('actions/requests/nodes/');
-        var payload = self.requestAccessPayload(trigger, self.permission(), self.visible());
+        var payload = self.requestAccessPayload(trigger, data.permissions, data.visible);
         var request = $osf.ajaxJSON(
             'POST',
             requestUrl,
