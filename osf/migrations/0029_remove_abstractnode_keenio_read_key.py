@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0027_alter_guidversionsthrough_object_id'),
+        ('osf', '0028_collection_grade_levels_choices_and_more'),
     ]
 
     operations = [
