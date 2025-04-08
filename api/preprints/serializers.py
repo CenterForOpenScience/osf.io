@@ -630,7 +630,8 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
         preprint = self.context.get('resource')
         user = self.context.get('user')
         if (
-            preprint.machine_state == DefaultStates.INITIAL.value
+            user  # if user is None then probably we're trying to make bulk update and this validation is not relevant
+            and preprint.machine_state == DefaultStates.INITIAL.value
             and preprint.creator_id == user.id
         ):
             raise ValidationError(
