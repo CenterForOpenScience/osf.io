@@ -1,5 +1,6 @@
 import pytest
-
+from waffle.testutils import override_flag
+from osf import features
 from addons.wiki.tests.factories import WikiFactory
 from api.base.settings import osf_settings
 from api.base.settings.defaults import API_BASE
@@ -506,6 +507,117 @@ class NodeCommentsCreateMixin:
             expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
+
+    def test_node_comments_disabled(
+            self, app, user, user_read_contrib,
+            user_non_contrib,
+            project_private_comment_private,
+            project_private_comment_public,
+            project_public_comment_public,
+            project_public_comment_private):
+
+        with override_flag(features.DISABLE_COMMENTS, active=True):
+            #   test_private_node_private_comment_level_logged_in_admin_can_comment
+            project_dict = project_private_comment_private
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_private_node_private_comment_level_logged_in_read_contributor_can_comment
+            project_dict = project_private_comment_private
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_read_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_private_node_private_comment_level_non_contributor_cannot_comment
+            project_dict = project_private_comment_private
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_non_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_private_node_private_comment_level_osf_group_member_can_comment
+            project_dict = project_private_comment_private
+            group_mem = AuthUserFactory()
+            group = OSFGroupFactory(creator=group_mem)
+            project_dict['project'].add_osf_group(group, READ)
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=group_mem.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_private_node_with_public_comment_level_admin_can_comment
+            project_dict = project_private_comment_public
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_private_node_with_public_comment_level_read_only_contributor_can_comment
+            project_dict = project_private_comment_public
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_read_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_public_project_with_public_comment_level_admin_can_comment
+            project_dict = project_public_comment_public
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_public_project_with_public_comment_level_read_only_contributor_can_comment
+            project_dict = project_public_comment_public
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_read_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_public_project_with_public_comment_level_non_contributor_can_comment
+            project_dict = project_public_comment_public
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_non_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_public_node_private_comment_level_admin_can_comment
+            project_dict = project_public_comment_private
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user.auth,
+                expect_errors=True)
+            assert res.status_code == 501
+
+            #   test_public_node_private_comment_level_read_only_contributor_can_comment
+            project_dict = project_public_comment_private
+            res = app.post_json_api(
+                project_dict['url'],
+                project_dict['payload'],
+                auth=user_read_contrib.auth,
+                expect_errors=True)
+            assert res.status_code == 501
 
 
 @pytest.mark.django_db

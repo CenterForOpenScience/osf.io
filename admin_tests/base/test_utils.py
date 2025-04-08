@@ -150,10 +150,16 @@ class TestNodeChanges(AdminTestCase):
         self.registration.reload()
         assert not self.registration.is_public
 
+        # Ensure the embargo is not marked as approved initially
+        assert not self.registration.embargo.is_approved
+
         # Update an embargo end date
         change_embargo_date(self.registration, self.user, self.date_valid2)
         assert abs(self.registration.embargo.end_date - self.date_valid2) <= delta
         assert Embargo.objects.count() == 1
+
+        # Ensure `mark_as_approved()` was applied and embargo is approved
+        assert self.registration.embargo.is_approved
 
         # Test invalid dates
         with pytest.raises(ValidationError):

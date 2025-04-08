@@ -4,7 +4,7 @@ from packaging.version import Version
 from bulk_update.helper import bulk_update
 from django.conf import settings as django_settings
 from django.db import transaction
-from django.db.models import F, Q
+from django.db.models import F, Q, When, Case
 from django.http import JsonResponse
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics
@@ -468,11 +468,17 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
     )
-    ordering = ('-modified',)
+    default_ordering = ('-modified',)
 
     # overrides NodesFilterMixin
     def get_default_queryset(self):
         return default_node_list_queryset(model_cls=self.model_class)
+
+    def get_ordering(self):
+        #  Return empty string to prevent ordering by default ordering as sorting by _order handled by get_queryset
+        if self.request.query_params.get('sort', None) == '_order':
+            return ''
+        return self.default_ordering
 
     # overrides GenericAPIView
     def get_queryset(self):
@@ -485,7 +491,11 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         auth = get_user_auth(self.request)
         node_pks = node.node_relations.filter(is_node_link=False).select_related('child')\
             .values_list('child__pk', flat=True)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by('-modified')
+        if self.request.query_params.get('sort', None) == '_order':
+            # Order by the order of the node_relations
+            order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(node_pks)])
+            return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by(order)
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link)
 
 
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
@@ -503,6 +513,7 @@ class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):
 
 
 class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
+    DEFAULT_OPERATORS = ('eq', 'ne', 'exact')
 
     ordering = ('-user__modified',)
 
@@ -533,23 +544,37 @@ class BaseContributorList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
 
     def build_query_from_field(self, field_name, operation):
         if field_name == 'permission':
-            if operation['op'] != 'eq':
-                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq'])
+            if operation['op'] not in ['eq', 'exact']:
+                raise InvalidFilterOperator(value=operation['op'], valid_operators=['eq', 'exact'])
+
             # operation['value'] should be 'admin', 'write', or 'read'
             query_val = operation['value'].lower().strip()
             if query_val not in API_CONTRIBUTOR_PERMISSIONS:
                 raise InvalidFilterValue(value=operation['value'])
             # This endpoint should only be returning *contributors* not group members
             resource = self.get_resource()
-            if query_val == READ:
-                # If read, return all contributors
-                return Q(user_id__in=resource.contributors.values_list('id', flat=True))
-            elif query_val == WRITE:
-                # If write, return members of write and admin groups, both groups have write perms
-                return Q(user_id__in=(resource.get_group(WRITE).user_set.values_list('id', flat=True) | resource.get_group(ADMIN).user_set.values_list('id', flat=True)))
-            elif query_val == ADMIN:
-                # If admin, return only members of admin group
-                return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
+            if operation['op'] == 'eq':
+                if query_val == READ:
+                    # If read, return all contributors
+                    return Q(user_id__in=resource.contributors.values_list('id', flat=True))
+                elif query_val == WRITE:
+                    # If write, return members of write and admin groups, both groups have write perms
+                    write_ids = resource.get_group(WRITE).user_set.values_list('id', flat=True)
+                    admin_ids = resource.get_group(ADMIN).user_set.values_list('id', flat=True)
+                    return Q(user_id__in=(write_ids | admin_ids))
+                elif query_val == ADMIN:
+                    # If admin, return only members of admin group
+                    return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
+            elif operation['op'] == 'exact':
+                if query_val == READ:
+                    # If read, return only members of read group
+                    return Q(user_id__in=resource.get_group(READ).user_set.values_list('id', flat=True))
+                elif query_val == WRITE:
+                    # If write, return only members of write group
+                    return Q(user_id__in=resource.get_group(WRITE).user_set.values_list('id', flat=True))
+                elif query_val == ADMIN:
+                    # If admin, return only members of admin group
+                    return Q(user_id__in=resource.get_group(ADMIN).user_set.values_list('id', flat=True))
         return super().build_query_from_field(field_name, operation)
 
 

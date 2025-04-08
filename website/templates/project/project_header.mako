@@ -60,7 +60,13 @@
                                 </li>
                             % endif
                         % endfor
-
+                        % if node['is_registration']:
+                            <li id="projectNavRecentActivity">
+                                <a href="${node['url']}recent-activity/" class="subnav-header">
+                                    Recent Activity
+                                </a>
+                            </li>
+                        % endif
                         <li id="projectNavComponents">
                             <a href="${node['url']}components/" class="subnav-header">
                                 Components

@@ -111,6 +111,29 @@ class TestRegistrationList(ApiTestCase):
         assert self.public_project._id not in ids
         assert self.project._id not in ids
 
+    def test_deleted_registrations_are_hidden(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert len(res.json['data']) == 2
+
+        new_registration = RegistrationFactory(
+            creator=self.user, project=self.project
+        )
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert len(res.json['data']) == 3
+
+        new_registration.confirm_spam()
+        assert new_registration.deleted
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert len(res.json['data']) == 2
+
+        self.public_registration.deleted = timezone.now()
+        self.public_registration.save()
+
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert len(res.json['data']) == 1
+
+
 class TestSparseRegistrationList(ApiTestCase):
 
     def setUp(self):

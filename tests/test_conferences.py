@@ -755,3 +755,44 @@ class TestConferenceIntegration(ContextTestCase):
         assert AbstractNode.objects.filter(title=title, creator=user).count() == 2
         assert mock_upload.called
         assert mock_send_mail.called
+
+
+    @mock.patch('website.conferences.views.send_mail')
+    def test_conferences_discontinued(self, mock_send_mail):
+        fullname = 'John Deacon'
+        username = 'deacon@queen.com'
+        title = 'good songs'
+        conference = ConferenceFactory()
+        body = 'dragon on my back'
+        content = 'dragon attack'
+        recipient = '{}{}-poster@osf.io'.format(
+            'test-' if settings.DEV_MODE else '',
+            conference.endpoint,
+        )
+        from waffle.testutils import override_flag
+        from osf import features
+        with override_flag(features.DISABLE_MEETINGS, active=True):
+            res = self.app.post(
+                api_url_for('meeting_hook'),
+                data={
+                    'X-Mailgun-Sscore': 0,
+                    'timestamp': '123',
+                    'token': 'secret',
+                    'signature': hmac.new(
+                        key=settings.MAILGUN_API_KEY.encode(),
+                        msg='{}{}'.format('123', 'secret').encode(),
+                        digestmod=hashlib.sha256,
+                    ).hexdigest(),
+                    'attachment-count': '1',
+                    'X-Mailgun-Sscore': 0,
+                    'from': f'{fullname} <{username}>',
+                    'recipient': recipient,
+                    'subject': title,
+                    'stripped-text': body,
+                    'attachment-1': (BytesIO(content.encode()), 'attachment-1')
+                },
+            )
+        assert res.status_code == 501
+        assert res.json['message_short'] == 'Service has been discontinued'
+
+        assert mock_send_mail.called

@@ -115,3 +115,21 @@ class UnpublishedPendingPreprintVersionExists(FrameworkError):
     """Raised if an unpublished pending preprint version exists
     """
     pass
+
+class ServiceDiscontinuedError(HTTPError):
+    """Raised if the service has been discontinued
+    """
+
+    code = http_status.HTTP_501_NOT_IMPLEMENTED
+    error_msgs = {
+        http_status.HTTP_501_NOT_IMPLEMENTED: {
+            'message_short': 'Service has been discontinued',
+            'message_long': ('This service has been discontinued and is no longer available for new interactions. If this '
+                                'should not have occurred and the issue persists, '
+                                + language.SUPPORT_LINK),
+        },
+    }
+
+    def __init__(self, code=None, message=None, redirect_url=None, data=None):
+        code = code or self.code
+        super().__init__(code, message, redirect_url, data)

@@ -306,7 +306,10 @@ DATACITE_RESOURCE_TYPES_GENERAL = {
 }
 DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
-    OSF.Registration: 'StudyRegistration',
+    OSF.Registration: {
+        'all': 'StudyRegistration',
+        'dataarchive': 'Dataset'
+    },
 }
 
 
@@ -352,6 +355,7 @@ class OsfFocus(gather.Focus):
         super().__init__(
             iri=osf_iri(osf_item),
             rdftype=get_rdf_type(osf_item),
+            provider_id=osf_item.provider._id if (osf_item and getattr(osf_item, 'type', '') == 'osf.registration' and osf_item.provider) else None
         )
         self.dbmodel = osf_item
         try:
@@ -433,6 +437,8 @@ def gather_flexible_types(focus):
         pass
     if not _type_label:
         _type_label = DATACITE_RESOURCE_TYPE_BY_OSF_TYPE.get(focus.rdftype)
+        if isinstance(_type_label, dict):
+            _type_label = _type_label.get('dataarchive') if focus.provider_id == 'dataarchive' else _type_label.get('all')
     if _type_label in DATACITE_RESOURCE_TYPES_GENERAL:
         _type_ref = DATACITE[_type_label]
         yield (DCTERMS.type, _type_ref)

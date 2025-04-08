@@ -99,6 +99,33 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'StudyRegistration'
 
+    def test_datacite_build_metadata_for_dataarchive_registration(self, registration, datacite_client):
+        registration.provider._id = 'dataarchive'
+        registration.provider.save()
+        metadata_xml = datacite_client.build_metadata(registration)
+        parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        xsi_location = '{http://www.w3.org/2001/XMLSchema-instance}schemaLocation'
+        expected_location = 'http://datacite.org/schema/kernel-4 http://schema.datacite.org/meta/kernel-4.5/metadata.xsd'
+        assert root.attrib[xsi_location] == expected_location
+
+        identifier = root.find('{%s}identifier' % schema40.ns[None])
+        assert identifier.attrib['identifierType'] == 'DOI'
+        assert identifier.text == settings.DOI_FORMAT.format(prefix=settings.DATACITE_PREFIX, guid=registration._id)
+
+        creators = root.find('{%s}creators' % schema40.ns[None])
+        assert len(creators.getchildren()) == len(registration.visible_contributors)
+
+        publisher = root.find('{%s}publisher' % schema40.ns[None])
+        assert publisher.text == 'OSF Registries'
+
+        pub_year = root.find('{%s}publicationYear' % schema40.ns[None])
+        assert pub_year.text == str(registration.registered_date.year)
+
+        resource_type = root.find('{%s}resourceType' % schema40.ns[None])
+        assert resource_type.text == 'Pre-registration'
+        assert resource_type.attrib['resourceTypeGeneral'] == 'Dataset'
+
     def test_datcite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()

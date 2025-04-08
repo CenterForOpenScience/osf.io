@@ -245,7 +245,7 @@ class TestSerializers(OsfTestCase):
             description='this is a preprint description!',
             project=self.project,
             creator=self.user,
-            doi='11.111/something-or-other',
+            article_doi='11.111/something-or-other',
             provider=another_provider,
             subjects=[
                 [parent_subject._id, child_subject._id],
