@@ -199,22 +199,6 @@ WEBPACK_LOADER = {
 TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 NOSE_ARGS = ['--verbosity=2']
 
-# Keen.io settings in local.py
-KEEN_PROJECT_ID = osf_settings.KEEN['private']['project_id']
-KEEN_READ_KEY = osf_settings.KEEN['private']['read_key']
-KEEN_WRITE_KEY = osf_settings.KEEN['private']['write_key']
-
-KEEN_CREDENTIALS = {
-    'keen_ready': False
-}
-
-if KEEN_CREDENTIALS['keen_ready']:
-    KEEN_CREDENTIALS.update({
-        'keen_project_id': KEEN_PROJECT_ID,
-        'keen_read_key': KEEN_READ_KEY,
-        'keen_write_key': KEEN_WRITE_KEY
-    })
-
 
 # Set in local.py
 DESK_KEY = ''
