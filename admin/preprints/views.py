@@ -560,7 +560,12 @@ class PreprintMakePublishedView(PreprintMixin, View):
 
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
-        preprint.set_published(True, request, True, True)
+        preprint.set_published(
+            published=True,
+            auth=request,
+            save=True,
+            ignore_permission=True
+        )
         if preprint.provider and preprint.provider.reviews_workflow == Workflows.POST_MODERATION.value:
             on_preprint_updated.apply_async(kwargs={'preprint_id': preprint._id})
 
