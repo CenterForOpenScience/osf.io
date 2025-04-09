@@ -720,11 +720,6 @@ class CeleryConfig:
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
         #         'kwargs': {},
         #     },
-        #     'cumulative_plos_metrics': {
-        #         'task': 'osf.management.commands.cumulative_plos_metrics',
-        #         'schedule': crontab(day_of_month=1, minute=30, hour=9),  # First of the month at 4:30 a.m.
-        #         'kwargs': {},
-        #     },
         # })
 
 
@@ -2065,9 +2060,6 @@ DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
-PLOS_METRICS_BASE_FOLDER = None
-PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL = None
-PLOS_METRICS_OSF_TOKEN = None
 
 STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
 STORAGE_LIMIT_PUBLIC = 50

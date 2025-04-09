@@ -7,6 +7,9 @@ var lodashGet = require('lodash.get');
 var $osf = require('js/osfHelpers');
 
 var MetricsTracker = (function() {
+
+    // approach taken from: https://github.com/keen/keen-tracking.js/blob/master/lib/helpers/getUniqueId.js
+    // which originally came from: http://stackoverflow.com/a/2117523/2511985
     function getUniqueId() {
         if (typeof window.crypto !== 'undefined' && window.crypto.getRandomValues) {
             return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c =>
