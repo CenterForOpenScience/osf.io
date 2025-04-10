@@ -530,13 +530,13 @@ class CeleryConfig:
                 task_external_high_queue,
                 Exchange(task_external_high_queue),
                 routing_key=task_external_high_queue,
-                consumer_arguments={'x-priority': 10},
+                consumer_arguments={'x-priority': 9},
             ),
             Queue(
                 task_external_low_queue,
                 Exchange(task_external_low_queue),
                 routing_key=task_external_low_queue,
-                consumer_arguments={'x-priority': -1},
+                consumer_arguments={'x-priority': -2},
             ),
         )
 
