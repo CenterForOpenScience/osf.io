@@ -337,6 +337,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if not self.guid.referent.is_public:
             self.guid.referent.set_privacy('public')
 
+    def _remove_from_search(self, event_data):
+        self.remove_from_index()
+
     def _save_transition(self, event_data):
         '''Save changes here and write the action.'''
         self.save()
@@ -394,7 +397,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 logger.exception(e)
                 sentry.log_exception(e)
 
-    def remove_from_index(self, *_):
+    def remove_from_index(self):
         from website.search.search import update_collected_metadata
         try:
             update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
