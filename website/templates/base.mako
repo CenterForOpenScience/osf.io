@@ -75,8 +75,8 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="OSF" />
 
-    %for author in self.authors_meta()[:10]:
-        <meta name="dc.creator" content="${author}" />
+    %for author, creator in list(zip(self.authors_meta()[:10], self.creator_meta()[:10])):
+        <meta name="dc.creator" content="${creator}" />
         <meta name="citation_author" content="${author}" />
     %endfor
     %for tag in self.keywords_meta()[:10]:
@@ -327,6 +327,10 @@
 
 <%def name="authors_meta()">
     ### The list of project contributors ###
+</%def>
+
+<%def name="creator_meta()">
+    ### The list of project creators ###
 </%def>
 
 <%def name="datemodified_meta()">
