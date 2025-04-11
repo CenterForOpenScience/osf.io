@@ -19,7 +19,6 @@ from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
-from .notifications import NotificationSubscription
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -456,19 +455,6 @@ def rules_to_subjects(rules):
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-
-
-@receiver(post_save, sender=CollectionProvider)
-@receiver(post_save, sender=PreprintProvider)
-@receiver(post_save, sender=RegistrationProvider)
-def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
-    if created:
-        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
-            NotificationSubscription.objects.get_or_create(
-                _id=f'{instance._id}_{subscription}',
-                event_name=subscription,
-                provider=instance
-            )
 
 
 @receiver(post_save, sender=CollectionProvider)

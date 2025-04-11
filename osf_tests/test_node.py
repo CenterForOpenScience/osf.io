@@ -1379,11 +1379,6 @@ class TestContributorProperties:
 
 class TestContributorAddedSignal:
 
-    # Override disconnected signals from conftest
-    @pytest.fixture(autouse=True)
-    def disconnected_signals(self):
-        return None
-
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, node, auth):
         user = UserFactory()
@@ -3450,7 +3445,7 @@ class TestLogMethods:
         # one more log for adding the node link
         assert n_logs_after == n_logs_before + 1
 
-# copied from tests/test_notifications.py
+# copied from tests/test_legacy_notifications.py
 class TestHasPermissionOnChildren:
 
     def test_has_permission_on_children(self):

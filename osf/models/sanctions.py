@@ -8,7 +8,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website import settings as osf_settings
-from website import mails
 from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
@@ -20,6 +19,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SanctionTypes
+from osf.models.notification import NotificationType
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
@@ -397,19 +397,29 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _rejection_url_context(self, user_id):
         return None
 
-    def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
+    def _send_approval_request_email(self, user, notification_type, context):
+        NotificationType.objects.get(
+            name=notification_type
+        ).emit(
+            user=user,
+            event_context=context
+        )
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
-        context = self._email_template_context(authorizer,
-                                            node,
-                                            is_authorizer=True)
+        context = self._email_template_context(
+            authorizer,
+            node,
+            is_authorizer=True
+        )
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(
-                authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
+                authorizer,
+                self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+                context
+            )
         else:
             raise NotImplementedError()
 
@@ -468,8 +478,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -531,18 +541,21 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'token': rejection_token,
             }
 
-    def _email_template_context(self,
-                                user,
-                                node,
-                                is_authorizer=False,
-                                urls=None):
+    def _email_template_context(self, user, node, is_authorizer=False, urls=None):
         context = super()._email_template_context(
             user,
             node,
-            is_authorizer=is_authorizer)
+            is_authorizer=is_authorizer
+        )
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         approval_time_span = osf_settings.EMBARGO_PENDING_TIME.days * 24
+
+        if self.end_date:
+            end_date = self.end_date.strftime('%B %d, %Y')
+        else:
+            end_date = None
+
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
@@ -556,19 +569,19 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'project_name': registration.title,
                 'disapproval_link': disapproval_link,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': end_date,
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
             })
         else:
             context.update({
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': end_date,
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
             })
         return context
 
@@ -648,8 +661,8 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -710,7 +723,7 @@ class Retraction(EmailApprovableSanction):
             return {
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
@@ -723,7 +736,7 @@ class Retraction(EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'approval_time_span': approval_time_span,
             }
 
@@ -768,8 +781,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -836,7 +849,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -848,7 +861,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'approval_time_span': approval_time_span,
             })
         return context
@@ -932,8 +945,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -986,6 +999,12 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+
+        if self.end_date:
+            end_date = self.end_date.strftime('%B %d, %Y')
+        else:
+            end_date = None
+
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
@@ -995,13 +1014,13 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
                 'disapproval_link': disapproval_link,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': end_date,
                 'approval_time_span': approval_time_span,
             })
         else:
@@ -1009,9 +1028,9 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.target_registration.title,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': end_date,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration().id,
                 'approval_time_span': approval_time_span,
             })
         return context

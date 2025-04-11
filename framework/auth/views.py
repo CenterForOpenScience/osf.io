@@ -26,9 +26,9 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.sessions.utils import remove_sessions_for_user
 from framework.sessions import get_session
 from framework.utils import throttle_period_expired
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils.sanitize import strip_html
-from website import settings, mails, language
+from website import settings, language
 from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
@@ -207,19 +207,23 @@ def redirect_unsupported_institution(auth):
 def forgot_password_post():
     """Dispatches to ``_forgot_password_post`` passing non-institutional user mail template
     and reset action."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD,
-                                 reset_route='reset_password_get')
+    return _forgot_password_post(
+        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD,
+        reset_route='reset_password_get'
+    )
 
 
 def forgot_password_institution_post():
     """Dispatches to `_forgot_password_post` passing institutional user mail template, reset
     action, and setting the ``institutional`` flag."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD_INSTITUTION,
-                                 reset_route='reset_password_institution_get',
-                                 institutional=True)
+    return _forgot_password_post(
+        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION,
+        reset_route='reset_password_institution_get',
+        institutional=True
+    )
 
 
-def _forgot_password_post(mail_template, reset_route, institutional=False):
+def _forgot_password_post(notificaton_type, reset_route, institutional=False):
     """
     View for user to submit forgot password form (standard or institutional).  Validates submitted
     form and sends reset-password link via email if valid.  If user has submitted another password
@@ -272,11 +276,15 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                         token=user_obj.verification_key_v2['token']
                     )
                 )
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                NotificationType.objects.get(
+                    name=notificaton_type,
+                ).emit(
+                    user=user_obj,
+                    event_context={
+                        'reset_link': reset_link,
+                        'can_change_preferences': False,
+                        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    },
                 )
 
         # institutional forgot password page displays the message as main text, not as an alert
@@ -653,12 +661,16 @@ def external_login_confirm_email_get(auth, uid, token):
     if external_status == 'CREATE':
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
-        mails.send_mail(
+        NotificationType.objects.get(
+            name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS,
+        ).emit(
             user=user,
-            to_addr=user.username,
-            mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-            external_id_provider=provider,
-            can_change_preferences=False,
+            subscribed_object=user,  # or whatever the correct related object is
+            event_context={
+                'external_id_provider': getattr(provider, 'id', None),
+                'can_change_preferences': False,
+                'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            },
         )
 
     # Send to celery the following async task to affiliate the user with eligible institutions if verified
@@ -811,14 +823,14 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
-    confirmation_url = user.get_confirmation_url(
-        email,
-        external=True,
-        force=True,
-        renew=renew,
-        external_id_provider=external_id_provider,
-        destination=destination
-    )
+    # confirmation_url = user.get_confirmation_url(
+    #     email,
+    #     external=True,
+    #     force=True,
+    #     renew=renew,
+    #     external_id_provider=external_id_provider,
+    #     destination=destination
+    # )
 
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
@@ -826,45 +838,34 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         merge_target = None
 
     campaign = campaigns.campaign_for_user(user)
-    branded_preprints_provider = None
-    logo = None
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
-            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+            notificaton_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
-            mail_template = mails.EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+            notificaton_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
     elif merge_target:
         # Merge account confirmation
-        mail_template = mails.CONFIRM_MERGE
-        confirmation_url = f'{confirmation_url}?logout=1'
+        notificaton_type = NotificationType.Type.USER_CONFIRM_MERGE
     elif user.is_active:
         # Add email confirmation
-        mail_template = mails.CONFIRM_EMAIL
-        confirmation_url = f'{confirmation_url}?logout=1'
+        notificaton_type = NotificationType.Type.USER_CONFIRM_EMAIL
     elif campaign:
         # Account creation confirmation: from campaign
-        mail_template = campaigns.email_template_for_campaign(campaign)
-        if campaigns.is_proxy_login(campaign) and campaigns.get_service_provider(campaign) != 'OSF':
-            branded_preprints_provider = campaigns.get_service_provider(campaign)
-        logo = campaigns.get_campaign_logo(campaign)
+        notificaton_type = campaigns.email_template_for_campaign(campaign)
     else:
         # Account creation confirmation: from OSF
-        mail_template = mails.INITIAL_CONFIRM_EMAIL
+        notificaton_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    mails.send_mail(
-        email,
-        mail_template,
+    NotificationType.objects.get(
+        name=notificaton_type.value,
+    ).emit(
         user=user,
-        confirmation_url=confirmation_url,
-        email=email,
-        merge_target=merge_target,
-        external_id_provider=external_id_provider,
-        branded_preprints_provider=branded_preprints_provider,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        can_change_preferences=False,
-        logo=logo if logo else settings.OSF_LOGO
+        event_context={
+            'can_change_preferences': False,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        },
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):

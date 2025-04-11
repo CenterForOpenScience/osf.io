@@ -136,17 +136,16 @@ def send_mail(
     )
 
     logger.debug('Preparing to send...')
-    if settings.USE_EMAIL:
-        if settings.USE_CELERY and celery:
-            logger.debug('Sending via celery...')
-            return mailer.apply_async(kwargs=kwargs, link=callback)
-        else:
-            logger.debug('Sending without celery')
-            ret = mailer(**kwargs)
-            if callback:
-                callback()
+    if settings.USE_CELERY and celery:
+        logger.debug('Sending via celery...')
+        return mailer.apply_async(kwargs=kwargs, link=callback)
+    else:
+        logger.debug('Sending without celery')
+        ret = mailer(**kwargs)
+        if callback:
+            callback()
 
-            return ret
+        return ret
 
 
 def get_english_article(word):
@@ -321,18 +320,6 @@ SPAM_FILES_DETECTED = Mail(
     subject='[auto] Spam files audit'
 )
 
-CONFERENCE_SUBMITTED = Mail(
-    'conference_submitted',
-    subject='Project created on OSF',
-)
-CONFERENCE_INACTIVE = Mail(
-    'conference_inactive',
-    subject='OSF Error: Conference inactive',
-)
-CONFERENCE_FAILED = Mail(
-    'conference_failed',
-    subject='OSF Error: No files attached',
-)
 CONFERENCE_DEPRECATION = Mail(
     'conference_deprecation',
     subject='Meeting Service Discontinued',

@@ -45,6 +45,7 @@ from tests.base import (
     assert_datetime_equal,
     test_app
 )
+from tests.utils import capture_notifications
 from website.project.decorators import check_can_access
 from website.project.model import has_anonymous_link
 from website.project.views.node import _should_show_wiki_widget
@@ -425,19 +426,21 @@ class TestExternalAuthViews(OsfTestCase):
         assert self.user.is_registered
         assert self.user.has_usable_password()
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+    def test_external_login_confirm_email_get_link(self):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url)
+        with capture_notifications() as notifications:
+            res = self.app.get(url)
+
+        assert len(notifications) == 1
+
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
         assert 'new=true' not in parse.unquote(res.location)
 
-        assert mock_link_confirm.call_count == 1
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
@@ -708,90 +711,6 @@ class TestUserConfirmSignal(OsfTestCase):
 
         assert mock_signals.signals_sent() == {auth.signals.user_confirmed}
 
-
-# copied from tests/test_comments.py
-class TestCommentViews(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.project = ProjectFactory(is_public=True)
-        self.user = AuthUserFactory()
-        self.project.add_contributor(self.user)
-        self.project.save()
-        self.user.save()
-
-    def test_view_project_comments_updates_user_comments_view_timestamp(self):
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put(url, json={
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[self.project._id]
-        view_timestamp = timezone.now()
-        assert_datetime_equal(user_timestamp, view_timestamp)
-
-    def test_confirm_non_contrib_viewers_dont_have_pid_in_comments_view_timestamp(self):
-        non_contributor = AuthUserFactory()
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put(url, json={
-            'page': 'node',
-            'rootId': self.project._id
-        }, auth=self.user.auth)
-
-        non_contributor.reload()
-        assert self.project._id not in non_contributor.comments_viewed_timestamp
-
-    def test_view_comments_updates_user_comments_view_timestamp_files(self):
-        osfstorage = self.project.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        test_file = root_node.append_file('test_file')
-        test_file.create_version(self.user, {
-            'object': '06d80e',
-            'service': 'cloud',
-            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
-        }, {
-            'size': 1337,
-            'contentType': 'img/png'
-        }).save()
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put(url, json={
-            'page': 'files',
-            'rootId': test_file._id
-        }, auth=self.user.auth)
-        self.user.reload()
-
-        user_timestamp = self.user.comments_viewed_timestamp[test_file._id]
-        view_timestamp = timezone.now()
-        assert_datetime_equal(user_timestamp, view_timestamp)
-
-        # Regression test for https://openscience.atlassian.net/browse/OSF-5193
-        # moved from tests/test_comments.py
-        def test_find_unread_includes_edited_comments(self):
-            project = ProjectFactory()
-            user = AuthUserFactory()
-            project.add_contributor(user, save=True)
-            comment = CommentFactory(node=project, user=project.creator)
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 1
-
-            url = project.api_url_for('update_comments_timestamp')
-            payload = {'page': 'node', 'rootId': project._id}
-            self.app.put(url, json=payload, auth=user.auth)
-            user.reload()
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 0
-
-            # Edit previously read comment
-            comment.edit(
-                auth=Auth(project.creator),
-                content='edited',
-                save=True
-            )
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 1
 
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):

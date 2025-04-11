@@ -19,6 +19,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
+from osf.models.notification import NotificationType
 
 from .subject import Subject
 from .tag import Tag
@@ -33,14 +34,12 @@ from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
-from website.notifications.emails import get_user_subscriptions
-from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
-from website import settings, mails
+from website import settings
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
@@ -503,8 +502,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return self.region
 
     @property
-    def contributor_email_template(self):
-        return 'preprint'
+    def contributor_notification_type(self):
+        return NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
 
     @property
     def file_read_scope(self):
@@ -943,34 +942,29 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        event_type = utils.find_subscription_type('global_reviews')
-        user_subscriptions = get_user_subscriptions(recipient, event_type)
+        from osf.models import NotificationSubscription, NotificationType
         if self.provider._id == 'osf':
             logo = settings.OSF_PREPRINTS_LOGO
         else:
             logo = self.provider._id
 
-        context = {
-            'domain': settings.DOMAIN,
-            'reviewable': self,
-            'workflow': self.provider.reviews_workflow,
-            'provider_url': '{domain}preprints/{provider_id}'.format(
-                            domain=self.provider.domain or settings.DOMAIN,
-                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
-            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
-            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
-            'no_future_emails': user_subscriptions['none'],
-            'is_creator': True,
-            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
-            'logo': logo,
-            'document_type': self.provider.preprint_word
-        }
-
-        mails.send_mail(
-            recipient.username,
-            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+        NotificationType.objects.get(
+            name=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
+        ).emit(
             user=recipient,
-            **context
+            event_context={
+                'domain': settings.DOMAIN,
+                'workflow': self.provider.reviews_workflow,
+                'provider_url': f"{self.provider.domain or settings.DOMAIN}preprints/{(self.provider._id if not self.provider.domain else '').strip('/')}",
+                'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+                'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+                'no_future_emails': NotificationSubscription.objects.filter(notification_type__name='reviews', user=recipient, message_frequency='none').exists(),
+                'is_creator': True,
+                'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+                'logo': logo,
+                'document_type': self.provider.preprint_word
+            },
+            subscribed_object=self.provider,
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS

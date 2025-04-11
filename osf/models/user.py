@@ -59,11 +59,12 @@ from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
 from website import settings as website_settings
-from website import filters, mails
+from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+from osf.models.notification import NotificationType
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -227,15 +228,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
-
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # Tracks last email sent where user was added to an OSF Group
     member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
@@ -1107,12 +1099,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            mails.send_mail(
-                to_addr=self.username,
-                mail=mails.PASSWORD_RESET,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_PASSWORD_RESET
+            ).emit(
                 user=self,
-                can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                event_context={
+                    'user': self.id,
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
             )
             remove_sessions_for_user(self)
 
@@ -1406,6 +1401,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.date_confirmed = timezone.now()
         if accepted_terms_of_service:
             self.accepted_terms_of_service = timezone.now()
+
+        self.__subscribe_user_to_default_user_notifications()
         self.update_search()
         self.update_search_nodes()
 
@@ -1413,6 +1410,27 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         signals.user_confirmed.send(self)
 
         return self
+
+    def __subscribe_user_to_default_user_notifications(self):
+        NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+        NotificationType = apps.get_model('osf.NotificationType')
+        from django.contrib.contenttypes.models import ContentType
+
+        for notification_type in NotificationType.Type.user_types():
+            print(notification_type.value)
+            content_type = ContentType.objects.get_for_model(self.__class__)
+            subscription, created = NotificationSubscription.objects.get_or_create(
+                notification_type=NotificationType.objects.get(name=notification_type.value),
+                user=self,
+                content_type=content_type,
+                object_id=self.id,
+                defaults={
+                    'content_type': content_type,
+                    'message_frequency': 'instantly',
+                    'object_id': self.id
+                }
+            )
+            subscription.save()
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""

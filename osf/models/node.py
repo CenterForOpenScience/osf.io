@@ -35,6 +35,8 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import (InvalidTagError, NodeStateError,
                             TagNotFoundError)
+from osf.models.notification import NotificationType
+
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -982,8 +984,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.get_users_with_perm(READ)
 
     @property
-    def contributor_email_template(self):
-        return 'default'
+    def contributor_notification_type(self):
+        return NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
 
     @property
     def registrations_all(self):
@@ -1385,9 +1387,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         for user in self.contributors.filter(is_registered=True):
             perm = self.contributor_set.get(user=user).permission
-            project_signals.contributor_added.send(self,
-                                                   contributor=user,
-                                                   auth=None, email_template='default', permissions=perm)
+            project_signals.contributor_added.send(
+                self,
+                contributor=user,
+                auth=None,
+                email_template='default',
+                permissions=perm
+            )
+            from website.project.views.contributor import notify_added_contributor
+            notify_added_contributor(
+                self,
+                contributor=user,
+                auth=None,
+                email_template='default',
+            )
 
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
         """Make a frozen copy of a node.
@@ -1700,8 +1713,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
-
+        project_signals.contributor_added.send(forked, contributor=user, auth=auth)
         return forked
 
     def clone_logs(self, node, is_registration=False, page_size=100):
@@ -1809,7 +1821,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save(suppress_log=True)
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth)
 
         # Log the creation
         new.add_log(

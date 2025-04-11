@@ -8,7 +8,7 @@ from django.utils import timezone
 
 from addons.osfstorage.models import OsfStorageFile
 from framework.celery_tasks import app
-from website import mails
+from osf.models import NotificationType
 
 logger = logging.getLogger(__name__)
 
@@ -52,14 +52,17 @@ def find_spammy_files(sniff_r=None, n=None, t=None, to_addrs=None):
         if ct:
             if to_addrs:
                 for addr in to_addrs:
-                    mails.send_mail(
-                        mail=mails.SPAM_FILES_DETECTED,
-                        to_addr=addr,
-                        ct=ct,
-                        sniff_r=sniff,
-                        attachment_name=filename,
-                        attachment_content=output.getvalue(),
-                        can_change_preferences=False,
+                    NotificationType.objects.get(
+                        name=NotificationType.Type.SPAM_FILES_DETECTED
+                    ).emit(
+                        user=user,
+                        event_context={
+                            'ct': ct,
+                            'sniff_n': sniff,
+                            'attachment_name': filename,
+                            'attachment_content': output.getvalue(),
+                            'can_change_preferences': False
+                        }
                     )
             else:
                 with open(filepath, 'w') as writeFile:

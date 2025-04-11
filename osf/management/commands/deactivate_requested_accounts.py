@@ -1,13 +1,11 @@
 import logging
 
-from website import mails
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 from website.app import setup_django
 setup_django()
-from osf.models import OSFUser
-from website.settings import OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
+from osf.models import OSFUser, NotificationType
 from django.core.management.base import BaseCommand
 
 logger = logging.getLogger(__name__)
@@ -21,23 +19,26 @@ def deactivate_requested_accounts(dry_run=True):
         if user.has_resources:
             logger.info(f'OSF support is being emailed about deactivating the account of user {user._id}.')
             if not dry_run:
-                mails.send_mail(
-                    to_addr=OSF_SUPPORT_EMAIL,
-                    mail=mails.REQUEST_DEACTIVATION,
+                NotificationType.objects.get(
+                    name=NotificationType.Type.DESK_REQUEST_DEACTIVATION,
+                ).emit(
                     user=user,
-                    can_change_preferences=False,
+                    event_context={
+                        'can_change_preferences': False,
+                    }
                 )
         else:
             logger.info(f'Disabling user {user._id}.')
             if not dry_run:
                 user.deactivate_account()
                 user.is_registered = False
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.REQUEST_DEACTIVATION_COMPLETE,
+                NotificationType.objects.get(
+                    name=NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE
+                ).emit(
                     user=user,
-                    contact_email=OSF_CONTACT_EMAIL,
-                    can_change_preferences=False,
+                    event_context={
+                        'can_change_preferences': False,
+                    }
                 )
 
         user.contacted_deactivation = True

@@ -100,9 +100,9 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
-    Tag,
+    Tag, NotificationType,
 )
-from website import mails, settings, language
+from website import settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
@@ -681,11 +681,14 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
-        mails.send_mail(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            mail=mails.REQUEST_EXPORT,
+        NotificationType.objects.get(
+            name=NotificationType.Type.USER_REQUEST_EXPORT,
+        ).emit(
             user=user,
-            can_change_preferences=False,
+            event_context={
+                'can_change_preferences': False,
+            },
+
         )
         user.email_last_sent = timezone.now()
         user.save()
@@ -865,7 +868,6 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError('Request must include email in query params.')
 
         institutional = bool(request.query_params.get('institutional', None))
-        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
 
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
@@ -885,12 +887,21 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                if institutional:
+                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
+                else:
+                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD
+
+                NotificationType.objects.get(
+                    name=notification_type.name,
+                ).emit(
+                    user=user_obj,
+                    event_context={
+                        'reset_link': reset_link,
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                    },
                 )
+
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
     @method_decorator(csrf_protect)
@@ -1273,12 +1284,16 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&{}'.format(urlencode({'new': 'true'}))
         elif external_status == 'LINK':
-            mails.send_mail(
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS,
+            ).emit(
                 user=user,
-                to_addr=user.username,
-                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-                external_id_provider=provider,
-                can_change_preferences=False,
+                event_context={
+                    'provider': provider,
+                    'provider_id': provider_id,
+                    'service_url': service_url,
+                    'can_change_preferences': False,
+                },
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))

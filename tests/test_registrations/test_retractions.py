@@ -796,8 +796,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
+    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self):
         unreg = UnregUserFactory()
         self.registration.add_unregistered_contributor(
             unreg.fullname,
@@ -813,7 +812,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         # Only the creator gets an email; the unreg user does not get emailed
-        assert mock_send_mail.call_count == 1
+        #assert mock_send_mail.call_count == 1
+        assert False, 'redp test'
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(

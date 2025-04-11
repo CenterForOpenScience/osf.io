@@ -1,0 +1,563 @@
+# This file contains the configuration for our notification system using the NotificationType object, this is intended to
+# exist as a simple declarative list of NotificationTypes and their attributes. Every notification sent by OSF should be
+# represented here for bussiness logic dnd metrics reasons.
+
+# Workflow:
+# 1. Add a new notification template
+# 2. Add a entry here with the desired notification types
+# 3. Add name tp Enum osf.notification.NotificationType.Type
+# 4. Use the emit method to send or subscribe the notification for immediate deliver or periodic digest.
+notification_types:
+  #### GLOBAL (User Notifications)
+  - name: user_pending_verification_registered
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_pending_verification
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_osf_preprint
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_default
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_add_sso_email_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_duplicate_accounts_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_welcome_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/welcome_osf4i.html.mako'
+    notification_freq_default: instantly
+  - name: duplicate_accounts_sso_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: forgot_password_institution
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: initial_confirm
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: confirm
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_comments
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_comment_replies
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_file_updated
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_reviews
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_mentions
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_password_reset
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_invite_default
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_pending_invite
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_forward_invite
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_archive_job_exceeded
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_archive_job_exceeded
+    __docs__: Archive job failed due to size exceeded. Sent to the initiating user.
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_archive_job_copy_error
+    __docs__: Archive job failed due to copy error. Sent to the initiating user.
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_archive_job_file_not_found
+    __docs__: Archive job failed because files were not found. Sent to the initiating user.
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_archive_job_uncaught_error
+    __docs__: Archive job failed due to an uncaught error. Sent to the initiating user.
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_external_login_link_success
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_registration_bulk_upload_failure_all
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_registration_bulk_upload_failure_all
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_registration_bulk_upload_success_all
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_registration_bulk_upload_success_partial
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_forward_invite_registered
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_storage_cap_exceeded_announcement
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_spam_banned
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_request_deactivation_complete
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_primary_email_changed
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_institution_deactivation
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_forgot_password
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_forgot_password_institution
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_request_export
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_initial_confirm_email
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_confirm_email
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_confirm_merge
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_external_login_confirm_email_create
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_external_login_confirm_email_link
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+
+  #### PROVIDER
+  - name: new_pending_submissions
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: submit
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: notify_submit
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_submission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_moderator_submission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_accept_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_reject_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_resubmission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_resubmission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_reviews_comment_edited
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: accept_submission
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: reject_submission
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: request_withdrawal
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: accept_withdrawal
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: reject_withdrawal
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_confirm_email_moderation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_moderator_added
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### NODE
+  - name: node_contributor_added_access_request
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_request_institutional_access_request
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_retraction_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_termination_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_registration_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_registration_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_fork_completed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_fork_failed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_affiliation_changed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_request_access_denied
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_access_request_submitted
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: wiki_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_renamed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_moved
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_copied
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: contributor_added_default
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: contributor_added_draft_registration
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_moved
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_added
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_removed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_renamed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_termination_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### PREPRINT
+  - name: pending_retraction_admin
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: addon_file_renamed
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_added
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: invite_preprints
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: contributor_added_preprints
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: preprint_request_withdrawal_approved
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: preprint_request_withdrawal_declined
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: preprint_request_withdrawal_requested
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: contributor_added_preprint_node_from_osf
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### SUPPORT
+  - name: crossref_error
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### Collection Submissions
+  - name: collection_submission_removed_moderator
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_removed_private
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_removed_admin
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_submitted
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_cancel
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_accepted
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_rejected
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### DESK
+  - name: desk_archive_job_exceeded
+    __docs__: Archive job failed due to size exceeded. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_copy_error
+    __docs__: Archive job failed due to copy error. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_file_not_found
+    __docs__: Archive job failed because files were not found. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_uncaught_error
+    __docs__: Archive job failed due to an uncaught error. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_osf_support_email
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly

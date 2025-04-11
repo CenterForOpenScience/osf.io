@@ -62,7 +62,8 @@ from .node import AbstractNode, Node
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .notable_domain import NotableDomain, DomainReference
-from .notifications import NotificationDigest, NotificationSubscription
+from .notifications import NotificationDigest, NotificationSubscriptionLegacy
+from .notification import Notification, NotificationType, NotificationSubscription
 from .oauth import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -82,7 +83,6 @@ from .provider import (
     RegistrationProvider,
     WhitelistedSHAREPreprintProvider,
 )
-from .queued_mail import QueuedMail
 from .quickfiles import QuickFilesNode
 from .registrations import (
     DraftRegistration,

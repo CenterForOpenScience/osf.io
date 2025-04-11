@@ -39,6 +39,7 @@ from api.institutions.utils import update_institutions_if_user_associated
 from api.preprints.fields import DOIField
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
+from website import settings
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
 from osf.models import (
@@ -46,10 +47,11 @@ from osf.models import (
     Preprint,
     PreprintProvider,
     Node,
-    NodeLicense,
+    NodeLicense, NotificationType,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
+from website.project.views.node import serialize_preprints
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -502,6 +504,25 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         contributor=author,
                         auth=auth,
                         email_template='preprint',
+                    )
+                    if node.provider.is_default:
+                        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+                    else:
+                        notification_type = NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
+
+                    NotificationType.objects.get(name=notification_type).emit(
+                        user=author,
+                        event_context={
+                            'user': author.id,
+                            'node': node.id,
+                            'referrer_name': auth.user.fullname if auth else '',
+                            'is_initiator': getattr(auth, 'user', False) == author.id,
+                            'all_global_subscriptions_none': False,
+                            'branded_service': getattr(author, 'id', None),
+                            'can_change_preferences': False,
+                            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                            'published_preprints': serialize_preprints(node, user=None),
+                        },
                     )
 
         return preprint

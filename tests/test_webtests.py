@@ -731,8 +731,7 @@ class TestResendConfirmation(OsfTestCase):
         assert res.get_form('resendForm')
 
     # test that unconfirmed user can receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
+    def test_can_receive_resend_confirmation_email(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -746,8 +745,7 @@ class TestResendConfirmation(OsfTestCase):
         assert_in_html('If there is an OSF account', res.text)
 
     # test that confirmed user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
+    def test_cannot_receive_resend_confirmation_email_1(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -761,8 +759,7 @@ class TestResendConfirmation(OsfTestCase):
         assert_in_html('has already been confirmed', res.text)
 
     # test that non-existing user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
+    def test_cannot_receive_resend_confirmation_email_2(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -776,8 +773,7 @@ class TestResendConfirmation(OsfTestCase):
         assert_in_html('If there is an OSF account', res.text)
 
     # test that user cannot submit resend confirmation request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
+    def test_cannot_resend_confirmation_twice_quickly(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -820,8 +816,7 @@ class TestForgotPassword(OsfTestCase):
         assert res.get_form('forgotPasswordForm')
 
     # test that existing user can receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_reset_password_email(self, mock_send_mail):
+    def test_can_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -843,8 +838,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+    def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -866,8 +860,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+    def test_not_active_user_no_reset_password_email(self):
         self.user.deactivate_account()
         self.user.save()
 
@@ -892,8 +885,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+    def test_cannot_reset_password_twice_quickly(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -939,8 +931,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert 'campaign=unsupportedinstitution' in location
 
     # test that user from disabled institution can receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_reset_password_email(self, mock_send_mail):
+    def test_can_receive_reset_password_email(self):
         # submit email to institutional forgot-password page
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
@@ -959,8 +950,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+    def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
 
@@ -979,8 +969,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive institutional reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+    def test_not_active_user_no_reset_password_email(self):
         self.user.deactivate_account()
         self.user.save()
 
@@ -1001,8 +990,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+    def test_cannot_reset_password_twice_quickly(self):
         # submit institutional forgot-password request in rapid succession
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})

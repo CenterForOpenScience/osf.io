@@ -20,10 +20,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
-from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
-from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
 
 from osf import models
@@ -42,7 +40,7 @@ from osf.exceptions import UserStateError, ValidationValueError
 fake = Factory.create()
 faker = Faker()
 # If tests are run on really old processors without high precision this might fail. Unlikely to occur.
-fake_email = lambda: f'{FAKE_EMAIL_NAME}+{int(time.time() * 1000000)}@{FAKE_EMAIL_DOMAIN}'
+fake_email = lambda: f'freddiefish+{int(time.time() * 1000000)}@fake.org'
 
 # Do this out of a cls context to avoid setting "t" as a local
 PROVIDER_ASSET_NAME_CHOICES = tuple([t[0] for t in PROVIDER_ASSET_NAME_CHOICES])
@@ -1067,7 +1065,7 @@ class NotificationDigestFactory(DjangoModelFactory):
     timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
     node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
     user = factory.SubFactory(UserFactory)
-    send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
+    send_type = FuzzyChoice(choices=list(models.NotificationType.Type))
     message = fake.text(max_nb_chars=2048)
     event = fake.text(max_nb_chars=50)
     class Meta:

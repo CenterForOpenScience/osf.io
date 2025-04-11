@@ -620,17 +620,6 @@ def make_url_map(app):
 
     ### Metadata ###
     process_rules(app, [
-
-        Rule(
-            [
-                '/project/<pid>/comments/timestamps/',
-                '/project/<pid>/node/<nid>/comments/timestamps/',
-            ],
-            'put',
-            project_views.comment.update_comments_timestamp,
-            json_renderer,
-        ),
-
         Rule(
             [
                 '/project/<pid>/citation/',
@@ -1720,23 +1709,6 @@ def make_url_map(app):
             '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
-            json_renderer,
-        ),
-
-        Rule(
-            '/subscriptions/',
-            'get',
-            notification_views.get_subscriptions,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/subscriptions/',
-                '/project/<pid>/node/<nid>/subscriptions/'
-            ],
-            'get',
-            notification_views.get_node_subscriptions,
             json_renderer,
         ),
 

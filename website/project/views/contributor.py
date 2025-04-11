@@ -19,11 +19,19 @@ from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
 from osf.models import Tag
 from osf.exceptions import NodeStateError
-from osf.models import AbstractNode, DraftRegistration, OSFGroup, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
+from osf.models import (
+    AbstractNode,
+    DraftRegistration,
+    OSFGroup,
+    OSFUser,
+    Preprint,
+    PreprintProvider,
+    RecentlyAddedContributor,
+    NotificationType
+)
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
-from website import mails, language, settings
-from website.notifications.utils import check_if_all_global_subscriptions_are_none
+from website import language, settings
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
                                         must_be_contributor_or_public, must_be_contributor)
@@ -421,29 +429,33 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     )
 
     # Send mail to referrer, telling them to forward verification link to claimer
-    mails.send_mail(
-        referrer.username,
-        mails.FORWARD_INVITE_REGISTERED,
-        user=unclaimed_user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url,
-        fullname=unclaimed_record['name'],
-        can_change_preferences=False,
-        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+    ).emit(
+        user=referrer,
+        event_context={
+            'claim_url': claim_url,
+            'fullname': unclaimed_record['name'],
+            'can_change_preferences': False,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
     )
     unclaimed_record['last_sent'] = get_timestamp()
     unclaimed_user.save()
 
     # Send mail to claimer, telling them to wait for referrer
-    mails.send_mail(
-        claimer.username,
-        mails.PENDING_VERIFICATION_REGISTERED,
-        fullname=claimer.fullname,
-        referrer=referrer,
-        node=node,
-        can_change_preferences=False,
-        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+    ).emit(
+        user=claimer,
+        event_context={
+            'claim_url': claim_url,
+            'fullname': unclaimed_record['name'],
+            'referrer': referrer.username,
+            'node': node.title,
+            'can_change_preferences': False,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
     )
 
 
@@ -469,8 +481,6 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     claimer_email = email.lower().strip()
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = OSFUser.load(unclaimed_record['referrer_id'])
-    claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
-
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
@@ -479,15 +489,15 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         # check email template for branded preprints
         if email_template == 'preprint':
             if node.provider.is_default:
-                mail_tpl = mails.INVITE_OSF_PREPRINT
+                notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                mail_tpl = mails.INVITE_PREPRINT(node.provider)
+                notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
                 logo = node.provider._id
         elif email_template == 'draft_registration':
-            mail_tpl = mails.INVITE_DRAFT_REGISTRATION
+            notification_type = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
         else:
-            mail_tpl = mails.INVITE_DEFAULT
+            notification_type = NotificationType.Type.USER_INVITE_DEFAULT
 
         to_addr = claimer_email
         unclaimed_record['claimer_email'] = claimer_email
@@ -512,112 +522,129 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
 
-        claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
-        # send an email to the invited user without `claim_url`
         if notify:
-            pending_mail = mails.PENDING_VERIFICATION
-            mails.send_mail(
-                claimer_email,
-                pending_mail,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_PENDING_VERIFICATION
+            ).emit(
                 user=unclaimed_user,
-                referrer=referrer,
-                fullname=unclaimed_record['name'],
-                node=node,
-                can_change_preferences=False,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                event_context={
+                    'user': unclaimed_user.id,
+                    'referrer': referrer.id,
+                    'fullname': unclaimed_record['name'],
+                    'node': node.id,
+                    'logo': logo,
+                    'can_change_preferences': False,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                }
             )
-        mail_tpl = mails.FORWARD_INVITE
+        notification_type = NotificationType.Type.USER_FORWARD_INVITE
         to_addr = referrer.username
 
-    # Send an email to the claimer (Option 1) or to the referrer (Option 2) with `claim_url`
-    mails.send_mail(
-        to_addr,
-        mail_tpl,
-        user=unclaimed_user,
-        referrer=referrer,
-        node=node,
-        claim_url=claim_url,
-        email=claimer_email,
-        fullname=unclaimed_record['name'],
-        branded_service=node.provider,
-        can_change_preferences=False,
-        logo=logo if logo else settings.OSF_LOGO,
-        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+    NotificationType.objects.get(name=notification_type.value).emit(
+        user=referrer,
+        event_context={
+            'user': unclaimed_user.id,
+            'referrer': referrer.id,
+            'fullname': unclaimed_record['name'],
+            'node': node.id,
+            'logo': logo,
+            'can_change_preferences': False,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
     )
 
     return to_addr
 
-
 def check_email_throttle(node, contributor, throttle=None):
+    """
+    Check whether a 'contributor added' notification was sent recently
+    (within the throttle period) for the given node and contributor.
+
+    Args:
+        node (AbstractNode): The node to check.
+        contributor (OSFUser): The contributor being notified.
+        throttle (int, optional): Throttle period in seconds (defaults to CONTRIBUTOR_ADDED_EMAIL_THROTTLE setting).
+
+    Returns:
+        bool: True if throttled (email was sent recently), False otherwise.
+    """
+    from osf.models import Notification, NotificationType, NotificationSubscription
+    from website import settings
+
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
-    contributor_record = contributor.contributor_added_email_records.get(node._id, {})
-    if contributor_record:
-        timestamp = contributor_record.get('last_sent', None)
-        if timestamp:
-            if not throttle_period_expired(timestamp, throttle):
-                return True
-    else:
-        contributor.contributor_added_email_records[node._id] = {}
 
+    try:
+        notification_type = NotificationType.objects.get(
+            name=NotificationType.Type.NODE_COMMENT.value  # or whatever event type you're using for 'contributor added'
+        )
+    except NotificationType.DoesNotExist:
+        return False  # Fail-safe: if the notification type isn't set up, don't throttle
+    from django.contrib.contenttypes.models import ContentType
+    from datetime import timedelta
 
-@contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, email_template='default', throttle=None, *args, **kwargs):
+    # Check for an active subscription for this contributor and this node
+    subscription = NotificationSubscription.objects.filter(
+        user=contributor,
+        notification_type=notification_type,
+        content_type=ContentType.objects.get_for_model(node),
+        object_id=str(node.id)
+    ).first()
+
+    if not subscription:
+        return False  # No subscription means no previous notifications, so no throttling
+
+    # Check the most recent Notification for this subscription
+    last_notification = Notification.objects.filter(
+        subscription=subscription,
+        sent__isnull=False
+    ).order_by('-sent').first()
+
+    if last_notification and last_notification.sent:
+        cutoff_time = timezone.now() - timedelta(seconds=throttle)
+        return last_notification.sent > cutoff_time
+
+    return False  # No previous sent notification, not throttled
+
+def notify_added_contributor(node, contributor, auth=None, notification_type=None):
+    """Send a notification to a contributor who was just added to a node.
+
+    Handles:
+        - Unregistered contributor invitations.
+        - Registered contributor notifications.
+        - Throttle checks to avoid repeated emails.
+
+    Args:
+        node (AbstractNode): The node to which the contributor was added.
+        contributor (OSFUser): The user being added.
+        auth (Auth, optional): Authorization context.
+        notification_type (str, optional): Template identifier (default: 'default').
+        throttle (int, optional): Throttle period in seconds.
+    """
     logo = settings.OSF_LOGO
-    if check_email_throttle(node, contributor, throttle=throttle):
-        return
-    if email_template == 'false':
-        return
-    if not getattr(node, 'is_published', True):
-        return
-    if not contributor.is_registered:
-        unreg_contributor_added.send(
-            node,
-            contributor=contributor,
-            auth=auth,
-            email_template=email_template
-        )
-        return
+    notification_type = notification_type or NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
 
-    # Email users for projects, or for components where they are not contributors on the parent node.
-    contrib_on_parent_node = isinstance(node, (Preprint, DraftRegistration)) or \
-                             (not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor)))
-    if contrib_on_parent_node:
-        if email_template == 'preprint':
-            if node.provider.is_default:
-                email_template = mails.CONTRIBUTOR_ADDED_OSF_PREPRINT
-                logo = settings.OSF_PREPRINTS_LOGO
-            else:
-                email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
-                logo = node.provider._id
-        elif email_template == 'draft_registration':
-            email_template = mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        elif email_template == 'access_request':
-            email_template = mails.CONTRIBUTOR_ADDED_ACCESS_REQUEST
-        elif node.has_linked_published_preprints:
-            # Project holds supplemental materials for a published preprint
-            email_template = mails.CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
-            logo = settings.OSF_PREPRINTS_LOGO
-        else:
-            email_template = mails.CONTRIBUTOR_ADDED_DEFAULT
+    if node and getattr(node, 'has_linked_published_preprints', None):
+        notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
+        logo = settings.OSF_PREPRINTS_LOGO
 
-        mails.send_mail(
-            to_addr=contributor.username,
-            mail=email_template,
-            user=contributor,
-            node=node,
-            referrer_name=auth.user.fullname if auth else '',
-            is_initiator=getattr(auth, 'user', False) == contributor,
-            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=node.provider,
-            can_change_preferences=False,
-            logo=logo,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
-        )
-
-        contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
-        contributor.save()
-
+    provider = node.provider
+    NotificationType.objects.get(
+        name=notification_type
+    ).emit(
+        user=contributor,
+        event_context={
+            'user': contributor.id,
+            'node': node.id,
+            'referrer_name': auth.user.fullname if auth else '',
+            'is_initiator': getattr(auth, 'user', False) == contributor.id,
+            'all_global_subscriptions_none': False,
+            'branded_service': getattr(provider, 'id', None),
+            'can_change_preferences': False,
+            'logo': logo,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'published_preprints': [] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None),
+        }
+    )
 
 @contributor_added.connect
 def add_recently_added_contributor(node, contributor, auth=None, *args, **kwargs):

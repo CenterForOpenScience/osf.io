@@ -4,7 +4,6 @@ from website.app import setup_django
 setup_django()
 
 import argparse
-from django.template.defaultfilters import filesizeformat
 from google.cloud.storage.client import Client
 from google.oauth2.service_account import Credentials
 

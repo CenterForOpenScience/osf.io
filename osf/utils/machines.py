@@ -6,7 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
-from osf.models.preprintlog import PreprintLog
+from osf.models.notification import NotificationType
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
 from osf.utils.workflows import (
@@ -21,11 +21,8 @@ from osf.utils.workflows import (
     COLLECTION_SUBMISSION_TRANSITIONS,
     NodeRequestTypes
 )
-from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
-
-from osf.utils import notifications as notify
 
 from api.base.exceptions import Conflict
 
@@ -61,6 +58,14 @@ class BaseMachine(Machine):
             send_event=True,
             prepare_event=['initialize_machine'],
             ignore_invalid_triggers=True,
+        )
+
+    def emit_notification(self, user, notif_type_enum, context):
+        notification_type = NotificationType.objects.get(name=notif_type_enum)
+        notification_type.emit(
+            user=user,
+            subscribed_object=self.machineable,  # or the relevant subscribed object
+            event_context=context
         )
 
     @property
@@ -143,55 +148,50 @@ class ReviewsMachine(BaseMachine):
         self.machineable.withdrawal_justification = ev.kwargs.get('comment', '')
 
     def notify_submit(self, ev):
-        user = ev.kwargs.get('user')
-        notify.notify_submit(self.machineable, user)
-        auth = Auth(user)
-        self.machineable.add_log(
-            action=PreprintLog.PUBLISHED,
-            params={
-                'preprint': self.machineable._id
-            },
-            auth=auth,
-            save=False,
+        self.emit_notification(
+            ev.kwargs.get('user'),
+            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
+            self.get_context()
         )
 
     def notify_resubmit(self, ev):
-        notify.notify_resubmit(self.machineable, ev.kwargs.get('user'), self.action)
+        self.emit_notification(
+            ev.kwargs.get('user'),
+            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
+            self.get_context()
+        )
 
     def notify_accept_reject(self, ev):
-        notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
+        user = ev.kwargs.get('user')
+        notif_type = (
+            NotificationType.Type.PROVIDER_REVIEWS_ACCEPT_CONFIRMATION
+            if ev.event.name == DefaultTriggers.ACCEPT.value
+            else NotificationType.Type.PROVIDER_REVIEWS_REJECT_CONFIRMATION
+        )
+        self.emit_notification(
+            user,
+            notif_type,
+            self.get_context()
+        )
 
     def notify_edit_comment(self, ev):
-        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
+        self.emit_notification(
+            ev.kwargs.get('user'),
+            NotificationType.Type.PROVIDER_REVIEWS_COMMENT_EDITED,
+            self.get_context()
+        )
 
     def notify_withdraw(self, ev):
-        context = self.get_context()
-        context['ever_public'] = self.machineable.ever_public
-        try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
-                                                                   from_state='pending',
-                                                                   to_state='accepted',
-                                                                   trigger='accept')
-            context['requester'] = preprint_request_action.target.creator
-        except PreprintRequestAction.DoesNotExist:
-            # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
-            context['force_withdrawal'] = True
-
-        for contributor in self.machineable.contributors.all():
-            context['contributor'] = contributor
-            if context.get('requester', None):
-                context['is_requester'] = context['requester'].username == contributor.username
-            mails.send_mail(
-                contributor.username,
-                mails.WITHDRAWAL_REQUEST_GRANTED,
-                document_type=self.machineable.provider.preprint_word,
-                **context
-            )
+        self.emit_notification(
+            ev.kwargs.get('user'),
+            NotificationType.Type.PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED,
+            self.get_context()
+        )
 
     def get_context(self):
         return {
             'domain': DOMAIN,
-            'reviewable': self.machineable,
+            'reviewable': self.machineable.title,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
@@ -220,7 +220,7 @@ class NodeRequestMachine(BaseMachine):
                         auth=Auth(ev.kwargs['user']),
                         permissions=contributor_permissions,
                         visible=visible,
-                        send_email=f'{self.machineable.request_type}_request',
+                        notification_type=f'{self.machineable.request_type}_request',
                         make_curator=make_curator,
                     )
                 except IntegrityError as e:
@@ -233,19 +233,12 @@ class NodeRequestMachine(BaseMachine):
         return False
 
     def notify_submit(self, ev):
-        """ Notify admins that someone is requesting access
-        """
-        context = self.get_context()
-        context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
-        context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-                mails.send_mail(
-                    admin.username,
-                    mails.ACCESS_REQUEST_SUBMITTED,
-                    admin=admin,
-                    osf_contact_email=OSF_CONTACT_EMAIL,
-                    **context
+                self.emit_notification(
+                    admin,
+                    NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED,
+                    self.get_context()
                 )
 
     def notify_resubmit(self, ev):
@@ -255,18 +248,15 @@ class NodeRequestMachine(BaseMachine):
         raise NotImplementedError()
 
     def notify_accept_reject(self, ev):
-        """ Notify requester that admins have approved/denied
-        """
+        context = self.get_context()
         if ev.event.name == DefaultTriggers.REJECT.value:
-            context = self.get_context()
-            mails.send_mail(
-                self.machineable.creator.username,
-                mails.ACCESS_REQUEST_DENIED,
-                osf_contact_email=OSF_CONTACT_EMAIL,
-                **context
+            self.emit_notification(
+                self.machineable.creator,
+                NotificationType.Type.NODE_REQUEST_ACCESS_DENIED,
+                context
             )
         else:
-            # add_contributor sends approval notification email
+            # Approval is handled by add_contributor, which may already send an email
             pass
 
     def notify_edit_comment(self, ev):
@@ -276,8 +266,8 @@ class NodeRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'node': self.machineable.target,
-            'requester': self.machineable.creator
+            'node': self.machineable.target.id,
+            'requester': self.machineable.creator.id
         }
 
 
@@ -303,20 +293,22 @@ class PreprintRequestMachine(BaseMachine):
         return self.machineable.target.provider.reviews_workflow == Workflows.PRE_MODERATION.value and not self.machineable.target.ever_public
 
     def notify_submit(self, ev):
-        context = self.get_context()
         if not self.auto_approval_allowed():
-            reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
+            reviews_signals.email_withdrawal_requests.send(
+                timestamp=timezone.now(),
+                context=self.get_context()
+            )
 
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:
-            context = self.get_context()
-            mails.send_mail(
-                self.machineable.creator.username,
-                mails.WITHDRAWAL_REQUEST_DECLINED,
-                **context
-            )
+            notif_type = NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
         else:
-            pass
+            notif_type = NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+        self.emit_notification(
+            self.machineable.creator,
+            notif_type,
+            self.get_context()
+        )
 
     def notify_edit_comment(self, ev):
         """ Not presently required to notify for this event
@@ -332,8 +324,8 @@ class PreprintRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'reviewable': self.machineable.target,
-            'requester': self.machineable.creator,
+            'reviewable': self.machineable.target.id,
+            'requester': self.machineable.creator.id,
             'is_request_email': True,
             'document_type': self.machineable.target.provider.preprint_word
         }

@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import AuthUserFactory, NotificationSubscriptionFactory
+from osf_tests.factories import AuthUserFactory
 
 
 @pytest.mark.django_db
@@ -14,12 +14,6 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def user_no_auth(self):
         return AuthUserFactory()
-
-    @pytest.fixture()
-    def global_user_notification(self, user):
-        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
-        notification.add_user_to_subscription(user, 'email_transactional')
-        return notification
 
     @pytest.fixture()
     def url(self, global_user_notification):

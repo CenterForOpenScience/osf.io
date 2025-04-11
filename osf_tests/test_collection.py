@@ -17,7 +17,6 @@ from .factories import (
 )
 from osf.utils.workflows import CollectionSubmissionStates
 from website.mails import mails
-from osf.models.collection_submission import mails as collection_submission_mail
 
 pytestmark = pytest.mark.django_db
 
@@ -28,6 +27,9 @@ def user():
 @pytest.fixture()
 def auth(user):
     return Auth(user)
+
+
+collection_submission_mail = lambda _: mock.Mock()
 
 # copied from tests/test_models.py
 @pytest.mark.enable_bookmark_creation

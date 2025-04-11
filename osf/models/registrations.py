@@ -46,9 +46,9 @@ from .node import AbstractNode
 from .nodelog import NodeLog
 from .provider import RegistrationProvider
 from .tag import Tag
+from .notification import NotificationType
 from .validators import validate_title
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils import notifications as notify
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
@@ -754,23 +754,19 @@ class Registration(AbstractNode):
         action.save()
         RegistriesModerationMetrics.record_transitions(action)
 
-        moderation_notifications = {
-            RegistrationModerationTriggers.SUBMIT: notify.notify_submit,
-            RegistrationModerationTriggers.ACCEPT_SUBMISSION: notify.notify_accept_reject,
-            RegistrationModerationTriggers.REJECT_SUBMISSION: notify.notify_accept_reject,
-            RegistrationModerationTriggers.REQUEST_WITHDRAWAL: notify.notify_moderator_registration_requests_withdrawal,
-            RegistrationModerationTriggers.REJECT_WITHDRAWAL: notify.notify_reject_withdraw_request,
-            RegistrationModerationTriggers.ACCEPT_WITHDRAWAL: notify.notify_withdraw_registration,
-            RegistrationModerationTriggers.FORCE_WITHDRAW: notify.notify_withdraw_registration,
-        }
+        notification_type = NotificationType.objects.get(name=trigger.db_name)
 
-        notification = moderation_notifications.get(trigger)
-        if notification:
-            notification(
-                resource=self,
-                user=initiated_by,
-                action=action,
-                states=RegistrationModerationStates
+        for user, _ in self.get_admin_contributors_recursive(unique_users=True):
+            notification_type.emit(
+                user=user,
+                subscribed_object=self,
+                event_context={
+                    'registration': self._id,
+                    'from_state': from_state.db_name,
+                    'to_state': to_state.db_name,
+                    'comment': comment,
+                    'action_id': action.id,
+                }
             )
 
     def add_tag(self, tag, auth=None, save=True, log=True, system=False):
@@ -1177,9 +1173,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         ).order_by(self.order_by_contributor_field)
 
     @property
-    def contributor_email_template(self):
-        # Override for ContributorMixin
-        return 'draft_registration'
+    def contributor_notification_type(self):
+        return NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
 
     @property
     def institutions_url(self):
@@ -1301,6 +1296,13 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 auth=None,
                 email_template='draft_registration',
                 permissions=initiator_permissions
+            )
+            from website.project.views.contributor import notify_added_contributor
+            notify_added_contributor(
+                draft,
+                contributor=user,
+                auth=None,
+                email_template='draft_registration',
             )
 
         return draft

@@ -1,7 +1,12 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import AuthUserFactory, PreprintProviderFactory, ProjectFactory, NotificationSubscriptionFactory
+from osf_tests.factories import (
+    AuthUserFactory,
+    PreprintProviderFactory,
+    ProjectFactory,
+)
+from osf.models.notification import NotificationType
 
 
 @pytest.mark.django_db
@@ -23,9 +28,10 @@ class TestSubscriptionList:
 
     @pytest.fixture()
     def global_user_notification(self, user):
-        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
-        notification.add_user_to_subscription(user, 'email_transactional')
-        return notification
+        notification_type = NotificationType.objects.get('...')
+        frequency = 'instant'
+        user.add_to_subscription(notification_type, frequency)
+        return notification_type
 
     @pytest.fixture()
     def url(self, user, node):

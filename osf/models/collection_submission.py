@@ -2,6 +2,7 @@ import logging
 
 from django.db import models
 from django.utils.functional import cached_property
+from framework import sentry
 from framework.exceptions import PermissionsError
 
 from .base import BaseModel
@@ -10,13 +11,12 @@ from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
-from website.filters import profile_image_url
 
-from website import mails, settings
+from website import settings
 from osf.utils.machines import CollectionSubmissionMachine
+from osf.models.notification import NotificationType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -101,72 +101,35 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
                 claim_url = None
 
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
+            NotificationType.objects.get(
+                name=NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
+            ).emit(
                 user=contributor,
-                submitter=user,
-                is_initator=self.creator == contributor,
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                is_registered_contrib=contributor.is_registered,
-                collection=self.collection,
-                claim_url=claim_url,
-                node=self.guid.referent,
-                domain=settings.DOMAIN,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                subscribed_object=self,
+                event_context={
+                    'user': contributor.id,
+                    'submitter': user.id,
+                    'is_initiator': self.creator == contributor,
+                    'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                    'is_registered_contrib': contributor.is_registered,
+                    'collection': self.collection.id,
+                    'claim_url': claim_url,
+                    'node': self.guid.referent.id,
+                    'domain': settings.DOMAIN,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                },
             )
 
     def _notify_moderators_pending(self, event_data):
-        context = {
-            'reviewable': self.guid.referent,
-            'abstract_provider': self.collection.provider,
-            'reviews_submission_url': f'{settings.DOMAIN}{self.guid.referent._id}?mode=moderator',
-            'profile_image_url': profile_image_url(
-                settings.PROFILE_IMAGE_PROVIDER,
-                self.creator,
-                use_ssl=True,
-                size=settings.PROFILE_IMAGE_MEDIUM
-            ),
-            'message': f'submitted "{self.guid.referent.title}".',
-            'allow_submissions': True,
-        }
-
-        from .notifications import NotificationSubscription
-        from website.notifications.emails import store_emails
-
-        provider_subscription, created = NotificationSubscription.objects.get_or_create(
-            _id=f'{self.collection.provider._id}_new_pending_submissions',
-            provider=self.collection.provider
-        )
-        email_transactors_ids = list(
-            provider_subscription.email_transactional.all().values_list(
-                'guids___id',
-                flat=True
-            )
-        )
-        store_emails(
-            email_transactors_ids,
-            'email_transactional',
-            'new_pending_submissions',
-            self.creator,
-            self.guid.referent,
-            timezone.now(),
-            **context
-        )
-        email_digester_ids = list(
-            provider_subscription.email_digest.all().values_list(
-                'guids___id',
-                flat=True
-            )
-        )
-        store_emails(
-            email_digester_ids,
-            'email_digest',
-            'new_pending_submissions',
-            self.creator,
-            self.guid.referent,
-            timezone.now(),
-            **context
+        user = event_data.kwargs.get('user', None)
+        NotificationType.objects.get(
+            name=NotificationType.Type.NEW_PENDING_SUBMISSIONS,
+        ).emit(
+            user=user,
+            subscribed_object=self.guid.referent,
+            event_context={
+                'submitter': self.creator.id,
+            },
         )
 
     def _validate_accept(self, event_data):
@@ -181,16 +144,20 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_accepted(self, event_data):
         if self.collection.provider:
             for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
+                NotificationType.objects.get(
+                    name=NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED,
+                ).emit(
                     user=contributor,
-                    submitter=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    domain=settings.DOMAIN,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    subscribed_object=self,
+                    event_context={
+                        'user': contributor.id,
+                        'submitter': event_data.kwargs.get('user').id,
+                        'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                        'collection': self.collection.id,
+                        'node': self.guid.referent.id,
+                        'domain': settings.DOMAIN,
+                        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    },
                 )
 
     def _validate_reject(self, event_data):
@@ -208,15 +175,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderated_rejected(self, event_data):
         for contributor in self.guid.referent.contributors:
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_REJECTED(self.collection, self.guid.referent),
+            NotificationType.objects.get(
+                name=NotificationType.Type.COLLECTION_SUBMISSION_REJECTED,
+            ).emit(
                 user=contributor,
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                collection=self.collection,
-                node=self.guid.referent,
-                rejection_justification=event_data.kwargs.get('comment'),
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                subscribed_object=self,
+                event_context={
+                    'user': contributor.id,
+                    'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                    'collection': self.collection.id,
+                    'node': self.guid.referent.id,
+                    'rejection_justification': event_data.kwargs.get('comment'),
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                },
             )
 
     def _validate_remove(self, event_data):
@@ -242,56 +213,60 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
+        node = self.guid.referent
+
+        event_context_base = {
+            'remover': user.id,
+            'collection_id': self.collection.id,
+            'node_id': node.id,
+            'domain': settings.DOMAIN,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
+
         if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
-                    mails.send_mail(
-                        to_addr=moderator.username,
-                        mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
+                    NotificationType.objects.get(
+                        name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
+                    ).emit(
                         user=moderator,
-                        remover=user,
-                        is_admin=self.guid.referent.has_permission(moderator, ADMIN),
-                        collection=self.collection,
-                        node=self.guid.referent,
-                        domain=settings.DOMAIN,
-                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                        event_context={
+                            **event_context_base,
+                            'is_admin': node.has_permission(moderator, ADMIN),
+                        },
                     )
-            for contributor in self.guid.referent.contributors.all():
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.objects.get(
+                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
+                ).emit(
                     user=contributor,
-                    remover=user,
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    domain=settings.DOMAIN,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                    },
                 )
         elif is_moderator and self.collection.provider:
-            for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.objects.get(
+                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+                ).emit(
                     user=contributor,
-                    rejection_justification=event_data.kwargs.get('comment'),
-                    remover=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                        'rejection_justification': event_data.kwargs.get('comment'),
+                    },
                 )
         elif is_admin and self.collection.provider:
-            for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.objects.get(
+                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+                ).emit(
                     user=contributor,
-                    remover=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                    },
                 )
 
     def _validate_resubmit(self, event_data):
@@ -321,15 +296,13 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             return
 
         for contributor in self.guid.referent.contributors:
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_CANCEL(self.collection, self.guid.referent),
+            NotificationType.objects.get(
+                name=NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
+            ).emit(
                 user=contributor,
-                remover=event_data.kwargs.get('user'),
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                collection=self.collection,
-                node=self.guid.referent,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                event_context={
+                    'is_admin': self.collection.has_permission(contributor, ADMIN),
+                },
             )
 
     def _make_public(self, event_data):
@@ -382,13 +355,19 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         path = f'/collections/{self.collection._id}/collection_submissions/{self.guid._id}/'
         return api_v2_url(path)
 
-    def update_index(self):
+    def update_search(self):
         if self.collection.is_public:
+            from api.share.utils import update_share
             from website.search.search import update_collected_metadata
+
+            # It will automatically determine if a referent is part of the collection
+            update_share(self.guid.referent)
+
             try:
                 update_collected_metadata(self.guid._id, collection_id=self.collection.id)
             except SearchUnavailableError as e:
                 logger.exception(e)
+                sentry.log_exception(e)
 
     def remove_from_index(self):
         from website.search.search import update_collected_metadata
@@ -396,10 +375,11 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             update_collected_metadata(self.guid._id, collection_id=self.collection.id, op='delete')
         except SearchUnavailableError as e:
             logger.exception(e)
+            sentry.log_exception(e)
 
     def save(self, *args, **kwargs):
         ret = super().save(*args, **kwargs)
-        self.update_index()
+        self.update_search()
         return ret
 
 
