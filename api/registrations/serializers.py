@@ -1,5 +1,4 @@
 import pytz
-import json
 from website.archiver.utils import normalize_unicode_filenames
 
 from packaging.version import Version
@@ -36,7 +35,6 @@ from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
 from osf.models import Node
-from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
 
 class RegistrationSerializer(NodeSerializer):
@@ -62,7 +60,6 @@ class RegistrationSerializer(NodeSerializer):
         'original_response',
         'provider',
         'provider_specific_metadata',
-        'registered_meta',
         'registration_responses',
         'registration_schema',
         'registration_supplement',
@@ -185,12 +182,6 @@ class RegistrationSerializer(NodeSerializer):
     has_supplements = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
 
     registration_supplement = ser.SerializerMethodField()
-    # Will be deprecated in favor of registration_responses
-    registered_meta = HideIfWithdrawal(
-        ser.SerializerMethodField(
-            help_text='A dictionary with supplemental registration questions and responses.',
-        ),
-    )
     registration_responses = HideIfWithdrawal(
         ser.SerializerMethodField(
             help_text='A dictionary with supplemental registration questions and responses.',
@@ -510,17 +501,6 @@ class RegistrationSerializer(NodeSerializer):
     def get_absolute_url(self, obj):
         return obj.get_absolute_url()
 
-    def get_registered_meta(self, obj):
-        if obj.registered_meta:
-            meta_values = self.anonymize_registered_meta(obj)
-            try:
-                return json.loads(meta_values)
-            except TypeError:
-                return meta_values
-            except ValueError:
-                return meta_values
-        return None
-
     def get_registration_responses(self, obj):
         latest_approved_response = obj.root.schema_responses.filter(
             reviews_state=ApprovalStates.APPROVED.db_name,
@@ -572,15 +552,6 @@ class RegistrationSerializer(NodeSerializer):
             return latest_approved._id
         return None
 
-    def anonymize_registered_meta(self, obj):
-        """
-        Looks at every question on every page of the schema, for any titles
-        that have a contributor-input block type.  If present, deletes that question's response
-        from meta_values.
-        """
-        cleaned_registered_meta = strip_registered_meta_comments(list(obj.registered_meta.values())[0])
-        return self.anonymize_fields(obj, cleaned_registered_meta)
-
     def anonymize_registration_responses(self, obj):
         """
         For any questions that have a `contributor-input` block type, delete
@@ -594,7 +565,7 @@ class RegistrationSerializer(NodeSerializer):
     def anonymize_fields(self, obj, data):
         """
         Consolidates logic to anonymize fields with contributor information
-        on both registered_meta and registration_responses
+        on registration_responses
         """
         if is_anonymized(self.context['request']):
             anonymous_registration_response_keys = obj.get_contributor_registration_response_keys()

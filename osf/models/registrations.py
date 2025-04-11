@@ -114,7 +114,6 @@ class Registration(AbstractNode):
     # TODO: Consider making this a FK, as there can be one per Registration
     registered_schema = models.ManyToManyField(RegistrationSchema)
 
-    registered_meta = DateTimeAwareJSONField(default=dict, blank=True)
     registered_from = models.ForeignKey('self',
                                         related_name='registrations',
                                         on_delete=models.SET_NULL,
@@ -197,11 +196,6 @@ class Registration(AbstractNode):
         if self.registered_schema.exists():
             return self.registered_schema.first()
         return None
-
-    def get_registration_metadata(self, schema):
-        # Overrides RegistrationResponseMixin
-        registered_meta = self.registered_meta or {}
-        return registered_meta.get(schema._id, None)
 
     @property
     def file_storage_resource(self):
@@ -989,7 +983,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     #     'value': <value>
     #   }
     # }
-    registration_metadata = DateTimeAwareJSONField(default=dict, blank=True)
     registration_schema = models.ForeignKey('RegistrationSchema', null=True, on_delete=models.CASCADE)
     registered_node = models.ForeignKey('Registration', null=True, blank=True,
                                         related_name='draft_registration', on_delete=models.CASCADE)
@@ -1028,10 +1021,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     def __repr__(self):
         return ('<DraftRegistration(branched_from={self.branched_from!r}) '
                 'with id {self._id!r}>').format(self=self)
-
-    def get_registration_metadata(self, schema):
-        # Overrides RegistrationResponseMixin
-        return self.registration_metadata
 
     @property
     def file_storage_resource(self):
@@ -1282,7 +1271,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             initiator=user,
             branched_from=branched_from,
             registration_schema=schema,
-            registration_metadata=data or {},
             provider=provider,
         )
         draft.save()
@@ -1331,14 +1319,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 self.add_permission(contrib.user, permission, save=True)
         DraftRegistrationContributor.objects.bulk_create(contribs)
 
-    def update_metadata(self, metadata):
-        # Prevent comments on approved drafts
-        self.registration_metadata.update(metadata)
-
-        # Write to registration_responses also (new workflow)
-        registration_responses = self.flatten_registration_metadata()
-        self.registration_responses.update(registration_responses)
-
     def update_registration_responses(self, registration_responses):
         """
         New workflow - update_registration_responses.  This should have been
@@ -1347,8 +1327,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         """
         registration_responses = self.unescape_registration_file_names(registration_responses)
         self.registration_responses.update(registration_responses)
-        registration_metadata = self.expand_registration_responses()
-        self.registration_metadata = registration_metadata
         return
 
     def unescape_registration_file_names(self, registration_responses):

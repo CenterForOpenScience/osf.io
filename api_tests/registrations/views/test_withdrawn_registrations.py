@@ -174,7 +174,6 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
             'pending_registration_approval': None,
             'pending_embargo_approval': None,
             'embargo_end_date': None,
-            'registered_meta': None,
             'current_user_permissions': None,
             'registration_supplement': registration.registered_schema.first().name}
 

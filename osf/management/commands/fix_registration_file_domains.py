@@ -48,10 +48,7 @@ def fix_registration_response_file_links(registration):
                 urls['download'] = urls['download'].replace(BAD_DOMAIN, DOMAIN)
             block.save()
 
-    # Re-set registration_responses and registered_meta bssed on the *latest* schema_response,
-    # which will have inherited these fixes if not already explicitly updated
     registration.registration_responses = registration.schema_responses.first().all_responses
-    registration.registered_meta[schema._id] = registration.expand_registration_responses()
     registration.save()
 
 

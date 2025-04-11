@@ -1488,7 +1488,6 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     # Will be eventually deprecated in favor of registration_responses
-    registration_metadata = ser.DictField(required=False)
     registration_responses = ser.DictField(required=False)
     datetime_initiated = VersionedDateTimeField(read_only=True)
     datetime_updated = VersionedDateTimeField(read_only=True)
@@ -1547,34 +1546,20 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         draft.update_registration_responses(registration_responses)
         draft.save()
 
-    def enforce_metadata_or_registration_responses(self, metadata=None, registration_responses=None):
-        if metadata and registration_responses:
-            raise exceptions.ValidationError(
-                'You cannot include both `registration_metadata` and `registration_responses` in your request. Please use' +
-                ' `registration_responses` as `registration_metadata` will be deprecated in the future.',
-            )
-
     def get_node(self, validated_data=None):
         return self.context['view'].get_node()
 
     def create(self, validated_data):
         initiator = get_user_auth(self.context['request']).user
         node = self.get_node(validated_data)
-        # Old workflow - deeply nested
-        metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
         provider = validated_data.pop('provider', None)
-
-        self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         try:
             draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
         except ValidationError as e:
             raise exceptions.ValidationError(e.message)
-
-        if metadata:
-            self.update_metadata(draft, metadata)
 
         if registration_responses:
             self.update_registration_responses(draft, registration_responses)
@@ -1616,8 +1601,6 @@ class DraftRegistrationDetailLegacySerializer(DraftRegistrationLegacySerializer)
         """
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
-
-        self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
         if metadata:
             self.update_metadata(draft, metadata)

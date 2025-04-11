@@ -800,7 +800,6 @@ class RegistrationLinkedRegistrationsList(NodeLinkedRegistrationsList, Registrat
         pending_withdrawal              boolean            is this registration pending withdrawal?
         pending_withdrawal_approval     boolean            is this registration pending approval?
         pending_embargo_approval        boolean            is the associated Embargo awaiting approval by project admins?
-        registered_meta                 dictionary         registration supplementary information
         registration_supplement         string             registration template
 
     ##Links

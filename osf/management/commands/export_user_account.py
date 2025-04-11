@@ -53,7 +53,6 @@ NODE_EXPORT_FIELDS = [
 
 REGISTRATION_EXPORT_FIELDS = NODE_EXPORT_FIELDS + [
     'registered_data',
-    'registered_meta'
 ]
 
 logging.getLogger('urllib3').setLevel(logging.WARNING)

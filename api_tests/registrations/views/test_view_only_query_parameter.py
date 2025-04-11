@@ -159,23 +159,11 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
 
     @pytest.fixture()
     def reg_report(self, registration_schema, admin):
-        registration = RegistrationFactory(schema=registration_schema, creator=admin, is_public=False)
-        registration.registered_meta[registration_schema._id] = {
-            'q1': {
-                'comments': [],
-                'extra': [],
-                'value': 'This is the answer to a question'
-            },
-            'q2': {
-                'comments': [],
-                'extra': [],
-                'value': 'Grapes McGee'
-            }
-
-        }
-        registration.registration_responses = registration.flatten_registration_metadata()
-        registration.save()
-        return registration
+        return RegistrationFactory(
+            schema=registration_schema,
+            creator=admin,
+            is_public=False
+        )
 
     @pytest.fixture()
     def reg_report_anonymous_link(self, reg_report):
@@ -189,9 +177,6 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
         url = f'/{API_BASE}registrations/{reg_report._id}/'
         res = app.get(url, auth=admin.auth)
         assert res.status_code == 200
-        meta = res.json['data']['attributes']['registered_meta']
-        assert 'q1' in meta
-        assert 'q2' in meta
 
         reg_responses = res.json['data']['attributes']['registration_responses']
         assert 'q1' in reg_responses
@@ -202,9 +187,6 @@ class TestRegistrationDetailViewOnlyLinks(TestNodeDetailViewOnlyLinks):
             'view_only': reg_report_anonymous_link.key
         })
         assert res.status_code == 200
-        meta = res.json['data']['attributes']['registered_meta']
-        assert 'q1' in meta
-        assert 'q2' not in meta
 
         reg_responses = res.json['data']['attributes']['registration_responses']
         assert 'q1' in reg_responses

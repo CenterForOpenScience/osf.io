@@ -711,7 +711,6 @@ class TestProject:
         assert hasattr(node, 'forked_date')
         assert bool(node.title)
         assert hasattr(node, 'description')
-        assert hasattr(node, 'registered_meta')
         assert hasattr(node, 'registered_user')
         assert hasattr(node, 'registered_schema')
         assert bool(node.creator)
@@ -2003,7 +2002,6 @@ class TestRegisterNode:
         r1 = reg.nodes[0]
         r1a = r1.nodes[0]
         for r in [reg, r1, r1a]:
-            assert r.registered_meta[meta_schema._id] == data
             assert r.registration_responses == expected_flat_data
             assert r.registered_schema.first() == meta_schema
 
@@ -2101,7 +2099,6 @@ class TestRegisterNode:
         # so there aren't discrepancies
 
         # assert that other registration_metadata not overridden
-        assert registration.registered_meta[registration.registration_schema._id]['q3']['value'] == 'research questions'
         assert registration.registration_responses['q3'] == 'research questions'
 
 

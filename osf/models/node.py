@@ -1439,9 +1439,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.registered_user = auth.user
         registered.registered_from = original
         registered.provider = provider
-        if not registered.registered_meta:
-            registered.registered_meta = {}
-        registered.registered_meta[schema._id] = draft_registration.registration_metadata
 
         registered.forked_from = self.forked_from
         registered.creator = self.creator

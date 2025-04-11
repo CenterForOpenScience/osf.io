@@ -587,7 +587,6 @@ class DraftRegistrationFactory(DjangoModelFactory):
             draft.title = title
         if description:
             draft.description = description
-        draft.registration_responses = draft.flatten_registration_metadata()
         draft.save()
         return draft
 

@@ -9,7 +9,6 @@ from framework.celery_tasks import app as celery_app
 from framework import sentry
 
 from osf.exceptions import SchemaBlockConversionError
-from osf.utils.registrations import flatten_registration_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +19,6 @@ def get_nested_responses(registration_or_draft, schema_id):
         'registration_metadata',
         None,
     )
-    if nested_responses is None:
-        registered_meta = registration_or_draft.registered_meta or {}
-        nested_responses = registered_meta.get(schema_id, None)
     return nested_responses
 
 # because Registrations and DraftRegistrations are different
@@ -82,11 +78,6 @@ def migrate_responses(model, resources, resource_name, dry_run=False, rows='all'
     errors_to_save = []
     for resource in resources:
         try:
-            schema = get_registration_schema(resource)
-            resource.registration_responses = flatten_registration_metadata(
-                schema,
-                get_nested_responses(resource, schema._id),
-            )
             resource.registration_responses_migrated = True
             successes_to_save.append(resource)
         except SchemaBlockConversionError as e:

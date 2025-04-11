@@ -27,7 +27,6 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from osf_tests.utils import get_default_test_schema
-from osf_tests.test_registrations import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
 from website import settings
@@ -36,6 +35,77 @@ from website.project.metadata.schemas import from_json
 from osf.utils import permissions
 
 SCHEMA_VERSION = 2
+
+
+prereg_registration_responses = {
+    'q12.uploader': [],
+    'q7.question': 'data collection procedures',
+    'q20': 'transforming and recoding',
+    'q21': 'research plan follow up',
+    'q22': 'criteria',
+    'q23': 'this is how outliers will be handled',
+    'q24': 'this is how I will deal with incomplete data.',
+    'q25': 'this is my exploratory analysis',
+    'q26': [],
+    'q27': 'No additional comments',
+    'q12.question': 'these are my measured variables',
+    'q1': 'This is my title',
+    'q3': 'research questions',
+    'q5': 'Registration prior to creation of data',
+    'q4': 'this is my hypothesis',
+    'q6': 'Explanation of existing data',
+    'q9': 'this is the rationale for my sample size',
+    'q8': 'this is my sample size',
+    'q13.question': 'these are my indices',
+    'q19.uploader': [],
+    'q11.uploader': [
+        {
+            'file_name': 'Screen Shot 2019-08-30 at 9.04.01 AM.png',
+            'file_id': '5d6d22264d476c088fb8e01f',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22264d476c088fb8e01f'),
+            },
+            'file_hashes': {
+                'sha256': 'sdf',
+            },
+        },
+        {
+            'file_name': 'Alphabet.txt',
+            'file_id': '5d6d22274d476c088fb8e021',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+            },
+            'file_hashes': {
+                'sha256': 'dsdfds',
+            },
+        }
+    ],
+    'q16.question': 'this is my study design',
+    'q15': [
+        'No blinding is involved in this study.',
+        'For studies that involve human subjects, they will not know the treatment group to which they have been assigned.',
+        'Research personnel who interact directly with the study subjects (either human or non-human subjects) will not be aware of the assigned treatments.'
+    ],
+    'q14': '',
+    'q17': 'this is my explanation of randomization',
+    'q10': 'this is my stopping rule',
+    'q11.question': 'these are my maniuplated variables',
+    'q16.uploader': [],
+    'q19.question': 'ANOVA',
+    'q13.uploader': [],
+    'q7.uploader': [
+        {
+            'file_name': 'Alphabet.txt',
+            'file_id': '5d6d22274d476c088fb8e021',
+            'file_urls': {
+                'html': urljoin(settings.DOMAIN, '/project/57zbh/files/osfstorage/5d6d22274d476c088fb8e021'),
+            },
+            'file_hashes': {
+                'sha256': 'dsdfds',
+            },
+        }
+    ]
+}
 
 
 class TestRegistrationList(ApiTestCase):

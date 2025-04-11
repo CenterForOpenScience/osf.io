@@ -44,7 +44,6 @@ from osf.utils.machines import (
 )
 
 from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
-from osf.utils.registrations import flatten_registration_metadata, expand_registration_responses
 from osf.utils.workflows import (
     DefaultStates,
     DefaultTriggers,
@@ -2285,37 +2284,6 @@ class RegistrationResponseMixin(models.Model):
     def file_storage_resource(self):
         # Where the original files were stored (the node)
         raise NotImplementedError()
-
-    def flatten_registration_metadata(self):
-        """
-        Extracts questions/nested registration_responses - makes use of schema block `registration_response_key`
-        and block_type to assemble flattened registration_responses.
-
-        For example, if the registration_response_key = "description-methods.planned-sample.question7b",
-        this will recurse through the registered_meta, looking for each key, starting with "description-methods",
-        then "planned-sample", and finally "question7b", returning the most deeply nested value corresponding
-        with the final key to flatten the dictionary.
-        :self, DraftRegistration or Registration
-        :returns dictionary, registration_responses, flattened dictionary with registration_response_keys
-        top-level
-        """
-        schema = self.registration_schema
-        registered_meta = self.get_registration_metadata(schema)
-        return flatten_registration_metadata(schema, registered_meta)
-
-    def expand_registration_responses(self):
-        """
-        Expanding `registration_responses` into Draft.registration_metadata or
-        Registration.registered_meta. registration_responses are more flat;
-        "registration_response_keys" are top level.  Registration_metadata/registered_meta
-        will have a more deeply nested format.
-        :returns registration_metadata, dictionary
-        """
-        return expand_registration_responses(
-            self.registration_schema,
-            self.registration_responses,
-            self.file_storage_resource,
-        )
 
     class Meta:
         abstract = True

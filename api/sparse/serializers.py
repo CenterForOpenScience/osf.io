@@ -167,7 +167,6 @@ class SparseRegistrationSerializer(RegistrationSerializer):
             'pending_registration_approval',
             'pending_withdrawal',
             'public',
-            'registered_meta',
             'registration_schema',
             'root',
             'tags',

@@ -656,8 +656,8 @@ class TestArchiverTasks(ArchiverTestCase):
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
                 archive_success(registration._id, job._id)
-                for key, question in registration.registered_meta[schema._id].items():
-                    assert question['extra'][0]['selectedFileName'] == fake_file['name']
+                # for key, question in registration.registered_meta[schema._id].items():
+                #     assert question['extra'][0]['selectedFileName'] == fake_file['name']
 
     def test_archive_failure_different_name_same_sha(self):
         file_tree = file_tree_factory(0, 0, 0)
@@ -712,8 +712,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 archive_success(registration._id, job._id)
                 registration.reload()
                 child_reg = registration.nodes[0]
-                for key, question in registration.registered_meta[schema._id].items():
-                    assert child_reg._id in question['extra'][0]['viewUrl']
+                for rr in registration.registered_responses.all():
+                    assert child_reg._id in rr.url   # rr question['extra'][0]['viewUrl']
 
 
 class TestArchiverUtils(ArchiverTestCase):

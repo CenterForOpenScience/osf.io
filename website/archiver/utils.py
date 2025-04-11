@@ -265,7 +265,6 @@ def migrate_file_metadata(dst):
         response_block.set_response(updated_response)
 
     dst.registration_responses = dst.schema_responses.get().all_responses
-    dst.registered_meta[schema._id] = dst.expand_registration_responses()
     dst.save()
 
 

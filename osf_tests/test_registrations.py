@@ -20,12 +20,6 @@ from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.providers.workflows import Workflows
 from osf.migrations import update_provider_auth_groups
 from osf.models.action import RegistrationAction
-from osf_tests.management_commands.test_migration_registration_responses import (
-    prereg_registration_responses,
-    prereg_registration_metadata_built,
-    veer_registration_responses,
-    veer_condensed
-)
 from osf.utils.workflows import (
     RegistrationModerationStates,
     RegistrationModerationTriggers,
@@ -614,25 +608,6 @@ class TestRegistrationMixin:
             name__icontains='Pre-Registration in Social Psychology',
             schema_version=2
         )
-
-    def test_expand_registration_responses(self, draft_prereg):
-        draft_prereg.registration_responses = prereg_registration_responses
-        draft_prereg.save()
-        assert draft_prereg.registration_metadata == {}
-
-        registration_metadata = draft_prereg.expand_registration_responses()
-
-        assert registration_metadata == prereg_registration_metadata_built
-
-    def test_expand_registration_responses_veer(self, draft_veer):
-        draft_veer.registration_responses = veer_registration_responses
-        draft_veer.save()
-        assert draft_veer.registration_metadata == {}
-
-        registration_metadata = draft_veer.expand_registration_responses()
-
-        assert registration_metadata == veer_condensed
-
 
 class TestRegistationModerationStates:
 
