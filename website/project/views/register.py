@@ -7,17 +7,12 @@ from framework import status
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.auth.decorators import must_be_signed
-
-from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
-
-from addons.base.views import DOWNLOAD_ACTIONS
 from website import settings
 from osf.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission, must_be_contributor_and_not_group_member,
-    must_not_be_registration, must_be_registration,
+    must_not_be_registration,
     must_not_be_retracted_registration
 )
 from osf import features
@@ -26,12 +21,10 @@ from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
 from website.ember_osf_web.decorators import ember_flag_is_active
-from website.project import signals as project_signals
 from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema
 from website.project.model import has_anonymous_link
-from website.archiver.decorators import fail_archive_on_error
 
 from .node import _view_project
 from api.waffle.utils import flag_is_active
@@ -228,28 +221,3 @@ def get_referent_by_identifier(category, value):
     if identifier.referent.url:
         return redirect(identifier.referent.url)
     raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-@fail_archive_on_error
-@must_be_signed
-@must_be_registration
-def registration_callbacks(node, payload, *args, **kwargs):
-    if payload.get('action', None) in DOWNLOAD_ACTIONS:
-        return {'status': 'success'}
-    errors = payload.get('errors')
-    src_provider = payload['source']['provider']
-    if errors:
-        node.archive_job.update_target(
-            src_provider,
-            ARCHIVER_FAILURE,
-            errors=errors,
-        )
-    else:
-        # Dataverse requires two seperate targets, one
-        # for draft files and one for published files
-        if src_provider == 'dataverse':
-            src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())
-        node.archive_job.update_target(
-            src_provider,
-            ARCHIVER_SUCCESS,
-        )
-    project_signals.archive_callback.send(node)

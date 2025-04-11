@@ -173,25 +173,6 @@ def must_not_be_registration(func):
 
     return wrapped
 
-def must_be_registration(func):
-
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        _inject_nodes(kwargs)
-        node = kwargs['node']
-
-        if not node.is_registration:
-            raise HTTPError(
-                http_status.HTTP_400_BAD_REQUEST,
-                data={
-                    'message_short': 'Registered Nodes only',
-                    'message_long': 'This view is restricted to registered Nodes only',
-                }
-            )
-        return func(*args, **kwargs)
-
-    return wrapped
-
 
 def check_can_download_preprint_file(user, node):
     """View helper that returns whether a given user can download unpublished preprint files.
