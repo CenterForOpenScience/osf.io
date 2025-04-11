@@ -22,6 +22,8 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
+from api.providers.workflows import Workflows
+from framework.postcommit_tasks.handlers import get_task_from_postcommit_queue
 
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
@@ -797,3 +799,69 @@ class TestPreprintMakePublishedView:
         preprint.reload()
 
         assert preprint.is_published
+
+    @mock.patch('website.preprints.tasks.update_or_create_preprint_identifiers')
+    def test_doi_request_is_called_for_post_moderation(self, create_identifier_mock, user, preprint, plain_view):
+        unpublished_post_moderation_preprint = PreprintFactory(
+            is_published=False,
+            reviews_workflow=Workflows.POST_MODERATION.value
+        )
+        admin_group = Group.objects.get(name='osf_admin')
+
+        request = RequestFactory().post(reverse('preprints:make-published', kwargs={'guid': unpublished_post_moderation_preprint._id}))
+        request.user = user
+
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=unpublished_post_moderation_preprint._id)
+
+        assert create_identifier_mock.assert_called_with(unpublished_post_moderation_preprint) is None
+
+    @mock.patch('website.preprints.tasks.update_or_create_preprint_identifiers')
+    def test_doi_request_is_not_called_for_pre_moderation(self, create_identifier_mock, user, preprint, plain_view):
+        unpublished_pre_moderation_preprint = PreprintFactory(
+            is_published=False,
+            reviews_workflow=Workflows.PRE_MODERATION.value
+        )
+        admin_group = Group.objects.get(name='osf_admin')
+
+        request = RequestFactory().post(reverse('preprints:make-published', kwargs={'guid': unpublished_pre_moderation_preprint._id}))
+        request.user = user
+
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=unpublished_pre_moderation_preprint._id)
+
+        assert not create_identifier_mock.called
+
+    def test_share_update_is_called_when_make_preprint_published(self, user, preprint, plain_view):
+        unpublished_post_moderation_preprint = PreprintFactory(
+            is_published=False,
+            reviews_workflow=Workflows.POST_MODERATION.value
+        )
+
+        assert not unpublished_post_moderation_preprint.is_published
+
+        admin_group = Group.objects.get(name='osf_admin')
+
+        request = RequestFactory().post(reverse('preprints:make-published', kwargs={'guid': unpublished_post_moderation_preprint._id}))
+        request.user = user
+
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=unpublished_post_moderation_preprint._id)
+
+        unpublished_post_moderation_preprint.reload()
+        assert unpublished_post_moderation_preprint.is_published
+
+        updated_task = get_task_from_postcommit_queue(
+            'website.preprints.tasks.on_preprint_updated',
+            predicate=lambda task: task.kwargs['preprint_id'] == unpublished_post_moderation_preprint._id
+        )
+
+        assert updated_task
+        # ensure this field is passed to celery task so that update_share is called for it
+        assert 'is_published' in updated_task.kwargs['saved_fields']
