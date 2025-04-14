@@ -834,9 +834,11 @@ class TestPreprintMakePublishedView:
 
         plain_view.as_view()(request, guid=unpublished_pre_moderation_preprint._id)
 
+        assert unpublished_pre_moderation_preprint.provider and unpublished_pre_moderation_preprint.provider.reviews_workflow == Workflows.PRE_MODERATION.value
         assert not create_identifier_mock.called
 
-    def test_share_update_is_called_when_make_preprint_published(self, user, preprint, plain_view):
+    @mock.patch('website.preprints.tasks.update_or_enqueue_on_preprint_updated')
+    def test_share_update_is_called_when_make_preprint_published(self, on_preprint_updated_mock, user, preprint, plain_view):
         unpublished_post_moderation_preprint = PreprintFactory(
             is_published=False,
             reviews_workflow=Workflows.POST_MODERATION.value
