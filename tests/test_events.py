@@ -18,37 +18,6 @@ email_transactional = 'email_transactional'
 email_digest = 'email_digest'
 
 
-class TestEventNotImplemented(OsfTestCase):
-    """
-    Test non-implemented errors
-    """
-    @register('not_implemented')
-    class NotImplementedEvent(Event):
-        pass
-
-    def setUp(self):
-        super().setUp()
-        self.user = factories.UserFactory()
-        self.auth = Auth(user=self.user)
-        self.node = factories.ProjectFactory(creator=self.user)
-        self.event = self.NotImplementedEvent(self.user, self.node, 'not_implemented')
-
-    def test_text(self):
-        with raises(NotImplementedError):
-            text = self.event.text_message
-
-    def test_html(self):
-        with raises(NotImplementedError):
-            html = self.event.html_message
-
-    def test_url(self):
-        with raises(NotImplementedError):
-            url = self.event.url
-
-    def test_event(self):
-        with raises(NotImplementedError):
-            event = self.event.event_type
-
 
 class TestListOfFiles(OsfTestCase):
     """

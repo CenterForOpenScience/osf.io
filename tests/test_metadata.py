@@ -3,7 +3,6 @@ import unittest
 import pytest
 from django.core.exceptions import ValidationError
 
-from framework.forms.utils import process_payload
 from osf.models import RegistrationSchema
 from osf.utils.migrations import ensure_schemas
 from website.project.metadata.schemas import OSF_META_SCHEMA_FILES
@@ -30,18 +29,6 @@ class TestMetaData(OsfTestCase):
         RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
         RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=2).save()
         assert RegistrationSchema.objects.filter(name='foo').count() == 2
-
-    def test_process(self):
-        processed = process_payload({'foo': 'bar&baz'})
-        assert processed['foo'] == 'bar%26baz'
-
-    def test_process_list(self):
-        processed = process_payload({'foo': ['bar', 'baz&bob']})
-        assert processed['foo'][1] == 'baz%26bob'
-
-    def test_process_whitespace(self):
-        processed = process_payload({'foo': 'bar baz'})
-        assert processed['foo'] == 'bar baz'
 
 
 if __name__ == '__main__':

@@ -769,29 +769,29 @@ class TestCommentViews(OsfTestCase):
 
         # Regression test for https://openscience.atlassian.net/browse/OSF-5193
         # moved from tests/test_comments.py
-        def test_find_unread_includes_edited_comments(self):
-            project = ProjectFactory()
-            user = AuthUserFactory()
-            project.add_contributor(user, save=True)
-            comment = CommentFactory(node=project, user=project.creator)
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 1
+    def test_find_unread_includes_edited_comments(self):
+        project = ProjectFactory()
+        user = AuthUserFactory()
+        project.add_contributor(user, save=True)
+        comment = CommentFactory(node=project, user=project.creator)
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 1
 
-            url = project.api_url_for('update_comments_timestamp')
-            payload = {'page': 'node', 'rootId': project._id}
-            self.app.put(url, json=payload, auth=user.auth)
-            user.reload()
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 0
+        url = project.api_url_for('update_comments_timestamp')
+        payload = {'page': 'node', 'rootId': project._id}
+        self.app.put(url, json=payload, auth=user.auth)
+        user.reload()
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 0
 
-            # Edit previously read comment
-            comment.edit(
-                auth=Auth(project.creator),
-                content='edited',
-                save=True
-            )
-            n_unread = Comment.find_n_unread(user=user, node=project, page='node')
-            assert n_unread == 1
+        # Edit previously read comment
+        comment.edit(
+            auth=Auth(project.creator),
+            content='edited',
+            save=True
+        )
+        n_unread = Comment.find_n_unread(user=user, node=project, page='node')
+        assert n_unread == 1
 
 @mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
@@ -834,4 +834,3 @@ class TestResolveGuid(OsfTestCase):
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
         mock_use_ember_app.assert_called_with()
-
