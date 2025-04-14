@@ -196,7 +196,7 @@ class TestNodeSerializerAndRegistrationSerializerDifferences(ApiTestCase):
             'cedar_metadata_records',
         ]
         # fields that do not appear on registrations
-        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups', 'subjects_acceptable']
+        non_registration_fields = ['registrations', 'draft_registrations', 'templated_by_count', 'settings', 'storage', 'children', 'groups', 'subjects_acceptable', 'verified_resource_links']
 
         for field in NodeSerializer._declared_fields:
             assert field in RegistrationSerializer._declared_fields
