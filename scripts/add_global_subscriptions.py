@@ -40,8 +40,6 @@ def add_global_subscriptions(dry=True):
                     logger.info(f'No {user_event} subscription found for user {user._id}. Subscribing...')
                     subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
                     subscription.save()  # Need to save in order to access m2m fields
-                    subscription.add_user_to_subscription(user, notification_type)
-                    subscription.save()
                     changed = True
                 else:
                     logger.info(f'User {user._id} already has a {user_event} subscription')

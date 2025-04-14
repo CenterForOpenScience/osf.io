@@ -1063,7 +1063,7 @@ class ReviewProviderMixin(GuardianMixin):
     def add_to_group(self, user, group):
         # Add default notification subscription
         for subscription in self.DEFAULT_SUBSCRIPTIONS:
-            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+            self.add_user_to_subscription(user, subscription)
 
         return self.get_group(group).user_set.add(user)
 
@@ -1080,16 +1080,11 @@ class ReviewProviderMixin(GuardianMixin):
         return _group.user_set.remove(user)
 
     def add_user_to_subscription(self, user, subscription_id):
-        notification = self.notification_subscriptions.get(_id=subscription_id)
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+        notification = self.notification_subscriptions.get(notification_type__name=subscription_id)
+        notification.add_user_to_subscription(user, 'email_transactional', save=True)
 
     def remove_user_from_subscription(self, user, subscription_id):
-        notification = self.notification_subscriptions.get(_id=subscription_id)
+        notification = self.notification_subscriptions.get(id=subscription_id)
         notification.remove_user_from_subscription(user, save=True)
 
 

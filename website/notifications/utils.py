@@ -92,9 +92,13 @@ def remove_supplemental_node(node):
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    from django.contrib.contenttypes.models import ContentType
 
     node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(node=node).delete()
+    NotificationSubscription.objects.filter(
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node.__class__).id,
+    ).delete()
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -238,11 +242,7 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    queryset = NotificationSubscription.objects.filter(
-        Q(none=user.pk) |
-        Q(email_digest=user.pk) |
-        Q(email_transactional=user.pk)
-    ).distinct()
+    queryset = NotificationSubscription.objects.filter(user=user)
     return queryset.filter(extra) if extra else queryset
 
 
@@ -253,10 +253,15 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     :param user_subscriptions: all Subscription objects that the user is subscribed to
     :return: list of Subscription objects for a node that the user is subscribed to
     """
+    from django.contrib.contenttypes.models import ContentType
+
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    return user_subscriptions.filter(user__isnull=True, node=node)
-
+    return user_subscriptions.filter(
+        user__isnull=True,
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node.__class__),
+    )
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page
@@ -435,14 +440,22 @@ def check_if_all_global_subscriptions_are_none(user):
 
 def subscribe_user_to_global_notifications(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    notification_type = 'email_transactional'
     user_events = constants.USER_SUBSCRIPTIONS_AVAILABLE
+    NotificationType = apps.get_model('osf.NotificationType')
+    from django.contrib.contenttypes.models import ContentType
     for user_event in user_events:
-        user_event_id = to_subscription_key(user._id, user_event)
-
-        # get_or_create saves on creation
-        subscription, created = NotificationSubscription.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
-        subscription.add_user_to_subscription(user, notification_type)
+        subscription, created = NotificationSubscription.objects.get_or_create(
+            notification_type=NotificationType.objects.get(name=user_event),
+            user=user,
+            content_type=ContentType.objects.get_for_model(user),
+            object_id=user.id,
+            defaults={
+                'notification_type': NotificationType.objects.get(name=user_event),
+                'content_type': ContentType.objects.get_for_model(user.__class__),
+                'message_frequency': 'instantly',
+                'object_id': user.id
+            }
+        )
         subscription.save()
 
 
@@ -450,7 +463,9 @@ def subscribe_user_to_notifications(node, user):
     """ Update the notification settings for the creator or contributors
     :param user: User to subscribe to notifications
     """
+    from django.contrib.contenttypes.models import ContentType
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationType = apps.get_model('osf.NotificationType')
     Preprint = apps.get_model('osf.Preprint')
     DraftRegistration = apps.get_model('osf.DraftRegistration')
     if isinstance(node, Preprint):
@@ -468,32 +483,19 @@ def subscribe_user_to_notifications(node, user):
     if getattr(node, 'is_registration', False):
         raise InvalidSubscriptionError('Registrations are invalid targets for subscriptions')
 
-    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
-    notification_type = 'email_transactional'
-    target_id = node._id
-
     if user.is_registered:
-        for event in events:
-            event_id = to_subscription_key(target_id, event)
-            global_event_id = to_subscription_key(user._id, 'global_' + event)
-            global_subscription = NotificationSubscription.load(global_event_id)
-
-            subscription = NotificationSubscription.load(event_id)
-
-            # If no subscription for component and creator is the user, do not create subscription
-            # If no subscription exists for the component, this means that it should adopt its
-            # parent's settings
-            if not (node and node.parent_node and not subscription and node.creator == user):
-                if not subscription:
-                    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
-                    # Need to save here in order to access m2m fields
-                    subscription.save()
-                if global_subscription:
-                    global_notification_type = get_global_notification_type(global_subscription, user)
-                    subscription.add_user_to_subscription(user, global_notification_type)
-                else:
-                    subscription.add_user_to_subscription(user, notification_type)
-                subscription.save()
+        for event in constants.NODE_SUBSCRIPTIONS_AVAILABLE:
+            NotificationSubscription.objects.get_or_create(
+                notification_type__name=NotificationType.objects.get(name=event),
+                user=user,
+                content_type=ContentType.objects.get_for_model(node),
+                object_id=node.id,
+                defaults={
+                    'notification_type': NotificationType.objects.get(name=event),
+                    'content_type': ContentType.objects.get_for_model(node),
+                    'object_id': node.id
+                }
+            )
 
 
 def format_user_and_project_subscriptions(user):

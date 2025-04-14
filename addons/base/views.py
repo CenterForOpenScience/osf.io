@@ -611,7 +611,10 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+        print('!', action, payload)
+        from osf.models.notification import NotificationType
+        NotificationType.objects.get(name=action).emit()
+        # file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 

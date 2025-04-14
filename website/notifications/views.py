@@ -95,10 +95,10 @@ def configure_subscription(auth):
                     raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
-            subscription = NotificationSubscription.load(event_id)
-            if not subscription:
-                return {}  # We're done here
-
+            subscription = NotificationSubscription.objects.get(
+                notification_type__name=event_id,
+                user=user
+            )
             subscription.remove_user_from_subscription(user)
             return {}
 
@@ -111,8 +111,6 @@ def configure_subscription(auth):
     if node and node._id not in user.notifications_configured:
         user.notifications_configured[node._id] = True
         user.save()
-
-    subscription.add_user_to_subscription(user, notification_type)
 
     subscription.save()
 

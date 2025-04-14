@@ -1435,7 +1435,7 @@ class TestSendEmails(NotificationTestCase):
     def test_notify_no_subscription(self, mock_store):
         node = factories.ProjectFactory()
         user = factories.AuthUserFactory()
-        emails.notify('comments', user=user, node=node, timestamp=timezone.now())
+        emails.notify_legacy('comments', user=user, node=node, timestamp=timezone.now())
         assert not mock_store.called
 
     @mock.patch('website.notifications.emails.store_emails')
@@ -1447,13 +1447,13 @@ class TestSendEmails(NotificationTestCase):
             event_name='comments'
         )
         node_subscription.save()
-        emails.notify('comments', user=self.user, node=node, timestamp=timezone.now())
+        emails.notify_legacy('comments', user=self.user, node=node, timestamp=timezone.now())
         assert not mock_store.called
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_with_correct_args(self, mock_store):
         time_now = timezone.now()
-        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now)
+        emails.notify_legacy('comments', user=self.user, node=self.node, timestamp=time_now)
         assert mock_store.called
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', self.user,
                                       self.node, time_now)
@@ -1462,7 +1462,7 @@ class TestSendEmails(NotificationTestCase):
     def test_notify_does_not_send_to_exclude(self, mock_store):
         time_now = timezone.now()
         context = {'exclude':[self.project.creator._id]}
-        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, **context)
+        emails.notify_legacy('comments', user=self.user, node=self.node, timestamp=time_now, **context)
         assert mock_store.call_count == 0
 
     @mock.patch('website.notifications.emails.store_emails')
@@ -1477,7 +1477,7 @@ class TestSendEmails(NotificationTestCase):
         node_subscription.save()
         node_subscription.none.add(user)
         node_subscription.save()
-        sent = emails.notify('comments', user=user, node=node, timestamp=timezone.now())
+        sent = emails.notify_legacy('comments', user=user, node=node, timestamp=timezone.now())
         assert not mock_store.called
         assert sent == []
 
@@ -1522,14 +1522,14 @@ class TestSendEmails(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_event_if_comment_is_direct_reply(self, mock_store):
         time_now = timezone.now()
-        emails.notify('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
+        emails.notify_legacy('comments', user=self.user, node=self.node, timestamp=time_now, target_user=self.project.creator)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comment_replies',
                                       self.user, self.node, time_now, target_user=self.project.creator)
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_reply_when_target_user_is_subscribed_via_user_settings(self, mock_store):
         time_now = timezone.now()
-        emails.notify('global_comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
+        emails.notify_legacy('global_comment_replies', user=self.project.creator, node=self.node, timestamp=time_now, target_user=self.user)
         mock_store.assert_called_with([self.user._id], 'email_transactional', 'comment_replies',
                                       self.project.creator, self.node, time_now, target_user=self.user)
 
@@ -1537,7 +1537,7 @@ class TestSendEmails(NotificationTestCase):
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply(self, mock_store):
         user = factories.UserFactory()
         time_now = timezone.now()
-        emails.notify('comments', user=user, node=self.node, timestamp=time_now, target_user=user)
+        emails.notify_legacy('comments', user=user, node=self.node, timestamp=time_now, target_user=user)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
                                       self.node, time_now, target_user=user)
 
@@ -1545,8 +1545,8 @@ class TestSendEmails(NotificationTestCase):
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_does_not_send_comment_if_they_reply_to_their_own_comment(self, mock_store, mock_send_mail):
         time_now = timezone.now()
-        emails.notify('comments', user=self.project.creator, node=self.project, timestamp=time_now,
-                      target_user=self.project.creator)
+        emails.notify_legacy('comments', user=self.project.creator, node=self.project, timestamp=time_now,
+                             target_user=self.project.creator)
         assert not mock_store.called
         assert not mock_send_mail.called
 
@@ -1556,7 +1556,7 @@ class TestSendEmails(NotificationTestCase):
         # "comments" email template.
         user = factories.UserFactory()
         time_now = timezone.now()
-        emails.notify('comments', user, self.node, time_now, target_user=user)
+        emails.notify_legacy('comments', user, self.node, time_now, target_user=user)
         mock_store.assert_called_with([self.project.creator._id], 'email_transactional', 'comments', user,
                                       self.node, time_now, target_user=user)
 

@@ -1,0 +1,53 @@
+# This file contains the configuration for our notification system using the NotificationType object, this represents
+# the intended text and composition of email templates at the time of release, if you plan to update an  please make
+# by creating a new template and linking it here.
+# it here. However features not intended to be after a release flipped should explicitly stated.
+
+# Workflow:
+# 1. Add a new notification template
+# 2. Add a entry here with the desired notification types
+notification_types:
+  #### GLOBAL (User Notifications)
+  - name: comments
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: comment_replies
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_updated
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: mentions
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: reviews
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: file_removed
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### PROVIDER
+  - name: new_pending_submissions
+    __docs__: ...
+    object_content_type_model_name: AbstractProvider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### NODE
+  - name: wiki_updated
+    __docs__: ...
+    object_content_type_model_name: AbstractNode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+

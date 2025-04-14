@@ -234,7 +234,7 @@ def populate_registration_providers(*args):
         default_license = data.pop('default_license', False)
         licenses = [get_license(name) for name in data.pop('licenses_acceptable', [])]
 
-        provider, created = RegistrationProvider.objects.update_or_create(_id=_id, defaults=data)
+        provider, created = RegistrationProvider.objects.update_or_create(id=_id, defaults=data)
 
         if licenses:
             provider.licenses_acceptable.set(licenses)

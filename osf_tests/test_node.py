@@ -3450,7 +3450,7 @@ class TestLogMethods:
         # one more log for adding the node link
         assert n_logs_after == n_logs_before + 1
 
-# copied from tests/test_notifications.py
+# copied from tests/test_legacy_notifications.py
 class TestHasPermissionOnChildren:
 
     def test_has_permission_on_children(self):

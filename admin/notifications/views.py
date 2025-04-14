@@ -1,4 +1,4 @@
-from osf.models.notifications import NotificationSubscription
+from osf.models.notification import NotificationSubscription
 from django.db.models import Count
 
 def delete_selected_notifications(selected_ids):

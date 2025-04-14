@@ -561,15 +561,20 @@ class CeleryConfig:
         #  Setting up a scheduler, essentially replaces an independent cron job
         # Note: these times must be in UTC
         beat_schedule = {
-            '5-minute-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute='*/5'),
-                'args': ('email_transactional',),
-            },
-            'daily-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
+            'daily-digests': {
+                'task': 'website.notifications.tasks.send_notifications',
                 'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
-                'args': ('email_digest',),
+                'args': ('daily',),
+            },
+            'weekly-digests': {
+                'task': 'website.notifications.tasks.send_notifications',
+                'schedule': crontab(minute=0, day_of_week=1),
+                'args': ('weekly',),
+            },
+            'monthly-emails': {
+                'task': 'website.notifications.tasks.send_notifications',
+                'schedule': crontab(day_of_month=1),
+                'args': ('monthly',),
             },
             # 'refresh_addons': {  # Handled by GravyValet now
             #     'task': 'scripts.refresh_addon_tokens',
@@ -2121,6 +2126,7 @@ CAS_LOG_LEVEL = 3  # ERROR
 PREPRINT_METRICS_START_DATE = datetime.datetime(2019, 1, 1)
 
 WAFFLE_VALUES_YAML = 'osf/features.yaml'
+NOTIICATION_TYPES_YAML = 'osf/notifications.yaml'
 DEFAULT_DRAFT_NODE_TITLE = 'Untitled'
 USE_COLOR = False
 
