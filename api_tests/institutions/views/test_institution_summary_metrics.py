@@ -90,7 +90,8 @@ class TestInstitutionSummaryMetrics:
             'attributes': {
                 'public_project_count': public_project_count_latest,
                 'private_project_count': private_project_count_latest,
-                'user_count': institution_user_count_latest
+                'user_count': institution_user_count_latest,
+                'last_updated': timestamp_latest.replace(microsecond=0, second=0).isoformat() + 'Z'
             },
             'links': {
                 'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/summary/'
