@@ -33,7 +33,7 @@ def log_gv_addon(node_url: str, action: str, user_url: str, addon: str):
 
     node = get_object_by_url(node_url, Node)
     user = get_object_by_url(user_url, OSFUser)
-    if not (node or user):
+    if not node or not user:
         return
 
     node.add_log(
