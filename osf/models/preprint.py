@@ -5,7 +5,7 @@ import re
 
 from dirtyfields import DirtyFieldsMixin
 from django.db import models, IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -374,12 +374,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return None, None
 
     @classmethod
-    def create_version(cls, create_from_guid, auth):
+    def create_version(cls, create_from_guid, auth, assign_version_number=None):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
         but `create_version` always finds the latest version and creates a new version from it. In addition, this
         creates an "incomplete" new preprint version object using the model class and returns both the new object and
         the data to be updated. The API, more specifically `PreprintCreateVersionSerializer` must call `.update()` to
         "completely finish" the new preprint version object creation.
+        Optionally, you can assign a custom version number, as long as it doesn't conflict with existing versions.
+        The version must be an integer greater than 0.
         """
 
         # Use `Guid.load()` instead of `VersionedGuid.load()` to retrieve the base guid obj, which always points to the
@@ -406,9 +408,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                            f'_id={unfinished_version._id}, '
                            f'state={unfinished_version.machine_state}].')
             return unfinished_version, None
-
-        # Note: version number bumps from the last version number instead of the latest version number
-        last_version_number = guid_obj.versions.order_by('-version').first().version
 
         # Prepare the data to clone/update
         data_to_update = {
@@ -438,13 +437,29 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=latest_version.description,
         )
         preprint.save(guid_ready=False)
+
+        # Note: version number bumps from the last version number instead of the latest version number
+        # if no assign_version_number specified
+        last_version_number = guid_obj.versions.order_by('-version').first().version
+        version = last_version_number + 1
+        if assign_version_number:
+            if not isinstance(assign_version_number, int) or assign_version_number <= 0:
+                raise ValueError(
+                    f"Unable to assign: {assign_version_number}. "
+                    'Version must be integer greater than 0.'
+                )
+            if GuidVersionsThrough.objects.filter(guid=guid_obj, version=assign_version_number).first():
+                raise ValueError(f"Version {assign_version_number} for preprint {guid_obj} already exists.")
+
+            version = assign_version_number
+
         # Create a new entry in the `GuidVersionsThrough` table to store version information, which must happen right
         # after the first `.save()` of the new preprint version object, which enables `preprint._id` to be computed.
         guid_version = GuidVersionsThrough(
             referent=preprint,
             object_id=guid_obj.object_id,
             content_type=guid_obj.content_type,
-            version=last_version_number + 1,
+            version=version,
             guid=guid_obj
         )
         guid_version.save()
@@ -482,8 +497,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for institution in latest_version.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
-        # Update Guid obj to point to the new version if there is no moderation
-        if not preprint.provider.reviews_workflow:
+        # Update Guid obj to point to the new version if there is no moderation and new version is bigger
+        if not preprint.provider.reviews_workflow and version > guid_obj.referent.version:
             guid_obj.referent = preprint
             guid_obj.object_id = preprint.pk
             guid_obj.content_type = ContentType.objects.get_for_model(preprint)
@@ -493,6 +508,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             preprint.set_supplemental_node(latest_version.node, auth, save=False, ignore_node_permissions=True)
 
         return preprint, data_to_update
+
+    def upgrade_version(self):
+        """Increase preprint version by one."""
+        guid_version = GuidVersionsThrough.objects.get(object_id=self.id)
+        guid_version.version += 1
+        guid_version.save()
+
+        return self
 
     @property
     def is_deleted(self):
@@ -707,9 +730,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_preprint_versions(self, include_rejected=True):
         guids = self.versioned_guids.first().guid.versions.all()
-        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
+        preprint_versions = (
+            Preprint.objects
+            .filter(id__in=[vg.object_id for vg in guids])
+            .annotate(latest_version=Max('versioned_guids__version'))
+            .order_by('-latest_version')
+        )
         if include_rejected is False:
-            preprint_versions = [p for p in preprint_versions if p.machine_state != 'rejected']
+            preprint_versions = preprint_versions.exclude(machine_state='rejected')
         return preprint_versions
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):

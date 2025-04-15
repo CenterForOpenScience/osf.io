@@ -1,6 +1,9 @@
+import datetime
+
+from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
-from django.urls import NoReverseMatch
+from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -10,7 +13,7 @@ from django.views.generic import (
     FormView,
 )
 from django.utils import timezone
-from django.urls import reverse_lazy
+from django.urls import NoReverseMatch, reverse_lazy
 
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
@@ -19,6 +22,7 @@ from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
 from api.providers.workflows import Workflows
+from api.preprints.serializers import PreprintCreateVersionSerializer
 
 from osf.exceptions import PreprintStateError
 
@@ -45,6 +49,7 @@ from osf.models.admin_log_entry import (
 )
 from osf.utils.workflows import DefaultStates
 from website import search
+from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
 
 
@@ -180,6 +185,46 @@ class PreprintReindexShare(PreprintMixin, View):
             message=f'Preprint Reindexed (SHARE): {preprint._id}',
             action_flag=REINDEX_SHARE
         )
+        return redirect(self.get_success_url())
+
+
+class PreprintReVersion(PreprintMixin, View):
+    """Allows an authorized user to create new version 1 of a preprint based on earlier
+    primary file version(s). All operations are executed within an atomic transaction.
+    If any step fails, the entire transaction will be rolled back and no version will be changed.
+    """
+    permission_required = 'osf.view_preprint'
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        file_versions_date = request.POST.get('date')
+        file_versions_date = datetime.datetime.strptime(file_versions_date, '%Y-%m-%d').date()
+        file_versions = (
+            preprint.primary_file.versions
+            .filter(created__date=file_versions_date)
+            .values_list('identifier', flat=True)
+        )
+        if not file_versions:
+            return HttpResponse(f"No available file versions found on {file_versions_date}.", status=400)
+
+        versions = preprint.get_preprint_versions()
+        for version in versions:
+            version.upgrade_version()
+
+        new_preprint, data_to_update = Preprint.create_version(
+            create_from_guid=preprint._id,
+            assign_version_number=1,
+            auth=request
+        )
+        primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
+        data_to_update['subjects'] = [data_to_update['subjects']]  # list of lists is expected
+        data_to_update['primary_file'] = primary_file
+        PreprintCreateVersionSerializer(new_preprint, context={'request': request}).update(new_preprint, data_to_update)
+
+        Preprint.bulk_update_search(preprint.get_preprint_versions())
+
         return redirect(self.get_success_url())
 
 
