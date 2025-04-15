@@ -2,14 +2,15 @@ $(document).ready(function() {
 
     $("#confirmReversion").on("submit", function (event) {
         event.preventDefault();
-        console.log(123);
 
         $.ajax({
             url: window.templateVars.reVersionPreprint,
             type: "post",
             data: $("#re-version-preprint-form").serialize(),
         }).success(function (response) {
-            console.log(response);
+            if (response.redirect) {
+                window.location.href = response.redirect;
+            }
         }).fail(function (jqXHR, textStatus, error) {
             $("#date-validation").text(jqXHR.responseText);
         });
