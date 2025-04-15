@@ -592,6 +592,8 @@ class PreprintUnwithdrawView(PreprintMixin, View):
         from osf.utils.migrations import disable_auto_now_fields
         with disable_auto_now_fields():
             req = preprint.requests.filter(machine_state=DefaultStates.ACCEPTED.value).first()
-            req.delete()
+            if req:
+                req.delete()
+
             preprint.save()
         return redirect(self.get_success_url())

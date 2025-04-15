@@ -215,3 +215,9 @@ DISK_SAVING_MODE = 'Forks, registrations, and uploads to OSF Storage uploads are
 CONFIRM_ALTERNATE_EMAIL_ERROR = 'The email address has <b>NOT</b> been added to your account. Please log out and revisit the link in your email. Thank you.'
 SWITCH_VALIDATOR_ERROR = 'You do not have the ability to edit this field at this time.'
 EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT = 'User has left custom message field empty'
+
+RESET_PASSWORD_SUCCESS_STATUS_MESSAGE = (
+    'If there is an OSF account associated with {email}, an email with instructions on how to '
+    'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
+    'you should have, please contact OSF Support. '
+)

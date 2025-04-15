@@ -690,6 +690,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         else:
             return None
 
+    def has_groups(self, groups):
+        """
+        Checks if user is a member of the group(s).
+        """
+        return self.groups.filter(name__in=groups).exists()
+
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 

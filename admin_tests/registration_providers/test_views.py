@@ -321,3 +321,14 @@ class TestEditModerators:
         res = add_moderator_view.post(req)
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
+
+        # try to add the same user, but another group
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            'add-moderators-form': [user._id],
+            'admin': ['Add Admin']
+        }
+        res = add_moderator_view.post(req)
+        assert res.status_code == 302
+        assert user in provider.get_group('moderator').user_set.all()
+        assert user not in provider.get_group('admin').user_set.all()

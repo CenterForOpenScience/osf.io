@@ -264,6 +264,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         with pytest.raises(PermissionsError):
             self.registration.embargo.disapprove_embargo(non_admin, rejection_token)
+        assert not sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()])
         assert self.registration.is_pending_embargo
 
     def test_one_disapproval_cancels_embargo(self):
@@ -276,6 +277,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()]) == 1
         assert self.registration.embargo.state == Embargo.REJECTED
         assert not self.registration.is_pending_embargo
 
@@ -290,6 +292,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         registered_from = self.registration.registered_from
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()]) == 1
         # Logs: Created, registered, embargo initiated, embargo cancelled
         assert registered_from.logs.count() == initial_project_logs + 2
 
@@ -302,6 +305,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()]) == 1
         self.registration.reload()
         assert self.registration.embargo.state == Embargo.REJECTED
         assert self.registration.is_deleted
@@ -328,6 +332,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = project_registration.embargo.approval_state[self.user._id]['rejection_token']
         project_registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in project_registration.embargo.approval_state.values()]) == 1
         assert project_registration.embargo.state == Embargo.REJECTED
         project_registration.reload()
         assert project_registration.is_deleted
@@ -346,6 +351,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()]) == 1
         assert self.registration.embargo.state == Embargo.REJECTED
         assert not self.registration.is_deleted
 
@@ -371,6 +377,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
 
         rejection_token = project_registration.embargo.approval_state[self.user._id]['rejection_token']
         project_registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in project_registration.embargo.approval_state.values()]) == 1
         project_registration.save()
         assert project_registration.embargo.state == Embargo.REJECTED
         assert not project_registration.is_deleted
@@ -503,6 +510,7 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
         # Disapprove parent registration's embargo
         rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert sum([val['has_rejected'] for val in self.registration.embargo.approval_state.values()]) == 1
         assert not self.registration.is_pending_embargo
         assert self.registration.embargo.state == Embargo.REJECTED
 
