@@ -3,7 +3,7 @@ import datetime
 from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -22,7 +22,7 @@ from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
 from api.providers.workflows import Workflows
-from api.preprints.serializers import PreprintCreateVersionSerializer
+from api.preprints.serializers import PreprintSerializer
 
 from osf.exceptions import PreprintStateError
 
@@ -61,8 +61,8 @@ class PreprintMixin(PermissionRequiredMixin):
         preprint.guid = preprint._id
         return preprint
 
-    def get_success_url(self):
-        return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs['guid']})
+    def get_success_url(self, guid=None):
+        return reverse_lazy('preprints:preprint', kwargs={'guid': guid or self.kwargs['guid']})
 
 
 class PreprintView(PreprintMixin, GuidView):
@@ -193,7 +193,7 @@ class PreprintReVersion(PreprintMixin, View):
     primary file version(s). All operations are executed within an atomic transaction.
     If any step fails, the entire transaction will be rolled back and no version will be changed.
     """
-    permission_required = 'osf.view_preprint'
+    permission_required = 'osf.change_node'
 
     @transaction.atomic
     def post(self, request, *args, **kwargs):
@@ -216,16 +216,21 @@ class PreprintReVersion(PreprintMixin, View):
         new_preprint, data_to_update = Preprint.create_version(
             create_from_guid=preprint._id,
             assign_version_number=1,
-            auth=request
+            auth=request,
+            ignore_permission=True,
         )
         primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
-        data_to_update['subjects'] = [data_to_update['subjects']]  # list of lists is expected
         data_to_update['primary_file'] = primary_file
-        PreprintCreateVersionSerializer(new_preprint, context={'request': request}).update(new_preprint, data_to_update)
 
-        Preprint.bulk_update_search(preprint.get_preprint_versions())
+        # FIXME: currently it's not possible to ignore permission when update subjects
+        # via serializer, remove this logic if deprecated
+        subjects = data_to_update.pop('subjects', None)
+        if subjects:
+            new_preprint.set_subjects([subjects], auth=request, ignore_permission=True)
 
-        return redirect(self.get_success_url())
+        PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
+
+        return JsonResponse({'redirect': self.get_success_url(new_preprint._id)})
 
 
 class PreprintReindexElastic(PreprintMixin, View):
