@@ -378,7 +378,7 @@
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
           {% endif %}
-		  {% if user.is_superuser or user.is_institutional_admin %}
+		  {% if user.is_superuser %}
               <li><a role="button" data-toggle="collapse" href="#collapseProjectLimitNumber">
                   <i class='fa fa-caret-down'></i> {% trans "Project Limit Number" %}
               </a></li>
