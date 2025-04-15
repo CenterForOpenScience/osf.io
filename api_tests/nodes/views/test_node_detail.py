@@ -303,6 +303,7 @@ class TestNodeDetail:
         assert res.json['data']['attributes']['registration'] is False
         assert res.json['data']['attributes']['collection'] is False
         assert res.json['data']['attributes']['tags'] == []
+        assert res.json['data']['attributes']['verified_resource_links'] is None
 
     def test_requesting_folder_returns_error(self, app, user):
         folder = CollectionFactory(creator=user)
@@ -1420,6 +1421,31 @@ class TestNodeUpdate(NodeCRUDTestCase):
             auth=user.auth  # self.user is creator/admin
         )
         assert res.status_code == 200
+
+    def test_update_verified_resource_links(self, app, user, project_public, url_public):
+        payload = {
+            'data': {
+                'id': project_public._id,
+                'type': 'nodes',
+                'attributes': {
+                    'verified_resource_links': {
+                        'https://doi.org/10.1234/5678': 'doi',
+                        'https://arxiv.org/abs/1234.5678': 'arxiv'
+                    }
+                }
+            }
+        }
+        res = app.patch_json_api(url_public, payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['verified_resource_links'] == {
+            'https://doi.org/10.1234/5678': 'doi',
+            'https://arxiv.org/abs/1234.5678': 'arxiv'
+        }
+
+        payload['data']['attributes']['verified_resource_links'] = {}
+        res = app.patch_json_api(url_public, payload, auth=user.auth)
+        assert res.status_code == 200
+        assert res.json['data']['attributes']['verified_resource_links'] == {}
 
     @mock.patch('osf.models.node.update_doi_metadata_on_change')
     def test_set_node_private_updates_doi(

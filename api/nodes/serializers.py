@@ -249,6 +249,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         'template_node',
         'title',
         'type',
+        'verified_resource_links',
         'view_only_links',
         'wiki_enabled',
         'wikis',
@@ -310,6 +311,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     links = LinksField({'html': 'get_absolute_html_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
+
+    verified_resource_links = ser.DictField(required=False, allow_null=True)
 
     license = NodeLicenseRelationshipField(
         related_view='licenses:license-detail',
