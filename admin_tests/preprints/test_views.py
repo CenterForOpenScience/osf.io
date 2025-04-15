@@ -1,5 +1,6 @@
 import pytest
 from unittest import mock
+from datetime import datetime
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -797,3 +798,33 @@ class TestPreprintMakePublishedView:
         preprint.reload()
 
         assert preprint.is_published
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintReVersionView:
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.PreprintReVersion
+
+    def test_admin_user_can_add_new_version_one(self, user, preprint, plain_view):
+        # user isn't admin contributor in the preprint
+        assert preprint.contributors.filter(id=user.id).exists() is False
+        assert preprint.has_permission(user, ADMIN) is False
+        assert len(preprint.get_preprint_versions()) == 1
+
+        request = RequestFactory().post(
+            reverse('preprints:re-version-preprint',
+            kwargs={'guid': preprint._id}),
+            data={'date': datetime.today().date()}
+        )
+        request.user = user
+
+        admin_group = Group.objects.get(name='osf_admin')
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.refresh_from_db()
+
+        assert len(preprint.get_preprint_versions()) == 2
