@@ -1986,7 +1986,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             is_active=True
         ).exclude(id=self.id).exists()
 
-        if not alternate_admins:
+        if not resource.deleted and not alternate_admins:
             raise UserStateError(
                 f'You cannot delete {resource.__class__.__name__} {resource._id} because it would be '
                 f'a {resource.__class__.__name__} with contributors, but with no admin.'

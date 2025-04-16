@@ -141,6 +141,16 @@ class TestGDPRDeleteUser(AdminTestCase):
         response = self.view.as_view()(request, guid=user._id)
         self.assertEqual(response.status_code, 302)
 
+    def test_user_with_deleted_node_is_deleted(self):
+        patch_messages(self.request)
+
+        project = ProjectFactory(creator=self.user, is_deleted=True)
+        assert self.user.nodes.filter(id=project.id, is_deleted=True).count()
+
+        self.view().post(self.request)
+        self.user.reload()
+        assert self.user.deleted
+
 
 class TestDisableUser(AdminTestCase):
     def setUp(self):
