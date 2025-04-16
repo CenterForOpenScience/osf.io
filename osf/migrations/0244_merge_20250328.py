@@ -8,7 +8,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0242_auto_20241113_1058'),
+        ('osf', '0242_auto_20250320_0155'),
         ('osf', '0243_ensure_schema_and_reports'),
     ]
 
