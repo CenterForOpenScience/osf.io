@@ -294,6 +294,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         'category',
         'is_public',
         'node_license',
+        'addon_verified_resource_links',
     ]
 
     # Named constants
@@ -386,6 +387,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
 
     schema_responses = GenericRelation('osf.SchemaResponse', related_query_name='nodes')
+
+    # A dictionary of links and their respective resource types in the node's configured LINK add-ons
+    # Example:
+    # {
+    #   '<link from addon 1>': '<resource type A>',
+    #   '<link from addon 2>': '<resource type B>',
+    #   ...
+    # }
+    addon_verified_resource_links = DateTimeAwareJSONField(default=dict, blank=True)
 
     class Meta:
         base_manager_name = 'objects'
