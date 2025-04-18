@@ -71,6 +71,7 @@ def mint_doi_on_crossref_fail(preprint_id):
     preprint = Preprint.load(preprint_id)
     existing_versions_without_minted_doi = Preprint.objects.filter(
         versioned_guids__guid__in=preprint.versioned_guids.values_list('guid'),
+        versioned_guids__version__lt=preprint.versioned_guids.first().version,
         preprint_doi_created__isnull=True
     ).exclude(id=preprint.id)
     if existing_versions_without_minted_doi:
