@@ -14,12 +14,18 @@ from osf.models import (
     RegistrationProvider,
     CollectionProvider,
     NotificationDigest,
+    NotificationSubscription
 )
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 from website import mails, settings
 from website.notifications.utils import NotificationsDict
 
+
+@celery_app.task(name='website.notifications.tasks.send_notifications')
+def send_notifications(message_frequency):
+    for sub in NotificationSubscription.objects.filter(message_frequency=message_frequency):
+        sub.emit()
 
 @celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
 def send_users_email(send_type):

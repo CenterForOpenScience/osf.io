@@ -143,14 +143,14 @@ class JSONAPIBaseView(generics.GenericAPIView):
          multiple levels of nesting.
         """
         context = super().get_serializer_context()
-        if self.kwargs.get('is_embedded'):
+        if self.kwargs.get('is_embedded') or not self.request:
             embeds = []
         else:
             embeds = self.request.query_params.getlist('embed') or self.request.query_params.getlist('embed[]')
 
         fields_check = self.get_serializer_class()._declared_fields.copy()
         serializer_class_type = get_meta_type(self.serializer_class, self.request)
-        if f'fields[{serializer_class_type}]' in self.request.query_params:
+        if self.request and f'fields[{serializer_class_type}]' in self.request.query_params:
             # Check only requested and mandatory fields
             sparse_fields = self.request.query_params[f'fields[{serializer_class_type}]']
             for field in list(fields_check.copy().keys()):

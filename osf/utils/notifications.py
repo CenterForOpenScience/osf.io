@@ -33,14 +33,15 @@ def notify_submit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
     context['referrer'] = user
     recipients = list(resource.contributors)
-    reviews_signals.reviews_email_submit.send(
-        context=context,
-        recipients=recipients
-    )
-    reviews_signals.reviews_email_submit_moderators_notifications.send(
-        timestamp=timezone.now(),
-        context=context
-    )
+    # reviews_signals.reviews_email_submit.send(
+    #     context=context,
+    #     recipients=recipients
+    # )
+    # reviews_signals.reviews_email_submit_moderators_notifications.send(
+    #     timestamp=timezone.now(),
+    #     context=context
+    # )
+    raise NotImplementedError(f'Send Moderation notifications {context} {recipients}')
 
 
 def notify_resubmit(resource, user, *args, **kwargs):

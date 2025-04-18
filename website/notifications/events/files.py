@@ -6,6 +6,7 @@ These classes are registered in event_registry and are callable through the
 
 FileEvent and ComplexFileEvent are parent classes with shared functionality.
 """
+from django.utils import timezone
 from furl import furl
 import markupsafe
 
@@ -14,7 +15,6 @@ from website.notifications.constants import NOTIFICATION_TYPES
 from website.notifications import utils
 from website.notifications.events.base import (
     register,
-    Event,
     event_registry,
     RegistryError,
 )
@@ -33,13 +33,36 @@ def file_updated(self, target=None, user=None, event_type=None, payload=None):
     event.perform()
 
 
-class FileEvent(Event):
+class FileEvent:
     """File event base class, should not be called directly"""
 
-    def __init__(self, user, node, event, payload=None):
-        super().__init__(user, node, event)
+    """Base event class for notification.
+
+    - abstract methods set methods that should be defined by subclasses.
+    To use this interface you must use the class as a Super (inherited).
+     - Implement property methods in subclasses
+    """
+
+    def __init__(self, user, node, action, payload=None):
+        self.user = user
+        self.profile_image_url = user.profile_image_url()
+        self.node = node
+        self.action = action
+        self.timestamp = timezone.now()
         self.payload = payload
         self._url = None
+
+    def perform(self):
+        """Call emails.notify to notify users of an action"""
+        emails.notify_legacy(
+            event=self.action,
+            user=self.user,
+            node=self.node,
+            timestamp=self.timestamp,
+            message=self.html_message,
+            profile_image_url=self.profile_image_url,
+            url=self.url
+        )
 
     @property
     def html_message(self):

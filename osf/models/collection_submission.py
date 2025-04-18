@@ -132,7 +132,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'allow_submissions': True,
         }
 
-        from .notifications import NotificationSubscription
+        from .notification import NotificationSubscription
         from website.notifications.emails import store_emails
 
         provider_subscription, created = NotificationSubscription.objects.get_or_create(

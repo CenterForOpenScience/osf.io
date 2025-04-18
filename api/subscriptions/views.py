@@ -1,34 +1,27 @@
-from rest_framework import generics
-from rest_framework import permissions as drf_permissions
-from rest_framework.exceptions import NotFound
-from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
-
-from framework.auth.oauth_scopes import CoreScopes
-from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
+from api.subscriptions.serializers import SubscriptionSerializer
+from osf.models.notification import NotificationSubscription
+from django.contrib.contenttypes.models import ContentType
+from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
+from django.shortcuts import get_object_or_404
+
+from osf.models import AbstractProvider, CollectionProvider, PreprintProvider, RegistrationProvider
+
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
+from api.subscriptions.permissions import IsSubscriptionOwner
 from api.subscriptions.serializers import (
-    SubscriptionSerializer,
     CollectionSubscriptionSerializer,
     PreprintSubscriptionSerializer,
     RegistrationSubscriptionSerializer,
 )
-from api.subscriptions.permissions import IsSubscriptionOwner
-from osf.models import (
-    NotificationSubscription,
-    CollectionProvider,
-    PreprintProvider,
-    RegistrationProvider,
-    AbstractProvider,
-)
-
+from framework.auth.oauth_scopes import CoreScopes
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     view_name = 'notification-subscription-list'
     view_category = 'notification-subscriptions'
     serializer_class = SubscriptionSerializer
-    model_class = NotificationSubscription
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
@@ -37,31 +30,8 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    def get_default_queryset(self):
-        user = self.request.user
-        return NotificationSubscription.objects.filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(
-                email_transactional=user,
-            ),
-        ).distinct()
-
     def get_queryset(self):
-        return self.get_queryset_from_request()
-
-
-class AbstractProviderSubscriptionList(SubscriptionList):
-    def get_default_queryset(self):
-        user = self.request.user
-        return NotificationSubscription.objects.filter(
-            provider___id=self.kwargs['provider_id'],
-            provider__type=self.provider_class._typedmodels_type,
-        ).filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(email_transactional=user),
-        ).distinct()
+        return NotificationSubscription.objects.filter(user=self.request.user)
 
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
@@ -78,16 +48,15 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
 
     def get_object(self):
-        subscription_id = self.kwargs['subscription_id']
         try:
-            obj = NotificationSubscription.objects.get(_id=subscription_id)
-        except ObjectDoesNotExist:
+            sub = NotificationSubscription.objects.get(pk=self.kwargs['pk'])
+        except NotificationSubscription.DoesNotExist:
             raise NotFound
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, sub)
+        return sub
 
 
-class AbstractProviderSubscriptionDetail(SubscriptionDetail):
+class AbstractProviderSubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'provider-notification-subscription-detail'
     view_category = 'notification-subscriptions'
     permission_classes = (
@@ -95,63 +64,86 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
         base_permissions.TokenHasScope,
         IsSubscriptionOwner,
     )
-
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
     required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
-    provider_class = None
-
-    def __init__(self, *args, **kwargs):
-        assert issubclass(self.provider_class, AbstractProvider), 'Class must be subclass of AbstractProvider'
-        super().__init__(*args, **kwargs)
+    provider_class = None  # Must be set in subclass
+    serializer_class = None  # Must be set in subclass
 
     def get_object(self):
-        subscription_id = self.kwargs['subscription_id']
-        if self.kwargs.get('provider_id'):
-            provider = self.provider_class.objects.get(_id=self.kwargs.get('provider_id'))
-            try:
-                obj = NotificationSubscription.objects.get(
-                    _id=subscription_id,
-                    provider_id=provider.id,
-                )
-            except ObjectDoesNotExist:
-                raise NotFound
-        else:
-            try:
-                obj = NotificationSubscription.objects.get(
-                    _id=subscription_id,
-                    provider__type=self.provider_class._typedmodels_type,
-                )
-            except ObjectDoesNotExist:
-                raise NotFound
-        self.check_object_permissions(self.request, obj)
-        return obj
+        assert issubclass(self.provider_class, AbstractProvider), 'Must set provider_class to an AbstractProvider subclass'
 
+        subscription_id = self.kwargs.get('pk')
+        provider_id = self.kwargs.get('provider_id')
+
+        # Get provider
+        provider = get_object_or_404(self.provider_class, _id=provider_id)
+        content_type = ContentType.objects.get_for_model(self.provider_class)
+
+        try:
+            sub = NotificationSubscription.objects.get(
+                pk=subscription_id,
+                content_type=content_type,
+                object_id=provider.id,
+            )
+        except NotificationSubscription.DoesNotExist:
+            raise NotFound
+
+        self.check_object_permissions(self.request, sub)
+        return sub
+
+
+class AbstractProviderSubscriptionList(JSONAPIBaseView, generics.ListAPIView):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
+    provider_class = None
+    serializer_class = None
+
+    def get_queryset(self):
+        assert issubclass(self.provider_class, AbstractProvider), 'Must set provider_class to an AbstractProvider subclass'
+        provider_id = self.kwargs.get('provider_id')
+        provider = get_object_or_404(self.provider_class, _id=provider_id)
+
+        return NotificationSubscription.objects.filter(
+            user=self.request.user,
+            content_type=ContentType.objects.get_for_model(self.provider_class),
+            object_id=provider.id,
+        )
 
 class CollectionProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = CollectionProvider
     serializer_class = CollectionSubscriptionSerializer
 
-
 class PreprintProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = PreprintProvider
     serializer_class = PreprintSubscriptionSerializer
 
-
 class RegistrationProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = RegistrationProvider
     serializer_class = RegistrationSubscriptionSerializer
 
-
 class CollectionProviderSubscriptionList(AbstractProviderSubscriptionList):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = CollectionProvider
     serializer_class = CollectionSubscriptionSerializer
 
-
 class PreprintProviderSubscriptionList(AbstractProviderSubscriptionList):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = PreprintProvider
     serializer_class = PreprintSubscriptionSerializer
 
-
 class RegistrationProviderSubscriptionList(AbstractProviderSubscriptionList):
+    view_name = 'provider-notification-subscription-detail'
+    view_category = 'notification-subscriptions'
     provider_class = RegistrationProvider
     serializer_class = RegistrationSubscriptionSerializer

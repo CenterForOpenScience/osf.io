@@ -3,14 +3,14 @@ from django.apps import apps
 from babel import dates, core, Locale
 
 from osf.models import AbstractNode, NotificationDigest, NotificationSubscription
-from osf.utils.permissions import ADMIN, READ
+from osf.utils.permissions import ADMIN
 from website import mails
 from website.notifications import constants
 from website.notifications import utils
 from website.util import web_url_for
 
 
-def notify(event, user, node, timestamp, **context):
+def notify_legacy(event, user, node, timestamp, **context):
     """Retrieve appropriate ***subscription*** and passe user list
 
     :param event: event that triggered the notification
@@ -134,7 +134,6 @@ def compile_subscriptions(node, event_type, event=None, level=0):
     :param level: How deep the recursion is
     :return: a dict of notification types with lists of users.
     """
-    subscriptions = check_node(node, event_type)
     if event:
         subscriptions = check_node(node, event)  # Gets particular event subscriptions
         parent_subscriptions = compile_subscriptions(node, event_type, level=level + 1)  # get node and parent subs
@@ -157,22 +156,20 @@ def compile_subscriptions(node, event_type, event=None, level=0):
 
 def check_node(node, event):
     """Return subscription for a particular node and event."""
-    node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
-    if node:
-        subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
-        for notification_type in node_subscriptions:
-            users = getattr(subscription, notification_type, [])
-            if users:
-                for user in users.exclude(date_disabled__isnull=False):
-                    if node.has_permission(user, READ):
-                        node_subscriptions[notification_type].append(user._id)
-    return node_subscriptions
+    from django.contrib.contenttypes.models import ContentType
+    return NotificationSubscription.objects.filter(
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node.__class__),
+    )
 
 
 def get_user_subscriptions(user, event):
     if user.is_disabled:
         return {}
-    user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
+    user_subscription = NotificationSubscription.objects.get(
+        notification_type__name=event,
+        user=user,
+    )
     if user_subscription:
         return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
     else:

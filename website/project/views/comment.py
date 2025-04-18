@@ -10,7 +10,7 @@ from addons.base.signals import file_updated
 from osf.models import BaseFileNode, TrashedFileNode
 from osf.models import Comment
 from website.notifications.constants import PROVIDERS
-from website.notifications.emails import notify, notify_mentions
+from website.notifications.emails import notify_legacy, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
 from osf.models import Node
 from website.project.signals import comment_added, mention_added
@@ -126,7 +126,7 @@ def send_comment_added_notification(comment, auth, new_mentions=None):
         exclude=new_mentions,
     )
     time_now = timezone.now()
-    sent_subscribers = notify(
+    sent_subscribers = notify_legacy(
         event='comments',
         user=auth.user,
         node=node,
@@ -136,7 +136,7 @@ def send_comment_added_notification(comment, auth, new_mentions=None):
 
     if is_reply(target):
         if target.referent.user and target.referent.user._id not in sent_subscribers:
-            notify(
+            notify_legacy(
                 event='global_comment_replies',
                 user=auth.user,
                 node=node,
