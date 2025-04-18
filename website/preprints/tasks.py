@@ -6,6 +6,7 @@ from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 
 
+CROSSREF_FAIL_RETRY_DELAY = 12 * 60 * 60
 logger = logging.getLogger(__name__)
 
 
@@ -62,3 +63,23 @@ def update_or_enqueue_on_preprint_updated(preprint_id, saved_fields=None):
             },
             celery=True
         )
+
+
+@celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=CROSSREF_FAIL_RETRY_DELAY)
+def mint_doi_on_crossref_fail(preprint_id):
+    from osf.models import Preprint
+    preprint = Preprint.load(preprint_id)
+    existing_versions_without_minted_doi = Preprint.objects.filter(
+        versioned_guids__guid__in=preprint.versioned_guids.values_list('guid'),
+        preprint_doi_created__isnull=True
+    ).exclude(id=preprint.id)
+    if existing_versions_without_minted_doi:
+        logger.error(
+            f'There are existing preprint versions for preprint with guid {preprint._id}. Versions: '
+            f'{list(existing_versions_without_minted_doi.values_list('versioned_guids__version', flat=True))}'
+        )
+        mint_doi_on_crossref_fail.retry(countdown=CROSSREF_FAIL_RETRY_DELAY)
+    else:
+        crossref_client = preprint.get_doi_client()
+        if crossref_client:
+            crossref_client.create_identifier(preprint, category='doi', include_relation=False)
