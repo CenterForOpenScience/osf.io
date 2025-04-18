@@ -204,7 +204,7 @@ class TestStorageInformationUtils(AdminTestCase):
         result = get_nextcloudinstitutions_info(self.mock_institution, 'test_provider')
 
         expected = {
-            'host': {'field_name': 'Endpoint URL', 'value': 'https://test.com'},
+            'host': {'field_name': 'Host URL', 'value': 'https://test.com'},
             'username': {'field_name': 'Username', 'value': 'test_display_name'},
             'folder': {'field_name': 'Folder', 'value': 'test_folder'},
             'notification_secret': {

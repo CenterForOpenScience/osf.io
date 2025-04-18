@@ -80,8 +80,9 @@ class InstitutionalStorageView(InstitutionalStorageBaseView, TemplateView):
             # Disable view setting info button if institution have not set institution storage yet
             disable_view_setting_info = True
 
+        institution_storage_type = region.waterbutler_settings.get('storage', {}).get('type')
         provider_name = region.waterbutler_settings['storage']['provider']
-        provider_name = provider_name if provider_name != 'filesystem' else 'osfstorage'
+        provider_name = provider_name if provider_name != 'filesystem' and institution_storage_type != Region.NII_STORAGE else 'osfstorage'
 
         # Also disable view setting info button if institution's storage provider is not supported
         disable_view_setting_info = disable_view_setting_info or provider_name in settings.UNSUPPORTED_VIEW_SETTING_INFO_PROVIDERS

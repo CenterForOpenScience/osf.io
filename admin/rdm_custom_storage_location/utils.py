@@ -1221,7 +1221,7 @@ def get_nextcloudinstitutions_info(institution, provider_name):
     """Get storage information for Nextcloud for Institutions."""
     rdm_addon_option, external_account = get_institution_addon_info(institution.id, provider_name)
     return {
-        'host': create_storage_info_template('Endpoint URL', external_account.profile_url),
+        'host': create_storage_info_template('Host URL', external_account.profile_url),
         'username': create_storage_info_template('Username', external_account.display_name),
         'folder': create_storage_info_template('Folder', rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)),
         'notification_secret': create_storage_info_template(
