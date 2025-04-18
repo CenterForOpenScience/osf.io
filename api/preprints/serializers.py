@@ -49,6 +49,7 @@ from osf.models import (
     NodeLicense,
 )
 from osf.utils import permissions as osf_permissions
+from osf.utils.workflows import DefaultStates
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -624,6 +625,20 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
     """
     id = IDField(required=True, source='_id')
     index = ser.IntegerField(required=False, read_only=False, source='_order')
+
+    def validate_permission(self, value):
+        preprint = self.context.get('resource')
+        user = self.context.get('user')
+        if (
+            user  # if user is None then probably we're trying to make bulk update and this validation is not relevant
+            and preprint.machine_state == DefaultStates.INITIAL.value
+            and preprint.creator_id == user.id
+        ):
+            raise ValidationError(
+                'You cannot change your permission setting at this time. '
+                'Have another admin contributor edit your permission after you’ve submitted your preprint',
+            )
+        return value
 
 
 class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):

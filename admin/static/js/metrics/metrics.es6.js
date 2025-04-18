@@ -5,20 +5,9 @@ require('keen-dataviz/dist/keen-dataviz.min.css');
 
 
 var c3 = require('c3/c3.js');
-var keen = require('keen-js');
 var keenDataviz = require('keen-dataviz');
-var keenAnalysis = require('keen-analysis');
 var $ = require('jquery');
 
-var client = new keenAnalysis({
-    projectId: keenProjectId,
-    readKey: keenReadKey
-});
-
-var publicClient = new keenAnalysis({
-    projectId: keenPublicProjectId,
-    readKey: keenPublicReadKey
-});
 
 // Heights and Colors for the below rendered
 // Keen and c3 Data visualizations
@@ -423,67 +412,6 @@ var getMetricTitle = function(metric, type) {
     return title;
 };
 
-var renderKeenMetric = function(element, type, query, height, colors, keenClient) {
-    if (!keenClient) {
-        keenClient = client;
-    }
-
-    var chart = new keenDataviz()
-        .el(element)
-        .height(height)
-        .title(' ')
-        .type(type)
-        .prepare();
-
-    if (colors) {
-        chart.colors([colors]);
-    }
-
-    keenClient
-        .run(query)
-        .then(function(res){
-            var metricChart = chart.data(res);
-            metricChart.dataset.sortRows("desc", function(row) {
-                return row[1]
-            });
-            metricChart.render();
-        })
-        .catch(function(err){
-            chart.message(err.message);
-        });
-};
-
-var renderNodeLogsForOneUserChart = function(user_id) {
-    var chart = new keenDataviz()
-        .el('#yesterdays-node-logs-by-user')
-        .height(bigMetricHeight)
-        .title('Individual Logs for ' + '<a href=../users/' + user_id + '>' + user_id + '</a>')
-        .type('line')
-        .prepare();
-
-    client
-        .query('count', {
-            event_collection: "node_log_events",
-            interval: "hourly",
-            group_by: "action",
-            filters: [{
-                property_name: 'user_id',
-                operator: 'eq',
-                property_value: user_id
-            }],
-            timeframe: "previous_1_days",
-            timezone: "UTC"
-        })
-        .then(function(res){
-            chart
-                .data(res)
-                .render();
-        })
-        .catch(function(err){
-            chart.message(err.message);
-        });
-};
-
 // called from pageview collection
 var differenceGrowthBetweenMetrics = function(query1, query2, totalQuery, element, colors) {
 
@@ -837,46 +765,6 @@ var renderEmailDomainsChart = function() {
     });
 };
 
-var NodeLogsPerUser = function() {
-    var chart = new keenDataviz()
-        .el('#yesterdays-node-logs-by-user')
-        .title(' ')
-        .height(bigMetricHeight)
-        .chartOptions({
-            data: {
-                onclick: function (d, element) {
-                    renderNodeLogsForOneUserChart(d.name);
-                }
-            }
-        })
-
-        .type('line')
-        .prepare();
-
-    client
-        .query('count', {
-            event_collection: 'node_log_events',
-            group_by: "user_id",
-            timeframe: 'previous_1_days',
-            interval: 'hourly'
-        })
-        .then(function (res) {
-            var chartWithData = chart.data(res);
-            chartWithData.dataset.filterColumns(function (column, index) {
-                var logThreshhold = 25;
-                for (var i = 0; i < column.length; i++) {
-                    if (column[i] > logThreshhold && column[0] != 'null' && column[0] != 'uj57r') {
-                        return column;
-                    }
-                }
-            });
-
-            chartWithData.render();
-        })
-        .catch(function (err) {
-            chart.message(err.message);
-        });
-};
 
 var renderRawNodeMetrics = function() {
     var propertiesAndElements = [
@@ -966,7 +854,6 @@ var UserGainMetrics = function() {
     renderMainCounts();
     renderWeeklyUserGainMetrics();
     renderEmailDomainsChart();
-    NodeLogsPerUser();
 };
 
 
@@ -1084,36 +971,6 @@ function renderPreprintMetrics(timeframe) {
 // ><+><+><+<+><+
 
 var DownloadMetrics = function() {
-
-    // ********** legacy keen **********
-    var totalDownloadsQuery = new keenAnalysis.Query("count", {
-        eventCollection: "file_stats",
-        timeframe: 'previous_1_days',
-        filters: [{
-            property_name: 'action.type',
-            operator: 'eq',
-            property_value: 'download_file',
-            timezone: "UTC"
-        }]
-    });
-    renderKeenMetric("#number-of-downloads", "metric", totalDownloadsQuery,
-                     defaultHeight, defaultColor, publicClient);
-
-    // ********** legacy keen **********
-    var uniqueDownloadsQuery = new keenAnalysis.Query("count_unique", {
-        eventCollection: "file_stats",
-        timeframe: 'previous_1_days',
-        target_property: 'file.resource',
-        filters: [{
-            property_name: 'action.type',
-            operator: 'eq',
-            property_value: 'download_file',
-            timezone: "UTC"
-        }]
-    });
-    renderKeenMetric("#number-of-unique-downloads", "metric", uniqueDownloadsQuery,
-                     defaultHeight, defaultColor, publicClient);
-
     renderDownloadMetrics();
 };
 
@@ -1138,13 +995,11 @@ function renderDownloadMetrics(timeframe) {
 
 module.exports = {
     UserGainMetrics: UserGainMetrics,
-    NodeLogsPerUser: NodeLogsPerUser,
     InstitutionMetrics: InstitutionMetrics,
     RawNumberMetrics: RawNumberMetrics,
     AddonMetrics: AddonMetrics,
     PreprintMetrics: PreprintMetrics,
     DownloadMetrics: DownloadMetrics,
-    KeenRenderMetrics: renderKeenMetric,
     RenderPreprintMetrics: renderPreprintMetrics,
     RenderDownloadMetrics: renderDownloadMetrics,
 };

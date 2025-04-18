@@ -2254,11 +2254,9 @@ class TestSetPrivacy:
         assert last_logged_before_method_call != node.last_logged
         node.save()
         assert bool(node.is_public) is True
-        assert node.keenio_read_key != ''
         node.set_privacy('private', auth=auth)
         node.save()
         assert bool(node.is_public) is False
-        assert node.keenio_read_key == ''
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert last_logged_before_method_call != node.last_logged
 

@@ -342,6 +342,7 @@ class ComposedScopes:
                  + REVIEWS_WRITE\
                  + PREPRINT_ALL_WRITE\
                  + GROUP_WRITE\
+                 + TOKENS_WRITE\
                  + (
                      CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,

@@ -10,12 +10,6 @@
     <link rel="stylesheet" type="text/css" href="/static/css/keen-dashboards.css" />
     <script>
         var metricsUrl = '{{ metrics_url }}';
-        if ('{{ keen_ready }}' == 'True') {
-            var keenProjectId = '{{ keen_project_id }}';
-            var keenReadKey = '{{ keen_read_key }}';
-            var keenPublicProjectId = '{{ keen_public_project_id }}';
-            var keenPublicReadKey = '{{ keen_public_read_key }}';
-        }
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.4.10/c3.min.js"></script>
@@ -195,9 +189,6 @@
                                 <div class="chart-title">
                                     Yesterday's Node logs by user
                                     <a id="reload-node-logs" class="glyphicon glyphicon-refresh"></a>
-                                </div>
-                                <div class="chart-stage">
-                                    <div id="yesterdays-node-logs-by-user"></div>
                                 </div>
                                 <div class="chart-notes">
                                     The last day of node logs by user, if a user had over 100 node logs.
