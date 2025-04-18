@@ -70,7 +70,7 @@ def mint_doi_on_crossref_fail(preprint_id):
     from osf.models import Preprint
     preprint = Preprint.load(preprint_id)
     existing_versions_without_minted_doi = Preprint.objects.filter(
-        versioned_guids__guid__in=preprint.versioned_guids.values_list('guid', flat=True),
+        versioned_guids__guid=preprint.versioned_guids.first().guid,
         versioned_guids__version__lt=preprint.versioned_guids.first().version,
         preprint_doi_created__isnull=True
     ).exclude(id=preprint.id)
