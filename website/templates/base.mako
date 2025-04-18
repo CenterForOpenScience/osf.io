@@ -75,8 +75,8 @@
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="OSF" />
 
-    %for author in self.authors_meta()[:10]:
-        <meta name="dc.creator" content="${author}" />
+    %for author, creator in list(zip(self.authors_meta()[:10], self.creator_meta()[:10])):
+        <meta name="dc.creator" content="${creator}" />
         <meta name="citation_author" content="${author}" />
     %endfor
     %for tag in self.keywords_meta()[:10]:
@@ -258,7 +258,6 @@
                     entryPoint: ${ user_entry_point | sjson, n },
                     institutions: ${ user_institutions | sjson, n},
                     emailsToAdd: ${ user_email_verifications | sjson, n },
-                    anon: ${ anon | sjson, n },
                 },
                 maintenance: ${ maintenance | sjson, n},
                 analyticsMeta: {
@@ -271,23 +270,6 @@
             });
         </script>
 
-        % if keen['public']['project_id']:
-            <script>
-                window.contextVars = $.extend(true, {}, window.contextVars, {
-                    keen: {
-                        public: {
-                            projectId: ${ keen['public']['project_id'] | sjson, n },
-                            writeKey: ${ keen['public']['write_key'] | sjson, n },
-                        },
-                        private: {
-                            projectId: ${ keen['private']['project_id'] | sjson, n },
-                            writeKey: ${ keen['private']['write_key'] | sjson, n },
-                        },
-                    },
-                });
-            </script>
-        % endif
-
         % if settings.DATACITE_TRACKER_REPO_ID:
             <script>
                 window.contextVars = $.extend(true, {}, window.contextVars, {
@@ -295,7 +277,6 @@
                 });
             </script>
         % endif
-
 
         ${self.javascript_bottom()}
     </body>
@@ -346,6 +327,10 @@
 
 <%def name="authors_meta()">
     ### The list of project contributors ###
+</%def>
+
+<%def name="creator_meta()">
+    ### The list of project creators ###
 </%def>
 
 <%def name="datemodified_meta()">

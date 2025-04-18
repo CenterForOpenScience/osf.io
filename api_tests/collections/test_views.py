@@ -21,6 +21,7 @@ from osf.utils.sanitize import strip_html
 from osf.utils.permissions import ADMIN, WRITE, READ
 from website.project.signals import contributor_removed
 from api_tests.utils import disconnected_from_listeners
+from api_tests.share._utils import mock_update_share
 from website.views import find_bookmark_collection
 
 
@@ -4339,6 +4340,18 @@ class TestCollectionSubmissionList:
         res = app.get(url.format(collection_with_zero_collection_submission._id), auth=user_one.auth)
         assert len(res.json['data']) == 0
         assert res.status_code == 200
+
+    def test_update_share_called(self, app, collection_with_zero_collection_submission, user_one, project_four, url, payload, subject_one):
+        collection_with_zero_collection_submission.is_public = True
+        collection_with_zero_collection_submission.save()
+
+        with mock_update_share() as _shmock:
+            res = app.post_json_api(
+                url.format(collection_with_zero_collection_submission._id),
+                payload(guid=project_four._id, subjects=[[subject_one._id]]),
+                auth=user_one.auth)
+            assert res.status_code == 201
+            _shmock.assert_called()
 
     def test_filters(self, app, collection_with_one_collection_submission, collection_with_three_collection_submission, project_two, project_four, user_one, subject_one, url, payload):
         res = app.get(f'{url.format(collection_with_three_collection_submission._id)}?filter[id]={project_two._id}', auth=user_one.auth)

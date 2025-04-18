@@ -71,6 +71,14 @@
 <%def name="authors_meta()">
     %if node['contributors'] and not node['anonymous']:
         <%
+            return [f'{contrib['surname']}, {contrib['given_name']}'for contrib in node['contributors'] if isinstance(contrib, dict)]
+        %>
+    %endif
+</%def>
+
+<%def name="creator_meta()">
+    %if node['contributors'] and not node['anonymous']:
+        <%
             return [contrib['fullname'] for contrib in node['contributors'] if isinstance(contrib, dict)]
         %>
     %endif

@@ -785,8 +785,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             self.save()
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
 
-    def set_published(self, published, auth, save=False):
-        if not self.has_permission(auth.user, ADMIN):
+    def set_published(self, published, auth, save=False, ignore_permission=False):
+        if not ignore_permission and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can publish a preprint.')
 
         if self.is_published and not published:
