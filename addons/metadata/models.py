@@ -284,7 +284,7 @@ class NodeSettings(BaseNodeSettings):
     def get_report_formats_for(self, schemas):
         formats = []
         for schema in schemas:
-            for format in RegistrationReportFormat.objects\
+            for format in RegistrationReportFormat.objects \
                     .filter(registration_schema_id=schema._id) \
                     .order_by('order'):
                 formats.append({
