@@ -142,16 +142,16 @@ class CrossRefClient(AbstractIdentifierClient):
                     continue
 
                 minted_doi = previous_version.get_identifier_value('doi')
-                if minted_doi:
-                    related_item = element.related_item(
-                        element.intra_work_relation(
-                            minted_doi,
-                            **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
-                        )
+                if not minted_doi:
+                    minted_doi = self.build_doi(previous_version)
+
+                related_item = element.related_item(
+                    element.intra_work_relation(
+                        minted_doi,
+                        **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
-                    relations_program.append(related_item)
-                else:
-                    self.build_doi(previous_version)
+                )
+                relations_program.append(related_item)
 
         if len(relations_program) > 0:
             posted_content.append(relations_program)
