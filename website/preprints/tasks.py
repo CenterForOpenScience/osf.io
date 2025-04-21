@@ -65,8 +65,8 @@ def update_or_enqueue_on_preprint_updated(preprint_id, saved_fields=None):
         )
 
 
-@celery_app.task(ignore_results=True, max_retries=5, default_retry_delay=CROSSREF_FAIL_RETRY_DELAY)
-def mint_doi_on_crossref_fail(preprint_id):
+@celery_app.task(bind=True, acks_late=True, max_retries=5, default_retry_delay=CROSSREF_FAIL_RETRY_DELAY)
+def mint_doi_on_crossref_fail(self, preprint_id):
     from osf.models import Preprint
     preprint = Preprint.load(preprint_id)
     existing_versions_without_minted_doi = Preprint.objects.filter(
@@ -79,7 +79,7 @@ def mint_doi_on_crossref_fail(preprint_id):
             f'There are existing preprint versions for preprint with guid {preprint._id} that are missing DOIs. Versions: '
             f'{list(existing_versions_without_minted_doi.values_list('versioned_guids__version', flat=True))}'
         )
-        mint_doi_on_crossref_fail.retry(countdown=CROSSREF_FAIL_RETRY_DELAY)
+        self.retry()
     else:
         crossref_client = preprint.get_doi_client()
         if crossref_client:
