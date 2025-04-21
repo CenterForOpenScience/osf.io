@@ -140,9 +140,11 @@ class CrossRefClient(AbstractIdentifierClient):
             for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
                 if preprint_version.version > preprint.version:
                     continue
+
+                minted_doi = previous_version.get_identifier_value('doi')
                 related_item = element.related_item(
                     element.intra_work_relation(
-                        self.build_doi(previous_version),
+                        minted_doi,
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
