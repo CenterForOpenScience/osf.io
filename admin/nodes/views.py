@@ -1,4 +1,5 @@
 import pytz
+from enum import Enum
 from datetime import datetime
 from framework import status
 
@@ -26,7 +27,7 @@ from admin.notifications.views import detect_duplicate_notifications, delete_sel
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 
-from osf.exceptions import NodeStateError
+from osf.exceptions import NodeStateError, RegistrationStuckError
 from osf.models import (
     OSFUser,
     NodeLog,
@@ -672,34 +673,9 @@ class NodeMakePublic(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
-class RestartStuckRegistrationsView(NodeMixin, TemplateView):
-    """ Allows an authorized user to restart a registrations archive process.
-    """
-    template_name = 'nodes/restart_registrations_modal.html'
-    permission_required = ('osf.view_node', 'osf.change_node')
-
-    def post(self, request, *args, **kwargs):
-        # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import archive, verify
-        stuck_reg = self.get_object()
-        if verify(stuck_reg):
-            try:
-                archive(stuck_reg)
-                messages.success(request, 'Registration archive processes has restarted')
-            except Exception as exc:
-                messages.error(request, f'This registration cannot be unstuck due to {exc.__class__.__name__} '
-                                        f'if the problem persists get a developer to fix it.')
-        else:
-            messages.error(request, 'This registration may not technically be stuck,'
-                                    ' if the problem persists get a developer to fix it.')
-
-        return redirect(self.get_success_url())
-
-
-class RemoveStuckRegistrationsView(NodeMixin, TemplateView):
+class RemoveStuckRegistrationsView(NodeMixin, View):
     """ Allows an authorized user to remove a registrations if it's stuck in the archiving process.
     """
-    template_name = 'nodes/remove_registrations_modal.html'
     permission_required = ('osf.view_node', 'osf.change_node')
 
     def post(self, request, *args, **kwargs):
@@ -710,6 +686,73 @@ class RemoveStuckRegistrationsView(NodeMixin, TemplateView):
         else:
             messages.error(request, 'This registration may not technically be stuck,'
                                     ' if the problem persists get a developer to fix it.')
+
+        return redirect(self.get_success_url())
+
+
+class CheckArchiveStatusRegistrationsView(NodeMixin, View):
+    """Allows an authorized user to check a registration archive status.
+    """
+    permission_required = ('osf.view_node', 'osf.change_node')
+
+    def get(self, request, *args, **kwargs):
+        # Prevents circular imports that cause admin app to hang at startup
+        from osf.management.commands.force_archive import check
+
+        registration = self.get_object()
+
+        try:
+            archive_status = check(registration)
+            messages.success(request, archive_status)
+        except RegistrationStuckError as exc:
+            messages.error(request, str(exc))
+
+        return redirect(self.get_success_url())
+
+
+class CollisionHandle(Enum):
+    NONE: str = 'none'
+    SKIP: str = 'skip'
+    DELETE: str = 'delete'
+
+
+class ForceArchiveRegistrationsView(NodeMixin, View):
+    """Allows an authorized user to force archive for registration.
+    """
+    permission_required = ('osf.view_node', 'osf.change_node')
+
+    def post(self, request, *args, **kwargs):
+        """Attempts to force-archive the registration if verification passes."""
+        # Prevents circular imports that cause admin app to hang at startup
+        from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
+
+        registration = self.get_object()
+        force_archive_params = request.POST
+
+        collision_mode = force_archive_params.get('collision_mode', CollisionHandle.NONE.value)
+        delete_collision = CollisionHandle.DELETE.value == collision_mode
+        skip_collision = CollisionHandle.SKIP.value == collision_mode
+
+        allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
+
+        addons = DEFAULT_PERMISSIBLE_ADDONS
+
+        if verify(registration, permissible_addons=addons, raise_error=True):
+            try:
+                archive(
+                    registration,
+                    permissible_addons=addons,
+                    allow_unconfigured=allow_unconfigured,
+                    skip_collision=skip_collision,
+                    delete_collision=delete_collision,
+                )
+                messages.success(request, 'Registration archive processes has started.')
+            except Exception as exc:
+                messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__} '
+                                        f'if the problem persists get a developer to fix it.')
+        else:
+            messages.error(request, 'This registration cannot be archived,'
+                                    ' run force archive in dry mode to get more information about this.')
 
         return redirect(self.get_success_url())
 
