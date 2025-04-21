@@ -1,13 +1,10 @@
-{% if node.is_registration and not node.archived %}
-    <!-- Buttons -->
-    <a href="{% url 'nodes:check-archive-status' guid=node.guid %}" class="btn btn-info">
-        Check archive status
-    </a>
-    <a data-toggle="modal" data-target="#confirmForceArchiveRegistration" class="btn btn-danger">
-        Force Archive
-    </a>
+{% if node.is_registration %}
+<a href="{% url 'nodes:check-archive-status' guid=node.guid %}" class="btn btn-info">
+    Check archive status
+</a>
+{% if not node.archived %}
     {% if node.is_stuck_registration %}
-    <a data-toggle="modal" data-target="#confirmForceArchiveRegistration" class="btn btn-danger">
+    <a data-toggle="modal" data-target="#confirmRestartStuckRegistration" class="btn btn-danger">
         Restart Stuck Registration
     </a>
     <a href="{% url 'nodes:remove-stuck-registrations' guid=node.guid %}"
@@ -15,54 +12,32 @@
         class="btn btn-danger">
         Remove Stuck Registration
     </a>
+    {% else %}
+    <a data-toggle="modal" data-target="#confirmForceArchiveRegistration" class="btn btn-danger">
+        Force Archive
+    </a>
     {% endif %}
 
     <!-- Modals -->
     <div class="modal" id="confirmForceArchiveRegistration">
         <div class="modal-dialog">
             <div class="modal-content">
-                <form id="confirm-force-archive-form" class="well" method="post" action="{% url 'nodes:force-archive-registration' guid=node.guid%}">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal">x</button>
-                        <h3>Are you sure you want to force archive the registration? {{ node.guid }}</h3>
-                    </div>
-                    {% csrf_token %}
-                    <div class="modal-content" style="padding: 5px">
-                        <div>
-                            <h4>Handle collision:</h4>
-                            <div>
-                                <div>
-                                    <label><input type="radio" name="collision_mode" value="none">None</label>
-                                </div>
-                                <div>
-                                    <label><input type="radio" name="collision_mode" value="skip">Skip Collisions</label>
-                                </div>
-                                <div>
-                                    <label><input type="radio" name="collision_mode" value="delete">Delete Collisions</label>
-                                </div>
-                            </div>
-                        </div>
-                        <div>
-                            <h4>Addons:</h4>
-                            <div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="allow_unconfigured" id="allowUnconfigured">
-                                    <label class="form-check-label" for="allowUnconfigured">Allow unconfigured addons</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <label><input class="form-check-input" type="checkbox" name="dry-mode" id="dry-mode" value="true">Dry-mode</label>
-                        <input class="btn btn-danger" type="submit" value="Confirm" />
-                        <button type="button" class="btn btn-default" data-dismiss="modal">
-                            Cancel
-                        </button>
-                    </div>
-                </form>
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to force archive the registration? {{ node.guid }}</h3>
+                </div>
+                {% include "nodes/registration_force_archive_form.html" with form_id="confirm-force-archive-form" %}
+                <div class="modal-footer">
+                    <label><input class="form-check-input" type="checkbox" name="dry_mode" id="dry-mode" form="confirm-force-archive-form" value="true">Dry-mode</label>
+                    <input class="btn btn-danger" type="submit" form="confirm-force-archive-form" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
             </div>
         </div>
     </div>
+
     <div class="modal" id="confirmRemoveRegistration">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -82,8 +57,23 @@
             </div>
         </div>
     </div>
-{% endif %}
-{% block bottom_js %}
-    <script src="/static/js/nodes/force_archive.js"></script>
-{% endblock %}
 
+    <div class="modal" id="confirmRestartStuckRegistration">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to restart the registration process? {{ node.guid }}</h3>
+                </div>
+                {% include "nodes/registration_force_archive_form.html" with form_id="confirm-restart-stuck-registration" %}
+                <div class="modal-footer">
+                    <input class="btn btn-danger" type="submit" form="confirm-restart-stuck-registration" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endif %}

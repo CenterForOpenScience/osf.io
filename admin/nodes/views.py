@@ -701,6 +701,10 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
 
         registration = self.get_object()
 
+        if registration.archived:
+            messages.success(request, f"Registration {registration._id} is archived.")
+            return redirect(self.get_success_url())
+
         try:
             archive_status = check(registration)
             messages.success(request, archive_status)
@@ -710,34 +714,44 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
-class CollisionHandle(Enum):
+class CollisionMode(Enum):
     NONE: str = 'none'
     SKIP: str = 'skip'
     DELETE: str = 'delete'
 
 
 class ForceArchiveRegistrationsView(NodeMixin, View):
-    """Allows an authorized user to force archive for registration.
+    """Allows an authorized user to force archive registration.
     """
     permission_required = ('osf.view_node', 'osf.change_node')
 
     def post(self, request, *args, **kwargs):
-        """Attempts to force-archive the registration if verification passes."""
         # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
 
         registration = self.get_object()
         force_archive_params = request.POST
 
-        collision_mode = force_archive_params.get('collision_mode', CollisionHandle.NONE.value)
-        delete_collision = CollisionHandle.DELETE.value == collision_mode
-        skip_collision = CollisionHandle.SKIP.value == collision_mode
+        collision_mode = force_archive_params.get('collision_mode', CollisionMode.NONE.value)
+        delete_collision = CollisionMode.DELETE.value == collision_mode
+        skip_collision = CollisionMode.SKIP.value == collision_mode
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = DEFAULT_PERMISSIBLE_ADDONS
+        addons = set(force_archive_params.getlist('addons', []))
+        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
 
-        if verify(registration, permissible_addons=addons, raise_error=True):
+        try:
+            verify(registration, permissible_addons=addons, raise_error=True)
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+            return redirect(self.get_success_url())
+
+        dry_mode = force_archive_params.get('dry_mode', False)
+
+        if dry_mode:
+            messages.success(request, f"Registration {registration._id} can be archived.")
+        else:
             try:
                 archive(
                     registration,
@@ -746,13 +760,10 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                     skip_collision=skip_collision,
                     delete_collision=delete_collision,
                 )
-                messages.success(request, 'Registration archive processes has started.')
+                messages.success(request, 'Registration archive process has finished.')
             except Exception as exc:
-                messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__} '
-                                        f'if the problem persists get a developer to fix it.')
-        else:
-            messages.error(request, 'This registration cannot be archived,'
-                                    ' run force archive in dry mode to get more information about this.')
+                messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '
+                                        f'If the problem persists get a developer to fix it.')
 
         return redirect(self.get_success_url())
 
