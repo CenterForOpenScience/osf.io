@@ -76,7 +76,7 @@ def mint_doi_on_crossref_fail(preprint_id):
     ).exclude(id=preprint.id)
     if existing_versions_without_minted_doi:
         logger.error(
-            f'There are existing preprint versions for preprint with guid {preprint._id}. Versions: '
+            f'There are existing preprint versions for preprint with guid {preprint._id} that are missing DOIs. Versions: '
             f'{list(existing_versions_without_minted_doi.values_list('versioned_guids__version', flat=True))}'
         )
         mint_doi_on_crossref_fail.retry(countdown=CROSSREF_FAIL_RETRY_DELAY)
