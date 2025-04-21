@@ -186,25 +186,27 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke install --develop &&
-        (python -m compileall /usr/local/lib/python3.6 || true) &&
-        rm -Rf /python3.6/* &&
-        cp -Rf -p /usr/local/lib/python3.6 /
+      - |
+        python3 -m venv /tmp/venv && \
+        /tmp/venv/bin/pip install poetry==2.1.2 && \
+        /tmp/venv/bin/poetry install --no-root --with=dev --without=docs --compile && \
+        rm -rf /python3.13/* && \
+        cp -Rf -p /usr/local/lib/python3.13 /
     restart: 'no'
     volumes:
-      - wb_requirements_vol:/python3.6
+      - wb_requirements_vol:/python3.13
       - wb_requirements_local_bin_vol:/usr/local/bin
 
   wb:
     image: quay.io/centerforopenscience/wb:develop
-    command: invoke server
+    command: python3 -m invoke server
     restart: unless-stopped
     ports:
       - 7777:7777
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.6
+      - wb_requirements_vol:/usr/local/lib/python3.13
       - wb_requirements_local_bin_vol:/usr/local/bin
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
@@ -212,7 +214,7 @@ services:
 
   wb_worker:
     image: quay.io/centerforopenscience/wb:develop
-    command: invoke celery
+    command: python3 -m invoke celery
     restart: unless-stopped
     depends_on:
       - wb
@@ -222,7 +224,7 @@ services:
     env_file:
       - .docker-compose.wb.env
     volumes:
-      - wb_requirements_vol:/usr/local/lib/python3.6
+      - wb_requirements_vol:/usr/local/lib/python3.13
       - osfstoragecache_vol:/code/website/osfstoragecache
       - wb_tmp_vol:/tmp
     stdin_open: true
