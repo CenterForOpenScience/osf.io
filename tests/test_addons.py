@@ -305,6 +305,34 @@ class TestAddonAuth(OsfTestCase):
         res = self.app.get(url, auth=none_auth, expect_errors=True)
         assert_equal(res.status_code, 401)
 
+    @mock.patch('addons.base.views.OSFUser.load')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    @mock.patch('addons.base.views.cas.get_client')
+    def test_auth_bearer_token_has_permission(self, mock_cas_client, mock_get_current_user, user_load):
+        attributes = {'lastName': 'inst11', 'firstName': 'admin01', 'accessToken': 'valid_access_token',
+                      'accessTokenScope': {'osf.full_write', 'osf.full_read'}}
+        value = cas.CasResponse(authenticated=True, attributes=attributes, user=self.user)
+        mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=value))
+        mock_get_current_user.return_value = Auth(self.user)
+        user_load.return_value = self.user
+        url = self.build_url()
+        res = self.app.get(url, headers={'Authorization': 'Bearer valid_access_token'}, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('addons.base.views.OSFUser.load')
+    @mock.patch('framework.auth.decorators.Auth.from_kwargs')
+    @mock.patch('addons.base.views.cas.get_client')
+    def test_auth_bearer_token_without_permission(self, mock_cas_client, mock_get_current_user, user_load):
+        attributes = {'lastName': 'inst11', 'firstName': 'admin01', 'accessToken': 'valid_access_token',
+                      'accessTokenScope': {'osf.users.profile_read'}}
+        value = cas.CasResponse(authenticated=True, attributes=attributes, user=self.user)
+        mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=value))
+        mock_get_current_user.return_value = Auth(self.user)
+        user_load.return_value = self.user
+        url = self.build_url()
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestAddonLogs(OsfTestCase):
 
