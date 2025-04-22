@@ -416,7 +416,7 @@ class TestForceArchiveRegistrationsView(AdminTestCase):
         assert self.registration == view.get_object()
 
     def test_force_archive_registration(self):
-        # Prevents circular iassert self.registration.archive_job.status == 'INITIATED'mport that prevents admin app from starting up
+        # Prevents circular import that prevents admin app from starting up
         from django.contrib.messages.storage.fallback import FallbackStorage
 
         view = setup_log_view(self.view(), self.request, guid=self.registration._id)
