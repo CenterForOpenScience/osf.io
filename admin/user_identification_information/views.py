@@ -7,6 +7,7 @@ from django.http import Http404
 from django.http import HttpResponse
 from django.views.generic import ListView
 
+from admin.base import settings
 from admin.base.views import GuidView
 from admin.rdm.utils import RdmPermissionMixin
 from admin.user_identification_information.utils import (
@@ -14,10 +15,42 @@ from admin.user_identification_information.utils import (
     get_list_extend_storage
 )
 from api.base import settings as api_settings
-from osf.models import OSFUser, UserQuota, Email
+from osf.models import OSFUser, UserQuota, Email, Institution
 from website.util import quota
 from datetime import datetime
 from django.contrib.auth.mixins import UserPassesTestMixin
+
+
+class UserIdentificationInstitutionListView(RdmPermissionMixin, UserPassesTestMixin, ListView):
+    """ Institution list page for User Identification Information menu. """
+    template_name = 'user_identification_information/user_identification_institution_list.html'
+    paginate_by = 25
+    ordering = 'name'
+    raise_exception = True
+    model = Institution
+
+    def test_func(self):
+        """ Check user permissions """
+        if not self.is_authenticated:
+            # If user is not authenticated then redirect to login page
+            self.raise_exception = False
+            return False
+        # Only allow super administrators to access this view
+        return self.is_super_admin
+
+    def get_queryset(self):
+        """ GET: set to self.object_list """
+        return Institution.objects.filter(is_deleted=False).order_by(self.ordering)
+
+    def get_context_data(self, **kwargs):
+        """ Get context for this view """
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+        kwargs.setdefault('institutions', query_set)
+        kwargs.setdefault('page', page)
+        kwargs.setdefault('logohost', settings.OSF_URL)
+        return super(UserIdentificationInstitutionListView, self).get_context_data(**kwargs)
 
 
 class UserIdentificationInformationListView(ListView):
@@ -65,8 +98,15 @@ class UserIdentificationInformationListView(ListView):
         self.paginator, self.page, self.query_set, self.is_paginated = \
             self.paginate_queryset(self.query_set, self.page_size)
         kwargs['requested_user'] = self.request.user
-        kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name \
-            if self.request.user.is_superuser is False else None
+        if self.request.user.is_superuser is False:
+            kwargs['institution_name'] = self.request.user.affiliated_institutions.first().name
+        else:
+            institution_id = self.kwargs.get('institution_id')
+            institution = Institution.objects.filter(id=institution_id).first()
+            if institution is None:
+                raise Http404('Institution not found')
+            kwargs['institution_name'] = institution.name
+            kwargs['institution_id'] = institution.id
         kwargs['users'] = self.query_set
         kwargs['page'] = self.page
         kwargs['order_by'] = self.get_order_by()
@@ -112,7 +152,11 @@ class UserIdentificationListView(RdmPermissionMixin, UserPassesTestMixin, UserId
             if institution is not None:
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
-            queryset = OSFUser.objects.all().order_by('id')
+            institution_id = self.kwargs.get('institution_id')
+            institution = Institution.objects.filter(id=institution_id).first()
+            if institution is None:
+                raise Http404('Institution not found')
+            queryset = OSFUser.objects.filter(affiliated_institutions=institution_id).order_by('id')
 
         dict_users_list = get_list_extend_storage()
 
@@ -244,7 +288,11 @@ class ExportFileCSVView(RdmPermissionMixin, UserPassesTestMixin, UserIdentificat
             if institution is not None:
                 queryset = OSFUser.objects.filter(affiliated_institutions=institution.id).order_by('id')
         else:
-            queryset = OSFUser.objects.all().order_by('id')
+            institution_id = self.kwargs.get('institution_id')
+            institution = Institution.objects.filter(id=institution_id).first()
+            if institution is None:
+                raise Http404('Institution not found')
+            queryset = OSFUser.objects.filter(affiliated_institutions=institution_id).order_by('id')
 
         dict_users_list = get_list_extend_storage()
         for user in queryset:

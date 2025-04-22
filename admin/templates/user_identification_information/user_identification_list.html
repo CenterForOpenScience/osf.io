@@ -123,11 +123,9 @@
     }
 </style>
 <h2 id="title">{% trans "User Identification Information" %}</h2>
-{% if user.is_superuser == False %}
-    <h3 id="sub-title">
-        {% blocktrans %}{{ institution_name }}{% endblocktrans %}
-    </h3>
-{% endif %}
+<h3 id="sub-title">
+    {% blocktrans %}{{ institution_name }}{% endblocktrans %}
+</h3>
 <form
         class="form-inline flex-container search-form"
         action="#"
@@ -189,7 +187,7 @@
         <a
                 class="btn btn-primary"
                 style="padding-left: 6px; padding-right: 6px"
-                href="{% url 'user_identification_information:user_identification_export_csv' %}"
+                href="{% url 'user_identification_information:user_identification_export_csv' institution_id=institution_id %}"
         >{% trans "Export All Users Statistics (CSV)" %}</a
         >
     {% else %}
