@@ -12,13 +12,7 @@ $(document).ready(function() {
                 window.location.href = response.redirect;
             }
         }).fail(function (jqXHR, textStatus, error) {
-            $("#date-validation").text(jqXHR.responseText);
+            $("#version-validation").text(jqXHR.responseText);
         });
     });
-
-    $(".datepicker").datepicker({
-        format: "yyyy-mm-dd",
-        startDate: "+0d",
-    });
-
 });

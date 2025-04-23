@@ -1,5 +1,3 @@
-import datetime
-
 from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
@@ -199,15 +197,9 @@ class PreprintReVersion(PreprintMixin, View):
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
 
-        file_versions_date = request.POST.get('date')
-        file_versions_date = datetime.datetime.strptime(file_versions_date, '%Y-%m-%d').date()
-        file_versions = (
-            preprint.primary_file.versions
-            .filter(created__date=file_versions_date)
-            .values_list('identifier', flat=True)
-        )
+        file_versions = request.POST.getlist('file_versions')
         if not file_versions:
-            return HttpResponse(f"No available file versions found on {file_versions_date}.", status=400)
+            return HttpResponse('At least one file version should be attached.', status=400)
 
         versions = preprint.get_preprint_versions()
         for version in versions:
@@ -221,6 +213,7 @@ class PreprintReVersion(PreprintMixin, View):
         )
         primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
         data_to_update['primary_file'] = primary_file
+        breakpoint()
 
         # FIXME: currently it's not possible to ignore permission when update subjects
         # via serializer, remove this logic if deprecated
