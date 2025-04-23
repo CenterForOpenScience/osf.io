@@ -213,7 +213,6 @@ class PreprintReVersion(PreprintMixin, View):
         )
         primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
         data_to_update['primary_file'] = primary_file
-        breakpoint()
 
         # FIXME: currently it's not possible to ignore permission when update subjects
         # via serializer, remove this logic if deprecated

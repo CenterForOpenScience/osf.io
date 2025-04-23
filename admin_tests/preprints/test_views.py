@@ -1,6 +1,5 @@
 import pytest
 from unittest import mock
-from datetime import datetime
 
 from django.test import RequestFactory
 from django.urls import reverse
@@ -816,7 +815,7 @@ class TestPreprintReVersionView:
         request = RequestFactory().post(
             reverse('preprints:re-version-preprint',
             kwargs={'guid': preprint._id}),
-            data={'date': datetime.today().date()}
+            data={'file_versions': ['1']}
         )
         request.user = user
 
