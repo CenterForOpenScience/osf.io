@@ -4,12 +4,17 @@ import re
 from osf.models.metaschema import RegistrationSchema
 
 
+REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP = 'http://purl.org/net/sword/3.0/package/SimpleZip'
+REGISTRATION_METADATA_MAPPING_PACKAGING_SWORD_BAGIT = 'http://purl.org/net/sword/3.0/package/SWORDBagIt'
+
 logger = logging.getLogger(__name__)
 
 
 def _validate_mapping_element(element):
     if isinstance(element, list):
         for e in element:
+            if isinstance(e, str):
+                continue
             _validate_mapping_element(e)
         return
     for key, v in element.items():
@@ -29,11 +34,26 @@ def _validate_metadata_element(element):
         raise ValueError('Metadata object must be dict')
     if len(element) == 0:
         raise ValueError('Metadata object cannot be empty')
-    if 'itemtype' not in element:
-        raise ValueError('Metadata object must have itemtype')
+
+    if 'filename' in element and not element['filename']:
+        raise ValueError('Metadata object must have filename')
+    element['filename'] = element.get('filename', 'ro-crate-metadata.json')
+    filename = element['filename']
+
+    if 'filename' not in element:
+        raise ValueError('Metadata object must have filename')
+    filename = element['filename']
+    if not isinstance(filename, str):
+        raise ValueError('Metadata filename must be string')
+    if filename not in ['ro-crate-metadata.json', 'index.csv']:
+        raise ValueError(f'Unexpected filename "{filename}", must be "ro-crate-metadata.json" or "index.csv"')
+    if 'itemtype' not in element and filename == 'index.csv':
+        raise ValueError('Metadata object must have itemtype for index.csv')
     for key, v in element.items():
         if key == 'itemtype':
             _validate_itemtype_element(v)
+            continue
+        if key in ['filename']:
             continue
         raise ValueError(f'Unexpected key "{key}" in metadata')
 
@@ -79,6 +99,7 @@ def validate_mapping(mapping):
 
 def ensure_registration_metadata_mapping(schema_name, mapping):
     validate_mapping(mapping)
+    filename = mapping['@metadata']['filename']
 
     from .models import RegistrationMetadataMapping
     registration_schema = RegistrationSchema.objects.filter(
@@ -86,13 +107,25 @@ def ensure_registration_metadata_mapping(schema_name, mapping):
     ).order_by('-schema_version').first()
     mapping_query = RegistrationMetadataMapping.objects.filter(
         registration_schema_id=registration_schema._id,
+        filename=filename,
     )
+    entity = None
     if mapping_query.exists():
         entity = mapping_query.first()
-    else:
+    elif filename == 'index.csv':
+        # index.csv is default filename
+        old_mapping_query = RegistrationMetadataMapping.objects.filter(
+            registration_schema_id=registration_schema._id,
+            filename=None,
+        )
+        if old_mapping_query.exists():
+            entity = old_mapping_query.first()
+    if entity is None:
         entity = RegistrationMetadataMapping.objects.create(
             registration_schema_id=registration_schema._id,
+            filename=filename,
         )
     entity.rules = mapping
-    logger.info(f'Mapping registered: {registration_schema._id}, {mapping}')
+    entity.filename = filename
+    logger.info(f'Mapping registered: {registration_schema._id}, {filename}, {mapping}')
     entity.save()
