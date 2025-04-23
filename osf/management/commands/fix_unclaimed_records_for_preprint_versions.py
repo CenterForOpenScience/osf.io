@@ -101,7 +101,6 @@ def update_unclaimed_records_for_preprint_versions(dry_run=False):
                                             referrer=referrer,
                                             given_name=record_info.get('name', None),
                                             email=record_info.get('email', None),
-                                            provided_pid=preprint_id,
                                         )
                                         contributor.user.save()
                                         updated_count += 1
@@ -127,7 +126,6 @@ def update_unclaimed_records_for_preprint_versions(dry_run=False):
                                                 referrer=current_preprint.creator,
                                                 given_name=contributor.user.fullname,
                                                 email=contributor.user.username,
-                                                provided_pid=preprint_id,
                                             )
                                             contributor.user.save()
                                             updated_count += 1
