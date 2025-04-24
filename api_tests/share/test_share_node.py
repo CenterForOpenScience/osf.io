@@ -20,7 +20,7 @@ from website import settings
 from website.project.tasks import on_node_updated
 
 from framework.auth.core import Auth
-from api.share.utils import shtrove_ingest_url, sharev2_push_url
+from api.share.utils import shtrove_ingest_url
 from ._utils import expect_ingest_request
 
 
@@ -189,8 +189,6 @@ class TestNodeShare:
         """This is meant to simulate a temporary outage, so the retry mechanism should kick in and complete it."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
         mock_share_responses.add(responses.POST, shtrove_ingest_url(), status=200)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)
-        mock_share_responses.add(responses.POST, sharev2_push_url(), status=200)
         with expect_ingest_request(mock_share_responses, node._id, count=2):
             on_node_updated(node._id, user._id, False, {'is_public'})
 
@@ -198,13 +196,11 @@ class TestNodeShare:
     def test_call_async_update_on_500_failure(self, mock_share_responses, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)
         with expect_ingest_request(mock_share_responses, node._id, count=5):  # tries five times
             on_node_updated(node._id, user._id, False, {'is_public'})
 
     @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_no_call_async_update_on_400_failure(self, mock_share_responses, node, user):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=400)
         with expect_ingest_request(mock_share_responses, node._id):
             on_node_updated(node._id, user._id, False, {'is_public'})
