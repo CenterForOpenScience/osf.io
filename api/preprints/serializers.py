@@ -369,21 +369,16 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
             if 'prereg_link_info' in validated_data:
                 preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'], ignore_permission=ignore_permission)
+
+            if 'data_links' in validated_data:
+                preprint.update_data_links(auth, validated_data['data_links'], ignore_permission=ignore_permission)
+            else:
+                if updated_has_data_links == 'no' and preprint.data_links:
+                    preprint.update_data_links(auth, [], ignore_permission=ignore_permission)
         except PreprintStateError as e:
             raise exceptions.ValidationError(detail=str(e))
         except PermissionsError:
             raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
-
-        if 'data_links' in validated_data:
-            try:
-                preprint.update_data_links(auth, validated_data['data_links'], ignore_permission=ignore_permission)
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-            except PermissionsError:
-                raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
-        else:
-            if updated_has_data_links == 'no' and preprint.data_links:
-                preprint.update_data_links(auth, [], ignore_permission=ignore_permission)
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
@@ -440,7 +435,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
-            self.set_field(preprint.set_preprint_license, license_details, auth)
+            self.set_field(preprint.set_preprint_license, license_details, auth, ignore_permission=ignore_permission)
 
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
@@ -455,7 +450,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 )
             self.set_field(preprint.set_published, published, auth, ignore_permission=ignore_permission)
             recently_published = published
-            preprint.set_privacy('public', log=False, save=True)
+            preprint.set_privacy('public', log=False, save=True, ignore_permission=ignore_permission)
 
         try:
             preprint.full_clean()

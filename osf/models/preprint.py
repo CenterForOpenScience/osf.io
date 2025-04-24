@@ -897,8 +897,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def set_preprint_license(self, license_detail, auth, save=False):
-        license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint')
+    @require_permission([WRITE])
+    def set_preprint_license(self, license_detail, auth, save=False, **kwargs):
+        license_record, license_changed = set_license(self, license_detail, auth, node_type='preprint', **kwargs)
 
         if license_changed:
             self.add_log(
