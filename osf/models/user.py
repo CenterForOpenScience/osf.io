@@ -1284,7 +1284,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             validate_email(email)
 
         if not external_identity and self.emails.filter(address=email).exists():
-            if not force or self.is_confirmed:
+            if not force and self.is_confirmed:
                 raise ValueError('Email already confirmed to this user.')
 
         # If the unconfirmed email is already present, refresh the token
