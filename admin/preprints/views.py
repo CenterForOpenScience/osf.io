@@ -23,6 +23,7 @@ from api.providers.workflows import Workflows
 from api.preprints.serializers import PreprintSerializer
 
 from osf.exceptions import PreprintStateError
+from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
 
 from osf.management.commands.fix_preprints_has_data_links_and_why_no_data import process_wrong_why_not_data_preprints
 from osf.models import (
@@ -193,7 +194,6 @@ class PreprintReVersion(PreprintMixin, View):
     """
     permission_required = 'osf.change_node'
 
-    @transaction.atomic
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
 
@@ -201,26 +201,30 @@ class PreprintReVersion(PreprintMixin, View):
         if not file_versions:
             return HttpResponse('At least one file version should be attached.', status=400)
 
-        versions = preprint.get_preprint_versions()
-        for version in versions:
-            version.upgrade_version()
+        try:
+            with transaction.atomic():
+                versions = preprint.get_preprint_versions()
+                for version in versions:
+                    version.upgrade_version()
 
-        new_preprint, data_to_update = Preprint.create_version(
-            create_from_guid=preprint._id,
-            assign_version_number=1,
-            auth=request,
-            ignore_permission=True,
-        )
-        primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
-        data_to_update['primary_file'] = primary_file
+                new_preprint, data_to_update = Preprint.create_version(
+                    create_from_guid=preprint._id,
+                    assign_version_number=1,
+                    auth=request,
+                    ignore_permission=True,
+                )
+                primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
+                data_to_update['primary_file'] = primary_file
 
-        # FIXME: currently it's not possible to ignore permission when update subjects
-        # via serializer, remove this logic if deprecated
-        subjects = data_to_update.pop('subjects', None)
-        if subjects:
-            new_preprint.set_subjects([subjects], auth=request, ignore_permission=True)
+                # FIXME: currently it's not possible to ignore permission when update subjects
+                # via serializer, remove this logic if deprecated
+                subjects = data_to_update.pop('subjects', None)
+                if subjects:
+                    new_preprint.set_subjects([subjects], auth=request, ignore_permission=True)
 
-        PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
+                PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
+        except DrfPermissionDenied as exc:
+            return HttpResponse(f'Not enough permissions to perform this action : {str(exc)}', status=400)
 
         return JsonResponse({'redirect': self.get_success_url(new_preprint._id)})
 
