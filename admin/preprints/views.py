@@ -1,6 +1,7 @@
+from django.db import transaction
 from django.db.models import F
 from django.core.exceptions import PermissionDenied
-from django.urls import NoReverseMatch
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.shortcuts import redirect
@@ -10,7 +11,7 @@ from django.views.generic import (
     FormView,
 )
 from django.utils import timezone
-from django.urls import reverse_lazy
+from django.urls import NoReverseMatch, reverse_lazy
 
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
@@ -19,6 +20,7 @@ from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
 from api.providers.workflows import Workflows
+from api.preprints.serializers import PreprintSerializer
 
 from osf.exceptions import PreprintStateError
 
@@ -45,6 +47,7 @@ from osf.models.admin_log_entry import (
 )
 from osf.utils.workflows import DefaultStates
 from website import search
+from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
 
 
@@ -56,8 +59,8 @@ class PreprintMixin(PermissionRequiredMixin):
         preprint.guid = preprint._id
         return preprint
 
-    def get_success_url(self):
-        return reverse_lazy('preprints:preprint', kwargs={'guid': self.kwargs['guid']})
+    def get_success_url(self, guid=None):
+        return reverse_lazy('preprints:preprint', kwargs={'guid': guid or self.kwargs['guid']})
 
 
 class PreprintView(PreprintMixin, GuidView):
@@ -181,6 +184,45 @@ class PreprintReindexShare(PreprintMixin, View):
             action_flag=REINDEX_SHARE
         )
         return redirect(self.get_success_url())
+
+
+class PreprintReVersion(PreprintMixin, View):
+    """Allows an authorized user to create new version 1 of a preprint based on earlier
+    primary file version(s). All operations are executed within an atomic transaction.
+    If any step fails, the entire transaction will be rolled back and no version will be changed.
+    """
+    permission_required = 'osf.change_node'
+
+    @transaction.atomic
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+
+        file_versions = request.POST.getlist('file_versions')
+        if not file_versions:
+            return HttpResponse('At least one file version should be attached.', status=400)
+
+        versions = preprint.get_preprint_versions()
+        for version in versions:
+            version.upgrade_version()
+
+        new_preprint, data_to_update = Preprint.create_version(
+            create_from_guid=preprint._id,
+            assign_version_number=1,
+            auth=request,
+            ignore_permission=True,
+        )
+        primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
+        data_to_update['primary_file'] = primary_file
+
+        # FIXME: currently it's not possible to ignore permission when update subjects
+        # via serializer, remove this logic if deprecated
+        subjects = data_to_update.pop('subjects', None)
+        if subjects:
+            new_preprint.set_subjects([subjects], auth=request, ignore_permission=True)
+
+        PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
+
+        return JsonResponse({'redirect': self.get_success_url(new_preprint._id)})
 
 
 class PreprintReindexElastic(PreprintMixin, View):

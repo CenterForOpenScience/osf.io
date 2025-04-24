@@ -27,6 +27,7 @@
                     {% include "preprints/make_public.html" with preprint=preprint %}
                     {% include "preprints/make_published.html" with preprint=preprint %}
                     {% include "preprints/fix_editing.html" with preprint=preprint %}
+                    {% include "preprints/assign_new_version.html" with preprint=preprint %}
                 </div>
             </div>
         </div>
@@ -123,3 +124,11 @@
         </div>
     </div>
 {% endblock content %}
+{% block bottom_js %}
+    <script src="/static/js/preprints/preprints.js"></script>
+    <script>
+        window.templateVars = {
+            'reVersionPreprint': '{% url 'preprints:re-version-preprint' guid=preprint.guid %}',
+        }
+    </script>
+{% endblock %}

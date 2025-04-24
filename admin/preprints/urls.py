@@ -13,6 +13,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/change_provider/$', views.PreprintProviderChangeView.as_view(), name='preprint-provider'),
     re_path(r'^(?P<guid>\w+)/machine_state/$', views.PreprintMachineStateView.as_view(), name='preprint-machine-state'),
     re_path(r'^(?P<guid>\w+)/reindex_share_preprint/$', views.PreprintReindexShare.as_view(), name='reindex-share-preprint'),
+    re_path(r'^(?P<guid>\w+)/reversion_preprint/$', views.PreprintReVersion.as_view(), name='re-version-preprint'),
     re_path(r'^(?P<guid>\w+)/remove_user/(?P<user_id>[a-z0-9]+)/$', views.PreprintRemoveContributorView.as_view(), name='remove-user'),
     re_path(r'^(?P<guid>\w+)/make_private/$', views.PreprintMakePrivate.as_view(), name='make-private'),
     re_path(r'^(?P<guid>\w+)/fix_editing/$', views.PreprintFixEditing.as_view(), name='fix-editing'),
