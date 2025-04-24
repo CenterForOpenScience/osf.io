@@ -1,11 +1,12 @@
 import functools
+import inspect
 from urllib.parse import urljoin
 import logging
 import re
 
 from dirtyfields import DirtyFieldsMixin
 from django.db import models, IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Max
 from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericRelation
 from django.core.exceptions import ValidationError
@@ -145,6 +146,35 @@ class RejectedPreprintManager(PreprintManager):
 class EverPublishedPreprintManager(PreprintManager):
     def get_queryset(self):
         return super().get_queryset().filter(date_published__isnull=False)
+
+
+def require_permission(permissions: list):
+    """
+    Preprint-specific decorator for permission checks.
+
+    This decorator adds an implicit `ignore_permission` argument to the decorated function,
+    allowing you to bypass the permission check when set to `True`.
+
+    Usage example:
+        preprint.some_method(..., ignore_permission=True)  # Skips permission check
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(self, *args, ignore_permission=False, **kwargs):
+            sig = inspect.signature(func)
+            bound_args = sig.bind_partial(self, *args, **kwargs)
+            bound_args.apply_defaults()
+
+            auth = bound_args.arguments.get('auth', None)
+
+            if not ignore_permission and auth is not None:
+                for permission in permissions:
+                    if not self.has_permission(auth.user, permission):
+                        raise PermissionsError(f'Must have following permissions to change a preprint: {permissions}')
+            return func(self, *args, ignore_permission=ignore_permission, **kwargs)
+        return wrapper
+    return decorator
+
 
 class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, ReviewableMixin, BaseModel, TitleMixin, DescriptionMixin,
         Loggable, Taggable, ContributorMixin, GuardianMixin, SpamOverrideMixin, TaxonomizableMixin, AffiliatedInstitutionMixin):
@@ -374,12 +404,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return None, None
 
     @classmethod
-    def create_version(cls, create_from_guid, auth):
+    def create_version(cls, create_from_guid, auth, assign_version_number=None, ignore_permission=False):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
         but `create_version` always finds the latest version and creates a new version from it. In addition, this
         creates an "incomplete" new preprint version object using the model class and returns both the new object and
         the data to be updated. The API, more specifically `PreprintCreateVersionSerializer` must call `.update()` to
         "completely finish" the new preprint version object creation.
+        Optionally, you can assign a custom version number, as long as it doesn't conflict with existing versions.
+        The version must be an integer greater than 0.
         """
 
         # Use `Guid.load()` instead of `VersionedGuid.load()` to retrieve the base guid obj, which always points to the
@@ -389,7 +421,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if not latest_version:
             sentry.log_message(f'Preprint not found: [guid={guid_obj._id}, create_from_guid={create_from_guid}]')
             return None, None
-        if not latest_version.has_permission(auth.user, ADMIN):
+        if not ignore_permission and not latest_version.has_permission(auth.user, ADMIN):
             sentry.log_message(f'ADMIN permission for the latest version is required to create a new version: '
                                f'[user={auth.user._id}, guid={guid_obj._id}, latest_version={latest_version._id}]')
             raise PermissionsError
@@ -406,9 +438,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                            f'_id={unfinished_version._id}, '
                            f'state={unfinished_version.machine_state}].')
             return unfinished_version, None
-
-        # Note: version number bumps from the last version number instead of the latest version number
-        last_version_number = guid_obj.versions.order_by('-version').first().version
 
         # Prepare the data to clone/update
         data_to_update = {
@@ -438,13 +467,30 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             description=latest_version.description,
         )
         preprint.save(guid_ready=False)
+
+        # Note: version number bumps from the last version number instead of the latest version number
+        # if assign_version_number is not specified
+        if assign_version_number:
+            if not isinstance(assign_version_number, int) or assign_version_number <= 0:
+                raise ValueError(
+                    f"Unable to assign: {assign_version_number}. "
+                    'Version must be integer greater than 0.'
+                )
+            if GuidVersionsThrough.objects.filter(guid=guid_obj, version=assign_version_number).first():
+                raise ValueError(f"Version {assign_version_number} for preprint {guid_obj} already exists.")
+
+            version_number = assign_version_number
+        else:
+            last_version_number = guid_obj.versions.order_by('-version').first().version
+            version_number = last_version_number + 1
+
         # Create a new entry in the `GuidVersionsThrough` table to store version information, which must happen right
         # after the first `.save()` of the new preprint version object, which enables `preprint._id` to be computed.
         guid_version = GuidVersionsThrough(
             referent=preprint,
             object_id=guid_obj.object_id,
             content_type=guid_obj.content_type,
-            version=last_version_number + 1,
+            version=version_number,
             guid=guid_obj
         )
         guid_version.save()
@@ -482,8 +528,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         for institution in latest_version.affiliated_institutions.all():
             preprint.add_affiliated_institution(institution, auth.user, ignore_user_affiliation=True)
 
-        # Update Guid obj to point to the new version if there is no moderation
-        if not preprint.provider.reviews_workflow:
+        # Update Guid obj to point to the new version if there is no moderation and new version is bigger
+        if not preprint.provider.reviews_workflow and version_number > guid_obj.referent.version:
             guid_obj.referent = preprint
             guid_obj.object_id = preprint.pk
             guid_obj.content_type = ContentType.objects.get_for_model(preprint)
@@ -493,6 +539,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             preprint.set_supplemental_node(latest_version.node, auth, save=False, ignore_node_permissions=True)
 
         return preprint, data_to_update
+
+    def upgrade_version(self):
+        """Increase preprint version by one."""
+        guid_version = GuidVersionsThrough.objects.get(object_id=self.id)
+        guid_version.version += 1
+        guid_version.save()
+
+        return self
 
     @property
     def is_deleted(self):
@@ -707,9 +761,14 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_preprint_versions(self, include_rejected=True):
         guids = self.versioned_guids.first().guid.versions.all()
-        preprint_versions = Preprint.objects.filter(id__in=[vg.object_id for vg in guids]).order_by('-id')
+        preprint_versions = (
+            Preprint.objects
+            .filter(id__in=[vg.object_id for vg in guids])
+            .annotate(latest_version=Max('versioned_guids__version'))
+            .order_by('-latest_version')
+        )
         if include_rejected is False:
-            preprint_versions = [p for p in preprint_versions if p.machine_state != 'rejected']
+            preprint_versions = preprint_versions.exclude(machine_state=DefaultStates.REJECTED.value)
         return preprint_versions
 
     def web_url_for(self, view_name, _absolute=False, _guid=False, *args, **kwargs):
@@ -768,12 +827,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         return
 
-    def set_primary_file(self, preprint_file, auth, save=False):
+    @require_permission([WRITE])
+    def set_primary_file(self, preprint_file, auth, save=False, **kwargs):
         if not self.root_folder:
             raise PreprintStateError('Preprint needs a root folder.')
-
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to change a preprint\'s primary file.')
 
         if preprint_file.target != self or preprint_file.provider != 'osfstorage':
             raise ValueError('This file is not a valid primary file for this preprint.')
@@ -800,10 +857,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             self.save()
         update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['primary_file'])
 
-    def set_published(self, published, auth, save=False, ignore_permission=False):
-        if not ignore_permission and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Only admins can publish a preprint.')
-
+    @require_permission([ADMIN])
+    def set_published(self, published, auth, save=False, **kwargs):
         if self.is_published and not published:
             raise ValueError('Cannot unpublish preprint.')
 
@@ -820,7 +875,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 raise ValueError('Preprint must have at least one subject to be published.')
             self.date_published = timezone.now()
             # For legacy preprints, not logging
-            self.set_privacy('public', log=False, save=False)
+            self.set_privacy('public', log=False, save=False, **kwargs)
 
             # In case this provider is ever set up to use a reviews workflow, put this preprint in a sensible state
             self.machine_state = ReviewStates.ACCEPTED.value
@@ -1042,10 +1097,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=['tags'])
             return True
 
-    def set_supplemental_node(self, node, auth, save=False, ignore_node_permissions=False):
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('You must have write permissions to set a supplemental node.')
-
+    @require_permission([WRITE])
+    def set_supplemental_node(self, node, auth, save=False, ignore_node_permissions=False, **kwargs):
         if not node.has_permission(auth.user, WRITE) and not ignore_node_permissions:
             raise PermissionsError('You must have write permissions on the supplemental node to attach.')
 
@@ -1067,10 +1120,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def unset_supplemental_node(self, auth, save=False):
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('You must have write permissions to set a supplemental node.')
-
+    @require_permission([WRITE])
+    def unset_supplemental_node(self, auth, save=False, **kwargs):
         current_node_id = self.node._id if self.node else None
         self.node = None
 
@@ -1087,27 +1138,23 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def set_title(self, title, auth, save=False):
+    @require_permission([WRITE])
+    def set_title(self, title, auth, save=False, **kwargs):
         """Set the title of this Preprint and log it.
 
         :param str title: The new title.
         :param auth: All the auth information including user, API key.
         """
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
-
         return super().set_title(title, auth, save)
 
-    def set_description(self, description, auth, save=False):
+    @require_permission([WRITE])
+    def set_description(self, description, auth, save=False, **kwargs):
         """Set the description and log the event.
 
         :param str description: The new description
         :param auth: All the auth informtion including user, API key.
         :param bool save: Save self after updating.
         """
-        if not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to edit a preprint\'s title.')
-
         return super().set_description(description, auth, save)
 
     def get_spam_fields(self, saved_fields=None):
@@ -1115,7 +1162,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             return self.SPAM_CHECK_FIELDS
         return self.SPAM_CHECK_FIELDS.intersection(saved_fields)
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False, force=False, should_hide=False):
+    @require_permission([WRITE])
+    def set_privacy(self, permissions, auth=None, log=True, save=True, check_addons=False, force=False, should_hide=False, **kwargs):
         """Set the permissions for this preprint - mainly for spam purposes.
 
         :param permissions: A string, either 'public' or 'private'
@@ -1124,8 +1172,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         :param bool meeting_creation: Whether this was created due to a meetings email.
         :param bool check_addons: Check and collect messages for addons?
         """
-        if auth and not self.has_permission(auth.user, WRITE):
-            raise PermissionsError('Must have admin or write permissions to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if (self.is_spam or (settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE and self.is_spammy)) and not force:
                 raise PreprintStateError(
@@ -1191,7 +1237,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @classmethod
     def bulk_update_search(cls, preprints, index=None):
         for _preprint in preprints:
-            update_share(_preprint)
+            if _preprint.is_latest_version:
+                update_share(_preprint)
         from website import search
         try:
             serialize = functools.partial(search.search.update_preprint, index=index, bulk=True, async_update=False)
@@ -1269,7 +1316,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         system_tag_to_add, created = Tag.all_tags.get_or_create(name=provider_source_tag(self.provider._id, 'preprint'), system=True)
         contributor.add_system_tag(system_tag_to_add)
 
-    def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_has_coi(self, auth: Auth, has_coi: bool, log: bool = True, save: bool = True, **kwargs):
         """
         This method sets the field `has_coi` to indicate if there's a conflict interest statement for this preprint
         and logs that change.
@@ -1301,7 +1349,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_conflict_of_interest_statement(self, auth: Auth, coi_statement: str, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_conflict_of_interest_statement(self, auth: Auth, coi_statement: str, log: bool = True, save: bool = True, **kwargs):
         """
         This method sets the `conflict_of_interest_statement` field for this preprint and logs that change.
 
@@ -1330,7 +1379,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True, **kwargs):
         """
         This method sets the `has_data_links` field that respresent the availability of links to supplementary data
         for this preprint and logs that change.
@@ -1361,11 +1411,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 auth=auth
             )
         if not has_data_links:
-            self.update_data_links(auth, data_links=[], log=False)
+            self.update_data_links(auth, data_links=[], log=False, **kwargs)
         if save:
             self.save()
 
-    def update_data_links(self, auth: Auth, data_links: list, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_data_links(self, auth: Auth, data_links: list, log: bool = True, save: bool = True, **kwargs):
         """
         This method sets the field `data_links` which is a validated list of links to supplementary data for a
         preprint and logs that change.
@@ -1397,7 +1448,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_why_no_data(self, auth: Auth, why_no_data: str, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_why_no_data(self, auth: Auth, why_no_data: str, log: bool = True, save: bool = True, **kwargs):
         """
         This method sets the field `why_no_data` a string that represents a user provided explanation for the
         unavailability of supplementary data for their preprint.
@@ -1429,7 +1481,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_has_prereg_links(self, auth: Auth, has_prereg_links: bool, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_has_prereg_links(self, auth: Auth, has_prereg_links: bool, log: bool = True, save: bool = True, **kwargs):
         """
         This method updates the `has_prereg_links` field, that indicates availability of links to prereg data and logs
         changes to it.
@@ -1461,12 +1514,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 auth=auth
             )
         if not has_prereg_links:
-            self.update_prereg_links(auth, prereg_links=[], log=False)
-            self.update_prereg_link_info(auth, prereg_link_info=None, log=False)
+            self.update_prereg_links(auth, prereg_links=[], log=False, **kwargs)
+            self.update_prereg_link_info(auth, prereg_link_info=None, log=False, **kwargs)
         if save:
             self.save()
 
-    def update_why_no_prereg(self, auth: Auth, why_no_prereg: str, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_why_no_prereg(self, auth: Auth, why_no_prereg: str, log: bool = True, save: bool = True, **kwargs):
         """
         This method updates the field `why_no_prereg` that contains a user provided explanation of prereg data
         unavailability and logs changes to it.
@@ -1498,7 +1552,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_prereg_links(self, auth: Auth, prereg_links: list, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_prereg_links(self, auth: Auth, prereg_links: list, log: bool = True, save: bool = True, **kwargs):
         """
         This method updates the field `prereg_links` that contains a list of validated URLS linking to prereg data
         and logs changes to it.
@@ -1530,7 +1585,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         if save:
             self.save()
 
-    def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True):
+    @require_permission([ADMIN])
+    def update_prereg_link_info(self, auth: Auth, prereg_link_info: str, log: bool = True, save: bool = True, **kwargs):
         """
         This method updates the field `prereg_link_info` that contains a one of a finite number of choice strings in
         contained in the list in the static member `PREREG_LINK_INFO_CHOICES` that describe the nature of the preprint's
