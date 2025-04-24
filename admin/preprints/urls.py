@@ -15,6 +15,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/reindex_share_preprint/$', views.PreprintReindexShare.as_view(), name='reindex-share-preprint'),
     re_path(r'^(?P<guid>\w+)/remove_user/(?P<user_id>[a-z0-9]+)/$', views.PreprintRemoveContributorView.as_view(), name='remove-user'),
     re_path(r'^(?P<guid>\w+)/make_private/$', views.PreprintMakePrivate.as_view(), name='make-private'),
+    re_path(r'^(?P<guid>\w+)/fix_editing/$', views.PreprintFixEditing.as_view(), name='fix-editing'),
     re_path(r'^(?P<guid>\w+)/make_public/$', views.PreprintMakePublic.as_view(), name='make-public'),
     re_path(r'^(?P<guid>\w+)/remove/$', views.PreprintDeleteView.as_view(), name='remove'),
     re_path(r'^(?P<guid>\w+)/restore/$', views.PreprintDeleteView.as_view(), name='restore'),

@@ -22,6 +22,7 @@ from api.providers.workflows import Workflows
 
 from osf.exceptions import PreprintStateError
 
+from osf.management.commands.fix_preprints_has_data_links_and_why_no_data import process_wrong_why_not_data_preprints
 from osf.models import (
     SpamStatus,
     Preprint,
@@ -522,6 +523,21 @@ class PreprintMakePrivate(PreprintMixin, View):
 
         preprint.set_privacy('private', force=True)
         preprint.save()
+
+        return redirect(self.get_success_url())
+
+class PreprintFixEditing(PreprintMixin, View):
+    """ Allows an authorized user to manually fix why not data field.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        preprint = self.get_object()
+        process_wrong_why_not_data_preprints(
+            version_guid=preprint._id,
+            dry_run=False,
+            executing_through_command=False,
+        )
 
         return redirect(self.get_success_url())
 
