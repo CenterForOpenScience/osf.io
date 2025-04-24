@@ -22,6 +22,15 @@ class Command(BaseCommand):
         dry_run = options.get('dry_run', False)
         update_unclaimed_records_for_preprint_versions(dry_run=dry_run)
 
+def safe_sort_key(x, delimiter):
+    parts = x.split(delimiter)
+    if len(parts) > 1:
+        try:
+            return int(parts[1])
+        except (ValueError, TypeError):
+            return 0
+    return 0
+
 
 def update_unclaimed_records_for_preprint_versions(dry_run=False):
     Preprint = apps.get_model('osf.Preprint')
@@ -70,13 +79,15 @@ def update_unclaimed_records_for_preprint_versions(dry_run=False):
             latest_version_number = latest_version_through.version
             unregistered_contributors = preprint.contributor_set.filter(user__is_registered=False)
             logger.info(f'Found {unregistered_contributors.count()} unregistered contributors for preprint {preprint._id}')
-
+            delimiter = Preprint.GUID_VERSION_DELIMITER
             for contributor in unregistered_contributors:
                 try:
-                    records_key_for_current_guid = [key for key in contributor.user.unclaimed_records.keys() if guid in key]
+                    records_key_for_current_guid = [
+                        key for key in contributor.user.unclaimed_records.keys() if guid in key and delimiter in key
+                    ]
                     if records_key_for_current_guid:
                         records_key_for_current_guid.sort(
-                            key=lambda x: int(x.split(Preprint.GUID_VERSION_DELIMITER)[1]),
+                            key=lambda x: safe_sort_key(x, delimiter),
                         )
                         record_info = contributor.user.unclaimed_records[records_key_for_current_guid[0]]
                         for current_version in range(1, int(latest_version_number) + 1):
