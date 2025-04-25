@@ -223,6 +223,7 @@ class RegistrationSerializer(NodeSerializer):
             related_meta={
                 'unread': 'get_unread_comments_count',
                 'count': 'get_total_comments_count',
+                'comment_count': 'get_comments_count',
             },
             filter={'target': '<_id>'},
         ),
@@ -948,7 +949,7 @@ class RegistrationFileSerializer(OsfStorageFileSerializer):
     comments = FileRelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<target._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
         filter={'target': 'get_file_guid'},
     )
 
