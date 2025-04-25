@@ -337,6 +337,9 @@ class BaseFileSerializer(JSONAPISerializer):
             return 0
         return Comment.find_n_unread(user=user, node=obj.target, page='files', root_id=obj.get_guid()._id)
 
+    def get_comments_count(self, obj):
+        return Comment.find_count(node=obj.target, page='files', root_id=obj.get_guid()._id)
+
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for
         # Hyperlinks is weird
