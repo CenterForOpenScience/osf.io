@@ -4,7 +4,8 @@
         <span data-bind="if: unreadComments() !== 0">
             <span data-bind="text: displayCount" class="badge unread-comments-count"></span>
         </span>
-        <i class="fa fa-comments-o fa-2x comment-handle-icon"></i>
+        <i class="fa fa-comments-o fa-2x comment-handle-icon"
+            data-bind="css: { 'has-comments': hasComments }"></i>
     </div>
     <div class="cp-bar"></div>
 
