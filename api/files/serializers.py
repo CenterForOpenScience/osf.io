@@ -244,7 +244,7 @@ class BaseFileSerializer(JSONAPISerializer):
         FileRelationshipField(
             related_view='nodes:node-comments',
             related_view_kwargs={'node_id': '<target._id>'},
-            related_meta={'unread': 'get_unread_comments_count'},
+            related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
             filter={'target': 'get_file_guid'},
         ),
     )
