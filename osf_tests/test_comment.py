@@ -457,6 +457,37 @@ class TestCommentModel:
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert n_unread == 0
 
+    #Comment count tests
+    def test_find_count_is_zero_when_no_comments(self):
+        n_count = Comment.find_count(node=ProjectFactory(), page='node')
+        assert n_count == 0
+
+    def test_find_count_new_comments(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.add_contributor(user, save=True)
+        CommentFactory(node=project, user=project.creator)
+        n_count = Comment.find_count(node=project, page='node')
+        assert n_count == 1
+
+    def test_find_count_includes_comment_replies(self):
+        project = ProjectFactory()
+        user = UserFactory()
+        project.add_contributor(user, save=True)
+        comment = CommentFactory(node=project, user=user)
+        CommentFactory(node=project, target=Guid.load(comment._id), user=project.creator)
+        n_count = Comment.find_count(node=project, page='node')
+        assert n_count == 1
+
+    def test_find_count_does_not_include_deleted_comments(self):
+        project = ProjectFactory()
+        user = AuthUserFactory()
+        project.add_contributor(user)
+        project.save()
+        CommentFactory(node=project, user=project.creator, is_deleted=True)
+        n_count = Comment.find_count(node=project, page='node')
+        assert n_count == 0
+
 
 # copied from tests/test_comments.py
 class FileCommentMoveRenameTestMixin:
