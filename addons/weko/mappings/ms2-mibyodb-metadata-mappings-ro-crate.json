@@ -12,43 +12,18 @@
     },
     "@projects": {
         "@type": "object",
-        "root.rdm:Dataset[TITLE_OF_DATASET]": {
-            "@createIf": "{{ title_of_dataset_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{title_of_dataset_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:Dataset1"
-        },
-        "root.rdm:Dataset[TITLE_OF_DATASET_EN]": {
-            "@createIf": "{{ title_of_dataset_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{title_of_dataset_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Dataset2"
-        },
-        "root.rdm:Project": {
+        "root.rdm:project": {
             "@createIf": "{{ project_name_value }}",
             ".@type": "PropertyValue",
             "value": "{{project_name_value}}",
             ".@id": "_:rdm:Project1"
         },
-        "root.rdm:Identifier": {
+        "root.ams:identifier": {
             "@createIf": "{{ data_id_value }}",
             ".@type": "PropertyValue",
+            "type": "Local",
             "value": "{{data_id_value}}",
             ".@id": "_:rdm:Identifier1"
-        },
-        "root.rdm:Register": {
-            "@createIf": "{{ date_registered_in_metadata_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{date_registered_in_metadata_value}}",
-            ".@id": "_:rdm:Register1"
-        },
-        "root.rdm:Update": {
-            "@createIf": "{{ date_updated_in_metadata_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{date_updated_in_metadata_value}}",
-            ".@id": "_:rdm:Update1"
         },
         "root.ams:purposeOfExperiment[PURPOSE_OF_EXPERIMENT]": {
             "@createIf": "{{ purpose_of_experiment_value }}",
@@ -78,21 +53,21 @@
             "language": "en",
             ".@id": "_:ams:descriptionOfExperimentalCondition2"
         },
-        "root.rdm:Resource[KEYWORD_ARR]": {
+        "root.rdm:keywords[KEYWORD_ARR]": {
             "@createIf": "{{ keyword_arr_value }}",
             ".@type": "PropertyValue",
             "value": "{{keyword_arr_value}}",
             "language": "ja",
             ".@id": "_:rdm:Resource1"
         },
-        "root.rdm:Resource[KEYWORD_ARR_EN]": {
+        "root.rdm:keywords[KEYWORD_ARR_EN]": {
             "@createIf": "{{ keyword_arr_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{keyword_arr_en_value}}",
             "language": "en",
             ".@id": "_:rdm:Resource2"
         },
-        "root.rdm:Dataset[DATASET_RESEARCH_FIELD]": {
+        "root.rdm:field[DATASET_RESEARCH_FIELD]": {
             "@createIf": "{{ dataset_research_field_value }}",
             ".@type": "PropertyValue",
             "value": "{{dataset_research_field_value}}",
@@ -110,7 +85,7 @@
             "value": "{{Analysis_type_other_value}}",
             ".@id": "_:ams:analysisOtherType"
         },
-        "root.rdm:Dataset[THE_PRESENCE_OF_METADATA_FILES_CREATED_FOR_A_SPECIFIC_MODALITY_IN_OTHER_DATABASES]": {
+        "root.rdm:metadataFiles[THE_PRESENCE_OF_METADATA_FILES_CREATED_FOR_A_SPECIFIC_MODALITY_IN_OTHER_DATABASES]": {
             "@createIf": "{{ the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value }}",
             ".@type": "PropertyValue",
             "value": "{{the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value}}",
@@ -162,7 +137,7 @@
             "language": "en",
             ".@id": "_:ams:otherConditionsOrSpecialNotes2"
         },
-        "root.rdm:License[DATA_POLICY_LICENSE]": {
+        "root.ams:license[DATA_POLICY_LICENSE]": {
             "@createIf": "{{ data_policy_license_value }}",
             ".@type": "PropertyValue",
             "value": "{{data_policy_license_value}}",
@@ -257,99 +232,152 @@
             ".@id": "_:rdm:AccessRights2"
         },
 
-        "root.rdm:Repository[REPOSITORY_INFORMATION]": {
+        "root.ams:repository[REPOSITORY_INFORMATION]": {
             "@createIf": "{{ repository_information_value }}",
             ".@type": "PropertyValue",
             "value": "{{repository_information_value}}",
             ".@id": "_:rdm:Repository1"
         },
-        "root.rdm:Repository[REPOSITORY_URL_DOI_LINK]": {
+        "root.ams:repositoryId[REPOSITORY_URL_DOI_LINK]": {
             "@createIf": "{{ repository_url_doi_link_value }}",
             ".@type": "PropertyValue",
             "value": "{{repository_url_doi_link_value}}",
             ".@id": "_:rdm:Repository2"
         },
-        "root.rdm:Repository[OTHER_SUPPLEMENTARY_INFORMATION]": {
+        "root.ams:repositoryInfo[OTHER_SUPPLEMENTARY_INFORMATION]": {
             "@createIf": "{{ other_supplementary_information_value }}",
             ".@type": "PropertyValue",
             "value": "{{other_supplementary_information_value}}",
             "language": "ja",
             ".@id": "_:rdm:Repository3"
         },
-        "root.rdm:Repository[OTHER_SUPPLEMENTARY_INFORMATION_EN]": {
+        "root.ams:repositoryInfo[OTHER_SUPPLEMENTARY_INFORMATION_EN]": {
             "@createIf": "{{ other_supplementary_information_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{other_supplementary_information_en_value}}",
             "language": "en",
             ".@id": "_:rdm:Repository4"
         },
-        "root.rdm:Person[NAME_OF_DATA_CREATOR]": {
+        "root.creator[]": {
+            "@createIf": "{{ name_of_data_creator_value }}",
+            ".@id": "_:rdm:Person1",
+            ".@type": "Person",
+            "address[]": [
+                {
+                    ".@id": "_:rdm:Person1Address1"
+                }
+              ],
+            "affiliation[]": [
+                {
+                    ".@id": "_:rdm:Person1Affiliation1"
+                },
+                {
+                    ".@id": "_:rdm:Person1Affiliation2"
+                }
+              ],
+            "name[]": [
+                {
+                    ".@id": "_:rdm:Person1Name1"
+                },
+                {
+                    ".@id": "_:rdm:Person1Name2"
+                }
+              ]
+        },
+        "root.creator[NAME_OF_DATA_CREATOR]": {
             "@createIf": "{{ name_of_data_creator_value }}",
             ".@type": "PropertyValue",
             "value": "{{name_of_data_creator_value}}",
             "language": "ja",
-            ".@id": "_:rdm:Person1"
+            ".@id": "_:rdm:Person1Name1"
         },
-        "root.rdm:Person[NAME_OF_DATA_CREATOR_EN]": {
+        "root.creator[NAME_OF_DATA_CREATOR_EN]": {
             "@createIf": "{{ name_of_data_creator_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{name_of_data_creator_en_value}}",
             "language": "en",
-            ".@id": "_:rdm:Person2"
+            ".@id": "_:rdm:Person1Name2"
         },
-        "root.rdm:Person[BELONG_OF_DATA_CREATER]": {
+        "root.creator[BELONG_OF_DATA_CREATER]": {
             "@createIf": "{{ belonging_of_data_creator_value }}",
             ".@type": "PropertyValue",
             "value": "{{belonging_of_data_creator_value}}",
             "language": "ja",
-            ".@id": "_:rdm:Person3"
+            ".@id": "_:rdm:PersPerson1Affiliation1on3"
         },
-        "root.rdm:Person[BELONG_OF_DATA_CREATER_EN]": {
+        "root.creator[BELONG_OF_DATA_CREATER_EN]": {
             "@createIf": "{{ belonging_of_data_creator_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{belonging_of_data_creator_en_value}}",
             "language": "en",
-            ".@id": "_:rdm:Person4"
+            ".@id": "_:rdm:Person1Affiliation2"
         },
-        "root.rdm:Person[CONTACT_OF_DATA_CREATOR]": {
+        "root.creator[CONTACT_OF_DATA_CREATOR]": {
             "@createIf": "{{ contact_of_data_creator_value }}",
             ".@type": "PropertyValue",
             "value": "{{contact_of_data_creator_value}}",
-            ".@id": "_:rdm:Person5"
+            ".@id": "_:rdm:PerPerson1Address1son5"
         },
-        "root.rdm:Person[NAME_OF_DATA_MANAGER]": {
+        "root.contributor[]": {
+            "@createIf": "{{ name_of_data_manager_value }}",
+            ".@id": "_:rdm:Person2",
+            ".@type": "Person",
+            "jpcoar:contributorType": "DataManager",
+            "address[]": [
+                {
+                    ".@id": "_:rdm:Person2Address1"
+                }
+              ],
+            "affiliation[]": [
+                {
+                    ".@id": "_:rdm:Person2Affiliation1"
+                },
+                {
+                    ".@id": "_:rdm:Person2Affiliation2"
+                }
+              ],
+            "name[]": [
+                {
+                    ".@id": "_:rdm:Person2Name1"
+                },
+                {
+                    ".@id": "_:rdm:Person2Name2"
+                }
+              ]
+        },
+        "root.contributor[NAME_OF_DATA_MANAGER]": {
             "@createIf": "{{ name_of_data_manager_value }}",
             ".@type": "PropertyValue",
             "value": "{{name_of_data_manager_value}}",
             "language": "ja",
-            ".@id": "_:rdm:Person6"
+            ".@id": "_:rdm:Person2Name1"
         },
-        "root.rdm:Person[NAME_OF_DATA_MANAGER_EN]": {
+        "root.contributor[NAME_OF_DATA_MANAGER_EN]": {
             "@createIf": "{{ name_of_data_manager_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{name_of_data_manager_en_value}}",
             "language": "en",
-            ".@id": "_:rdm:Person7"
+            ".@id": "_:rdm:Person2Name2"
         },
-        "root.rdm:Person[BELONG_OF_DATA_MANAGER]": {
+        "root.contributor[BELONG_OF_DATA_MANAGER]": {
             "@createIf": "{{ belonging_of_data_manager_value }}",
             ".@type": "PropertyValue",
             "value": "{{belonging_of_data_manager_value}}",
             "language": "ja",
-            ".@id": "_:rdm:Person8"
+            ".@id": "_:rdm:Person2Affiliation1"
         },
-        "root.rdm:Person[BELONG_OF_DATA_MANAGER_EN]": {
+        "root.contributor[BELONG_OF_DATA_MANAGER_EN]": {
             "@createIf": "{{ belonging_of_data_manager_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{belonging_of_data_manager_en_value}}",
             "language": "en",
-            ".@id": "_:rdm:Person9"
+            ".@id": "_:rdm:Person2Affiliation2"
         },
-        "root.rdm:Person[CONTACT_OF_DATA_MANAGER]": {
+        "root.contributor[CONTACT_OF_DATA_MANAGER]": {
             "@createIf": "{{ contact_of_data_manager_value }}",
             ".@type": "PropertyValue",
             "email": "{{contact_of_data_manager_value}}",
-            ".@id": "_:rdm:Person10"
+            ".@id": "_:rdm:Person2Address1"
         },
         "root.rdm:Dataset[REMARKS_3]": {
             "@createIf": "{{ remarks_3_value }}",
@@ -396,18 +424,27 @@
                 ".@type[]": ["Dataset", "rdm:Dataset"],
                 "name": "{% if title_of_dataset_value %}{{ title_of_dataset_en_value }}{% elif title_of_dataset_value %}{{ title_of_dataset_value }}{% endif %}",
                 "description": "{% if purpose_of_experiment_value %}{{ purpose_of_experiment_en_value }}{% elif purpose_of_experiment_value %}{{ purpose_of_experiment_value }}{% endif %}",
+                "dateModified": "{{date_updated_in_metadata_value}}",
+                "dateCreated": "{{ date_registered_in_metadata_value }}",
                 "conformsTo": {
                     ".@id": "https://w3id.org/ro/crate/1.1"
                 },
                 "dc:type": "dataset",
                 "datePublished": "{{ nowdate }}",
-                "rdm:name": [
+                "rdm:name[]": [
                     {
                         "@createIf": "{{ title_of_dataset_value }}",
                         ".@type": "PropertyValue",
                         "value": "{{title_of_dataset_value}}",
                         "language": "ja",
                         ".@id": "_:Name_ja"
+                    },
+                    {
+                        "@createIf": "{{ title_of_dataset_en_value }}",
+                        ".@type": "PropertyValue",
+                        "value": "{{title_of_dataset_en_value}}",
+                        "language": "en",
+                        ".@id": "_:Name_en"
                     }
                   ],
                 "wk:index[]": ["1623632832836"],
