@@ -54,9 +54,13 @@
 
 .comment-handle-icon {
     padding-top: 2px;
-    color: #428bca;
+    color: #333333;
     cursor: pointer;
     position: relative;
+}
+
+.comment-handle-icon.has-comments {
+    color: #428bca;
 }
 
 .cp-bar {
