@@ -1,6 +1,7 @@
 import re
 from packaging.version import Version
 
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework import permissions as drf_permissions
@@ -12,7 +13,6 @@ from osf.models import (
     Preprint,
     PreprintContributor,
     ReviewAction,
-    OSFUser,
 )
 from osf.utils.requests import check_select_for_update
 from osf.utils.workflows import DefaultStates, ReviewStates
@@ -137,9 +137,12 @@ class PreprintMixin(NodeMixin):
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
 
-        user = OSFUser.load(self.request.user._id)
-        user_is_reviewer = user.has_groups(preprint.provider.group_names)
-        user_is_contributor = preprint.is_contributor(user)
+        user = self.request.user
+        if isinstance(user, AnonymousUser):
+            user_is_reviewer = user_is_contributor = False
+        else:
+            user_is_reviewer = user.has_groups(preprint.provider.group_names)
+            user_is_contributor = preprint.is_contributor(user)
 
         if (
             preprint.machine_state == DefaultStates.INITIAL.value and
