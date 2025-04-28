@@ -135,6 +135,7 @@ OSF_OBJECT = {
     },
     OWL.sameAs: None,
     PROV.qualifiedAttribution: None,
+    OSF.verifiedLink: None,
 }
 
 OSFMAP = {
@@ -921,6 +922,14 @@ def gather_qualified_attributions(focus):
                 yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
                 yield (_attribution_ref, OSF.order, index)
 
+@gather.er(OSF.verifiedLink)
+def gather_verified_link(focus):
+    links = focus.dbmodel.get_links()
+    for link in links:
+        ref = rdflib.BNode()
+        yield (OSF.verifiedLink, ref)
+        yield (ref, DCAT.accessURL, link['target_url'])
+        yield (ref, DATACITE.resourceTypeGeneral, link['resource_type'])
 
 @gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):
