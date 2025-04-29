@@ -20,7 +20,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 from django.utils.functional import cached_property
-from keen import scoped_keys
 from psycopg2._psycopg import AsIs
 from typedmodels.models import TypedModel, TypedModelManager
 from guardian.models import (
@@ -57,7 +56,7 @@ from osf.external.gravy_valet import (
     translations as gv_translations,
 )
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import NonNaiveDateTimeField, ensure_str
+from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers, get_current_request
 from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
@@ -478,8 +477,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     wiki_private_uuids = DateTimeAwareJSONField(default=dict, blank=True)
 
     identifiers = GenericRelation(Identifier, related_query_name='nodes')
-
-    keenio_read_key = models.CharField(max_length=1000, null=True, blank=True)
 
     def __init__(self, *args, **kwargs):
         self._parent = kwargs.pop('parent', None)
@@ -1260,7 +1257,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     self.request_embargo_termination(auth.user)
                     return False
             self.is_public = True
-            self.keenio_read_key = self.generate_keenio_read_key()
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo and not force:
                 raise NodeStateError('Public registrations must be withdrawn, not made private.')
@@ -1268,7 +1264,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.check_privacy_change_viability(auth)
 
             self.is_public = False
-            self.keenio_read_key = ''
             self._remove_from_associated_collections(auth, force=force)
         else:
             return False
@@ -1304,17 +1299,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and permissions == 'public':
             project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
-
-    def generate_keenio_read_key(self):
-        encrypted_read_key = scoped_keys.encrypt(settings.KEEN['public']['master_key'], options={
-            'filters': [{
-                'property_name': 'node.id',
-                'operator': 'eq',
-                'property_value': str(self._id)
-            }],
-            'allowed_operations': [READ]
-        })
-        return ensure_str(encrypted_read_key)
 
     @property
     def private_links_active(self):

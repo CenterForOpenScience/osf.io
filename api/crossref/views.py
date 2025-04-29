@@ -9,6 +9,7 @@ from api.crossref.permissions import RequestComesFromMailgun
 from framework.auth.views import mails
 from osf.models import Preprint
 from website import settings
+from website.preprints.tasks import mint_doi_on_crossref_fail
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,7 @@ class ParseCrossRefConfirmation(APIView):
                 elif record.get('status').lower() == 'failure':
                     if 'Relation target DOI does not exist' in record.find('msg').text:
                         logger.warning('Related publication DOI does not exist, sending metadata again without it...')
-                        client = preprint.get_doi_client()
-                        client.create_identifier(preprint, category='doi', include_relation=False)
+                        mint_doi_on_crossref_fail.apply_async(kwargs={'preprint_id': preprint._id})
                     # This error occurs when a single preprint is being updated several times in a row with the same metadata [#PLAT-944]
                     elif 'less or equal to previously submitted version' in record.find('msg').text and record_count == 2:
                         break
@@ -78,12 +78,13 @@ class ParseCrossRefConfirmation(APIView):
         if dois_processed != record_count or status != 'completed':
             if unexpected_errors:
                 batch_id = crossref_email_content.find('batch_id').text
+                email_error_text = request.POST['body-plain']
                 mails.send_mail(
                     to_addr=settings.OSF_SUPPORT_EMAIL,
                     mail=mails.CROSSREF_ERROR,
                     batch_id=batch_id,
-                    email_content=request.POST['body-plain'],
+                    email_content=email_error_text,
                 )
-                logger.error(f'Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk')
+                logger.error(f'Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk: {email_error_text}')
 
         return HttpResponse('Mail received', status=200)

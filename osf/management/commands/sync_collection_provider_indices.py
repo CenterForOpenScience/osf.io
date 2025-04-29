@@ -26,7 +26,7 @@ def sync_collection_provider_indices(cp_ids=None, only_remove=False):
                     submission.remove_from_index()
                     remove_ct += 1
                 elif not only_remove:
-                    submission.update_index()
+                    submission.update_search()
                     add_ct += 1
             logger.info(f'{remove_ct} submissions removed from {prov._id}')
             logger.info(f'{add_ct} submissions synced to {prov._id}')

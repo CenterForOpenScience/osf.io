@@ -280,6 +280,8 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
+    ordering = ('_order',)
+
     permission_classes = (
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
