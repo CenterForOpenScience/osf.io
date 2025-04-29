@@ -24,6 +24,7 @@ from api.preprints.serializers import PreprintSerializer
 
 from osf.exceptions import PreprintStateError
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
+from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 
 from osf.management.commands.fix_preprints_has_data_links_and_why_no_data import process_wrong_why_not_data_preprints
 from osf.models import (
@@ -213,17 +214,23 @@ class PreprintReVersion(PreprintMixin, View):
                     auth=request,
                     ignore_permission=True,
                 )
+                data_to_update = data_to_update or dict()
+
                 primary_file = copy_files(preprint.primary_file, target_node=new_preprint, identifier__in=file_versions)
+                if primary_file is None:
+                    raise ValueError(f"Primary file {preprint.primary_file.id} doesn't have following versions: {file_versions}")  # rollback changes
                 data_to_update['primary_file'] = primary_file
 
                 # FIXME: currently it's not possible to ignore permission when update subjects
                 # via serializer, remove this logic if deprecated
                 subjects = data_to_update.pop('subjects', None)
                 if subjects:
-                    new_preprint.set_subjects([subjects], auth=request, ignore_permission=True)
+                    new_preprint.set_subjects_from_relationships(subjects, auth=request, ignore_permission=True)
 
                 PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
-        except DrfPermissionDenied as exc:
+        except (UnpublishedPendingPreprintVersionExists, ValueError) as exc:
+            return HttpResponse(str(exc), status=400)
+        except (PermissionsError, DrfPermissionDenied) as exc:
             return HttpResponse(f'Not enough permissions to perform this action : {str(exc)}', status=400)
 
         return JsonResponse({'redirect': self.get_success_url(new_preprint._id)})
