@@ -24,7 +24,7 @@ from api.preprints.serializers import PreprintSerializer
 
 from osf.exceptions import PreprintStateError
 from rest_framework.exceptions import PermissionDenied as DrfPermissionDenied
-from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
+from framework.exceptions import PermissionsError
 
 from osf.management.commands.fix_preprints_has_data_links_and_why_no_data import process_wrong_why_not_data_preprints
 from osf.models import (
@@ -213,6 +213,7 @@ class PreprintReVersion(PreprintMixin, View):
                     assign_version_number=1,
                     auth=request,
                     ignore_permission=True,
+                    ignore_existing_versions=True,
                 )
                 data_to_update = data_to_update or dict()
 
@@ -228,7 +229,7 @@ class PreprintReVersion(PreprintMixin, View):
                     new_preprint.set_subjects_from_relationships(subjects, auth=request, ignore_permission=True)
 
                 PreprintSerializer(new_preprint, context={'request': request, 'ignore_permission': True}).update(new_preprint, data_to_update)
-        except (UnpublishedPendingPreprintVersionExists, ValueError) as exc:
+        except ValueError as exc:
             return HttpResponse(str(exc), status=400)
         except (PermissionsError, DrfPermissionDenied) as exc:
             return HttpResponse(f'Not enough permissions to perform this action : {str(exc)}', status=400)
