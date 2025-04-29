@@ -1,4 +1,5 @@
 import contextlib
+import re
 from urllib.parse import urlsplit
 from unittest import mock
 
@@ -11,9 +12,13 @@ from framework.postcommit_tasks.handlers import (
     postcommit_queue,
 )
 from osf.models import Node, Preprint
-from website import settings as website_settings
-from api.share.utils import shtrove_ingest_url, sharev2_push_url, gv_url
+from website import settings as website_settings, settings
+from api.share.utils import shtrove_ingest_url, sharev2_push_url
 from osf.metadata.osf_gathering import OsfmapPartition
+
+
+def gv_url():
+    return fr'^{settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
 
 
 @contextlib.contextmanager
@@ -31,6 +36,7 @@ def mock_share_responses():
                     _rsps.add(responses.DELETE, _ingest_url, status=200)
                     # for legacy sharev2 support:
                     _rsps.add(responses.POST, sharev2_push_url(), status=200)
+                    _rsps.add(responses.GET, re.compile(gv_url()), status=200, body='{}')
                     yield _rsps
 
 
@@ -74,7 +80,7 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
                 _trove_supp_ingest_calls.append(_call)
             else:
                 _trove_ingest_calls.append(_call)
-        elif _call.request.url.startswith(gv_url()):
+        elif _call.request.url.startswith(settings.GRAVYVALET_URL):
             _gv_links_calls.append(_call)
         else:
             _legacy_push_calls.append(_call)
