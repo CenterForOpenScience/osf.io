@@ -2,6 +2,7 @@ import dataclasses
 import enum
 import logging
 import typing
+from functools import partial
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
 import requests
@@ -9,6 +10,7 @@ from requests.exceptions import RequestException
 
 from website import settings
 from . import auth_helpers
+from .exceptions import GVException
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +59,11 @@ def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
         params={'include': ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH},
     )
 
-def get_links(node_guid, requesting_user=None):
+def get_verified_links(node_guid, requesting_user=None):
     return iterate_gv_results(
         ADDONS_ENDPOINT.format(addon_type=AddonType.LINK) + f'/{node_guid}/verified-links',
         requesting_user=requesting_user,
+        retry=True
     )
 
 
@@ -232,10 +235,12 @@ def iterate_gv_results(
     requested_resource=None,
     request_method='GET',
     params: dict = None,
-    auth=None
+    auth=None,
+    retry: bool = False
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
-    response = _make_gv_request(
+    call = partial(
+        _make_gv_request,
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
@@ -243,8 +248,12 @@ def iterate_gv_results(
         params=params,
         auth=auth
     )
+    response = call()
+    if not response and retry:
+        # retry
+        response = call()
     if not response:
-        return
+        raise GVException
 
     response_json = response.json()
     if not response_json.get('data'):
@@ -429,6 +438,7 @@ class JSONAPIResultEntry:
 
     def json(self):
         return self._result_entry
+
     @property
     def attributes(self):
         return self._attributes

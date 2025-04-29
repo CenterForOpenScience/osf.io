@@ -924,7 +924,7 @@ def gather_qualified_attributions(focus):
 
 @gather.er(OSF.verifiedLink)
 def gather_verified_link(focus):
-    links = focus.dbmodel.get_links()
+    links = focus.dbmodel.get_verified_links()
     for link in links:
         ref = rdflib.BNode()
         yield (OSF.verifiedLink, ref)

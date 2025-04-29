@@ -23,8 +23,8 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
         active_user=requesting_user,
     )
 
-def get_links(node_guid, requesting_user=None):
-    links = gv_requests.get_links(node_guid, requesting_user)
+def get_verified_links(node_guid, requesting_user=None):
+    links = gv_requests.get_verified_links(node_guid, requesting_user)
     return [
         link.attributes for link in links
     ]
