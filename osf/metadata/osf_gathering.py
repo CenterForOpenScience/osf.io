@@ -135,7 +135,6 @@ OSF_OBJECT = {
     },
     OWL.sameAs: None,
     PROV.qualifiedAttribution: None,
-    OSF.verifiedLink: None,
 }
 
 OSFMAP = {
@@ -143,6 +142,7 @@ OSFMAP = {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
         OSF.hasCedarTemplate: None,
+        OSF.verifiedLink: None,
     },
     OSF.ProjectComponent: {
         **OSF_OBJECT,

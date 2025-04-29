@@ -33,6 +33,10 @@ def shtrove_ingest_url():
     return f'{settings.SHARE_URL}trove/ingest'
 
 
+def gv_url():
+    return f'{settings.GRAVYVALET_URL}'
+
+
 def sharev2_push_url():
     return f'{settings.SHARE_URL}api/v2/normalizeddata/'
 
