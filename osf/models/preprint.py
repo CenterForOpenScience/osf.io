@@ -404,7 +404,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return None, None
 
     @classmethod
-    def create_version(cls, create_from_guid, auth, assign_version_number=None, ignore_permission=False):
+    def create_version(cls, create_from_guid, auth, assign_version_number=None, ignore_permission=False, ignore_existing_versions=False):
         """Create a new version for a given preprint. `create_from_guid` can be any existing versions of the preprint
         but `create_version` always finds the latest version and creates a new version from it. In addition, this
         creates an "incomplete" new preprint version object using the model class and returns both the new object and
@@ -425,19 +425,21 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             sentry.log_message(f'ADMIN permission for the latest version is required to create a new version: '
                                f'[user={auth.user._id}, guid={guid_obj._id}, latest_version={latest_version._id}]')
             raise PermissionsError
-        unfinished_version, unpublished_version = latest_version.check_unfinished_or_unpublished_version()
-        if unpublished_version:
-            logger.error('Failed to create a new version due to unpublished pending version already exists: '
-                         f'[version={unpublished_version.version}, '
-                         f'_id={unpublished_version._id}, '
-                         f'state={unpublished_version.machine_state}].')
-            raise UnpublishedPendingPreprintVersionExists
-        if unfinished_version:
-            logger.warning(f'Use existing initiated but unfinished version instead of creating a new one: '
-                           f'[version={unfinished_version.version}, '
-                           f'_id={unfinished_version._id}, '
-                           f'state={unfinished_version.machine_state}].')
-            return unfinished_version, None
+        if not ignore_existing_versions:
+            unfinished_version, unpublished_version = latest_version.check_unfinished_or_unpublished_version()
+            if unpublished_version:
+                message = ('Failed to create a new version due to unpublished pending version already exists: '
+                            f'[version={unpublished_version.version}, '
+                            f'_id={unpublished_version._id}, '
+                            f'state={unpublished_version.machine_state}].')
+                logger.error(message)
+                raise UnpublishedPendingPreprintVersionExists(message)
+            if unfinished_version:
+                logger.warning(f'Use existing initiated but unfinished version instead of creating a new one: '
+                            f'[version={unfinished_version.version}, '
+                            f'_id={unfinished_version._id}, '
+                            f'state={unfinished_version.machine_state}].')
+                return unfinished_version, None
 
         # Prepare the data to clone/update
         data_to_update = {
@@ -536,7 +538,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid_obj.save()
 
         if latest_version.node:
-            preprint.set_supplemental_node(latest_version.node, auth, save=False, ignore_node_permissions=True)
+            preprint.set_supplemental_node(
+                latest_version.node,
+                auth,
+                save=False,
+                ignore_node_permissions=True,
+                ignore_permission=ignore_permission
+            )
 
         return preprint, data_to_update
 

@@ -1191,7 +1191,7 @@ class TaxonomizableMixin(models.Model):
         if hasattr(self, 'update_search'):
             self.update_search()
 
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True, **kwargs):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -1201,7 +1201,7 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        self.check_subject_perms(auth)
+        self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
             self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')

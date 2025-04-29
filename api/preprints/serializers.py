@@ -416,7 +416,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'node' in validated_data:
             node = validated_data.pop('node', None)
-            self.set_field(preprint.set_supplemental_node, node, auth, ignore_permission=ignore_permission)
+            self.set_field(preprint.set_supplemental_node, node, auth, ignore_node_permissions=ignore_permission, ignore_permission=ignore_permission)
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
