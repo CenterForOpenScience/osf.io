@@ -160,6 +160,7 @@ class RegistrationSerializer(NodeSerializer):
         ser.SerializerMethodField(help_text='When the embargo on this registration will be lifted.'),
     )
     custom_citation = HideIfWithdrawal(ser.CharField(allow_blank=True, required=False))
+    verified_resource_links = ser.DictField(required=False, allow_null=True, read_only=True)
 
     withdrawal_justification = ser.CharField(read_only=True)
     template_from = HideIfWithdrawal(

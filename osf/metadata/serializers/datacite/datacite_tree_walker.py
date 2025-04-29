@@ -113,7 +113,7 @@ class DataciteTreeWalker:
         self._visit_rights(self.root)
         self._visit_descriptions(self.root, self.basket.focus.iri)
         self._visit_funding_references(self.root)
-        self._visit_related(self.root)
+        self._visit_related_and_verified_links(self.root)
 
     def _visit_identifier(self, parent_el, *, doi_override=None):
         if doi_override is None:
@@ -373,13 +373,17 @@ class DataciteTreeWalker:
         self._visit_publication_year(related_item_el, related_iri)
         self._visit_publisher(related_item_el, related_iri)
 
-    def _visit_related(self, parent_el):
+    def _visit_related_and_verified_links(self, parent_el):
+        # Create related identifiers element and gather relation pairs
         relation_pairs = set()
         for relation_iri, datacite_relation in RELATED_IDENTIFIER_TYPE_MAP.items():
             for related_iri in self.basket[relation_iri]:
                 relation_pairs.add((datacite_relation, related_iri))
+
         related_identifiers_el = self.visit(parent_el, 'relatedIdentifiers', is_list=True)
         related_items_el = self.visit(parent_el, 'relatedItems', is_list=True)
+
+        # First add regular related identifiers
         for datacite_relation, related_iri in sorted(relation_pairs):
             self._visit_related_identifier_and_item(
                 related_identifiers_el,
@@ -387,6 +391,20 @@ class DataciteTreeWalker:
                 related_iri,
                 datacite_relation,
             )
+
+        # Then add verified links to same relatedIdentifiers element
+        osf_item = self.basket.focus.dbmodel
+        verified_links = getattr(osf_item, 'verified_resource_links', None)
+        if verified_links:
+            for link, resource_type in verified_links.items():
+                if link and isinstance(link, str) and smells_like_iri(link):
+                    self.visit(related_identifiers_el, 'relatedIdentifier', text=link, attrib={
+                        'relatedIdentifierType': 'URL',
+                        'relationType': 'References',
+                        'resourceTypeGeneral': resource_type
+                    })
+                else:
+                    logger.warning('skipping non-URL verified link "%s"', link)
 
     def _visit_name_identifiers(self, parent_el, agent_iri):
         for identifier in sorted(self.basket[agent_iri:DCTERMS.identifier]):
