@@ -20,7 +20,7 @@ from api.nodes.serializers import (
     NodeLicenseRelationshipField,
     NodeLinksSerializer,
     NodeLicenseSerializer,
-    NodeContributorsSerializer,
+    NodeContributorDetailSerializer,
     NodeContributorsCreateSerializer,
     RegistrationProviderRelationshipField,
     get_license_details,
@@ -908,7 +908,7 @@ class RegistrationNodeLinksSerializer(NodeLinksSerializer):
         )
 
 
-class RegistrationContributorsSerializer(NodeContributorsSerializer):
+class RegistrationContributorsSerializer(NodeContributorDetailSerializer):
     def get_absolute_url(self, obj):
         return absolute_reverse(
             'registrations:registration-contributor-detail',

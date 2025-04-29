@@ -1,7 +1,7 @@
 from osf.models.metadata import GuidMetadataRecord
 
 
-def copy_files(src, target_node, parent=None, name=None):
+def copy_files(src, target_node, parent=None, name=None, **version_filters):
     """Copy the files from src to the target node
     :param Folder src: The source to copy children from
     :param Node target_node: The node to copy files to
@@ -18,7 +18,7 @@ def copy_files(src, target_node, parent=None, name=None):
 
     cloned.save()
     if src.is_file and src.versions.exists():
-        fileversions = src.versions.select_related('region').order_by('-created')
+        fileversions = src.versions.filter(**version_filters).select_related('region').order_by('-created')
         most_recent_fileversion = fileversions.first()
         if most_recent_fileversion.region and most_recent_fileversion.region != target_node.osfstorage_region:
             # add all original version except the most recent
@@ -29,7 +29,7 @@ def copy_files(src, target_node, parent=None, name=None):
             new_fileversion.save()
             attach_versions(cloned, [new_fileversion], src)
         else:
-            attach_versions(cloned, src.versions.all(), src)
+            attach_versions(cloned, fileversions, src)
 
         if renaming:
             latest_version = cloned.versions.first()

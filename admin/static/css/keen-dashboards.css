@@ -114,7 +114,3 @@ body.application .return-link:hover,
   background-color: lightgray;
   height: 1px;
 }
-
-#reload-node-logs {
-  margin-left: 20px;
-}

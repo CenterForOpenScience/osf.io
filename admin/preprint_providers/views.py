@@ -12,6 +12,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms.models import model_to_dict
 from django.shortcuts import redirect, render
+from django.utils.functional import cached_property
 
 from admin.base import settings
 from admin.base.forms import ImportFileForm
@@ -459,14 +460,18 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
     template_name = 'preprint_providers/register_moderator_admin.html'
     form_class = PreprintProviderRegisterModeratorOrAdminForm
 
+    @cached_property
+    def target_provider(self):
+        return PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['provider_id'] = self.kwargs['preprint_provider_id']
+        kwargs['provider_groups'] = self.target_provider.group_objects
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['provider_name'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id']).name
+        context['provider_name'] = self.target_provider.name
         return context
 
     def form_valid(self, form):
@@ -477,13 +482,7 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
             raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
         for group in form.cleaned_data.get('group_perms'):
-            osf_user.groups.add(group)
-            split = group.name.split('_')
-            group_type = split[0]
-            if group_type == 'reviews':
-                provider_id = split[2]
-                provider = PreprintProvider.objects.get(id=provider_id)
-                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
+            self.target_provider.add_to_group(osf_user, group)
 
         osf_user.save()
         messages.success(self.request, f'Permissions update successful for OSF User {osf_user.username}!')

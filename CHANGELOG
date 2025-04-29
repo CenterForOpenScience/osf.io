@@ -2,6 +2,26 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.09.0 (2025-05-14)
+====================
+
+- Accounts confirmed but not registered
+- Action requests creation for preprints and nodes not working
+- Reviews Dashboard not displaying contributors for preprint provider moderators
+- Backend Support for Static Contact Indicator in Institutional Dashboard
+- Add ability to remove categories from active collections
+- Add scopes for applications to full_read and full_write scopes
+
+25.08.0 (2025-05-02)
+====================
+
+- Bugfix and Improvements
+
+25.07.0 (2025-04-21)
+====================
+
+- Bugfix and Improvements
+
 25.06.0 (2025-04-07)
 ====================
 

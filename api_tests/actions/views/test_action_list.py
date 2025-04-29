@@ -57,53 +57,105 @@ class TestReviewActionCreateRoot:
         moderator.groups.add(provider.get_group('moderator'))
         return moderator
 
-    def test_create_permissions(
-            self, app, url, preprint, node_admin, moderator
-    ):
+    def test_create_permissions_unauthorized(self, app, url, preprint, node_admin, moderator):
         assert preprint.machine_state == 'initial'
 
-        submit_payload = self.create_payload(preprint._id, trigger='submit')
+        submit_payload = self.create_payload(
+            preprint._id,
+            trigger='submit'
+        )
 
         # Unauthorized user can't submit
-        res = app.post_json_api(url, submit_payload, expect_errors=True)
+        res = app.post_json_api(
+            url,
+            submit_payload,
+            expect_errors=True
+        )
         assert res.status_code == 401
+
+    def test_create_permissions_forbidden(self, app, url, preprint, node_admin, moderator):
+        assert preprint.machine_state == 'initial'
+
+        submit_payload = self.create_payload(
+            preprint._id,
+            trigger='submit'
+        )
 
         # A random user can't submit
         some_rando = AuthUserFactory()
         res = app.post_json_api(
-            url, submit_payload,
+            url,
+            submit_payload,
             auth=some_rando.auth,
             expect_errors=True
         )
         assert res.status_code == 403
 
+    def test_create_permissions_success(self, app, url, preprint, node_admin, moderator):
+        assert preprint.machine_state == 'initial'
+
+        submit_payload = self.create_payload(
+            preprint._id,
+            trigger='submit'
+        )
+
         # Node admin can submit
-        res = app.post_json_api(url, submit_payload, auth=node_admin.auth)
+        res = app.post_json_api(
+            url,
+            submit_payload,
+            auth=node_admin.auth
+        )
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'pending'
         assert not preprint.is_published
 
+    def test_accept_permissions_unauthorized(self, app, url, preprint, node_admin, moderator):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        assert preprint.machine_state == 'pending'
+
         accept_payload = self.create_payload(
-            preprint._id, trigger='accept', comment='This is good.'
+            preprint._id,
+            trigger='accept',
+            comment='This is good.'
         )
 
         # Unauthorized user can't accept
         res = app.post_json_api(url, accept_payload, expect_errors=True)
         assert res.status_code == 401
 
+    def test_accept_permissions_forbidden(self, app, url, preprint, node_admin, moderator):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        assert preprint.machine_state == 'pending'
+
+        accept_payload = self.create_payload(
+            preprint._id,
+            trigger='accept',
+            comment='This is good.'
+        )
+
+        some_rando = AuthUserFactory()
+
         # A random user can't accept
         res = app.post_json_api(
-            url, accept_payload,
+            url,
+            accept_payload,
             auth=some_rando.auth,
             expect_errors=True
         )
         assert res.status_code == 403
 
-        # Moderator from another provider can't accept
+    def test_accept_permissions_other_mod(self, app, url, preprint, node_admin, moderator):
         another_moderator = AuthUserFactory()
         another_moderator.groups.add(
             PreprintProviderFactory().get_group('moderator')
+        )
+        accept_payload = self.create_payload(
+            preprint._id,
+            trigger='accept',
+            comment='This is good.'
         )
         res = app.post_json_api(
             url, accept_payload,
@@ -119,6 +171,15 @@ class TestReviewActionCreateRoot:
             expect_errors=True
         )
         assert res.status_code == 403
+
+    def test_accept_permissions_accept(self, app, url, preprint, node_admin, moderator):
+        preprint.machine_state = 'pending'
+        preprint.save()
+        accept_payload = self.create_payload(
+            preprint._id,
+            trigger='accept',
+            comment='This is good.'
+        )
 
         # Still unchanged after all those tries
         preprint.refresh_from_db()
@@ -275,3 +336,33 @@ class TestReviewActionCreateRoot:
                     assert preprint.date_last_transitioned is None
                 else:
                     assert preprint.date_last_transitioned == action.created
+
+    def test_invalid_target_id(self, app, moderator):
+        """
+        This test simulates the issue reported where using either an invalid
+        action ID or an unrelated node ID as the target ID results in a 502 error.
+
+        It attempts to create a review action with a bad `target.id`.
+        """
+        res = app.post_json_api(
+            f'/{API_BASE}actions/reviews/',
+            {
+                'data': {
+                    'type': 'actions',
+                    'attributes': {
+                        'trigger': 'submit'
+                    },
+                    'relationships': {
+                        'target': {
+                            'data': {
+                                'type': 'preprints',
+                                'id': 'deadbeef1234'
+                            }
+                        }
+                    }
+                }
+            },
+            auth=moderator.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 404
