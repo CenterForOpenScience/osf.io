@@ -929,7 +929,7 @@ def gather_verified_link(focus):
         ref = rdflib.BNode()
         yield (OSF.verifiedLink, ref)
         yield (ref, DCAT.accessURL, link['target_url'])
-        yield (ref, DATACITE.resourceTypeGeneral, link['resource_type'])
+        yield (ref, DCTERMS.type, DATACITE[link['resource_type']])
 
 @gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):

@@ -63,7 +63,7 @@ def get_verified_links(node_guid, requesting_user=None):
     return iterate_gv_results(
         ADDONS_ENDPOINT.format(addon_type=AddonType.LINK) + f'/{node_guid}/verified-links',
         requesting_user=requesting_user,
-        retry=True
+        raise_on_error=True
     )
 
 
@@ -236,7 +236,7 @@ def iterate_gv_results(
     request_method='GET',
     params: dict = None,
     auth=None,
-    retry: bool = False
+    raise_on_error: bool = False
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
     call = partial(
@@ -249,10 +249,7 @@ def iterate_gv_results(
         auth=auth
     )
     response = call()
-    if not response and retry:
-        # retry
-        response = call()
-    if not response:
+    if not response and raise_on_error:
         raise GVException
 
     response_json = response.json()
