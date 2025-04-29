@@ -1665,35 +1665,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors or group members for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None, skip_referrer_permissions=False):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
+        :param bool skip_referrer_permissions: The flag to check permissions for referrer.
         :returns: The added record
         """
 
         from .provider import AbstractProvider
         from .osf_group import OSFGroup
 
-        if isinstance(claim_origin, AbstractProvider):
-            if not bool(get_perms(referrer, claim_origin)):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
-                )
+        if not skip_referrer_permissions:
+            if isinstance(claim_origin, AbstractProvider):
+                if not bool(get_perms(referrer, claim_origin)):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
+                    )
 
-        elif isinstance(claim_origin, OSFGroup):
-            if not claim_origin.has_permission(referrer, MANAGE):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a member to {claim_origin._id}'
-                )
-        else:
-            if not claim_origin.has_permission(referrer, ADMIN):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a contributor to {claim_origin._id}'
-                )
+            elif isinstance(claim_origin, OSFGroup):
+                if not claim_origin.has_permission(referrer, MANAGE):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a member to {claim_origin._id}'
+                    )
+            else:
+                if not claim_origin.has_permission(referrer, ADMIN):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a contributor to {claim_origin._id}'
+                    )
 
         pid = str(claim_origin._id)
         referrer_id = str(referrer._id)
