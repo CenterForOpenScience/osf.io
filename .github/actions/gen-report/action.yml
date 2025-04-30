@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
   - name: Generate Report
-    uses: dorny/test-reporter@v1
+    uses: dorny/test-reporter@v2
     if: success() || failure()    # run this step even if previous step failed
     with:
       name: ${{github.job}} REPORT   # Name of the check run which will be created
