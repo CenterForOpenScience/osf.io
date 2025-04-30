@@ -48,7 +48,7 @@ def mock_update_share():
 
 
 @contextlib.contextmanager
-def expect_ingest_request(mock_share_responses, item, *, token=None, delete=False, count=1, error_response=False, expect_gv_call: bool = False):
+def expect_ingest_request(mock_share_responses, item, *, token=None, delete=False, count=1, error_response=False):
     osfguid = item.get_guid()._id if isinstance(item, Preprint) else item._id
     mock_share_responses._calls.reset()
     yield

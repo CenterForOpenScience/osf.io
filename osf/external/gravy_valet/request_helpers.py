@@ -2,7 +2,6 @@ import dataclasses
 import enum
 import logging
 import typing
-from functools import partial
 from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 
 import requests
@@ -239,8 +238,7 @@ def iterate_gv_results(
     raise_on_error: bool = False
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
-    call = partial(
-        _make_gv_request,
+    response = _make_gv_request(
         endpoint_url=endpoint_url,
         requesting_user=requesting_user,
         requested_resource=requested_resource,
@@ -248,9 +246,12 @@ def iterate_gv_results(
         params=params,
         auth=auth
     )
-    response = call()
+
     if not response and raise_on_error:
         raise GVException
+
+    if not response:
+        return
 
     response_json = response.json()
     if not response_json.get('data'):
