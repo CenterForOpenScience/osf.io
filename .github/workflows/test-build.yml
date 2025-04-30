@@ -54,7 +54,7 @@ jobs:
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-addons -n 1 --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   website:
@@ -81,7 +81,7 @@ jobs:
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-website -n 1 --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api1_and_js:
@@ -110,7 +110,7 @@ jobs:
       - name: Run test
         run: poetry run python3 -m invoke test-ci-api1-and-js -n 1 --junit
       - name: Upload report
-        if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+        if: (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
 
   api2:
@@ -137,7 +137,7 @@ jobs:
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api2 -n 1 --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api3_and_osf:
@@ -165,5 +165,5 @@ jobs:
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api3-and-osf -n 1 --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
