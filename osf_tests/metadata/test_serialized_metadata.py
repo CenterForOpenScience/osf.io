@@ -176,6 +176,9 @@ class TestSerializers(OsfTestCase):
             mock.patch('osf.models.base.Guid.objects.get_or_create', new=osfguid_sequence.get_or_create),
             mock.patch('django.utils.timezone.now', new=forever_now),
             mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
+            mock.patch('osf.models.node.Node.get_verified_links', return_value=[
+                {'target_url': 'https://foo.bar', 'resource_type': 'Other'}
+            ])
         ):
             self.enterContext(patcher)
         # build test objects
@@ -335,7 +338,8 @@ class TestSerializers(OsfTestCase):
         for focus_type, by_partition in scenario_dict.items():
             for osfmap_partition, expected_files in by_partition.items():
                 for format_key, filename in expected_files.items():
-                    self._assert_scenario_file(focus_type, osfmap_partition, format_key, filename)
+                    with self.subTest(msg=f'{focus_type=}, {format_key=}. {filename=}'):
+                        self._assert_scenario_file(focus_type, osfmap_partition, format_key, filename)
 
     def _assert_scenario_file(
         self,
