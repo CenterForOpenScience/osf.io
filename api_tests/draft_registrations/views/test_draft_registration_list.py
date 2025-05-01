@@ -54,10 +54,6 @@ class TestDraftRegistrationListTopLevelEndpoint:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def group_mem(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def project(self, user):
         return ProjectFactory(creator=user)
 

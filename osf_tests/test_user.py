@@ -822,7 +822,7 @@ class TestProjectsInCommon:
         project.save()
 
         assert user.n_projects_in_common(user2) == 1
-        assert user.n_projects_in_common(user3) == 1
+        assert user.n_projects_in_common(user3) == 0
 
 
 class TestCookieMethods:
@@ -1787,7 +1787,7 @@ class TestUser(OsfTestCase):
         project_three.save()
 
         user_nodes = self.user.all_nodes
-        assert user_nodes.count() == 2
+        assert user_nodes.count() == 1
         assert project in user_nodes
         assert project_three not in user_nodes
 

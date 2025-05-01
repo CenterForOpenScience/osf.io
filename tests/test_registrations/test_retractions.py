@@ -848,10 +848,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-        # group admin POST fails
-        res = self.app.post(self.retraction_post_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
     @mock.patch('website.mails.send_mail')
     def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
         res = self.app.post(
@@ -913,10 +909,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
-        # group admin on node fails disapproval GET
-        res = self.app.get(approval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
-
     def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
@@ -927,7 +919,3 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
-
-        # group admin on node fails disapproval GET
-        res = self.app.get(disapproval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED

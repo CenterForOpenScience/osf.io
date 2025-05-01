@@ -233,8 +233,6 @@ class TestDraftRegistrations:
         assert draft.category == category
         assert user in draft.contributors.all()
         assert write_contrib in draft.contributors.all()
-        assert member not in draft.contributors.all()
-        assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]

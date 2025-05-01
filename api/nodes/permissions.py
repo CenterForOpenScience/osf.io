@@ -217,7 +217,7 @@ class NodeGroupDetailPermissions(permissions.BasePermission):
     """Permissions for node group detail - involving who can update the relationship
     between a node and an OSF Group."""
 
-    acceptable_models = (AbstractNode, )
+    acceptable_models = (AbstractNode,)
 
     def load_resource(self, context, view):
         return AbstractNode.load(context[view.node_lookup_url_kwarg])

@@ -5,7 +5,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
-from osf.utils.permissions import READ, WRITE
+from osf.utils.permissions import WRITE
 
 @pytest.fixture()
 def non_contributor():
@@ -20,31 +20,19 @@ def write_contributor():
     return AuthUserFactory()
 
 @pytest.fixture()
-def group_manager():
-    user = AuthUserFactory()
-    user.given_name = 'Dawn'
-    user.save()
-    return user
-
-@pytest.fixture()
-def group_member():
-    return AuthUserFactory()
-
-@pytest.fixture()
-def project(admin_contributor, write_contributor, group_member_and_contributor):
+def project(admin_contributor, write_contributor):
     project = ProjectFactory(
         creator=admin_contributor
     )
     project.add_contributor(write_contributor, WRITE)
-    project.add_contributor(group_member_and_contributor, READ)
     return project
 
 
 @pytest.mark.django_db
 class TestNodeContributorsAndGroupMembers:
     def test_list_and_filter_contributors_and_group_members(
-            self, app, project, admin_contributor, write_contributor, group_manager,
-            group_member, group_member_and_contributor, non_contributor):
+            self, app, project, admin_contributor, write_contributor,
+            non_contributor):
         url = f'/{API_BASE}nodes/{project._id}/contributors_and_group_members/'
 
         # unauthenticated
@@ -71,13 +59,6 @@ class TestNodeContributorsAndGroupMembers:
         actual = {node['id'] for node in res.json['data']}
 
         assert actual == expected
-
-        url = f'/{API_BASE}nodes/{project._id}/contributors_and_group_members/?filter[given_name]={group_manager.given_name}'
-        res = app.get(url, auth=admin_contributor.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == group_manager._id
 
         url = f'/{API_BASE}nodes/{project._id}/contributors_and_group_members/?filter[given_name]=NOT_EVEN_A_NAME'
         res = app.get(url, auth=admin_contributor.auth)
