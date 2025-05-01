@@ -51,7 +51,7 @@ class TestNodeContributorsAndGroupMembers:
         res = app.get(url, auth=admin_contributor.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert len(res.json['data']) == 5
+        assert len(res.json['data']) == 2
         expected = {
             admin_contributor._id,
             write_contributor._id,

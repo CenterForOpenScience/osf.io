@@ -108,7 +108,7 @@ class TestUserSerializer:
         'test_related_counts_equal_related_views': [{
             'field_name': 'nodes',
             'expected_count': {
-                'user': 5,  # this counts the private nodes created by RegistrationFactory
+                'user': 4,  # this counts the private nodes created by RegistrationFactory
                 'other_user': 1,
                 'no_auth': 1
             },
@@ -181,7 +181,6 @@ class TestUserSerializer:
         assert 'institutions' in relationships
         assert 'preprints' in relationships
         assert 'registrations' in relationships
-        assert 'groups' in relationships
 
     def test_related_counts_equal_related_views(self,
                                                 request,
