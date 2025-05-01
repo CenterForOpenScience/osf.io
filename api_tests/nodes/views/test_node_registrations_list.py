@@ -7,7 +7,6 @@ from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
 )
-from osf.utils.permissions import READ
 
 
 def node_url_for(n_id):

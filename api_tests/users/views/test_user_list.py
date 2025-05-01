@@ -16,7 +16,6 @@ from osf_tests.factories import (
     UserFactory,
     ProjectFactory,
     ApiOAuth2ScopeFactory,
-    RegistrationFactory,
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS

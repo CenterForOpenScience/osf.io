@@ -10,7 +10,6 @@ from osf_tests.factories import (
     RegistrationFactory,
     EmbargoFactory,
 )
-from osf.utils.permissions import READ
 from tests.base import assert_datetime_equal
 from api_tests.utils import disconnected_from_listeners
 from website.project.signals import contributor_removed

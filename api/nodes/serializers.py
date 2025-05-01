@@ -386,11 +386,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_forks_count'},
     )
 
-    groups = RelationshipField(
-        related_view='nodes:node-groups',
-        related_view_kwargs={'node_id': '<_id>'},
-    )
-
     node_links = ShowIfVersion(
         RelationshipField(
             related_view='nodes:node-pointers',

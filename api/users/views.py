@@ -11,7 +11,6 @@ from rest_framework.throttling import UserRateThrottle
 from api.addons.views import AddonSettingsMixin
 from api.base import permissions as base_permissions
 from api.users.permissions import UserMessagePermissions
-from api.base.waffle_decorators import require_flag
 from api.base.exceptions import Conflict, UserGone, Gone
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
 from api.base.parsers import (

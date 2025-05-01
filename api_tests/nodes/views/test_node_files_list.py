@@ -24,7 +24,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     PrivateLinkFactory
 )
-from osf.utils.permissions import READ
 from dateutil.parser import parse as parse_date
 from website import settings
 from osf.features import ENABLE_GV

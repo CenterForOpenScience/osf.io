@@ -8,7 +8,6 @@ from osf_tests.factories import (
     RegistrationFactory,
     AuthUserFactory
 )
-from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from tests.utils import assert_latest_log
 
