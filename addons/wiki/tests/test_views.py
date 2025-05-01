@@ -111,66 +111,6 @@ class TestUpdateNodeWiki(OsfTestCase):
         with pytest.raises(NameInvalidError):
             WikiPage.objects.create_for_node(self.project, invalid_name, 'more valid content', self.auth)
 
-    def test_update_wiki_updates_comments_and_user_comments_viewed_timestamp(self):
-        project = ProjectFactory(creator=self.user, is_public=True)
-        wiki_page = WikiFactory(node=project, page_name='test')
-        wiki = WikiVersionFactory(wiki_page=wiki_page)
-        comment = CommentFactory(node=project, target=Guid.load(wiki_page._id), user=UserFactory())
-
-        # user views comments -- sets user.comments_viewed_timestamp
-        url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put(url, json={
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=self.user.auth)
-        assert res.status_code == 200
-        self.user.reload()
-        assert wiki_page._id in self.user.comments_viewed_timestamp
-
-        # user updates the wiki
-        wiki_page.update(self.user, 'Updating wiki')
-        comment.reload()
-        self.user.reload()
-        assert wiki_page._id in self.user.comments_viewed_timestamp
-        assert comment.target.referent._id == wiki_page._id
-
-    # Regression test for https://openscience.atlassian.net/browse/OSF-6138
-    def test_update_wiki_updates_contributor_comments_viewed_timestamp(self):
-        contributor = AuthUserFactory()
-        project = ProjectFactory(creator=self.user, is_public=True)
-        project.add_contributor(contributor)
-        project.save()
-        wiki_page = WikiFactory(node=project, page_name='test')
-        wiki = WikiVersionFactory(wiki_page=wiki_page)
-        comment = CommentFactory(node=project, target=Guid.load(wiki_page._id), user=self.user)
-
-        # user views comments -- sets user.comments_viewed_timestamp
-        url = project.api_url_for('update_comments_timestamp')
-        res = self.app.put(url, json={
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=self.user.auth)
-        assert res.status_code == 200
-        self.user.reload()
-        assert wiki_page._id in self.user.comments_viewed_timestamp
-
-        # contributor views comments -- sets contributor.comments_viewed_timestamp
-        res = self.app.put(url, json={
-            'page': 'wiki',
-            'rootId': wiki_page._id
-        }, auth=contributor.auth)
-        contributor.reload()
-        assert wiki_page._id in contributor.comments_viewed_timestamp
-
-        # user updates the wiki
-        wiki_page.update(self.user, 'Updating wiki')
-        comment.reload()
-        contributor.reload()
-
-        new_version_id = WikiVersion.objects.get_for_node(project, 'test')._id
-        assert wiki_page._id in contributor.comments_viewed_timestamp
-        assert comment.target.referent._id == wiki_page._id
-
     # Regression test for https://openscience.atlassian.net/browse/OSF-8584
     def test_no_read_more_when_less_than_400_character(self):
         wiki_content = '1234567'

@@ -292,3 +292,18 @@ class MetadataSerializationError(OSFError):
 class InvalidCookieOrSessionError(OSFError):
     """Raised when cookie is invalid or session key is not found."""
     pass
+
+
+class RegistrationStuckError(OSFError):
+    """Raised if Registration stuck during archive."""
+    pass
+
+
+class RegistrationStuckRecoverableException(RegistrationStuckError):
+    """Raised if registration stuck but recoverable."""
+    pass
+
+
+class RegistrationStuckBrokenException(RegistrationStuckError):
+    """Raised if registration stuck and not recoverable."""
+    pass

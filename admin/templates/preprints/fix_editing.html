@@ -1,0 +1,21 @@
+{% if  perms.osf.change_node %}
+    <a data-toggle="modal" data-target="#confirmMakePublic" class="btn btn-warning">
+        Fix why not data
+    </a>
+    <div class="modal" id="confirmMakePublic">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="well" method="post" action="{% url 'preprints:fix-editing' guid=preprint.guid %}">
+
+                    {% csrf_token %}
+                    <div class="modal-footer">
+                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}

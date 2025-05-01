@@ -1,0 +1,79 @@
+{% if node.is_registration %}
+<a href="{% url 'nodes:check-archive-status' guid=node.guid %}" class="btn btn-info">
+    Check archive status
+</a>
+{% if not node.archived %}
+    {% if node.is_stuck_registration %}
+    <a data-toggle="modal" data-target="#confirmRestartStuckRegistration" class="btn btn-danger">
+        Restart Stuck Registration
+    </a>
+    <a href="{% url 'nodes:remove-stuck-registrations' guid=node.guid %}"
+        data-toggle="modal" data-target="#confirmRemoveRegistration"
+        class="btn btn-danger">
+        Remove Stuck Registration
+    </a>
+    {% else %}
+    <a data-toggle="modal" data-target="#confirmForceArchiveRegistration" class="btn btn-danger">
+        Force Archive
+    </a>
+    {% endif %}
+
+    <!-- Modals -->
+    <div class="modal" id="confirmForceArchiveRegistration">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to force archive the registration? {{ node.guid }}</h3>
+                </div>
+                {% include "nodes/registration_force_archive_form.html" with form_id="confirm-force-archive-form" %}
+                <div class="modal-footer">
+                    <label><input class="form-check-input" type="checkbox" name="dry_mode" id="dry-mode" form="confirm-force-archive-form" value="true">Dry-mode</label>
+                    <input class="btn btn-danger" type="submit" form="confirm-force-archive-form" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmRemoveRegistration">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="well" method="post" action="{% url 'nodes:remove-stuck-registrations' guid=node.guid%}">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">x</button>
+                        <h3>Are you sure you want to remove this registration? {{ node.guid }}</h3>
+                    </div>
+                    {% csrf_token %}
+                    <div class="modal-footer">
+                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmRestartStuckRegistration">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to restart the registration process? {{ node.guid }}</h3>
+                </div>
+                {% include "nodes/registration_force_archive_form.html" with form_id="confirm-restart-stuck-registration" %}
+                <div class="modal-footer">
+                    <input class="btn btn-danger" type="submit" form="confirm-restart-stuck-registration" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+{% endif %}

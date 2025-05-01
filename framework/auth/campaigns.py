@@ -4,7 +4,7 @@ import threading
 from django.utils import timezone
 
 from website import mails, settings
-from osf.models import PreprintProvider
+from osf.models import PreprintProvider, NotificationType
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
 from framework.utils import throttle_period_expired
@@ -44,12 +44,10 @@ def get_campaigns():
             preprint_providers = PreprintProvider.objects.all()
             for provider in preprint_providers:
                 if provider._id == 'osf':
-                    template = 'osf'
                     name = 'OSF'
                     url_path = 'preprints/'
                     external_url = None
                 else:
-                    template = 'branded'
                     name = provider.name
                     url_path = f'preprints/{provider._id}'
                     external_url = provider.domain
@@ -60,7 +58,7 @@ def get_campaigns():
                         'system_tag': system_tag,
                         'redirect_url': furl(DOMAIN).add(path=url_path).url,
                         'external_url': external_url,
-                        'confirmation_email_template': mails.CONFIRM_EMAIL_PREPRINTS(template, name),
+                        'confirmation_email_template': NotificationType.Type.PROVIDER_CONFIRM_EMAIL_PREPRINTS,
                         'login_type': 'proxy',
                         'provider': name,
                         'logo': provider._id if name != 'OSF' else settings.OSF_PREPRINTS_LOGO,

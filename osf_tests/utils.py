@@ -16,7 +16,6 @@ from osf.models import (
     Sanction,
     RegistrationProvider,
     RegistrationSchema,
-    NotificationSubscription
 )
 
 from osf.utils.migrations import create_schema_blocks_for_atomic_schema
@@ -220,20 +219,6 @@ def get_default_test_schema():
 
     return test_schema
 
-
-def _ensure_subscriptions(provider):
-    '''Make sure a provider's subscriptions exist.
-
-    Provider subscriptions are populated by an on_save signal when the provider is created.
-    This has led to observed race conditions and probabalistic test failures.
-    Avoid that.
-    '''
-    for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-        NotificationSubscription.objects.get_or_create(
-            _id=f'{provider._id}_{subscription}',
-            event_name=subscription,
-            provider=provider
-        )
 
 def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
     '''Confirms that a mocked send_mail function contains the appropriate calls.'''

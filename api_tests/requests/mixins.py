@@ -1,5 +1,6 @@
 import pytest
 
+from osf.models import NotificationType
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import (
     AuthUserFactory,
@@ -37,7 +38,7 @@ class NodeRequestTestMixin:
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            send_email='access_request',
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
             save=True
         )
         return proj

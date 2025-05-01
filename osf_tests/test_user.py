@@ -944,22 +944,21 @@ class TestChangePassword:
         user.change_password(old_password, new_password, confirm_password)
         assert bool(user.check_password(new_password)) is True
 
-    @mock.patch('website.mails.send_mail')
-    def test_set_password_notify_default(self, mock_send_mail, user):
+    def test_set_password_notify_default(self, user):
         old_password = 'password'
         user.set_password(old_password)
         user.save()
-        assert mock_send_mail.called is True
+        assert False, 'redo test'
+        # assert mock_send_mail.called is True
 
-    @mock.patch('website.mails.send_mail')
-    def test_set_password_no_notify(self, mock_send_mail, user):
+    def test_set_password_no_notify(self, user):
         old_password = 'password'
         user.set_password(old_password, notify=False)
         user.save()
-        assert mock_send_mail.called is False
+        assert False, 'redo test'
+        # assert mock_send_mail.called is False
 
-    @mock.patch('website.mails.send_mail')
-    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user, settings):
+    def test_check_password_upgrade_hasher_no_notify(self, user, settings):
         # NOTE: settings fixture comes from pytest-django.
         # changes get reverted after tests run
         settings.PASSWORD_HASHERS = (
@@ -970,7 +969,8 @@ class TestChangePassword:
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
         user.check_password(raw_password)
         assert user.password.startswith('md5$')
-        assert mock_send_mail.called is False
+        assert False, 'redo test'
+        # assert mock_send_mail.called is False
 
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
                                      error_message='Old password is invalid'):

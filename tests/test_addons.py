@@ -1,28 +1,25 @@
 import datetime
 import time
 import functools
-import logging
 from importlib import import_module
-from unittest.mock import Mock
+from unittest import mock
 
 from furl import furl
 import itsdangerous
 import jwe
 import jwt
-from unittest import mock
 import pytest
 from django.utils import timezone
 from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import get_session
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     RegistrationFactory,
-    DraftRegistrationFactory,
 )
 from website import settings
 from addons.base import views
@@ -32,7 +29,7 @@ from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
 from osf import features
-from osf.models import files as file_models
+from osf.models import files as file_models, NotificationType
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
 from website.project import new_private_link
@@ -44,8 +41,6 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
-from api.base.settings.defaults import API_BASE
-from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 from django.conf import settings as django_conf_settings
@@ -422,7 +417,8 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert self.node.logs.count() == nlogs
 
-    def test_action_file_rename(self):
+    @mock.patch('osf.models.notification.send_notification')
+    def test_action_file_rename(self, mocK_notification):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(
             action='rename',
@@ -453,6 +449,11 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
 
         assert self.node.logs.latest().action == 'github_addon_file_renamed'
+        mocK_notification.assert_called_once_with(
+            to=self.user.username,
+            type=NotificationType.objects.get(name='addon_file_renamed'),
+            context={'path': 'foo'}
+        )
 
     def test_action_file_rename_storage(self):
         url = self.node.api_url_for('create_waterbutler_log')
@@ -1635,7 +1636,7 @@ class TestAddonFileViews(OsfTestCase):
     @with_sentry
     @mock.patch('framework.sentry.isolation_scope')
     @mock.patch('framework.sentry.capture_message')
-    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture: Mock, mock_set_context: Mock):
+    def test_update_logs_to_sentry_when_called_with_disordered_metadata(self, mock_capture: mock, mock_set_context: mock):
         file_node = self.get_test_file()
         file_node.history.append({'modified': parse_date(
                 '2017-08-22T13:54:32.100900',

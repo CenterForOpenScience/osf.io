@@ -8,8 +8,6 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 from rest_framework import exceptions
 
-from website.notifications.constants import NOTIFICATION_TYPES
-
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
@@ -54,8 +52,9 @@ def string_required(value):
 
 
 def validate_subscription_type(value):
-    if value not in NOTIFICATION_TYPES:
-        raise ValidationValueError
+    from osf.models.notification import NotificationType
+    if value not in NotificationType.Type:
+        raise ValidationValueError(f'{value} is not a valid subscription type.')
 
 
 def validate_title(value, allow_blank=False):

@@ -32,7 +32,6 @@ TERMS_POLICY_PATH = os.path.join(POLICY_PATH, 'TERMS_OF_USE.md')
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 LOG_LEVEL = logging.INFO
-TEST_ENV = False
 
 with open(os.path.join(APP_PATH, 'package.json')) as fobj:
     VERSION = json.load(fobj)['version']
@@ -140,41 +139,10 @@ OSF_SERVER_CERT = None
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-USE_EMAIL = True
-FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 # contact email
 OSF_CONTACT_EMAIL = 'contact@osf.io'
-
-# prereg email
-PREREG_EMAIL = 'prereg@cos.io'
-
-# Default settings for fake email address generation
-FAKE_EMAIL_NAME = 'freddiemercury'
-FAKE_EMAIL_DOMAIN = 'cos.io'
-
-# SMTP Settings
-MAIL_SERVER = 'smtp.sendgrid.net'
-MAIL_USERNAME = 'osf-smtp'
-MAIL_PASSWORD = ''  # Set this in local.py
-
-# OR, if using Sendgrid's API
-# WARNING: If `SENDGRID_WHITELIST_MODE` is True,
-# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
-SENDGRID_API_KEY = None
-SENDGRID_WHITELIST_MODE = False
-SENDGRID_EMAIL_WHITELIST = []
-
-# Mailchimp
-MAILCHIMP_API_KEY = None
-MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
-ENABLE_EMAIL_SUBSCRIPTIONS = True
-MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
-MAILCHIMP_LIST_MAP = {
-    MAILCHIMP_GENERAL_LIST: '123',
-}
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
@@ -561,15 +529,20 @@ class CeleryConfig:
         #  Setting up a scheduler, essentially replaces an independent cron job
         # Note: these times must be in UTC
         beat_schedule = {
-            '5-minute-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute='*/5'),
-                'args': ('email_transactional',),
-            },
-            'daily-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
+            'daily-digests': {
+                'task': 'website.notifications.tasks.send_notifications',
                 'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
-                'args': ('email_digest',),
+                'args': ('daily',),
+            },
+            'weekly-digests': {
+                'task': 'website.notifications.tasks.send_notifications',
+                'schedule': crontab(minute=0, day_of_week=1),
+                'args': ('weekly',),
+            },
+            'monthly-emails': {
+                'task': 'website.notifications.tasks.send_notifications',
+                'schedule': crontab(day_of_month=1),
+                'args': ('monthly',),
             },
             # 'refresh_addons': {  # Handled by GravyValet now
             #     'task': 'scripts.refresh_addon_tokens',
@@ -2127,3 +2100,32 @@ USE_COLOR = False
 # path to newrelic.ini config file
 # newrelic is only enabled when DEBUG_MODE is False
 NEWRELIC_INI_PATH = None
+
+
+### NOTIFICATION SETTINGS
+USE_EMAIL = True
+FROM_EMAIL = 'openscienceframework-noreply@osf.io'
+
+NOTIFICATION_TYPES_YAML = 'osf/notifications.yaml'
+# Switches to SMTP server
+ENABLE_TEST_EMAIL = False
+
+# SMTP Settings
+MAIL_SERVER = '' # set to development osf server
+MAIL_USERNAME = 'osf-smtp'
+MAIL_PASSWORD = ''  # Set this in local.py
+
+# OR, if using Sendgrid's API
+# WARNING: If `SENDGRID_WHITELIST_MODE` is True,
+# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
+SENDGRID_API_KEY = None
+SENDGRID_WHITELIST_MODE = False
+SENDGRID_EMAIL_WHITELIST = []
+
+MAILCHIMP_API_KEY = None
+MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is secure
+ENABLE_EMAIL_SUBSCRIPTIONS = True
+MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
+MAILCHIMP_LIST_MAP = {
+    MAILCHIMP_GENERAL_LIST: '123',
+}

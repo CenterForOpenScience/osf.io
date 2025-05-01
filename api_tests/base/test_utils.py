@@ -6,8 +6,11 @@ from django.conf import settings as django_conf_settings
 
 from rest_framework import fields
 from rest_framework.exceptions import ValidationError
-from api.base import utils as api_utils
 
+from api.base import utils as api_utils
+from osf.models.base import coerce_guid, Guid, GuidMixin, OptionalGuidMixin, VersionedGuidMixin, InvalidGuid
+from osf_tests.factories import ProjectFactory, PreprintFactory
+from tests.test_websitefiles import TestFile
 from framework.status import push_status_message
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -100,3 +103,67 @@ class TestFlaskDjangoIntegration:
                 'Unexpected Exception from push_status_message when called '
                 'from the v2 API with type "error"'
             )
+
+
+@pytest.mark.django_db
+class TestCoerceGuid:
+
+    def test_guid_instance(self):
+        project = ProjectFactory()
+        assert isinstance(project.guids.first(), Guid)
+        assert coerce_guid(project.guids.first()) == project.guids.first()
+
+    def test_versioned_guid_instance(self):
+        preprint = PreprintFactory()
+        assert isinstance(preprint, VersionedGuidMixin)
+        assert coerce_guid(preprint) == preprint.versioned_guids.first().guid
+
+    def test_guid_mixin_instance(self):
+        project = ProjectFactory()
+        assert isinstance(project, GuidMixin)
+        assert coerce_guid(project._id) == project.guids.first()
+
+    def test_str_guid_instance(self):
+        project = ProjectFactory()
+        str_guid = str(project._id)
+        guid = coerce_guid(str_guid)
+        assert isinstance(guid, Guid)
+        assert guid == project.guids.first()
+
+    def test_incorrect_str_guid_instance(self):
+        incorrect_guid = '12345'
+        with pytest.raises(InvalidGuid, match='guid does not exist'):
+            assert coerce_guid(incorrect_guid)
+
+    def test_optional_guid_instance(self):
+        node = ProjectFactory()
+        test_file = TestFile(
+            _path='anid',
+            name='name',
+            target=node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        test_file.save()
+        test_file.get_guid(create=True)
+        assert isinstance(test_file, OptionalGuidMixin)
+        assert coerce_guid(test_file) == test_file.guids.first()
+
+    def test_incorrect_optional_guid_instance(self):
+        node = ProjectFactory()
+        test_file = TestFile(
+            _path='anid',
+            name='name',
+            target=node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        test_file.save()
+        assert isinstance(test_file, OptionalGuidMixin)
+        with pytest.raises(InvalidGuid, match='guid does not exist'):
+            assert coerce_guid(test_file)
+
+    def test_invalid_guid(self):
+        incorrect_guid = 12345
+        with pytest.raises(InvalidGuid, match='cannot coerce'):
+            assert coerce_guid(incorrect_guid)

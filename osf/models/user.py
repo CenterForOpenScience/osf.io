@@ -59,17 +59,19 @@ from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
 from website import settings as website_settings
-from website import filters, mails
+from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+from osf.models.notification import NotificationType
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 logger = logging.getLogger(__name__)
 
 MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
+
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -227,15 +229,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
-
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # Tracks last email sent where user was added to an OSF Group
     member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
@@ -1107,12 +1100,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            mails.send_mail(
-                to_addr=self.username,
-                mail=mails.PASSWORD_RESET,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_PASSWORD_RESET
+            ).emit(
                 user=self,
-                can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                event_context={
+                    'user': self.id,
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
             )
             remove_sessions_for_user(self)
 
@@ -1406,6 +1402,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         self.date_confirmed = timezone.now()
         if accepted_terms_of_service:
             self.accepted_terms_of_service = timezone.now()
+
+        self.__subscribe_user_to_default_user_notifications()
         self.update_search()
         self.update_search_nodes()
 
@@ -1413,6 +1411,27 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         signals.user_confirmed.send(self)
 
         return self
+
+    def __subscribe_user_to_default_user_notifications(self):
+        NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+        NotificationType = apps.get_model('osf.NotificationType')
+        from django.contrib.contenttypes.models import ContentType
+
+        for notification_type in NotificationType.Type.user_types():
+            print(notification_type.value)
+            content_type = ContentType.objects.get_for_model(self.__class__)
+            subscription, created = NotificationSubscription.objects.get_or_create(
+                notification_type=NotificationType.objects.get(name=notification_type.value),
+                user=self,
+                content_type=content_type,
+                object_id=self.id,
+                defaults={
+                    'content_type': content_type,
+                    'message_frequency': 'instantly',
+                    'object_id': self.id
+                }
+            )
+            subscription.save()
 
     def confirm_email(self, token, merge=False):
         """Confirm the email address associated with the token"""
@@ -1664,35 +1683,37 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """Returns number of "shared projects" (projects that both users are contributors or group members for)"""
         return self._projects_in_common_query(other_user).count()
 
-    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None):
+    def add_unclaimed_record(self, claim_origin, referrer, given_name, email=None, skip_referrer_permissions=False):
         """Add a new project entry in the unclaimed records dictionary.
 
         :param object claim_origin: Object this unclaimed user was added to. currently `Node` or `Provider` or `Preprint`
         :param User referrer: User who referred this user.
         :param str given_name: The full name that the referrer gave for this user.
         :param str email: The given email address.
+        :param bool skip_referrer_permissions: The flag to check permissions for referrer.
         :returns: The added record
         """
 
         from .provider import AbstractProvider
         from .osf_group import OSFGroup
 
-        if isinstance(claim_origin, AbstractProvider):
-            if not bool(get_perms(referrer, claim_origin)):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
-                )
+        if not skip_referrer_permissions:
+            if isinstance(claim_origin, AbstractProvider):
+                if not bool(get_perms(referrer, claim_origin)):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
+                    )
 
-        elif isinstance(claim_origin, OSFGroup):
-            if not claim_origin.has_permission(referrer, MANAGE):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a member to {claim_origin._id}'
-                )
-        else:
-            if not claim_origin.has_permission(referrer, ADMIN):
-                raise PermissionsError(
-                    f'Referrer does not have permission to add a contributor to {claim_origin._id}'
-                )
+            elif isinstance(claim_origin, OSFGroup):
+                if not claim_origin.has_permission(referrer, MANAGE):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a member to {claim_origin._id}'
+                    )
+            else:
+                if not claim_origin.has_permission(referrer, ADMIN):
+                    raise PermissionsError(
+                        f'Referrer does not have permission to add a contributor to {claim_origin._id}'
+                    )
 
         pid = str(claim_origin._id)
         referrer_id = str(referrer._id)
@@ -1986,7 +2007,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             is_active=True
         ).exclude(id=self.id).exists()
 
-        if not alternate_admins:
+        if not resource.deleted and not alternate_admins:
             raise UserStateError(
                 f'You cannot delete {resource.__class__.__name__} {resource._id} because it would be '
                 f'a {resource.__class__.__name__} with contributors, but with no admin.'

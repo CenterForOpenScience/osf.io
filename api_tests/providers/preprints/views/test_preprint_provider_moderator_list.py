@@ -1,12 +1,13 @@
-from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 class ProviderModeratorListTestClass:
@@ -68,70 +69,87 @@ class ProviderModeratorListTestClass:
         assert res.json['data'][0]['id'] == admin._id
         assert res.json['data'][0]['attributes']['permission_group'] == permissions.ADMIN
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_unauthorized(self, mock_mail, app, url, nonmoderator, moderator, provider):
+    def test_list_post_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
-        res = app.post(url, payload, expect_errors=True)
-        assert res.status_code == 401
+        with capture_notifications() as notifications:
+            res = app.post(url, payload, expect_errors=True)
 
-        res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert res.status_code == 403
+            assert res.status_code == 401
 
-        res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
-        assert res.status_code == 403
+            res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
+            assert res.status_code == 403
 
-        assert mock_mail.call_count == 0
+            res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
+            assert res.status_code == 403
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_admin_success_existing_user(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+        assert not notifications
+
+    def test_list_post_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
 
-        res = app.post_json_api(url, payload, auth=admin.auth)
-        assert res.status_code == 201
-        assert res.json['data']['id'] == nonmoderator._id
-        assert res.json['data']['attributes']['permission_group'] == 'moderator'
-        assert mock_mail.call_count == 1
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth)
+            assert res.status_code == 201
+            assert res.json['data']['id'] == nonmoderator._id
+            assert res.json['data']['attributes']['permission_group'] == 'moderator'
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_admin_failure_existing_moderator(self, mock_mail, app, url, moderator, admin, provider):
+    def test_list_post_admin_failure_existing_moderator(self, app, url, moderator, admin, provider):
         payload = self.create_payload(user_id=moderator._id, permission_group='moderator')
-        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+
         assert res.status_code == 400
-        assert mock_mail.call_count == 0
+        assert not notifications
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_admin_failure_unreg_moderator(self, mock_mail, app, url, moderator, nonmoderator, admin, provider):
+    def test_user_with_non_moderator_admin_permissions(self, app, url, moderator, nonmoderator, admin, provider):
         unreg_user = {'full_name': 'Son Goku', 'email': 'goku@dragonball.org'}
-        # test_user_with_no_moderator_admin_permissions
         payload = self.create_payload(permission_group='moderator', **unreg_user)
-        res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert mock_mail.call_count == 0
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
 
-        # test_user_with_moderator_admin_permissions
-        payload = self.create_payload(permission_group='moderator', **unreg_user)
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        assert res.status_code == 403
+        assert not notifications
+
+    def test_user_with_moderator_admin_permissions(self, app, url, moderator, nonmoderator, admin, provider):
+        unreg_user = {'full_name': 'Jason Kelece', 'email': 'burds@eagles.org'}
+        payload = self.create_payload(
+            permission_group='moderator',
+            **unreg_user
+        )
+
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url,
+                payload,
+                auth=admin.auth
+            )
 
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
-        assert mock_mail.call_args[0][0] == unreg_user['email']
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        assert notifications[0]['kwargs']['user'].username == unreg_user['email']
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_admin_failure_invalid_group(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+    def test_list_post_admin_failure_invalid_group(self, app, url, nonmoderator, moderator, admin, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='citizen')
-        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
-        assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_list_post_admin_success_email(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+        assert not notifications
+
+    def test_list_post_admin_success_email(self, app, url, nonmoderator, moderator, admin, provider):
         payload = self.create_payload(email='somenewuser@gmail.com', full_name='Some User', permission_group='moderator')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         assert len(res.json['data']['id']) == 5
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
         assert 'email' not in res.json['data']['attributes']
-        assert mock_mail.call_count == 1
+
+        assert len(notifications) == 1
 
     def test_list_moderators_alphabetically(self, app, url, admin, moderator, provider):
         admin.fullname = 'Alice Alisdottir'

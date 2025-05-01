@@ -13,16 +13,11 @@ from framework.celery_tasks import handlers as celery_task_handlers
 from framework.django import handlers as django_handlers
 from framework.csrf import handlers as csrf_handlers
 from framework.flask import add_handlers, app
-# Import necessary to initialize the root logger
 from framework.logging import logger as root_logger  # noqa
 from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.transactions import handlers as transaction_handlers
-# Imports necessary to connect signals
 from website.archiver import listeners  # noqa
-from website.mails import listeners  # noqa
-from website.notifications import listeners  # noqa
 from website.identifiers import listeners  # noqa
-from website.reviews import listeners  # noqa
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 logger = logging.getLogger(__name__)

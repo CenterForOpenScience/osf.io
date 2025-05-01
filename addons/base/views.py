@@ -36,7 +36,6 @@ from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.routing import proxy_url
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -54,7 +53,8 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion,
+    NotificationType
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -431,11 +431,7 @@ def _enqueue_metrics(file_version, file_node, action, auth, from_mfr=False):
 def _construct_payload(auth, resource, credentials, waterbutler_settings):
 
     if isinstance(resource, Registration):
-        callback_url = resource.api_url_for(
-            'registration_callbacks',
-            _absolute=True,
-            _internal=True
-        )
+        callback_url = resource.callbacks_url
     else:
         callback_url = resource.api_url_for(
             'create_waterbutler_log',
@@ -583,17 +579,17 @@ def create_waterbutler_log(payload, **kwargs):
                 )
 
             if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                if payload.get('errors'):
+                    notification_type = NotificationType.Type.FILE_OPERATION_FAILED
+                else:
+                    notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
+
+                NotificationType.objects.get(
+                    name=notification_type.value,
+                ).emit(
+                    user=user,
+                    subscribed_object=destination_node or node,
+                    event_context=payload,
                 )
 
             if payload.get('errors'):
@@ -612,6 +608,14 @@ def create_waterbutler_log(payload, **kwargs):
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+
+    NotificationType.objects.get(
+        name=action,
+    ).emit(
+        user=user,
+        subscribed_object=target_node or node,
+        event_context=metadata,
+    )
 
     return {'status': 'success'}
 

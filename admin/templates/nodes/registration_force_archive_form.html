@@ -1,0 +1,39 @@
+<form id="{{ form_id }}" class="well" method="post" action="{% url 'nodes:force-archive-registration' guid=node.guid%}">
+    {% csrf_token %}
+    <div class="modal-content" style="padding: 5px">
+        <div>
+            <h4>Handle collision:</h4>
+            <div>
+                <div>
+                    <label><input type="radio" name="collision_mode" value="none" checked>None</label>
+                </div>
+                <div>
+                    <label><input type="radio" name="collision_mode" value="skip">Skip Collisions</label>
+                </div>
+                <div>
+                    <label><input type="radio" name="collision_mode" value="delete">Delete Collisions</label>
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4>Permissible Addons (Optional):</h4>
+            <div>
+                <div>
+                    {% for addon_name in node.get_addon_names %}
+                    <input class="form-check-input" type="checkbox" name="addons" id="permissibleAddon" value="{{ addon_name }}">
+                    <label class="form-check-label" for="permissibleAddon">{{ addon_name }}</label>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div>
+            <h4>Other:</h4>
+            <div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="allow_unconfigured" id="allowUnconfigured">
+                    <label class="form-check-label" for="allowUnconfigured">Allow unconfigured addons</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

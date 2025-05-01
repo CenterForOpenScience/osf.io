@@ -350,12 +350,12 @@ docker compose run --rm --service-ports web
 
 - Test a Specific Class
   ```bash
-  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode
+  docker compose run --rm web python3 -m pytest tests/test_node.py::TestExample:test_example
   ```
 
 - Test a Specific Method
   ```bash
-  docker compose run --rm web python3 -m pytest tests/test_conferences.py::TestProvisionNode::test_upload
+  docker compose run --rm web python3 -m pytest tests/test_node.py::TestExample:test_example
   ```
 
 ## Managing Container State

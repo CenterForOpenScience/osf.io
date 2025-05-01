@@ -17,8 +17,9 @@ from admin.nodes.views import (
     NodeKnownHamList,
     NodeConfirmHamView,
     AdminNodeLogView,
-    RestartStuckRegistrationsView,
     RemoveStuckRegistrationsView,
+    CheckArchiveStatusRegistrationsView,
+    ForceArchiveRegistrationsView,
     ApprovalBacklogListView,
     ConfirmApproveBacklogView
 )
@@ -375,28 +376,50 @@ class TestAdminNodeLogView(AdminTestCase):
         assert log_entry.params['title_new'] == 'New Title'
 
 
-class TestRestartStuckRegistrationsView(AdminTestCase):
+class TestCheckArchiveStatusRegistrationsView(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.view = CheckArchiveStatusRegistrationsView
+        self.request = RequestFactory().post('/fake_path')
+
+    def test_check_archive_status(self):
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        registration = RegistrationFactory(creator=self.user, archive=True)
+        view = setup_log_view(self.view(), self.request, guid=registration._id)
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(self.request, 'session', 'session')
+        messages = FallbackStorage(self.request)
+        setattr(self.request, '_messages', messages)
+
+        view.get(self.request)
+
+        assert not registration.archived
+        assert f'Registration {registration._id} is not stuck in archiving' in [m.message for m in messages]
+
+
+class TestForceArchiveRegistrationsView(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
         self.registration = RegistrationFactory(creator=self.user, archive=True)
         self.registration.save()
-        self.view = RestartStuckRegistrationsView
+        self.view = ForceArchiveRegistrationsView
         self.request = RequestFactory().post('/fake_path')
 
     def test_get_object(self):
-        view = RestartStuckRegistrationsView()
-        view = setup_log_view(view, self.request, guid=self.registration._id)
+        view = setup_log_view(self.view(), self.request, guid=self.registration._id)
 
         assert self.registration == view.get_object()
 
-    def test_restart_stuck_registration(self):
+    def test_force_archive_registration(self):
         # Prevents circular import that prevents admin app from starting up
         from django.contrib.messages.storage.fallback import FallbackStorage
 
-        view = RestartStuckRegistrationsView()
-        view = setup_log_view(view, self.request, guid=self.registration._id)
-        assert self.registration.archive_job.status == 'INITIATED'
+        view = setup_log_view(self.view(), self.request, guid=self.registration._id)
 
         # django.contrib.messages has a bug which effects unittests
         # more info here -> https://code.djangoproject.com/ticket/17971
@@ -407,6 +430,24 @@ class TestRestartStuckRegistrationsView(AdminTestCase):
         view.post(self.request)
 
         assert self.registration.archive_job.status == 'SUCCESS'
+
+    def test_force_archive_registration_dry_mode(self):
+        # Prevents circular import that prevents admin app from starting up
+        from django.contrib.messages.storage.fallback import FallbackStorage
+
+        request = RequestFactory().post('/fake_path', data={'dry_mode': 'true'})
+        view = setup_log_view(self.view(), request, guid=self.registration._id)
+        assert self.registration.archive_job.status == 'INITIATED'
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(request, 'session', 'session')
+        messages = FallbackStorage(request)
+        setattr(request, '_messages', messages)
+
+        view.post(request)
+
+        assert self.registration.archive_job.status == 'INITIATED'
 
 
 class TestRemoveStuckRegistrationsView(AdminTestCase):

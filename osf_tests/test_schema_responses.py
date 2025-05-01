@@ -8,10 +8,9 @@ from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaRespon
 from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
-from osf_tests.utils import get_default_test_schema, assert_notification_correctness, _ensure_subscriptions
+from osf_tests.utils import get_default_test_schema, assert_notification_correctness
 
 from website.mails import mails
-from website.notifications import emails
 
 from transitions import MachineError
 
@@ -830,7 +829,6 @@ class TestModeratedSchemaResponseApprovalFlows():
     def provider(self):
         provider = RegistrationProviderFactory()
         provider.update_group_permissions()
-        _ensure_subscriptions(provider)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
@@ -886,13 +884,14 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        store_emails = emails.store_emails
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
-            mock_store.side_effect = store_emails
-            revised_response.approve(user=admin_user)
-
-        assert mock_store.called
-        assert mock_store.call_args[0][0] == [moderator._id]
+        # store_emails = emails.store_emails
+        # with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+        #     mock_store.side_effect = store_emails
+        #     revised_response.approve(user=admin_user)
+        #
+        assert False, 'REDO TEST'
+        # assert mock_store.called
+        # assert mock_store.call_args[0][0] == [moderator._id]
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(
             self, initial_response, admin_user):
@@ -900,9 +899,10 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
-            initial_response.approve(user=admin_user)
-        assert not mock_store.called
+        # with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+        #     initial_response.approve(user=admin_user)
+        # assert not mock_store.called
+        assert False, 'redo test'
 
     def test_moderator_accept(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)

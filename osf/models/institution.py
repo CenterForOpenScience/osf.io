@@ -22,7 +22,6 @@ from .mixins import Loggable, GuardianMixin
 from .storage import InstitutionAssetFile
 from .validators import validate_email
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
-from website import mails
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -218,15 +217,19 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         forgot_password = 'forgotpassword' if website_settings.DOMAIN.endswith('/') else '/forgotpassword'
         attempts = 0
         success = 0
+        from osf.models import NotificationType
+
         for user in self.get_institution_users():
             try:
                 attempts += 1
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.INSTITUTION_DEACTIVATION,
+                NotificationType.objects.get(
+                    name=NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+                ).emit(
                     user=user,
-                    forgot_password_link=f'{website_settings.DOMAIN}{forgot_password}',
-                    osf_support_email=website_settings.OSF_SUPPORT_EMAIL
+                    event_context={
+                        'forgot_password_link': f'{website_settings.DOMAIN}{forgot_password}',
+                        'osf_support_email': website_settings.OSF_SUPPORT_EMAIL,
+                    }
                 )
             except Exception as e:
                 logger.error(f'Failed to send institution deactivation email to user [{user._id}] at [{self._id}]')
