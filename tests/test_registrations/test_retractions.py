@@ -22,8 +22,9 @@ from osf.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
-from osf.models import Contributor, Retraction
+from osf.models import Contributor, Retraction, NotificationType
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.enable_bookmark_creation
@@ -806,14 +807,16 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             existing_user=unreg
         )
         self.registration.save()
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         # Only the creator gets an email; the unreg user does not get emailed
-        #assert mock_send_mail.call_count == 1
-        assert False, 'redp test'
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
+
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -904,16 +907,16 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_calls_send_mail_with_username(self, mock_send):
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        assert mock_send.called
-        args, kwargs = mock_send.call_args
-        assert self.user.username in args
+    def test_valid_POST_calls_send_mail_with_username(self):
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+        assert len(notifications) == 1
+        username = notifications[0]['kargs']['user'].username
+        assert self.user.username == username
 
     def test_non_contributor_GET_approval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()

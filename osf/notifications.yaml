@@ -234,6 +234,21 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
+  - name: user_invite_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_invite_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: user_invite_osf_preprint
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
 
   #### PROVIDER
   - name: new_pending_submissions
@@ -383,6 +398,16 @@ notification_types:
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
   - name: node_access_request_submitted
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_pending_retraction_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_pending_embargo_termination_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'

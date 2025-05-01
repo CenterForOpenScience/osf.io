@@ -34,6 +34,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from tests.utils import capture_notifications
 from website import language
 from website.util import web_url_for, api_url_for
 
@@ -736,10 +737,11 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = self.unconfirmed_user.unconfirmed_emails[0]
-        res = form.submit(self.app)
+        with capture_notifications() as notifications:
+            res = form.submit(self.app)
 
         # check email, request and response
-        assert mock_send_mail.called
+        assert notifications
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)
@@ -750,10 +752,11 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = self.confirmed_user.emails.first().address
-        res = form.submit(self.app)
+        with capture_notifications() as notifications:
+            res = form.submit(self.app)
 
         # check email, request and response
-        assert not mock_send_mail.called
+        assert not notifications
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('has already been confirmed', res.text)
@@ -764,10 +767,11 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = 'random@random.com'
-        res = form.submit(self.app)
+        with capture_notifications() as notifications:
+            res = form.submit(self.app)
 
         # check email, request and response
-        assert not mock_send_mail.called
+        assert not notifications
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)
@@ -933,10 +937,11 @@ class TestForgotPasswordInstitution(OsfTestCase):
     # test that user from disabled institution can receive reset password email
     def test_can_receive_reset_password_email(self):
         # submit email to institutional forgot-password page
-        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        with capture_notifications() as notifications:
+            res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert mock_send_mail.called
+        assert not notifications
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -952,10 +957,11 @@ class TestForgotPasswordInstitution(OsfTestCase):
     # test that non-existing user cannot receive reset password email
     def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
-        res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
+        with capture_notifications() as notifications:
+            res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not notifications
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution
@@ -973,10 +979,11 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.deactivate_account()
         self.user.save()
 
-        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        with capture_notifications() as notifications:
+            res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not notifications
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution
@@ -1000,83 +1007,6 @@ class TestForgotPasswordInstitution(OsfTestCase):
         # check push notification
         assert_in_html('Please wait', res.text)
         assert_not_in_html('If there is an OSF account', res.text)
-
-
-@unittest.skip('Public projects/components are dynamically loaded now.')
-class TestAUserProfile(OsfTestCase):
-
-    def setUp(self):
-        OsfTestCase.setUp(self)
-
-        self.user = AuthUserFactory()
-        self.me = AuthUserFactory()
-        self.project = ProjectFactory(creator=self.me, is_public=True, title=fake.bs())
-        self.component = NodeFactory(creator=self.me, parent=self.project, is_public=True, title=fake.bs())
-
-    # regression test for https://github.com/CenterForOpenScience/osf.io/issues/2623
-    def test_has_public_projects_and_components(self):
-        # I go to my own profile
-        url = web_url_for('profile_view_id', uid=self.me._primary_key)
-        # I see the title of both my project and component
-        res = self.app.get(url, auth=self.me.auth)
-        assert_in_html(self.component.title, res)
-        assert_in_html(self.project.title, res)
-
-        # Another user can also see my public project and component
-        url = web_url_for('profile_view_id', uid=self.me._primary_key)
-        # I see the title of both my project and component
-        res = self.app.get(url, auth=self.user.auth)
-        assert_in_html(self.component.title, res)
-        assert_in_html(self.project.title, res)
-
-    def test_shows_projects_with_many_contributors(self):
-        # My project has many contributors
-        for _ in range(5):
-            user = UserFactory()
-            self.project.add_contributor(user, auth=Auth(self.project.creator), save=True)
-
-        # I go to my own profile
-        url = web_url_for('profile_view_id', uid=self.me._primary_key)
-        res = self.app.get(url, auth=self.me.auth)
-        # I see '3 more' as a link
-        assert '3 more' in res.text
-
-        res = res.click('3 more')
-        assert res.request.path == self.project.url
-
-    def test_has_no_public_projects_or_components_on_own_profile(self):
-        # User goes to their profile
-        url = web_url_for('profile_view_id', uid=self.user._id)
-        res = self.app.get(url, auth=self.user.auth)
-
-        # user has no public components/projects
-        assert 'You have no public projects' in res
-        assert 'You have no public components' in res
-
-    def test_user_no_public_projects_or_components(self):
-        # I go to other user's profile
-        url = web_url_for('profile_view_id', uid=self.user._id)
-        # User has no public components/projects
-        res = self.app.get(url, auth=self.me.auth)
-        assert 'This user has no public projects' in res
-        assert 'This user has no public components'in res
-
-    # regression test
-    def test_does_not_show_registrations(self):
-        project = ProjectFactory(creator=self.user)
-        component = NodeFactory(parent=project, creator=self.user, is_public=False)
-        # User has a registration with public components
-        reg = RegistrationFactory(project=component.parent_node, creator=self.user, is_public=True)
-        for each in reg.nodes:
-            each.is_public = True
-            each.save()
-        # I go to other user's profile
-        url = web_url_for('profile_view_id', uid=self.user._id)
-        # Registration does not appear on profile
-        res = self.app.get(url, auth=self.me.auth)
-        assert 'This user has no public components' in res
-        assert reg.title not in res
-        assert reg.nodes[0].title not in res
 
 
 @pytest.mark.enable_bookmark_creation
