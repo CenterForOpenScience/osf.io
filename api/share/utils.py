@@ -18,6 +18,7 @@ from framework.celery_tasks.handlers import enqueue_task
 from framework.encryption import ensure_bytes
 from framework.sentry import log_exception
 from osf import models as osf_db
+from osf.external.gravy_valet.exceptions import GVException
 from osf.metadata.osf_gathering import (
     OsfmapPartition,
     pls_get_magic_metadata_basket,
@@ -31,7 +32,6 @@ logger = logging.getLogger(__name__)
 
 def shtrove_ingest_url():
     return f'{settings.SHARE_URL}trove/ingest'
-
 
 def sharev2_push_url():
     return f'{settings.SHARE_URL}api/v2/normalizeddata/'
@@ -90,15 +90,20 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         raise ValueError(f'unknown osfguid "{guid}"')
     _resource = _osfid_instance.referent
     _is_deletion = _should_delete_indexcard(_resource)
-    _response = (
-        pls_delete_trove_record(_resource, osfmap_partition=_osfmap_partition)
-        if _is_deletion
-        else pls_send_trove_record(
-            _resource,
-            is_backfill=is_backfill,
-            osfmap_partition=_osfmap_partition,
+    try:
+        _response = (
+            pls_delete_trove_record(_resource, osfmap_partition=_osfmap_partition)
+            if _is_deletion
+            else pls_send_trove_record(
+                _resource,
+                is_backfill=is_backfill,
+                osfmap_partition=_osfmap_partition,
+            )
         )
-    )
+    except GVException as e:
+        log_exception(e)
+        raise self.retry(exc=e)
+
     try:
         _response.raise_for_status()
     except Exception as e:
