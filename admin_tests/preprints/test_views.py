@@ -21,6 +21,7 @@ from osf_tests.factories import (
 from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
+from osf.utils.permissions import ADMIN
 
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
@@ -617,6 +618,50 @@ class TestPreprintWithdrawalRequests:
         assert new_withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         assert original_comment == new_withdrawal_request.target.withdrawal_justification
 
+    def test_can_unwithdraw_preprint_without_moderation_workflow(self, withdrawal_request, submitter, preprint, admin):
+        provider = PreprintProviderFactory(reviews_workflow=None)
+        preprint = PreprintFactory(project=NodeFactory(creator=submitter), provider=provider)
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=admin,
+            target=preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(admin)
+        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+
+        assert preprint.machine_state == 'withdrawn'
+
+        request_unwithdraw = RequestFactory().post(reverse('preprints:unwithdraw', kwargs={'guid': preprint._id}))
+        request_unwithdraw.user = admin
+        response_unwithdraw = views.PreprintUnwithdrawView.as_view()(request_unwithdraw, guid=preprint._id)
+        assert response_unwithdraw.status_code == 302
+
+        preprint.refresh_from_db()
+        assert preprint.machine_state == DefaultStates.ACCEPTED.value
+
+    def test_can_unwithdraw_preprint_in_pre_moderation(self, withdrawal_request, submitter, preprint, admin):
+        provider = PreprintProviderFactory(reviews_workflow='pre-moderation')
+        preprint = PreprintFactory(project=NodeFactory(creator=submitter), provider=provider)
+
+        withdrawal_request = PreprintRequestFactory(
+            creator=admin,
+            target=preprint,
+            request_type=RequestTypes.WITHDRAWAL.value,
+            machine_state=DefaultStates.INITIAL.value)
+        withdrawal_request.run_submit(admin)
+        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+
+        assert preprint.machine_state == 'withdrawn'
+
+        request_unwithdraw = RequestFactory().post(reverse('preprints:unwithdraw', kwargs={'guid': preprint._id}))
+        request_unwithdraw.user = admin
+        response_unwithdraw = views.PreprintUnwithdrawView.as_view()(request_unwithdraw, guid=preprint._id)
+        assert response_unwithdraw.status_code == 302
+
+        preprint.refresh_from_db()
+        assert preprint.machine_state == DefaultStates.ACCEPTED.value
+
     def test_permissions_errors(self, user, submitter):
         # with auth, no permissions
         request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
@@ -724,3 +769,31 @@ class TestPreprintMachineStateView:
         request.user = req.user
         with pytest.raises(PermissionDenied):
             views.PreprintMachineStateView.as_view()(request, guid=preprint._id)
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintMakePublishedView:
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.PreprintMakePublishedView
+
+    def test_admin_user_can_publish_preprint(self, user, preprint, plain_view):
+        admin_group = Group.objects.get(name='osf_admin')
+        preprint.is_published = False
+        preprint.save()
+
+        # user isn't admin contributor in the preprint
+        assert preprint.contributors.filter(id=user.id).exists() is False
+        assert preprint.has_permission(user, ADMIN) is False
+
+        request = RequestFactory().post(reverse('preprints:make-published', kwargs={'guid': preprint._id}))
+        request.user = user
+
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.reload()
+
+        assert preprint.is_published

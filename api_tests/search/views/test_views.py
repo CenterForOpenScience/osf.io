@@ -51,7 +51,7 @@ class ApiSearchTestCase:
                                  status_choices=['', 'asdf', 'lkjh'], collected_type_choices=['', 'asdf', 'lkjh'],
                                  issue_choices=['', '0', '1', '2'], volume_choices=['', '0', '1', '2'],
                                  disease_choices=['illness'], data_type_choices=['realness'],
-                                 program_area_choices=['', 'asdf', 'lkjh'])
+                                 program_area_choices=['', 'asdf', 'lkjh'], grade_levels_choices=['super', 'cool'])
 
     @pytest.fixture()
     def registration_collection(self, user):
@@ -908,7 +908,7 @@ class TestSearchCollections(ApiSearchTestCase):
             registration_two, registration_private, reg_with_abstract):
         collection_public.collect_object(node_one, user, status='asdf', issue='0', volume='1', program_area='asdf')
         collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
-        collection_public.collect_object(node_with_abstract, user, status='asdf')
+        collection_public.collect_object(node_with_abstract, user, status='asdf', grade_levels='super')
         collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
 
         registration_collection.collect_object(registration_one, user, status='asdf')
@@ -983,6 +983,11 @@ class TestSearchCollections(ApiSearchTestCase):
         assert len(res.json['data']) == 1
         actual_ids = self.get_ids(res.json['data'])
         assert node_one._id in actual_ids
+
+        payload = self.post_payload(gradeLevels='super')
+        res = app.post_json_api(url_collection_search, payload)
+        assert res.status_code == 200
+        assert res.json['links']['meta']['total'] == 1
 
         # test_search_abstract_keyword_and_filter
         payload = self.post_payload(q='Khadja', status='asdf')

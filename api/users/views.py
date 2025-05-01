@@ -1,7 +1,10 @@
 import pytz
+from urllib.parse import urlencode
 
 from django.apps import apps
 from django.db.models import F
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_protect
 from guardian.shortcuts import get_objects_for_user
 from rest_framework.throttling import UserRateThrottle
 
@@ -26,7 +29,13 @@ from api.base.utils import (
     is_truthy,
 )
 from api.base.views import JSONAPIBaseView
-from api.base.throttling import SendEmailThrottle, SendEmailDeactivationThrottle, NonCookieAuthThrottle, BurstRateThrottle
+from api.base.throttling import (
+    SendEmailThrottle,
+    SendEmailDeactivationThrottle,
+    NonCookieAuthThrottle,
+    BurstRateThrottle,
+    RootAnonThrottle,
+)
 from api.institutions.serializers import InstitutionSerializer
 from api.nodes.filters import NodesFilterMixin, UserNodesFilterMixin
 from api.nodes.serializers import DraftRegistrationLegacySerializer
@@ -47,6 +56,7 @@ from api.users.serializers import (
     UserDetailSerializer,
     UserIdentitiesSerializer,
     UserInstitutionsRelationshipSerializer,
+    UserResetPasswordSerializer,
     UserSerializer,
     UserEmail,
     UserEmailsSerializer,
@@ -57,14 +67,19 @@ from api.users.serializers import (
     ReadEmailUserDetailSerializer,
     UserChangePasswordSerializer,
     UserMessageSerializer,
+    ExternalLoginSerialiser,
+    ExternalLoginConfirmEmailSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
 from django.utils import timezone
-from framework.auth.core import get_user
-from framework.auth.views import send_confirm_email_async
+from framework import sentry
+from framework.auth.core import get_user, generate_verification_key
+from framework.auth.views import send_confirm_email_async, ensure_external_identity_uniqueness
+from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
+from framework.celery_tasks.handlers import enqueue_task
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
@@ -85,9 +100,13 @@ from osf.models import (
     OSFGroup,
     OSFUser,
     Email,
+    Tag,
 )
-from website import mails, settings
+from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
+from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
+from framework.auth import exceptions
+
 
 class UserMixin:
     """Mixin with convenience methods for retrieving the current user based on the
@@ -725,6 +744,210 @@ class UserChangePassword(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
+    """
+    View to handle email submission for first-time oauth-login user.
+    HTTP Method: POST
+    """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = ExternalLoginSerialiser
+    view_category = 'users'
+    view_name = 'external-login'
+
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        session = request.session
+        external_id_provider = session.get('auth_user_external_id_provider', None)
+        external_id = session.get('auth_user_external_id', None)
+        fullname = session.get('auth_user_fullname', None) or request.data.get('auth_user_fullname', None)
+
+        accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
+
+        if session.get('auth_user_external_first_login', False) is not True:
+            raise HTTPError(status.HTTP_401_UNAUTHORIZED)
+
+        clean_email = request.data.get('email', None)
+        user = get_user(email=clean_email)
+        external_identity = {
+            external_id_provider: {
+                external_id: None,
+            },
+        }
+        try:
+            ensure_external_identity_uniqueness(external_id_provider, external_id, user)
+        except ValidationError as e:
+            raise HTTPError(status.HTTP_403_FORBIDDEN, e.message)
+        if user:
+            # 1. update user oauth, with pending status
+            external_identity[external_id_provider][external_id] = 'LINK'
+            if external_id_provider in user.external_identity:
+                user.external_identity[external_id_provider].update(external_identity[external_id_provider])
+            else:
+                user.external_identity.update(external_identity)
+            if not user.accepted_terms_of_service and accepted_terms_of_service:
+                user.accepted_terms_of_service = timezone.now()
+            # 2. add unconfirmed email and send confirmation email
+            user.add_unconfirmed_email(clean_email, external_identity=external_identity)
+            user.save()
+            send_confirm_email_async(
+                user,
+                clean_email,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+            )
+
+        else:
+            # 1. create unconfirmed user with pending status
+            external_identity[external_id_provider][external_id] = 'CREATE'
+            accepted_terms_of_service = timezone.now() if accepted_terms_of_service else None
+            user = OSFUser.create_unconfirmed(
+                username=clean_email,
+                password=None,
+                fullname=fullname,
+                external_identity=external_identity,
+                campaign=None,
+                accepted_terms_of_service=accepted_terms_of_service,
+            )
+            # TODO: [#OSF-6934] update social fields, verified social fields cannot be modified
+            user.save()
+            # 3. send confirmation email
+            send_confirm_email_async(
+                user,
+                user.username,
+                external_id_provider=external_id_provider,
+                external_id=external_id,
+            )
+
+        # Don't go anywhere
+        return JsonResponse(
+            {
+                'external_id_provider': external_id_provider,
+                'auth_user_fullname': fullname,
+            },
+            status=status.HTTP_200_OK,
+            content_type='application/vnd.api+json; application/json',
+        )
+
+class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
+    """
+    View for handling reset password requests.
+
+    GET:
+    - Takes an email as a query parameter.
+    - If the email is associated with an OSF account, sends an email with instructions to reset the password.
+    - If the email is not provided or invalid, returns a validation error.
+    - If the user has recently requested a password reset, returns a throttling error.
+
+    POST:
+    - Takes uid, token, and new password in the request data.
+    - Verifies the token and resets the password if valid.
+    - If the token is invalid or expired, returns an error.
+    - If the request data is incomplete, returns a validation error.
+    """
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = UserResetPasswordSerializer
+    view_category = 'users'
+    view_name = 'request-reset-password'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
+
+    def get(self, request, *args, **kwargs):
+        email = request.query_params.get('email', None)
+        if not email:
+            raise ValidationError('Request must include email in query params.')
+
+        institutional = bool(request.query_params.get('institutional', None))
+        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+
+        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
+        kind = 'success'
+        # check if the user exists
+        user_obj = get_user(email=email)
+
+        if user_obj:
+            # rate limit forgot_password_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
+                                 'before trying again.'
+                kind = 'error'
+                return Response({'message': status_message, 'kind': kind}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+            elif user_obj.is_active:
+                # new random verification key (v2)
+                user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
+                user_obj.email_last_sent = timezone.now()
+                user_obj.save()
+                reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
+                mails.send_mail(
+                    to_addr=email,
+                    mail=mail_template,
+                    reset_link=reset_link,
+                    can_change_preferences=False,
+                )
+        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uid = request.data.get('uid', None)
+        token = request.data.get('token', None)
+        password = request.data.get('password', None)
+        if not (uid and token and password):
+            error_data = {
+                'message_short': 'Invalid Request.',
+                'message_long': 'The request must include uid, token, and password.',
+            }
+            return JsonResponse(
+                error_data,
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        user_obj = OSFUser.load(uid)
+        if not (user_obj and user_obj.verify_password_token(token=token)):
+            error_data = {
+                'message_short': 'Invalid Request.',
+                'message_long': 'The requested URL is invalid, has expired, or was already used',
+            }
+            return JsonResponse(
+                error_data,
+                status=status.HTTP_400_BAD_REQUEST,
+                content_type='application/vnd.api+json; application/json',
+            )
+
+        else:
+            # clear verification key (v2)
+            user_obj.verification_key_v2 = {}
+            # new verification key (v1) for CAS
+            user_obj.verification_key = generate_verification_key(verification_type=None)
+            try:
+                user_obj.set_password(password)
+                osf4m_source_tag, created = Tag.all_tags.get_or_create(name=CampaignSourceTags.Osf4m.value, system=True)
+                osf4m_claimed_tag, created = Tag.all_tags.get_or_create(name=CampaignClaimedTags.Osf4m.value, system=True)
+                if user_obj.all_tags.filter(id=osf4m_source_tag.id, system=True).exists():
+                    user_obj.add_system_tag(osf4m_claimed_tag)
+                user_obj.save()
+            except exceptions.ChangePasswordError as error:
+                return JsonResponse(
+                    {'errors': [{'detail': message} for message in error.messages]},
+                    status=400,
+                    content_type='application/vnd.api+json; application/json',
+                )
+
+        return Response(
+            status=status.HTTP_200_OK,
+            content_type='application/vnd.api+json; application/json',
+        )
+
+
 class UserSettings(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -983,3 +1206,81 @@ class UserMessageView(JSONAPIBaseView, generics.CreateAPIView):
 
     view_category = 'users'
     view_name = 'user-messages'
+
+
+class ExternalLoginConfirmEmailView(generics.CreateAPIView):
+    permission_classes = (
+        drf_permissions.AllowAny,
+    )
+    serializer_class = ExternalLoginConfirmEmailSerializer
+    view_category = 'users'
+    view_name = 'external-login-confirm-email'
+    throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
+
+    @method_decorator(csrf_protect)
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uid = request.data.get('uid', None)
+        token = request.data.get('token', None)
+        destination = request.data.get('destination', None)
+
+        user = OSFUser.load(uid)
+        if not user:
+            sentry.log_message('external_login_confirm_email_get::400 - Cannot find user')
+            raise ValidationError('User not found.')
+
+        if not destination:
+            sentry.log_message('external_login_confirm_email_get::400 - bad destination')
+            raise ValidationError('Bad destination.')
+
+        if token not in user.email_verifications:
+            sentry.log_message('external_login_confirm_email_get::400 - bad token')
+            raise ValidationError('Invalid token.')
+
+        verification = user.email_verifications[token]
+        email = verification['email']
+        provider = list(verification['external_identity'].keys())[0]
+        provider_id = list(verification['external_identity'][provider].keys())[0]
+
+        if provider not in user.external_identity:
+            sentry.log_message('external_login_confirm_email_get::400 - Auth error...wrong provider')
+            raise ValidationError('Wrong provider.')
+
+        external_status = user.external_identity[provider][provider_id]
+
+        try:
+            ensure_external_identity_uniqueness(provider, provider_id, user)
+        except ValidationError as e:
+            sentry.log_message('external_login_confirm_email_get::403 - Validation Error')
+            raise ValidationError(str(e))
+
+        if not user.is_registered:
+            user.register(email)
+
+        if not user.emails.filter(address=email.lower()).exists():
+            user.emails.create(address=email.lower())
+
+        user.date_last_logged_in = timezone.now()
+        user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.social[provider.lower()] = provider_id
+        del user.email_verifications[token]
+        user.verification_key = generate_verification_key()
+        user.save()
+
+        service_url = request.build_absolute_uri()
+
+        if external_status == 'CREATE':
+            service_url += '&{}'.format(urlencode({'new': 'true'}))
+        elif external_status == 'LINK':
+            mails.send_mail(
+                user=user,
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
+            )
+
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
+        return Response(status=status.HTTP_200_OK)

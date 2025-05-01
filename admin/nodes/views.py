@@ -18,7 +18,7 @@ from django.views.generic import (
 from django.shortcuts import redirect, reverse
 from django.urls import reverse_lazy
 
-from admin.base.utils import change_embargo_date, validate_embargo_date
+from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
@@ -380,23 +380,17 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        validation_only = request.POST.get('validation_only', False) == 'True'
         end_date = request.POST.get('date')
         user = request.user
         registration = self.get_object()
 
         try:
             end_date = pytz.utc.localize(datetime.strptime(end_date, '%m/%d/%Y'))
+            change_embargo_date(registration, user, end_date)
         except ValueError:
             return HttpResponse('Please enter a valid date.', status=400)
-
-        try:
-            if validation_only:
-                validate_embargo_date(registration, user, end_date)
-            else:
-                change_embargo_date(registration, user, end_date)
         except ValidationError as e:
-            messages.error(request, e.message)
+            return HttpResponse(e, status=400)
         except PermissionDenied as e:
             return HttpResponse(e, status=403)
 
@@ -649,7 +643,6 @@ class NodeMakePrivate(NodeMixin, View):
         node = self.get_object()
 
         node.is_public = False
-        node.keenio_read_key = ''
 
         # After set permissions callback
         for addon in node.get_addons():

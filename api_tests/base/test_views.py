@@ -17,7 +17,7 @@ from api.metrics.views import (
     CountedAuthUsageView,
     MetricsOpenapiView,
 )
-from api.users.views import ClaimUser
+from api.users.views import ClaimUser, ResetPassword, ExternalLoginConfirmEmailView, ExternalLogin
 from api.wb.views import MoveFileMetadataView, CopyFileMetadataView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
@@ -60,6 +60,9 @@ class TestApiBaseViews(ApiTestCase):
             RawMetricsView,
             RegistriesModerationMetricsView,
             MetricsOpenapiView,
+            ResetPassword,
+            ExternalLoginConfirmEmailView,
+            ExternalLogin,
         ]
 
     def test_root_returns_200(self):

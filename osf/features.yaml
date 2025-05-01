@@ -193,6 +193,16 @@ flags:
     name: institutional_dashboard_2024
     note: whether to surface older or updated (in 2024) institutional metrics
 
+  - flag_name: DISABLE_COMMENTS
+    name: disable_comments
+    note: This flag controls wheter users can create or interact with comments via BE or FE.
+    everyone: false
+
+  - flag_name: DISABLE_MEETINGS
+    name: disable_meetings
+    note: This flag controls wheter users can create or interact with meetings via BE or FE.
+    everyone: false
+
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails

@@ -31,6 +31,7 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
         'id': str(user._id),
         'registered': user.is_registered,
         'surname': user.family_name,
+        'given_name': user.given_name,
         'fullname': fullname,
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + '...' + fullname[-23:],
         'profile_image_url': user.profile_image_url(size=settings.PROFILE_IMAGE_MEDIUM),

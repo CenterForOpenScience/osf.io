@@ -2731,75 +2731,11 @@ class TestEmberRedirect(OsfTestCase):
 
     def test_ember_redirect_to_versioned_guid(self):
         pp = PreprintFactory(filename='test.pdf', finish=True)
-
         res = self.app.get(f'preprints/provider/{pp.get_guid()._id}/')
-
+        guid_with_version = pp._id
         assert res.status_code == 302
-        assert res.location == f'{pp._id}'
-
-
-@pytest.mark.django_db
-class TestPreprintCreatorStateChangings:
-
-    @pytest.fixture()
-    def creator(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def unpublished_preprint_pre_mod(self):
-        return PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
-
-    def test_preprint_initial_creator_removal(self, creator, unpublished_preprint_pre_mod):
-        new_version = PreprintFactory.create_version(
-            create_from=unpublished_preprint_pre_mod,
-            creator=creator,
-            final_machine_state='initial',
-            is_published=False,
-            set_doi=False
-        )
-        request = RequestFactory().delete('/fake_path')
-        request.user = creator
-        request.query_params = {}
-        request.parser_context = {
-            'kwargs': {
-                'preprint_id': new_version._id,
-                'user_id': creator._id
-            },
-        }
-        view = PreprintContributorDetail()
-        view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
-        try:
-            view.perform_destroy(request)
-        except Exception as error:
-            assert error.args[0] == ('You cannot delete yourself at this time. '
-                                     'Have another admin contributor do that after you’ve submitted your preprint')
-        else:
-            assert False
-
-    def test_preprint_initial_creator_update(self, creator, unpublished_preprint_pre_mod):
-        new_version = PreprintFactory.create_version(
-            create_from=unpublished_preprint_pre_mod,
-            creator=creator,
-            final_machine_state='initial',
-            is_published=False,
-            set_doi=False
-        )
-        request = RequestFactory().patch('/fake_path')
-        request.user = creator
-        request.query_params = {}
-        request.parser_context = {
-            'kwargs': {
-                'preprint_id': new_version._id,
-                'user_id': creator._id
-            },
-        }
-        view = PreprintContributorDetail()
-        view = setup_view(view, request, preprint_id=new_version._id, user_id=creator._id)
-        try:
-            view.patch(request)
-        except Exception as error:
-            assert error.args[0] == ('You cannot change your permission setting at this time. '
-                                     'Have another admin contributor edit your permission '
-                                     'after you’ve submitted your preprint')
-        else:
-            assert False
+        assert res.location.endswith(f'{guid_with_version}')
+        guid_with_no_version = guid_with_version.split('_')[0]
+        location_with_no_guid = res.location.replace(guid_with_version, '')
+        # check if location has not wrong format https://osf.io/preprints/socarxiv/3rhyz/3rhyz_v1
+        assert location_with_no_guid == location_with_no_guid.replace(guid_with_no_version, '')

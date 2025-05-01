@@ -7,6 +7,7 @@ import logging
 import requests
 from django.db.models import QuerySet
 
+from .exceptions import CrossRefRateLimitError
 from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
@@ -139,13 +140,19 @@ class CrossRefClient(AbstractIdentifierClient):
             for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
                 if preprint_version.version > preprint.version:
                     continue
+
+                minted_doi = previous_version.get_identifier_value('doi')
+                if not minted_doi:
+                    previous_doi = self.build_doi(previous_version)
+
                 related_item = element.related_item(
                     element.intra_work_relation(
-                        self.build_doi(previous_version),
+                        minted_doi or previous_doi,
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
                 relations_program.append(related_item)
+
         if len(relations_program) > 0:
             posted_content.append(relations_program)
 
@@ -247,7 +254,7 @@ class CrossRefClient(AbstractIdentifierClient):
             logger.info(f'Sending metadata for DOI {doi}:\n{metadata}')
 
             # Crossref sends an email to CROSSREF_DEPOSITOR_EMAIL to confirm
-            requests.post(
+            response = requests.post(
                 self._build_url(
                     operation='doMDUpload',
                     login_id=username,
@@ -256,11 +263,12 @@ class CrossRefClient(AbstractIdentifierClient):
                 ),
                 files={'file': (f'{preprint._id}.xml', metadata)},
             )
+            if response.status_code == 429:
+                raise CrossRefRateLimitError(response.text)
 
-            # Don't wait for response to confirm doi because it arrives via email.
             return {'doi': doi}
-        else:
-            raise NotImplementedError()
+
+        raise NotImplementedError()
 
     def update_identifier(self, preprint, category):
         return self.create_identifier(preprint, category)

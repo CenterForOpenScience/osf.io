@@ -130,6 +130,7 @@ class TestUnmoderatedFlows():
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
         sanction_object.reject(user=registration.creator, token=rejection_token)
 
+        assert sum([val['has_rejected'] for val in sanction_object.approval_state.values()]) == 1
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
 

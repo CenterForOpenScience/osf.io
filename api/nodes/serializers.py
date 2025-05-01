@@ -274,7 +274,8 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
     access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
     node_license = NodeLicenseSerializer(required=False, source='license')
-    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, source='keenio_read_key'))
+    # 'analytics_key' can be removed after another version release.
+    analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, default=''))
     template_from = ser.CharField(
         required=False, allow_blank=False, allow_null=False,
         help_text='Specify a node id for a node you would like to use as a template for the '
@@ -1172,6 +1173,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         related_view='nodes:node-detail',
         related_view_kwargs={'node_id': '<node._id>'},
     )
+
+    is_curator = ser.BooleanField(read_only=True)
 
     class Meta:
         type_ = 'contributors'

@@ -60,6 +60,7 @@ def get_admin_read_permissions():
         'view_basefilenode',
         'view_registration',
         'view_registrationapproval',
+        'view_registrationschema',
     ])
 
 

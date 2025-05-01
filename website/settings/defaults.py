@@ -87,6 +87,7 @@ PROTOCOL = 'https://' if SECURE_MODE else 'http://'
 DOMAIN = PROTOCOL + 'localhost:5000/'
 INTERNAL_DOMAIN = DOMAIN
 API_DOMAIN = PROTOCOL + 'localhost:8000/'
+RESET_PASSWORD_URL = PROTOCOL + 'localhost:5000/resetpassword/' # TODO set angular reset password url
 
 PREPRINT_PROVIDER_DOMAINS = {
     'enabled': False,
@@ -274,20 +275,6 @@ SYSTEM_ADDED_ADDONS = {
     'node': [],
 }
 
-KEEN = {
-    'public': {
-        'project_id': None,
-        'master_key': 'changeme',
-        'write_key': '',
-        'read_key': '',
-    },
-    'private': {
-        'project_id': '',
-        'write_key': '',
-        'read_key': '',
-    },
-}
-
 SENTRY_DSN = None
 SENTRY_DSN_JS = None
 
@@ -295,7 +282,6 @@ MISSING_FILE_NAME = 'untitled'
 
 # Most Popular and New and Noteworthy Nodes
 POPULAR_LINKS_NODE = None  # TODO Override in local.py in production.
-POPULAR_LINKS_REGISTRATIONS = None  # TODO Override in local.py in production.
 NEW_AND_NOTEWORTHY_LINKS_NODE = None  # TODO Override in local.py in production.
 
 MAX_POPULAR_PROJECTS = 10
@@ -432,7 +418,6 @@ class CeleryConfig:
         'scripts.osfstorage.usage_audit',
         'scripts.stuck_registration_audit',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'website.search.elastic_search',
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
@@ -449,7 +434,6 @@ class CeleryConfig:
         'osf.management.commands.sync_datacite_doi_metadata',
         'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
-        'osf.management.commands.cumulative_plos_metrics',
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
@@ -529,7 +513,6 @@ class CeleryConfig:
         'website.search.search',
         'website.project.tasks',
         'scripts.populate_new_and_noteworthy_projects',
-        'scripts.populate_popular_projects_and_registrations',
         'scripts.refresh_addon_tokens',
         'scripts.retract_registrations',
         'scripts.embargo_registrations',
@@ -554,7 +537,6 @@ class CeleryConfig:
         'osf.management.commands.delete_legacy_quickfiles_nodes',
         'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'osf.management.commands.sync_doi_metadata',
-        'osf.management.commands.cumulative_plos_metrics',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
@@ -641,11 +623,6 @@ class CeleryConfig:
             'new-and-noteworthy': {
                 'task': 'scripts.populate_new_and_noteworthy_projects',
                 'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-                'kwargs': {'dry_run': False}
-            },
-            'update_popular_nodes': {
-                'task': 'scripts.populate_popular_projects_and_registrations',
-                'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
                 'kwargs': {'dry_run': False}
             },
             'registration_schema_metrics': {
@@ -741,11 +718,6 @@ class CeleryConfig:
         #     'stuck_registration_audit': {
         #         'task': 'scripts.stuck_registration_audit',
         #         'schedule': crontab(minute=0, hour=11),  # Daily 6 a.m
-        #         'kwargs': {},
-        #     },
-        #     'cumulative_plos_metrics': {
-        #         'task': 'osf.management.commands.cumulative_plos_metrics',
-        #         'schedule': crontab(day_of_month=1, minute=30, hour=9),  # First of the month at 4:30 a.m.
         #         'kwargs': {},
         #     },
         # })
@@ -2088,9 +2060,6 @@ DS_METRICS_OSF_TOKEN = None
 DS_METRICS_BASE_FOLDER = None
 REG_METRICS_OSF_TOKEN = None
 REG_METRICS_BASE_FOLDER = None
-PLOS_METRICS_BASE_FOLDER = None
-PLOS_METRICS_INITIAL_FILE_DOWNLOAD_URL = None
-PLOS_METRICS_OSF_TOKEN = None
 
 STORAGE_WARNING_THRESHOLD = .9  # percent of maximum storage used before users get a warning message
 STORAGE_LIMIT_PUBLIC = 50
