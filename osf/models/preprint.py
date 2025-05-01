@@ -201,6 +201,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         'primary_file',
         'contributors',
         'tags',
+        'date_withdrawn',
+        'withdrawal_justification'
     }
 
     PREREG_LINK_INFO_CHOICES = [('prereg_designs', 'Pre-registration of study designs'),
