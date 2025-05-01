@@ -22,7 +22,6 @@ from osf.models.files import FileVersionUserMetadata
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    OSFGroupFactory,
     PrivateLinkFactory
 )
 from osf.utils.permissions import READ
@@ -216,16 +215,6 @@ class TestNodeFilesList(ApiTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
-
-    def test_returns_private_files_logged_in_osf_group_member(self):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        self.project.add_osf_group(group, READ)
-        res = self.app.get(
-            self.private_url,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 200
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
@@ -540,18 +529,6 @@ class TestGVNodeFileList(ApiTestCase):
         )
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
-
-    @responses.activate
-    def test_returns_private_files_logged_in_osf_group_member(self):
-        self.configure_addon(self.project)
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        self.project.add_osf_group(group, READ)
-        with self.fake_gv.run_fake():
-            res = self.app.get(
-                self.private_url, auth=group_mem.auth, expect_errors=True
-            )
-        assert res.status_code == 200
 
 
 class TestNodeFilesListFiltering(ApiTestCase):

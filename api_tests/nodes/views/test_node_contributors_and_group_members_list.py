@@ -3,7 +3,6 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
-    OSFGroupFactory,
     AuthUserFactory,
 )
 from osf.utils.permissions import READ, WRITE
@@ -32,24 +31,12 @@ def group_member():
     return AuthUserFactory()
 
 @pytest.fixture()
-def group_member_and_contributor():
-    return AuthUserFactory()
-
-@pytest.fixture()
-def group(group_manager, group_member, group_member_and_contributor):
-    group = OSFGroupFactory(creator=group_manager)
-    group.make_member(group_member)
-    group.make_member(group_member_and_contributor)
-    return group
-
-@pytest.fixture()
-def project(group, admin_contributor, write_contributor, group_member_and_contributor):
+def project(admin_contributor, write_contributor, group_member_and_contributor):
     project = ProjectFactory(
         creator=admin_contributor
     )
     project.add_contributor(write_contributor, WRITE)
     project.add_contributor(group_member_and_contributor, READ)
-    project.add_osf_group(group)
     return project
 
 
@@ -72,10 +59,6 @@ class TestNodeContributorsAndGroupMembers:
         res = app.get(url, auth=write_contributor.auth, expect_errors=True)
         assert res.status_code == 200
 
-        # group_member
-        res = app.get(url, auth=group_member.auth, expect_errors=True)
-        assert res.status_code == 200
-
         # assert all contributors and group members appear, no duplicates
         res = app.get(url, auth=admin_contributor.auth)
         assert res.status_code == 200
@@ -84,9 +67,6 @@ class TestNodeContributorsAndGroupMembers:
         expected = {
             admin_contributor._id,
             write_contributor._id,
-            group_manager._id,
-            group_member._id,
-            group_member_and_contributor._id
         }
         actual = {node['id'] for node in res.json['data']}
 

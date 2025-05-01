@@ -15,7 +15,7 @@ from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
-    UnregUserFactory, OSFGroupFactory
+    UnregUserFactory
 )
 from osf.utils import tokens
 from osf.exceptions import (
@@ -192,15 +192,6 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         with pytest.raises(PermissionsError):
             self.registration.retraction.approve_retraction(non_admin, approval_token)
-        assert self.registration.is_pending_retraction
-        assert not self.registration.is_retracted
-
-        # group admin on node cannot retract registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        self.registration.registered_from.add_osf_group(group, permissions.ADMIN)
-        with pytest.raises(PermissionsError):
-            self.registration.retraction.approve_retraction(group_mem, approval_token)
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
@@ -768,10 +759,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
-
-        self.group_mem = AuthUserFactory()
-        self.group = OSFGroupFactory(creator=self.group_mem)
-        self.registration.registered_from.add_osf_group(self.group, permissions.ADMIN)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)

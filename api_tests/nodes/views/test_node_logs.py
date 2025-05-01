@@ -7,7 +7,6 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    OSFGroupFactory,
     RegistrationFactory,
     EmbargoFactory,
 )
@@ -76,13 +75,6 @@ class TestNodeLogList:
     def public_url(self, public_project):
         return '/{}nodes/{}/logs/?version=2.2'.format(
             API_BASE, public_project._id)
-
-    def test_can_view_osf_group_log(self, app, private_project, private_url):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, READ)
-        res = app.get(private_url, auth=group_mem.auth)
-        assert res.status_code == 200
 
     def test_add_tag(self, app, user, user_auth, public_project, public_url):
         public_project.add_tag('Rheisen', auth=user_auth)

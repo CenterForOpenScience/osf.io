@@ -7,7 +7,6 @@ from osf.models import (
 from osf.utils import permissions
 from osf_tests.factories import (
     AuthUserFactory,
-    OSFGroupFactory,
     ProjectFactory,
     ProjectWithAddonFactory,
 )
@@ -114,10 +113,8 @@ class TestProjectCreation(OsfTestCase):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
         read_user = AuthUserFactory()
-        group = OSFGroupFactory(creator=read_user)
         self.project.add_contributor(non_admin, permissions=permissions.WRITE)
         self.project.add_contributor(read_user, permissions=permissions.READ)
-        self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, data=post_data, auth=non_admin.auth)
@@ -136,8 +133,6 @@ class TestProjectCreation(OsfTestCase):
         assert child.has_permission(read_user, permissions.ADMIN) is False
         assert child.has_permission(read_user, permissions.WRITE) is False
         assert child.has_permission(read_user, permissions.READ) is True
-        # User creating the component was not a manager on the group
-        assert group not in child.osf_groups
         # check redirect url
         assert '/contributors/' in res.location
 
@@ -145,10 +140,8 @@ class TestProjectCreation(OsfTestCase):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
         write_user = AuthUserFactory()
-        group = OSFGroupFactory(creator=write_user)
         self.project.add_contributor(non_admin, permissions=permissions.WRITE)
         self.project.add_contributor(write_user, permissions=permissions.WRITE)
-        self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, data=post_data, auth=write_user.auth)
@@ -166,8 +159,6 @@ class TestProjectCreation(OsfTestCase):
         assert child.has_permission(write_user, permissions.ADMIN) is True
         assert child.has_permission(write_user, permissions.WRITE) is True
         assert child.has_permission(write_user, permissions.READ) is True
-        # User creating the component was a manager of the group, so group copied
-        assert group in child.osf_groups
         # check redirect url
         assert '/contributors/' in res.location
 
@@ -260,4 +251,3 @@ class TestProjectCreation(OsfTestCase):
         url = api_url_for('project_new_from_template', nid=project._id)
         res = self.app.post(url, auth=contributor.auth)
         assert res.status_code == 201
-

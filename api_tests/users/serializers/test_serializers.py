@@ -9,7 +9,6 @@ from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
     InstitutionFactory,
-    OSFGroupFactory,
 )
 from tests.utils import make_drf_request_with_version
 from django.utils import timezone
@@ -91,16 +90,6 @@ def public_project(user):
 @pytest.fixture()
 def deleted_project(user):
     return ProjectFactory(creator=user, is_deleted=True)
-
-@pytest.fixture()
-def group(user):
-    return OSFGroupFactory(creator=user, name='Platform')
-
-@pytest.fixture()
-def group_project(group):
-    project = ProjectFactory()
-    project.add_osf_group(group)
-    return project
 
 
 def pytest_generate_tests(metafunc):
@@ -210,9 +199,7 @@ class TestUserSerializer:
                                                 private_preprint,
                                                 withdrawn_preprint,
                                                 unpublished_preprint,  # not in the view/related counts by default
-                                                deleted_preprint,
-                                                group,
-                                                group_project):
+                                                deleted_preprint):
 
         view_count = self.get_view_count(user, field_name, auth=user)
         related_count = self.get_related_count(user, field_name, auth=user)

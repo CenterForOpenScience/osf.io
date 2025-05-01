@@ -57,7 +57,6 @@ from osf_tests.factories import (
     CollectionFactory,
     CommentFactory,
     NodeFactory,
-    OSFGroupFactory,
     PreprintFactory,
     PreprintProviderFactory,
     PrivateLinkFactory,

@@ -9,9 +9,7 @@ from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     RegistrationFactory,
-    OSFGroupFactory
 )
-from osf.utils import permissions
 from tests.base import ApiTestCase
 from website.views import find_bookmark_collection
 
@@ -29,14 +27,6 @@ class TestUserRegistrations:
     @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
-
-    @pytest.fixture()
-    def group_member(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def osf_group(self, group_member):
-        return OSFGroupFactory(creator=group_member)
 
     @pytest.fixture()
     def project_public_user_one(self, user_one):
@@ -65,16 +55,6 @@ class TestUserRegistrations:
             title='Private Project User Two',
             is_public=False,
             creator=user_two)
-
-    @pytest.fixture()
-    def project_private_group_member(self, user_one, osf_group):
-        project = ProjectFactory(
-            title='Private Project Group Member',
-            is_public=False,
-            creator=user_one
-        )
-        project.add_osf_group(osf_group, permissions.ADMIN)
-        return project
 
     @pytest.fixture()
     def project_deleted_user_one(self, user_one):
