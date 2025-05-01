@@ -1,4 +1,5 @@
 import contextlib
+import re
 from urllib.parse import urlsplit
 from unittest import mock
 
@@ -10,9 +11,14 @@ from framework.postcommit_tasks.handlers import (
     postcommit_celery_queue,
     postcommit_queue,
 )
-from website import settings as website_settings
+from osf.models import Node, Preprint
+from website import settings as website_settings, settings
 from api.share.utils import shtrove_ingest_url
 from osf.metadata.osf_gathering import OsfmapPartition
+
+
+def gv_url():
+    return fr'^{settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
 
 
 @contextlib.contextmanager
@@ -28,6 +34,7 @@ def mock_share_responses():
                     _ingest_url = shtrove_ingest_url()
                     _rsps.add(responses.POST, _ingest_url, status=200)
                     _rsps.add(responses.DELETE, _ingest_url, status=200)
+                    _rsps.add(responses.GET, re.compile(gv_url()), status=200, body='{}')
                     yield _rsps
 
 
@@ -39,10 +46,13 @@ def mock_update_share():
 
 
 @contextlib.contextmanager
-def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1, error_response=False):
+def expect_ingest_request(mock_share_responses, item, *, token=None, delete=False, count=1, error_response=False):
+    osfguid = item.get_guid()._id if isinstance(item, Preprint) else item._id
     mock_share_responses._calls.reset()
     yield
     _trove_main_count_per_item = 1
+    expect_gv_call = isinstance(item, Node) and not delete
+    _gv_calls_number = 1 if expect_gv_call else 0
     _trove_supplementary_count_per_item = (
         0
         if (error_response or delete)
@@ -51,20 +61,25 @@ def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=F
     _total_count = count * (
         _trove_main_count_per_item
         + _trove_supplementary_count_per_item
+        + _gv_calls_number
     )
     assert len(mock_share_responses.calls) == _total_count, (
         f'expected {_total_count} call(s), got {len(mock_share_responses.calls)}: {list(mock_share_responses.calls)}'
     )
     _trove_ingest_calls = []
     _trove_supp_ingest_calls = []
+    _gv_links_calls = []
     for _call in mock_share_responses.calls:
         if _call.request.url.startswith(shtrove_ingest_url()):
             if 'is_supplementary' in _call.request.url:
                 _trove_supp_ingest_calls.append(_call)
             else:
                 _trove_ingest_calls.append(_call)
+        elif _call.request.url.startswith(settings.GRAVYVALET_URL):
+            _gv_links_calls.append(_call)
     assert len(_trove_ingest_calls) == count
     assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
+    assert len(_gv_links_calls) == (count if expect_gv_call else 0)
     for _call in _trove_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
     for _call in _trove_supp_ingest_calls:
@@ -96,7 +111,7 @@ def expect_preprint_ingest_request(mock_share_responses, preprint, *, delete=Fal
     # and postcommit-task handling (so on_preprint_updated actually runs)
     with expect_ingest_request(
         mock_share_responses,
-        preprint.get_guid()._id,
+        preprint,
         token=preprint.provider.access_token,
         delete=delete,
         count=count,
