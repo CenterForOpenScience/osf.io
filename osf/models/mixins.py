@@ -2076,6 +2076,22 @@ class SpamOverrideMixin(SpamMixin):
     def log_params(self):
         return NotImplementedError()
 
+    @property
+    def was_public(self):
+        was_public = self.is_public
+        try:
+            latest_privacy_edit = self.logs.filter(
+                action__in=[self.log_class.MADE_PRIVATE, self.log_class.MADE_PUBLIC]
+            ).latest('created')
+            last_spam_log = self.logs.filter(
+                action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM],
+                created__gt=latest_privacy_edit.created
+            ).earliest('created')
+
+            return last_spam_log.params.get('was_public', was_public)
+        except ObjectDoesNotExist:
+            return was_public
+
     def get_spam_fields(self, saved_fields=None):
         return NotImplementedError()
 
@@ -2105,20 +2121,12 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
-        was_public = self.is_public
-        # the approach below helps to update to public true on ham just the objects that were public before were spammed
-        is_public_changings = self.logs.filter(action__in=['made_public', 'made_private'])
-        if is_public_changings:
-            latest_privacy_edit_time = is_public_changings.latest('created').created
-            last_spam_log = self.logs.filter(action__in=['confirm_spam', 'flag_spam'],
-                                                 created__gt=latest_privacy_edit_time)
-            if last_spam_log:
-                was_public = last_spam_log.latest().params.get('was_public', was_public)
+
         self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
-            params={**self.log_params, 'was_public': was_public},
+            params={**self.log_params, 'was_public': self.was_public},
             auth=None,
             save=False,
             should_hide=True
@@ -2216,7 +2224,6 @@ class SpamOverrideMixin(SpamMixin):
         if user.is_hammy:
             return False
         self.confirm_spam(save=True, train_spam_services=False)
-        self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
         user.flag_spam()
@@ -2236,24 +2243,21 @@ class SpamOverrideMixin(SpamMixin):
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                 node.confirm_spam(save=True, train_spam_services=False)
-                node.set_privacy('private', log=False, save=True, force=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
                 preprint.confirm_spam(save=True, train_spam_services=False)
-                preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
         super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
-            was_public = self.is_public
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True, should_hide=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
-                params={**self.log_params, 'was_public': was_public},
+                params={**self.log_params, 'was_public': self.was_public},
                 auth=None,
                 save=False,
                 should_hide=True
