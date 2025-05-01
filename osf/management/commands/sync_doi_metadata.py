@@ -35,7 +35,7 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
         object_id__isnull=False,
     )
     if missing_preprint_dois_only:
-        sync_preprint_missing_dois.apply_async()
+        sync_preprint_missing_dois.apply_async(kwargs={'rate_limit': rate_limit})
         identifiers = identifiers.exclude(content_type=ContentType.objects.get_for_model(Preprint))
 
     if batch_size:
@@ -59,15 +59,25 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
             sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
 
 
-@app.task(name='osf.management.commands.sync_preprint_missing_dois', bind=True, acks_late=True, max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
-def sync_preprint_missing_dois(self):
+@app.task(name='osf.management.commands.sync_preprint_missing_dois', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def sync_preprint_missing_dois(rate_limit):
     preprints = Preprint.objects.filter(preprint_doi_created=None)
-    for preprint in preprints:
-        try:
-            preprint.request_identifier_update('doi', create=True)
-        except Exception as err:
-            logger.warning(f'[{err.__class__.__name__}] Doi creation failed for the preprint with id {preprint._id} because of error: {err}')
-            self.retry()
+    for record_number, preprint in enumerate(preprints, 1):
+        # in order to not reach rate limit that CrossRef has, we make delay
+        if not record_number % rate_limit:
+            time.sleep(RATE_LIMIT_RETRY_DELAY)
+
+        async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
+
+
+@app.task(name='osf.management.commands.async_request_identifier_update', bind=True, acks_late=True, max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def async_request_identifier_update(self, preprint_id):
+    preprint = Preprint.load(preprint_id)
+    try:
+        preprint.request_identifier_update('doi', create=True)
+    except Exception as err:
+        logger.warning(f'[{err.__class__.__name__}] Doi creation failed for the preprint with id {preprint._id} because of error: {err}')
+        self.retry()
 
 
 @app.task(name='osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
