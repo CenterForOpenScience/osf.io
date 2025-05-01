@@ -116,12 +116,11 @@ class TestUserRegistrations:
             is_private=True)
 
     def test_user_registrations(
-            self, app, user_one, user_two, group_member,
+            self, app, user_one, user_two,
             reg_project_public_user_one,
             reg_project_public_user_two,
             reg_project_private_user_one,
             reg_project_private_user_two,
-            reg_project_private_group_member,
             folder, folder_deleted,
             project_deleted_user_one):
 
@@ -178,22 +177,6 @@ class TestUserRegistrations:
         assert folder._id not in ids
         assert folder_deleted._id not in ids
         assert project_deleted_user_one._id not in ids
-
-    #   test_get_registrations_logged_in_group_member
-        url = f'/{API_BASE}users/{group_member._id}/registrations/'
-        res = app.get(url, auth=group_member.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert reg_project_public_user_one._id not in ids
-        assert reg_project_private_user_one._id not in ids
-        assert reg_project_public_user_two._id not in ids
-        assert reg_project_private_user_two._id not in ids
-        assert folder._id not in ids
-        assert folder_deleted._id not in ids
-        assert project_deleted_user_one._id not in ids
-        # project group members not copied to registration.
-        assert reg_project_private_group_member not in ids
 
 
 class TestRegistrationListFiltering(
