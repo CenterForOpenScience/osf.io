@@ -58,7 +58,7 @@ class TestSyncDOIs:
         assert registration_identifier.modified.date() < datetime.datetime.now().date()
 
         call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}')
-        assert len(mock_datacite.calls) == 3
+        assert len(mock_datacite.calls) == 2
         update_metadata, update_doi = mock_datacite.calls
         assert update_metadata.request.url == f'{settings.DATACITE_URL}/metadata'
         assert update_doi.request.url == f'{settings.DATACITE_URL}/doi'
