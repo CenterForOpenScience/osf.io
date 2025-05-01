@@ -431,11 +431,7 @@ def _enqueue_metrics(file_version, file_node, action, auth, from_mfr=False):
 def _construct_payload(auth, resource, credentials, waterbutler_settings):
 
     if isinstance(resource, Registration):
-        callback_url = resource.api_url_for(
-            'registration_callbacks',
-            _absolute=True,
-            _internal=True
-        )
+        callback_url = resource.callbacks_url
     else:
         callback_url = resource.api_url_for(
             'create_waterbutler_log',

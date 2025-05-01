@@ -22,10 +22,12 @@ from rest_framework import status as http_status
 import json
 import logging
 import requests
+import contextlib
 
 import django
 django.setup()
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.db.utils import IntegrityError
@@ -35,6 +37,7 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorag
 from framework import sentry
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
+from osf.exceptions import RegistrationStuckRecoverableException, RegistrationStuckBrokenException
 from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
@@ -42,11 +45,6 @@ from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER, COOKIE
 from website.files.utils import attach_versions
 
 logger = logging.getLogger(__name__)
-
-# Control globals
-DELETE_COLLISIONS = False
-SKIP_COLLISIONS = False
-ALLOW_UNCONFIGURED = False
 
 # Logging globals
 CHECKED_OKAY = []
@@ -57,7 +55,7 @@ ARCHIVED = []
 SKIPPED = []
 
 # Ignorable NodeLogs
-LOG_WHITELIST = {
+LOG_WHITELIST = (
     'affiliated_institution_added',
     'category_updated',
     'comment_added',
@@ -109,35 +107,34 @@ LOG_WHITELIST = {
     'node_access_requests_disabled',
     'view_only_link_added',
     'view_only_link_removed',
-}
+)
 
 # Require action, but recoverable from
-LOG_GREYLIST = {
+LOG_GREYLIST = (
     'addon_file_moved',
     'addon_file_renamed',
     'osf_storage_file_added',
     'osf_storage_file_removed',
     'osf_storage_file_updated',
     'osf_storage_folder_created'
-}
-VERIFY_PROVIDER = {
+)
+VERIFY_PROVIDER = (
     'addon_file_moved',
     'addon_file_renamed'
-}
+)
 
 # Permissible in certain circumstances after communication with user
-PERMISSIBLE_BLACKLIST = {
+PERMISSIBLE_BLACKLIST = (
     'dropbox_folder_selected',
     'dropbox_node_authorized',
     'dropbox_node_deauthorized',
     'addon_removed',
     'addon_added'
-}
+)
 
-# Extendable with command line input
-PERMISSIBLE_ADDONS = {
-    'osfstorage'
-}
+DEFAULT_PERMISSIBLE_ADDONS = (
+    'osfstorage',
+)
 
 def complete_archive_target(reg, addon_short_name):
     # Cache registration files count
@@ -149,16 +146,16 @@ def complete_archive_target(reg, addon_short_name):
     target.save()
     archive_job._post_update_target()
 
-def perform_wb_copy(reg, node_settings):
+def perform_wb_copy(reg, node_settings, delete_collisions=False, skip_collisions=False):
     src, dst, user = reg.archive_job.info()
     if dst.files.filter(name=node_settings.archive_folder_name.replace('/', '-')).exists():
-        if not DELETE_COLLISIONS and not SKIP_COLLISIONS:
+        if not delete_collisions and not skip_collisions:
             raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
-        if DELETE_COLLISIONS:
+        if delete_collisions:
             archive_folder = dst.files.exclude(type='osf.trashedfolder').get(name=node_settings.archive_folder_name.replace('/', '-'))
             logger.info(f'Removing {archive_folder}')
             archive_folder.delete()
-        if SKIP_COLLISIONS:
+        if skip_collisions:
             complete_archive_target(reg, node_settings.short_name)
             return
     cookie = user.get_or_create_cookie().decode()
@@ -283,9 +280,9 @@ def get_logs_to_revert(reg):
             Q(node=reg.registered_from) |
             (Q(params__source__nid=reg.registered_from._id) | Q(params__destination__nid=reg.registered_from._id))).order_by('-date')
 
-def revert_log_actions(file_tree, reg, obj_cache):
+def revert_log_actions(file_tree, reg, obj_cache, permissible_addons):
     logs_to_revert = get_logs_to_revert(reg)
-    if len(PERMISSIBLE_ADDONS) > 1:
+    if len(permissible_addons) > 1:
         logs_to_revert = logs_to_revert.exclude(action__in=PERMISSIBLE_BLACKLIST)
     for log in list(logs_to_revert):
         try:
@@ -327,7 +324,7 @@ def revert_log_actions(file_tree, reg, obj_cache):
             obj_cache.add(file_obj._id)
     return file_tree
 
-def build_file_tree(reg, node_settings):
+def build_file_tree(reg, node_settings, *args, **kwargs):
     n = reg.registered_from
     obj_cache = set(n.files.values_list('_id', flat=True))
 
@@ -344,45 +341,47 @@ def build_file_tree(reg, node_settings):
         return serialized
 
     current_tree = _recurse(node_settings.get_root(), n)
-    return revert_log_actions(current_tree, reg, obj_cache)
+    return revert_log_actions(current_tree, reg, obj_cache, *args, **kwargs)
 
-def archive(registration):
+def archive(registration, *args, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, allow_unconfigured=False, **kwargs):
     for reg in registration.node_and_primary_descendants():
         reg.registered_from.creator.get_or_create_cookie()  # Allow WB requests
         if reg.archive_job.status == ARCHIVER_SUCCESS:
             continue
         logs_to_revert = reg.registered_from.logs.filter(date__gt=reg.registered_date).exclude(action__in=LOG_WHITELIST)
-        if len(PERMISSIBLE_ADDONS) == 1:
+        if len(permissible_addons) == 1:
             assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exists(), f'{registration._id}: {reg.registered_from._id} had unexpected unacceptable logs'
         else:
             assert not logs_to_revert.exclude(action__in=LOG_GREYLIST).exclude(action__in=PERMISSIBLE_BLACKLIST).exists(), f'{registration._id}: {reg.registered_from._id} had unexpected unacceptable logs'
         logger.info(f'Preparing to archive {reg._id}')
-        for short_name in PERMISSIBLE_ADDONS:
+        for short_name in permissible_addons:
             node_settings = reg.registered_from.get_addon(short_name)
             if not hasattr(node_settings, '_get_file_tree'):
                 # Excludes invalid or None-type
                 continue
             if not node_settings.configured:
-                if not ALLOW_UNCONFIGURED:
+                if not allow_unconfigured:
                     raise Exception(f'{reg._id}: {short_name} on {reg.registered_from._id} is not configured. If this is permissible, re-run with `--allow-unconfigured`.')
                 continue
             if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
                 continue
             if short_name == 'osfstorage':
-                file_tree = build_file_tree(reg, node_settings)
+                file_tree = build_file_tree(reg, node_settings, permissible_addons=permissible_addons)
                 manually_archive(file_tree, reg, node_settings)
                 complete_archive_target(reg, short_name)
             else:
                 assert reg.archiving, f'{reg._id}: Must be `archiving` for WB to copy'
-                perform_wb_copy(reg, node_settings)
+                perform_wb_copy(reg, node_settings, *args, **kwargs)
 
-def archive_registrations():
+def archive_registrations(*args, **kwargs):
     for reg in deepcopy(VERIFIED):
-        archive(reg)
+        archive(reg, *args, *kwargs)
         ARCHIVED.append(reg)
         VERIFIED.remove(reg)
 
-def verify(registration):
+def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, raise_error=False):
+    maybe_suppress_error = contextlib.suppress(ValidationError) if not raise_error else contextlib.nullcontext(enter_result=False)
+
     for reg in registration.node_and_primary_descendants():
         logger.info(f'Verifying {reg._id}')
         if reg.archive_job.status == ARCHIVER_SUCCESS:
@@ -390,26 +389,41 @@ def verify(registration):
         nonignorable_logs = get_logs_to_revert(reg)
         unacceptable_logs = nonignorable_logs.exclude(action__in=LOG_GREYLIST)
         if unacceptable_logs.exists():
-            if len(PERMISSIBLE_ADDONS) == 1 or unacceptable_logs.exclude(action__in=PERMISSIBLE_BLACKLIST):
-                logger.error('{}: Original node {} has unacceptable logs: {}'.format(
+            if len(permissible_addons) == 1 or unacceptable_logs.exclude(action__in=PERMISSIBLE_BLACKLIST):
+                message = '{}: Original node {} has unacceptable logs: {}'.format(
                     registration._id,
                     reg.registered_from._id,
                     list(unacceptable_logs.values_list('action', flat=True))
-                ))
+                )
+                logger.error(message)
+
+                with maybe_suppress_error:
+                    raise ValidationError(message)
+
                 return False
         if nonignorable_logs.filter(action__in=VERIFY_PROVIDER).exists():
             for log in nonignorable_logs.filter(action__in=VERIFY_PROVIDER):
                 for key in ['source', 'destination']:
                     if key in log.params:
                         if log.params[key]['provider'] != 'osfstorage':
-                            logger.error('{}: {} Only OSFS moves and renames are permissible'.format(
+                            message = '{}: {} Only OSFS moves and renames are permissible'.format(
                                 registration._id,
                                 log._id
-                            ))
+                            )
+                            logger.error(message)
+
+                            with maybe_suppress_error:
+                                raise ValidationError(message)
+
                             return False
         addons = reg.registered_from.get_addon_names()
-        if set(addons) - set(PERMISSIBLE_ADDONS | {'wiki'}) != set():
-            logger.error(f'{registration._id}: Original node {reg.registered_from._id} has addons: {addons}')
+        if set(addons) - set(permissible_addons | {'wiki'}) != set():
+            message = f'{registration._id}: Original node {reg.registered_from._id} has addons: {addons}'
+            logger.error(message)
+
+            with maybe_suppress_error:
+                raise ValidationError(message)
+
             return False
         if nonignorable_logs.exists():
             logger.info('{}: Original node {} has had revertable file operations'.format(
@@ -423,23 +437,23 @@ def verify(registration):
             ))
     return True
 
-def verify_registrations(registration_ids):
+def verify_registrations(registration_ids, permissible_addons):
     for r_id in registration_ids:
         reg = Registration.load(r_id)
         if not reg:
             logger.warning(f'Registration {r_id} not found')
         else:
-            if verify(reg):
+            if verify(reg, permissible_addons=permissible_addons):
                 VERIFIED.append(reg)
             else:
                 SKIPPED.append(reg)
 
 def check(reg):
+    """Check registration status. Raise exception if registration stuck."""
     logger.info(f'Checking {reg._id}')
     if reg.is_deleted:
-        logger.info(f'Registration {reg._id} is deleted.')
-        CHECKED_OKAY.append(reg)
-        return
+        return f'Registration {reg._id} is deleted.'
+
     expired_if_before = timezone.now() - ARCHIVE_TIMEOUT_TIMEDELTA
     archive_job = reg.archive_job
     root_job = reg.root.archive_job
@@ -452,14 +466,11 @@ def check(reg):
     if still_archiving and root_job.datetime_initiated < expired_if_before:
         logger.warning(f'Registration {reg._id} is stuck in archiving')
         if verify(reg):
-            logger.info(f'Registration {reg._id} verified recoverable')
-            CHECKED_STUCK_RECOVERABLE.append(reg)
+            raise RegistrationStuckRecoverableException(f'Registration {reg._id} is stuck and verified recoverable')
         else:
-            logger.info(f'Registration {reg._id} verified broken')
-            CHECKED_STUCK_BROKEN.append(reg)
-    else:
-        logger.info(f'Registration {reg._id} is not stuck in archiving')
-        CHECKED_OKAY.append(reg)
+            raise RegistrationStuckBrokenException(f'Registration {reg._id} is stuck and verified broken')
+
+    return f'Registration {reg._id} is not stuck in archiving'
 
 def check_registrations(registration_ids):
     for r_id in registration_ids:
@@ -467,7 +478,16 @@ def check_registrations(registration_ids):
         if not reg:
             logger.warning(f'Registration {r_id} not found')
         else:
-            check(reg)
+            try:
+                status = check(reg)
+                logger.info(status)
+                CHECKED_OKAY.append(reg)
+            except RegistrationStuckRecoverableException as exc:
+                logger.info(str(exc))
+                CHECKED_STUCK_RECOVERABLE.append(reg)
+            except RegistrationStuckBrokenException as exc:
+                logger.info(str(exc))
+                CHECKED_STUCK_BROKEN.append(reg)
 
 def log_results(dry_run):
     if CHECKED_OKAY:
@@ -527,29 +547,31 @@ class Command(BaseCommand):
         parser.add_argument('--guids', type=str, nargs='+', help='GUIDs of registrations to archive')
 
     def handle(self, *args, **options):
-        global DELETE_COLLISIONS
-        global SKIP_COLLISIONS
-        global ALLOW_UNCONFIGURED
-        DELETE_COLLISIONS = options.get('delete_collisions')
-        SKIP_COLLISIONS = options.get('skip_collisions')
-        ALLOW_UNCONFIGURED = options.get('allow_unconfigured')
-        if DELETE_COLLISIONS and SKIP_COLLISIONS:
+        delete_collisions = options.get('delete_collisions')
+        skip_collisions = options.get('skip_collisions')
+        allow_unconfigured = options.get('allow_unconfigured')
+        if delete_collisions and skip_collisions:
             raise Exception('Cannot specify both delete_collisions and skip_collisions')
 
         dry_run = options.get('dry_run')
         if not dry_run:
             script_utils.add_file_logger(logger, __file__)
 
-        addons = options.get('addons', [])
-        if addons:
-            PERMISSIBLE_ADDONS.update(set(addons))
+        addons = options.get('addons') or set()
+        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+
         registration_ids = options.get('guids', [])
 
         if options.get('check', False):
             check_registrations(registration_ids)
         else:
-            verify_registrations(registration_ids)
+            verify_registrations(registration_ids, permissible_addons=addons)
             if not dry_run:
-                archive_registrations()
+                archive_registrations(
+                    permissible_addons=addons,
+                    delete_collisions=delete_collisions,
+                    skip_collisions=skip_collisions,
+                    allow_unconfigured=allow_unconfigured,
+                )
 
         log_results(dry_run)

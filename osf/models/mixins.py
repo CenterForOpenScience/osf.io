@@ -1112,25 +1112,26 @@ class TaxonomizableMixin(models.Model):
     def subjects_url(self):
         return self.absolute_api_v2_url + 'subjects/'
 
-    def check_subject_perms(self, auth):
+    def check_subject_perms(self, auth, ignore_permission=False):
         AbstractNode = apps.get_model('osf.AbstractNode')
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
-        if isinstance(self, AbstractNode):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, Preprint):
-            if not self.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-        elif isinstance(self, DraftRegistration):
-            if not self.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
-        elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(
-                    self.collection.groups[ADMIN], self.collection):
-                raise PermissionsError('Only admins can change subjects.')
+        if not ignore_permission:
+            if isinstance(self, AbstractNode):
+                if not self.has_permission(auth.user, ADMIN):
+                    raise PermissionsError('Only admins can change subjects.')
+            elif isinstance(self, Preprint):
+                if not self.has_permission(auth.user, WRITE):
+                    raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
+            elif isinstance(self, DraftRegistration):
+                if not self.has_permission(auth.user, WRITE):
+                    raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
+            elif isinstance(self, CollectionSubmission):
+                if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(
+                        self.collection.groups[ADMIN], self.collection):
+                    raise PermissionsError('Only admins can change subjects.')
         return
 
     def add_subjects_log(self, old_subjects, auth):
@@ -1153,7 +1154,7 @@ class TaxonomizableMixin(models.Model):
         if (expect_list and not is_list) or (not expect_list and is_list):
             raise ValidationValueError(f'Subjects are improperly formatted. {error_msg}')
 
-    def set_subjects(self, new_subjects, auth, add_log=True):
+    def set_subjects(self, new_subjects, auth, add_log=True, **kwargs):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
 
@@ -1164,7 +1165,7 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         if auth:
-            self.check_subject_perms(auth)
+            self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -1186,7 +1187,7 @@ class TaxonomizableMixin(models.Model):
         if hasattr(self, 'update_search'):
             self.update_search()
 
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True, **kwargs):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -1196,7 +1197,7 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        self.check_subject_perms(auth)
+        self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
             self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')

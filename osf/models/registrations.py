@@ -326,6 +326,11 @@ class Registration(AbstractNode):
         return job and not job.done and not job.archive_tree_finished()
 
     @property
+    def archived(self):
+        job = self.archive_job
+        return job and job.done and job.archive_tree_finished()
+
+    @property
     def is_moderated(self):
         if not self.provider:
             return False

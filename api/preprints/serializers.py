@@ -298,7 +298,8 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         assert isinstance(preprint, Preprint), 'You must specify a valid preprint to be updated'
 
         auth = get_user_auth(self.context['request'])
-        if not preprint.has_permission(auth.user, osf_permissions.WRITE):
+        ignore_permission = self.context.get('ignore_permission', False)
+        if not ignore_permission and not preprint.has_permission(auth.user, osf_permissions.WRITE):
             raise exceptions.PermissionDenied(detail='User must have admin or write permissions to update a preprint.')
 
         for field in ['conflict_of_interest_statement', 'why_no_data', 'why_no_prereg']:
@@ -346,76 +347,40 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                     detail='You cannot edit this field while your prereg links availability is set to false or is unanswered.',
                 )
 
-        def require_admin_permission():
-            if not preprint.has_permission(auth.user, osf_permissions.ADMIN):
-                raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
+        try:
+            if 'has_coi' in validated_data:
+                preprint.update_has_coi(auth, validated_data['has_coi'], ignore_permission=ignore_permission)
 
-        if 'has_coi' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_has_coi(auth, validated_data['has_coi'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'conflict_of_interest_statement' in validated_data:
+                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'], ignore_permission=ignore_permission)
 
-        if 'conflict_of_interest_statement' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_conflict_of_interest_statement(auth, validated_data['conflict_of_interest_statement'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'has_data_links' in validated_data:
+                preprint.update_has_data_links(auth, validated_data['has_data_links'], ignore_permission=ignore_permission)
 
-        if 'has_data_links' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_has_data_links(auth, validated_data['has_data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'why_no_data' in validated_data:
+                preprint.update_why_no_data(auth, validated_data['why_no_data'], ignore_permission=ignore_permission)
 
-        if 'why_no_data' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_why_no_data(auth, validated_data['why_no_data'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'has_prereg_links' in validated_data:
+                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'], ignore_permission=ignore_permission)
 
-        if 'data_links' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_data_links(auth, validated_data['data_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-        else:
-            if updated_has_data_links == 'no' and preprint.data_links:
-                preprint.update_data_links(auth, [])
+            if 'why_no_prereg' in validated_data:
+                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'], ignore_permission=ignore_permission)
 
-        if 'has_prereg_links' in validated_data:
-            require_admin_permission()
+            if 'prereg_links' in validated_data:
+                preprint.update_prereg_links(auth, validated_data['prereg_links'], ignore_permission=ignore_permission)
 
-            try:
-                preprint.update_has_prereg_links(auth, validated_data['has_prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'prereg_link_info' in validated_data:
+                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'], ignore_permission=ignore_permission)
 
-        if 'why_no_prereg' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_why_no_prereg(auth, validated_data['why_no_prereg'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_links' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_prereg_links(auth, validated_data['prereg_links'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
-
-        if 'prereg_link_info' in validated_data:
-            require_admin_permission()
-            try:
-                preprint.update_prereg_link_info(auth, validated_data['prereg_link_info'])
-            except PreprintStateError as e:
-                raise exceptions.ValidationError(detail=str(e))
+            if 'data_links' in validated_data:
+                preprint.update_data_links(auth, validated_data['data_links'], ignore_permission=ignore_permission)
+            else:
+                if updated_has_data_links == 'no' and preprint.data_links:
+                    preprint.update_data_links(auth, [], ignore_permission=ignore_permission)
+        except PreprintStateError as e:
+            raise exceptions.ValidationError(detail=str(e))
+        except PermissionsError:
+            raise exceptions.PermissionDenied(detail='Must have admin permissions to update author assertion fields.')
 
         published = validated_data.pop('is_published', None)
         if published and preprint.provider.is_reviewed:
@@ -436,7 +401,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         primary_file = validated_data.pop('primary_file', None)
         if primary_file:
-            self.set_field(preprint.set_primary_file, primary_file, auth)
+            self.set_field(preprint.set_primary_file, primary_file, auth, ignore_permission=ignore_permission)
 
         old_tags = set(preprint.tags.values_list('name', flat=True))
         if 'tags' in validated_data:
@@ -453,7 +418,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'node' in validated_data:
             node = validated_data.pop('node', None)
-            self.set_field(preprint.set_supplemental_node, node, auth)
+            self.set_field(preprint.set_supplemental_node, node, auth, ignore_node_permissions=ignore_permission, ignore_permission=ignore_permission)
 
         if 'subjects' in validated_data:
             subjects = validated_data.pop('subjects', None)
@@ -461,18 +426,18 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         if 'title' in validated_data:
             title = validated_data['title']
-            self.set_field(preprint.set_title, title, auth)
+            self.set_field(preprint.set_title, title, auth, ignore_permission=ignore_permission)
 
         if 'description' in validated_data:
             description = validated_data['description']
-            self.set_field(preprint.set_description, description, auth)
+            self.set_field(preprint.set_description, description, auth, ignore_permission=ignore_permission)
 
         if 'article_doi' in validated_data:
             preprint.article_doi = validated_data['article_doi']
 
         if 'license_type' in validated_data or 'license' in validated_data:
             license_details = get_license_details(preprint, validated_data)
-            self.set_field(preprint.set_preprint_license, license_details, auth)
+            self.set_field(preprint.set_preprint_license, license_details, auth, ignore_permission=ignore_permission)
 
         if 'original_publication_date' in validated_data:
             preprint.original_publication_date = validated_data['original_publication_date'] or None
@@ -485,9 +450,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 raise exceptions.ValidationError(
                     detail='A valid primary_file must be set before publishing a preprint.',
                 )
-            self.set_field(preprint.set_published, published, auth)
+            self.set_field(preprint.set_published, published, auth, ignore_permission=ignore_permission)
             recently_published = published
-            preprint.set_privacy('public', log=False, save=True)
+            preprint.set_privacy('public', log=False, save=True, ignore_permission=ignore_permission)
 
         try:
             preprint.full_clean()
@@ -527,9 +492,9 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         return preprint
 
-    def set_field(self, func, val, auth, save=False):
+    def set_field(self, func, val, auth, **kwargs):
         try:
-            func(val, auth)
+            func(val, auth, **kwargs)
         except PermissionsError as e:
             raise exceptions.PermissionDenied(detail=str(e))
         except (ValueError, ValidationError, NodeStateError) as e:
@@ -587,6 +552,13 @@ class PreprintCreateVersionSerializer(PreprintSerializer):
             raise Conflict(detail='Failed to create a new preprint version due to unpublished pending version exists.')
         if not preprint:
             raise NotFound(detail='Failed to create a new preprint version due to source preprint not found.')
+        for contributor in preprint.contributor_set.filter(user__is_registered=False):
+            contributor.user.add_unclaimed_record(
+                claim_origin=preprint,
+                referrer=auth.user,
+                email=contributor.user.email,
+                given_name=contributor.user.fullname,
+            )
         if data_to_update:
             return self.update(preprint, data_to_update)
         return preprint

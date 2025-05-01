@@ -753,4 +753,3 @@ class TestResolveGuid(OsfTestCase):
         url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
         res = self.app.get(url)
         mock_use_ember_app.assert_called_with()
-
