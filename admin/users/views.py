@@ -456,9 +456,6 @@ class GetUserLink(UserMixin, TemplateView):
 
 class GetUserConfirmationLink(GetUserLink):
     def get_link(self, user):
-        if user.is_confirmed:
-            return f'User {user._id} is already confirmed'
-
         if user.deleted or user.is_merged:
             return f'User {user._id} is deleted or merged'
 
