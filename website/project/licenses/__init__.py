@@ -6,7 +6,7 @@ from osf import exceptions as osf_exceptions
 from osf.utils import permissions
 
 
-def set_license(node, license_detail, auth, node_type='node'):
+def set_license(node, license_detail, auth, node_type='node', ignore_permission=False):
     NodeLicense = apps.get_model('osf.NodeLicense')
     NodeLicenseRecord = apps.get_model('osf.NodeLicenseRecord')
 
@@ -26,7 +26,7 @@ def set_license(node, license_detail, auth, node_type='node'):
     ):
         return {}, False
 
-    if not node.has_permission(auth.user, permissions.WRITE):
+    if not ignore_permission and not node.has_permission(auth.user, permissions.WRITE):
         raise framework_exceptions.PermissionsError(f'You need admin or write permissions to change a {node_type}\'s license')
 
     try:

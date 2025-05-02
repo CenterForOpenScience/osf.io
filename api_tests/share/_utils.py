@@ -11,7 +11,7 @@ from framework.postcommit_tasks.handlers import (
     postcommit_queue,
 )
 from website import settings as website_settings
-from api.share.utils import shtrove_ingest_url, sharev2_push_url
+from api.share.utils import shtrove_ingest_url
 from osf.metadata.osf_gathering import OsfmapPartition
 
 
@@ -28,8 +28,6 @@ def mock_share_responses():
                     _ingest_url = shtrove_ingest_url()
                     _rsps.add(responses.POST, _ingest_url, status=200)
                     _rsps.add(responses.DELETE, _ingest_url, status=200)
-                    # for legacy sharev2 support:
-                    _rsps.add(responses.POST, sharev2_push_url(), status=200)
                     yield _rsps
 
 
@@ -44,7 +42,6 @@ def mock_update_share():
 def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=False, count=1, error_response=False):
     mock_share_responses._calls.reset()
     yield
-    _legacy_count_per_item = 1
     _trove_main_count_per_item = 1
     _trove_supplementary_count_per_item = (
         0
@@ -52,8 +49,7 @@ def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=F
         else (len(OsfmapPartition) - 1)
     )
     _total_count = count * (
-        _legacy_count_per_item
-        + _trove_main_count_per_item
+        _trove_main_count_per_item
         + _trove_supplementary_count_per_item
     )
     assert len(mock_share_responses.calls) == _total_count, (
@@ -61,24 +57,18 @@ def expect_ingest_request(mock_share_responses, osfguid, *, token=None, delete=F
     )
     _trove_ingest_calls = []
     _trove_supp_ingest_calls = []
-    _legacy_push_calls = []
     for _call in mock_share_responses.calls:
         if _call.request.url.startswith(shtrove_ingest_url()):
             if 'is_supplementary' in _call.request.url:
                 _trove_supp_ingest_calls.append(_call)
             else:
                 _trove_ingest_calls.append(_call)
-        else:
-            _legacy_push_calls.append(_call)
     assert len(_trove_ingest_calls) == count
     assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
-    assert len(_legacy_push_calls) == count
     for _call in _trove_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
     for _call in _trove_supp_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete, supp=True)
-    for _call in _legacy_push_calls:
-        assert _call.request.url.startswith(sharev2_push_url())
 
 
 def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False, supp=False):
