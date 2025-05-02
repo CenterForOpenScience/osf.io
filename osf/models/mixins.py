@@ -2222,7 +2222,6 @@ class SpamOverrideMixin(SpamMixin):
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            user.is_registered = False
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.SPAM_USER_BANNED,
