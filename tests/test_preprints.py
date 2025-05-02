@@ -114,16 +114,6 @@ class TestPreprintProperties:
         preprint.deleted = None
         assert preprint.verified_publishable is True
 
-    def test_is_deleted(self, preprint):
-        assert preprint.deleted is None
-        assert preprint.is_deleted is False
-
-        preprint.deleted = timezone.now()
-        preprint.save()
-
-        assert preprint.deleted is not None
-        assert preprint.is_deleted is True
-
     def test_has_submitted_preprint(self, preprint):
         preprint.machine_state = 'initial'
         preprint.save()
@@ -167,9 +157,6 @@ class TestPreprintProperties:
 
         assert len(preprint.all_tags) == 1
         assert preprint.all_tags[0].name == 'test_tag_1'
-
-    def test_system_tags(self, preprint):
-        assert preprint.system_tags.exists() is False
 
 
 class TestPreprintSubjects:

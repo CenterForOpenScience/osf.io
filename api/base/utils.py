@@ -69,7 +69,9 @@ def get_user_auth(request):
     authenticated user attached to it.
     """
     user = request.user
-    private_key = request.query_params.get('view_only', None)
+    private_key = None
+    if hasattr(request, 'query_params'):  # allows django WSGIRequest to be used as well
+        private_key = request.query_params.get('view_only', None)
     if user.is_anonymous:
         auth = Auth(None, private_key=private_key)
     else:
