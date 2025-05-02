@@ -6,23 +6,12 @@ from tests.base import assert_dict_contains_subset
 from osf_tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
 
-def _get_application_detail_route(app):
-    path = f'applications/{app.client_id}/'
-    return api_v2_url(path, base_route='/')
-
-
-def _get_application_list_url():
-    path = 'applications/'
-    return api_v2_url(path, base_route='/')
-
-
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-
 @pytest.mark.django_db
 class TestApplicationDetail:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def user_app(self, user):
@@ -30,25 +19,28 @@ class TestApplicationDetail:
 
     @pytest.fixture()
     def user_app_url(self, user_app):
-        return _get_application_detail_route(user_app)
+        return self._get_application_detail_route(user_app)
 
-    @pytest.fixture()
-    def make_payload(self, user_app):
+    def _get_application_detail_route(self, user_app):
+        path = f'applications/{user_app.client_id}/'
+        return api_v2_url(path, base_route='/')
 
-        def payload(type='applications', id=user_app.client_id):
-            return {
-                'data': {
-                    'id': id,
-                    'type': type,
-                    'attributes': {
-                        'name': 'A shiny new application',
-                        'home_url': 'http://osf.io',
-                        'callback_url': 'https://cos.io'
-                    }
+    def _get_application_list_url(self):
+        path = 'applications/'
+        return api_v2_url(path, base_route='/')
+
+    def make_payload(self, user_app, id=None, type='applications'):
+        return {
+            'data': {
+                'id': id or user_app.client_id,
+                'type': type,
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
                 }
             }
-
-        return payload
+        }
 
     def test_can_view(self, app, user, user_app, user_app_url):
         # owner can view
@@ -78,16 +70,17 @@ class TestApplicationDetail:
     def test_non_owner_cant_delete(self, app, user_app_url):
         non_owner = AuthUserFactory()
         res = app.delete(
-            user_app_url, auth=non_owner.auth,
+            user_app_url,
+            auth=non_owner.auth,
             expect_errors=True
         )
         assert res.status_code == 403
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
-    def test_deleting_application_makes_api_view_inaccessible(
-            self, mock_method, app, user, user_app_url):
+    def test_deleting_application_makes_api_view_inaccessible(self, mock_method, app, user, user_app_url):
         mock_method.return_value(True)
-        res = app.delete(user_app_url, auth=user.auth)
+        app.delete(user_app_url, auth=user.auth)
+
         res = app.get(user_app_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -135,143 +128,141 @@ class TestApplicationDetail:
         )
         assert res.status_code == 200
 
-        list_url = _get_application_list_url()
+        list_url = self._get_application_list_url()
         res = app.get(list_url, auth=user.auth)
         assert res.status_code == 200
         assert len(res.json['data']) == 1
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
-    def test_deleting_application_flags_instance_inactive(
-            self, mock_method, app, user, user_app, user_app_url):
+    def test_deleting_application_flags_instance_inactive(self, mock_method, app, user, user_app, user_app_url):
         mock_method.return_value(True)
         app.delete(user_app_url, auth=user.auth)
         user_app.reload()
         assert not user_app.is_active
 
-    @pytest.mark.enable_implicit_clean
-    def test_update_application(
-            self, app, user, user_app, user_app_url, make_payload):
+    def test_update_application(self, app, user, user_app, user_app_url):
+        res = app.put_json_api(
+            user_app_url,
+            self.make_payload(user_app),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 200
 
-        valid_payload = make_payload()
-        incorrect_type_payload = make_payload(type='incorrect')
-        incorrect_id_payload = make_payload(id='12345')
-        missing_type_payload = make_payload()
+    def test_update_application_incorrect_type_payload(self, app, user, user_app, user_app_url):
+        res = app.put_json_api(
+            user_app_url,
+            self.make_payload(user_app, type='incorrect'),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409
+
+    def test_update_application_incorrect_id_payload(self, app, user, user_app, user_app_url):
+        res = app.put_json_api(
+            user_app_url,
+            self.make_payload(user_app, id='12345'),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409
+
+    def test_update_application_no_type(self, app, user, user_app, user_app_url):
+        missing_type_payload = self.make_payload(user_app)
         del missing_type_payload['data']['type']
-        missing_id_payload = make_payload()
+
+        res = app.put_json_api(
+            user_app_url,
+            missing_type_payload,
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+
+    def test_update_application_no_id(self, app, user, user_app, user_app_url):
+        missing_id_payload = self.make_payload(user_app)
         del missing_id_payload['data']['id']
 
         res = app.put_json_api(
             user_app_url,
-            valid_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-
-    #   test_update_application_incorrect_type_payload
-        res = app.put_json_api(
-            user_app_url,
-            incorrect_type_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 409
-
-    #   test_update_application_incorrect_id_payload
-        res = app.put_json_api(
-            user_app_url,
-            incorrect_id_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 409
-
-    #   test_update_application_no_type
-        res = app.put_json_api(
-            user_app_url,
-            missing_type_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 400
-
-    #   test_update_application_no_id
-        res = app.put_json_api(
-            user_app_url,
             missing_id_payload,
             auth=user.auth,
             expect_errors=True
         )
         assert res.status_code == 400
 
-    #   test_update_application_no_attributes
-        payload = {
-            'id': user_app.client_id,
-            'type': 'applications',
-            'name': 'The instance formerly known as Prince'
-        }
+    def test_update_application_no_attributes(self, app, user, user_app, user_app_url,):
         res = app.put_json_api(
             user_app_url,
-            payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 400
-
-    #   test_partial_update_application_incorrect_type_payload
-        res = app.patch_json_api(
-            user_app_url,
-            incorrect_type_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 409
-
-    #   test_partial_update_application_incorrect_id_payload
-        res = app.patch_json_api(
-            user_app_url,
-            incorrect_id_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 409
-
-    #   test_partial_update_application_no_type
-        res = app.patch_json_api(
-            user_app_url,
-            missing_type_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 400
-
-    #   test_partial_update_application_no_id
-        res = app.patch_json_api(
-            user_app_url,
-            missing_id_payload,
-            auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 400
-
-    #   test_partial_update_application_no_attributes
-        payload = {
-            'data': {
+            {
                 'id': user_app.client_id,
                 'type': 'applications',
                 'name': 'The instance formerly known as Prince'
-            }
-        }
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+
+    def test_partial_update_application_incorrect_type_payload(self, app, user, user_app, user_app_url):
         res = app.patch_json_api(
             user_app_url,
-            payload,
+            self.make_payload(user_app, type='incorrect'),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409
+
+    def test_partial_update_application_incorrect_id_payload(self, app, user, user_app, user_app_url):
+        res = app.patch_json_api(
+            user_app_url,
+            self.make_payload(user_app, id='12345'),
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409
+
+    def test_partial_update_application_no_type(self, app, user, user_app, user_app_url):
+        missing_type_payload = self.make_payload(user_app)
+        del missing_type_payload['data']['type']
+
+        res = app.patch_json_api(
+            user_app_url,
+            missing_type_payload,
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+
+    def test_partial_update_application_no_id(self, app, user, user_app, user_app_url):
+        missing_id_payload = self.make_payload(user_app)
+        del missing_id_payload['data']['id']
+
+        res = app.patch_json_api(
+            user_app_url,
+            missing_id_payload,
+            auth=user.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+
+    def test_partial_update_application_no_attributes(self, app, user, user_app, user_app_url):
+        res = app.patch_json_api(
+            user_app_url,
+            {
+                'data': {
+                    'id': user_app.client_id,
+                    'type': 'applications',
+                    'name': 'The instance formerly known as Prince'
+                }
+            },
             auth=user.auth,
             expect_errors=True
         )
         assert res.status_code == 200
 
-    #   test home url is too long
-        payload = make_payload()
+    def test_partial_update_url_too_long(self, app, user, user_app, user_app_url):
+        payload = self.make_payload(user_app)
         payload['data']['attributes']['home_url'] = 'http://osf.io/' + 'A' * 200
         res = app.patch_json_api(
             user_app_url,

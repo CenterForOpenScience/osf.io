@@ -350,9 +350,13 @@ class ComposedScopes:
                      CoreScopes.USERS_MESSAGE_WRITE_EMAIL
                  )
 
+    FULL_WRITE_NO_APPLICATIONS = FULL_WRITE
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
-                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ, )
+    ADMIN_LEVEL = FULL_WRITE_NO_APPLICATIONS + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE + (
+        CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ,
+    )
+
+    FULL_WRITE = APPLICATIONS_WRITE
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
