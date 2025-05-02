@@ -2077,18 +2077,18 @@ class SpamOverrideMixin(SpamMixin):
         return NotImplementedError()
 
     @property
-    def was_public(self):
+    def was_public_at_spam(self):
         was_public = self.is_public
         try:
             latest_privacy_edit = self.logs.filter(
                 action__in=[self.log_class.MADE_PRIVATE, self.log_class.MADE_PUBLIC]
             ).latest('created')
-            last_spam_log = self.logs.filter(
+            first_spam_log = self.logs.filter(
                 action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM],
                 created__gt=latest_privacy_edit.created
             ).earliest('created')
 
-            return last_spam_log.params.get('was_public', was_public)
+            return first_spam_log.params.get('was_public', was_public)
         except ObjectDoesNotExist:
             return was_public
 
@@ -2121,12 +2121,13 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
+        was_public = self.was_public_at_spam
 
         self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(
             action=self.log_class.CONFIRM_SPAM,
-            params={**self.log_params, 'was_public': self.was_public},
+            params={**self.log_params, 'was_public': was_public},
             auth=None,
             save=False,
             should_hide=True
@@ -2254,10 +2255,11 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
+            was_public = self.was_public_at_spam
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True, should_hide=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,
-                params={**self.log_params, 'was_public': self.was_public},
+                params={**self.log_params, 'was_public': was_public},
                 auth=None,
                 save=False,
                 should_hide=True

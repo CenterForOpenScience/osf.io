@@ -2428,6 +2428,23 @@ class TestNodeSpam:
         assert project.is_spammy
         assert project.is_public is False
 
+    @mock.patch.object(settings, 'SPAM_FLAGGED_MAKE_NODE_PRIVATE', True)
+    def test_project_remains_recoverable_after_multiple_spam_flags(self, project):
+        project.set_privacy('public')
+        assert project.is_public
+
+        project.confirm_spam()
+        assert project.is_public is False
+        assert project.was_public_at_spam is True
+
+        project.flag_spam()
+        assert project.is_public is False
+        assert project.was_public_at_spam is True
+
+        project.confirm_spam()
+        assert project.is_public is False
+        assert project.was_public_at_spam is True
+
 
 # copied from tests/test_models.py
 class TestPrivateLinks:
