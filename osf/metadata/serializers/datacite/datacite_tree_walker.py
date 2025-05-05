@@ -6,7 +6,9 @@ import typing
 
 import rdflib
 
+from framework import sentry
 from osf.exceptions import MetadataSerializationError
+from osf.external.gravy_valet.request_helpers import get_verified_links
 from osf.metadata import gather
 from osf.metadata.rdfutils import (
     RDF,
@@ -396,18 +398,21 @@ class DataciteTreeWalker:
         from osf.models import AbstractNode
 
         if isinstance(osf_item, AbstractNode):
-            gv_verified_link_list = osf_item.get_links()
+            gv_verified_link_list = get_verified_links(node_guid=osf_item._id)
+            non_url_verified_links = []
             for item in gv_verified_link_list:
-                verified_link, resource_type = item.get('target_url', None), item.get('resource_type', None)
+                verified_link, resource_type = item.attributes.get('target_url', None), item.attributes.get('resource_type', None)
                 if verified_link and resource_type:
-                    if verified_link and isinstance(verified_link, str) and smells_like_iri(verified_link):
+                    if smells_like_iri(verified_link):
                         self.visit(related_identifiers_el, 'relatedIdentifier', text=verified_link, attrib={
                             'relatedIdentifierType': 'URL',
                             'relationType': 'IsReferencedBy',
                             'resourceTypeGeneral': resource_type.title()
                         })
                     else:
-                        logger.warning('skipping non-URL verified link "%s"', verified_link)
+                        non_url_verified_links.append(verified_link)
+            if non_url_verified_links:
+                sentry.log_message(f'Skipped - {','.join(non_url_verified_links)} for node {osf_item._id}')
 
     def _visit_name_identifiers(self, parent_el, agent_iri):
         for identifier in sorted(self.basket[agent_iri:DCTERMS.identifier]):

@@ -361,6 +361,6 @@ def with_class_scoped_db(_class_scoped_db):
 @pytest.fixture(autouse=True)
 def mock_gravy_valet_get_links():
 
-    with mock.patch('osf.external.gravy_valet.translations.get_links') as mock_get_links:
+    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_links:
         mock_get_links.return_value = []
         yield mock_get_links
