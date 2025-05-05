@@ -398,21 +398,22 @@ class DataciteTreeWalker:
         from osf.models import AbstractNode
 
         if isinstance(osf_item, AbstractNode):
-            gv_verified_link_list = get_verified_links(node_guid=osf_item._id)
-            non_url_verified_links = []
-            for item in gv_verified_link_list:
-                verified_link, resource_type = item.attributes.get('target_url', None), item.attributes.get('resource_type', None)
-                if verified_link and resource_type:
-                    if smells_like_iri(verified_link):
-                        self.visit(related_identifiers_el, 'relatedIdentifier', text=verified_link, attrib={
-                            'relatedIdentifierType': 'URL',
-                            'relationType': 'IsReferencedBy',
-                            'resourceTypeGeneral': resource_type.title()
-                        })
-                    else:
-                        non_url_verified_links.append(verified_link)
-            if non_url_verified_links:
-                sentry.log_message(f'Skipped - {','.join(non_url_verified_links)} for node {osf_item._id}')
+            gv_verified_link_list = list(get_verified_links(node_guid=osf_item._id))
+            if gv_verified_link_list:
+                non_url_verified_links = []
+                for item in gv_verified_link_list:
+                    verified_link, resource_type = item.attributes.get('target_url', None), item.attributes.get('resource_type', None)
+                    if verified_link and resource_type:
+                        if smells_like_iri(verified_link):
+                            self.visit(related_identifiers_el, 'relatedIdentifier', text=verified_link, attrib={
+                                'relatedIdentifierType': 'URL',
+                                'relationType': 'IsReferencedBy',
+                                'resourceTypeGeneral': resource_type.title()
+                            })
+                        else:
+                            non_url_verified_links.append(verified_link)
+                if non_url_verified_links:
+                    sentry.log_message(f'Skipped - {','.join(non_url_verified_links)} for node {osf_item._id}')
 
     def _visit_name_identifiers(self, parent_el, agent_iri):
         for identifier in sorted(self.basket[agent_iri:DCTERMS.identifier]):
