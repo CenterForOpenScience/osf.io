@@ -356,7 +356,7 @@ class ComposedScopes:
         CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ,
     )
 
-    FULL_WRITE = APPLICATIONS_WRITE
+    FULL_WRITE += APPLICATIONS_WRITE
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
