@@ -126,6 +126,7 @@ class UserSearchView(PermissionRequiredMixin, FormView):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
         email = form.cleaned_data['email']
+        orcid = form.cleaned_data['orcid']
         if name:
             return redirect(reverse('users:search-list', kwargs={'name': name}))
 
@@ -147,6 +148,16 @@ class UserSearchView(PermissionRequiredMixin, FormView):
                 )
 
             return redirect(reverse('users:user', kwargs={'guid': guid}))
+
+        if orcid:
+            user = OSFUser.objects.filter(social__orcid=orcid).first()
+            if not user:
+                return page_not_found(
+                    self.request,
+                    AttributeError(f'resource with id "{orcid}" not found.')
+                )
+
+            return redirect(reverse('users:user', kwargs={'guid': user._id}))
 
         return super().form_valid(form)
 
