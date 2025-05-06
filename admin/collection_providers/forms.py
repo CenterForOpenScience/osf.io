@@ -194,16 +194,6 @@ class CollectionProviderForm(forms.ModelForm):
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('school_type_choices'))}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
-            active_removed_choices = set(
-                primary_collection.collectionsubmission_set.filter(
-                    school_type__in=removed_choices
-                ).values_list('school_type', flat=True)
-            )
-            if active_removed_choices:
-                raise forms.ValidationError(
-                    'Cannot remove the following choices for "school_type", as they are '
-                    f'currently in use: {active_removed_choices}'
-                )
         else:  # Creating a new CollectionProvider
             added_choices = set()
             removed_choices = set()
@@ -223,17 +213,6 @@ class CollectionProviderForm(forms.ModelForm):
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('study_design_choices'))}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
-
-            active_removed_choices = set(
-                primary_collection.collectionsubmission_set.filter(
-                    study_design__in=removed_choices
-                ).values_list('school_type', flat=True)
-            )
-            if active_removed_choices:
-                raise forms.ValidationError(
-                    'Cannot remove the following choices for "study_design", as they are '
-                    f'currently in use: {active_removed_choices}'
-                )
         else:  # Creating a new CollectionProvider
             added_choices = set()
             removed_choices = set()
@@ -253,17 +232,6 @@ class CollectionProviderForm(forms.ModelForm):
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('disease_choices'))}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
-
-            active_removed_choices = set(
-                primary_collection.collectionsubmission_set.filter(
-                    disease__in=removed_choices
-                ).values_list('disease', flat=True)
-            )
-            if active_removed_choices:
-                raise forms.ValidationError(
-                    'Cannot remove the following choices for "disease", as they are '
-                    f'currently in use: {active_removed_choices}'
-                )
         else:  # Creating a new CollectionProvider
             added_choices = set()
             removed_choices = set()
@@ -283,17 +251,6 @@ class CollectionProviderForm(forms.ModelForm):
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('data_type_choices'))}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
-
-            active_removed_choices = set(
-                primary_collection.collectionsubmission_set.filter(
-                    data_type__in=removed_choices
-                ).values_list('data_type', flat=True)
-            )
-            if active_removed_choices:
-                raise forms.ValidationError(
-                    'Cannot remove the following choices for "data_type", as they are '
-                    f'currently in use: {active_removed_choices}'
-                )
         else:  # Creating a new CollectionProvider
             added_choices = set()
             removed_choices = set()
@@ -313,17 +270,6 @@ class CollectionProviderForm(forms.ModelForm):
             updated_choices = {c.strip(' ') for c in json.loads(self.data.get('grade_levels_choices'))}
             added_choices = updated_choices - old_choices
             removed_choices = old_choices - updated_choices
-
-            active_removed_choices = set(
-                primary_collection.collectionsubmission_set.filter(
-                    data_type__in=removed_choices
-                ).values_list('grade_levels', flat=True)
-            )
-            if active_removed_choices:
-                raise forms.ValidationError(
-                    'Cannot remove the following choices for "grade_levels", as they are '
-                    f'currently in use: {active_removed_choices}'
-                )
         else:  # Creating a new CollectionProvider
             added_choices = set()
             removed_choices = set()
