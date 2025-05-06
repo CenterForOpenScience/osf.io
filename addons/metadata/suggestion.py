@@ -6,9 +6,7 @@ from rest_framework import status as http_status
 from framework.exceptions import HTTPError
 from osf.models import BaseFileNode
 from osf.models.files import UnableToResolveFileClass
-from osf.utils.fields import EncryptedTextField, EncryptedJSONField
 from . import SHORT_NAME
-from .models import ERadRecord
 
 import json
 
@@ -27,15 +25,11 @@ from addons.metadata.apps import AddonAppConfig as AddonAppConfig
 import mimetypes
 from api.base.utils import waterbutler_api_url_for
 
+from .suggestions import suggestion_erad, suggestion_contributor
+
+
 logger = logging.getLogger(__name__)
 
-
-ERAD_COLUMNS = [
-    'KENKYUSHA_NO', 'KENKYUSHA_SHIMEI', 'KENKYUKIKAN_CD', 'KENKYUKIKAN_MEI',
-    'HAIBUNKIKAN_CD', 'HAIBUNKIKAN_MEI', 'NENDO', 'SEIDO_CD', 'SEIDO_MEI',
-    'JIGYO_CD', 'JIGYO_MEI', 'KADAI_ID', 'KADAI_MEI', 'BUNYA_CD', 'BUNYA_MEI',
-    'JAPAN_GRANT_NUMBER', 'PROGRAM_NAME_JA', 'PROGRAM_NAME_EN', 'FUNDING_STREAM_CODE',
-]
 
 ROR_URL = 'https://api.ror.org/v2/organizations'
 
@@ -462,86 +456,6 @@ def suggestion_ror(key, keyword):
     return res
 
 
-def _to_msfullname(name, lang):
-    names = []
-    if 'last' not in name:
-        raise ValueError('Invalid name: {}'.format(name))
-    names.append(name['last'])
-    if 'middle' in name:
-        names.append(name['middle'])
-    if 'first' not in name:
-        raise ValueError('Invalid name: {}'.format(name))
-    names.append(name['first'])
-    names = [n.strip() for n in names]
-    if lang == 'ja':
-        return ''.join(names)
-    names = [n for n in names if len(n) > 0]
-    return ' '.join(names[::-1])
-
-
-def suggestion_erad(key, keyword, node):
-    filter_field_name = key[5:]
-    filter_field = ERadRecord._meta.get_field(filter_field_name)
-    if isinstance(filter_field, EncryptedTextField) or isinstance(filter_field, EncryptedJSONField):
-        # cannot filter by encrypted field
-        candidates = [
-            r
-            for r in _erad_candidates_for_node(node)
-            if keyword.lower() in r[filter_field_name].lower()
-        ]
-    else:
-        candidates = _erad_candidates_for_node(node, **{f'{filter_field_name}__icontains': keyword})
-    res = []
-    for candidate in candidates:
-        names = candidate.get('kenkyusha_shimei', '').split('|')
-        ja_parts = names[:len(names) // 2]
-        en_parts = names[len(names) // 2:]
-        kikan_parts = candidate.get('kenkyukikan_mei', '').split('|')
-        kikan_ja = kikan_parts[0]
-        kikan_en = kikan_parts[1] if len(kikan_parts) > 1 else ''
-        kenkyusha_shimei_ja = {
-            'last': ja_parts[0],
-            'middle': ''.join(ja_parts[1:-1]),
-            'first': ja_parts[-1],
-        }
-        kenkyusha_shimei_en = {
-            'last': en_parts[0] if len(en_parts) > 0 else '',
-            'middle': ''.join(en_parts[1:-1]),
-            'first': en_parts[-1] if len(en_parts) > 0 else '',
-        }
-        res.append({
-            'key': key,
-            'value': {
-                **candidate,
-                'kenkyusha_shimei_ja': kenkyusha_shimei_ja,
-                'kenkyusha_shimei_en': kenkyusha_shimei_en,
-                'kenkyusha_shimei_ja_msfullname': _to_msfullname(kenkyusha_shimei_ja, 'ja'),
-                'kenkyusha_shimei_en_msfullname': _to_msfullname(kenkyusha_shimei_en, 'en'),
-                'kenkyukikan_mei_ja': kikan_ja,
-                'kenkyukikan_mei_en': kikan_en,
-            },
-        })
-    return res
-
-
-def _erad_candidates_for_node(node, **pred):
-    return sum([  # flatten
-        _erad_candidates(**{**pred, 'kenkyusha_no': user.erad})
-        for user in node.contributors
-        if user.erad is not None
-    ], [])
-
-
-def _erad_candidates(**pred):
-    return [
-        dict([
-            (k.lower(), getattr(record, k.lower()))
-            for k in ERAD_COLUMNS
-        ])
-        for record in ERadRecord.objects.filter(**pred)
-    ]
-
-
 def suggestion_asset(key, keyword, node):
     addon = node.get_addon(SHORT_NAME)
     assets = addon.get_metadata_assets()
@@ -554,71 +468,3 @@ def suggestion_asset(key, keyword, node):
                 'value': asset,
             })
     return res
-
-
-def _contributor_to_name_ja(user):
-    return {
-        'last': user.family_name_ja,
-        'middle': user.middle_names_ja,
-        'first': user.given_name_ja,
-    }
-
-
-def _contributor_to_name_en(user):
-    return {
-        'last': user.family_name,
-        'middle': user.middle_names,
-        'first': user.given_name,
-    }
-
-
-def suggestion_contributor(key, keyword, node):
-    contributors = [
-        {
-            'erad': user.erad,
-            'name-ja-full': '|'.join([
-                part for part in [
-                    user.family_name_ja,
-                    user.middle_names_ja,
-                    user.given_name_ja,
-                ]
-                if len(part) > 0
-            ]),
-            'name-en-full': '|'.join([
-                part for part in [
-                    user.family_name,
-                    user.middle_names,
-                    user.given_name,
-                ]
-                if len(part) > 0
-            ]),
-            'name-ja': _contributor_to_name_ja(user),
-            'name-en': _contributor_to_name_en(user),
-            'name-ja-msfullname': _to_msfullname(_contributor_to_name_ja(user), 'ja'),
-            'name-en-msfullname': _to_msfullname(_contributor_to_name_en(user), 'en'),
-        }
-        for user in node.contributors
-    ]
-    search_key = key.split(':')[1]
-    if search_key == 'erad':
-        contributors = [
-            cont for cont in contributors
-            if keyword in cont['erad']
-        ]
-    elif search_key == 'name':
-        contributors = [
-            cont for cont in contributors
-            if any([
-                keyword in cont['name-ja-full'],
-                keyword in cont['name-en-full'],
-            ])
-        ]
-    else:
-        raise KeyError('Invalid key: {}'.format(key))
-    return [
-        {
-            'key': key,
-            'value': cont
-        }
-        for cont in contributors
-    ]

@@ -9,7 +9,8 @@ import logging
 from . import SHORT_NAME
 from .models import RegistrationReportFormat, get_draft_files, FIELD_GRDM_FILES, schema_has_field
 from .utils import make_report_as_csv
-from .suggestion import suggestion_metadata, _erad_candidates, valid_suggestion_key
+from .suggestion import suggestion_metadata, valid_suggestion_key
+from .suggestions.erad import erad_candidates
 from .packages import import_project, export_project, get_task_result
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -136,7 +137,7 @@ def metadata_get_erad_candidates(auth, **kwargs):
         rn = user.erad
         if rn is None:
             continue
-        candidates += _erad_candidates(kenkyusha_no=rn)
+        candidates += erad_candidates(kenkyusha_no=rn)
     return {
         'data': {
             'id': node._id,
