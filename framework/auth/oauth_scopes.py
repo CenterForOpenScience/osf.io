@@ -343,6 +343,7 @@ class ComposedScopes:
                  + PREPRINT_ALL_WRITE\
                  + GROUP_WRITE\
                  + TOKENS_WRITE\
+                 + APPLICATIONS_WRITE\
                  + (
                      CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
@@ -350,13 +351,9 @@ class ComposedScopes:
                      CoreScopes.USERS_MESSAGE_WRITE_EMAIL
                  )
 
-    FULL_WRITE_NO_APPLICATIONS = FULL_WRITE
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE_NO_APPLICATIONS + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE + (
-        CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ,
-    )
-
-    FULL_WRITE += APPLICATIONS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE + USERS_CREATE + REVIEWS_WRITE +\
+                    (CoreScopes.USER_EMAIL_READ, CoreScopes.USER_ADDON_READ, CoreScopes.WAFFLE_READ, )
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
