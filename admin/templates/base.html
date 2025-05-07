@@ -288,9 +288,6 @@
               </div>
           {% endif %}
           {% endif %}
-          {% if perms.osf.view_conference %}
-            <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>Meetings</span></a></li>
-          {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>Metrics</span></a></li>
           {% endif %}

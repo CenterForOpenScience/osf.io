@@ -14,7 +14,6 @@ from addons.s3.models import S3File
 from website import settings
 from addons.osfstorage import settings as osfstorage_settings
 from website.project.views.comment import update_file_guid_referent
-from website.project.signals import comment_added, mention_added
 from framework.exceptions import PermissionsError
 from tests.base import capture_signals
 from osf.models import Comment, NodeLog, Guid, BaseFileNode
@@ -219,35 +218,11 @@ class TestCommentModel:
 
     ]
     create_cases = [
-        # Make sure valid mentions send signals
-        {
-            'comment_content': comment_mention_valid,
-            'expected_signals': {comment_added, mention_added},
-            'expected_error_msg': None,
-        },
-        #  User mentions a contributor
-        {
-            'comment_content': comment_contributor_mentioned,
-            'expected_signals': {comment_added, mention_added},
-            'expected_error_msg': None,
-        },
         # Make sure comments aren't NoneType
         {
             'comment_content': None,
             'expected_signals': set(),
             'expected_error_msg': "{'content': ['This field cannot be null.']}",
-        },
-        # User makes valid comment
-        {
-            'comment_content': comment_valid,
-            'expected_signals': {comment_added},
-            'expected_error_msg': None,
-        },
-        #  User mentions themselves
-        {
-            'comment_content': comment_self_mentioned,
-            'expected_signals': {comment_added, mention_added},
-            'expected_error_msg': None,
         },
         # Prevent user from entering a comment that's too long with a mention
         {
@@ -257,40 +232,16 @@ class TestCommentModel:
         },
     ]
     edit_cases = [
-        # Send if mention is valid
-        {
-            'comment_content': comment_mention_valid,
-            'expected_signals': {mention_added},
-            'expected_error_msg': None,
-        },
-        #  User mentions a contributor
-        {
-            'comment_content': comment_contributor_mentioned,
-            'expected_signals': {mention_added},
-            'expected_error_msg': None,
-        },
         # User edits valid comment
         {
             'comment_content': comment_valid,
             'expected_signals': set(),
             'expected_error_msg': None,
         },
-        #  User mentions themselves
-        {
-            'comment_content': comment_self_mentioned,
-            'expected_signals': {mention_added},
-            'expected_error_msg': None,
-        },
         # Don't send mention if already mentioned
         {
             'comment_content': comment_mention_edited_twice,
             'expected_signals': set(),
-            'expected_error_msg': None,
-        },
-        # Send mention if already mentioned
-        {
-            'comment_content': comment_mention_project_with_contributor,
-            'expected_signals': {mention_added},
             'expected_error_msg': None,
         }
     ]

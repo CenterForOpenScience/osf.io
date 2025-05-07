@@ -511,21 +511,6 @@ WITHDRAWAL_REQUEST_GRANTED = Mail(
     subject='Your ${document_type} has been withdrawn',
 )
 
-GROUP_MEMBER_ADDED = Mail(
-    'group_member_added',
-    subject='You have been added as a ${permission} of the group ${group_name}',
-)
-
-GROUP_MEMBER_UNREGISTERED_ADDED = Mail(
-    'group_member_unregistered_added',
-    subject='You have been added as a ${permission} of the group ${group_name}',
-)
-
-GROUP_ADDED_TO_NODE = Mail(
-    'group_added_to_node',
-    subject='Your group, ${group_name}, has been added to an OSF Project'
-)
-
 WITHDRAWAL_REQUEST_DECLINED = Mail(
     'withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
@@ -597,11 +582,6 @@ SCHEMA_RESPONSE_APPROVED = Mail(
 SCHEMA_RESPONSE_REJECTED = Mail(
     'updates_rejected',
     subject='The updates for ${resource_type} ${title} were not accepted'
-)
-
-QUICKFILES_MIGRATED = Mail(
-    'quickfiles_migrated',
-    subject='Your Quick Files have moved'
 )
 
 ADDONS_BOA_JOB_COMPLETE = Mail(
