@@ -459,14 +459,17 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
     template_name = 'preprint_providers/register_moderator_admin.html'
     form_class = PreprintProviderRegisterModeratorOrAdminForm
 
+    def get_object(self):
+        return PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id'])
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs['provider_id'] = self.kwargs['preprint_provider_id']
+        kwargs['provider_groups'] = self.get_object().group_objects
         return kwargs
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['provider_name'] = PreprintProvider.objects.get(id=self.kwargs['preprint_provider_id']).name
+        context['provider_name'] = self.get_object().name
         return context
 
     def form_valid(self, form):
