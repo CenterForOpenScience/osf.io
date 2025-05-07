@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.models import Group
 
 from framework.utils import sanitize_html
 from osf.models import (
@@ -111,8 +112,10 @@ class PreprintProviderRegisterModeratorOrAdminForm(forms.Form):
     """ A form that finds an existing OSF User, and grants permissions to that
         user so that they can use the admin app"""
 
-    def __init__(self, *args, provider_groups=[], **kwargs):
+    def __init__(self, *args, provider_groups=None, **kwargs):
         super().__init__(*args, **kwargs)
+
+        provider_groups = provider_groups or Group.objects.none()
         self.fields['group_perms'] = forms.ModelMultipleChoiceField(
             queryset=provider_groups,
             required=False,
