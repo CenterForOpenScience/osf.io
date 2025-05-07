@@ -316,7 +316,6 @@ class FakeGravyValet:
         r'v1/configured-citation-addons/(?P<pk>\d+)': '_get_citation_addon',
         r'v1/configured-computing-addons/(?P<pk>\d+)': '_get_computing_addon',
         r'v1/configured-link-addons/(?P<pk>\d+)': '_get_link_addon',
-        r'v1/configured-link-addons/(?P<node_guid>[^/]+)/verified-links': '_get_verified_links',
         r'v1/configured-storage-addons/(?P<pk>\d+)/waterbutler-credentials': '_get_wb_settings',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_citation_accounts': '_get_user_citation_accounts',
@@ -324,6 +323,7 @@ class FakeGravyValet:
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_citation_addons': '_get_resource_citation_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_computing_addons': '_get_resource_computing_addons',
+        r'v1/configured-link-addons/(?P<node_guid>[a-zA-Z0-9]+)/verified-links': '_get_verified_links',
     }
 
     def __init__(self):
