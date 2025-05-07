@@ -137,6 +137,7 @@ class UserIdentificationListView(RdmPermissionMixin, UserPassesTestMixin, UserId
         """check user permissions"""
         # login check
         if not self.is_authenticated:
+            self.raise_exception = False
             return False
 
         # permitted if superuser
@@ -263,6 +264,7 @@ class ExportFileCSVView(RdmPermissionMixin, UserPassesTestMixin, UserIdentificat
         """check user permissions"""
         # login check
         if not self.is_authenticated:
+            self.raise_exception = False
             return False
 
         # permitted if superuser

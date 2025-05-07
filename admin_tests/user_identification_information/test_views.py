@@ -378,8 +378,9 @@ class TestUserIdentificationListView(AdminTestCase):
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
-            views.UserIdentificationListView.as_view()(self.request)
+        response = views.UserIdentificationListView.as_view()(self.request)
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_in('login', str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
@@ -526,8 +527,9 @@ class TestExportFileCSVView(AdminTestCase):
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
-            views.ExportFileCSVView.as_view()(self.request)
+        response = views.ExportFileCSVView.as_view()(self.request)
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_in('login', str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
