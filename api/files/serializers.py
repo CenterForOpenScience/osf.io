@@ -244,7 +244,7 @@ class BaseFileSerializer(JSONAPISerializer):
         FileRelationshipField(
             related_view='nodes:node-comments',
             related_view_kwargs={'node_id': '<target._id>'},
-            related_meta={'unread': 'get_unread_comments_count'},
+            related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
             filter={'target': 'get_file_guid'},
         ),
     )
@@ -336,6 +336,9 @@ class BaseFileSerializer(JSONAPISerializer):
         if user.is_anonymous:
             return 0
         return Comment.find_n_unread(user=user, node=obj.target, page='files', root_id=obj.get_guid()._id)
+
+    def get_comments_count(self, obj):
+        return Comment.find_count(node=obj.target, page='files', root_id=obj.get_guid()._id)
 
     def user_id(self, obj):
         # NOTE: obj is the user here, the meta field for
