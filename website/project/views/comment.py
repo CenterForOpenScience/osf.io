@@ -9,11 +9,8 @@ from website import settings
 from addons.base.signals import file_updated
 from osf.models import BaseFileNode, TrashedFileNode
 from osf.models import Comment
-from website.notifications.constants import PROVIDERS
-from website.notifications.emails import notify, notify_mentions
 from website.project.decorators import must_be_contributor_or_public
 from osf.models import Node
-from website.project.signals import comment_added, mention_added
 
 
 @file_updated.connect
@@ -105,70 +102,6 @@ def update_comment_node(root_target_id, source_node, destination_node):
 
 def render_email_markdown(content):
     return markdown.markdown(content, extensions=['markdown_del_ins', 'markdown.extensions.tables', 'markdown.extensions.fenced_code'])
-
-
-@comment_added.connect
-def send_comment_added_notification(comment, auth, new_mentions=None):
-    if not new_mentions:
-        new_mentions = []
-    node = comment.node
-    target = comment.target
-
-    context = dict(
-        profile_image_url=auth.user.profile_image_url(),
-        content=render_email_markdown(comment.content),
-        page_type=comment.get_comment_page_type(),
-        page_title=comment.get_comment_page_title(),
-        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
-        target_user=target.referent.user if is_reply(target) else None,
-        parent_comment=target.referent.content if is_reply(target) else '',
-        url=comment.get_comment_page_url(),
-        exclude=new_mentions,
-    )
-    time_now = timezone.now()
-    sent_subscribers = notify(
-        event='comments',
-        user=auth.user,
-        node=node,
-        timestamp=time_now,
-        **context
-    )
-
-    if is_reply(target):
-        if target.referent.user and target.referent.user._id not in sent_subscribers:
-            notify(
-                event='global_comment_replies',
-                user=auth.user,
-                node=node,
-                timestamp=time_now,
-                **context
-            )
-
-
-@mention_added.connect
-def send_mention_added_notification(comment, new_mentions, auth):
-    node = comment.node
-    target = comment.target
-
-    context = dict(
-        profile_image_url=auth.user.profile_image_url(),
-        content=render_email_markdown(comment.content),
-        page_type='file' if comment.page == Comment.FILES else node.project_or_component,
-        page_title=comment.root_target.referent.name if comment.page == Comment.FILES else '',
-        provider=PROVIDERS[comment.root_target.referent.provider] if comment.page == Comment.FILES else '',
-        target_user=target.referent.user if is_reply(target) else None,
-        parent_comment=target.referent.content if is_reply(target) else '',
-        new_mentions=new_mentions,
-        url=comment.get_comment_page_url()
-    )
-    time_now = timezone.now()
-    notify_mentions(
-        event='global_mentions',
-        user=auth.user,
-        node=node,
-        timestamp=time_now,
-        **context
-    )
 
 
 def is_reply(target):

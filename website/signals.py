@@ -8,8 +8,6 @@ from website.reviews import signals as reviews
 
 
 ALL_SIGNALS = [  # TODO: Fix
-    project.comment_added,
-    project.mention_added,
     project.unreg_contributor_added,
     project.contributor_added,
     project.contributor_removed,

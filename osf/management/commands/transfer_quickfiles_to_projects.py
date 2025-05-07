@@ -16,11 +16,9 @@ from osf.models import (
 )
 from osf.models.base import generate_guid
 from osf.models.quickfiles import get_quickfiles_project_title
-from osf.models.queued_mail import QueuedMail
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 
 from addons.osfstorage.models import OsfStorageFile
-from website import mails, settings
 from django.contrib.contenttypes.models import ContentType
 
 logger = logging.getLogger(__name__)
@@ -65,7 +63,6 @@ def remove_quickfiles():
     logger.info(f'Created {len(guids)} Guids')
 
     node_logs = []
-    queued_mail = []
     pbar = tqdm(total=target_count)
     for node in quick_files_nodes:
         node_logs.append(NodeLog(
@@ -74,17 +71,6 @@ def remove_quickfiles():
             original_node=node,
             params={'node': node._id},
             action=NodeLog.MIGRATED_QUICK_FILES
-        ))
-        queued_mail.append(QueuedMail(
-            user=node.creator,
-            to_addr=node.creator.email,
-            send_at=QUICKFILES_DATE,
-            email_type=mails.QUICKFILES_MIGRATED.tpl_prefix,
-            data=dict(
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                can_change_preferences=False,
-                quickfiles_link=node.absolute_url
-            )
         ))
         node.logs.update(
             params=Func(
@@ -100,8 +86,6 @@ def remove_quickfiles():
     logger.info('Updated logs')
     NodeLog.objects.bulk_create(node_logs)
     logger.info(f'Created {len(node_logs)} logs')
-    QueuedMail.objects.bulk_create(queued_mail)
-    logger.info(f'Created {len(queued_mail)} mails')
 
     quick_files_nodes.update(description=QUICKFILES_DESC, type='osf.node')
     logger.info(f'Projectified {target_count} QuickFilesNodes')
