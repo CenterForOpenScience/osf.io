@@ -315,6 +315,8 @@ class FakeGravyValet:
         r'v1/configured-storage-addons/(?P<pk>\d+)': '_get_addon',
         r'v1/configured-citation-addons/(?P<pk>\d+)': '_get_citation_addon',
         r'v1/configured-computing-addons/(?P<pk>\d+)': '_get_computing_addon',
+        r'v1/configured-link-addons/(?P<pk>\d+)': '_get_link_addon',
+        r'v1/configured-link-addons/(?P<node_guid>[^/]+)/verified-links': '_get_verified_links',
         r'v1/configured-storage-addons/(?P<pk>\d+)/waterbutler-credentials': '_get_wb_settings',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_storage_accounts': '_get_user_accounts',
         r'v1/user-references/(?P<user_pk>\d+)/authorized_citation_accounts': '_get_user_citation_accounts',
@@ -322,7 +324,6 @@ class FakeGravyValet:
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_citation_addons': '_get_resource_citation_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_computing_addons': '_get_resource_computing_addons',
-        r'v1/configured-link-addons/(?P<node_guid>[^/]+)/verified-links': '_get_verified_links',
     }
 
     def __init__(self):
@@ -713,6 +714,32 @@ class FakeGravyValet:
             )
         return _format_response_body(data=[], list_view=True)
 
+    def _get_link_addon(
+            self, headers: dict,
+            pk: str,
+            include_param: str = '',
+    ) -> str:
+        pk = int(pk)
+        addon = None
+        for addon in itertools.chain.from_iterable(self._resource_addons.values()):
+            if addon.pk == pk:
+                addon = addon
+                break
+
+        if not addon:
+            raise FakeGVError(HTTPStatus.NOT_FOUND)
+
+        if self.validate_headers:
+            resource_uri = self._known_resources[addon.resource_pk]
+            _validate_resource_access(resource_uri, headers)
+        if addon.base_account.external_storage_service is not None:
+            return _format_response_body(
+                data=addon,
+                list_view=False,
+                include_param=include_param,
+            )
+        return _format_response_body(data=[], list_view=True)
+
     def _get_user_accounts(
             self,
             headers: dict,
@@ -829,8 +856,6 @@ class FakeGravyValet:
             node_guid: str,
             include_param: str = '',
     ) -> str:
-        """Handle requests for verified links"""
-        # Return an empty list for now since we don't need to test actual links
         return _format_response_body(data=[], list_view=True)
 
 

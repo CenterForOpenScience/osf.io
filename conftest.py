@@ -366,8 +366,19 @@ def mock_gravy_valet_get_links():
 
 @pytest.fixture
 def mock_get_verified_links():
+    from osf.external.gravy_valet import request_helpers as gv_requests
+    from osf_tests.external.gravy_valet import gv_fakes
+
+    fake_gv = gv_fakes.FakeGravyValet()
+    fake_gv.validate_headers = False
+
     def mock_get_links(node_guid, requesting_user=None):
-        return iter([])
+        with fake_gv.run_fake():
+            return gv_requests.iterate_gv_results(
+                gv_requests.ADDONS_ENDPOINT.format(addon_type=gv_requests.AddonType.LINK) + f'/{node_guid}/verified-links',
+                requesting_user=requesting_user,
+                raise_on_error=True
+            )
 
     with mock.patch('osf.external.gravy_valet.request_helpers.get_verified_links', side_effect=mock_get_links) as mock_get_links:
         yield mock_get_links
