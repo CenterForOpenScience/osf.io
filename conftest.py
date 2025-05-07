@@ -358,22 +358,14 @@ def with_class_scoped_db(_class_scoped_db):
     """
     yield from rolledback_transaction('function_transaction')
 
-@pytest.fixture(autouse=True)
-def mock_gravy_valet_get_links():
-    with mock.patch('osf.external.gravy_valet.request_helpers.get_verified_links') as mock_get_links:
-        mock_get_links.return_value = iter([])
-        yield mock_get_links
 
 @pytest.fixture
 def mock_get_verified_links():
-    from osf_tests.external.gravy_valet import gv_fakes
-
-    fake_gv = gv_fakes.FakeGravyValet()
-    fake_gv.validate_headers = False
 
     def mock_get_links():
-        with mock.patch('osf.external.gravy_valet.request_helpers.iterate_gv_results'):
-            yield []
+        with mock.patch('osf.external.gravy_valet.request_helpers.iterate_gv_results') as get_links_mock:
+            get_links_mock.return_value = iter([])
+            yield get_links_mock
 
     with mock.patch('osf.external.gravy_valet.request_helpers.get_verified_links', side_effect=mock_get_links) as mock_get_links:
         yield mock_get_links
