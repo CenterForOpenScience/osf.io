@@ -322,6 +322,7 @@ class FakeGravyValet:
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_storage_addons': '_get_resource_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_citation_addons': '_get_resource_citation_addons',
         r'v1/resource-references/(?P<resource_pk>\d+)/configured_computing_addons': '_get_resource_computing_addons',
+        r'v1/configured-link-addons/(?P<node_guid>[^/]+)/verified-links': '_get_verified_links',
     }
 
     def __init__(self):
@@ -820,6 +821,16 @@ class FakeGravyValet:
                 include_param=include_param,
                 list_view=True,
             )
+        return _format_response_body(data=[], list_view=True)
+
+    def _get_verified_links(
+            self,
+            headers: dict,
+            node_guid: str,
+            include_param: str = '',
+    ) -> str:
+        """Handle requests for verified links"""
+        # Return an empty list for now since we don't need to test actual links
         return _format_response_body(data=[], list_view=True)
 
 

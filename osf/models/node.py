@@ -1991,10 +1991,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         request_headers = string_type_request_headers(request)
         self.update_or_enqueue_on_node_updated(user_id, first_save, saved_fields)
 
-        from website.identifiers.tasks import update_doi_metadata_with_verified_links
-        if self.get_identifier('doi') and bool(self.IDENTIFIER_UPDATE_FIELDS.intersection(set(saved_fields))):
-            update_doi_metadata_with_verified_links(self._id)
-
         user = User.load(user_id)
         if user:
             # Specifically call the super class save method to avoid recursion into model save method.

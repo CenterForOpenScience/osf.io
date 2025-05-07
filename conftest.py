@@ -360,7 +360,14 @@ def with_class_scoped_db(_class_scoped_db):
 
 @pytest.fixture(autouse=True)
 def mock_gravy_valet_get_links():
+    with mock.patch('osf.external.gravy_valet.request_helpers.get_verified_links') as mock_get_links:
+        mock_get_links.return_value = iter([])
+        yield mock_get_links
 
-    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_links:
-        mock_get_links.return_value = []
+@pytest.fixture
+def mock_get_verified_links():
+    def mock_get_links(node_guid, requesting_user=None):
+        return iter([])
+
+    with mock.patch('osf.external.gravy_valet.request_helpers.get_verified_links', side_effect=mock_get_links) as mock_get_links:
         yield mock_get_links
