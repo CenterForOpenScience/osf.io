@@ -126,8 +126,79 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         }
         assert r[0]['value']['kenkyusha_shimei_ja_msfullname'] == '姓名'
         assert r[0]['value']['kenkyusha_shimei_en_msfullname'] == 'First Last'
+        assert r[0]['value']['display_fullname'] == '姓 名 (First Last)'
+        assert 'display-fullname' not in r[0]['value']
         assert r[0]['value']['kenkyukikan_mei_ja'] == '研究機関名'
         assert r[0]['value']['kenkyukikan_mei_en'] == 'Research Institute Name'
+
+    @mock.patch('addons.metadata.settings.KAKEN_ELASTIC_URI', 'http://localhost:9200')
+    @mock.patch('addons.metadata.suggestions.kaken.suggest.KakenElasticsearchService')
+    def test_suggestion_kaken(self, mock_es_service_class):
+        """Test KAKEN suggestion with mocked Elasticsearch service"""
+        # Test with no erad ID
+        r = suggestion_metadata('kaken:kenkyusha_shimei', '山田', None, self.project)
+        logger.info('kaken suggestion (no erad): {}'.format(r))
+        assert len(r) == 0
+
+        # Set erad ID for user
+        self.user.erad = '12345678'
+        self.user.save()
+
+        # Setup mock Elasticsearch service
+        mock_es = mock.MagicMock()
+        mock_es_service_class.return_value = mock_es
+
+        # Mock response data
+        mock_es.get_researcher_by_erad.return_value = {
+            'id:person:erad': ['12345678'],
+            'name': {
+                'humanReadableValue': [
+                    {'text': '山田 太郎', 'lang': 'ja'},
+                    {'text': 'YAMADA Taro', 'lang': 'en'}
+                ],
+                'name:familyName': [
+                    {'text': '山田', 'lang': 'ja'},
+                    {'text': 'YAMADA', 'lang': 'en'}
+                ],
+                'name:givenName': [
+                    {'text': '太郎', 'lang': 'ja'},
+                    {'text': 'Taro', 'lang': 'en'}
+                ]
+            },
+            'affiliations:history': [{
+                'sequence': 1,
+                'affiliation:institution': {
+                    'humanReadableValue': [
+                        {'text': 'テスト大学', 'lang': 'ja'},
+                        {'text': 'Test University', 'lang': 'en'}
+                    ]
+                }
+            }],
+            'work:project': [{
+                'recordSource': {'id:project:kakenhi': ['KAKENHI-PROJECT-11111111']},
+                'since': {'fiscal:year': {'commonEra:year': '2020'}}
+            }]
+        }
+        mock_es.close.return_value = None
+
+        # Test KAKEN suggestion
+        r = suggestion_metadata('kaken:kenkyusha_shimei', '山田', None, self.project)
+        logger.info('kaken suggestion: {}'.format(r))
+
+        assert len(r) == 1
+        assert r[0]['key'] == 'kaken:kenkyusha_shimei'
+        assert r[0]['value']['erad'] == '12345678'
+        assert r[0]['value']['kadai_id'] == '11111111'
+        assert r[0]['value']['kenkyusha_shimei'] == '山田|太郎||YAMADA|Taro'
+        assert r[0]['value']['kenkyusha_shimei_ja'] == '山田|太郎'
+        assert r[0]['value']['kenkyusha_shimei_en'] == 'YAMADA|Taro'
+        assert r[0]['value']['kenkyusha_shimei_ja_msfullname'] == '山田太郎'
+        assert r[0]['value']['kenkyusha_shimei_en_msfullname'] == 'Taro YAMADA'
+        assert r[0]['value']['display_fullname'] == '山田 太郎 (Taro YAMADA)'
+        assert 'display-fullname' not in r[0]['value']
+        assert 'テスト大学' in r[0]['value']['kenkyukikan_mei']
+        assert r[0]['value']['japan_grant_number'] == 'JP11111111'
+        assert r[0]['value']['nendo'] == '2020'
 
     def test_suggestion_contributors(self):
         self.user.erad = ''
@@ -167,6 +238,8 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         }
         assert r[0]['value']['name-ja-msfullname'] == '姓2中間2名2'
         assert r[0]['value']['name-en-msfullname'] == 'Given2 Middle2 Family2'
+        assert r[0]['value']['display-fullname'] == '姓2 中間2 名2 (Given2 Middle2 Family2)'
+        assert 'display_fullname' not in r[0]['value']
 
         r = suggestion_metadata('contributor:erad', '', None, self.project)
         logger.info('contributors suggestion: {}'.format(r))
@@ -187,6 +260,8 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         }
         assert r[0]['value']['name-ja-msfullname'] == '姓名'
         assert r[0]['value']['name-en-msfullname'] == 'Given Family'
+        assert r[0]['value']['display-fullname'] == '姓 名 (Given Family)'
+        assert 'display_fullname' not in r[0]['value']
         assert r[1]['key'] == 'contributor:erad'
         assert r[1]['value']['erad'] == '0123456'
         assert r[1]['value']['name-ja-full'] == '姓2|中間2|名2'
@@ -203,3 +278,5 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         }
         assert r[1]['value']['name-ja-msfullname'] == '姓2中間2名2'
         assert r[1]['value']['name-en-msfullname'] == 'Given2 Middle2 Family2'
+        assert r[1]['value']['display-fullname'] == '姓2 中間2 名2 (Given2 Middle2 Family2)'
+        assert 'display_fullname' not in r[1]['value']

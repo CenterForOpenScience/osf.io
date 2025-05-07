@@ -1,6 +1,8 @@
 from osf.utils.fields import EncryptedTextField, EncryptedJSONField
 from ..models import ERadRecord
-from .utils import to_msfullname
+from .utils import contributors_self_first
+from framework.auth.core import _get_current_user
+from .utils import to_msfullname, build_display_fullname
 
 
 ERAD_COLUMNS = [
@@ -12,17 +14,19 @@ ERAD_COLUMNS = [
 
 
 def suggestion_erad(key, keyword, node):
+    # Detect current user for self-first ordering
+    current_user = _get_current_user()
     filter_field_name = key[5:]
     filter_field = ERadRecord._meta.get_field(filter_field_name)
     if isinstance(filter_field, EncryptedTextField) or isinstance(filter_field, EncryptedJSONField):
         # cannot filter by encrypted field
         candidates = [
             r
-            for r in _erad_candidates_for_node(node)
+            for r in _erad_candidates_for_node(node, current_user=current_user)
             if keyword.lower() in r[filter_field_name].lower()
         ]
     else:
-        candidates = _erad_candidates_for_node(node, **{f'{filter_field_name}__icontains': keyword})
+        candidates = _erad_candidates_for_node(node, current_user=current_user, **{f'{filter_field_name}__icontains': keyword})
     res = []
     for candidate in candidates:
         names = candidate.get('kenkyusha_shimei', '').split('|')
@@ -45,6 +49,7 @@ def suggestion_erad(key, keyword, node):
             'key': key,
             'value': {
                 **candidate,
+                'display_fullname': build_display_fullname(kenkyusha_shimei_ja, kenkyusha_shimei_en),
                 'kenkyusha_shimei_ja': kenkyusha_shimei_ja,
                 'kenkyusha_shimei_en': kenkyusha_shimei_en,
                 'kenkyusha_shimei_ja_msfullname': to_msfullname(kenkyusha_shimei_ja, 'ja'),
@@ -56,10 +61,11 @@ def suggestion_erad(key, keyword, node):
     return res
 
 
-def _erad_candidates_for_node(node, **pred):
-    return sum([  # flatten
+def _erad_candidates_for_node(node, current_user=None, **pred):
+    users = contributors_self_first(node, current_user=current_user)
+    return sum([  # flatten preserving contributor order
         erad_candidates(**{**pred, 'kenkyusha_no': user.erad})
-        for user in node.contributors
+        for user in users
         if user.erad is not None
     ], [])
 

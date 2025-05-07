@@ -25,7 +25,7 @@ from addons.metadata.apps import AddonAppConfig as AddonAppConfig
 import mimetypes
 from api.base.utils import waterbutler_api_url_for
 
-from .suggestions import suggestion_erad, suggestion_contributor
+from .suggestions import suggestion_erad, suggestion_contributor, suggest_kaken
 
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,8 @@ def valid_suggestion_key(key):
     elif key == 'ror':
         return True
     elif key.startswith('erad:'):
+        return True
+    elif key.startswith('kaken:'):
         return True
     elif key.startswith('asset:'):
         return True
@@ -60,6 +62,8 @@ def suggestion_metadata(key, keyword, filepath, node):
         suggestions.extend(suggestion_ror(key, keyword))
     elif key.startswith('erad:'):
         suggestions.extend(suggestion_erad(key, keyword, node))
+    elif key.startswith('kaken:'):
+        suggestions.extend(suggest_kaken(key, keyword, node))
     elif key.startswith('asset:'):
         suggestions.extend(suggestion_asset(key, keyword, node))
     elif key.startswith('contributor:'):

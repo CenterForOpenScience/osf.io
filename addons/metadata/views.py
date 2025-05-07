@@ -11,6 +11,13 @@ from .models import RegistrationReportFormat, get_draft_files, FIELD_GRDM_FILES,
 from .utils import make_report_as_csv
 from .suggestion import suggestion_metadata, valid_suggestion_key
 from .suggestions.erad import erad_candidates
+from .suggestions.kaken import kaken_candidates
+from .suggestions.utils import (
+    order_candidates_by_contributors,
+    contributors_self_first,
+    classify_mode_for_keys,
+    deduplicate_suggestions,
+)
 from .packages import import_project, export_project, get_task_result
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
@@ -132,12 +139,27 @@ def metadata_update_config(auth, **kwargs):
 @must_have_permission('write')
 def metadata_get_erad_candidates(auth, **kwargs):
     node = kwargs['node'] or kwargs['project']
-    candidates = []
+    current_user = auth.user
+
+    # Collect plain candidates from ERAD DB and KAKEN for all contributors
+    plain_candidates = []
+
     for user in node.contributors:
         rn = user.erad
         if rn is None:
             continue
-        candidates += erad_candidates(kenkyusha_no=rn)
+
+        user_candidates = []
+        user_candidates += erad_candidates(kenkyusha_no=rn)
+        user_candidates += kaken_candidates(rn, erad=rn)
+        plain_candidates.extend(user_candidates)
+
+    # Order by contributor sequence (self first → others in node order),
+    # sort per-contributor by year desc, then dedupe by kadai_id (first wins)
+    contribs = contributors_self_first(node, current_user=current_user)
+    contrib_erads = [u.erad for u in contribs if u.erad]
+    candidates = order_candidates_by_contributors(plain_candidates, contrib_erads)
+
     return {
         'data': {
             'id': node._id,
@@ -367,10 +389,24 @@ def metadata_file_metadata_suggestions(auth, filepath=None, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
     keyword = request.args.get('keyword', '').lower()
     node = kwargs['node'] or kwargs['project']
-    suggestions = sum([  # flatten
+    suggestions = sum([
         suggestion_metadata(key, keyword, filepath, node)
         for key in key_list
     ], [])
+
+    # Classify keys: if all 'person' or all 'project', apply unified policy
+    mode = classify_mode_for_keys(key_list) if key_list else None
+    if mode in ('person', 'project'):
+        ordered_users = contributors_self_first(node, current_user=auth.user)
+        erad_order = [u.erad for u in ordered_users if u.erad]
+        # Unified: sort by owner -> year -> key, then keep first occurrence per identity
+        suggestions = deduplicate_suggestions(
+            suggestions,
+            mode=mode,
+            key_order=key_list,
+            contributor_erads_order=erad_order,
+            year_field='nendo',
+        )
     return {
         'data': {
             'id': node._id,
