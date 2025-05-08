@@ -135,7 +135,7 @@ class TestNotificationsModels(OsfTestCase):
 
         file_updated_subscription = NotificationSubscription.objects.get(_id=node._id + '_file_updated')
 
-        assert len(user_subscriptions) == 5  # subscribed to both node and user settings
+        assert len(user_subscriptions) == 2  # subscribed to both node and user settings
         assert 'file_updated' in event_types
         assert 'global_file_updated' in event_types
         assert file_updated_subscription.none.count() == 1
@@ -155,7 +155,7 @@ class TestNotificationsModels(OsfTestCase):
         user_subscriptions = list(utils.get_all_user_subscriptions(user))
         event_types = [sub.event_name for sub in user_subscriptions]
 
-        assert len(user_subscriptions) == 4  # subscribed to only user settings
+        assert len(user_subscriptions) == 1  # subscribed to only user settings
         assert 'global_file_updated' in event_types
 
     def test_subscribe_user_to_global_notfiications(self):
@@ -186,7 +186,7 @@ class TestNotificationsModels(OsfTestCase):
 
         file_updated_subscription = NotificationSubscription.objects.get(_id=node._id + '_file_updated')
 
-        assert len(user_subscriptions) == 6  # subscribed to both node and user settings
+        assert len(user_subscriptions) == 2  # subscribed to both node and user settings
         assert 'file_updated' in event_types
         assert 'global_file_updated' in event_types
         assert file_updated_subscription.email_transactional.count() == 1
@@ -209,7 +209,7 @@ class TestNotificationsModels(OsfTestCase):
         node_file_updated_subscription = NotificationSubscription.objects.get(_id=node._id + '_file_updated')
         project_file_updated_subscription = NotificationSubscription.objects.get(_id=project._id + '_file_updated')
 
-        assert len(user_subscriptions) == 7  # subscribed to project, fork, and user settings
+        assert len(user_subscriptions) == 3  # subscribed to project, fork, and user settings
         assert 'file_updated' in event_types
         assert 'global_file_updated' in event_types
         assert node_file_updated_subscription.email_transactional.count() == 1
@@ -262,7 +262,7 @@ class TestNotificationsModels(OsfTestCase):
 
         file_updated_subscription = NotificationSubscription.objects.get(_id=node._id + '_file_updated')
 
-        assert len(contributor_subscriptions) == 4  # subscribed to both node and user settings
+        assert len(contributor_subscriptions) == 2  # subscribed to both node and user settings
         assert 'file_updated' in event_types
         assert 'global_file_updated' in event_types
         assert file_updated_subscription.email_transactional.count() == 1
@@ -289,10 +289,10 @@ class TestRemoveNodeSignal(OsfTestCase):
         component = factories.NodeFactory(parent=project, creator=project.creator)
 
         s = NotificationSubscription.objects.filter(email_transactional=project.creator)
-        assert s.count() == 2
+        assert s.count() == 1
 
         s = NotificationSubscription.objects.filter(email_transactional=component.creator)
-        assert s.count() == 2
+        assert s.count() == 1
 
         with capture_signals() as mock_signals:
             project.remove_node(auth=Auth(project.creator))
@@ -399,38 +399,12 @@ class TestNotificationUtils(OsfTestCase):
         self.user = factories.UserFactory()
         self.project = factories.ProjectFactory(creator=self.user)
 
-        self.project_subscription = NotificationSubscription.objects.get(
-            node=self.project,
-            _id=self.project._id + '_comments',
-            event_name='comments'
-        )
-
         self.user.notifications_configured[self.project._id] = True
         self.user.save()
 
         self.node = factories.NodeFactory(parent=self.project, creator=self.user)
 
-        self.node_comments_subscription = factories.NotificationSubscriptionFactory(
-            _id=self.node._id + '_' + 'comments',
-            node=self.node,
-            event_name='comments'
-        )
-        self.node_comments_subscription.save()
-        self.node_comments_subscription.email_transactional.add(self.user)
-        self.node_comments_subscription.save()
-
-        self.node_subscription = list(NotificationSubscription.objects.filter(node=self.node))
-
-        self.user_subscription = [factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'comment_replies',
-            user=self.user,
-            event_name='comment_replies'
-        ),
-        factories.NotificationSubscriptionFactory(
-            _id=self.user._id + '_' + 'global_comment',
-            user=self.user,
-            event_name='global_comment'
-        ),
+        self.user_subscription = [
         factories.NotificationSubscriptionFactory(
             _id=self.user._id + '_' + 'global_file_updated',
             user=self.user,
@@ -718,10 +692,6 @@ class TestNotificationUtils(OsfTestCase):
     def test_get_global_notification_type(self):
         notification_type = utils.get_global_notification_type(self.user_subscription[1] ,self.user)
         assert 'email_transactional' == notification_type
-
-    def test_check_if_all_global_subscriptions_are_none_false(self):
-        all_global_subscriptions_none = utils.check_if_all_global_subscriptions_are_none(self.user)
-        assert not all_global_subscriptions_none
 
     # # Business logic prevents this from being an applicable unit test;
     # # global_mentions cannot be unsubscribed from
@@ -1012,6 +982,8 @@ class TestSendEmails(NotificationTestCase):
         super().setUp()
         self.user = factories.AuthUserFactory()
         self.project = factories.ProjectFactory()
+        self.node = factories.NodeFactory(parent=self.project)
+
 
     def test_get_settings_url_for_node(self):
         url = emails.get_settings_url(self.project._id, self.user)
@@ -1168,7 +1140,7 @@ class TestSendDigest(OsfTestCase):
             }
         ]
 
-        assert len(user_groups) == 2
+        assert len(user_groups) == 1
         assert user_groups == expected
         digest_ids = [d2._id, d3._id]
         remove_notifications(email_notification_ids=digest_ids)
