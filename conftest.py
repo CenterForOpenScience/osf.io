@@ -358,7 +358,7 @@ def with_class_scoped_db(_class_scoped_db):
     """
     yield from rolledback_transaction('function_transaction')
 
-@pytest.fixture(autouse=True)
+@pytest.fixture
 def mock_gravy_valet_get_links():
 
     with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_links:
