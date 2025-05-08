@@ -1,5 +1,6 @@
 import datetime
 
+from unittest import mock
 import pytest
 from django.core.management import call_command
 from django.utils import timezone
@@ -52,6 +53,12 @@ class TestSyncDOIs:
         identifier.modified = timezone.now() - datetime.timedelta(days=1)
         identifier.save(update_modified=False)
         return identifier
+
+    @pytest.fixture(autouse=True)
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     @pytest.mark.enable_enqueue_task
     def test_doi_synced_datacite(self, app, registration, registration_identifier, mock_datacite):

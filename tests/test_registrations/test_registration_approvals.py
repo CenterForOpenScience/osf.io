@@ -38,6 +38,12 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(project=self.project)
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     def test__require_approval_saves_approval(self):
         initial_count = RegistrationApproval.objects.all().count()
         self.registration._initiate_approval(
@@ -114,7 +120,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.registration.registration_approval.approve(user=non_admin, token=approval_token)
         assert self.registration.is_pending_registration
 
-    def test_approval_adds_to_parent_projects_log(self):
+    def test_approval_adds_to_parent_projects_log(self, mock_gravy_valet_get_links):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.require_approval(
             self.user
@@ -126,7 +132,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         # adds initiated, approved, and registered logs
         assert self.registration.registered_from.logs.count() == initial_project_logs + 3
 
-    def test_one_approval_with_two_admins_stays_pending(self):
+    def test_one_approval_with_two_admins_stays_pending(self, mock_gravy_valet_get_links):
         admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=admin2)
         self.registration.add_permission(admin2, ADMIN, save=True)
@@ -251,7 +257,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_registration
 
-    def test_should_suppress_emails(self):
+    def test_should_suppress_emails(self, mock_gravy_valet_get_links):
         self.registration = RegistrationFactory(project=self.project)
         self.registration.external_registration = True
         self.registration.save()
@@ -280,7 +286,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.registration.sanction.ask(contributors)
         assert mock_notify_non_authorizer.call_count == 0
 
-    def test_on_complete_notify_initiator(self):
+    def test_on_complete_notify_initiator(self, mock_gravy_valet_get_links):
         self.registration.require_approval(
             self.user,
             notify_initiator_on_complete=True

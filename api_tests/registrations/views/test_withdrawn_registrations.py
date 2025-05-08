@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from urllib.parse import urlparse
 
@@ -63,6 +65,12 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
     def url_withdrawn(self, registration):
         return '/{}registrations/{}/?version=2.2'.format(
             API_BASE, registration._id)
+
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_can_access_withdrawn_contributors(
             self, app, user, registration, withdrawn_registration):

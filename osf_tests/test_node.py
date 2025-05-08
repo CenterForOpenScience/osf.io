@@ -3640,6 +3640,12 @@ class TestNodeEditableFieldsMixin:
 @pytest.mark.enable_implicit_clean
 class TestNodeUpdate:
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     def test_update_description(self, fake, node, auth):
         new_title = fake.bs()
 
@@ -3707,7 +3713,7 @@ class TestNodeUpdate:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.MADE_PRIVATE
 
-    def test_update_can_make_registration_public(self):
+    def test_update_can_make_registration_public(self, mock_gravy_valet_get_links):
         reg = RegistrationFactory(is_public=False)
         reg.update({'is_public': True})
 

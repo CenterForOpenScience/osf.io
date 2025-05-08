@@ -1,6 +1,7 @@
 import datetime
 from unittest import mock
 
+import pytest
 from django.test import TestCase
 import rdflib
 from rdflib import Literal, URIRef
@@ -116,6 +117,12 @@ class TestOsfGathering(TestCase):
         cls.userfocus__admin = osf_gathering.OsfFocus(cls.user__admin)
         cls.userfocus__readwrite = osf_gathering.OsfFocus(cls.user__readwrite)
         cls.userfocus__readonly = osf_gathering.OsfFocus(cls.user__readonly)
+
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_setupdata(self):
         assert self.projectfocus.iri == OSFIO[self.project._id]
@@ -703,7 +710,7 @@ class TestOsfGathering(TestCase):
             (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
         })
 
-    def test_gather_registration_withdrawal(self):
+    def test_gather_registration_withdrawal(self, mock_gravy_valet_get_links):
         # focus: registration
         assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())
         _retraction = factories.WithdrawnRegistrationFactory(

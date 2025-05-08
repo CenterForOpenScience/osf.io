@@ -504,8 +504,13 @@ class TestConfirmApproveBacklogView(AdminTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
-    def test_request_approval_is_approved(self):
+    def test_request_approval_is_approved(self, mock_gravy_valet_get_links):
         now = timezone.now()
         self.approval = RegistrationApprovalFactory(
             initiation_date=now - timezone.timedelta(days=1),
