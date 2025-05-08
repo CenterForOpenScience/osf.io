@@ -17,7 +17,6 @@ urlpatterns = [
     re_path(r'^(?P<user_id>\w+)/draft_registrations/$', views.UserDraftRegistrations.as_view(), name=views.UserDraftRegistrations.view_name),
     re_path(r'^(?P<user_id>\w+)/institutions/$', views.UserInstitutions.as_view(), name=views.UserInstitutions.view_name),
     re_path(r'^(?P<user_id>\w+)/nodes/$', views.UserNodes.as_view(), name=views.UserNodes.view_name),
-    re_path(r'^(?P<user_id>\w+)/groups/$', views.UserGroups.as_view(), name=views.UserGroups.view_name),
     re_path(r'^(?P<user_id>\w+)/preprints/$', views.UserPreprints.as_view(), name=views.UserPreprints.view_name),
     re_path(r'^(?P<user_id>\w+)/draft_preprints/$', views.UserDraftPreprints.as_view(), name=views.UserDraftPreprints.view_name),
     re_path(r'^(?P<user_id>\w+)/registrations/$', views.UserRegistrations.as_view(), name=views.UserRegistrations.view_name),

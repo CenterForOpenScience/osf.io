@@ -14,7 +14,6 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
@@ -24,7 +23,6 @@ from django.db import models
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
-from guardian.shortcuts import get_objects_for_user
 
 from framework import sentry
 from framework.auth import Auth, signals, utils
@@ -57,7 +55,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
 from website import settings as website_settings
 from website import filters, mails
 from website.project import new_bookmark_collection
@@ -644,14 +642,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_anonymous(self):
         return False
 
-    @property
-    def osf_groups(self):
-        """
-        OSFGroups that the user belongs to
-        """
-        OSFGroup = apps.get_model('osf.OSFGroup')
-        return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
-
     def is_institutional_admin_at(self, institution):
         """
         Checks if user is admin of a specific institution.
@@ -861,17 +851,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Transfer user's draft registrations
         self._merge_user_draft_registrations(user)
 
-        # transfer group membership
-        for group in user.osf_groups:
-            if not group.is_manager(self):
-                if group.has_permission(user, MANAGE):
-                    group.make_manager(self)
-                else:
-                    group.make_member(self)
-            group.remove_member(user)
-
         # finalize the merge
-
         remove_sessions_for_user(user)
 
         # - username is set to the GUID so the merging user can set it primary
@@ -1528,9 +1508,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         for node in self.contributor_to:
             node.update_search()
 
-        for group in self.osf_groups:
-            group.update_search()
-
     def update_date_last_login(self, login_time=None):
         self.date_last_login = login_time or timezone.now()
 
@@ -1677,19 +1654,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from .provider import AbstractProvider
-        from .osf_group import OSFGroup
 
         if not skip_referrer_permissions:
             if isinstance(claim_origin, AbstractProvider):
                 if not bool(get_perms(referrer, claim_origin)):
                     raise PermissionsError(
                         f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
-                    )
-
-            elif isinstance(claim_origin, OSFGroup):
-                if not claim_origin.has_permission(referrer, MANAGE):
-                    raise PermissionsError(
-                        f'Referrer does not have permission to add a member to {claim_origin._id}'
                     )
             else:
                 if not claim_origin.has_permission(referrer, ADMIN):
@@ -2029,9 +1999,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             hard_delete=True
         )
 
-        # A Potentially out of date check that user isn't a member of a OSFGroup
-        self._validate_osf_groups()
-
         # Finally delete the user's info.
         self._clear_identifying_information()
 
@@ -2088,20 +2055,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 logger.info(f'Soft-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
                 entity.remove_node(auth=Auth(self))
 
-    def _validate_osf_groups(self):
-        """
-        This method ensures a user isn't in an OSFGroup before deleting them..
-        """
-        for group in self.osf_groups:
-            if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(
-                    id=self.id).exists():
-                raise UserStateError(
-                    f'You cannot delete this user because they are the only registered manager of OSFGroup {group._id} that contains other members.')
-            elif len(group.managers) == 1 and group.managers[0] == self:
-                group.remove_group()
-            else:
-                group.remove_member(self)
-
     def _clear_identifying_information(self):
         '''
         This method ensures a user's info is deleted during a GDPR delete
@@ -2156,10 +2109,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         from osf.models import Preprint
 
         nodes = self.nodes.filter(deleted__isnull=True).exists()
-        groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
-        return groups or nodes or preprints
+        return nodes or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App
