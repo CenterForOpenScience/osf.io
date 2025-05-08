@@ -1,6 +1,7 @@
 import lxml
 import pytest
 import responses
+from unittest import mock
 
 from datacite import schema40
 from django.utils import timezone
@@ -40,6 +41,12 @@ class TestDataCiteClient:
     @pytest.fixture()
     def registration(self, user):
         return RegistrationFactory(is_public=True, creator=user)
+
+    @pytest.fixture(autouse=True)
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_datacite_create_identifiers(self, registration, datacite_client, mock_datacite):
         identifiers = datacite_client.create_identifier(node=registration, category='doi')
@@ -259,7 +266,14 @@ class TestDataCiteViews(OsfTestCase):
         self.node = RegistrationFactory(creator=self.user, is_public=True)
         self.client = DataCiteClient(self.node)
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     @responses.activate
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_datacite_create_identifiers_not_exists(self):
         responses.add(
             responses.Response(

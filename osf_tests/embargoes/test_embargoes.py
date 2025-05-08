@@ -29,7 +29,13 @@ class TestDraftRegistrations:
         embargo.save()
         return embargo.registrations.last()
 
-    def test_request_early_termination_too_late(self, registration, user):
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
+    def test_request_early_termination_too_late(self, registration, user, mock_gravy_valet_get_links):
         """
         This is for an edge case test for where embargos are frozen and never expire when the user requests they be
         terminated with embargo with less then 48 hours before it would expire anyway.

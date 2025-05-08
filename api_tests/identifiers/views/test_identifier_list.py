@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from urllib.parse import urlparse
@@ -475,6 +477,13 @@ class TestNodeIdentifierCreate:
     def client(self, resource):
         return DataCiteClient(resource)
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     @responses.activate
     def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,
             write_contributor, read_contributor, ark_payload):

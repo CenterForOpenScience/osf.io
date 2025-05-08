@@ -335,10 +335,17 @@ class TestRegistrationUpdateTestCase:
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
+
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     def test_update_registration(
             self, app, user, read_only_contributor,
             read_write_contributor, public_registration,
-            public_url, private_url, make_payload, public_project):
+            public_url, private_url, make_payload, public_project, mock_gravy_valet_get_links):
 
         private_registration_payload = make_payload()
         non_contributor = AuthUserFactory()
@@ -418,7 +425,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
     def test_fields(
             self, app, user, public_registration,
             private_registration, public_url, institution_one,
-            private_url, make_payload, license_cc0):
+            private_url, make_payload, license_cc0, mock_gravy_valet_get_links):
 
         #   test_field_has_invalid_value
         invalid_public_payload = make_payload(
@@ -562,7 +569,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.status_code == 400
 
     def test_turning_private_registrations_public(
-            self, app, user, make_payload):
+            self, app, user, make_payload, mock_gravy_valet_get_links):
         private_project = ProjectFactory(creator=user, is_public=False)
         private_registration = RegistrationFactory(
             project=private_project, creator=user, is_public=False)
@@ -711,6 +718,12 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
+    @pytest.fixture
     def public_payload(self, public_registration, make_payload):
         return make_payload(
             id=public_registration._id,
@@ -777,7 +790,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert mock_send_mail.called
 
     def test_initiate_withdrawal_with_embargo_ends_embargo(
-            self, app, user, public_project, public_registration, public_url, public_payload):
+            self, app, user, public_project, public_registration, public_url, public_payload, mock_gravy_valet_get_links):
         public_registration.embargo_registration(
             user,
             (timezone.now() + datetime.timedelta(days=10)),
@@ -934,11 +947,17 @@ class TestRegistrationTags:
             }
         }
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     def test_registration_tags(
             self, app, registration_public, registration_private,
             url_registration_public, url_registration_private,
             new_tag_payload_public, new_tag_payload_private,
-            user_admin, user_non_contrib, read_write_contrib):
+            user_admin, user_non_contrib, read_write_contrib, mock_gravy_valet_get_links):
         # test_registration_starts_with_no_tags
         res = app.get(url_registration_public)
         assert res.status_code == 200

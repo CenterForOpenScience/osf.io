@@ -148,6 +148,12 @@ class TestNotableDomain:
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT,
         )
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory])
     def test_check_resource_for_domains_moderation_queue(self, spam_domain, factory):
         obj = factory()
@@ -190,7 +196,7 @@ class TestNotableDomain:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, RegistrationFactory, PreprintFactory])
-    def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, request_context):
+    def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, request_context, mock_gravy_valet_get_links):
         obj = factory()
         obj.is_public = True
         obj.is_published = True
