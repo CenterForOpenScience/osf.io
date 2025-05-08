@@ -380,6 +380,7 @@ def archive_registrations(*args, **kwargs):
         VERIFIED.remove(reg)
 
 def verify(registration, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, raise_error=False):
+    permissible_addons = set(permissible_addons)
     maybe_suppress_error = contextlib.suppress(ValidationError) if not raise_error else contextlib.nullcontext(enter_result=False)
 
     for reg in registration.node_and_primary_descendants():
