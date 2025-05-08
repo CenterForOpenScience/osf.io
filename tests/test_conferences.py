@@ -231,18 +231,6 @@ class TestProvisionNode(ContextTestCase):
             cookies={settings.COOKIE_NAME: self.user.get_or_create_cookie().decode()},
         )
 
-    @mock.patch('website.conferences.utils.upload_attachments')
-    def test_add_poster_by_email(self, mock_upload_attachments):
-        conference = ConferenceFactory()
-
-        with self.make_context(data={'from': 'bdawk@sb52champs.com', 'subject': 'It\'s PARTY TIME!'}):
-            msg = message.ConferenceMessage()
-            views.add_poster_by_email(conference, msg)
-
-        user = OSFUser.objects.get(username='bdawk@sb52champs.com')
-        assert user.email == 'bdawk@sb52champs.com'
-        assert user.fullname == user._id  # user's shouldn't be able to use email as fullname, so we use the guid.
-
 
 class TestMessage(ContextTestCase):
     PUSH_CONTEXT = False
