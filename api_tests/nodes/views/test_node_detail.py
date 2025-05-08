@@ -28,7 +28,6 @@ from osf_tests.factories import (
     IdentifierFactory,
     InstitutionFactory,
     ForkFactory,
-    OSFGroupFactory,
     WithdrawnRegistrationFactory,
     DraftNodeFactory,
 )
@@ -151,13 +150,6 @@ class TestNodeDetail:
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
-
-    #   test_return_project_where_you_have_osf_group_membership
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.WRITE)
-        res = app.get(url_private, auth=user_two.auth)
-        assert res.status_code == 200
-        assert project_private.has_permission(user_two, permissions.WRITE) is True
 
     #   test_draft_node_not_returned_under_node_detail_endpoint
         draft_node_url = f'/{API_BASE}nodes/{draft_node._id}/'
@@ -412,28 +404,6 @@ class TestNodeDetail:
         res = app.get(node_children_url, auth=user_two.auth)
         assert len(res.json['data']) == 1
 
-        # Explicit Member of OSFGroup can view child count
-        user_three = AuthUserFactory()
-        group = OSFGroupFactory(creator=user_three)
-        res = app.get(url, auth=user_three.auth)
-        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
-        child.add_osf_group(group, permissions.READ)
-        res = app.get(url, auth=user_three.auth)
-        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
-        res = app.get(node_children_url, auth=user_three.auth)
-        assert len(res.json['data']) == 1
-
-        # Implicit admin group member can view child count
-        child.remove_osf_group(group)
-        res = app.get(url, auth=user_three.auth)
-        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 0
-
-        project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.get(url, auth=user_three.auth)
-        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
-        res = app.get(node_children_url, auth=user_three.auth)
-        assert len(res.json['data']) == 1
-
         # Grandchildren not shown. Children show one level.
         grandparent = AuthUserFactory()
         NodeFactory(parent=child, creator=user)
@@ -571,46 +541,6 @@ class TestNodeDetail:
 
         # check read permission is included with older versions for anon user
         res = app.get(url_public)
-        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
-        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
-
-        # Read group member has "read" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        project_public.add_osf_group(osf_group, permissions.READ)
-        res = app.get(url, auth=group_member.auth)
-        assert project_public.has_permission(group_member, permissions.READ)
-        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
-        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # Write group member has "read" and "write" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        project_public.add_osf_group(osf_group, permissions.WRITE)
-        res = app.get(url, auth=group_member.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
-        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # Admin group member has "read" and "write" and "admin" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        project_public.add_osf_group(osf_group, permissions.ADMIN)
-        res = app.get(url, auth=group_member.auth)
-        assert res.json['data']['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
-        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # make sure 'read' is there for implicit read group members
-        comp = NodeFactory(parent=project_public, is_public=True)
-        comp_url = f'/{API_BASE}nodes/{comp._id}/?version=2.11'
-        res = app.get(comp_url, auth=group_member.auth)
-        assert project_public.has_permission(user, permissions.ADMIN)
-        assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
-        assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
-
-        # ensure 'read' is still included with older versions
-        project_public.remove_osf_group(osf_group)
-        res = app.get(url_public, auth=group_member.auth)
-        assert not project_public.has_permission(group_member, permissions.READ)
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
 
@@ -1052,25 +982,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
-    # test_update_private_project_group_has_read_perms
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.put_json_api(url_private, {
-            'data': {
-                'id': project_private._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': title_new,
-                    'description': description_new,
-                    'category': category_new,
-                    'public': False
-                }
-            }
-        }, auth=user_two.auth, expect_errors=True)
-        assert project_private.has_permission(user_two, permissions.READ) is True
-        assert res.status_code == 403
-        assert 'detail' in res.json['errors'][0]
-
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
@@ -1095,32 +1006,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert NodeLog.EDITED_TITLE in log_actions
         assert NodeLog.EDITED_DESCRIPTION in log_actions
         assert NodeLog.CATEGORY_UPDATED in log_actions
-
-    def test_update_public_project_osf_group_member(
-        self, app, user_two, title_new, description_new,
-            category_new, project_public, url_public):
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_public.add_osf_group(osf_group, permissions.WRITE)
-        res = app.put_json_api(url_public, {
-            'data': {
-                'id': project_public._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': title_new,
-                    'description': description_new,
-                    'category': category_new,
-                }
-            }
-        }, auth=user_two.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == title_new
-        assert res.json['data']['attributes']['description'] == description_new
-        assert res.json['data']['attributes']['category'] == category_new
-        log_actions = project_public.logs.values_list('action', flat=True)
-        assert NodeLog.CATEGORY_UPDATED in log_actions
-        assert NodeLog.EDITED_TITLE in log_actions
-        assert NodeLog.EDITED_DESCRIPTION in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(
@@ -1498,15 +1383,6 @@ class TestNodeDelete(NodeCRUDTestCase):
     #   test_deletes_invalid_node
         res = app.delete(url_fake, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert 'detail' in res.json['errors'][0]
-
-    #   test_delete_osf_group_improper_permissions
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
-        project_private.reload()
-        assert res.status_code == 403
-        assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
     def test_deletes_private_node_logged_in_read_only_contributor(

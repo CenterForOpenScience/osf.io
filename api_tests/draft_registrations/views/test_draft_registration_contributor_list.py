@@ -199,20 +199,6 @@ class TestDraftRegistrationContributorAdd(DraftRegistrationCRUDTestCase, TestNod
     def url_private(self, project_private):
         return f'/{API_BASE}draft_registrations/{project_private._id}/contributors/?send_email=false'
 
-    # Overrides TestNodeContributorAdd
-    def test_adds_contributor_public_project_non_admin_osf_group(
-            self, app, user, user_two, user_three,
-            project_public, data_user_three, url_public):
-        # Draft registrations don't have groups
-        return
-
-    # Overrides TestNodeContributorAdd
-    def test_adds_contributor_private_project_osf_group_admin_perms(
-            self, app, user, user_two, user_three, project_private,
-            data_user_two, url_private):
-        # Draft registrations don't have groups
-        return
-
 
 class TestDraftRegistrationContributorCreateValidation(DraftRegistrationCRUDTestCase, TestNodeContributorCreateValidation):
 

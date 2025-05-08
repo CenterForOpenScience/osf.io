@@ -27,22 +27,7 @@ SELECT json_agg(
                                LEFT OUTER JOIN osf_guid AS USER_GUID
                                  ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
                              WHERE (CONTRIB.node_id = N.id AND CONTRIB.visible = TRUE))
-            , 'groups', (SELECT json_agg(json_build_object(
-                                            'url',  '/' || osf_osfgroup._id || '/'
-                                            , 'name', osf_osfgroup.name
-                                        ))
-                        FROM osf_osfgroup
-                        WHERE osf_osfgroup.id IN (
-                            SELECT GGOP.content_object_id AS osfgroup_id
-                            FROM osf_osfgroupgroupobjectpermission GGOP
-                            WHERE GGOP.group_id IN (
-                                SELECT DISTINCT AG.id AS osfgroup_id
-                                FROM auth_group AG
-                                    INNER JOIN osf_nodegroupobjectpermission NGOP
-                                    ON (AG.id = NGOP.group_id)
-                                WHERE (NGOP.content_object_id = N.id AND UPPER(AG.name::text) LIKE UPPER('%osfgroup_%'))
-                                )
-                            ))
+            , 'groups', NULL
             , 'extra_search_terms', CASE
                                     WHEN strpos(N.title, '-') + strpos(N.title, '_') + strpos(N.title, '.') > 0
                                       THEN translate(N.title, '-_.', '   ')
