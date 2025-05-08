@@ -25,6 +25,7 @@ from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
 from website import search
+from website.settings import EXTERNAL_IDENTITY_PROFILE
 
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -126,6 +127,7 @@ class UserSearchView(PermissionRequiredMixin, FormView):
         guid = form.cleaned_data['guid']
         name = form.cleaned_data['name']
         email = form.cleaned_data['email']
+        orcid = form.cleaned_data['orcid']
         if name:
             return redirect(reverse('users:search-list', kwargs={'name': name}))
 
@@ -147,6 +149,18 @@ class UserSearchView(PermissionRequiredMixin, FormView):
                 )
 
             return redirect(reverse('users:user', kwargs={'guid': guid}))
+
+        if orcid:
+            external_id_provider = EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile')
+            user = get_user(external_id_provider=external_id_provider, external_id=orcid)
+
+            if not user:
+                return page_not_found(
+                    self.request,
+                    AttributeError(f'resource with id "{orcid}" not found.')
+                )
+
+            return redirect(reverse('users:user', kwargs={'guid': user._id}))
 
         return super().form_valid(form)
 
