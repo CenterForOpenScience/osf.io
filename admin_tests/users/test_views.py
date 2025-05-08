@@ -402,7 +402,14 @@ class TestRemove2Factor(AdminTestCase):
 class TestUserSearchView(AdminTestCase):
 
     def setUp(self):
-        self.user_1 = AuthUserFactory(fullname='Broken Matt Hardy', social={'orcid': '1234-5678'})
+        self.user_1 = AuthUserFactory(
+            fullname='Broken Matt Hardy',
+            external_identity={
+                settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'): {
+                    '1234-5678': 'VERIFIED'
+                }
+            }
+        )
         self.user_2 = AuthUserFactory(fullname='Jeff Hardy')
         self.user_3 = AuthUserFactory(fullname='Reby Sky')
         self.user_4 = AuthUserFactory(fullname='King Maxel Hardy')
