@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from api.providers.workflows import Workflows
@@ -57,6 +59,12 @@ def retraction(provider=None):
     registration.update_moderation_state()
     registration.save()
     return sanction
+
+@pytest.fixture(autouse=True)
+def mock_gravy_valet_get_links(self):
+    with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+        mock_get_links.return_value = []
+        yield mock_get_links
 
 
 @pytest.mark.enable_bookmark_creation

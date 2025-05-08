@@ -45,6 +45,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.embargo = EmbargoFactory(user=self.user)
         self.valid_embargo_end_date = timezone.now() + datetime.timedelta(days=3)
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     # Node#_initiate_embargo tests
     def test__initiate_embargo_saves_embargo(self):
         initial_count = Embargo.objects.all().count()
@@ -150,7 +156,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_embargo
 
-    def test_embargo_public_project_makes_private_pending_embargo(self):
+    def test_embargo_public_project_makes_private_pending_embargo(self, mock_gravy_valet_get_links):
         self.registration.is_public = True
         assert self.registration.is_public
         self.registration.embargo_registration(
@@ -427,7 +433,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert mock_notify.call_count == 0
 
     # Regression for OSF-8840
-    def test_public_embargo_cannot_be_deleted_with_initial_token(self):
+    def test_public_embargo_cannot_be_deleted_with_initial_token(self, mock_gravy_valet_get_links):
         embargo_termination_approval = EmbargoTerminationApprovalFactory()
         registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         user = registration.contributors.first()
@@ -533,6 +539,12 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(creator=self.user, project=self.project)
+
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_GET_approve_registration_without_embargo_raises_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo
@@ -697,7 +709,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert res.status_code == 200
         assert res.request.path == self.registration.web_url_for('view_project')
 
-    def test_GET_from_unauthorized_user_with_registration_token(self):
+    def test_GET_from_unauthorized_user_with_registration_token(self, mock_gravy_valet_get_links):
         unauthorized_user = AuthUserFactory()
 
         self.registration.require_approval(self.user)
@@ -747,7 +759,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 200
 
-    def test_GET_from_authorized_user_with_registration_app_token(self):
+    def test_GET_from_authorized_user_with_registration_app_token(self, mock_gravy_valet_get_links):
         self.registration.require_approval(self.user)
         self.registration.save()
         app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
@@ -796,6 +808,12 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
         self.registration = RegistrationFactory(creator=self.user, project=self.project)
+
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_GET_approve_registration_without_embargo_raises_HTTPBad_Request(self):
         assert not self.registration.is_pending_embargo
@@ -960,7 +978,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert res.status_code == 302
         assert res.request.path == self.registration.web_url_for('token_action')
 
-    def test_GET_from_unauthorized_user_with_registration_token(self):
+    def test_GET_from_unauthorized_user_with_registration_token(self, mock_gravy_valet_get_links):
         unauthorized_user = AuthUserFactory()
 
         self.registration.require_approval(self.user)
@@ -1010,7 +1028,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 302
 
-    def test_GET_from_authorized_user_with_registration_app_token(self):
+    def test_GET_from_authorized_user_with_registration_app_token(self, mock_gravy_valet_get_links):
         self.registration.require_approval(self.user)
         self.registration.save()
         app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']

@@ -25,6 +25,12 @@ from osf.exceptions import (
 from osf.models import Contributor, Retraction
 from osf.utils import permissions
 
+@pytest.fixture(autouse=True)
+def mock_gravy_valet_get_links(self):
+    with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+        mock_get_links.return_value = []
+        yield mock_get_links
+
 
 @pytest.mark.enable_bookmark_creation
 class RegistrationRetractionModelsTestCase(OsfTestCase):

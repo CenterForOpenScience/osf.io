@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from api.search.serializers import SearchSerializer
@@ -15,8 +17,13 @@ SCHEMA_VERSION = 2
 
 @pytest.mark.django_db
 class TestSearchSerializer:
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
-    def test_search_serializer_mixed_model(self):
+    def test_search_serializer_mixed_model(self, mock_gravy_valet_get_links):
 
         user = AuthUserFactory()
         project = ProjectFactory(creator=user, is_public=True)

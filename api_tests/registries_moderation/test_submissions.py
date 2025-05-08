@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 import datetime
 
@@ -163,6 +165,12 @@ class TestRegistriesModerationSubmissions:
             }
         }
         return payload
+
+    @pytest.fixture(autouse=True)
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
 
     def test_get_provider_requests(self, app, provider_requests_url, registration_with_withdraw_request, access_request, moderator, moderator_wrong_provider):
         resp = app.get(provider_requests_url, expect_errors=True)

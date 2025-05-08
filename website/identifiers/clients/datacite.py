@@ -57,7 +57,6 @@ class DataCiteClient(AbstractIdentifierClient):
         doi_value = doi_value or self._get_doi_value(node)
         metadata_record_xml = self.build_metadata(node, doi_value, as_xml=True)
         if settings.DATACITE_ENABLED:
-
             resp = self._client.metadata_post(metadata_record_xml)
             # Typical response: 'OK (10.70102/FK2osf.io/cq695)' to doi 10.70102/FK2osf.io/cq695
             doi = re.match(r'OK \((?P<doi>[a-zA-Z0-9 .\/]{0,})\)', resp).groupdict()['doi']
