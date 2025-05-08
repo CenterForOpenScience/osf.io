@@ -156,7 +156,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_embargo
 
-    def test_embargo_public_project_makes_private_pending_embargo(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_embargo_public_project_makes_private_pending_embargo(self):
         self.registration.is_public = True
         assert self.registration.is_public
         self.registration.embargo_registration(
@@ -433,7 +434,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert mock_notify.call_count == 0
 
     # Regression for OSF-8840
-    def test_public_embargo_cannot_be_deleted_with_initial_token(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_public_embargo_cannot_be_deleted_with_initial_token(self):
         embargo_termination_approval = EmbargoTerminationApprovalFactory()
         registration = Registration.objects.get(embargo_termination_approval=embargo_termination_approval)
         user = registration.contributors.first()
@@ -709,7 +711,8 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert res.status_code == 200
         assert res.request.path == self.registration.web_url_for('view_project')
 
-    def test_GET_from_unauthorized_user_with_registration_token(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_GET_from_unauthorized_user_with_registration_token(self):
         unauthorized_user = AuthUserFactory()
 
         self.registration.require_approval(self.user)
@@ -759,7 +762,8 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 200
 
-    def test_GET_from_authorized_user_with_registration_app_token(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_GET_from_authorized_user_with_registration_app_token(self):
         self.registration.require_approval(self.user)
         self.registration.save()
         app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
@@ -978,7 +982,8 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert res.status_code == 302
         assert res.request.path == self.registration.web_url_for('token_action')
 
-    def test_GET_from_unauthorized_user_with_registration_token(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_GET_from_unauthorized_user_with_registration_token(self):
         unauthorized_user = AuthUserFactory()
 
         self.registration.require_approval(self.user)
@@ -1028,7 +1033,8 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 302
 
-    def test_GET_from_authorized_user_with_registration_app_token(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_GET_from_authorized_user_with_registration_app_token(self):
         self.registration.require_approval(self.user)
         self.registration.save()
         app_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']

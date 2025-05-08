@@ -571,7 +571,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
         assert registration_files == set(selected_files.keys())
 
-    def test_archive_success_escaped_file_names(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_archive_success_escaped_file_names(self):
         file_tree = file_tree_factory(0, 0, 0)
         fake_file = file_factory(name='>and&and<')
         fake_file_name = normalize_unicode_filenames(fake_file['name'])[0]
@@ -599,7 +600,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 updated_response = registration.schema_responses.get().all_responses[qid]
                 assert updated_response[0]['file_name'] == fake_file_name
 
-    def test_archive_success_with_components(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_archive_success_with_components(self):
         node = factories.NodeFactory(creator=self.user)
         comp1 = factories.NodeFactory(parent=node, creator=self.user)
         factories.NodeFactory(parent=comp1, creator=self.user)
@@ -638,7 +640,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 assert parent_registration._id in file_response['file_urls']['html']
                 registration_files.add(file_sha)
 
-    def test_archive_success_different_name_same_sha(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_archive_success_different_name_same_sha(self):
         file_tree = file_tree_factory(0, 0, 0)
         fake_file = file_factory()
         fake_file2 = file_factory(sha256=fake_file['extra']['hashes']['sha256'])
@@ -664,7 +667,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 for key, question in registration.registered_meta[schema._id].items():
                     assert question['extra'][0]['selectedFileName'] == fake_file['name']
 
-    def test_archive_failure_different_name_same_sha(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_archive_failure_different_name_same_sha(self):
         file_tree = file_tree_factory(0, 0, 0)
         fake_file = file_factory()
         fake_file2 = file_factory(sha256=fake_file['extra']['hashes']['sha256'])
@@ -689,7 +693,8 @@ class TestArchiverTasks(ArchiverTestCase):
                 with pytest.raises(ArchivedFileNotFound):
                     archive_success(registration._id, job._id)
 
-    def test_archive_success_same_file_in_component(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_archive_success_same_file_in_component(self):
         file_tree = file_tree_factory(3, 3, 3)
         selected = list(select_files_from_tree(file_tree).values())[0]
 

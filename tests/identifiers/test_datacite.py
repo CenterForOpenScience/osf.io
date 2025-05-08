@@ -266,7 +266,14 @@ class TestDataCiteViews(OsfTestCase):
         self.node = RegistrationFactory(creator=self.user, is_public=True)
         self.client = DataCiteClient(self.node)
 
+    @pytest.fixture
+    def mock_gravy_valet_get_links(self):
+        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+            mock_get_links.return_value = []
+            yield mock_get_links
+
     @responses.activate
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_datacite_create_identifiers_not_exists(self):
         responses.add(
             responses.Response(
