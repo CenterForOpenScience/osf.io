@@ -540,6 +540,7 @@ class TestArchiverTasks(ArchiverTestCase):
             }
         )
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_archive_success(self):
         node = factories.NodeFactory(creator=self.user)
         file_trees, selected_files, node_index = generate_file_tree([node])

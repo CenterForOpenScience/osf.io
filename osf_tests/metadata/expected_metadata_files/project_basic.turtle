@@ -8,6 +8,16 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
+<http://localhost:5000/preprints/preprovi> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
+    foaf:name "PP the Preprint Provider" .
+
+<http://localhost:5000/registries/regiprovi> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
+    foaf:name "RegiProvi the Registration Provider" .
+
 <http://localhost:5000/w2ibb> a osf:Project ;
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
@@ -24,14 +34,33 @@
     dcterms:title "this is a project title!" ;
     owl:sameAs <https://doi.org/10.70102/FK2osf.io/w2ibb> ;
     dcat:accessService <http://localhost:5000> ;
-    osf:contains <http://localhost:5000/w3ibb> ;
-    osf:hostingInstitution <https://cos.io/> ;
-    osf:supplements <http://localhost:5000/w4ibb> ;
     prov:qualifiedAttribution [ dcat:hadRole osf:admin-contributor ;
             prov:agent <http://localhost:5000/w1ibb> ;
             osf:order 0 ] ;
+    osf:contains <http://localhost:5000/w3ibb> ;
+    osf:hostingInstitution <https://cos.io/> ;
+    osf:supplements <http://localhost:5000/w4ibb> ;
     osf:verifiedLink [ dcterms:type <https://schema.datacite.org/meta/kernel-4/#Other> ;
             dcat:accessURL "https://foo.bar" ] .
+
+<http://localhost:5000/w3ibb> a osf:File ;
+    dcterms:created "2123-05-04" ;
+    dcterms:identifier "http://localhost:5000/w3ibb" ;
+    dcterms:modified "2123-05-04" ;
+    osf:fileName "my-file.blarg" ;
+    osf:filePath "/my-file.blarg" ;
+    osf:hasFileVersion <http://localhost:5000/w3ibb?revision=1> ;
+    osf:isContainedBy <http://localhost:5000/w2ibb> .
+
+<http://localhost:5000/w3ibb?revision=1> a osf:FileVersion ;
+    dcterms:created "2123-05-04" ;
+    dcterms:creator <http://localhost:5000/w1ibb> ;
+    dcterms:extent "0.000007 MB" ;
+    dcterms:format "img/png" ;
+    dcterms:modified "2123-05-04" ;
+    dcterms:requires <urn:checksum:sha-256::shashasha> ;
+    osf:storageRegion <http://localhost:8000/v2/regions/us/> ;
+    osf:versionNumber "1" .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
     dcterms:created "2123-05-04" ;
@@ -55,24 +84,7 @@
     dcterms:title "this is a project title!" ;
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#StudyRegistration> .
 
-<http://localhost:5000/w3ibb> a osf:File ;
-    dcterms:created "2123-05-04" ;
-    dcterms:identifier "http://localhost:5000/w3ibb" ;
-    dcterms:modified "2123-05-04" ;
-    osf:fileName "my-file.blarg" ;
-    osf:filePath "/my-file.blarg" ;
-    osf:hasFileVersion <http://localhost:5000/w3ibb?revision=1> ;
-    osf:isContainedBy <http://localhost:5000/w2ibb> .
-
-<http://localhost:5000/w3ibb?revision=1> a osf:FileVersion ;
-    dcterms:created "2123-05-04" ;
-    dcterms:creator <http://localhost:5000/w1ibb> ;
-    dcterms:extent "0.000007 MB" ;
-    dcterms:format "img/png" ;
-    dcterms:modified "2123-05-04" ;
-    dcterms:requires <urn:checksum:sha-256::shashasha> ;
-    osf:storageRegion <http://localhost:8000/v2/regions/us/> ;
-    osf:versionNumber "1" .
+<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .
 
 <https://cos.io/> a dcterms:Agent,
         foaf:Organization ;
@@ -81,28 +93,17 @@
     owl:sameAs <https://ror.org/05d5mza29> ;
     foaf:name "Center for Open Science" .
 
-<http://localhost:5000/registries/regiprovi> a dcterms:Agent,
-        foaf:Organization ;
-    dcterms:identifier "http://localhost:5000/registries/regiprovi" ;
-    foaf:name "RegiProvi the Registration Provider" .
+<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
 
-<http://localhost:5000/preprints/preprovi> a dcterms:Agent,
-        foaf:Organization ;
-    dcterms:identifier "http://localhost:5000/preprints/preprovi" ;
-    foaf:name "PP the Preprint Provider" .
-
-<http://localhost:5000/w1ibb> a dcterms:Agent,
-        foaf:Person ;
-    dcterms:identifier "http://localhost:5000/w1ibb" ;
-    foaf:name "Person McNamington" .
+<https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .
 
 <http://localhost:5000> a dcterms:Agent,
         foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
     foaf:name "OSF" .
 
-<https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .
 
-<https://schema.datacite.org/meta/kernel-4/#StudyRegistration> rdfs:label "StudyRegistration"@en .
-
-<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .

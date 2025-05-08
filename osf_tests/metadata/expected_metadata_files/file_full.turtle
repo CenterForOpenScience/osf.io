@@ -7,10 +7,10 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 <http://localhost:5000/w3ibb> a osf:File ;
-    dcat:accessService <http://localhost:5000> ;
     dcterms:created "2123-05-04" ;
     dcterms:identifier "http://localhost:5000/w3ibb" ;
     dcterms:modified "2123-05-04" ;
+    dcat:accessService <http://localhost:5000> ;
     osf:fileName "my-file.blarg" ;
     osf:filePath "/my-file.blarg" ;
     osf:hasFileVersion <http://localhost:5000/w3ibb?revision=1> ;
@@ -44,6 +44,15 @@
     osf:storageRegion <http://localhost:8000/v2/regions/us/> ;
     osf:versionNumber "1" .
 
+<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .
+
+<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
+    foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
+
+<https://doi.org/10.$> a dcterms:Agent ;
+    dcterms:identifier "https://doi.org/10.$" ;
+    foaf:name "Caring Fan" .
+
 <https://moneypockets.example/millions> a osf:FundingAward ;
     dcterms:contributor <https://doi.org/10.$$$$> ;
     dcterms:identifier "https://moneypockets.example/millions" ;
@@ -56,27 +65,19 @@
     dcterms:title "because reasons!" ;
     osf:awardNumber "2000000" .
 
-<https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> dcterms:identifier "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode" ;
-    foaf:name "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International" .
-
-<https://doi.org/10.$$$$> a dcterms:Agent ;
-    dcterms:identifier "https://doi.org/10.$$$$" ;
-    foaf:name "Mx. Moneypockets" .
-
-<https://doi.org/10.$> a dcterms:Agent ;
-    dcterms:identifier "https://doi.org/10.$" ;
-    foaf:name "Caring Fan" .
-
-<http://localhost:5000/w1ibb> a dcterms:Agent,
-        foaf:Person ;
-    dcterms:identifier "http://localhost:5000/w1ibb" ;
-    foaf:name "Person McNamington" .
+<https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .
 
 <http://localhost:5000> a dcterms:Agent,
         foaf:Organization ;
     dcterms:identifier "http://localhost:5000" ;
     foaf:name "OSF" .
 
-<https://schema.datacite.org/meta/kernel-4/#Dataset> rdfs:label "Dataset"@en .
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .
 
-<http://localhost:8000/v2/regions/us/> skos:prefLabel "United States"@en .
+<https://doi.org/10.$$$$> a dcterms:Agent ;
+    dcterms:identifier "https://doi.org/10.$$$$" ;
+    foaf:name "Mx. Moneypockets" .
+

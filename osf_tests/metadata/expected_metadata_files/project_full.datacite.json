@@ -97,6 +97,12 @@
       "relatedIdentifier": "11.pp/FK2osf.io/w4ibb_v1",
       "relatedIdentifierType": "DOI",
       "relationType": "IsSupplementTo"
+    },
+    {
+      "relatedIdentifier": "https://foo.bar",
+      "relatedIdentifierType": "URL",
+      "relationType": "IsReferencedBy",
+      "resourceTypeGeneral": "Other"
     }
   ],
   "relatedItems": [

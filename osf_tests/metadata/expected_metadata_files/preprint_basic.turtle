@@ -25,17 +25,12 @@
     dcterms:type <https://schema.datacite.org/meta/kernel-4/#Preprint> ;
     owl:sameAs <https://doi.org/11.pp/FK2osf.io/w4ibb_v1> ;
     dcat:accessService <http://localhost:5000> ;
-    osf:hostingInstitution <https://cos.io/> ;
-    osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
-    osf:statedConflictOfInterest osf:no-conflict-of-interest ;
     prov:qualifiedAttribution [ dcat:hadRole osf:admin-contributor ;
             prov:agent <http://localhost:5000/w1ibb> ;
-            osf:order 0 ] .
-
-<http://localhost:5000> a dcterms:Agent,
-        foaf:Organization ;
-    dcterms:identifier "http://localhost:5000" ;
-    foaf:name "OSF" .
+            osf:order 0 ] ;
+    osf:hostingInstitution <https://cos.io/> ;
+    osf:isSupplementedBy <http://localhost:5000/w2ibb> ;
+    osf:statedConflictOfInterest osf:no-conflict-of-interest .
 
 <http://localhost:5000/preprints/preprovi> a dcterms:Agent,
         foaf:Organization ;
@@ -72,10 +67,10 @@
 
 <https://schema.datacite.org/meta/kernel-4/#Preprint> rdfs:label "Preprint"@en .
 
-<http://localhost:5000/w1ibb> a dcterms:Agent,
-        foaf:Person ;
-    dcterms:identifier "http://localhost:5000/w1ibb" ;
-    foaf:name "Person McNamington" .
+<http://localhost:5000> a dcterms:Agent,
+        foaf:Organization ;
+    dcterms:identifier "http://localhost:5000" ;
+    foaf:name "OSF" .
 
 <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> a skos:ConceptScheme ;
     dcterms:title "preprovi" .
@@ -93,6 +88,12 @@
 <https://bepress.com/reference_guide_dc/disciplines/> a skos:ConceptScheme ;
     dcterms:title "bepress Digital Commons Three-Tiered Taxonomy" .
 
+<http://localhost:5000/w1ibb> a dcterms:Agent,
+        foaf:Person ;
+    dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:name "Person McNamington" .
+
 <http://localhost:8000/v2/subjects/subjwibbb> a skos:Concept ;
     skos:inScheme <https://bepress.com/reference_guide_dc/disciplines/> ;
     skos:prefLabel "wibbble" .
+
