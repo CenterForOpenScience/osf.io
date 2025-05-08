@@ -710,7 +710,8 @@ class TestOsfGathering(TestCase):
             (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
         })
 
-    def test_gather_registration_withdrawal(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_gather_registration_withdrawal(self):
         # focus: registration
         assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())
         _retraction = factories.WithdrawnRegistrationFactory(

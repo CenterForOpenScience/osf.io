@@ -574,9 +574,10 @@ class TestSearchRegistrations(ApiSearchTestCase):
             mock_get_links.return_value = []
             yield mock_get_links
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_search_registrations(
             self, app, url_registration_search, user, user_one, user_two,
-            registration, registration_public, registration_private, mock_gravy_valet_get_links):
+            registration, registration_public, registration_private):
 
         # test_search_public_registration_no_auth
         res = app.get(url_registration_search)

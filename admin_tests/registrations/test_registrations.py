@@ -130,6 +130,7 @@ class TestRegistrationSpamHam:
         public_registration_from_changed_to_private_project.confirm_ham(save=True)
         assert public_registration_from_changed_to_private_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_unapproved_registration_task(self, embargoed_registration_from_changed_to_public_project):
         embargoed_registration_from_changed_to_public_project.registration_approval.state = 'unapproved'
         embargoed_registration_from_changed_to_public_project.registration_approval.initiation_date -= timedelta(3)

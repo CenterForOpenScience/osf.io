@@ -510,7 +510,8 @@ class TestConfirmApproveBacklogView(AdminTestCase):
             mock_get_links.return_value = []
             yield mock_get_links
 
-    def test_request_approval_is_approved(self, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    def test_request_approval_is_approved(self):
         now = timezone.now()
         self.approval = RegistrationApprovalFactory(
             initiation_date=now - timezone.timedelta(days=1),
