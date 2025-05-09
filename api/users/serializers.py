@@ -38,7 +38,8 @@ from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
-from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
+from website import settings
+from website.profile.views import update_mailchimp_subscription
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from website.util import api_v2_url
 
@@ -543,10 +544,14 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def update_email_preferences(self, instance, attr, value):
         if self.MAP_MAIL[attr] == OSF_HELP_LIST:
-            update_osf_help_mails_subscription(user=instance, subscribe=value)
-        else:
+            instance.osf_mailing_lists[settings.OSF_HELP_LIST] = value
+        elif self.MAP_MAIL[attr] == MAILCHIMP_GENERAL_LIST:
             update_mailchimp_subscription(instance, self.MAP_MAIL[attr], value)
+        else:
+            raise exceptions.ValidationError(detail='Invalid email preference.')
+
         instance.save()
+        return instance
 
     def update_two_factor(self, instance, value, two_factor_addon):
         if value:
@@ -581,6 +586,15 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         Overriding to_representation allows using different serializers for the request and response.
         """
         context = self.context
+
+        # special case to show that we sent a request to subscribe, but don't
+        # change actual value until the task executes in case it doesn't and they need to try again
+        if getattr(instance, 'assume_mailchimp_completed_request', False):
+            instance.mailchimp_mailing_lists[MAILCHIMP_GENERAL_LIST] = True
+            instance.save = lambda _: NotImplementedError(
+                'Cannot save read comments in UserSettingsUpdateSerializer.to_representation',
+            )
+
         return UserSettingsSerializer(instance=instance, context=context).data
 
     def update(self, instance, validated_data):
@@ -596,6 +610,11 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
                 self.request_deactivation(instance, value)
             elif attr in self.MAP_MAIL.keys():
                 self.update_email_preferences(instance, attr, value)
+
+                # special case to show that we sent a request to subscribe, but don't
+                # change actual value until the task executes in case it doesn't and they need to try again
+                if value and self.MAP_MAIL[attr] == MAILCHIMP_GENERAL_LIST:
+                    instance.assume_mailchimp_completed_request = True
 
         return instance
 

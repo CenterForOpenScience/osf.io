@@ -206,8 +206,10 @@ class TestUserSettingsUpdateMailingList:
         assert res.status_code == 200
 
         user_one.refresh_from_db()
+        assert res.json['data']['attributes']['subscribe_osf_help_email'] is False
         assert user_one.osf_mailing_lists[OSF_HELP_LIST] is False
         mailchimp_mock.assert_called_with(user_one, MAILCHIMP_GENERAL_LIST, True)
+        assert res.json['data']['attributes']['subscribe_osf_general_email'] is True
 
     def test_bad_payload_patch_400(self, app, user_one, bad_payload, url):
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)
