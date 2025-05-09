@@ -45,7 +45,6 @@ class TestConfigureMailingListViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert mailing_lists == res.json['mailing_lists']
 
-    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()
