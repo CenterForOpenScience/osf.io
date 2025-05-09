@@ -519,7 +519,7 @@ def update_mailchimp_subscription(user, list_name, subscription):
     :param boolean subscription: true if user is subscribed
     """
     if subscription:
-        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        mailchimp_utils.subscribe_mailchimp_async(list_name, user._id)
     else:
         try:
             mailchimp_utils.unsubscribe_mailchimp_async(list_name, user._id, username=user.username)

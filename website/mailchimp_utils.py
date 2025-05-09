@@ -118,4 +118,4 @@ def unsubscribe_mailchimp_async(list_name, user_id, username=None):
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
+        subscribe_mailchimp_async(settings.MAILCHIMP_GENERAL_LIST, user._id)
