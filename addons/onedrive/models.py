@@ -119,6 +119,10 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         ))
 
     @property
+    def configured(self):
+        return self.complete and self.folder_id is not None
+
+    @property
     def folder_name(self):
         if not self.folder_id:
             return None
@@ -215,6 +219,26 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             self.user_settings.save()
 
         self.nodelogger.log(action='folder_selected', save=True)
+
+    # GRDM-36019 Package Export/Import
+    def set_folder_by_id(self, folder_id, auth):
+        """Configure this addon to point to a Google Drive folder by its ID
+
+        :param str folder_id:
+        :param User auth:
+        """
+        try:
+            access_token = self.fetch_access_token()
+        except exceptions.InvalidAuthError:
+            raise HTTPError(403)
+
+        client = OneDriveClient(access_token, self.drive_id)
+        folder = client.folder(folder_id)
+        logger.info('Setting folder to {0!r}'.format(folder))
+        self.set_folder({
+            'id': folder['id'],
+            'path': folder['name']
+        }, auth)
 
     @property
     def selected_folder_name(self):

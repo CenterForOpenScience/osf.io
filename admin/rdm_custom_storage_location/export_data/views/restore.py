@@ -10,7 +10,6 @@ from celery.states import PENDING
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.functions import Trunc
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from rest_framework import authentication as drf_authentication
@@ -728,7 +727,7 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
 
 
 def copy_files_from_export_data_to_destination(task, current_process_step,
-                                                export_data_files, export_data_restore, cookies, **kwargs):
+                                               export_data_files, export_data_restore, cookies, **kwargs):
     export_data = export_data_restore.export
 
     destination_region = export_data_restore.destination
@@ -807,30 +806,20 @@ def copy_files_from_export_data_to_destination(task, current_process_step,
                             file_version = node.get_version(response_file_version_id, required=False)
 
                             if file_version is not None:
-                                contributor = version.get('contributor')
-                                user = OSFUser.objects.filter(username=contributor)
                                 file_version_created_at = version.get('created_at')
-                                file_version_modified = version.get('modified_at')
-                                same_file_versions = node.versions.annotate(
-                                    created_trunc=Trunc('created', 'second'),
-                                    modified_trunc=Trunc('modified', 'second')
-                                ).exclude(
+                                file_version_modified_at = version.get('modified_at')
+
+                                # Find records of old versions with the same 'created_at' and 'modified_at' values
+                                same_file_versions = node.versions.exclude(
                                     identifier=response_file_version_id
                                 ).filter(
-                                    created_trunc=file_version_created_at,
-                                    modified_trunc=file_version_modified
+                                    created=file_version_created_at,
+                                    modified=file_version_modified_at
                                 )
 
                                 if same_file_versions.exists():
+                                    # delete duplicate new record
                                     file_version.delete()
-                                else:
-                                    if user.exists():
-                                        file_version.creator = user.first()
-                                    file_version.created = file_version_created_at
-                                    file_version.modified = file_version_modified
-                                    file_version.save()
-                                    FileVersion.objects.filter(id=file_version.id).update(created=file_version_created_at,
-                                                                                          modified=file_version_created_at)
 
                             if file_checkout_id:
                                 node.checkout_id = file_checkout_id
@@ -838,9 +827,8 @@ def copy_files_from_export_data_to_destination(task, current_process_step,
                             # update created/modified date to basefilenode
                             node.created = file_created
                             node.modified = file_modified
-                            node.save()
-                            BaseFileNode.objects.filter(id=node.id).update(created=file_created,
-                                                                           modified=file_modified)
+                            # ignore storing the value of `django.utils.timezone.now()` to `modified` field
+                            node.save(update_modified=False)
 
                             list_created_file_nodes.append({
                                 'node': node,

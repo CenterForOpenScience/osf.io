@@ -315,6 +315,7 @@ def query_search_contributor(self, qs, user):
     res = self.app.get(
         api_url_for('search_contributor'),
         {'query': qs, 'page': 0, 'size': 100},
+        auth=user.auth,
         expect_errors=True
     )
     DEBUG('query_search_contributor', res)

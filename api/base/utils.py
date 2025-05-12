@@ -10,13 +10,14 @@ from django.db.models import QuerySet, F
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 
+from admin.project_limit_number.utils import check_logic_condition
 from api.base.authentication.drf import get_session_from_cookie
 from api.base.exceptions import Gone, UserGone
 from api.base.settings import HASHIDS_SALT
 from framework.auth import Auth
 from framework.auth.cas import CasResponse
 from framework.auth.oauth_scopes import ComposedScopes, normalize_scopes
-from osf.models import OSFUser, Node, Registration
+from osf.models import OSFUser, Node, Registration, UserExtendedData
 from osf.models.base import GuidMixin
 from osf.utils.requests import check_select_for_update
 from website import settings as website_settings
@@ -29,6 +30,9 @@ TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True, 'on', 'ON', 'On', 
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False, 'off', 'OFF', 'Off', 'n', 'N', 'NO', 'no'))
 
 UPDATE_METHODS = ['PUT', 'PATCH']
+NO_LIMIT = -1
+LIMITED_ERROR = 'The new project cannot be created due to the created project number is greater than or equal the project number can create.'
+CREATED_ERROR = 'Can not create project'
 
 hashids = Hashids(alphabet='abcdefghijklmnopqrstuvwxyz', salt=HASHIDS_SALT)
 
@@ -247,3 +251,84 @@ class MockQueryset(list):
     def add_dict_as_item(self, dict):
         item = type('item', (object,), dict)
         self.append(item)
+
+
+def check_user_can_create_project(user):
+    """Check if user can create project.
+    :param user: OSFUser
+    :return: True if user can create project, False otherwise
+    """
+    from osf.models import ProjectLimitNumberSetting, ProjectLimitNumberSettingAttribute, \
+        AbstractNode, ProjectLimitNumberDefault
+
+    # If not user return false
+    if not user:
+        return False
+
+    # if user has no affiliated institution return true
+    institution = user.affiliated_institutions.first()
+    if not institution:
+        return True
+
+    # Get the list setting for institution
+    setting_list = ProjectLimitNumberSetting.objects.filter(
+        institution_id=institution.id,
+        is_availability=True,
+        is_deleted=False,
+    ).order_by('priority').all()
+    setting_id_list = [s.id for s in setting_list]
+    # Get setting list attribute by setting
+    all_setting_attribute_list = (ProjectLimitNumberSettingAttribute.objects.select_related(
+        'attribute',
+    ).filter(
+        setting_id__in=setting_id_list,
+        is_deleted=False,
+    ).annotate(
+        setting_type=F('attribute__setting_type'),
+        attribute_name=F('attribute__attribute_name'),
+        setting_id=F('setting_id'),
+    ).order_by('id').values(
+        'id',
+        'attribute_name',
+        'setting_type',
+        'attribute_value',
+        'setting_id',
+    ))
+    project_limit_number = None
+    user_dict = user.__dict__
+
+    # Map attribute list to dictionary
+    setting_attributes_dict = {}
+    for setting_attribute in all_setting_attribute_list:
+        setting_id = setting_attribute.get('setting_id')
+        setting_attributes_dict.setdefault(setting_id, []).append(setting_attribute)
+
+    user_extended_data = UserExtendedData.objects.filter(user_id=user_dict.get('id')).first()
+    # Check user by setting list attribute condition for each setting
+    for setting in setting_list:
+        if check_logic_condition(user_dict, setting_attributes_dict.get(setting.id, []), user_extended_data):
+            project_limit_number = setting.project_limit_number
+            break
+
+    # If no setting found, get default or use no limit (-1)
+    if project_limit_number is None:
+        default_limit = ProjectLimitNumberDefault.objects.filter(
+            institution_id=institution.id,
+        ).values_list('project_limit_number', flat=True).first()
+        if default_limit is not None:
+            project_limit_number = default_limit
+        else:
+            project_limit_number = NO_LIMIT
+
+    # Return if no limit
+    if project_limit_number == NO_LIMIT:
+        return True
+
+    # Get number of created project
+    created_project_number = AbstractNode.objects.filter(
+        type='osf.node',
+        creator_id=user.id,
+        is_deleted=False,
+    ).count()
+
+    return project_limit_number > created_project_number

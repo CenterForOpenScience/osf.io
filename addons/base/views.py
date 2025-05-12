@@ -659,7 +659,6 @@ def create_waterbutler_log(payload, **kwargs):
             timestamp.file_created_or_updated(node, metadata, user.id,
                                               created_flag)
     elif file_node_moved:
-        prepare_file_node(dest_provider)
         with transaction.atomic():  # long transaction
             timestamp.file_node_moved(auth.user.id, node._id,
                                       src_provider, dest_provider,
@@ -1062,6 +1061,7 @@ def addon_view_or_download_quickfile(**kwargs):
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
     from addons.wiki import settings as wiki_settings
+    from addons.onlyoffice import settings as onlyoffice_settings
 
     if isinstance(version, tuple):
         version, error = version
@@ -1128,6 +1128,7 @@ def addon_view_file(auth, node, file_node, version):
         'allow_comments': file_node.provider in settings.ADDONS_COMMENTABLE,
         'checkout_user': file_node.checkout._id if file_node.checkout else None,
         'version_names': list(version_names),
+        'wopi_onlyoffice': onlyoffice_settings.WOPI_CLIENT_ONLYOFFICE,
     })
 
     ret.update(rubeus.collect_addon_assets(node))

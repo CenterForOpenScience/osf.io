@@ -29,7 +29,8 @@ class MultiEmailField(forms.Field):
     def validate(self, value):
         super(MultiEmailField, self).validate(value)
         for email in value:
-            validate_email(email)
+            if not email.startswith('tmp_eppn_'):
+                validate_email(email)
 
 
 class MeetingForm(forms.Form):

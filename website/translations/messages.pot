@@ -569,11 +569,89 @@ msgid "Service Base URL"
 msgstr ""
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
+#: addons/metadata/templates/metadata_node_settings.mako:92
 msgid "OK"
 msgstr ""
 
 #: addons/metadata/templates/metadata_node_settings.mako:12
 msgid "No configuration items."
+msgstr ""
+
+#: addons/metadata/templates/metadata_node_settings.mako:18
+#: addons/metadata/templates/metadata_node_settings.mako:41
+#, python-format
+msgid ""
+"Please set the credential for the %(addonName)s add-on to access the "
+"storage                    attatched to the import source."
+msgstr ""
+
+#: addons/metadata/templates/metadata_node_settings.mako:24
+#: addons/metadata/templates/metadata_node_settings.mako:47
+msgid ""
+"To access the storages attatched to the import source, please set the "
+"credentials for each add-on: "
+msgstr ""
+
+#: addons/metadata/templates/metadata_node_settings.mako:34
+msgid "Restore Add-ons"
+msgstr ""
+
+#: addons/metadata/templates/metadata_node_settings.mako:68
+msgid "Restore imported add-on settings"
+msgstr ""
+
+#: addons/metadata/templates/metadata_node_settings.mako:79
+msgid ""
+"Apply the add-on settings from the import source."
+"                                This will make the storage attatched to "
+"the original project available."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:2
+#: addons/metadata/templates/metadata_project_importer.mako:2
+#: addons/metadata/templates/metadata_project_importer.mako:11
+msgid "Import Project"
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:13
+msgid "Importing..."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:19
+msgid "Preparing node settings..."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:20
+msgid "Preparing folders..."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:21
+msgid "Preparing files..."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:22
+msgid "Finished."
+msgstr ""
+
+#: addons/metadata/templates/metadata_progress.mako:27
+msgid "An error occurred during the import process: "
+msgstr ""
+
+#: addons/metadata/templates/metadata_project_importer.mako:15
+msgid "Source URL:"
+msgstr ""
+
+#: addons/metadata/templates/metadata_project_importer.mako:21
+msgid "Project Title"
+msgstr ""
+
+#: addons/metadata/templates/metadata_project_importer.mako:22
+msgid "Enter the title of the imported project"
+msgstr ""
+
+#: addons/metadata/templates/metadata_project_importer.mako:27
+#: website/templates/profile/personal_tokens_detail.mako:51
+msgid "Create"
 msgstr ""
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:6
@@ -829,23 +907,11 @@ msgstr ""
 msgid "WEKO Repository"
 msgstr ""
 
-#: addons/weko/templates/weko_credentials_modal.mako:22
+#: addons/weko/templates/weko_credentials_modal.mako:23
 msgid "Select a WEKO repository"
 msgstr ""
 
-#: addons/weko/templates/weko_credentials_modal.mako:33
-msgid "WEKO SWORD URL"
-msgstr ""
-
-#: addons/weko/templates/weko_credentials_modal.mako:37
-msgid "WEKO Username"
-msgstr ""
-
-#: addons/weko/templates/weko_credentials_modal.mako:41
-msgid "WEKO Password"
-msgstr ""
-
-#: addons/weko/templates/weko_credentials_modal.mako:60
+#: addons/weko/templates/weko_credentials_modal.mako:45
 msgid "Connect"
 msgstr ""
 
@@ -2008,8 +2074,11 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:54
 #: website/templates/include/profile/schools.mako:54
-#: website/templates/project/project.mako:614
 msgid "Start date"
+msgstr ""
+
+#: website/templates/project/project.mako:614
+msgid "Start time"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:58
@@ -2028,8 +2097,11 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:69
 #: website/templates/include/profile/schools.mako:69
-#: website/templates/project/project.mako:617
 msgid "End date"
+msgstr ""
+
+#: website/templates/project/project.mako:617
+msgid "End time"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:85
@@ -2618,10 +2690,6 @@ msgstr ""
 
 #: website/templates/profile/personal_tokens_detail.mako:32
 msgid "Scopes limit access for personal access tokens."
-msgstr ""
-
-#: website/templates/profile/personal_tokens_detail.mako:51
-msgid "Create"
 msgstr ""
 
 #: website/templates/profile/personal_tokens_detail.mako:65
@@ -3333,7 +3401,7 @@ msgid "Clear Filters"
 msgstr ""
 
 #: website/templates/project/project.mako:607
-msgid "Refresh"
+msgid "Update"
 msgstr ""
 
 #: website/templates/project/project.mako:639
@@ -3341,7 +3409,7 @@ msgid "Loading logs..."
 msgstr ""
 
 #: website/templates/project/project.mako:645
-msgid "Download as file"
+msgid "Download as file for 0 logs"
 msgstr ""
 
 #: website/templates/project/project.mako:646
@@ -3375,6 +3443,11 @@ msgstr ""
 
 #: website/templates/project/project_header.mako:65
 msgid "Metadata"
+msgstr ""
+
+#: website/templates/project/project_header.mako:76
+#: website/templates/project/project_header.mako:78
+msgid "Export"
 msgstr ""
 
 #: website/templates/project/project_header.mako:76

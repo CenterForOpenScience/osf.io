@@ -230,7 +230,7 @@ CONFIRM_EMAIL_MODERATION = lambda provider: Mail(
 # Merge account, add or remove email confirmation emails.
 CONFIRM_MERGE = Mail('confirm_merge', subject='アカウントの統合確認 / Confirm account merge')
 REMOVED_EMAIL = Mail('email_removed', subject='GakuNin RDMアカウントのメールアドレス削除 / Email address removed from your GakuNin RDM account')
-PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライバリメールアドレスの変更 / Primary email changed')
+PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='プライマリメールアドレスの変更 / Primary email changed')
 
 
 # Contributor added confirmation emails
@@ -480,4 +480,9 @@ GROUP_ADDED_TO_NODE = Mail(
 PREPRINT_WITHDRAWAL_REQUEST_DECLINED = Mail(
     'preprint_withdrawal_request_declined',
     subject='Your withdrawal request has been declined',
+)
+
+TOU_NOTIF = Mail(
+    'tou_notif',
+    subject='Updated Terms of Use for COS Websites and Services',
 )

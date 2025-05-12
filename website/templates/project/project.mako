@@ -80,7 +80,7 @@
                                     <div class="arrow-up m-b-xs"></div>
                                     % if not disk_saving_mode:
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${ '' if user_name and user['can_create_project'] and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            data-dismiss="modal"
                                            onclick="NodeActions.forkNode();"
                                         >
@@ -89,7 +89,7 @@
                                     </li>
                                     %endif
                                     <li class="p-h-md">
-                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
+                                        <span class="btn btn-primary btn-block m-t-sm form-control${'' if user_name and user['can_create_project'] and (user['is_contributor_or_group_member'] or node['is_public']) else ' disabled'}"
                                            onclick="NodeActions.useAsTemplate();"
                                         >
                                             ${ _(language.TEMPLATE_ACTION) | n }
@@ -606,17 +606,17 @@
             <div class="panel-heading clearfix">
                 <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">${_("Recent Activity")}</h3>
                 <div id="ClearLogFilterBtn" class="btn btn-sm btn-default pull-right" style="margin-left: 5px">${_("Clear Filters")}</div>
-                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Refresh")}</div>
+                <div id="RefreshLog" class="btn btn-sm btn-default pull-right">${_("Update")}</div>
             </div>
             <div class="panel-body">
                 <input type="hidden" id="LogSearchUserKeys">
                 <div class="container-fluid" style="padding: 0px">
                     <div>
                         <div class="pull-left" style="margin-bottom: 5px">
-                            <input type="text" id="LogSearchS" placeholder='${_("Start date")}' size="10" autocomplete="off">
+                            <input type="text" id="LogSearchS" placeholder='${_("Start time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left" style="margin-left: 10px; margin-bottom: 5px">
-                            <input type="text" id="LogSearchE" placeholder='${_("End date")}' size="10" autocomplete="off">
+                            <input type="text" id="LogSearchE" placeholder='${_("End time")}' size="14" autocomplete="off">
                         </div>
                         <div class="pull-left form-check" style="margin-left: 10px; padding-top: 2px;" id="useDropdown">
                             <input class="form-check-input" type="checkbox" id="useDropdownCheckbox">
@@ -644,8 +644,9 @@
             </div>
             % if 'admin' in user['permissions']:
             <div class="panel-heading clearfix">
-                <h4 class="panel-title">${_("Download as file")}</h4>
-                <div id="DownloadLog" class="btn btn-sm btn-default pull-right">${_("Download")}</div>
+                <input type='hidden' id='totalLogs' />
+                <h4 id="downloadHeader" class="panel-title">${_('Download as file for 0 logs')}</h4>
+                <div id="DownloadLog" class="btn btn-sm btn-default pull-right disabled">${_('Download')}</div>
             </div>
             % endif
         </div>
@@ -730,7 +731,8 @@ ${parent.javascript_bottom()}
             },
         },
         customCitations: ${ custom_citations | sjson, n },
-        currentUserRequestState: ${ user['access_request_state'] | sjson, n }
+        currentUserRequestState: ${ user['access_request_state'] | sjson, n },
+        canCreateProject: ${ user['can_create_project'] | sjson, n}
     });
 </script>
 

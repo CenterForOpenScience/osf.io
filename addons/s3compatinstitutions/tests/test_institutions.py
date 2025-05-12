@@ -3,7 +3,8 @@ from framework.auth import Auth
 from osf_tests.factories import ProjectFactory, InstitutionFactory, RegionFactory
 from admin_tests.rdm_addons.factories import RdmAddonOptionFactory
 
-from osf.models.rdm_addons import RdmAddonOption
+from nose.tools import assert_equal
+from addons.s3compatinstitutions import settings
 from addons.osfstorage.tests import factories
 from addons.osfstorage.tests.utils import StorageTestCase
 from addons.s3compatinstitutions.apps import SHORT_NAME
@@ -86,3 +87,13 @@ class TestNonTargetInstitutionalNodeSettings(StorageTestCase):
         assert self.node_settings._id
         assert self.node_settings.has_auth is not False
         assert self.node_settings.complete is False
+
+    def test_serialize_settings(self):
+        wb_settings = self.node_settings.serialize_waterbutler_settings()
+        expected = {
+            'nid': self.node_settings.owner._id,
+            'bucket': self.node_settings.bucket,
+            'prefix': self.node_settings.root_prefix,
+            'encrypt_uploads': settings.ENCRYPT_UPLOADS,
+        }
+        assert_equal(wb_settings, expected)

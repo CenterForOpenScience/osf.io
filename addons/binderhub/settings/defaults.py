@@ -29,31 +29,14 @@ BINDERHUB_DEPLOYMENT_IMAGES = [
         'url': 'jupyter/scipy-notebook',
         'name': 'Python',
         'description': 'Notebook Image with Python',
+        'deprecated': True,
+        'recommended': False,
     },
     {
         'url': 'jupyter/r-notebook',
         'name': 'R',
         'description': 'Notebook Image with R',
-    },
-]
-
-JUPYTERHUB_LAUNCHERS = [
-    {
-        'id': 'default',
-        'name': 'Jupyter Notebook',
-        'path': 'tree',
-        'image': 'jupyter-notebook.png',
-    },
-    {
-        'id': 'lab',
-        'name': 'JupyterLab',
-        'path': 'lab/',
-        'image': 'jupyterlab.png',
-    },
-    {
-        'id': 'rstudio',
-        'name': 'RStudio',
-        'path': 'rstudio/',
-        'image': 'rstudio.png',
+        'deprecated': True,
+        'recommended': True,
     },
 ]

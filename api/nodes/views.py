@@ -1,5 +1,6 @@
 import re
 
+from datetime import datetime
 from distutils.version import StrictVersion
 from django.apps import apps
 from django.db.models import Q, OuterRef, Exists, Subquery, F
@@ -25,7 +26,7 @@ from api.base.exceptions import (
     InvalidQueryStringError,
 )
 from api.base.filters import ListFilterMixin, PreprintFilterMixin
-from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination
+from api.base.pagination import CommentPagination, NodeContributorPagination, MaxSizePagination, NodeLogDownloadPagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
@@ -39,7 +40,7 @@ from api.base.throttling import (
     AddContributorThrottle,
     BurstRateThrottle,
 )
-from api.base.utils import default_node_list_permission_queryset
+from api.base.utils import default_node_list_permission_queryset, check_user_can_create_project, LIMITED_ERROR
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.versioning import DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION
 from api.base.views import JSONAPIBaseView
@@ -66,7 +67,7 @@ from api.files.serializers import FileSerializer, OsfStorageFileSerializer
 from api.identifiers.serializers import NodeIdentifierSerializer
 from api.identifiers.views import IdentifierList
 from api.institutions.serializers import InstitutionSerializer
-from api.logs.serializers import NodeLogSerializer
+from api.logs.serializers import NodeLogSerializer, NodeLogDownloadSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
@@ -128,16 +129,18 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
 from osf.features import OSF_GROUPS
-from osf.models import AbstractNode
+from osf.models import AbstractNode, NodeLog
 from osf.models import (Node, PrivateLink, Institution, Comment, DraftRegistration, Registration, )
 from osf.models import OSFUser
 from osf.models import OSFGroup
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
+from osf.models import Contributor
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails
+from website.util import quota
 from osf.models import RdmTimestampGrantPattern
 
 from nii.mapcore import (
@@ -327,6 +330,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = serializer.save(creator=user)
         if mapcore_sync_is_enabled():
             group_key = mapcore_sync_map_new_group(node.creator, node)
@@ -380,6 +389,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         except PermissionsError as err:
             raise PermissionDenied(str(err))
 
+        if instance.project_or_component == 'project':
+            storage_type = instance.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=instance).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
+
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
@@ -418,6 +434,13 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             node.remove_node(auth=auth)
         except PermissionsError as err:
             raise PermissionDenied(str(err))
+
+        if node.project_or_component == 'project':
+            storage_type = node.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()
@@ -799,6 +822,12 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         serializer.save(creator=user, parent=self.get_node())
 
 
@@ -1074,6 +1103,12 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
         user = get_user_auth(self.request).user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = self.get_node()
         try:
             fork = serializer.save(node=node)
@@ -1584,13 +1619,40 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
     )
 
     def get_default_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            node = self.get_node()
+            return NodeLog.objects.filter(node_id=node.id, should_hide=False).order_by('-date')
         auth = get_user_auth(self.request)
         return self.get_node().get_logs_queryset(auth)
 
     def get_queryset(self):
+        if self.request.query_params.get('action') == 'download':
+            # If there is query param 'action' with value is 'download', query and get only needed fields for download function
+            self.serializer_class = NodeLogDownloadSerializer
+            self.pagination_class = NodeLogDownloadPagination
+            return self.get_queryset_from_request().prefetch_related('user__guids')
         return self.get_queryset_from_request().include(
             'node__guids', 'user__guids', 'original_node__guids', limit_includes=10,
         )
+
+    def param_queryset(self, query_params, default_queryset):
+        """ Overrides the function to add the last microsecond to param 'filter[date][lte]' """
+        new_query_params = query_params.copy()
+        # Get end time param
+        end_time_param_value = query_params.get('filter[date][lte]')
+        if end_time_param_value:
+            try:
+                # Convert end time param to datetime object
+                end_time = datetime.strptime(end_time_param_value, '%Y-%m-%dT%H:%M')
+                # Insert the last microsecond to datetime object
+                end_time = end_time.replace(second=datetime.max.second, microsecond=datetime.max.microsecond)
+                # Format the datetime object to string
+                new_query_params['filter[date][lte]'] = datetime.strftime(end_time, '%Y-%m-%dT%H:%M:%S.%f')
+            except ValueError:
+                # Cannot add the last microsecond to end time param, do nothing
+                pass
+        return super(NodeLogList, self).param_queryset(new_query_params, default_queryset)
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):

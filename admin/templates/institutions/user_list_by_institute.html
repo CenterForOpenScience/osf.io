@@ -143,7 +143,7 @@
                oninvalid="this.setCustomValidity({% trans 'Please enter an valid email' %})"
                oninput="setCustomValidity('')"
                maxlength="255" minlength="6"
-               pattern="^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$"
+               pattern="^(tmp_eppn_.*|\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+)$"
                title="{% trans 'Please enter an email address' %}"
                id="id_email">
     </div>

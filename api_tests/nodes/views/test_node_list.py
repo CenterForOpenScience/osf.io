@@ -1,3 +1,4 @@
+import mock
 import pytest
 from nose.tools import *  # noqa:
 
@@ -1443,6 +1444,12 @@ class TestNodeCreate:
             }
         }
 
+    @pytest.fixture
+    def mock_user_can_not_create_project(self):
+        with mock.patch('api.nodes.views.check_user_can_create_project') as mock_user:
+            mock_user.return_value = False
+            yield mock_user
+
     def test_create_node_errors(self, app, user_one, public_project, private_project, url):
 
         #   test_node_create_invalid_data
@@ -1903,6 +1910,53 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Title cannot exceed 512 characters.'
+
+    def test_create_project_at_limit_project_number(
+            self, app, user_one, public_project, url, institution_one, mock_user_can_not_create_project):
+        res = app.post_json_api(url, public_project,
+                                auth=user_one.auth, expect_errors=True)
+        mock_user_can_not_create_project.assert_called_once()
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'The new project cannot be created due to the created project number is greater than or equal the project number can create.'
+
+    def test_creates_project_from_template_at_limit_project_number(self, app, user_one, category, url, mock_user_can_not_create_project):
+        template_from = ProjectFactory(creator=user_one, is_public=True)
+        templated_project_title = 'Templated Project'
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': templated_project_title,
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+
+        res = app.post_json_api(url, templated_project_data,
+                                auth=user_one.auth, expect_errors=True)
+        mock_user_can_not_create_project.assert_called_once()
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'The new project cannot be created due to the created project number is greater than or equal the project number can create.'
+
+    def test_create_component_at_limit_project_number(self, app, user_one, title, category, mock_user_can_not_create_project):
+        parent_project = ProjectFactory(creator=user_one)
+        url = '/{}nodes/{}/children/'.format(API_BASE, parent_project._id)
+        component_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'category': category
+                }
+            }
+        }
+        res = app.post_json_api(url, component_data, auth=user_one.auth, expect_errors=True)
+        mock_user_can_not_create_project.assert_called_once()
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'The new project cannot be created due to the created project number is greater than or equal the project number can create.'
+
 
 @pytest.mark.django_db
 class TestNodeLicenseOnCreate:

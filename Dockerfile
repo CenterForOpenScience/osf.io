@@ -70,7 +70,7 @@ COPY ./admin/rdm_announcement/requirements.txt ./admin/rdm_announcement/
 COPY ./admin/rdm_statistics/requirements.txt ./admin/rdm_statistics/
 COPY ./addons/metadata/requirements.txt ./addons/metadata/
 
-RUN pip3 install pip==21.0
+RUN pip3 install pip==21.1.3
 
 RUN set -ex \
     && mkdir -p /var/www \
@@ -98,7 +98,7 @@ RUN set -ex \
         /code/addons/*/requirements.txt \
         /code/admin/rdm*/requirements.txt \
     ; do \
-        pip3 install --no-cache-dir -r "$reqs_file" \
+        pip3 install --no-cache-dir -r "$reqs_file" || exit 1 \
     ; done \
     && (pip3 uninstall uritemplate.py --yes || true) \
     && pip3 install --no-cache-dir uritemplate.py==0.3.0 \
@@ -176,6 +176,7 @@ COPY ./addons/nextcloudinstitutions/static/ ./addons/nextcloudinstitutions/stati
 COPY ./addons/iqbrims/static/ ./addons/iqbrims/static/
 COPY ./addons/binderhub/static/ ./addons/binderhub/static/
 COPY ./addons/metadata/static/ ./addons/metadata/static/
+COPY ./addons/onlyoffice/static/ ./addons/onlyoffice/static/
 RUN \
     # OSF
     yarn install --frozen-lockfile \

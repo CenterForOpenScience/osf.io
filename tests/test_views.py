@@ -976,7 +976,7 @@ class TestProjectViews(OsfTestCase):
         assert_in(registration.title, res.body.decode())
         assert_equal(res.status_code, 200)
 
-        for route in ['files', 'wiki/home', 'contributors', 'settings', 'withdraw', 'register', 'register/fakeid']:
+        for route in ['files', 'wiki/home', 'settings', 'withdraw', 'register', 'register/fakeid']:
             res = self.app.get('{}{}/'.format(url, route), auth=self.auth, allow_redirects=True)
             assert_equal(res.status_code, 302, route)
             res = res.follow()
@@ -3792,6 +3792,14 @@ class TestPointerViews(OsfTestCase):
         assert_equal(template.title, 'Templated from ' + self.project.title)
         assert_not_in(project2, template.linked_nodes)
 
+    @mock.patch('website.project.views.node.check_user_can_create_project',return_value=False)
+    def test_fork_pointer_limit_project_number_error(self, _):
+        url = self.project.api_url + 'pointer/fork/'
+        linked_node = NodeFactory(creator=self.user)
+        pointer = self.project.add_pointer(linked_node, auth=self.consolidate_auth)
+        assert_true(linked_node.id, pointer.child.id)
+        res = self.app.post_json(url, {'nodeId': pointer.child._id}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 class TestPublicViews(OsfTestCase):
 
@@ -5352,6 +5360,34 @@ class TestProjectCreation(OsfTestCase):
         url = api_url_for('project_new_from_template', nid=project._id)
         res = self.app.post(url, auth=contributor.auth)
         assert_equal(res.status_code, 201)
+
+    @mock.patch('website.project.views.node.check_user_can_create_project',return_value=False)
+    def test_creates_a_project_limit_project_number_error(self, _):
+        payload = {
+            'title': 'Im a real title'
+        }
+        res = self.app.post_json(self.url, payload, auth=self.creator.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('website.project.views.node.check_user_can_create_project',return_value=False)
+    def test_create_component_strips_html_limit_project_number_error(self, _):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        url = web_url_for('project_new_node', pid=project._id)
+        post_data = {'title': '<b>New <blink>Component</blink> Title</b>', 'category': ''}
+        res = self.app.post(url, post_data, auth=user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('website.project.views.node.check_user_can_create_project',return_value=False)
+    def test_project_new_from_template_limit_project_number_error(self, _):
+        contributor = AuthUserFactory()
+        project = ProjectFactory(is_public=False)
+        project.add_contributor(contributor)
+        project.save()
+
+        url = api_url_for('project_new_from_template', nid=project._id)
+        res = self.app.post(url, auth=contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestUnconfirmedUserViews(OsfTestCase):

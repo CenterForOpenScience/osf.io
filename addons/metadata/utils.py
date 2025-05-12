@@ -3,6 +3,7 @@ import csv
 import io
 import json
 import logging
+import re
 from jinja2 import Environment
 from osf.models.metaschema import RegistrationSchema
 
@@ -34,6 +35,30 @@ def _convert_metadata_grdm_files(value, questions):
         r.append(obj)
     return r
 
+def _to_jinja_dict(value):
+    if value is None:
+        return value
+    if not isinstance(value, dict):
+        return value
+    r = {}
+    r.update(value)
+    for key in value.keys():
+        r[key.replace('-', '_')] = value[key]
+    return r
+
+def _to_jinja_list(value):
+    if value is None:
+        return value
+    if not isinstance(value, list):
+        return value
+    r = []
+    for v in value:
+        if isinstance(v, dict):
+            r.append(_to_jinja_dict(v))
+            continue
+        r.append(v)
+    return r
+
 def _convert_metadata_value(key, value, questions):
     if 'value' not in value:
         return [('', value)]
@@ -44,6 +69,12 @@ def _convert_metadata_value(key, value, questions):
             questions[key]['type'] == 'string' and 'format' in questions[key] and \
             questions[key]['format'] == 'file-creators':
         return [('', json.loads(v) if v != '' else [])]
+    if key in questions and 'type' in questions[key] and \
+            questions[key]['type'] == 'object':
+        return [('', _to_jinja_dict(v))]
+    if key in questions and 'type' in questions[key] and \
+            questions[key]['type'] == 'array':
+        return [('', _to_jinja_list(v))]
     if key in questions and 'type' in questions[key] and \
             questions[key]['type'] == 'choose' and 'options' in questions[key]:
         values = [('', v)]
@@ -87,14 +118,25 @@ def make_report_as_csv(format, draft_metadata, schema):
     template_metadata = _convert_metadata(draft_metadata, questions)
     return 'report.csv', template.render(**template_metadata)
 
-def ensure_registration_report(schema_name, report_name, csv_template):
+def ensure_registration_report(schema_name, report_name_and_order, csv_template):
     from .models import RegistrationReportFormat
     registration_schema = RegistrationSchema.objects.filter(
         name=schema_name
     ).order_by('-schema_version').first()
+    report_name = report_name_and_order
+    order = None
+    m = re.match(r'^(\d+):\s*(.*)$', report_name_and_order)
+    if m:
+        order = int(m.group(1))
+        report_name = m.group(2)
     template_query = RegistrationReportFormat.objects.filter(
         registration_schema_id=registration_schema._id, name=report_name
     )
+    if csv_template is None:
+        if template_query.exists():
+            template_query.delete()
+            logger.info(f'Format deleted: {registration_schema._id}, {report_name}')
+        return
     if template_query.exists():
         template = template_query.first()
     else:
@@ -103,5 +145,7 @@ def ensure_registration_report(schema_name, report_name, csv_template):
             name=report_name
         )
     template.csv_template = csv_template
-    logger.info(f'Format registered: {registration_schema._id}')
+    if order is not None:
+        template.order = order
+    logger.info(f'Format registered: {registration_schema._id}, "{report_name}" as index {order}')
     template.save()

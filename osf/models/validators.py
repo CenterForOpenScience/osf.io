@@ -98,6 +98,8 @@ def validate_social(value):
 
 def validate_email(value):
     from osf.models import BlacklistedEmailDomain
+    if value.startswith('tmp_eppn_'):
+        return True
     with reraise_django_validation_errors():
         django_validate_email(value)
     domain = value.split('@')[1].lower()
@@ -320,6 +322,7 @@ class RegistrationResponsesValidator:
         properties = {
             question.registration_response_key: self._build_question_schema(question)
             for question in questions
+            if self._build_question_schema(question) is not None
         }
 
         json_schema = {
@@ -387,6 +390,18 @@ class RegistrationResponsesValidator:
                 'type': 'string',
                 'description': question_text,
             }
+        elif question.block_type == 'single-select-pulldown-input':
+            # allow any option
+            return {
+                'type': 'string',
+                'description': question_text,
+            }
+        elif question.block_type == 'pulldown-input':
+            # allow any option
+            return {
+                'type': 'string',
+                'description': question_text,
+            }
         elif question.block_type == 'multi-select-input':
             return {
                 'type': 'array',
@@ -415,11 +430,14 @@ class RegistrationResponsesValidator:
                                      'e-rad-researcher-name-en-input',
                                      'e-rad-bunnya-input',
                                      'file-metadata-input', 'date-input',
+                                     'ad-metadata-input', 'date-input',
                                      'file-capacity-input', 'file-creators-input',
                                      'file-data-number-input',
+                                     'file-title-input',
                                      'file-url-input', 'file-institution-ja-input',
                                      'file-institution-en-input',
-                                     'file-institution-id-input'):
+                                     'file-institution-id-input',
+                                     'array-input'):
             if self.required_fields and question.required:
                 return {
                     'type': 'string',
@@ -431,6 +449,8 @@ class RegistrationResponsesValidator:
                     'type': 'string',
                     'description': question_text,
                 }
+        elif question.block_type == 'section-heading' or question.block_type == 'subsection-heading':
+            return None
 
         raise ValueError('Unexpected `block_type`: {}'.format(question.block_type))
 

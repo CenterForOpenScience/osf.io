@@ -152,11 +152,10 @@ class TestUserRegistrations:
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
 
-    #   test_anonymous_gets_200
+    #   test_anonymous_gets_401
         url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     #   test_get_registrations_logged_in
         url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
@@ -174,17 +173,8 @@ class TestUserRegistrations:
 
     #   test_get_registrations_not_logged_in
         url = '/{}users/{}/registrations/'.format(API_BASE, user_one._id)
-        res = app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert reg_project_public_user_one._id in ids
-        assert reg_project_private_user_one._id not in ids
-        assert reg_project_public_user_two._id not in ids
-        assert reg_project_private_user_two._id not in ids
-        assert folder._id not in ids
-        assert folder_deleted._id not in ids
-        assert project_deleted_user_one._id not in ids
+        res = app.get(url, expect_errors=True)
+        assert res.status_code == 401
 
     #   test_get_registrations_logged_in_as_different_user
         url = '/{}users/{}/registrations/'.format(API_BASE, user_two._id)
