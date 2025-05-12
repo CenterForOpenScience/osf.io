@@ -29,7 +29,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
     NodeFactory,
-    OSFGroupFactory,
     PreprintFactory,
     PreprintProviderFactory,
     PrivateLinkFactory,
@@ -192,13 +191,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
         self.project.save()
         assert check_can_access(self.project, contributor)
-
-    def test_check_can_access_osf_group_member_valid(self):
-        user = AuthUserFactory()
-        group = OSFGroupFactory(creator=user)
-        self.project.add_osf_group(group, permissions.READ)
-        self.project.save()
-        assert check_can_access(self.project, user)
 
     def test_check_user_access_invalid(self):
         noncontrib = AuthUserFactory()
@@ -631,17 +623,6 @@ class TestWikiWidgetViews(OsfTestCase):
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert not _should_show_wiki_widget(self.project, None)
-
-    def test_show_wiki_for_osf_group_members(self):
-        group = OSFGroupFactory(creator=self.noncontributor)
-        self.project.add_osf_group(group, permissions.READ)
-        assert not _should_show_wiki_widget(self.project, self.noncontributor)
-        assert not _should_show_wiki_widget(self.project2, self.noncontributor)
-
-        self.project.remove_osf_group(group)
-        self.project.add_osf_group(group, permissions.WRITE)
-        assert _should_show_wiki_widget(self.project, self.noncontributor)
-        assert not _should_show_wiki_widget(self.project2, self.noncontributor)
 
 
 class TestUnconfirmedUserViews(OsfTestCase):

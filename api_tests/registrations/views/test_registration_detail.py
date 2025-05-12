@@ -26,7 +26,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     UnregUserFactory,
     WithdrawnRegistrationFactory,
-    OSFGroupFactory,
     CommentFactory,
     InstitutionFactory,
 )
@@ -393,27 +392,6 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True)
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You do not have permission to perform this action.'
-
-    #   test_osf_group_member_write_cannot_update_registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        public_project.add_osf_group(group, permissions.WRITE)
-        res = app.put_json_api(
-            public_url,
-            public_to_private_payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
-    #   test_osf_group_member_admin_cannot_update_registration
-        public_project.remove_osf_group(group)
-        public_project.add_osf_group(group, permissions.ADMIN)
-        res = app.put_json_api(
-            public_url,
-            public_to_private_payload,
-            auth=group_mem.auth,
-            expect_errors=True)
-        assert res.status_code == 403
 
     def test_fields(
             self, app, user, public_registration,

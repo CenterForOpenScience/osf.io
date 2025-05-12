@@ -19,7 +19,6 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import GuidMetadataRecord
 from osf.models import Institution
-from osf.models import OSFGroup
 from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
@@ -59,7 +58,6 @@ DOC_TYPE_TO_MODEL = {
     'institution': Institution,
     'preprint': Preprint,
     'collectionSubmission': CollectionSubmission,
-    'group': OSFGroup
 }
 
 # Prevent tokenizing and stop word removal.
@@ -337,8 +335,6 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if isinstance(node, Preprint):
         return 'preprint'
-    if isinstance(node, OSFGroup):
-        return 'group'
     if node.is_registration:
         return 'registration'
     elif node.parent_node is None:
@@ -368,15 +364,6 @@ def update_preprint_async(self, preprint_id, index=None, bulk=False):
         self.retry(exc=exc)
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_group_async(self, group_id, index=None, bulk=False, deleted_id=None):
-    OSFGroup = apps.get_model('osf.OSFGroup')
-    group = OSFGroup.load(group_id)
-    try:
-        update_group(group=group, index=index, bulk=bulk, async_update=True, deleted_id=deleted_id)
-    except Exception as exc:
-        self.retry(exc=exc)
-
-@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_user_async(self, user_id, index=None):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
@@ -399,13 +386,6 @@ def serialize_node(node, category):
             }
             for x in node.contributor_set.filter(visible=True).order_by('_order')
             .values('user__fullname', 'user__guids___id', 'user__is_active')
-        ],
-        'groups': [
-            {
-                'name': x['name'],
-                'url': '/{}/'.format(x['_id'])
-            }
-            for x in node.osf_groups.values('name', '_id')
         ],
         'title': node.title,
         'normalized_title': normalized_title,

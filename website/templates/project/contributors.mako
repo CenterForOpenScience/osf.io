@@ -63,45 +63,6 @@
             <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
 
-    <div data-bind="filters: {
-            items: ['.contrib', '.admin'],
-            toggleClass: 'btn-default btn-primary',
-            manualRemove: true,
-            groups: {
-                permissionFilter: {
-                    filter: '.permission-filter',
-                    type: 'text',
-                    buttons: {
-                        admins: 'Administrator',
-                        write: 'Read + Write',
-                        read: 'Read'
-                    }
-                },
-                visibleFilter: {
-                    filter: '.visible-filter',
-                    type: 'checkbox',
-                    buttons: {
-                        visible: true,
-                        notVisible: false
-                    }
-                }
-            },
-            inputs: {
-                nameSearch: '.name-search'
-            }
-        }">
-        <table  id="manageContributorsTable"
-                class="table responsive-table responsive-table-xxs"
-                data-bind="template: {
-                    name: 'contribTable',
-                    afterRender: afterRender,
-                    options: {
-                        containment: '#manageContributors'
-                    },
-                    data: 'contrib'
-                    }">
-        </table>
-    </div>
     <div data-bind="visible: $root.empty" class="no-items text-danger m-b-md">
         No contributors found
     </div>

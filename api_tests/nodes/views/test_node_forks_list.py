@@ -6,7 +6,6 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
-    OSFGroupFactory,
     RegistrationFactory,
     AuthUserFactory,
     ForkFactory
@@ -163,19 +162,6 @@ class TestNodeForksList:
 
         forked_from = data['embeds']['forked_from']['data']
         assert forked_from['id'] == private_project._id
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, permissions.READ)
-        private_fork.add_osf_group(group, permissions.READ)
-        res = app.get(
-            private_project_url,
-            auth=group_mem.auth)
-        assert res.status_code == 200
-        assert len(res.json['data']) == 1
-        data = res.json['data'][0]
-        assert data['attributes']['title'] == 'Fork of ' + \
-            private_project.title
-        assert data['id'] == private_fork._id
 
     def test_node_forks_list_errors(self, app, private_project_url):
 
@@ -344,15 +330,6 @@ class TestNodeForkCreate:
         assert fork_contributors['id'] == user._id
         forked_from = data['embeds']['forked_from']['data']
         assert forked_from['id'] == private_project._id
-
-    #   test_group_member_read_can_create_fork_of_private_node
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, permissions.READ)
-        res = app.post_json_api(
-            private_project_url,
-            fork_data, auth=user.auth)
-        assert res.status_code == 201
 
     def test_fork_private_components_no_access(
             self, app, user_two, public_project,

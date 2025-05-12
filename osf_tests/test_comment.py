@@ -27,7 +27,6 @@ from .factories import (
     UserFactory,
     UnregUserFactory,
     AuthUserFactory,
-    OSFGroupFactory,
 )
 
 # All tests will require a databse
@@ -352,21 +351,6 @@ class TestCommentModel:
         assert comment.modified
         assert comment.node.logs.count() == 2
         assert comment.node.logs.latest().action == NodeLog.COMMENT_UPDATED
-
-    def test_create_sends_mention_added_signal_if_group_member_mentions(self, node, user, auth):
-        manager = AuthUserFactory()
-        group = OSFGroupFactory(creator=manager)
-        node.add_osf_group(group)
-        assert node.is_contributor_or_group_member(manager) is True
-        with capture_signals() as mock_signals:
-            Comment.create(
-                auth=auth,
-                user=user,
-                node=node,
-                target=node.guids.all()[0],
-                content='This is a comment with a group member mention [@Group Member](http://localhost:5000/' + manager._id + '/).'
-            )
-        assert mock_signals.signals_sent() == ({comment_added, mention_added})
 
     def test_delete(self, node):
         comment = CommentFactory(node=node)

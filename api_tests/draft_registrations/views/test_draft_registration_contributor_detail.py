@@ -165,14 +165,6 @@ class TestDraftRegistrationContributorUpdate(TestNodeContributorUpdate):
         return '/{}draft_registrations/{}/contributors/{}/'.format(
             API_BASE, project._id, contrib._id)
 
-    def test_change_contributor_non_admin_osf_group_member_auth(self, project, contrib):
-        # Overrides TestNodeContributorUpdate - drafts have no group perms
-        return
-
-    def test_change_contributor_admin_osf_group_permissions(self, project, contrib):
-        # Overrides TestNodeContributorUpdate - drafts have no group perms
-        return
-
 
 class TestDraftRegistrationContributorPartialUpdate(TestNodeContributorPartialUpdate):
     @pytest.fixture()
@@ -258,14 +250,6 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
         # Overrides TestNodeContributorDelete
         return '/{}draft_registrations/{}/contributors/{}/'.format(
             API_BASE, project._id, user_non_contrib._id)
-
-    def test_remove_contributor_osf_group_member_read(self):
-        # Overrides TestNodeContributorDelete - drafts don't have group members
-        return
-
-    def test_remove_contributor_osf_group_member_admin(self):
-        # Overrides TestNodeContributorDelete - drafts don't have group members
-        return
 
 
 @pytest.mark.django_db
