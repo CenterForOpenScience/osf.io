@@ -442,7 +442,7 @@ class UserResetPasswordSerializer(BaseAPISerializer):
         type_ = 'user_reset_password'
 
 
-class ExternalLoginConfirmEmailSerializer(BaseAPISerializer):
+class ConfirmEmailSerializer(BaseAPISerializer):
     uid = ser.CharField(write_only=True, required=True)
     destination = ser.CharField(write_only=True, required=True)
     token = ser.CharField(write_only=True, required=True)

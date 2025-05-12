@@ -68,7 +68,7 @@ from api.users.serializers import (
     UserChangePasswordSerializer,
     UserMessageSerializer,
     ExternalLoginSerialiser,
-    ExternalLoginConfirmEmailSerializer,
+    ConfirmEmailSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -80,6 +80,7 @@ from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.celery_tasks.handlers import enqueue_task
+from django.shortcuts import redirect
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
@@ -105,7 +106,7 @@ from osf.models import (
 from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
-from framework.auth import exceptions
+from framework.auth import exceptions, cas
 
 
 class UserMixin:
@@ -1060,6 +1061,91 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class ConfirmEmailView(generics.CreateAPIView):
+    """
+    Confirm an e-mail address created during *first-time* OAuth login.
+
+    **URL:**  POST /v2/users/<user_id>/confirm/
+
+    **Body (JSON):**
+    {
+        "uid": "<osf_user_id>",
+        "token": "<email_verification_token>",
+        "destination": "<campaign-code or relative URL>"
+    }
+
+    On success the endpoint redirects (HTTP 302) to CAS with a
+    one-time verification key, exactly like the original Flask view.
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.USERS_CONFIRM]
+    required_write_scopes = [CoreScopes.USERS_CONFIRM]
+
+    view_category = 'users'
+    view_name = 'confirm-user'
+
+    serializer_class = ConfirmEmailSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uid = serializer.validated_data['uid']
+        token = serializer.validated_data['token']
+
+        user = OSFUser.load(uid)
+        if not user:
+            raise ValidationError('User not found.')
+
+        verification = user.email_verifications.get(token)
+        if not verification:
+            raise ValidationError('Invalid or expired token.')
+
+        provider = next(iter(verification['external_identity']))
+        provider_id = next(iter(verification['external_identity'][provider]))
+
+        if provider not in user.external_identity:
+            raise ValidationError('External-ID provider mismatch.')
+
+        external_status = user.external_identity[provider][provider_id]
+        ensure_external_identity_uniqueness(provider, provider_id, user)
+
+        email = verification['email']
+        if not user.is_registered:
+            user.register(email)
+
+        user.emails.get_or_create(address=email.lower())
+        user.external_identity[provider][provider_id] = 'VERIFIED'
+        user.date_last_logged_in = timezone.now()
+
+        del user.email_verifications[token]
+        user.verification_key = generate_verification_key()
+        user.save()
+
+        service_url = request.build_absolute_uri()
+        if external_status == 'CREATE':
+            service_url += '&' + urlencode({'new': 'true'})
+        elif external_status == 'LINK':
+            mails.send_mail(
+                user=user,
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
+            )
+
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
+        return redirect(
+            cas.get_login_url(
+                service_url,
+                username=user.username,
+                verification_key=user.verification_key,
+            ),
+        )
+
 class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1212,7 +1298,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
     permission_classes = (
         drf_permissions.AllowAny,
     )
-    serializer_class = ExternalLoginConfirmEmailSerializer
+    serializer_class = ConfirmEmailSerializer
     view_category = 'users'
     view_name = 'external-login-confirm-email'
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
