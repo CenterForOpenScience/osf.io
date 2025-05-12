@@ -91,9 +91,9 @@ def main(dry_run=True):
                 except Exception as err:
                     logger.error(
                         f'Unexpected error raised when completing embargo for '
-                        f'registration {parent_registration._id}. Continuing...'
+                        f'registration {parent_registration._id}. Continuing...',
+                        exc_info=err
                     )
-                    logger.exception(err)
                     sentry.log_message(f'Registration {parent_registration._id} could not be made public because {str(err)}')
                     transaction.savepoint_rollback(sid)
 
