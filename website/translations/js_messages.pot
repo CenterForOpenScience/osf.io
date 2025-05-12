@@ -3885,6 +3885,48 @@ msgstr ""
 msgid "A user deauthorized the Azure Blob Storage addon for a project"
 msgstr ""
 
+#: website/static/js/fangorn.js:2791
+msgid "Properties"
+msgstr ""
+
+#: website/static/js/fangorn.js:2791
+msgid "Size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2793
+msgid "Total size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2810
+msgid "Path: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2755
+msgid "Total files: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2761
+msgid "Created at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2767
+msgid "Modified at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2773
+msgid "Modified by: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2665
+msgid "Loading..."
+msgstr ""
+
+#: website/static/js/fangorn.js:2649
+msgid ""
+" Press Option (Alt in Windows) while dragging a file to a new folder or "
+"component."
+msgstr ""
+
 #: website/static/js/anonymousLogActionsList_extract.js:202
 msgid "Azure Blob Storage addon for a project deauthorized"
 msgstr ""
@@ -8950,6 +8992,10 @@ msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:88
 msgid "An unexpected error occurred. Please try again."
+msgstr ""
+
+#: website/static/js/fangorn.js:2732
+msgid "A server error occurred. Please contact %1$s."
 msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:108

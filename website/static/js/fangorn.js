@@ -1780,7 +1780,7 @@ function orderFolder(tree) {
         this.redraw();
     }
     // hide loading after redrawing new data
-    this.select('#tb-tbody > .tb-modal-shade').hide();
+    this.select('#tb-tbody > .tb-modal-shade.loading-modal').hide();
     this.select('#tb-tbody').css('overflow', '');
 }
 
@@ -2154,7 +2154,7 @@ function _lazyLoadPreprocess(obj) {
             var path = attributes.kind === 'folder' ? id.slice(0, -1).replace(attributes.name, '') : id.replace(attributes.name, '');
             var parent = this.flatData.filter(function (item) {
                 return item.row.kind === 'folder' &&
-                    (item.row.provider === 's3' || item.row.provider === 's3compat') &&
+                    (item.row.provider === 's3' || item.row.provider === 's3compat' || item.row.provider === 's3compatinstitutions') &&
                     item.row.id === path;
             });
             if (parent[0]) {
@@ -2801,26 +2801,249 @@ var FGToolbar = {
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, gettext('Filter')));
-            if (ctrl.tb.options.placement !== 'fileview') {
-                generalButtons.push(m.component(FGButton, {
-                    onclick: function(event){
-                        var mithrilContent = m('div', [
-                            m('p', [ m('b', gettext('Select rows:')), m('span', gettext(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
-                            m('p', [ m('b', gettext('Open files:')), m('span', gettext(' Click a file name to go to view the file in the GakuNin RDM.'))]),
-                            m('p', [ m('b', gettext('Open files in new tab:')), m('span', gettext(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
-                            m('p', [ m('b', gettext('Download as zip:')), m('span', gettext(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', gettext(' Not available for all storage add-ons.'))]),
-                            m('p', [ m('b', gettext('Copy files:')), m('span', gettext(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', gettext(' Only for contributors with write access.'))])
-                        ]);
+
+        // Add button "details" for folder and file
+        // if folder or file will not have addonFullname attribute
+        if (item &&
+            items.length === 1 &&
+            item.data.id &&
+            item.data.nodeType !== 'project' &&
+            item.data.addonFullname === undefined) {
+            generalButtons.push(m.component(FGButton, {
+                onclick: function(){
+                    var currentItemNode = this;
+                    new Promise(function(resolve, reject) {
+                        // timeout of recusive api
+                        var isRecursiveCancelled = false;
+                        var resolveResult = {
+                            item,
+                            // file count of folder
+                            totalFile: null,
+                            // size of current folder/file
+                            totalSize: 0,
+                            // update user
+                            updatedBy: null
+                        };
+
+                        // use MutationObserver to detect the removal of the modal to cancel recusive calling api
+                        var observer = new MutationObserver(function(mutationsList, observer) {
+                            // loop list multation of DOM
+                            for (var mutation of mutationsList) {
+                                // Check if the mutation is a removed element from the DOM.
+                                if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                                    // Detect the removal of the modal.
+                                    for (var removedNode of mutation.removedNodes) {
+                                        if (removedNode.classList && removedNode.classList.contains('tb-modal-shade')) {
+                                            isRecursiveCancelled = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        // start to detect multation of tb-tbody
+                        observer.observe(ctrl.tb.select('#tb-tbody')[0], { childList: true, subtree: true });
+
+                        if (item.kind === 'folder') {
+                            var loadingBall = m('div', { className: 'text-center' }, [
+                                m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                                    // triple horizontal ball loading
+                                    m('div',''),
+                                    m('div',''),
+                                    m('div',''),
+                                ]),
+                                m('p', gettext('Loading...'))
+                            ]);
+                            var mithrilButtons = m('button', {
+                                'type':'button',
+                                'class' : 'btn btn-default',
+                                onclick : function() {
+                                    ctrl.tb.modal.dismiss();
+                                }
+                            },
+                            gettext('Close'));
+
+                            // create a loading when fetch get details info of folder
+                            ctrl.tb.modal.update(
+                                loadingBall,
+                                mithrilButtons,
+                                m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name)));
+                            ctrl.tb.select('#tb-tbody').css('overflow', 'hidden');
+
+                            // Get details info of children of folder to get size and count item
+                            // get info of folder
+                            // call to recursive call to the lowest children to get the final size
+                            getFolderSize(
+                                item,
+                                function () {return isRecursiveCancelled;}
+                            ).then(function(res) {
+                                resolveResult.totalFile = res.count;
+                                // convert from number to size text
+                                resolveResult.totalSize = $osf.humanFileSize(res.size, true);
+
+                                // if modal is closed before api finish will now handle lebow process
+                                // case api finish but modal is show for another folder
+                                // (get folder 1 and quick close modal, then click folder 2 and show details)
+                                if (!ctrl.tb.modal.on || !currentItemNode.className.includes(item.data.id)) {
+                                    return;
+                                }
+                                resolve(resolveResult);
+                            }).catch(function(error) {
+                                // redirect to login page
+                                if (error.code === 401) {
+                                    window.location.href = '/login';
+                                } else {
+                                    // handle when any error occurred
+                                    var errorNotify = m('div', { className: 'text-center' },
+                                        m('span', sprintf(gettext('A server error occurred. Please contact %1$s.'), $osf.osfSupportEmail()))
+                                    );
+                                    ctrl.tb.modal.update(
+                                        errorNotify,
+                                        mithrilButtons,
+                                        m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name))
+                                    );
+                                }
+                                return;
+                            });
+                        } else if (item.kind === 'file') {
+                            // get last version update user
+                            if (item.data.provider === 'osfstorage') {
+                                m.request({
+                                    method: 'GET',
+                                    url: waterbutler.buildRevisionsUrl(
+                                        item.data.path, item.data.provider, item.data.nodeId,
+                                        {branch: $osf.urlParams().branch}
+                                    ),
+                                    config: $osf.setXHRAuthorization
+                                }).then(function (value) {
+                                    var reversions = value.data;
+                                    var lastestVersion = reversions[0];
+                                    resolveResult.updatedBy = lastestVersion.attributes.extra.user.name || '';
+                                    resolveResult.totalSize = item.data.sizeInt !== null ?
+                                        $osf.humanFileSize(item.data.sizeInt, true) :
+                                        '';
+                                    resolve(resolveResult);
+                                }, function(error) {
+                                    // redirect to login page
+                                    if (error.code === 401) {
+                                        window.location.href = '/login';
+                                    } else {
+                                        // handle when any error occurred
+                                        var errorNotify = m('div', { className: 'text-center' },
+                                            m('span', sprintf(gettext('A server error occurred. Please contact %1$s.'), $osf.osfSupportEmail()))
+                                        );
+                                        ctrl.tb.modal.update(
+                                            errorNotify,
+                                            mithrilButtons,
+                                            m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name))
+                                        );
+                                    }
+                                    return;
+                                });
+                            } else {
+                                // mapping infomation when item is file
+                                resolveResult.totalSize = item.data.sizeInt !== null ?
+                                    $osf.humanFileSize(item.data.sizeInt, true) :
+                                    '';
+                                resolve(resolveResult);
+                            }
+                        }
+                    }).then(function(value) {
+                        var totalFile = value.totalFile;
+                        var totalSize = value.totalSize;
+                        var updatedBy = value.updatedBy;
+                        var item = value.item;
+                        // created time
+                        var createdAt = null;
+                        // updated time
+                        var updatedAt = null;
+
+                        // mapping time
+                        if (item.data.created_utc) {
+                            createdAt = moment(item.data.created_utc).format('YYYY-MM-DD hh:mm:ss A');
+                        }
+                        if (item.data.modified_utc) {
+                            updatedAt = moment(item.data.modified_utc).format('YYYY-MM-DD hh:mm:ss A');
+                        }
+
+                        // create a final show content of popup
+                        var detailsContent = [];
+                        // items count
+                        if (totalFile !== null) {
+                            detailsContent.push(
+                                m('p', [m('b', gettext('Total files: ')), m('span', totalFile)])
+                            );
+                        }
+                        // size
+                        if (item.kind === 'file') {
+                            detailsContent.push(m('p', [m('b', gettext('Size: ')), m('span', totalSize)]));
+                        } else if (item.kind === 'folder') {
+                            detailsContent.push(m('p', [m('b', gettext('Total size: ')), m('span', totalSize)]));
+                        }
+                        // created time
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Created at: ')), m('span', createdAt)])
+                        );
+                        // updated time
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Modified at: ')), m('span', updatedAt)])
+                        );
+                        // updated by
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Modified by: ')), m('span', updatedBy)])
+                        );
+                        // fullpath
+                        var fullpath = item.data.materialized;
+                        // remove the last '/' character for folder path
+                        if (fullpath.endsWith('/')) {
+                            fullpath = fullpath.slice(0, -1);
+                        }
+                        detailsContent.push(
+                            m('p', {style: 'line-break: anywhere;'},
+                            [
+                                m('b', gettext('Path: ')),
+                                m('span', fullpath)
+                            ])
+                        );
+
+                        var mithrilContent = m('div', detailsContent);
                         var mithrilButtons = m('button', {
                                 'type':'button',
                                 'class' : 'btn btn-default',
-                                onclick : function(event) { ctrl.tb.modal.dismiss(); } }, gettext('Close'));
-                        ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', gettext('How to Use the File Browser')));
-                    },
-                    icon: 'fa fa-info',
-                    className : 'text-info'
-                }, ''));
-            }
+                                onclick : function(event) {
+                                    ctrl.tb.modal.dismiss();
+                                }},
+                                gettext('Close'));
+                        ctrl.tb.modal.update(mithrilContent,
+                            mithrilButtons,
+                            m('h3.modal-title.break-word.two-line-ellipsis', item.data.name));
+                    });
+                },
+                icon: 'fa fa-info-circle',
+                className : 'text-info ' + item.data.id,
+            }, gettext('Properties')));
+        }
+
+        if (ctrl.tb.options.placement !== 'fileview') {
+            generalButtons.push(m.component(FGButton, {
+                onclick: function(event){
+                    var mithrilContent = m('div', [
+                        m('p', [m('b', gettext('Select rows:')), m('span', gettext(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
+                        m('p', [m('b', gettext('Open files:')), m('span', gettext(' Click a file name to go to view the file in the GakuNin RDM.'))]),
+                        m('p', [m('b', gettext('Open files in new tab:')), m('span', gettext(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
+                        m('p', [m('b', gettext('Download as zip:')), m('span', gettext(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', gettext(' Not available for all storage add-ons.'))]),
+                        m('p', [m('b', gettext('Copy files:')), m('span', gettext(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', gettext(' Only for contributors with write access.'))])
+                    ]);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, gettext('Close'));
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', gettext('How to Use the File Browser')));
+                },
+                icon: 'fa fa-info',
+                className : 'text-info'
+            }, ''));
+        }
         if (ctrl.tb.options.placement === 'fileview') {
             generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
@@ -3494,6 +3717,101 @@ function handleScroll() {
     }
 }
 
+/**
+ * Recursive to get the total size of folder item
+ * @param {item} item
+ * @param {recusiveCancelCallback} callback to get flag is the recusive cancelled
+ * @param {next_token} token to get the next data of
+ * @returns
+ */
+function getFolderSize(item, recusiveCancelCallback = function() {
+    return false;
+}, nextToken = null) {
+    if (recusiveCancelCallback() === true) {
+        return Promise.resolve({
+            size: 0,
+            count: 0
+        });
+    }
+
+    var totalSize = 0;
+    var totalFile = 0;
+
+    if (nextToken) {
+        item.next_token = nextToken;
+    }
+
+    var url = _fangornResolveLazyLoad(item);
+
+    // reset item for the next time
+    // delete item.next_token
+    item.next_token = null;
+
+    var requestParams = {
+        method: 'GET',
+        url: url,
+        config: $osf.setXHRAuthorization
+    };
+
+    return Promise.resolve(m.request(requestParams).then(function(value) {
+        totalFile = value.data.length;
+        if (value.data.length) {
+            var childPromises = value.data.map(function(child) {
+                if (child.attributes.kind === 'folder') {
+                    // only count file
+                    totalFile -= 1;
+                    var itemInstance = {
+                        data: Object.assign({}, child.attributes, {
+                            nodeId: item.data.nodeId
+                        })
+                    };
+                    return getFolderSize(itemInstance, recusiveCancelCallback).then(function(res) {
+                        totalSize += res.size;
+                        totalFile += res.count;
+                    });
+                } else {
+                    totalSize += child.attributes.sizeInt;
+                    return Promise.resolve();
+                }
+            });
+            return Promise.all(childPromises).then(function() {
+                if (value.next_token) {
+                    return getFolderSize(item, recusiveCancelCallback, value.next_token).then(function(res) {
+                        totalSize += res.size;
+                        totalFile += res.count;
+                        return {
+                            size: totalSize,
+                            count: totalFile
+                        };
+                    });
+                } else {
+                    return Promise.resolve({
+                        size: totalSize,
+                        count: totalFile
+                    });
+                }
+            });
+        } else {
+            if (value.next_token) {
+                return getFolderSize(item, recusiveCancelCallback, value.next_token).then(function(res) {
+                    totalSize += res.size;
+                    totalFile += res.count;
+                    return {
+                        size: totalSize,
+                        count: totalFile
+                    };
+                });
+            } else {
+                return Promise.resolve({
+                    size: totalSize,
+                    count: totalFile
+                });
+            }
+        }
+    }));
+}
+
+
 
 /**
  * OSF-specific Treebeard options common to all addons.
@@ -3587,7 +3905,7 @@ tbOptions = {
         // Add loading modal when loading page
         tb.select('#tb-tbody').prepend(
             '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
-            ' class="tb-modal-shade">' +
+            ' class="tb-modal-shade loading-modal">' +
             '<div class="spinner-loading-wrapper" style="background-color: transparent;">' +
             '<div class="ball-scale ball-scale-blue"><div></div></div>' +
             '<p class="m-t-sm fg-load-message">Loading files...</p>' +
@@ -3735,7 +4053,28 @@ Fangorn.prototype = {
     },
     // Create the Treebeard once all addons have been configured
     _initGrid: function () {
-        this.grid = new Treebeard(this.options);
+        var treebeard = new Treebeard(this.options);
+        this.grid = treebeard;
+        // create a trigger receiver of event save file editor (markdown), use to update file editted in tree for show dialog 'Properties'
+        $(document).on('fileviewpage:reload', function(event, data) {
+            // get selected file in tree, then replace the infomation base on new updated data
+            var selectedFile = treebeard.find(treebeard.currentFileID);
+            selectedFile.data.size = data.attributes.size;
+            selectedFile.data.sizeInt = data.attributes.sizeInt;
+            selectedFile.data.modified = data.attributes.modified;
+            selectedFile.data.modified_utc = data.attributes.modified_utc;
+
+            // find and replace the old child in list children
+            var children = treebeard.find(selectedFile.parentID).children;
+            children.forEach(function(child, index) {
+                if (child.id === selectedFile.id) {
+                    children[index] = selectedFile;
+                    return;
+                }
+            });
+            treebeard.find(selectedFile.parentID).children = children;
+            treebeard.redraw();
+        });
         return this.grid;
     }
 };
