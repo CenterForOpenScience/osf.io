@@ -89,7 +89,10 @@ def main(dry_run=True):
                     parent_registration.terminate_embargo()
                     transaction.savepoint_commit(sid)
                 except Exception as err:
-                    logger.error(f'Registration {parent_registration._id} could not be made public because {str(err)}')
+                    logger.error(
+                        f'Registration {parent_registration._id} could not be made public because {str(err)}',
+                        exc_info=err
+                    )
                     sentry.log_message(f'Registration {parent_registration._id} could not be made public because {str(err)}')
                     transaction.savepoint_rollback(sid)
 
