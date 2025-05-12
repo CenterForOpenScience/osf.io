@@ -94,7 +94,7 @@ def main(dry_run=True):
                         f'registration {parent_registration._id}. Continuing...'
                     )
                     logger.exception(err)
-                    sentry.log_message(str(err))
+                    sentry.log_message(f'Registration {parent_registration._id} could not be made public because {str(err)}')
                     transaction.savepoint_rollback(sid)
 
 
