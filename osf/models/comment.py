@@ -13,7 +13,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from framework.exceptions import PermissionsError
 from website import settings
 from website.util import api_v2_url
-from website.project import signals as project_signals
 from website.project.model import get_valid_mentioned_users_guids
 
 
@@ -164,7 +163,6 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
                 comment.save()
             new_mentions = get_valid_mentioned_users_guids(comment, comment.node.contributors_and_group_members)
             if new_mentions:
-                project_signals.mention_added.send(comment, new_mentions=new_mentions, auth=auth)
                 comment.ever_mentioned.add(*comment.node.contributors.filter(guids___id__in=new_mentions))
 
         comment.save()
@@ -177,8 +175,6 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         )
 
         comment.node.save()
-        project_signals.comment_added.send(comment, auth=auth, new_mentions=new_mentions)
-
         return comment
 
     def edit(self, content, auth, save=False):
@@ -198,7 +194,6 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
 
         if save:
             if new_mentions:
-                project_signals.mention_added.send(self, new_mentions=new_mentions, auth=auth)
                 self.ever_mentioned.add(*self.node.contributors.filter(guids___id__in=new_mentions))
             self.save()
             self.node.add_log(

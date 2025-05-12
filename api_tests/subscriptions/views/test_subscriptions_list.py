@@ -34,11 +34,10 @@ class TestSubscriptionList:
     def test_list_complete(self, app, user, provider, node, global_user_notification, url):
         res = app.get(url, auth=user.auth)
         notification_ids = [item['id'] for item in res.json['data']]
-        # There should only be 4 notifications: users' global, node's comments, node's file updates and provider's preprint added.
-        assert len(notification_ids) == 4
+        # There should only be 3 notifications: users' global, node's file updates and provider's preprint added.
+        assert len(notification_ids) == 3
         assert f'{user._id}_global' in notification_ids
         assert f'{provider._id}_new_pending_submissions' in notification_ids
-        assert f'{node._id}_comments' in notification_ids
         assert f'{node._id}_file_updated' in notification_ids
 
     def test_unauthenticated(self, app, url):
