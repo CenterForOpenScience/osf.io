@@ -240,6 +240,10 @@ class TestRegistrationDetail:
 class TestRegistrationUpdateTestCase:
 
     @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def read_only_contributor(self):
         return AuthUserFactory()
 

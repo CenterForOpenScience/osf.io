@@ -21,6 +21,10 @@ class TestNodeLicense:
         return AuthUserFactory()
 
     @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
     def user_two(self):
         return AuthUserFactory()
 

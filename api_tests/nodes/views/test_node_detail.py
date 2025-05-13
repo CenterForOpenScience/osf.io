@@ -334,6 +334,13 @@ class TestNodeDetail:
         res = app.get(url, auth=user.auth)
         assert 'wikis' in res.json['data']['relationships']
 
+    def test_node_shows_collected_in_relationship(self, app, user, project_public, url_public):
+        res = app.get(
+            url_public,
+            auth=user.auth
+        )
+        assert 'collected_in' in res.json['data']['relationships']
+
     def test_preprint_field(self, app, user, user_two, project_public, url_public):
         # Returns true if project holds supplemental material for a preprint a user can view
         # Published preprint, admin_contrib
@@ -616,6 +623,8 @@ class TestNodeDetail:
         assert permissions.READ in res.json['data']['attributes']['current_user_permissions']
         assert res.json['data']['attributes']['current_user_is_contributor_or_group_member'] is False
         assert res.json['data']['attributes']['current_user_is_contributor'] is False
+
+        assert res.json['data']['relationships']['collected_in']
 
     def test_current_user_permissions_vol(self, app, user, url_public, project_public):
         '''

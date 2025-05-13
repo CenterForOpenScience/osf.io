@@ -45,6 +45,9 @@ class CoreScopes:
 
     MEETINGS_READ = 'meetings.base_read'
 
+    NODE_COLLECTIONS_READ = 'node_collections_read'
+    NODE_COLLECTIONS_WRITE = 'node_collections_write'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 
