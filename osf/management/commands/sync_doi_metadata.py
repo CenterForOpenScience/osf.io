@@ -5,7 +5,7 @@ import logging
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
-from osf.models import GuidMetadataRecord, Identifier, Registration
+from osf.models import GuidMetadataRecord, Identifier, Registration, Preprint
 from framework.celery_tasks import app
 
 logger = logging.getLogger(__name__)
@@ -14,8 +14,8 @@ logger = logging.getLogger(__name__)
 RATE_LIMIT_RETRY_DELAY = 60 * 5
 
 
-@app.task(name='osf.management.commands.sync_doi_metadata', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
-def sync_identifier_doi(identifier_id):
+@app.task(name='osf.management.commands.sync_doi_metadata', bind=True, acks_late=True, max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def sync_identifier_doi(self, identifier_id):
     try:
         identifier = Identifier.objects.get(id=identifier_id)
         identifier.referent.request_identifier_update('doi')
@@ -23,17 +23,21 @@ def sync_identifier_doi(identifier_id):
         logger.info(f'Doi update for {identifier.value} complete')
     except Exception as err:
         logger.warning(f'[{err.__class__.__name__}] Doi update for {identifier.value} failed because of error: {err}')
-        sync_identifier_doi.retry(exc=err, countdown=RATE_LIMIT_RETRY_DELAY)
+        self.retry()
 
 
 @app.task(name='osf.management.commands.sync_doi_metadata_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
-def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100):
+def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=False, rate_limit=100, missing_preprint_dois_only=False):
     identifiers = Identifier.objects.filter(
         category='doi',
         deleted__isnull=True,
         modified__lte=modified_date,
         object_id__isnull=False,
     )
+    if missing_preprint_dois_only:
+        sync_preprint_missing_dois.apply_async(kwargs={'rate_limit': rate_limit})
+        identifiers = identifiers.exclude(content_type=ContentType.objects.get_for_model(Preprint))
+
     if batch_size:
         identifiers = identifiers[:batch_size]
         rate_limit = batch_size if batch_size > rate_limit else rate_limit
@@ -53,6 +57,27 @@ def sync_doi_metadata(modified_date, batch_size=100, dry_run=True, sync_private=
 
         if (identifier.referent.is_public and not identifier.referent.deleted and not identifier.referent.is_retracted) or sync_private:
             sync_identifier_doi.apply_async(kwargs={'identifier_id': identifier.id})
+
+
+@app.task(name='osf.management.commands.sync_preprint_missing_dois', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def sync_preprint_missing_dois(rate_limit):
+    preprints = Preprint.objects.filter(preprint_doi_created=None)
+    for record_number, preprint in enumerate(preprints, 1):
+        # in order to not reach rate limit that CrossRef has, we make delay
+        if not record_number % rate_limit:
+            time.sleep(RATE_LIMIT_RETRY_DELAY)
+
+        async_request_identifier_update.apply_async(kwargs={'preprint_id': preprint._id})
+
+
+@app.task(name='osf.management.commands.async_request_identifier_update', bind=True, acks_late=True, max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
+def async_request_identifier_update(self, preprint_id):
+    preprint = Preprint.load(preprint_id)
+    try:
+        preprint.request_identifier_update('doi', create=True)
+    except Exception as err:
+        logger.warning(f'[{err.__class__.__name__}] Doi creation failed for the preprint with id {preprint._id} because of error: {err}')
+        self.retry()
 
 
 @app.task(name='osf.management.commands.sync_doi_empty_metadata_dataarchive_registrations_command', max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)

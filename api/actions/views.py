@@ -84,7 +84,6 @@ class ActionDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         return ReviewActionSerializer
 
     def get_object(self):
-        action = None
         action_id = self.kwargs['action_id']
 
         if NodeRequestAction.objects.filter(_id=action_id).exists() or PreprintRequestAction.objects.filter(_id=action_id).exists():
@@ -169,6 +168,9 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Target
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
         target = serializer.validated_data['target']
+        if not target:
+            raise NotFound(f'Unable to find specified Action {target}')
+
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
