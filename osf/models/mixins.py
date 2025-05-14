@@ -1061,11 +1061,16 @@ class ReviewProviderMixin(GuardianMixin):
         return counts
 
     def add_to_group(self, user, group):
+        if isinstance(group, Group):
+            group.user_set.add(user)
+        elif isinstance(group, str):
+            self.get_group(group).user_set.add(user)
+        else:
+            raise TypeError(f"Unsupported group type: {type(group)}")
+
         # Add default notification subscription
         for subscription in self.DEFAULT_SUBSCRIPTIONS:
             self.add_user_to_subscription(user, f'{self._id}_{subscription}')
-
-        return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
@@ -2222,7 +2227,6 @@ class SpamOverrideMixin(SpamMixin):
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            user.is_registered = False
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.SPAM_USER_BANNED,

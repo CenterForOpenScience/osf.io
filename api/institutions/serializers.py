@@ -1,7 +1,10 @@
+from django.db.models import Count, F
+
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from osf.models import Node, Registration
+from framework import sentry
+from osf.models import Node, Registration, OSFUser
 from osf.utils import permissions as osf_permissions
 
 from api.base.serializers import (
@@ -355,11 +358,27 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
         related_view='institutions:institution-detail',
         related_view_kwargs={'institution_id': '<institution_id>'},
     )
+    contacts = ser.SerializerMethodField()
 
     links = LinksField({})
 
     def get_absolute_url(self):
         return None  # there is no detail view for institution-users
+
+    def get_contacts(self, obj):
+        user = OSFUser.load(obj._d_['user_id'])
+        if not user:
+            sentry.log_message(f'Institutional report with id {obj.meta['id']} has missing user')
+            return []
+
+        results = user.received_user_messages.annotate(
+            sender_name=F('sender__fullname'),
+        ).values(
+            'sender_name',
+        ).annotate(
+            count=Count('sender_name'),
+        ).order_by('sender_name')
+        return list(results)
 
 
 class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):

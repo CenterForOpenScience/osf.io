@@ -402,7 +402,14 @@ class TestRemove2Factor(AdminTestCase):
 class TestUserSearchView(AdminTestCase):
 
     def setUp(self):
-        self.user_1 = AuthUserFactory(fullname='Broken Matt Hardy')
+        self.user_1 = AuthUserFactory(
+            fullname='Broken Matt Hardy',
+            external_identity={
+                settings.EXTERNAL_IDENTITY_PROFILE.get('OrcidProfile'): {
+                    '1234-5678': 'VERIFIED'
+                }
+            }
+        )
         self.user_2 = AuthUserFactory(fullname='Jeff Hardy')
         self.user_3 = AuthUserFactory(fullname='Reby Sky')
         self.user_4 = AuthUserFactory(fullname='King Maxel Hardy')
@@ -424,6 +431,14 @@ class TestUserSearchView(AdminTestCase):
         response = self.view.form_valid(form)
         assert response.status_code == 302
         assert response.headers['location'] == f'/users/{self.user_1.guids.first()._id}/'
+
+        form_data = {
+            'guid': 'wrong'
+        }
+        form = UserSearchForm(data=form_data)
+        assert form.is_valid()
+        response = self.view.form_valid(form)
+        assert response.status_code == 404
 
     def test_search_user_by_name(self):
         form_data = {
@@ -454,6 +469,14 @@ class TestUserSearchView(AdminTestCase):
         response = self.view.form_valid(form)
         assert response.status_code == 302
         assert response.headers['location'] == f'/users/{self.user_1.guids.first()._id}/'
+
+        form_data = {
+            'email': 'wrong@email.com'
+        }
+        form = UserSearchForm(data=form_data)
+        assert form.is_valid()
+        response = self.view.form_valid(form)
+        assert response.status_code == 404
 
     def test_search_user_by_alternate_email(self):
         form_data = {
@@ -486,6 +509,24 @@ class TestUserSearchView(AdminTestCase):
         assert len(results) == 3
         for user in results:
             assert 'Hardy' in user.fullname
+
+    def test_search_user_by_orcid(self):
+        form_data = {
+            'orcid': '1234-5678'
+        }
+        form = UserSearchForm(data=form_data)
+        assert form.is_valid()
+        response = self.view.form_valid(form)
+        assert response.status_code == 302
+        assert response.headers['location'] == f'/users/{self.user_1.guids.first()._id}/'
+
+        form_data = {
+            'orcid': '1234-5678-90'
+        }
+        form = UserSearchForm(data=form_data)
+        assert form.is_valid()
+        response = self.view.form_valid(form)
+        assert response.status_code == 404
 
 
 class TestGetLinkView(AdminTestCase):

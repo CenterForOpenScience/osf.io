@@ -536,7 +536,8 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.run_submit(submitter)
         return withdrawal_request
 
-    def test_can_approve_withdrawal_request(self, withdrawal_request, submitter, preprint, admin):
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
+    def test_can_approve_withdrawal_request(self, mocked_function, withdrawal_request, submitter, preprint, admin):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
@@ -551,6 +552,12 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.target.refresh_from_db()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         assert original_comment == withdrawal_request.target.withdrawal_justification
+
+        # share update is triggered when update "date_withdrawn" and "withdrawal_justification" throughout withdrawal process
+        updated_fields = mocked_function.call_args[1]['saved_fields']
+        assert 'date_withdrawn' in updated_fields
+        assert 'withdrawal_justification' in updated_fields
+        assert preprint.SEARCH_UPDATE_FIELDS.intersection(updated_fields)
 
     def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
