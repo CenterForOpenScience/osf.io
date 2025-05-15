@@ -359,8 +359,8 @@ def with_class_scoped_db(_class_scoped_db):
     yield from rolledback_transaction('function_transaction')
 
 @pytest.fixture
-def mock_gravy_valet_get_links():
-
-    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_links:
-        mock_get_links.return_value = []
-        yield mock_get_links
+def mock_gravy_valet_get_verified_links():
+    '''This fix is used to mock a GV request for TreeWalker node metadata'''
+    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_verified_links:
+        mock_get_verified_links.return_value = []
+        yield mock_get_verified_links

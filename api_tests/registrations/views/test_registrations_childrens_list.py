@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -59,12 +57,6 @@ def registration_with_children_approved_url(registration_with_children_approved)
 @pytest.mark.django_db
 class TestRegistrationsChildrenList:
 
-    @pytest.fixture()
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
     def test_registrations_children_list(self, user, app, registration_with_children, registration_with_children_url):
         component_one, component_two, component_three, component_four = registration_with_children.nodes
 
@@ -76,7 +68,7 @@ class TestRegistrationsChildrenList:
         assert component_one._id in ids
         assert component_two._id in ids
 
-    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_return_registrations_list_no_auth_approved(
         self,
         user,

@@ -50,12 +50,12 @@ def project(user, auth, fake):
 @pytest.fixture()
 def auth(user):
     return Auth(user)
-
-@pytest.fixture(autouse=True)
-def mock_gravy_valet_get_links():
-    with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-        mock_get_links.return_value = []
-        yield mock_get_links
+#
+# @pytest.fixture(autouse=True)
+# def mock_gravy_valet_get_links():
+#     with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
+#         mock_get_links.return_value = []
+#         yield mock_get_links
 
 # copied from tests/test_models.py
 def test_factory(user, project):
@@ -124,6 +124,7 @@ class TestRegistration:
 
 
 # copied from tests/test_models.py
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestRegisterNode:
 
     @pytest.fixture()
@@ -409,13 +410,8 @@ class TestRegisterNodeContributors:
         with mock_archive(project_two, autoapprove=True) as registration:
             return registration
 
-    @pytest.fixture
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
-    def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()
         assert registration.contributors.filter(id=contributor_unregistered.id).exists()
@@ -428,6 +424,7 @@ class TestRegisterNodeContributors:
 
 
 # copied from tests/test_registrations
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestNodeApprovalStates:
 
     def test_sanction_none(self):
@@ -644,7 +641,7 @@ class TestRegistrationMixin:
 
         assert registration_metadata == veer_condensed
 
-
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestRegistationModerationStates:
 
     @pytest.fixture

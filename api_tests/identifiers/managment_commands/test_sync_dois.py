@@ -60,6 +60,7 @@ class TestSyncDOIs:
             mock_get_links.return_value = []
             yield mock_get_links
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     @pytest.mark.enable_enqueue_task
     def test_doi_synced_datacite(self, app, registration, registration_identifier, mock_datacite):
         assert registration_identifier.modified.date() < datetime.datetime.now().date()
@@ -73,6 +74,7 @@ class TestSyncDOIs:
         registration_identifier.reload()
         assert registration_identifier.modified.date() == datetime.datetime.now().date()
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     @pytest.mark.enable_enqueue_task
     def test_doi_synced_crossref(self, app, preprint_identifier, mock_crossref):
         assert preprint_identifier.modified.date() < datetime.datetime.now().date()
@@ -84,6 +86,7 @@ class TestSyncDOIs:
         preprint_identifier.reload()
         assert preprint_identifier.modified.date() == datetime.datetime.now().date()
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     @pytest.mark.enable_enqueue_task
     def test_doi_sync_private(self, app, registration_private, registration_identifier, mock_datacite):
 
@@ -98,6 +101,7 @@ class TestSyncDOIs:
         assert registration_identifier.modified.date() < datetime.datetime.now().date()
         assert registration_identifier.modified.date() < datetime.datetime.now().date()
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     @pytest.mark.enable_enqueue_task
     def test_doi_sync_public_only(self, app, registration_private, registration_identifier, mock_datacite):
         call_command('sync_doi_metadata', f'-m={datetime.datetime.now()}')
