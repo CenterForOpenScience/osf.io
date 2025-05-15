@@ -21,15 +21,15 @@ class TestGVSessionOptimization:
 
     @pytest.fixture()
     def mock_request(self):
-        mock_req = MagicMock()
-        return mock_req
+        mock_request = MagicMock()
+        return mock_request
 
     @pytest.fixture()
     def mock_external_service(self):
-        mock_service = MagicMock()
-        mock_service.short_name = 'github'
-        mock_service.type = 'storage'
-        return mock_service
+        mock_external_service = MagicMock()
+        mock_external_service.short_name = 'github'
+        mock_external_service.type = 'storage'
+        return mock_external_service
 
     @pytest.fixture()
     def mock_addon(self):
@@ -53,20 +53,30 @@ class TestGVSessionOptimization:
         mock_get_services.return_value = [mock_external_service]
         mock_get_addons.return_value = [mock_addon]
 
-        mock_request.gv_addons = None
+        # Make sure request.gv_addons is not set yet
+        if hasattr(mock_request, 'gv_addons'):
+            delattr(mock_request, 'gv_addons')
 
         original_method = node._get_addon_from_gv
 
         def mock_get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
             request = mock_get_request()
-
-            if not hasattr(request, 'gv_addons') or request.gv_addons is None:
+            # This is to avoid making multiple requests to GV
+            # within the lifespan of one request on the OSF side
+            try:
+                gv_addons = request.gv_addons
+            except AttributeError:
                 mock_load_user(requesting_user_id)
+                services = mock_get_services(user)
+                for service in services:
+                    if service.short_name == gv_pk:
+                        break
+                else:
+                    return None
+                request.gv_addons = mock_get_addons(requesting_user_id, service.type, auth=auth)
+                gv_addons = request.gv_addons
 
-                addons = mock_get_addons(requesting_user_id, mock_external_service.type, auth=auth)
-                request.gv_addons = addons
-
-            for item in request.gv_addons:
+            for item in gv_addons:
                 if item.short_name == gv_pk:
                     return item
             return None
@@ -112,20 +122,30 @@ class TestGVSessionOptimization:
         mock_get_services.return_value = [mock_external_service]  # github
         mock_get_addons.return_value = []  # No addons returned
 
-        mock_request.gv_addons = None
+        # Make sure request.gv_addons is not set yet
+        if hasattr(mock_request, 'gv_addons'):
+            delattr(mock_request, 'gv_addons')
 
         original_method = node._get_addon_from_gv
 
         def mock_get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
             request = mock_get_request()
-
-            if not hasattr(request, 'gv_addons') or request.gv_addons is None:
+            # This is to avoid making multiple requests to GV
+            # within the lifespan of one request on the OSF side
+            try:
+                gv_addons = request.gv_addons
+            except AttributeError:
                 mock_load_user(requesting_user_id)
+                services = mock_get_services(user)
+                for service in services:
+                    if service.short_name == gv_pk:
+                        break
+                else:
+                    return None
+                request.gv_addons = mock_get_addons(requesting_user_id, service.type, auth=auth)
+                gv_addons = request.gv_addons
 
-                addons = mock_get_addons(requesting_user_id, mock_external_service.type, auth=auth)
-                request.gv_addons = addons
-
-            for item in request.gv_addons:
+            for item in gv_addons:
                 if item.short_name == gv_pk:
                     return item
             return None
@@ -134,11 +154,11 @@ class TestGVSessionOptimization:
         node._get_addon_from_gv = MethodType(mock_get_addon_from_gv, node)
 
         try:
-            result = node._get_addon_from_gv('figshare', user._id)
+            result = node._get_addon_from_gv('github', user._id)
 
             assert result is None
             mock_get_services.assert_called_once_with(user)
-            mock_get_addons.assert_called_once()
+            mock_get_addons.assert_called_once_with(user._id, mock_external_service.type, auth=None)
         finally:
             node._get_addon_from_gv = original_method
 
@@ -163,20 +183,30 @@ class TestGVSessionOptimization:
         mock_addon2.short_name = 'figshare'
         mock_get_addons.return_value = [mock_addon1, mock_addon2]
 
-        mock_request.gv_addons = None
+        # Make sure request.gv_addons is not set yet
+        if hasattr(mock_request, 'gv_addons'):
+            delattr(mock_request, 'gv_addons')
 
         original_method = node._get_addon_from_gv
 
         def mock_get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
             request = mock_get_request()
-
-            if not hasattr(request, 'gv_addons') or request.gv_addons is None:
+            # This is to avoid making multiple requests to GV
+            # within the lifespan of one request on the OSF side
+            try:
+                gv_addons = request.gv_addons
+            except AttributeError:
                 mock_load_user(requesting_user_id)
+                services = mock_get_services(user)
+                for service in services:
+                    if service.short_name == gv_pk:
+                        break
+                else:
+                    return None
+                request.gv_addons = mock_get_addons(requesting_user_id, service.type, auth=auth)
+                gv_addons = request.gv_addons
 
-                addons = mock_get_addons(requesting_user_id, mock_external_service.type, auth=auth)
-                request.gv_addons = addons
-
-            for item in request.gv_addons:
+            for item in gv_addons:
                 if item.short_name == gv_pk:
                     return item
             return None
@@ -224,20 +254,30 @@ class TestGVSessionOptimization:
 
         auth = Auth(user=user)
 
-        mock_request.gv_addons = None
+        # Make sure request.gv_addons is not set yet
+        if hasattr(mock_request, 'gv_addons'):
+            delattr(mock_request, 'gv_addons')
 
         original_method = node._get_addon_from_gv
 
         def mock_get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
             request = mock_get_request()
-
-            if not hasattr(request, 'gv_addons') or request.gv_addons is None:
+            # This is to avoid making multiple requests to GV
+            # within the lifespan of one request on the OSF side
+            try:
+                gv_addons = request.gv_addons
+            except AttributeError:
                 mock_load_user(requesting_user_id)
+                services = mock_get_services(user)
+                for service in services:
+                    if service.short_name == gv_pk:
+                        break
+                else:
+                    return None
+                request.gv_addons = mock_get_addons(requesting_user_id, service.type, auth=auth)
+                gv_addons = request.gv_addons
 
-                addons = mock_get_addons(requesting_user_id, mock_external_service.type, auth=auth)
-                request.gv_addons = addons
-
-            for item in request.gv_addons:
+            for item in gv_addons:
                 if item.short_name == gv_pk:
                     return item
             return None
