@@ -30,12 +30,6 @@ class TestPigeon:
         embargo.accept()
         return embargo
 
-    @pytest.fixture
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
     def test_pigeon_sync_metadata(self, mock_pigeon, registration, mock_celery):
@@ -67,7 +61,8 @@ class TestPigeon:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
-    def test_pigeon_archive_embargo(self, embargo, mock_pigeon, mock_celery, mock_gravy_valet_get_links):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_pigeon_archive_embargo(self, embargo, mock_pigeon, mock_celery):
         embargo._get_registration().terminate_embargo()
         guid = embargo._get_registration()._id
 

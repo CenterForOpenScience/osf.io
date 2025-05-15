@@ -118,12 +118,6 @@ class TestOsfGathering(TestCase):
         cls.userfocus__readwrite = osf_gathering.OsfFocus(cls.user__readwrite)
         cls.userfocus__readonly = osf_gathering.OsfFocus(cls.user__readonly)
 
-    @pytest.fixture
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
     def test_setupdata(self):
         assert self.projectfocus.iri == OSFIO[self.project._id]
         assert self.projectfocus.rdftype == OSF.Project
@@ -710,7 +704,7 @@ class TestOsfGathering(TestCase):
             (_collection_ref, DCTERMS.title, Literal(_collection_provider.name)),
         })
 
-    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_gather_registration_withdrawal(self):
         # focus: registration
         assert_triples(osf_gathering.gather_registration_withdrawal(self.registrationfocus), set())

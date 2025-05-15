@@ -336,7 +336,7 @@ class TestSerializers(OsfTestCase):
             mock_get_links.return_value = []
             yield mock_get_links
 
-    pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_serialized_metadata(self):
         self._assert_scenario(BASIC_METADATA_SCENARIO)
         self._setUp_full()

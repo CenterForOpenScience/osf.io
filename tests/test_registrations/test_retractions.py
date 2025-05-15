@@ -25,14 +25,10 @@ from osf.exceptions import (
 from osf.models import Contributor, Retraction
 from osf.utils import permissions
 
-@pytest.fixture(autouse=True)
-def mock_gravy_valet_get_links():
-    with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-        mock_get_links.return_value = []
-        yield mock_get_links
 
 
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -406,6 +402,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -763,6 +760,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
