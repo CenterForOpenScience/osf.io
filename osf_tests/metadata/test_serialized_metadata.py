@@ -330,12 +330,6 @@ class TestSerializers(OsfTestCase):
         self.project.node_license.year = '2250-2254'
         self.project.node_license.save()
 
-    @pytest.fixture
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
     @pytest.mark.usefixtures('mock_gravy_valet_get_links')
     def test_serialized_metadata(self):
         self._assert_scenario(BASIC_METADATA_SCENARIO)
