@@ -32,6 +32,7 @@ class CoreScopes:
     USERS_MESSAGE_READ_EMAIL = 'users_message_read_email'
     USERS_MESSAGE_WRITE_EMAIL = 'users_message_write_email'
     USERS_CREATE = 'users_create'
+    USERS_CONFIRM = 'users_confirm'
 
     USER_SETTINGS_READ = 'user.settings_read'
     USER_SETTINGS_WRITE = 'user.settings_write'
@@ -214,7 +215,13 @@ class ComposedScopes:
 
     # Users collection
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ, CoreScopes.USER_SETTINGS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE, CoreScopes.USER_SETTINGS_WRITE)
+    USERS_WRITE = USERS_READ + (
+        CoreScopes.USERS_WRITE,
+        CoreScopes.USERS_CONFIRM,
+        CoreScopes.SUBSCRIPTIONS_WRITE,
+        CoreScopes.ALERTS_WRITE,
+        CoreScopes.USER_SETTINGS_WRITE
+    )
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
