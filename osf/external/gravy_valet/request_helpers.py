@@ -247,10 +247,9 @@ def iterate_gv_results(
         auth=auth
     )
 
-    if not response and raise_on_error:
-        raise GVException
-
     if not response:
+        if raise_on_error:
+            raise GVException
         return
 
     response_json = response.json()
