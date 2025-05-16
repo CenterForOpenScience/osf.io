@@ -398,21 +398,28 @@ class DataciteTreeWalker:
 
         if isinstance(osf_item, AbstractNode):
             gv_verified_link_list = osf_item.get_verified_links()
-            if gv_verified_link_list:
-                non_url_verified_links = []
-                for item in gv_verified_link_list:
-                    verified_link, resource_type = item.get('target_url', None), item.get('resource_type', None)
-                    if verified_link and resource_type:
-                        if smells_like_iri(verified_link):
-                            self.visit(related_identifiers_el, 'relatedIdentifier', text=verified_link, attrib={
-                                'relatedIdentifierType': 'URL',
-                                'relationType': 'IsReferencedBy',
-                                'resourceTypeGeneral': resource_type.title()
-                            })
-                        else:
-                            non_url_verified_links.append(verified_link)
-                if non_url_verified_links:
-                    sentry.log_message(f'Skipped - {','.join(non_url_verified_links)} for node {osf_item._id}')
+            skipped_items = []
+            for item in gv_verified_link_list:
+                verified_link, resource_type = item.get('target_url', None), item.get('resource_type', None)
+                if not verified_link or not resource_type:
+                    logger.error(f'Must have both verified_link and resource_type: [item={item}]')
+                    skipped_items.append(f'Missing data: [link={verified_link}, type={resource_type}]')
+                    continue
+                if not smells_like_iri(verified_link):
+                    skipped_items.append(f'Invalid link: [link={verified_link}, type={resource_type}]')
+                    continue
+                self.visit(
+                    related_identifiers_el,
+                    'relatedIdentifier',
+                    text=verified_link,
+                    attrib={
+                        'relatedIdentifierType': 'URL',
+                        'relationType': 'IsReferencedBy',
+                        'resourceTypeGeneral': resource_type.title()
+                    }
+                )
+            if skipped_items:
+                sentry.log_message(f'Skipped items for node [{osf_item._id}]: {'; '.join(skipped_items)}. ')
 
     def _visit_name_identifiers(self, parent_el, agent_iri):
         for identifier in sorted(self.basket[agent_iri:DCTERMS.identifier]):
