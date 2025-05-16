@@ -50,12 +50,6 @@ def project(user, auth, fake):
 @pytest.fixture()
 def auth(user):
     return Auth(user)
-#
-# @pytest.fixture(autouse=True)
-# def mock_gravy_valet_get_links():
-#     with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-#         mock_get_links.return_value = []
-#         yield mock_get_links
 
 # copied from tests/test_models.py
 def test_factory(user, project):
