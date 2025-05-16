@@ -330,7 +330,7 @@ class TestSerializers(OsfTestCase):
         self.project.node_license.year = '2250-2254'
         self.project.node_license.save()
 
-    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_serialized_metadata(self):
         self._assert_scenario(BASIC_METADATA_SCENARIO)
         self._setUp_full()
