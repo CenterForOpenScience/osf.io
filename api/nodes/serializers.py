@@ -327,7 +327,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     comments = RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<_id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
         filter={'target': '<_id>'},
     )
 
@@ -722,6 +722,13 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
         return {
             'node': node_comments,
+        }
+
+    def get_comments_count(self, obj):
+        node_comment_count = Comment.find_count(node=obj, page='node')
+
+        return {
+            'node_comment_count': node_comment_count,
         }
 
     def get_region_id(self, obj):
