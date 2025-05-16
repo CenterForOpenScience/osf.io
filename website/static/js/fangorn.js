@@ -2816,7 +2816,7 @@ var FGToolbar = {
                         // timeout of recusive api
                         var isRecursiveCancelled = false;
                         var resolveResult = {
-                            item,
+                            item: item,
                             // file count of folder
                             totalFile: null,
                             // size of current folder/file
@@ -2827,12 +2827,14 @@ var FGToolbar = {
 
                         // use MutationObserver to detect the removal of the modal to cancel recusive calling api
                         var observer = new MutationObserver(function(mutationsList, observer) {
-                            // loop list multation of DOM
-                            for (var mutation of mutationsList) {
+                            // loop list mutation of DOM
+                            for (var i = 0; i < mutationsList.length; i++) {
+                                var mutation = mutationsList[i];
                                 // Check if the mutation is a removed element from the DOM.
                                 if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
                                     // Detect the removal of the modal.
-                                    for (var removedNode of mutation.removedNodes) {
+                                    for (var j = 0; j < mutation.removedNodes.length; j++) {
+                                        var removedNode = mutation.removedNodes[j];
                                         if (removedNode.classList && removedNode.classList.contains('tb-modal-shade')) {
                                             isRecursiveCancelled = true;
                                             break;
@@ -3724,9 +3726,11 @@ function handleScroll() {
  * @param {next_token} token to get the next data of
  * @returns
  */
-function getFolderSize(item, recusiveCancelCallback = function() {
-    return false;
-}, nextToken = null) {
+function getFolderSize(item, recusiveCancelCallback, nextToken) {
+    recusiveCancelCallback = recusiveCancelCallback || function() {
+        return false;
+    };
+    nextToken = nextToken || null;
     if (recusiveCancelCallback() === true) {
         return Promise.resolve({
             size: 0,
