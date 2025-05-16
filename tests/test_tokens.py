@@ -88,13 +88,7 @@ class SanctionTokenHandlerBase(OsfTestCase):
         self.reg = AbstractNode.objects.get(Q(**{self.Model.SHORT_NAME: self.sanction}))
         self.user = self.reg.creator
 
-    @pytest.fixture
-    def mock_gravy_valet_get_links(self):
-        with mock.patch('osf.models.node.AbstractNode.get_verified_links') as mock_get_links:
-            mock_get_links.return_value = []
-            yield mock_get_links
-
-    @pytest.mark.usefixtures('mock_gravy_valet_get_links')
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_sanction_handler(self):
         if not self.kind:
             return
