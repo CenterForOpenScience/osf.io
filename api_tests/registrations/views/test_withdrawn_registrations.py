@@ -224,6 +224,7 @@ class TestWithdrawnRegistrations(NodeCRUDTestCase):
         assert res.status_code == 200
         assert res.json['data']['relationships']['contributors']['links']['related']['meta']['count'] == 1
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_child_inherits_withdrawal_justification_and_date_withdrawn(
             self, app, user, withdrawn_registration_with_child, registration_with_child):
 

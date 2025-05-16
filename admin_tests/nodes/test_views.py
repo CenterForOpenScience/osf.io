@@ -505,6 +505,7 @@ class TestConfirmApproveBacklogView(AdminTestCase):
         self.user = AuthUserFactory()
         self.node = ProjectFactory(creator=self.user)
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_request_approval_is_approved(self):
         now = timezone.now()
         self.approval = RegistrationApprovalFactory(
