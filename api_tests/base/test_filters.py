@@ -385,7 +385,6 @@ class TestListFilterMixin(ApiTestCase):
         assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
-
 @pytest.mark.django_db
 class TestOSFOrderingFilter(ApiTestCase):
     class query:
