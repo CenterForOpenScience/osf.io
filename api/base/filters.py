@@ -160,6 +160,8 @@ class FilterMixin:
     LIST_FIELDS = (ser.ListField,)
     RELATIONSHIP_FIELDS = (RelationshipField, TargetField)
 
+    MULTIPLE_VALUES_FIELDS = ['_id', 'guid._id', 'journal_id', 'moderation_state', 'event_name']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if not self.serializer_class:
@@ -292,7 +294,7 @@ class FilterMixin:
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and ',' in value:
+                    elif not isinstance(value, int) and source_field_name in self.MULTIPLE_VALUES_FIELDS:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -505,6 +507,7 @@ class ListFilterMixin(FilterMixin):
                 if issubclass(self.model_class, GuidMixin)
                 else self.model_class.primary_identifier_name
             )
+            operation['op'] = 'in'
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 

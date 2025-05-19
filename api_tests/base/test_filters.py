@@ -384,65 +384,6 @@ class TestListFilterMixin(ApiTestCase):
         assert parsed_field['value'] is False
         assert parsed_field['op'] == 'eq'
 
-    def test_multiple_values_filter(self):
-        user = AuthUserFactory()
-        node1 = NodeFactory(title='title1', creator=user)
-        node2 = NodeFactory(title='title2', creator=user)
-        node3 = NodeFactory(title='title3', creator=user)
-
-        url = f'/{API_BASE}users/{user._id}/nodes/'
-        res = self.app.get(url, auth=user.auth)
-        assert len(res.json['data']) == 3
-
-        # one filter, one value
-        res = self.app.get(url + '?filter[title]=title2', auth=user.auth)
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['attributes']['title'] == 'title2'
-
-        # one filter, two values
-        res = self.app.get(url + '?filter[title]=title3,title2', auth=user.auth)
-        assert len(res.json['data']) == 2
-        for node in res.json['data']:
-            assert node['attributes']['title'] in ['title3', 'title2']
-
-        # one filter, all DB values
-        res = self.app.get(url + '?filter[title]=title1,title3,title2', auth=user.auth)
-        assert len(res.json['data']) == 3
-        for node in res.json['data']:
-            assert node['attributes']['title'] in ['title3', 'title2', 'title1']
-
-        # two filters, different number of values. Filters don't intersect by nodes
-        res = self.app.get(url + f'?filter[title]=title3,title2&filter[id]={node1._id}', auth=user.auth)
-        assert len(res.json['data']) == 0
-
-        # two filters, different filters ordering but intersect by node2
-        # node3 is not returned as filters use AND operator between themselves
-        res = self.app.get(url + f'?filter[id]={node2._id}&filter[title]=title3,title2', auth=user.auth)
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == node2._id
-
-        # two filters, two values of the same entities
-        res = self.app.get(url + f'?filter[title]=title3,title1&filter[id]={node1._id},{node3._id}', auth=user.auth)
-        assert len(res.json['data']) == 2
-        for node in res.json['data']:
-            assert node['id'] in [node1._id, node3._id]
-            assert node['attributes']['title'] in ['title3', 'title1']
-
-        # two filters, one of them has an unexisting value, node1 in both filters, node3 is only in the second filter
-        # thus shouldn't be returned
-        res = self.app.get(url + f'?filter[title]=wrongtitle_____,title1&filter[id]={node1._id},{node3._id}', auth=user.auth)
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == node1._id
-        assert res.json['data'][0]['attributes']['title'] == 'title1'
-
-        # two filters whose values refer to different entities, thus no intersection and no values returned
-        res = self.app.get(url + f'?filter[title]=title1,title4&filter[id]={node2._id},{node3._id}', auth=user.auth)
-        assert len(res.json['data']) == 0
-
-        # two filters, all values aren't present in DB
-        res = self.app.get(url + '?filter[title]=wrong1,wrong2&filter[id]=guid1,guid2,guid999', auth=user.auth)
-        assert len(res.json['data']) == 0
-
 
 @pytest.mark.django_db
 class TestOSFOrderingFilter(ApiTestCase):
