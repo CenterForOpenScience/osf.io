@@ -486,6 +486,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_view_only_links_count'},
     )
 
     citation = RelationshipField(
@@ -701,6 +702,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         linked_nodes = obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
         return linked_nodes.can_view(auth.user, auth.private_link).count()
+
+    def get_view_only_links_count(self, obj):
+        return obj.private_links_active.count()
 
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
