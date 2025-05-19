@@ -30,6 +30,7 @@ def task__update_doi_metadata_with_verified_links(self, target_guid):
     target_object = Guid.load(target_guid).referent
     try:
         target_object.request_identifier_update(category='doi')
+        target_object.update_search()
         logger.debug(f'DOI metadata for guid with verified links updated: [guid={target_guid}]')
     except GVException as e:
         logger.error(f'DOI metadata for guid with verified links failed to update: [guid={target_guid}]')
