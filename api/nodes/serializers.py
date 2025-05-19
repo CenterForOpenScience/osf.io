@@ -718,9 +718,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return len(registrations)
 
     def get_draft_registration_count(self, obj):
-        auth = get_user_auth(self.context['request'])
-        if obj.has_permission(auth.user, osf_permissions.ADMIN):
-            return obj.draft_registrations_active.count()
+        return obj.draft_registrations_active.count()
 
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
