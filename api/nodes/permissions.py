@@ -340,7 +340,7 @@ class NodeLinksShowIfVersion(ShowIfVersion):
 
 
 # GRDM-50321 Project Metadata should be available to non-admins.
-class IsAdminContributorToRegisterDrafts(permissions.BasePermission):
+class IsWritableContributorToRegisterDrafts(permissions.BasePermission):
 
     acceptable_models = (AbstractNode, DraftRegistration,)
 
@@ -350,9 +350,6 @@ class IsAdminContributorToRegisterDrafts(permissions.BasePermission):
         """
         assert_resource_type(obj, self.acceptable_models)
         auth = get_user_auth(request)
-        if request.method != 'POST':
-            if request.method in permissions.SAFE_METHODS:
-                return obj.is_public or obj.can_view(auth)
-            else:
-                return obj.has_permission(auth.user, osf_permissions.WRITE)
-        return obj.is_admin_contributor(auth.user)
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+        return obj.has_permission(auth.user, osf_permissions.WRITE)
