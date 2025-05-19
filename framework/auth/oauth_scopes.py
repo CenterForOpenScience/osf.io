@@ -41,6 +41,8 @@ class CoreScopes:
 
     USER_ADDON_READ = 'users.addon_read'
 
+    SANCTION_RESPONSE = 'sanction_response'
+
     SUBSCRIPTIONS_READ = 'subscriptions_read'
     SUBSCRIPTIONS_WRITE = 'subscriptions_write'
 
@@ -289,16 +291,26 @@ class ComposedScopes:
     # Privileges relating to editing content uploaded under that preprint
     PREPRINT_DATA_READ = (CoreScopes.PREPRINT_FILE_READ,)
     PREPRINT_DATA_WRITE = PREPRINT_DATA_READ + \
-                        (CoreScopes.PREPRINT_FILE_WRITE,)
+                        (
+                            CoreScopes.PREPRINT_FILE_WRITE,
+                            CoreScopes.SANCTION_RESPONSE,
+                        )
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
                         CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
-                            (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
-                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE)
+                            (
+                                CoreScopes.NODE_CONTRIBUTORS_WRITE,
+                                CoreScopes.NODE_REGISTRATIONS_WRITE,
+                                CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE,
+                                CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
+                                CoreScopes.NODE_REQUESTS_WRITE,
+                                CoreScopes.NODE_SETTINGS_WRITE,
+                                CoreScopes.NODE_OSF_GROUPS_WRITE,
+                                CoreScopes.SANCTION_RESPONSE,
+                            )
 
     # Privileges relating to who can access a preprint via contributors
     PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)

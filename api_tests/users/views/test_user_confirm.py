@@ -43,26 +43,8 @@ class TestConfirmEmail:
             auth=user.auth
         )
         assert res.status_code == 400
-        assert res.json['errors'] == [
-            {
-                'source': {
-                    'pointer': '/data/attributes/uid'
-                },
-                'detail': 'This field is required.'
-            },
-            {
-                'source': {
-                    'pointer': '/data/attributes/destination'
-                },
-                'detail': 'This field is required.'
-            },
-            {
-                'source': {
-                    'pointer': '/data/attributes/token'
-                },
-                'detail': 'This field is required.'
-            }
-        ]
+        print(res.json['errors'])
+        assert res.json['errors'] == [{'source': {'pointer': '/data/attributes/uid'}, 'detail': 'This field is required.'}, {'source': {'pointer': '/data/attributes/destination'}, 'detail': 'This field is required.'}, {'source': {'pointer': '/data/attributes/token'}, 'detail': 'This field is required.'}]
 
     def test_post_user_not_found(self, app, user_with_email_verification):
         user, _, _ = user_with_email_verification
@@ -81,7 +63,7 @@ class TestConfirmEmail:
             expect_errors=True
         )
         assert res.status_code == 400
-        assert 'user not found' in res.json['errors'][0]['detail'].lower()
+        assert res.json['errors'] == [{'detail': 'User not found.'}]
 
     def test_post_invalid_token(self, app, confirm_url, user_with_email_verification):
         user, _, _ = user_with_email_verification

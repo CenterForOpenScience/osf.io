@@ -442,13 +442,37 @@ class UserResetPasswordSerializer(BaseAPISerializer):
         type_ = 'user_reset_password'
 
 
-class ConfirmEmailSerializer(BaseAPISerializer):
+class ConfirmEmailTokenSerializer(BaseAPISerializer):
     uid = ser.CharField(write_only=True, required=True)
     destination = ser.CharField(write_only=True, required=True)
     token = ser.CharField(write_only=True, required=True)
 
     class Meta:
-        type_ = 'external_login_confirm_email'
+        type_ = 'email_token_serializer'
+
+
+class SanctionTokenSerializer(ConfirmEmailTokenSerializer):
+    action = ser.ChoiceField(
+        write_only=True,
+        required=True,
+        choices=[
+            'approve',
+            'reject',
+        ],
+    )
+    sanction_type = ser.ChoiceField(
+        write_only=True,
+        required=False,
+        choices=[
+            'registration',
+            'embargo',
+            'embargo_termination_approval',
+            'retraction',
+        ],
+    )
+
+    class Meta:
+        type_ = 'sanction_token_serializer'
 
 
 class ExternalLoginSerialiser(BaseAPISerializer):

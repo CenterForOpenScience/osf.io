@@ -68,7 +68,8 @@ from api.users.serializers import (
     UserChangePasswordSerializer,
     UserMessageSerializer,
     ExternalLoginSerialiser,
-    ConfirmEmailSerializer,
+    ConfirmEmailTokenSerializer,
+    SanctionTokenSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -103,6 +104,8 @@ from osf.models import (
     Email,
     Tag,
 )
+from osf.utils.tokens import TokenHandler
+from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
@@ -1086,7 +1089,7 @@ class ConfirmEmailView(generics.CreateAPIView):
     view_category = 'users'
     view_name = 'confirm-user'
 
-    serializer_class = ConfirmEmailSerializer
+    serializer_class = ConfirmEmailTokenSerializer
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
@@ -1145,6 +1148,61 @@ class ConfirmEmailView(generics.CreateAPIView):
                 verification_key=user.verification_key,
             ),
         )
+
+
+class SanctionResponseView(generics.CreateAPIView, UserMixin):
+    """
+    **URL:**  POST /v2/users/<user_id>/sanction_response/
+
+    **Body (JSON):**
+    {
+        "uid": "<osf_user_id>",
+        "token": "<email_verification_token>",
+        "destination": "<campaign-code or relative URL>"
+    }
+
+    On success the endpoint redirects (HTTP 302) to CAS with a
+    one-time verification key, exactly like the original Flask view.
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.SANCTION_RESPONSE]
+
+    view_category = 'users'
+    view_name = 'sanction-response'
+
+    serializer_class = SanctionTokenSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uid = serializer.validated_data['uid']
+        token = serializer.validated_data['token']
+        action = serializer.validated_data['action']
+        if not action:
+            raise ValidationError('`approve` or `reject` action not found.')
+        sanction_type = serializer.validated_data.get('sanction_type')
+        if not sanction_type:
+            raise ValidationError('sanction_type not found.')
+
+        if self.get_user() != OSFUser.load(uid):
+            raise ValidationError('User not found.')
+
+        token_handler = TokenHandler.from_string(token)
+
+        sanction_handler(
+            sanction_type,
+            action,
+            payload=token_handler.payload,
+            encoded_token=token_handler.encoded_token,
+            user=self.get_user(),
+        )
+
+        return Response(status=status.HTTP_200_OK)
+
 
 class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
@@ -1298,7 +1356,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
     permission_classes = (
         drf_permissions.AllowAny,
     )
-    serializer_class = ConfirmEmailSerializer
+    serializer_class = ConfirmEmailTokenSerializer
     view_category = 'users'
     view_name = 'external-login-confirm-email'
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)
