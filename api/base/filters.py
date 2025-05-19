@@ -292,7 +292,8 @@ class FilterMixin:
                         query.get(key).update({
                             field_name: self._parse_date_param(field, source_field_name, op, value),
                         })
-                    elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
+                    # elif not isinstance(value, int) and source_field_name in ['_id', 'guid._id', 'journal_id', 'moderation_state']:
+                    elif not isinstance(value, int) and ',' in value:
                         query.get(key).update({
                             field_name: {
                                 'op': 'in',
@@ -505,7 +506,6 @@ class ListFilterMixin(FilterMixin):
                 if issubclass(self.model_class, GuidMixin)
                 else self.model_class.primary_identifier_name
             )
-            operation['op'] = 'in'
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 
