@@ -56,6 +56,13 @@ class TestWikiModels(OsfTestCase):
         assert_equal(data, expected)
 
     def test_get_for_child_nodes(self):
-        wiki = WikiPage.objects.get_for_child_nodes(self.prpject,'home')
+        wiki = WikiPage.objects.get_for_child_nodes(self.project,'home')
         
         assert_equal(wiki, None)
+
+    def test_get_wiki_pages_latest(self):
+        wiki = WikiPage.objects.get_wiki_pages_latest(self.project,'home')
+        
+        wikiRtn = WikiVersion.objects.annotate(name=F('wiki_page__page_name'), newest_version=Max('wiki_page__versions__identifier')).filter(identifier=F('newest_version'), wiki_page__id__in=wiki_page_ids, wiki_page__parent__isnull=True)
+
+        assert_equal(wiki, wikiRtn)

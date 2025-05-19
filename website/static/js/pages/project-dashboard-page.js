@@ -776,22 +776,22 @@ $(document).ready(function () {
         });
         request.done(function(resp) {
             var rawText;
-            if(resp.wiki_content){
-                rawText = resp.wiki_content;
-            } else if(window.contextVars.currentUser.canEdit) {
-                rawText = _('*Add important information, links, or images here to describe your project.*');
-            } else {
-                rawText = _('*No wiki content.*');
-            }
+//            if(resp.wiki_content){
+//                rawText = resp.wiki_content;
+//            } else if(window.contextVars.currentUser.canEdit) {
+//                rawText = _('*Add important information, links, or images here to describe your project.*');
+//            } else {
+//                rawText = _('*No wiki content.*');
+//            }
 
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
-//            truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
-//            //#47039　Add　Start
-//            truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
-//            truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
-//            //#47039　Add　End
+            truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
+            //#47039　Add　Start
+            truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
+            truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
+            //#47039　Add　End
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
