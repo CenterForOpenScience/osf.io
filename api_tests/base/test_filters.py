@@ -85,7 +85,6 @@ class FakeRecord:
 
 class FakeListView(ListFilterMixin, generics.GenericAPIView):
     serializer_class = FakeSerializer
-    model_class = FakeRecord
 
     def get_serializer_context(self):
         return {}
