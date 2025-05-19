@@ -571,7 +571,7 @@ class TestConferenceModel(OsfTestCase):
 
 class TestConferenceIntegration(ContextTestCase):
 
-    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.views.execute_email_send')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_integration(self, mock_upload, mock_send_mail):
         fullname = 'John Deacon'
@@ -619,7 +619,7 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
 
-    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.views.execute_email_send')
     def test_integration_inactive(self, mock_send_mail):
         conference = ConferenceFactory(active=False)
         fullname = 'John Deacon'
@@ -658,7 +658,7 @@ class TestConferenceIntegration(ContextTestCase):
             web_url_for('conference_view', _absolute=True),
         )
 
-    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.views.execute_email_send')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_integration_wo_full_name(self, mock_upload, mock_send_mail):
         username = 'no_full_name@mail.com'
@@ -705,7 +705,7 @@ class TestConferenceIntegration(ContextTestCase):
         assert_absolute(call_kwargs['file_url'])
         assert_absolute(call_kwargs['node_url'])
 
-    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.views.execute_email_send')
     @mock.patch('website.conferences.utils.upload_attachments')
     def test_create_conference_node_with_same_name_as_existing_node(self, mock_upload, mock_send_mail):
         conference = ConferenceFactory()
@@ -745,7 +745,7 @@ class TestConferenceIntegration(ContextTestCase):
         assert mock_send_mail.called
 
 
-    @mock.patch('website.conferences.views.send_mail')
+    @mock.patch('website.conferences.views.execute_email_send')
     def test_conferences_discontinued(self, mock_send_mail):
         fullname = 'John Deacon'
         username = 'deacon@queen.com'

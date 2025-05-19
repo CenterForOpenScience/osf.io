@@ -53,7 +53,7 @@ class TestBoaErrorHandling(OsfTestCase):
         assert BoaErrorCode.JOB_TIME_OUT_ERROR == 7
 
     def test_handle_boa_error(self):
-        with mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
+        with mock.patch('addons.boa.tasks.execute_email_send', return_value=None) as mock_send_mail, \
                 mock.patch('addons.boa.tasks.sentry.log_message', return_value=None) as mock_sentry_log_message, \
                 mock.patch('addons.boa.tasks.logger.error', return_value=None) as mock_logger_error:
             return_value = handle_boa_error(
@@ -179,7 +179,7 @@ class TestSubmitToBoaAsync(OsfTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None) as mock_async_sleep, \
-                mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
+                mock.patch('addons.boa.tasks.execute_email_send', return_value=None) as mock_send_mail, \
                 mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,

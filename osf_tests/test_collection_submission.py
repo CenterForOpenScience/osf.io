@@ -162,8 +162,8 @@ class TestModeratedCollectionSubmission:
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
 
     def test_notify_contributors_pending(self, node, moderated_collection):
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             collection_submission = CollectionSubmission(
                 guid=node.guids.first(),
@@ -218,8 +218,8 @@ class TestModeratedCollectionSubmission:
 
     def test_notify_moderated_accepted(self, node, moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             moderated_collection_submission.accept(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -244,8 +244,8 @@ class TestModeratedCollectionSubmission:
 
     def test_notify_moderated_rejected(self, node, moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             moderated_collection_submission.reject(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -277,8 +277,8 @@ class TestModeratedCollectionSubmission:
     def test_notify_moderated_removed_moderator(self, node, moderated_collection_submission):
         moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             moderated_collection_submission.remove(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -293,8 +293,8 @@ class TestModeratedCollectionSubmission:
     def test_notify_moderated_removed_admin(self, node, moderated_collection_submission):
         moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             moderated_collection_submission.remove(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -380,8 +380,8 @@ class TestUnmoderatedCollectionSubmission:
     def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission):
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             unmoderated_collection_submission.remove(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -484,8 +484,8 @@ class TestHybridModeratedCollectionSubmission:
 
     def test_notify_moderated_accepted(self, node, hybrid_moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -511,8 +511,8 @@ class TestHybridModeratedCollectionSubmission:
 
     def test_notify_moderated_rejected(self, node, hybrid_moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -544,8 +544,8 @@ class TestHybridModeratedCollectionSubmission:
     def test_notify_moderated_removed_moderator(self, node, hybrid_moderated_collection_submission):
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
             assert mock_send.called
@@ -560,8 +560,8 @@ class TestHybridModeratedCollectionSubmission:
     def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission):
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
             assert mock_send.called

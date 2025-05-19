@@ -71,7 +71,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert user.get_confirmation_token(user.username)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_confirm_email(self, mock_mail):
         user = UnregUserFactory()
 
@@ -163,7 +163,7 @@ class TestAuthUtils(OsfTestCase):
         cas.make_response_from_ticket(ticket, service_url)
         assert user == mock_external_first_login_authenticate.call_args[0][0]
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_password_change_sends_email(self, mock_mail):
         user = UserFactory()
         user.set_password('killerqueen')
@@ -211,7 +211,7 @@ class TestAuthUtils(OsfTestCase):
         # ensure None short circuits execution (no call to google)
         assert not validate_recaptcha(None)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_sign_up_twice_sends_two_confirmation_emails_only(self, mock_mail):
         # Regression test for https://openscience.atlassian.net/browse/OSF-7060
         url = api_url_for('register_user')

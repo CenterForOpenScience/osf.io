@@ -321,7 +321,7 @@ class TestBulkUploadTasks:
         assert not upload_job_done_full.email_sent
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    @mock.patch('website.mails.execute_email_send', return_value=None, side_effect=mails.execute_email_send)
     def test_bulk_creation_done_full(self, mock_send_mail, registration_row_1, registration_row_2,
                                      upload_job_done_full, provider, initiator, read_contributor, write_contributor):
 
@@ -350,7 +350,7 @@ class TestBulkUploadTasks:
         )
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    @mock.patch('website.mails.execute_email_send', return_value=None, side_effect=mails.execute_email_send)
     def test_bulk_creation_done_partial(self, mock_send_mail, registration_row_3,
                                         registration_row_invalid_extra_bib_1, upload_job_done_partial,
                                         provider, initiator, read_contributor, write_contributor):
@@ -387,7 +387,7 @@ class TestBulkUploadTasks:
         )
 
     @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
+    @mock.patch('website.mails.execute_email_send', return_value=None, side_effect=mails.execute_email_send)
     def test_bulk_creation_done_error(self, mock_send_mail, registration_row_invalid_extra_bib_2,
                                       registration_row_invalid_affiliation, upload_job_done_error,
                                       provider, initiator, read_contributor, write_contributor, institution):

@@ -26,7 +26,7 @@ class TestDeactivateRequestedAccount:
         user.save()
         return user
 
-    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
+    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.execute_email_send')
     def test_deactivate_user_with_no_content(self, mock_mail, user_requested_deactivation):
 
         deactivate_requested_accounts(dry_run=False)
@@ -41,7 +41,7 @@ class TestDeactivateRequestedAccount:
                                      contact_email=settings.OSF_CONTACT_EMAIL,
                                      user=user_requested_deactivation)
 
-    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
+    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.execute_email_send')
     def test_deactivate_user_with_content(self, mock_mail, user_requested_deactivation_with_node):
 
         deactivate_requested_accounts(dry_run=False)
@@ -53,4 +53,3 @@ class TestDeactivateRequestedAccount:
                                      mail=mails.REQUEST_DEACTIVATION,
                                      to_addr=settings.OSF_SUPPORT_EMAIL,
                                      user=user_requested_deactivation_with_node)
-

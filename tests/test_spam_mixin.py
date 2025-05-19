@@ -15,7 +15,7 @@ from website import settings, mails
 
 
 @pytest.mark.django_db
-@mock.patch('framework.auth.views.mails.send_mail')
+@mock.patch('framework.auth.views.mails.execute_email_send')
 def test_throttled_autoban(mock_mail):
     settings.SPAM_THROTTLE_AUTOBAN = True
     user = AuthUserFactory()

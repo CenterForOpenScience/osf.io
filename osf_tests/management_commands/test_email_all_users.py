@@ -42,7 +42,7 @@ class TestEmailAllUsers:
         return UserFactory(is_registered=False)
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_email_all_users_dry(self, mock_email, superuser):
         email_all_users('TOU_NOTIF', dry_run=True)
 
@@ -53,7 +53,7 @@ class TestEmailAllUsers:
         )
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_dont_email_inactive_users(
             self, mock_email, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
 
@@ -62,7 +62,7 @@ class TestEmailAllUsers:
         mock_email.assert_not_called()
 
     @pytest.mark.django_db
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_email_all_users_offset(self, mock_email, user, user2):
         email_all_users('TOU_NOTIF', offset=1, start_id=0)
 

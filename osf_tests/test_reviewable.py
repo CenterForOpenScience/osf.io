@@ -34,7 +34,7 @@ class TestReviewable:
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
-    @mock.patch('website.reviews.listeners.mails.send_mail')
+    @mock.patch('website.reviews.listeners.mails.execute_email_send')
     def test_reject_resubmission_sends_emails(self, send_mail):
         user = AuthUserFactory()
         preprint = PreprintFactory(

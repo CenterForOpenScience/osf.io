@@ -337,7 +337,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
+        with mock.patch.object(mails, 'execute_email_send') as mock_send_mail:
             app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
 
         assert not mock_send_mail.called
@@ -430,7 +430,7 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
+        with mock.patch.object(mails, 'execute_email_send') as mock_send_mail:
             resp = app.post_json_api(
                 f'{url_draft_registrations}?embed=branched_from&embed=initiator',
                 payload,

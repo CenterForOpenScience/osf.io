@@ -48,7 +48,7 @@ class TestUserRequestExport:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_post(self, mock_mail, app, user_one, user_two, url, payload):
         # Logged out
         res = app.post_json_api(url, payload, expect_errors=True)
@@ -66,7 +66,7 @@ class TestUserRequestExport:
         assert user_one.email_last_sent is not None
         assert mock_mail.call_count == 1
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_post_invalid_type(self, mock_mail, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
@@ -76,7 +76,7 @@ class TestUserRequestExport:
         assert user_one.email_last_sent is None
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.post_json_api(url, payload, auth=user_one.auth)
@@ -192,7 +192,7 @@ class TestResetPassword:
     def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
+        with mock.patch.object(mails, 'execute_email_send', return_value=None) as mock_send_mail:
             res = app.get(url)
             assert res.status_code == 200
 
@@ -206,7 +206,7 @@ class TestResetPassword:
 
     def test_get_invalid_email(self, app, url):
         url = f'{url}?email={'invalid_email'}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
+        with mock.patch.object(mails, 'execute_email_send', return_value=None) as mock_send_mail:
             res = app.get(url)
             assert res.status_code == 200
             assert not mock_send_mail.called

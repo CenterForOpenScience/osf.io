@@ -80,7 +80,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         res = app.get(url, create_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 403
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.mails.execute_email_send')
     def test_email_sent_to_all_admins_on_submit(self, mock_mail, app, project, noncontrib, url, create_payload, second_admin):
         project.is_public = True
         project.save()
@@ -88,7 +88,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         assert res.status_code == 201
         assert mock_mail.call_count == 2
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.mails.execute_email_send')
     def test_email_not_sent_to_parent_admins_on_submit(self, mock_mail, app, project, noncontrib, url, create_payload, second_admin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True

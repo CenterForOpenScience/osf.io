@@ -131,8 +131,8 @@ class TestImplicitRemoval:
         associated_collections = provider_collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             provider_collected_node.set_privacy('private', auth=auth)
             assert mock_send.called
@@ -148,8 +148,8 @@ class TestImplicitRemoval:
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(collection_submission_mail, 'execute_email_send') as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             collected_node.set_privacy('private', auth=auth)
             assert not mock_send.called

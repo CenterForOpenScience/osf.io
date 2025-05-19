@@ -75,6 +75,20 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
+def execute_email_send(celery, mailer, kwargs, callback=None):
+    if settings.USE_EMAIL:
+        if settings.USE_CELERY and celery:
+            logger.debug('Sending via celery...')
+            return mailer.apply_async(kwargs=kwargs, link=callback)
+        else:
+            logger.debug('Sending without celery')
+            ret = mailer(**kwargs)
+            if callback:
+                callback()
+
+            return ret
+
+
 def send_mail(
         to_addr,
         mail,
@@ -136,17 +150,13 @@ def send_mail(
     )
 
     logger.debug('Preparing to send...')
-    if settings.USE_EMAIL:
-        if settings.USE_CELERY and celery:
-            logger.debug('Sending via celery...')
-            return mailer.apply_async(kwargs=kwargs, link=callback)
-        else:
-            logger.debug('Sending without celery')
-            ret = mailer(**kwargs)
-            if callback:
-                callback()
-
-            return ret
+    ret = execute_email_send(
+        celery=celery,
+        mailer=mailer,
+        kwargs=kwargs,
+        callback=callback,
+    )
+    return ret
 
 
 def get_english_article(word):

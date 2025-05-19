@@ -60,7 +60,7 @@ class TestCheckCrossrefDOIs:
         assert stuck_preprint.identifiers.count() == 1
         assert stuck_preprint.identifiers.first().value == doi
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_report_stuck_dois(self, mock_email, stuck_preprint):
         report_stuck_dois(dry_run=False)
         guid = stuck_preprint.guids.first()._id

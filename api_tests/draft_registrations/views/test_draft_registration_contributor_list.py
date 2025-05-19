@@ -214,7 +214,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         # Overrides TestNodeContributorCreateEmail
         return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_sends_email(
             self, mock_mail, app, user, user_two,
             url_project_contribs):
@@ -264,7 +264,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
 
     # Overrides TestNodeContributorCreateEmail
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_sends_email(
             self, mock_mail, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'
@@ -301,7 +301,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         assert 'draft_registration' == kwargs['email_template']
 
     # Overrides TestNodeContributorCreateEmail
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_without_email_no_email(
             self, mock_mail, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'

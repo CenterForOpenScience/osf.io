@@ -92,14 +92,14 @@ class TestGETCollectionsModeratorList:
 @pytest.mark.django_db
 class TestPOSTCollectionsModeratorList:
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_unauthorized(self, mock_mail, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
         res = app.post(url, payload, expect_errors=True)
         assert res.status_code == 401
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_forbidden(self, mock_mail, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
@@ -111,7 +111,7 @@ class TestPOSTCollectionsModeratorList:
 
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_admin_success_existing_user(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
@@ -121,14 +121,14 @@ class TestPOSTCollectionsModeratorList:
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
         assert mock_mail.call_count == 1
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_admin_failure_existing_moderator(self, mock_mail, app, url, moderator, admin, provider):
         payload = make_payload(user_id=moderator._id, permission_group='moderator')
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_admin_failure_unreg_moderator(self, mock_mail, app, url, moderator, nonmoderator, admin, provider):
         unreg_user = {'full_name': 'Jalen Hurts', 'email': '1eagles@allbatman.org'}
         # test_user_with_no_moderator_admin_permissions
@@ -145,14 +145,14 @@ class TestPOSTCollectionsModeratorList:
         assert mock_mail.call_count == 1
         assert mock_mail.call_args[0][0] == unreg_user['email']
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_admin_failure_invalid_group(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_POST_admin_success_email(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(email='somenewuser@gmail.com', full_name='Some User', permission_group='moderator')
         res = app.post_json_api(url, payload, auth=admin.auth)

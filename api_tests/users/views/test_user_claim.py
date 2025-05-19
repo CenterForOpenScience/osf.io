@@ -17,7 +17,7 @@ class TestClaimUser:
 
     @pytest.fixture
     def mock_mail(self):
-        with mock.patch('website.project.views.contributor.mails.send_mail') as patch:
+        with mock.patch('website.project.views.contributor.mails.execute_email_send') as patch:
             yield patch
 
     @pytest.fixture()

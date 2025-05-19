@@ -744,7 +744,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_initiate_withdrawal_success(self, mock_send_mail, app, user, public_registration, public_url, public_payload):
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
@@ -775,7 +775,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert public_registration.is_pending_retraction
         assert not public_registration.is_pending_embargo
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
             self, mock_send_mail, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()

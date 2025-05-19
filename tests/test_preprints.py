@@ -1994,7 +1994,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
         self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_creator_gets_email(self, send_mail):
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
         domain = self.preprint.provider.domain or settings.DOMAIN

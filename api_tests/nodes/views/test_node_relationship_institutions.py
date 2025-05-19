@@ -206,7 +206,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
     @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
                                                                  node, node_institutions_url):
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.patch_json_api(
                 node_institutions_url,
                 self.create_payload([institution_one, institution_two]),
@@ -237,7 +237,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.put_json_api(
                 node_institutions_url,
                 {
@@ -262,7 +262,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.post_json_api(
                 node_institutions_url,
                 self.create_payload([institution_one]),
@@ -297,7 +297,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.patch_json_api(
                 node_institutions_url,
                 self.create_payload([institution_one, institution_two]),
@@ -324,7 +324,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.patch_json_api(
                 node_institutions_url,
                 self.create_payload([institution_two]),
@@ -358,7 +358,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.post_json_api(
                 node_institutions_url,
                 self.create_payload([institution_two]),
@@ -388,7 +388,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.delete_json_api(
                 node_institutions_url,
                 self.create_payload([institution_one]),
