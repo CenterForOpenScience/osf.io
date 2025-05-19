@@ -378,6 +378,7 @@ class TestListFilterMixin(ApiTestCase):
         query_params = {
             'filter[bool_field]': 'false',
         }
+
         fields = self.view.parse_query_params(query_params)
         parsed_field = fields['filter[bool_field]']['bool_field']
         assert parsed_field['source_field_name'] == 'foobar'
