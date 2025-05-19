@@ -208,8 +208,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
-        @mock.patch('api.requests.serializers.send_mail')
-        @mock.patch('osf.utils.machines.mails.send_mail')
+        @mock.patch('api.requests.serializers.execute_email_send')
+        @mock.patch('osf.utils.machines.mails.execute_email_send')
         def test_email_send_institutional_request_specific_email(
                 self,
                 mock_send_mail_machines,
@@ -255,7 +255,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
                 }
             )
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,
                                                  create_payload, institution):
         """
@@ -269,7 +269,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         # Check that an email is sent
         assert not mock_mail.called
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_email_not_sent_outside_institution(self, mock_mail, app, project, institutional_admin, url,
                                                  create_payload, user_without_affiliation, institution):
         """
@@ -283,7 +283,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         # Check that an email is sent
         assert not mock_mail.called
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_email_sent_on_creation(
             self,
             mock_mail,
@@ -319,7 +319,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             }
         )
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_bcc_institutional_admin(
             self,
             mock_mail,
@@ -357,7 +357,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             }
         )
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_reply_to_institutional_admin(
             self,
             mock_mail,
@@ -410,7 +410,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert f"{node_with_disabled_access_requests._id} does not have Access Requests enabled" in res.json['errors'][0]['detail']
 
-    @mock.patch('api.requests.serializers.send_mail')
+    @mock.patch('api.requests.serializers.execute_email_send')
     def test_placeholder_text_when_comment_is_empty(
             self,
             mock_mail,

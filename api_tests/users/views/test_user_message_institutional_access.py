@@ -85,7 +85,7 @@ class TestUserMessageInstitutionalAccess:
             }
         }
 
-    @mock.patch('osf.models.user_message.send_mail')
+    @mock.patch('osf.models.user_message.execute_email_send')
     def test_institutional_admin_can_create_message(self, mock_send_mail, app, institutional_admin, institution, url_with_affiliation, payload):
         """
         Ensure an institutional admin can create a `UserMessage` with a `message` and `institution`.
@@ -110,7 +110,7 @@ class TestUserMessageInstitutionalAccess:
         assert 'Requesting user access for collaboration' in mock_send_mail.call_args[1]['message_text']
         assert user_message._id == data['id']
 
-    @mock.patch('osf.models.user_message.send_mail')
+    @mock.patch('osf.models.user_message.execute_email_send')
     def test_institutional_admin_can_not_create_message(self, mock_send_mail, app, institutional_admin_on_institution_without_access,
                                                         institution_without_access, url_with_affiliation_on_institution_without_access,
                                                         payload):
@@ -197,7 +197,7 @@ class TestUserMessageInstitutionalAccess:
         assert ('Cannot send to a recipient that is not affiliated with the provided institution.'
                 in res.json['errors'][0]['detail']['user'])
 
-    @mock.patch('osf.models.user_message.send_mail')
+    @mock.patch('osf.models.user_message.execute_email_send')
     def test_cc_institutional_admin(
             self,
             mock_send_mail,
@@ -239,7 +239,7 @@ class TestUserMessageInstitutionalAccess:
             institution=institution,
         )
 
-    @mock.patch('osf.models.user_message.send_mail')
+    @mock.patch('osf.models.user_message.execute_email_send')
     def test_cc_field_defaults_to_false(self, mock_send_mail, app, institutional_admin, url_with_affiliation, user_with_affiliation, institution, payload):
         """
         Ensure the `cc` field defaults to `false` when not provided in the payload.
@@ -261,7 +261,7 @@ class TestUserMessageInstitutionalAccess:
             institution=institution,
         )
 
-    @mock.patch('osf.models.user_message.send_mail')
+    @mock.patch('osf.models.user_message.execute_email_send')
     def test_reply_to_header_set(self, mock_send_mail, app, institutional_admin, user_with_affiliation, institution, url_with_affiliation, payload):
         """
         Ensure that the 'Reply-To' header is correctly set to the sender's email address.

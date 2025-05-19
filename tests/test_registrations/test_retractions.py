@@ -783,7 +783,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
         unreg = UnregUserFactory()
         self.registration.add_unregistered_contributor(
@@ -861,7 +861,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert self.registration.retraction.justification is None
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.app.post(
@@ -873,7 +873,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         # Logs: Created, registered, retraction initiated
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
         self.app.post(
             self.retraction_post_url,
@@ -887,7 +887,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_valid_POST_calls_send_mail_with_username(self, mock_send):
         self.app.post(
             self.retraction_post_url,

@@ -378,7 +378,7 @@ class TestInstitutionRelationshipNodes:
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.post_json_api(
                 url_institution_nodes,
                 {
@@ -398,7 +398,7 @@ class TestInstitutionRelationshipNodes:
         current_institution = InstitutionFactory()
         node_public.affiliated_institutions.add(current_institution)
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
+        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
             res = app.delete_json_api(
                 url_institution_nodes,
                 {

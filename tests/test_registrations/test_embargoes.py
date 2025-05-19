@@ -1125,7 +1125,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             with pytest.raises(NodeStateError):
                 reg._nodes.first().request_embargo_termination(node.creator)
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
         """
         Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668

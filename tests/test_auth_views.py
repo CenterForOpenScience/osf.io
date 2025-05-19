@@ -50,7 +50,7 @@ class TestAuthViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_ok(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -68,7 +68,7 @@ class TestAuthViews(OsfTestCase):
         assert user.accepted_terms_of_service is None
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/2902
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_email_case_insensitive(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -84,7 +84,7 @@ class TestAuthViews(OsfTestCase):
         user = OSFUser.objects.get(username=email)
         assert user.fullname == name
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_email_with_accepted_tos(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -101,7 +101,7 @@ class TestAuthViews(OsfTestCase):
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_email_without_accepted_tos(self, _):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -195,7 +195,7 @@ class TestAuthViews(OsfTestCase):
         assert users.count() == 0
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=True)
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_good_captcha(self, _, validate_recaptcha):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -217,7 +217,7 @@ class TestAuthViews(OsfTestCase):
             assert user.fullname == name
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_missing_captcha(self, _, validate_recaptcha):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -236,7 +236,7 @@ class TestAuthViews(OsfTestCase):
             assert resp.status_code == http_status.HTTP_400_BAD_REQUEST
 
     @mock.patch('framework.auth.views.validate_recaptcha', return_value=False)
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_register_bad_captcha(self, _, validate_recaptcha):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
@@ -317,7 +317,7 @@ class TestAuthViews(OsfTestCase):
         assert mock_signals.signals_sent() == {auth.signals.user_registered, auth.signals.unconfirmed_user_created}
         assert mock_send_confirm_email.called
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_resend_confirmation(self, send_mail: MagicMock):
         email = 'test@mail.com'
         token = self.user.add_unconfirmed_email(email)
@@ -344,7 +344,7 @@ class TestAuthViews(OsfTestCase):
         with pytest.raises(InvalidTokenError):
             self.user.get_unconfirmed_email_for_token(token)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_click_confirmation_email(self, send_mail):
         # TODO: check in qa url encoding
         email = 'test@mail.com'
@@ -509,7 +509,7 @@ class TestAuthViews(OsfTestCase):
         assert res.status_code == 400
         assert res.json['message_long'] == 'Cannnot resend confirmation for confirmed emails'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_resend_confirmation_does_not_send_before_throttle_expires(self, send_mail):
         email = 'test@mail.com'
         self.user.save()
@@ -940,4 +940,3 @@ class TestResetPassword(OsfTestCase):
         assert 'reauth' not in location
         assert 'logout?service=' in location
         assert 'resetpassword' in location
-

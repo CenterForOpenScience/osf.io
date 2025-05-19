@@ -143,7 +143,7 @@ class TestCreateSchemaResponse():
             assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
     def test_create_initial_response_does_not_notify(self, registration, admin_user):
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             schema_response.SchemaResponse.create_initial_response(
                 parent=registration, initiator=admin_user
             )
@@ -254,8 +254,8 @@ class TestCreateSchemaResponse():
 
     def test_create_from_previous_response_notification(
             self, initial_response, admin_user, notification_recipients):
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             schema_response.SchemaResponse.create_from_previous_response(
                 previous_response=initial_response, initiator=admin_user
@@ -584,8 +584,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.revision_justification = 'has for valid revision_justification for submission'
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
 
@@ -598,7 +598,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
         initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             initial_response.submit(user=admin_user, required_approvers=[admin_user])
         assert not mock_send.called
 
@@ -687,8 +687,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             revised_response.approve(user=admin_user)
             assert not mock_send.called  # Should only send email on final approval
@@ -703,7 +703,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             initial_response.approve(user=admin_user)
         assert not mock_send.called
 
@@ -761,8 +761,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             revised_response.reject(user=admin_user)
 
@@ -775,7 +775,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             initial_response.reject(user=admin_user)
         assert not mock_send.called
 
@@ -875,8 +875,8 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail
             revised_response.approve(user=admin_user)
         assert mock_send.called
@@ -929,8 +929,8 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             revised_response.accept(user=moderator)
 
@@ -943,7 +943,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             initial_response.accept(user=moderator)
         assert not mock_send.called
 
@@ -973,8 +973,8 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             mock_send.side_effect = send_mail  # implicitly test rendering
             revised_response.reject(user=moderator)
 
@@ -987,7 +987,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
+        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
             initial_response.reject(user=moderator)
         assert not mock_send.called
 

@@ -158,7 +158,7 @@ class TestCrossRefEmailResponse:
     def test_error_response_sends_message_does_not_set_doi(self, app, url, preprint, error_xml):
         assert not preprint.get_identifier_value('doi')
 
-        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
             context_data = self.make_mailgun_payload(crossref_response=error_xml)
             app.post(url, context_data)
         assert mock_send_mail.called
@@ -167,7 +167,7 @@ class TestCrossRefEmailResponse:
     def test_success_response_sets_doi(self, app, url, preprint, success_xml):
         assert not preprint.get_identifier_value('doi')
 
-        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
             context_data = self.make_mailgun_payload(crossref_response=success_xml)
             app.post(url, context_data)
 
@@ -181,7 +181,7 @@ class TestCrossRefEmailResponse:
         preprint.set_identifier_value(category='doi', value=initial_value)
         update_xml = self.update_success_xml(preprint)
 
-        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
             context_data = self.make_mailgun_payload(crossref_response=update_xml)
             app.post(url, context_data)
 
@@ -195,7 +195,7 @@ class TestCrossRefEmailResponse:
         update_xml = self.update_success_xml(preprint)
 
         pre_created = preprint.preprint_doi_created
-        with mock.patch('framework.auth.views.mails.send_mail'):
+        with mock.patch('framework.auth.views.mails.execute_email_send'):
             context_data = self.make_mailgun_payload(crossref_response=update_xml)
             app.post(url, context_data)
 
@@ -219,7 +219,7 @@ class TestCrossRefEmailResponse:
         preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
         update_xml = self.update_success_xml(preprint)
 
-        with mock.patch('framework.auth.views.mails.send_mail') as mock_send_mail:
+        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
             context_data = self.make_mailgun_payload(crossref_response=update_xml)
             app.post(url, context_data)
 

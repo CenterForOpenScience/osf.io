@@ -412,7 +412,7 @@ class TestUserProfile(OsfTestCase):
         assert res.status_code == 400
         assert res.json['message_long'] == '"id" is required'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_emails_return_emails(self, send_mail):
         user1 = AuthUserFactory()
         url = api_url_for('update_user')
@@ -426,7 +426,7 @@ class TestUserProfile(OsfTestCase):
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_resend_confirmation_return_emails(self, send_mail):
         user1 = AuthUserFactory()
         url = api_url_for('resend_confirmation')
@@ -439,7 +439,7 @@ class TestUserProfile(OsfTestCase):
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
@@ -484,7 +484,7 @@ class TestUserProfile(OsfTestCase):
         )
         handlers.celery_teardown_request()
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
         email = fake_email()
@@ -792,7 +792,7 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_blank_confirm_password(self):
         self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
         url = api_url_for('request_export')
         self.app.post(url, auth=self.user.auth)

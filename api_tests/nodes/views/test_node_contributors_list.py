@@ -1208,7 +1208,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def url_project_contribs(self, project_public):
         return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_no_email_if_false(
         self, mock_mail, app, user, url_project_contribs
     ):
@@ -1223,7 +1223,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert res.status_code == 201
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_sends_email(
         self, mock_mail, app, user, user_two, url_project_contribs
     ):
@@ -1281,7 +1281,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_sends_email(
         self, mock_mail, app, user, url_project_contribs
     ):
@@ -1329,7 +1329,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_invalid_send_email_param(
         self, mock_mail, app, user, url_project_contribs
     ):
@@ -1347,7 +1347,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         )
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_without_email_no_email(
         self, mock_mail, app, user, url_project_contribs
     ):

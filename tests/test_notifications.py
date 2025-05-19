@@ -945,7 +945,7 @@ class TestSendDigest(OsfTestCase):
         digest_ids = [d2._id, d3._id]
         remove_notifications(email_notification_ids=digest_ids)
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_send_users_email_called_with_correct_args(self, mock_send_mail):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
@@ -973,7 +973,7 @@ class TestSendDigest(OsfTestCase):
         message = group_by_node(user_groups[last_user_index]['info'])
         assert kwargs['message'] == message
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_send_users_email_ignores_disabled_users(self, mock_send_mail):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
@@ -1046,7 +1046,7 @@ class TestNotificationsReviews(OsfTestCase):
         event_types = [sub.event_name for sub in contributor_subscriptions]
         assert 'global_reviews' in event_types
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.mails.execute_email_send')
     def test_reviews_submit_notification(self, mock_send_email):
         listeners.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
         assert mock_send_email.called

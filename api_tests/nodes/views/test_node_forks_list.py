@@ -421,7 +421,7 @@ class TestNodeForkCreate:
             self, app, user, public_project_url,
             fork_data_with_title, public_project):
 
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
+        with mock.patch.object(mails, 'execute_email_send', return_value=None) as mock_send_mail:
             res = app.post_json_api(
                 public_project_url,
                 fork_data_with_title,
@@ -440,7 +440,7 @@ class TestNodeForkCreate:
             fork_data_with_title, public_project):
 
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
-            with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
+            with mock.patch.object(mails, 'execute_email_send', return_value=None) as mock_send_mail:
                 with pytest.raises(Exception):
                     app.post_json_api(
                         public_project_url,

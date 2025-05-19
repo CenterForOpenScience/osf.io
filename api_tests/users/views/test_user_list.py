@@ -277,7 +277,7 @@ class TestUsersCreate:
         app.reset()  # clears cookies
         OSFUser.remove()
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(
             self, mock_mail, app, user, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -292,7 +292,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_logged_out_user_cannot_create_other_user_or_send_mail(
             self, mock_mail, app, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -307,7 +307,7 @@ class TestUsersCreate:
         assert mock_mail.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_cookied_requests_can_create_and_email(
             self, mock_mail, app, user, email_unconfirmed, data, url_base):
         # NOTE: skipped tests are not tested during session refactor, only updated to fix import
@@ -327,7 +327,7 @@ class TestUsersCreate:
         assert mock_mail.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -367,7 +367,7 @@ class TestUsersCreate:
         assert mock_mail.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -409,7 +409,7 @@ class TestUsersCreate:
         assert mock_mail.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -454,7 +454,7 @@ class TestUsersCreate:
         assert OSFUser.objects.filter(fullname='No Email').count() == 1
         assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_improperly_scoped_token_can_not_create_or_email(
             self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
@@ -492,7 +492,7 @@ class TestUsersCreate:
         assert mock_mail.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
+    @mock.patch('framework.auth.views.mails.execute_email_send')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(

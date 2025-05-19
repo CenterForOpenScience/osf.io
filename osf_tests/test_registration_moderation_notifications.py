@@ -150,8 +150,8 @@ class TestRegistrationMachineNotification:
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call/args and also implicitly ensures
         # that the email acutally renders as normal in send_mail.
-        send_mail = mails.send_mail
-        with mock.patch.object(listeners.mails, 'send_mail', side_effect=send_mail) as mock_send_mail:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(listeners.mails, 'execute_email_send', side_effect=send_mail) as mock_send_mail:
             notify_submit(registration, admin)
 
         assert len(mock_send_mail.call_args_list) == 2
@@ -378,8 +378,8 @@ class TestRegistrationMachineNotification:
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
         # ensures that the email acutally renders as normal in send_mail.
-        send_mail = mails.send_mail
-        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(machines.mails, 'execute_email_send', side_effect=send_mail) as mock_email:
             notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -436,8 +436,8 @@ class TestRegistrationMachineNotification:
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
         # ensures that the email acutally renders as normal in send_mail.
-        send_mail = mails.send_mail
-        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(machines.mails, 'execute_email_send', side_effect=send_mail) as mock_email:
             notify_reject_withdraw_request(registration, withdraw_request_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -488,8 +488,8 @@ class TestRegistrationMachineNotification:
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
         # ensures that the email acutally renders as normal in send_mail.
-        send_mail = mails.send_mail
-        with mock.patch.object(machines.mails, 'send_mail', side_effect=send_mail) as mock_email:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(machines.mails, 'execute_email_send', side_effect=send_mail) as mock_email:
             notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_email.call_args_list) == 2
@@ -540,7 +540,7 @@ class TestRegistrationMachineNotification:
     def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider):
         # Invoke the fixture function to get the recipient because parametrize
         expected_recipient = expected_recipient(provider)
-        with mock.patch('website.reviews.listeners.mails.send_mail'):
+        with mock.patch('website.reviews.listeners.mails.execute_email_send'):
             notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
@@ -571,8 +571,8 @@ class TestRegistrationMachineNotification:
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
         # ensures that the email acutally renders as normal in send_mail.
-        send_mail = mails.send_mail
-        with mock.patch.object(tasks.mails, 'send_mail', side_effect=send_mail) as mock_send_mail:
+        send_mail = mails.execute_email_send
+        with mock.patch.object(tasks.mails, 'execute_email_send', side_effect=send_mail) as mock_send_mail:
             tasks._send_reviews_moderator_emails('email_transactional')
 
         mock_send_mail.assert_called()

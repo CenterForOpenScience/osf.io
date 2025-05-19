@@ -190,7 +190,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert initial_state == node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
+    @mock.patch('website.project.views.contributor.mails.execute_email_send')
     def test_email_sent_on_approve(self, mock_mail, app, admin, url, node_request):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
@@ -202,7 +202,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert node_request.creator in node_request.target.contributors
         assert mock_mail.call_count == 1
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.mails.execute_email_send')
     def test_email_sent_on_reject(self, mock_mail, app, admin, url, node_request):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
@@ -214,7 +214,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert node_request.creator not in node_request.target.contributors
         assert mock_mail.call_count == 1
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.mails.execute_email_send')
     def test_email_not_sent_on_reject(self, mock_mail, app, requester, url, node_request):
         initial_state = node_request.machine_state
         initial_comment = node_request.comment
@@ -384,7 +384,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
                 assert initial_state == request.machine_state
                 assert initial_comment == request.comment
 
-    @mock.patch('website.reviews.listeners.mails.send_mail')
+    @mock.patch('website.reviews.listeners.mails.execute_email_send')
     def test_email_sent_on_approve(self, mock_mail, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
@@ -400,7 +400,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
         assert mock_mail.call_count == 4
 
     @pytest.mark.skip('TODO: IN-331 -- add emails')
-    @mock.patch('website.reviews.listeners.mails.send_mail')
+    @mock.patch('website.reviews.listeners.mails.execute_email_send')
     def test_email_sent_on_reject(self, mock_mail, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
@@ -414,7 +414,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
         assert mock_mail.call_count == 2
 
     @pytest.mark.skip('TODO: IN-284/331 -- add emails')
-    @mock.patch('website.reviews.listeners.mails.send_mail')
+    @mock.patch('website.reviews.listeners.mails.execute_email_send')
     def test_email_not_sent_on_edit_comment(self, mock_mail, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state

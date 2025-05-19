@@ -400,7 +400,7 @@ class TestExternalAuthViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert res.status_code == 400, 'bad request'
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_external_login_confirm_email_get_create(self, mock_welcome):
         # TODO: check in qa url encoding
         assert not self.user.is_registered
@@ -417,7 +417,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert self.user.is_registered
         assert self.user.has_usable_password()
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_external_login_confirm_email_get_link(self, mock_link_confirm):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
@@ -436,7 +436,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert self.user.is_registered
         assert self.user.has_usable_password()
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert dupe_user.external_identity == self.user.external_identity
@@ -454,7 +454,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
         assert dupe_user.external_identity == {}
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')

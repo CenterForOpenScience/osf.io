@@ -717,7 +717,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
 class TestArchiverUtils(ArchiverTestCase):
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_handle_archive_fail(self, mock_send_mail):
         archiver_utils.handle_archive_fail(
             ARCHIVER_NETWORK_ERROR,
@@ -730,7 +730,7 @@ class TestArchiverUtils(ArchiverTestCase):
         self.dst.reload()
         assert self.dst.is_deleted
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_handle_archive_fail_copy(self, mock_send_mail):
         url = settings.INTERNAL_DOMAIN + self.src._id
         archiver_utils.handle_archive_fail(
@@ -762,7 +762,7 @@ class TestArchiverUtils(ArchiverTestCase):
             call(**args_desk),
         ], any_order=True)
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_handle_archive_fail_size(self, mock_send_mail):
         url = settings.INTERNAL_DOMAIN + self.src._id
         archiver_utils.handle_archive_fail(
@@ -931,14 +931,14 @@ class TestArchiverListeners(ArchiverTestCase):
             ARCHIVER_SUCCESS
         )
         self.dst.archive_job.save()
-        with mock.patch('website.mails.send_mail') as mock_send:
+        with mock.patch('website.mails.execute_email_send') as mock_send:
             with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
                 listeners.archive_callback(self.dst)
         assert not mock_send.called
         assert not mock_fail.called
         assert mock_delay.called
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_success(self, mock_send, mock_archive_success):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
@@ -946,7 +946,7 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.archive_callback(self.dst)
         assert mock_send.call_count == 1
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_send, mock_archive_success):
         end_date = timezone.now() + datetime.timedelta(days=30)
@@ -1037,7 +1037,7 @@ class TestArchiverListeners(ArchiverTestCase):
         rsibling.save()
         assert not reg.archive_job.archive_tree_finished()
 
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success, mock_arhive_success):
         proj = factories.NodeFactory()
@@ -1120,7 +1120,7 @@ class TestArchiverBehavior(OsfTestCase):
         assert not mock_update_search.called
 
     @mock.patch('osf.models.AbstractNode.update_search')
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_update_search, mock_send, mock_archive_success):
         proj = factories.ProjectFactory()
@@ -1135,7 +1135,7 @@ class TestArchiverBehavior(OsfTestCase):
 
     @pytest.mark.enable_search
     @mock.patch('website.search.elastic_search.delete_doc')
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj, archive=True)
@@ -1148,7 +1148,7 @@ class TestArchiverBehavior(OsfTestCase):
         assert mock_delete_index_node.called
 
     @mock.patch('osf.models.AbstractNode.update_search')
-    @mock.patch('website.mails.send_mail')
+    @mock.patch('website.mails.execute_email_send')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_send, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
