@@ -12,13 +12,13 @@ from framework.postcommit_tasks.handlers import (
     postcommit_queue,
 )
 from osf.models import Node, Preprint
-from website import settings as website_settings
+from website import settings
 from api.share.utils import shtrove_ingest_url
 from osf.metadata.osf_gathering import OsfmapPartition
 
 
 def gv_url():
-    return fr'^{website_settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
+    return fr'^{settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
 
 
 @contextlib.contextmanager
@@ -27,9 +27,9 @@ def mock_share_responses():
     enable sending requests to shtrove with metadata updates,
     catch those requests in a yielded responses.RequestsMock
     '''
-    with mock.patch.object(website_settings, 'SHARE_ENABLED', True):
-        with mock.patch.object(website_settings, 'SHARE_API_TOKEN', 'mock-api-token'):
-            with mock.patch.object(website_settings, 'USE_CELERY', False):  # run tasks synchronously
+    with mock.patch.object(settings, 'SHARE_ENABLED', True):
+        with mock.patch.object(settings, 'SHARE_API_TOKEN', 'mock-api-token'):
+            with mock.patch.object(settings, 'USE_CELERY', False):  # run tasks synchronously
                 with responses.RequestsMock(assert_all_requests_are_fired=False) as _rsps:
                     _ingest_url = shtrove_ingest_url()
                     _rsps.add(responses.POST, _ingest_url, status=200)
@@ -40,7 +40,7 @@ def mock_share_responses():
 
 @contextlib.contextmanager
 def mock_update_share():
-    with mock.patch.object(website_settings, 'SHARE_ENABLED', True):
+    with mock.patch.object(settings, 'SHARE_ENABLED', True):
         with mock.patch('api.share.utils._enqueue_update_share') as _mock_update_share:
             yield _mock_update_share
 
@@ -75,7 +75,7 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
                 _trove_supp_ingest_calls.append(_call)
             else:
                 _trove_ingest_calls.append(_call)
-        elif _call.request.url.startswith(website_settings.GRAVYVALET_URL):
+        elif _call.request.url.startswith(settings.GRAVYVALET_URL):
             _gv_links_calls.append(_call)
     assert len(_trove_ingest_calls) == count
     assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
@@ -98,10 +98,10 @@ def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False
     else:
         assert request.method == 'POST'
         _focus_iri = _querydict['focus_iri']
-        assert _focus_iri == f'{website_settings.DOMAIN}{expected_osfguid}'
+        assert _focus_iri == f'{settings.DOMAIN}{expected_osfguid}'
         _request_body = request.body.decode('utf-8')
         assert (_focus_iri in _request_body) or (supp and not _request_body.strip())
-    _token = token or website_settings.SHARE_API_TOKEN
+    _token = token or settings.SHARE_API_TOKEN
     assert request.headers['Authorization'] == f'Bearer {_token}'
 
 
