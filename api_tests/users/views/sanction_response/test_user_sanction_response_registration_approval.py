@@ -52,7 +52,7 @@ class TestRegistrationApproval:
             },
             auth=Auth(user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 201
 
         sanction.refresh_from_db()
         registration.refresh_from_db()
@@ -78,7 +78,7 @@ class TestRegistrationApproval:
             },
             auth=Auth(user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 201
 
         sanction.refresh_from_db()
 

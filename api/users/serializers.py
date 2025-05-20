@@ -446,6 +446,7 @@ class ConfirmEmailTokenSerializer(BaseAPISerializer):
     uid = ser.CharField(write_only=True, required=True)
     destination = ser.CharField(write_only=True, required=True)
     token = ser.CharField(write_only=True, required=True)
+    redirect_url = ser.CharField(read_only=True, required=False)
 
     class Meta:
         type_ = 'email_token_serializer'

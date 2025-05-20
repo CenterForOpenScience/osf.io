@@ -122,20 +122,15 @@ class TestConfirmEmail:
             },
             expect_errors=True
         )
-        assert res.status_code == 302
-        import urllib.parse
-
-        # Extract and decode the service parameter
-        location = res.headers['Location']
-        parsed_url = urllib.parse.urlparse(location)
-        query = urllib.parse.parse_qs(parsed_url.query)
-        service = query.get('service', [None])[0]
-
-        assert service is not None
-        decoded_service = urllib.parse.unquote(service)
-        assert '&new=true' in decoded_service
-
+        assert res.status_code == 201
         assert not mock_send_mail.called
+        assert res.json == {
+            'redirect_url': f'http://localhost:80/v2/users/{user._id}/confirm/&new=true',
+            'meta': {
+                'version': '2.0'
+            }
+        }
+        assert res.status_code == 201
 
         user.reload()
         assert user.is_registered
@@ -145,8 +140,6 @@ class TestConfirmEmail:
 
     @mock.patch('website.mails.send_mail')
     def test_post_success_link(self, mock_send_mail, app, confirm_url, user_with_email_verification):
-        import urllib.parse
-
         user, token, email = user_with_email_verification
         user.external_identity['ORCID']['0000-0000-0000-0000'] = 'LINK'
         user.save()
@@ -164,17 +157,7 @@ class TestConfirmEmail:
             },
             expect_errors=True
         )
-        assert res.status_code == 302
-
-        # Decode the redirect URL and check that &new=true is NOT present
-        location = res.headers['Location']
-        parsed_url = urllib.parse.urlparse(location)
-        query = urllib.parse.parse_qs(parsed_url.query)
-        service = query.get('service', [None])[0]
-
-        assert service is not None
-        decoded_service = urllib.parse.unquote(service)
-        assert '&new=true' not in decoded_service
+        assert res.status_code == 201
 
         assert mock_send_mail.called
 

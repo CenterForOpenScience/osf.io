@@ -49,7 +49,7 @@ class TestEmbargoTerminationApproval:
             },
             auth=Auth(user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 201
         registration.refresh_from_db()
         assert registration.embargo.state == 'approved'  # embargo still active because it needs unanimous approval
 
@@ -68,7 +68,7 @@ class TestEmbargoTerminationApproval:
             },
             auth=Auth(registration.creator)
         )
-        assert res.status_code == 200
+        assert res.status_code == 201
         registration.refresh_from_db()
         assert registration.embargo.state == 'completed'  # now all agree to terminate
 
@@ -89,7 +89,7 @@ class TestEmbargoTerminationApproval:
             },
             auth=Auth(user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 201
 
         sanction.refresh_from_db()
 

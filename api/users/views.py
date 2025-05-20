@@ -81,7 +81,6 @@ from framework.auth.tasks import update_affiliation_for_orcid_sso_users
 from framework.auth.oauth_scopes import CoreScopes, normalize_scopes
 from framework.auth.exceptions import ChangePasswordError
 from framework.celery_tasks.handlers import enqueue_task
-from django.shortcuts import redirect
 from framework.utils import throttle_period_expired
 from framework.sessions.utils import remove_sessions_for_user
 from framework.exceptions import PermissionsError, HTTPError
@@ -109,7 +108,7 @@ from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
-from framework.auth import exceptions, cas
+from framework.auth import exceptions
 
 
 class UserMixin:
@@ -1127,7 +1126,7 @@ class ConfirmEmailView(generics.CreateAPIView):
         user.verification_key = generate_verification_key()
         user.save()
 
-        service_url = request.build_absolute_uri()
+        service_url = self.request.build_absolute_uri()
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
@@ -1140,13 +1139,10 @@ class ConfirmEmailView(generics.CreateAPIView):
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
-
-        return redirect(
-            cas.get_login_url(
-                service_url,
-                username=user.username,
-                verification_key=user.verification_key,
-            ),
+        serializer.validated_data['redirect_url'] = service_url
+        return Response(
+            data=serializer.data,
+            status=status.HTTP_201_CREATED,
         )
 
 
@@ -1161,8 +1157,7 @@ class SanctionResponseView(generics.CreateAPIView, UserMixin):
         "destination": "<campaign-code or relative URL>"
     }
 
-    On success the endpoint redirects (HTTP 302) to CAS with a
-    one-time verification key, exactly like the original Flask view.
+    On success the endpoint returns (HTTP 200)
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -1175,10 +1170,7 @@ class SanctionResponseView(generics.CreateAPIView, UserMixin):
 
     serializer_class = SanctionTokenSerializer
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
+    def perform_create(self, serializer):
         uid = serializer.validated_data['uid']
         token = serializer.validated_data['token']
         action = serializer.validated_data['action']
@@ -1200,8 +1192,6 @@ class SanctionResponseView(generics.CreateAPIView, UserMixin):
             encoded_token=token_handler.encoded_token,
             user=self.get_user(),
         )
-
-        return Response(status=status.HTTP_200_OK)
 
 
 class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
