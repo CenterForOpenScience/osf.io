@@ -1,6 +1,7 @@
 import re
 from packaging.version import Version
 
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework import permissions as drf_permissions
@@ -136,12 +137,17 @@ class PreprintMixin(NodeMixin):
         if check_object_permissions:
             self.check_object_permissions(self.request, preprint)
 
-        user_is_moderator = preprint.provider.get_group('moderator').user_set.filter(id=self.request.user.id).exists()
-        user_is_contributor = preprint.contributors.filter(id=self.request.user.id).exists()
+        user = self.request.user
+        if isinstance(user, AnonymousUser):
+            user_is_reviewer = user_is_contributor = False
+        else:
+            user_is_reviewer = user.has_groups(preprint.provider.group_names)
+            user_is_contributor = preprint.is_contributor(user)
+
         if (
             preprint.machine_state == DefaultStates.INITIAL.value and
             not user_is_contributor and
-            user_is_moderator
+            user_is_reviewer
         ):
             raise NotFound
 
@@ -149,7 +155,7 @@ class PreprintMixin(NodeMixin):
             preprint.machine_state in PUBLIC_STATES[preprint.provider.reviews_workflow]
             or preprint.machine_state == ReviewStates.WITHDRAWN.value,
         )
-        if not preprint_is_public and not user_is_contributor and not user_is_moderator:
+        if not preprint_is_public and not user_is_contributor and not user_is_reviewer:
             raise NotFound
 
         return preprint

@@ -17,6 +17,8 @@ from osf_tests.factories import (
 
 from osf.metrics import UserInstitutionProjectCounts
 from osf.metrics.reports import InstitutionalUserReport
+from osf.models import UserMessage
+
 
 @pytest.mark.es_metrics
 @pytest.mark.django_db
@@ -350,6 +352,10 @@ class TestNewInstitutionUserMetricList:
         _expected_user_ids = {_report.user_id for _report in reports}
         assert set(_user_ids(_resp)) == _expected_user_ids
 
+        # # users haven't any received messages from institutional admins
+        for response_object in _resp.json['data']:
+            assert len(response_object['attributes']['contacts']) == 0
+
     def test_filter_reports(self, app, url, institutional_admin, institution, reports, unshown_reports):
         for _query, _expected_user_ids in (
             ({'filter[department]': 'nunavum'}, set()),
@@ -447,6 +453,7 @@ class TestNewInstitutionUserMetricList:
             [
                 'report_yearmonth',
                 'account_creation_date',
+                'contacts',
                 'department',
                 'embargoed_registration_count',
                 'month_last_active',
@@ -463,6 +470,7 @@ class TestNewInstitutionUserMetricList:
             [
                 '2024-08',
                 '2018-02',
+                '[]',
                 'Center, \t Greatest Ever',
                 '1',
                 '2018-02',
@@ -516,6 +524,7 @@ class TestNewInstitutionUserMetricList:
             expected_data.append([
                 '2024-08',
                 '2018-02',
+                '[]',
                 'QBatman',
                 '1',
                 '2018-02',
@@ -557,6 +566,7 @@ class TestNewInstitutionUserMetricList:
                 expected_header = [
                     'report_yearmonth',
                     'account_creation_date',
+                    'contacts',
                     'department',
                     'embargoed_registration_count',
                     'month_last_active',
@@ -612,6 +622,7 @@ class TestNewInstitutionUserMetricList:
             {
                 'report_yearmonth': '2024-08',
                 'account_creation_date': '2018-02',
+                'contacts': [],
                 'department': 'Safety "The Wolverine" Weapon X',
                 'embargoed_registration_count': 1,
                 'month_last_active': '2018-02',
@@ -627,6 +638,88 @@ class TestNewInstitutionUserMetricList:
             }
         ]
         assert response_data == expected_data
+
+    def test_correct_number_of_contact_messages(self, app, url, institutional_admin, institution):
+        user1 = AuthUserFactory()
+        user2 = AuthUserFactory()
+        user3 = AuthUserFactory()
+        user4 = AuthUserFactory()
+        _report_factory(
+            '2024-08', institution,
+            user_id=user1._id,
+            storage_byte_count=53,
+        ),
+        _report_factory(
+            '2024-08', institution,
+            user_id=user2._id,
+            orcid_id='5555-4444-3333-2222',
+            storage_byte_count=8277,
+        ),
+        _report_factory(
+            '2024-08', institution,
+            user_id=user3._id,
+            department_name='blargl',
+            storage_byte_count=34834834,
+        ),
+        _report_factory(
+            '2024-08', institution,
+            user_id=user4._id,
+            orcid_id='4444-3333-2222-1111',
+            department_name='a department, or so, that happens, incidentally, to have commas',
+            storage_byte_count=736662999298,
+        )
+
+        receiver = user1
+        UserMessage.objects.create(
+            sender=institutional_admin,
+            recipient=receiver,
+            message_text='message1',
+            message_type='institutional_request',
+            institution=institution
+        )
+        UserMessage.objects.create(
+            sender=institutional_admin,
+            recipient=receiver,
+            message_text='message2',
+            message_type='institutional_request',
+            institution=institution
+        )
+        UserMessage.objects.create(
+            sender=institutional_admin,
+            recipient=receiver,
+            message_text='message3',
+            message_type='institutional_request',
+            institution=institution
+        )
+
+        new_admin = AuthUserFactory()
+        institution.get_group('institutional_admins').user_set.add(new_admin)
+
+        # messages from another admin
+        UserMessage.objects.create(
+            sender=new_admin,
+            recipient=receiver,
+            message_text='message4',
+            message_type='institutional_request',
+            institution=institution
+        )
+        UserMessage.objects.create(
+            sender=new_admin,
+            recipient=receiver,
+            message_text='message5',
+            message_type='institutional_request',
+            institution=institution
+        )
+
+        res = app.get(f'/{API_BASE}institutions/{institution._id}/metrics/users/', auth=institutional_admin.auth)
+        contact_object = list(filter(lambda contact: receiver._id in contact['relationships']['user']['links']['related']['href'], res.json['data']))[0]
+        contacts = contact_object['attributes']['contacts']
+
+        first_admin_contact = list(filter(lambda x: x['sender_name'] == institutional_admin.fullname, contacts))[0]
+        assert first_admin_contact['count'] == 3
+
+        another_admin_contact = list(filter(lambda x: x['sender_name'] == new_admin.fullname, contacts))[0]
+        assert another_admin_contact['count'] == 2
 
 
 def _user_ids(api_response):

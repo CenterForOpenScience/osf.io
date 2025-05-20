@@ -13,7 +13,7 @@ from framework.postcommit_tasks.handlers import (
 )
 from osf.models import Node, Preprint
 from website import settings as website_settings, settings
-from api.share.utils import shtrove_ingest_url, sharev2_push_url
+from api.share.utils import shtrove_ingest_url
 from osf.metadata.osf_gathering import OsfmapPartition
 
 
@@ -34,8 +34,6 @@ def mock_share_responses():
                     _ingest_url = shtrove_ingest_url()
                     _rsps.add(responses.POST, _ingest_url, status=200)
                     _rsps.add(responses.DELETE, _ingest_url, status=200)
-                    # for legacy sharev2 support:
-                    _rsps.add(responses.POST, sharev2_push_url(), status=200)
                     _rsps.add(responses.GET, re.compile(gv_url()), status=200, body='{}')
                     yield _rsps
 
@@ -52,7 +50,6 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
     osfguid = item.get_guid()._id if isinstance(item, Preprint) else item._id
     mock_share_responses._calls.reset()
     yield
-    _legacy_count_per_item = 1
     _trove_main_count_per_item = 1
     expect_gv_call = isinstance(item, Node) and not delete
     _gv_calls_number = 1 if expect_gv_call else 0
@@ -62,8 +59,7 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
         else (len(OsfmapPartition) - 1)
     )
     _total_count = count * (
-        _legacy_count_per_item
-        + _trove_main_count_per_item
+        _trove_main_count_per_item
         + _trove_supplementary_count_per_item
         + _gv_calls_number
     )
@@ -72,7 +68,6 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
     )
     _trove_ingest_calls = []
     _trove_supp_ingest_calls = []
-    _legacy_push_calls = []
     _gv_links_calls = []
     for _call in mock_share_responses.calls:
         if _call.request.url.startswith(shtrove_ingest_url()):
@@ -82,18 +77,13 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
                 _trove_ingest_calls.append(_call)
         elif _call.request.url.startswith(settings.GRAVYVALET_URL):
             _gv_links_calls.append(_call)
-        else:
-            _legacy_push_calls.append(_call)
     assert len(_trove_ingest_calls) == count
     assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
-    assert len(_legacy_push_calls) == count
     assert len(_gv_links_calls) == (count if expect_gv_call else 0)
     for _call in _trove_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete)
     for _call in _trove_supp_ingest_calls:
         assert_ingest_request(_call.request, osfguid, token=token, delete=delete, supp=True)
-    for _call in _legacy_push_calls:
-        assert _call.request.url.startswith(sharev2_push_url())
 
 
 def assert_ingest_request(request, expected_osfguid, *, token=None, delete=False, supp=False):

@@ -22,7 +22,6 @@ from website.archiver import utils as archiver_utils
 from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
-from website.archiver.decorators import fail_archive_on_error
 
 from osf.models import Guid, RegistrationSchema, Registration
 from osf.models.archive import ArchiveTarget, ArchiveJob
@@ -1116,22 +1115,6 @@ class TestArchiverScripts(ArchiverTestCase):
         for pk in legacy:
             assert pk not in failed
 
-
-class TestArchiverDecorators(ArchiverTestCase):
-
-    @mock.patch('website.archiver.signals.archive_fail.send')
-    def test_fail_archive_on_error(self, mock_fail):
-        e = HTTPError(418)
-
-        def error(*args, **kwargs):
-            raise e
-
-        func = fail_archive_on_error(error)
-        func(node=self.dst)
-        mock_fail.assert_called_with(
-            self.dst,
-            errors=[str(e)]
-        )
 
 class TestArchiverBehavior(OsfTestCase):
 

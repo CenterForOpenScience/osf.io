@@ -536,7 +536,8 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.run_submit(submitter)
         return withdrawal_request
 
-    def test_can_approve_withdrawal_request(self, withdrawal_request, submitter, preprint, admin):
+    @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
+    def test_can_approve_withdrawal_request(self, mocked_function, withdrawal_request, submitter, preprint, admin):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
@@ -551,6 +552,12 @@ class TestPreprintWithdrawalRequests:
         withdrawal_request.target.refresh_from_db()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         assert original_comment == withdrawal_request.target.withdrawal_justification
+
+        # share update is triggered when update "date_withdrawn" and "withdrawal_justification" throughout withdrawal process
+        updated_fields = mocked_function.call_args[1]['saved_fields']
+        assert 'date_withdrawn' in updated_fields
+        assert 'withdrawal_justification' in updated_fields
+        assert preprint.SEARCH_UPDATE_FIELDS.intersection(updated_fields)
 
     def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
@@ -797,3 +804,33 @@ class TestPreprintMakePublishedView:
         preprint.reload()
 
         assert preprint.is_published
+
+
+@pytest.mark.urls('admin.base.urls')
+class TestPreprintReVersionView:
+
+    @pytest.fixture()
+    def plain_view(self):
+        return views.PreprintReVersion
+
+    def test_admin_user_can_add_new_version_one(self, user, preprint, plain_view):
+        # user isn't admin contributor in the preprint
+        assert preprint.contributors.filter(id=user.id).exists() is False
+        assert preprint.has_permission(user, ADMIN) is False
+        assert len(preprint.get_preprint_versions()) == 1
+
+        request = RequestFactory().post(
+            reverse('preprints:re-version-preprint',
+            kwargs={'guid': preprint._id}),
+            data={'file_versions': ['1']}
+        )
+        request.user = user
+
+        admin_group = Group.objects.get(name='osf_admin')
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.refresh_from_db()
+
+        assert len(preprint.get_preprint_versions()) == 2

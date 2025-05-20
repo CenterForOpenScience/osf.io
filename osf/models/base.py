@@ -49,6 +49,8 @@ def generate_object_id():
 def coerce_guid(maybe_guid, create_if_needed=False):
     if isinstance(maybe_guid, Guid):
         return maybe_guid
+    if isinstance(maybe_guid, VersionedGuidMixin):
+        return maybe_guid.versioned_guids.first().guid
     if isinstance(maybe_guid, GuidMixin):
         return maybe_guid.guids.first()
     if isinstance(maybe_guid, OptionalGuidMixin):
