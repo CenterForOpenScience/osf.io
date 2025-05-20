@@ -2,7 +2,7 @@ import logging
 
 from django.contrib.auth.models import Group
 from django.core.management.base import BaseCommand
-from osf.models import NotificationSubscription, RegistrationProvider
+from osf.models import RegistrationProvider, NotificationSubscriptionLegacy
 
 logger = logging.getLogger(__file__)
 
@@ -17,7 +17,7 @@ def populate_registration_provider_notification_subscriptions():
             continue
 
         for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-            instance, created = NotificationSubscription.objects.get_or_create(
+            instance, created = NotificationSubscriptionLegacy.objects.get_or_create(
                 _id=f'{provider._id}_{subscription}',
                 event_name=subscription,
                 provider=provider

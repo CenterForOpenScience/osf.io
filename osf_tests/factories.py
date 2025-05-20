@@ -1040,9 +1040,9 @@ class MockOAuth2Provider(models.ExternalProvider):
         }
 
 
-class NotificationSubscriptionFactory(DjangoModelFactory):
+class NotificationSubscriptionLegacyFactory(DjangoModelFactory):
     class Meta:
-        model = models.NotificationSubscription
+        model = models.NotificationSubscriptionLegacy
 
 
 def make_node_lineage():

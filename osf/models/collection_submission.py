@@ -132,10 +132,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'allow_submissions': True,
         }
 
-        from .notifications import NotificationSubscription
+        from .notifications import NotificationSubscriptionLegacy
         from website.notifications.emails import store_emails
 
-        provider_subscription, created = NotificationSubscription.objects.get_or_create(
+        provider_subscription, created = NotificationSubscriptionLegacy.objects.get_or_create(
             _id=f'{self.collection.provider._id}_new_pending_submissions',
             provider=self.collection.provider
         )
