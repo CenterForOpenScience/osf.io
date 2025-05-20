@@ -12,13 +12,13 @@ from framework.postcommit_tasks.handlers import (
     postcommit_queue,
 )
 from osf.models import Node, Preprint
-from website import settings as website_settings, settings
+from website import settings as website_settings
 from api.share.utils import shtrove_ingest_url
 from osf.metadata.osf_gathering import OsfmapPartition
 
 
 def gv_url():
-    return fr'^{settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
+    return fr'^{website_settings.GRAVYVALET_URL}/v1/configured-link-addons/\w*/verified-links'
 
 
 @contextlib.contextmanager
@@ -75,7 +75,7 @@ def expect_ingest_request(mock_share_responses, item, *, token=None, delete=Fals
                 _trove_supp_ingest_calls.append(_call)
             else:
                 _trove_ingest_calls.append(_call)
-        elif _call.request.url.startswith(settings.GRAVYVALET_URL):
+        elif _call.request.url.startswith(website_settings.GRAVYVALET_URL):
             _gv_links_calls.append(_call)
     assert len(_trove_ingest_calls) == count
     assert len(_trove_supp_ingest_calls) == count * _trove_supplementary_count_per_item
