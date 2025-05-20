@@ -91,10 +91,10 @@ def remove_supplemental_node(node):
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
 
     node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(node=node).delete()
+    NotificationSubscriptionLegacy.objects.filter(node=node).delete()
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -144,12 +144,12 @@ def users_to_remove(source_event, source_node, new_node):
     :param new_node: Node instance where a sub or new sub will be.
     :return: Dict of notification type lists with user_ids
     """
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
     removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
     if source_node == new_node:
         return removed_users
-    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
-    old_node_sub = NotificationSubscription.load(to_subscription_key(source_node._id,
+    old_sub = NotificationSubscriptionLegacy.load(to_subscription_key(source_node._id, source_event))
+    old_node_sub = NotificationSubscriptionLegacy.load(to_subscription_key(source_node._id,
                                                                      '_'.join(source_event.split('_')[-2:])))
     if not old_sub and not old_node_sub:
         return removed_users
@@ -172,11 +172,11 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     :param new_node: Instance of Node
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
     OSFUser = apps.get_model('osf.OSFUser')
     if source_node == new_node:
         return
-    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
+    old_sub = NotificationSubscriptionLegacy.load(to_subscription_key(source_node._id, source_event))
     if not old_sub:
         return
     elif old_sub:
@@ -237,8 +237,8 @@ def check_project_subscriptions_are_all_none(user, node):
 
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    queryset = NotificationSubscription.objects.filter(
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
+    queryset = NotificationSubscriptionLegacy.objects.filter(
         Q(none=user.pk) |
         Q(email_digest=user.pk) |
         Q(email_transactional=user.pk)
@@ -392,14 +392,14 @@ def get_parent_notification_type(node, event, user):
     :return: str notification type (e.g. 'email_transactional')
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
 
     if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, READ):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
-            subscription = NotificationSubscription.objects.get(_id=key)
-        except NotificationSubscription.DoesNotExist:
+            subscription = NotificationSubscriptionLegacy.objects.get(_id=key)
+        except NotificationSubscriptionLegacy.DoesNotExist:
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in constants.NOTIFICATION_TYPES:
@@ -429,19 +429,19 @@ def check_if_all_global_subscriptions_are_none(user):
     # This function predates comment mentions, which is a global_ notification that cannot be disabled
     # Therefore, an actual check would never return True.
     # If this changes, an optimized query would look something like:
-    # not NotificationSubscription.objects.filter(Q(event_name__startswith='global_') & (Q(email_digest=user.pk)|Q(email_transactional=user.pk))).exists()
+    # not NotificationSubscriptionLegacy.objects.filter(Q(event_name__startswith='global_') & (Q(email_digest=user.pk)|Q(email_transactional=user.pk))).exists()
     return False
 
 
 def subscribe_user_to_global_notifications(user):
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
     notification_type = 'email_transactional'
     user_events = constants.USER_SUBSCRIPTIONS_AVAILABLE
     for user_event in user_events:
         user_event_id = to_subscription_key(user._id, user_event)
 
         # get_or_create saves on creation
-        subscription, created = NotificationSubscription.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
+        subscription, created = NotificationSubscriptionLegacy.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
         subscription.add_user_to_subscription(user, notification_type)
         subscription.save()
 
@@ -450,7 +450,7 @@ def subscribe_user_to_notifications(node, user):
     """ Update the notification settings for the creator or contributors
     :param user: User to subscribe to notifications
     """
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
     Preprint = apps.get_model('osf.Preprint')
     DraftRegistration = apps.get_model('osf.DraftRegistration')
     if isinstance(node, Preprint):
@@ -476,16 +476,16 @@ def subscribe_user_to_notifications(node, user):
         for event in events:
             event_id = to_subscription_key(target_id, event)
             global_event_id = to_subscription_key(user._id, 'global_' + event)
-            global_subscription = NotificationSubscription.load(global_event_id)
+            global_subscription = NotificationSubscriptionLegacy.load(global_event_id)
 
-            subscription = NotificationSubscription.load(event_id)
+            subscription = NotificationSubscriptionLegacy.load(event_id)
 
             # If no subscription for component and creator is the user, do not create subscription
             # If no subscription exists for the component, this means that it should adopt its
             # parent's settings
             if not (node and node.parent_node and not subscription and node.creator == user):
                 if not subscription:
-                    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
+                    subscription = NotificationSubscriptionLegacy(_id=event_id, owner=node, event_name=event)
                     # Need to save here in order to access m2m fields
                     subscription.save()
                 if global_subscription:

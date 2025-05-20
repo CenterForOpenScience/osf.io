@@ -6,13 +6,13 @@ does not already exist.
 import logging
 import sys
 
+from osf.models.notifications import NotificationSubscriptionLegacy
 from website.app import setup_django
 setup_django()
 
 from django.apps import apps
 from django.db import transaction
 from website.app import init_app
-from osf.models import NotificationSubscription
 from website.notifications import constants
 from website.notifications.utils import to_subscription_key
 
@@ -35,10 +35,10 @@ def add_global_subscriptions(dry=True):
             for user_event in user_events:
                 user_event_id = to_subscription_key(user._id, user_event)
 
-                subscription = NotificationSubscription.load(user_event_id)
+                subscription = NotificationSubscriptionLegacy.load(user_event_id)
                 if not subscription:
                     logger.info(f'No {user_event} subscription found for user {user._id}. Subscribing...')
-                    subscription = NotificationSubscription(_id=user_event_id, owner=user, event_name=user_event)
+                    subscription = NotificationSubscriptionLegacy(_id=user_event_id, owner=user, event_name=user_event)
                     subscription.save()  # Need to save in order to access m2m fields
                     subscription.add_user_to_subscription(user, notification_type)
                     subscription.save()

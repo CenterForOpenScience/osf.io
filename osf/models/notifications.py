@@ -1,15 +1,16 @@
 from django.contrib.postgres.fields import ArrayField
 from django.db import models
+
+from website.notifications.constants import NOTIFICATION_TYPES
 from .node import Node
 from .user import OSFUser
 from .base import BaseModel, ObjectIDMixin
 from .validators import validate_subscription_type
 from osf.utils.fields import NonNaiveDateTimeField
-from website.notifications.constants import NOTIFICATION_TYPES
 from website.util import api_v2_url
 
 
-class NotificationSubscription(BaseModel):
+class NotificationSubscriptionLegacy(BaseModel):
     primary_identifier_name = '_id'
     _id = models.CharField(max_length=100, db_index=True, unique=False)  # pxyz_wiki_updated, uabc_comment_replies
 
@@ -29,6 +30,7 @@ class NotificationSubscription(BaseModel):
     class Meta:
         # Both PreprintProvider and RegistrationProvider default instances use "osf" as their `_id`
         unique_together = ('_id', 'provider')
+        db_table = 'osf_notificationsubscription_legacy'
 
     @classmethod
     def load(cls, q):
@@ -94,7 +96,6 @@ class NotificationSubscription(BaseModel):
 
         if save:
             self.save()
-
 
 class NotificationDigest(ObjectIDMixin, BaseModel):
     user = models.ForeignKey('OSFUser', null=True, blank=True, on_delete=models.CASCADE)

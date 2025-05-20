@@ -1,17 +1,17 @@
-from osf.models.notifications import NotificationSubscription
+from osf.models.notifications import NotificationSubscriptionLegacy
 from django.db.models import Count
 
 def delete_selected_notifications(selected_ids):
-    NotificationSubscription.objects.filter(id__in=selected_ids).delete()
+    NotificationSubscriptionLegacy.objects.filter(id__in=selected_ids).delete()
 
 def detect_duplicate_notifications(node_id=None):
-    query = NotificationSubscription.objects.values('_id').annotate(count=Count('_id')).filter(count__gt=1)
+    query = NotificationSubscriptionLegacy.objects.values('_id').annotate(count=Count('_id')).filter(count__gt=1)
     if node_id:
         query = query.filter(node_id=node_id)
 
     detailed_duplicates = []
     for dup in query:
-        notifications = NotificationSubscription.objects.filter(
+        notifications = NotificationSubscriptionLegacy.objects.filter(
             _id=dup['_id']
         ).order_by('created')
 

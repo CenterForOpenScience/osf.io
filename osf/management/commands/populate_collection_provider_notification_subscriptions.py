@@ -1,7 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from osf.models import NotificationSubscription, CollectionProvider
+from osf.models import NotificationSubscriptionLegacy, CollectionProvider
 
 logger = logging.getLogger(__file__)
 
@@ -12,7 +12,7 @@ def populate_collection_provider_notification_subscriptions():
         provider_moderators = provider.get_group('moderator').user_set.all()
 
         for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-            instance, created = NotificationSubscription.objects.get_or_create(
+            instance, created = NotificationSubscriptionLegacy.objects.get_or_create(
                 _id=f'{provider._id}_{subscription}',
                 event_name=subscription,
                 provider=provider
