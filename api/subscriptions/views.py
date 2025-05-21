@@ -22,6 +22,7 @@ from osf.models import (
     RegistrationProvider,
     AbstractProvider,
 )
+from osf.models.notifications import NotificationSubscriptionLegacy
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -39,7 +40,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_default_queryset(self):
         user = self.request.user
-        return NotificationSubscription.objects.filter(
+        return NotificationSubscriptionLegacy.objects.filter(
             Q(none=user) |
             Q(email_digest=user) |
             Q(
@@ -54,7 +55,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_default_queryset(self):
         user = self.request.user
-        return NotificationSubscription.objects.filter(
+        return NotificationSubscriptionLegacy.objects.filter(
             provider___id=self.kwargs['provider_id'],
             provider__type=self.provider_class._typedmodels_type,
         ).filter(
@@ -80,7 +81,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
         try:
-            obj = NotificationSubscription.objects.get(_id=subscription_id)
+            obj = NotificationSubscriptionLegacy.objects.get(_id=subscription_id)
         except ObjectDoesNotExist:
             raise NotFound
         self.check_object_permissions(self.request, obj)
@@ -109,7 +110,7 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
         if self.kwargs.get('provider_id'):
             provider = self.provider_class.objects.get(_id=self.kwargs.get('provider_id'))
             try:
-                obj = NotificationSubscription.objects.get(
+                obj = NotificationSubscriptionLegacy.objects.get(
                     _id=subscription_id,
                     provider_id=provider.id,
                 )
@@ -117,7 +118,7 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
                 raise NotFound
         else:
             try:
-                obj = NotificationSubscription.objects.get(
+                obj = NotificationSubscriptionLegacy.objects.get(
                     _id=subscription_id,
                     provider__type=self.provider_class._typedmodels_type,
                 )
