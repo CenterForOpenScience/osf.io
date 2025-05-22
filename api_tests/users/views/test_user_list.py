@@ -14,10 +14,8 @@ from osf.models import OSFUser, ApiOAuth2PersonalToken
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
-    OSFGroupFactory,
     ProjectFactory,
     ApiOAuth2ScopeFactory,
-    RegistrationFactory,
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
@@ -99,47 +97,6 @@ class TestUsers:
         ids = [each['id'] for each in user_json]
         assert user_one._id not in ids
         assert user_two._id not in ids
-
-    def test_more_than_one_projects_in_common(self, app, user_one, user_two):
-        group = OSFGroupFactory(creator=user_one)
-        group.make_member(user_two)
-
-        project1 = ProjectFactory(creator=user_one)
-        project1.add_contributor(
-            contributor=user_two,
-            permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
-        )
-        project1.save()
-        project2 = ProjectFactory(creator=user_one)
-        project2.add_contributor(
-            contributor=user_two,
-            permissions=CREATOR_PERMISSIONS,
-            auth=Auth(user=user_one)
-        )
-        project2.save()
-
-        project3 = ProjectFactory()
-        project4 = ProjectFactory()
-        project3.add_osf_group(group)
-        project4.add_osf_group(group)
-        project4.is_deleted = True
-        project3.save()
-        project4.save()
-
-        RegistrationFactory(
-            project=project1,
-            creator=user_one,
-            is_public=True)
-
-        url = f'/{API_BASE}users/?show_projects_in_common=true'
-        res = app.get(url, auth=user_two.auth)
-        user_json = res.json['data']
-        for user in user_json:
-            if user['id'] == user_two._id:
-                meta = user['relationships']['nodes']['links']['related']['meta']
-                assert 'projects_in_common' in meta
-                assert meta['projects_in_common'] == 4
 
     def test_users_projects_in_common(self, app, user_one, user_two):
         user_one.fullname = 'hello'

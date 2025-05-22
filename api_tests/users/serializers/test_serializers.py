@@ -9,7 +9,6 @@ from osf_tests.factories import (
     PreprintFactory,
     ProjectFactory,
     InstitutionFactory,
-    OSFGroupFactory,
 )
 from tests.utils import make_drf_request_with_version
 from django.utils import timezone
@@ -92,16 +91,6 @@ def public_project(user):
 def deleted_project(user):
     return ProjectFactory(creator=user, is_deleted=True)
 
-@pytest.fixture()
-def group(user):
-    return OSFGroupFactory(creator=user, name='Platform')
-
-@pytest.fixture()
-def group_project(group):
-    project = ProjectFactory()
-    project.add_osf_group(group)
-    return project
-
 
 def pytest_generate_tests(metafunc):
     # called once per each test function
@@ -119,7 +108,7 @@ class TestUserSerializer:
         'test_related_counts_equal_related_views': [{
             'field_name': 'nodes',
             'expected_count': {
-                'user': 5,  # this counts the private nodes created by RegistrationFactory
+                'user': 4,  # this counts the private nodes created by RegistrationFactory
                 'other_user': 1,
                 'no_auth': 1
             },
@@ -192,7 +181,6 @@ class TestUserSerializer:
         assert 'institutions' in relationships
         assert 'preprints' in relationships
         assert 'registrations' in relationships
-        assert 'groups' in relationships
 
     def test_related_counts_equal_related_views(self,
                                                 request,
@@ -210,9 +198,7 @@ class TestUserSerializer:
                                                 private_preprint,
                                                 withdrawn_preprint,
                                                 unpublished_preprint,  # not in the view/related counts by default
-                                                deleted_preprint,
-                                                group,
-                                                group_project):
+                                                deleted_preprint):
 
         view_count = self.get_view_count(user, field_name, auth=user)
         related_count = self.get_related_count(user, field_name, auth=user)

@@ -54,10 +54,6 @@ class TestDraftRegistrationListTopLevelEndpoint:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def group_mem(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
     def project(self, user):
         return ProjectFactory(creator=user)
 
@@ -319,7 +315,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_non_authenticated_user_cannot_create_draft(
-            self, app, user_write_contrib, payload_alt, group, url_draft_registrations
+            self, app, user_write_contrib, payload_alt, url_draft_registrations
     ):
         res = app.post_json_api(
             url_draft_registrations,

@@ -4,7 +4,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     NodeFactory,
-    OSFGroupFactory,
 )
 from osf.models import NodeRelation
 from osf.utils import permissions
@@ -22,15 +21,7 @@ def read_contrib():
     return AuthUserFactory()
 
 @pytest.fixture()
-def group_member():
-    return AuthUserFactory()
-
-@pytest.fixture()
-def osf_group(group_member):
-    return OSFGroupFactory(creator=group_member)
-
-@pytest.fixture()
-def project(admin_contrib, write_contrib, read_contrib, osf_group):
+def project(admin_contrib, write_contrib, read_contrib):
     project = ProjectFactory(creator=admin_contrib)
     project.add_contributor(write_contrib, permissions.WRITE)
     project.add_contributor(read_contrib, permissions.READ)
