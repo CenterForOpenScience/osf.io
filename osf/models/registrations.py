@@ -907,7 +907,7 @@ class Registration(AbstractNode):
             category='doi',
             content_type_id=ContentType.objects.get_for_model(Registration).id,
             deleted__isnull=True,
-            object_id__isnull=False,
+            object_id=self.id,
         ).exists()
         if doi_exists:
             raise NodeStateError('Registration with minted DOI cannot be reverted to draft state')
