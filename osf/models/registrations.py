@@ -401,6 +401,15 @@ class Registration(AbstractNode):
 
         return provider_supported_metadata
 
+    @property
+    def can_be_reverted(self):
+        try:
+            self.validate_draft_conditions()
+        except Exception:
+            return False
+
+        return True
+
     def update_provider_specific_metadata(self, updated_values):
         """Updates additional_metadata fields supported by the provider.
 
@@ -890,7 +899,7 @@ class Registration(AbstractNode):
 
         update_doi_metadata_on_change(target_guid=self._id)
 
-    def to_draft(self):
+    def validate_draft_conditions(self):
         # Registration shouldn't have any approved updated versions
         if self.schema_responses.exclude(previous_response=None).filter(reviews_state=ApprovalStates.APPROVED.db_name).exists():
             raise NodeStateError('Registration has an approved update thus cannot be reverted to draft')
@@ -911,6 +920,9 @@ class Registration(AbstractNode):
         ).exists()
         if doi_exists:
             raise ValidationError('Registration with minted DOI cannot be reverted to draft state')
+
+    def to_draft(self):
+        self.validate_draft_conditions()
 
         draft = DraftRegistration.objects.filter(registered_node=self).first()
         if not draft:
