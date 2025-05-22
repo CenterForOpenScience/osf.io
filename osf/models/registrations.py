@@ -910,7 +910,18 @@ class Registration(AbstractNode):
             object_id=self.id,
         ).exists()
         if doi_exists:
-            raise NodeStateError('Registration with minted DOI cannot be reverted to draft state')
+            raise ValidationError('Registration with minted DOI cannot be reverted to draft state')
+
+        draft = DraftRegistration.objects.filter(registered_node=self).first()
+        if not draft:
+            raise DraftRegistration.DoesNotExist()
+
+        # unattach registration object from draft version so that it's draft again
+        draft.registered_node = None
+        draft.save()
+
+        self.deleted = timezone.now()
+        self.save()
 
     class Meta:
         # custom permissions for use in the OSF Admin App
