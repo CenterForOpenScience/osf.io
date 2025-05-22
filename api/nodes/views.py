@@ -4,6 +4,8 @@ from collections import Counter
 
 import dataclasses
 import waffle
+
+from api.collections.serializers import CollectionSerializer
 from osf import features
 from packaging.version import Version
 from django.apps import apps
@@ -96,6 +98,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
+    ReadOnlyIfPublicOrContributor,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -158,7 +161,7 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint,
+    Preprint, Collection,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1672,6 +1675,27 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
         serializer.save()
+
+
+class NodeCollectionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfPublicOrContributor,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_COLLECTIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_COLLECTIONS_WRITE]
+
+    serializer_class = CollectionSerializer
+    view_category = 'nodes'
+    view_name = 'node-collections'
+
+    def get_default_queryset(self):
+        return Collection.objects.filter(guid_links___id=self.get_node()._id)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):

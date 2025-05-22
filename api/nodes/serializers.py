@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag
+from osf.models import Tag, CollectionSubmission
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -322,6 +322,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_node_count'},
+    )
+
+    collected_in = RelationshipField(
+        related_view='nodes:node-collections',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_collection_count'},
     )
 
     comments = RelationshipField(
@@ -620,6 +626,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
 
     def get_logs_count(self, obj):
         return obj.logs.count()
+
+    def get_collection_count(self, obj):
+        return CollectionSubmission.objects.filter(guid___id=obj._id).count()
 
     def get_node_count(self, obj):
         """
