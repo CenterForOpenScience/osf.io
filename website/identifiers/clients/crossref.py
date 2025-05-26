@@ -8,6 +8,7 @@ import requests
 from django.db.models import QuerySet
 
 from .exceptions import CrossRefRateLimitError
+from framework import sentry
 from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
@@ -135,19 +136,19 @@ class CrossRefClient(AbstractIdentifierClient):
                 )
             )
 
-        preprint_versions = preprint.get_preprint_versions(include_rejected=False)
+        preprint_versions = preprint.get_preprint_versions(
+            versioned_guids__version__lt=preprint.version,
+            include_rejected=False,
+        )
         if preprint_versions:
-            for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
-                if preprint_version.version > preprint.version:
-                    continue
+            for previous_version in preprint_versions:
 
                 minted_doi = previous_version.get_identifier_value('doi')
-                if not minted_doi:
-                    previous_doi = self.build_doi(previous_version)
+                previous_doi = minted_doi or self.build_doi(previous_version)
 
                 related_item = element.related_item(
                     element.intra_work_relation(
-                        minted_doi or previous_doi,
+                        previous_doi,
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
@@ -156,7 +157,8 @@ class CrossRefClient(AbstractIdentifierClient):
         if len(relations_program) > 0:
             posted_content.append(relations_program)
 
-        doi = self.build_doi(preprint)
+        minted_doi = preprint.get_identifier_value('doi')
+        doi = minted_doi or self.build_doi(preprint)
         doi_data = [
             element.doi(doi),
             element.resource(settings.DOMAIN + preprint._id)
@@ -248,6 +250,13 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def create_identifier(self, preprint, category, include_relation=True):
         if category == 'doi':
+            prefix = preprint.provider.doi_prefix
+            if prefix is None:
+                sentry.log_message(f'Preprint [_id={preprint._id}] has been skipped for CrossRef DOI Update '
+                                    f'since the provider [_id={preprint.provider._id}] has invalid DOI Prefix '
+                                    f'[doi_prefix={prefix}]')
+                return
+
             metadata = self.build_metadata(preprint, include_relation)
             doi = self.build_doi(preprint)
             username, password = self.get_credentials()
