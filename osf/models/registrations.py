@@ -900,13 +900,20 @@ class Registration(AbstractNode):
         update_doi_metadata_on_change(target_guid=self._id)
 
     def validate_draft_conditions(self):
-        # Registration shouldn't have any approved updated versions
-        if self.schema_responses.exclude(previous_response=None).filter(reviews_state=ApprovalStates.APPROVED.db_name).exists():
+        # Registration shouldn't have any approved updated versions besides the base one
+        if self.schema_responses.exclude(
+            previous_response=None
+        ).filter(
+            reviews_state=ApprovalStates.APPROVED.db_name
+        ).exists():
             raise NodeStateError('Registration has an approved update thus cannot be reverted to draft')
 
         # Registration shouldn't be approved by moderator in pre/post-moderation
         if (
-            self.provider.reviews_workflow in [ModerationWorkflows.PRE_MODERATION.value, ModerationWorkflows.POST_MODERATION.value] and
+            self.provider.reviews_workflow in [
+                ModerationWorkflows.PRE_MODERATION.value,
+                ModerationWorkflows.POST_MODERATION.value
+            ] and
             self.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
         ):
             raise NodeStateError('Registration was approved by moderator thus cannot be reverted to draft')
