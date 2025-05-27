@@ -296,6 +296,12 @@ class NotificationSubscription(BaseModel):
                 event_context=event_context
             )
 
+    @property
+    def absolute_api_v2_url(self):
+        from api.base.utils import absolute_reverse
+        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
+
+
 class Notification(models.Model):
     subscription = models.ForeignKey(
         NotificationSubscription,

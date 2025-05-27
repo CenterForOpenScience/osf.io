@@ -1,8 +1,8 @@
+from pyasn1_modules.rfc5126 import ContentType
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist
-from django.db.models import Q
 
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.views import JSONAPIBaseView
@@ -16,13 +16,12 @@ from api.subscriptions.serializers import (
 )
 from api.subscriptions.permissions import IsSubscriptionOwner
 from osf.models import (
-    NotificationSubscription,
     CollectionProvider,
     PreprintProvider,
     RegistrationProvider,
     AbstractProvider,
 )
-from osf.models.notifications import NotificationSubscriptionLegacy
+from osf.models.notification import NotificationSubscription
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
@@ -38,32 +37,20 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
     required_write_scopes = [CoreScopes.NULL]
 
-    def get_default_queryset(self):
-        user = self.request.user
-        return NotificationSubscriptionLegacy.objects.filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(
-                email_transactional=user,
-            ),
-        ).distinct()
-
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        return NotificationSubscription.objects.filter(
+            user=self.request.user,
+        )
 
 
 class AbstractProviderSubscriptionList(SubscriptionList):
-    def get_default_queryset(self):
-        user = self.request.user
-        return NotificationSubscriptionLegacy.objects.filter(
-            provider___id=self.kwargs['provider_id'],
-            provider__type=self.provider_class._typedmodels_type,
-        ).filter(
-            Q(none=user) |
-            Q(email_digest=user) |
-            Q(email_transactional=user),
-        ).distinct()
-
+    def get_queryset(self):
+        provider = AbstractProvider.objects.get(_id=self.kwargs['provider_id'])
+        return NotificationSubscription.objects.filter(
+            object_id=provider,
+            provider__type=ContentType.objects.get_for_model(provider.__class__),
+            user=self.request.user,
+        )
 
 class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     view_name = 'notification-subscription-detail'
@@ -81,7 +68,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
         try:
-            obj = NotificationSubscriptionLegacy.objects.get(_id=subscription_id)
+            obj = NotificationSubscription.objects.get(id=subscription_id)
         except ObjectDoesNotExist:
             raise NotFound
         self.check_object_permissions(self.request, obj)
@@ -100,33 +87,6 @@ class AbstractProviderSubscriptionDetail(SubscriptionDetail):
     required_read_scopes = [CoreScopes.SUBSCRIPTIONS_READ]
     required_write_scopes = [CoreScopes.SUBSCRIPTIONS_WRITE]
     provider_class = None
-
-    def __init__(self, *args, **kwargs):
-        assert issubclass(self.provider_class, AbstractProvider), 'Class must be subclass of AbstractProvider'
-        super().__init__(*args, **kwargs)
-
-    def get_object(self):
-        subscription_id = self.kwargs['subscription_id']
-        if self.kwargs.get('provider_id'):
-            provider = self.provider_class.objects.get(_id=self.kwargs.get('provider_id'))
-            try:
-                obj = NotificationSubscriptionLegacy.objects.get(
-                    _id=subscription_id,
-                    provider_id=provider.id,
-                )
-            except ObjectDoesNotExist:
-                raise NotFound
-        else:
-            try:
-                obj = NotificationSubscriptionLegacy.objects.get(
-                    _id=subscription_id,
-                    provider__type=self.provider_class._typedmodels_type,
-                )
-            except ObjectDoesNotExist:
-                raise NotFound
-        self.check_object_permissions(self.request, obj)
-        return obj
-
 
 class CollectionProviderSubscriptionDetail(AbstractProviderSubscriptionDetail):
     provider_class = CollectionProvider
