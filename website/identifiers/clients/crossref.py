@@ -8,7 +8,6 @@ import requests
 from django.db.models import QuerySet
 
 from .exceptions import CrossRefRateLimitError
-from framework import sentry
 from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
@@ -250,13 +249,6 @@ class CrossRefClient(AbstractIdentifierClient):
 
     def create_identifier(self, preprint, category, include_relation=True):
         if category == 'doi':
-            prefix = preprint.provider.doi_prefix
-            if prefix is None:
-                sentry.log_message(f'Preprint [_id={preprint._id}] has been skipped for CrossRef DOI Update '
-                                    f'since the provider [_id={preprint.provider._id}] has invalid DOI Prefix '
-                                    f'[doi_prefix={prefix}]')
-                return
-
             metadata = self.build_metadata(preprint, include_relation)
             doi = self.build_doi(preprint)
             username, password = self.get_credentials()
