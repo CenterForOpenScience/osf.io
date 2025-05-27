@@ -410,6 +410,10 @@ class Registration(AbstractNode):
 
         return True
 
+    @property
+    def draft(self):
+        return DraftRegistration.objects.filter(registered_node=self).first()
+
     def update_provider_specific_metadata(self, updated_values):
         """Updates additional_metadata fields supported by the provider.
 
@@ -928,14 +932,14 @@ class Registration(AbstractNode):
         if doi_exists:
             raise ValidationError('Registration with minted DOI cannot be reverted to draft state')
 
+        if not self.draft:
+            raise ValueError('This registration has not draft')
+
     def to_draft(self):
         self.validate_draft_conditions()
 
-        draft = DraftRegistration.objects.filter(registered_node=self).first()
-        if not draft:
-            raise DraftRegistration.DoesNotExist()
-
         # unattach registration object from draft version so that it's draft again
+        draft = self.draft
         draft.registered_node = None
         draft.save()
 

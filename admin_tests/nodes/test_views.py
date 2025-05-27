@@ -627,19 +627,19 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         post_moderation_draft.register(auth=self.auth, save=True)
         self.post_moderation_registration = post_moderation_draft.registered_node
 
-        no_moderation_draft = DraftRegistrationFactory(
+        self.no_moderation_draft = DraftRegistrationFactory(
             title='no-moderation-registration',
             description='some description',
             registration_schema=get_default_metaschema(),
             creator=self.user
         )
-        self._add_contributor(no_moderation_draft, permissions.ADMIN, self.contr1)
-        self._add_contributor(no_moderation_draft, permissions.ADMIN, self.contr2)
-        self._add_contributor(no_moderation_draft, permissions.ADMIN, self.contr3)
-        no_moderation_draft.add_tag('tag1', auth=self.auth, save=True)
-        no_moderation_draft.add_tag('tag2', auth=self.auth, save=True)
-        no_moderation_draft.register(auth=self.auth, save=True)
-        self.registration = no_moderation_draft.registered_node
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr1)
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr2)
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr3)
+        self.no_moderation_draft.add_tag('tag1', auth=self.auth, save=True)
+        self.no_moderation_draft.add_tag('tag2', auth=self.auth, save=True)
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
 
     def get_current_version(self, registration):
         return registration.schema_responses.order_by('-created').first()
@@ -704,9 +704,24 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         with self.assertRaisesMessage(NodeStateError, 'Registration has an approved update thus cannot be reverted to draft'):
             self.registration.to_draft()
 
+    def test_cannot_revert_previous_registration_without_draft(self):
+        self.approve_version(self.get_current_version(self.registration))
+
+        # revert the initial registration
+        self.registration.to_draft()
+
+        # re-register draft so that it's another registration
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+
+        assert self.registration.draft is None
+
+        # revert the initial registration again without draft
+        with self.assertRaisesMessage(ValueError, 'This registration has not draft'):
+            self.registration.to_draft()
+
     def test_can_revert_registration_without_updates_to_draft(self):
         self.approve_version(self.get_current_version(self.registration))
-        from_draft = DraftRegistration.objects.get(registered_node=self.registration)
+        from_draft = self.registration.draft
         assert from_draft.deleted is None
         assert from_draft.registered_node == self.registration
 
@@ -722,7 +737,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
     def test_can_revert_registration_with_unapproved_update_to_draft(self):
         self.approve_version(self.get_current_version(self.registration))
         self.create_new_version(self.registration)
-        from_draft = DraftRegistration.objects.get(registered_node=self.registration)
+        from_draft = self.registration.draft
 
         latest_version = self.registration.schema_responses.first()
         assert latest_version.reviews_state == ApprovalStates.IN_PROGRESS.db_name
@@ -775,10 +790,10 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
         self.approve_version(self.get_current_version(self.pre_moderation_registration))
 
-        assert self.pre_moderation_registration.draft_registration.exists()
+        assert self.pre_moderation_registration.draft
         assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.PENDING_MODERATION
 
-        draft = self.pre_moderation_registration.draft_registration.first()
+        draft = self.pre_moderation_registration.draft
         self.pre_moderation_registration.to_draft()
         draft.reload()
 
@@ -828,16 +843,16 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert pre_moderation_draft.description == 'description'
 
     def test_can_revert_embargo_registration_to_draft(self):
-        no_moderation_draft = DraftRegistrationFactory(
+        self.no_moderation_draft = DraftRegistrationFactory(
             title='embargo-registration',
             description='some description',
             registration_schema=get_default_metaschema(),
             creator=self.user
         )
-        no_moderation_draft.register(auth=self.auth, save=True)
-        self.registration = no_moderation_draft.registered_node
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
 
-        # embargo is created when draft registration is registered, so it's possible to do for
+        # embargo is created when draft registration is registered, so it's possible to do that for
         # registration only
         self.registration._initiate_embargo(
             user=self.user,
@@ -850,20 +865,20 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         self.registration.reload()
 
         # re-register draft, thus no embargo should be present
-        no_moderation_draft.register(auth=self.auth, save=True)
-        self.registration = no_moderation_draft.registered_node
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
 
         assert self.registration.sanction is None
 
     def test_embargo_is_reset_after_revertion(self):
-        no_moderation_draft = DraftRegistrationFactory(
+        self.no_moderation_draft = DraftRegistrationFactory(
             title='embargo-registration',
             description='some description',
             registration_schema=get_default_metaschema(),
             creator=self.user
         )
-        no_moderation_draft.register(auth=self.auth, save=True)
-        self.registration = no_moderation_draft.registered_node
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
 
         self.registration._initiate_embargo(
             user=self.user,
@@ -879,7 +894,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         self.registration.reload()
 
         # re-register draft, thus no embargo should be present
-        no_moderation_draft.register(auth=self.auth, save=True)
-        self.registration = no_moderation_draft.registered_node
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
 
         assert self.registration.sanction is None
