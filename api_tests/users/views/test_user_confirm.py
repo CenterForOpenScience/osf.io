@@ -26,8 +26,14 @@ class TestConfirmEmail:
         return user, token, email
 
     @pytest.fixture()
-    def confirm_url(self, user_with_email_verification):
-        user, _, _ = user_with_email_verification
+    def user_with_none_identity(self, user):
+        email = 'JasonMailata@eagles.burds.com'
+        token = user.add_unconfirmed_email(email, external_identity=None)
+        user.save()
+        return user, token, email
+
+    @pytest.fixture()
+    def confirm_url(self, user):
         return f'/{API_BASE}users/{user._id}/confirm/'
 
     def test_get_not_allowed(self, app, confirm_url):
@@ -43,8 +49,11 @@ class TestConfirmEmail:
             auth=user.auth
         )
         assert res.status_code == 400
-        print(res.json['errors'])
-        assert res.json['errors'] == [{'source': {'pointer': '/data/attributes/uid'}, 'detail': 'This field is required.'}, {'source': {'pointer': '/data/attributes/destination'}, 'detail': 'This field is required.'}, {'source': {'pointer': '/data/attributes/token'}, 'detail': 'This field is required.'}]
+        assert res.json['errors'] == [
+            {'source': {'pointer': '/data/attributes/uid'}, 'detail': 'This field is required.'},
+            {'source': {'pointer': '/data/attributes/destination'}, 'detail': 'This field is required.'},
+            {'source': {'pointer': '/data/attributes/token'}, 'detail': 'This field is required.'}
+        ]
 
     def test_post_user_not_found(self, app, user_with_email_verification):
         user, _, _ = user_with_email_verification
@@ -163,3 +172,30 @@ class TestConfirmEmail:
 
         user.reload()
         assert user.external_identity['ORCID']['0000-0000-0000-0000'] == 'VERIFIED'
+
+    @mock.patch('website.mails.send_mail')
+    def test_post_success_link_with_email_verification_none(
+            self, mock_send_mail, app, confirm_url, user_with_none_identity
+    ):
+        user, token, email = user_with_none_identity
+        user.save()
+
+        res = app.post_json_api(
+            confirm_url,
+            {
+                'data': {
+                    'attributes': {
+                        'uid': user._id,
+                        'token': token,
+                        'destination': 'doesnotmatter'
+                    }
+                }
+            },
+            expect_errors=True
+        )
+        assert res.status_code == 201
+
+        assert not mock_send_mail.called  # no orcid sso message
+
+        user.reload()
+        assert not user.external_identity
