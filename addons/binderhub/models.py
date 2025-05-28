@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 
 from osf.models.base import BaseModel
 from osf.models.user import OSFUser
@@ -11,6 +12,9 @@ from . import settings
 
 logger = logging.getLogger(__name__)
 
+
+def camel_to_snake(name: str) -> str:
+    return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', name).lower()
 
 def get_default_binderhub(allow_secrets=False):
     binderhub_oauth = settings.BINDERHUB_OAUTH_CLIENT
@@ -136,6 +140,81 @@ class ServerAnnotation(BaseModel):
             }
         }
 
+class InvalidUpdateDirectiveError(Exception):
+    """Raised if an `update directive` given to CustomBaseImage is invalid."""
+    pass
+
+class CustomBaseImage(BaseModel):
+    user = models.ForeignKey(OSFUser, db_index=True, null=True,
+                             blank=True, on_delete=models.CASCADE)
+
+    node = models.ForeignKey(AbstractNode, db_index=True, null=True,
+                             blank=True, on_delete=models.CASCADE)
+
+    name = models.TextField(blank=False, null=False)
+
+    image_reference = models.TextField(blank=False, null=False)
+
+    description_ja = models.TextField(blank=True, null=False)
+
+    description_en = models.TextField(blank=True, null=False)
+
+    deprecated = models.BooleanField(default=False)
+
+    updatable_filed_names = ['name', 'description_ja', 'description_en', 'deprecated']
+
+    @classmethod
+    def is_valid_camel_update_directive(cls, update_directive):
+        if not all((camel_to_snake(key) in cls.updatable_filed_names for key in update_directive.keys())):
+            return False
+        if 'name' in update_directive and not update_directive.get('name'):
+            return False
+        return True
+
+    def safe_camel_update(self, update_directive):
+        """
+        Update the fields specified by `update_directive` and returns a
+        dictionary that holds the old values of updated fields. The keys
+        of returned dictionary are in *snake_case*, while the keys of
+        `update_directive` must be in *camelCase*. The returned value is
+        useful to rollback the model object on DB commit failure.
+
+        Args:
+            update_directive (dict): dictionary with camelCased keys
+
+        Returns:
+            dict: Old values of updated fields { field_name: old_value }
+        """
+        if not self.is_valid_camel_update_directive(update_directive):
+            raise InvalidUpdateDirectiveError('Invalid update directive')
+
+        changed_fields = {}
+
+        for field_name, updated_value in update_directive.items():
+            snake_case_field = camel_to_snake(field_name)
+            current_value = getattr(self, snake_case_field, None)
+
+            if current_value != updated_value:
+                changed_fields[snake_case_field] = current_value
+                setattr(self, snake_case_field, updated_value)
+
+        return changed_fields
+
+    def make_resource_object(self, ancestor_level=0):
+        return {
+            'type': 'custom-base-image',
+            'id': self.id,
+            'attributes': {
+                'name': self.name,
+                'imageReference': self.image_reference,
+                'descriptionJa': self.description_ja,
+                'descriptionEn': self.description_en,
+                'deprecated': self.deprecated,
+                'guid': self.node._id,
+                'nodeTitle': self.node.title,
+                'level': ancestor_level,
+            }
+        }
 
 class UserSettings(BaseUserSettings):
     binderhubs = EncryptedTextField(blank=True, null=True)
@@ -204,6 +283,30 @@ class NodeSettings(BaseNodeSettings):
                 if b['binderhub_url'] != binderhub_url
             ]
         )
+
+    def after_fork(self, original_node, forked_node, user, save=True):
+        for img in CustomBaseImage.objects.filter(user=user, node=original_node):
+            CustomBaseImage(
+                user=user,
+                node=forked_node,
+                name=img.name,
+                image_reference=img.image_reference,
+                description_ja=img.description_ja,
+                description_en=img.description_en,
+                deprecated=img.deprecated,
+            ).save()
+
+    def after_template(self, templ_node, new_node, user, save=True):
+        for img in CustomBaseImage.objects.filter(user=user, node=templ_node):
+            CustomBaseImage(
+                user=user,
+                node=new_node,
+                name=img.name,
+                image_reference=img.image_reference,
+                description_ja=img.description_ja,
+                description_en=img.description_en,
+                deprecated=img.deprecated,
+            ).save()
 
     @property
     def complete(self):
