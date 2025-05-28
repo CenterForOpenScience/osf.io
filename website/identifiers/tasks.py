@@ -22,7 +22,7 @@ def update_doi_metadata_on_change(target_guid):
     task__update_doi_metadata_on_change(target_guid)
 
 @celery_app.task(bind=True, max_retries=5, acks_late=True)
-def task__update_doi_metadata_with_verified_links(self, target_guid):
+def task__update_verified_links(self, target_guid):
     logger.debug(f'Updating DOI metadata for guid due to verified links configuration change in Gravy Valet: '
                  f'[guid={target_guid}]')
 
@@ -35,8 +35,15 @@ def task__update_doi_metadata_with_verified_links(self, target_guid):
         logger.error(f'DOI metadata for guid with verified links failed to update: [guid={target_guid}]')
         raise self.retry(exc=e)
 
+    try:
+        target_object.update_search()
+    except GVException as e:
+        logger.error(f'Share update for guid with verified links failed to update: [guid={target_guid}]')
+        raise self.retry(exc=e)
+
+
 @queued_task
 @celery_app.task(ignore_results=True)
-def update_doi_metadata_with_verified_links(target_guid):
+def update_verified_links(target_guid):
     # TODO: log sentry if fails after max retry
-    task__update_doi_metadata_with_verified_links(target_guid)
+    task__update_verified_links(target_guid)
