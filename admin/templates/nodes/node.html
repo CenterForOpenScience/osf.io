@@ -78,11 +78,9 @@
                     </tr>
                     <tr>
                         <td>Provider</td>
-                        {% if node.provider %}
-                            <td><a href="{{ node | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
-                        {% else %}
-                            <td>None</td>
-                        {% endif %}
+                        <td>
+                            {% include "nodes/registration_provider.html" with node=node %}
+                        </td>
                     </tr>
                     <tr>
                         <td>Parent</td>

@@ -53,3 +53,9 @@ class TestSubscriptionList:
         assert patch_res.status_code == 405
         assert put_res.status_code == 405
         assert delete_res.status_code == 405
+
+    def test_multiple_values_filter(self, app, url, global_user_notification, user):
+        res = app.get(url + '?filter[event_name]=comments,global', auth=user.auth)
+        assert len(res.json['data']) == 2
+        for subscription in res.json['data']:
+            subscription['attributes']['event_name'] in ['global', 'comments']

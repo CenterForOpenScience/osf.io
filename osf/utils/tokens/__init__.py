@@ -14,14 +14,14 @@ from osf.exceptions import TokenHandlerNotFound
 class TokenHandler:
 
     HANDLERS = {
-        'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
-        'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
-        'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
-        'reject_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
-        'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'approve'),
-        'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler, 'embargo_termination_approval', 'reject'),
-        'approve_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
-        'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
+        'approve_registration_approval': functools.partial(handlers.sanction_handler_flask, 'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.sanction_handler_flask, 'registration', 'reject'),
+        'approve_embargo': functools.partial(handlers.sanction_handler_flask, 'embargo', 'approve'),
+        'reject_embargo': functools.partial(handlers.sanction_handler_flask, 'embargo', 'reject'),
+        'approve_embargo_termination_approval': functools.partial(handlers.sanction_handler_flask, 'embargo_termination_approval', 'approve'),
+        'reject_embargo_termination_approval': functools.partial(handlers.sanction_handler_flask, 'embargo_termination_approval', 'reject'),
+        'approve_retraction': functools.partial(handlers.sanction_handler_flask, 'retraction', 'approve'),
+        'reject_retraction': functools.partial(handlers.sanction_handler_flask, 'retraction', 'reject')
     }
 
     def __init__(self, encoded_token=None, payload=None):

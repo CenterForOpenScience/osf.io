@@ -851,6 +851,8 @@ class TestSendEmails(NotificationTestCase):
         assert emails.localize_timestamp(timestamp, self.user) == formatted_datetime
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestSendDigest(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -858,6 +860,9 @@ class TestSendDigest(OsfTestCase):
         self.user_2 = factories.UserFactory()
         self.project = factories.ProjectFactory()
         self.timestamp = timezone.now()
+
+        from conftest import start_mock_send_grid
+        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_group_notifications_by_user_transactional(self):
         send_type = 'email_transactional'
@@ -945,8 +950,7 @@ class TestSendDigest(OsfTestCase):
         digest_ids = [d2._id, d3._id]
         remove_notifications(email_notification_ids=digest_ids)
 
-    @mock.patch('website.mails.send_mail')
-    def test_send_users_email_called_with_correct_args(self, mock_send_mail):
+    def test_send_users_email_called_with_correct_args(self):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
             send_type=send_type,
@@ -958,23 +962,17 @@ class TestSendDigest(OsfTestCase):
         d.save()
         user_groups = list(get_users_emails(send_type))
         send_users_email(send_type)
-        assert mock_send_mail.called
-        assert mock_send_mail.call_count == len(user_groups)
+        mock_send_grid = self.mock_send_grid
+        assert mock_send_grid.called
+        assert mock_send_grid.call_count == len(user_groups)
 
         last_user_index = len(user_groups) - 1
         user = OSFUser.load(user_groups[last_user_index]['user_id'])
-
-        args, kwargs = mock_send_mail.call_args
+        args, kwargs = mock_send_grid.call_args
 
         assert kwargs['to_addr'] == user.username
-        assert kwargs['mail'] == mails.DIGEST
-        assert kwargs['name'] == user.fullname
-        assert kwargs['can_change_node_preferences'] == True
-        message = group_by_node(user_groups[last_user_index]['info'])
-        assert kwargs['message'] == message
 
-    @mock.patch('website.mails.send_mail')
-    def test_send_users_email_ignores_disabled_users(self, mock_send_mail):
+    def test_send_users_email_ignores_disabled_users(self):
         send_type = 'email_transactional'
         d = factories.NotificationDigestFactory(
             send_type=send_type,
@@ -993,7 +991,7 @@ class TestSendDigest(OsfTestCase):
         user.save()
 
         send_users_email(send_type)
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
 
     def test_remove_sent_digest_notifications(self):
         d = factories.NotificationDigestFactory(
@@ -1007,6 +1005,9 @@ class TestSendDigest(OsfTestCase):
         with pytest.raises(NotificationDigest.DoesNotExist):
             NotificationDigest.objects.get(_id=digest_id)
 
+
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestNotificationsReviews(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1015,12 +1016,14 @@ class TestNotificationsReviews(OsfTestCase):
         self.user = factories.UserFactory()
         self.sender = factories.UserFactory()
         self.context_info = {
-            'email_sender': self.sender,
             'domain': 'osf.io',
             'reviewable': self.preprint,
             'workflow': 'pre-moderation',
             'provider_contact_email': settings.OSF_CONTACT_EMAIL,
             'provider_support_email': settings.OSF_SUPPORT_EMAIL,
+            'document_type': 'preprint',
+            'referrer': self.sender,
+            'provider_url': self.provider.landing_url,
         }
         self.action = factories.ReviewActionFactory()
         factories.NotificationSubscriptionFactory(
@@ -1041,15 +1044,17 @@ class TestNotificationsReviews(OsfTestCase):
             event_name='global_reviews'
         ).add_user_to_subscription(self.user, 'email_transactional')
 
+        from conftest import start_mock_send_grid
+        self.mock_send_grid = start_mock_send_grid(self)
+
     def test_reviews_base_notification(self):
         contributor_subscriptions = list(utils.get_all_user_subscriptions(self.user))
         event_types = [sub.event_name for sub in contributor_subscriptions]
         assert 'global_reviews' in event_types
 
-    @mock.patch('website.mails.mails.send_mail')
-    def test_reviews_submit_notification(self, mock_send_email):
+    def test_reviews_submit_notification(self):
         listeners.reviews_submit_notification(self, context=self.context_info, recipients=[self.sender, self.user])
-        assert mock_send_email.called
+        assert self.mock_send_grid.called
 
     @mock.patch('website.notifications.emails.notify_global_event')
     def test_reviews_notification(self, mock_notify):

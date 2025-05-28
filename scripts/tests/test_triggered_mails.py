@@ -38,8 +38,7 @@ class TestTriggeredMails(OsfTestCase):
             send_at=mock.ANY,
         )
 
-    @mock.patch('website.mails.send_mail')
-    def test_find_inactive_users_with_no_inactivity_email_sent_or_queued(self, mock_mail):
+    def test_find_inactive_users_with_no_inactivity_email_sent_or_queued(self):
         user_active = UserFactory(fullname='Spot')
         user_inactive = UserFactory(fullname='Nucha')
         user_already_received_mail = UserFactory(fullname='Pep')

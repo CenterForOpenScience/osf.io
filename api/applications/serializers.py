@@ -73,6 +73,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
         required=True,
         validators=[URLValidator()],
         label='Home URL',
+        max_length=200,
     )
 
     callback_url = ser.CharField(
@@ -80,6 +81,7 @@ class ApiOAuth2ApplicationSerializer(ApiOAuthApplicationBaseSerializer):
         required=True,
         validators=[URLValidator()],
         label='Callback URL',
+        max_length=200,
     )
 
     owner = ser.CharField(
