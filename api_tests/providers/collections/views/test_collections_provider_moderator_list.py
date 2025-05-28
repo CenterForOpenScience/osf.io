@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -90,17 +89,16 @@ class TestGETCollectionsModeratorList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestPOSTCollectionsModeratorList:
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_unauthorized(self, mock_mail, app, url, nonmoderator, moderator, provider):
+    def test_POST_unauthorized(self, mock_send_grid, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
         res = app.post(url, payload, expect_errors=True)
         assert res.status_code == 401
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_forbidden(self, mock_mail, app, url, nonmoderator, moderator, provider):
+    def test_POST_forbidden(self, mock_send_grid, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
         res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
@@ -109,58 +107,53 @@ class TestPOSTCollectionsModeratorList:
         res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
         assert res.status_code == 403
 
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_admin_success_existing_user(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_success_existing_user(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_admin_failure_existing_moderator(self, mock_mail, app, url, moderator, admin, provider):
+    def test_POST_admin_failure_existing_moderator(self, mock_send_grid, app, url, moderator, admin, provider):
         payload = make_payload(user_id=moderator._id, permission_group='moderator')
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_admin_failure_unreg_moderator(self, mock_mail, app, url, moderator, nonmoderator, admin, provider):
+    def test_POST_admin_failure_unreg_moderator(self, mock_send_grid, app, url, moderator, nonmoderator, admin, provider):
         unreg_user = {'full_name': 'Jalen Hurts', 'email': '1eagles@allbatman.org'}
         # test_user_with_no_moderator_admin_permissions
         payload = make_payload(permission_group='moderator', **unreg_user)
         res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
         assert res.status_code == 403
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
         # test_user_with_moderator_admin_permissions
         payload = make_payload(permission_group='moderator', **unreg_user)
         res = app.post_json_api(url, payload, auth=admin.auth)
 
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
-        assert mock_mail.call_args[0][0] == unreg_user['email']
+        assert mock_send_grid.call_count == 1
+        assert mock_send_grid.call_args[1]['to_addr'] == unreg_user['email']
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_admin_failure_invalid_group(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_failure_invalid_group(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
         res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_POST_admin_success_email(self, mock_mail, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_success_email(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(email='somenewuser@gmail.com', full_name='Some User', permission_group='moderator')
         res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         assert len(res.json['data']['id']) == 5
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
         assert 'email' not in res.json['data']['attributes']
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     def test_moderators_alphabetically(self, app, url, admin, moderator, provider):
         admin.fullname = 'Flecher Cox'

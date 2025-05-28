@@ -1311,8 +1311,7 @@ class TestContributorAddedSignal:
     def disconnected_signals(self):
         return None
 
-    @mock.patch('website.project.views.contributor.mails.execute_email_send')
-    def test_add_contributors_sends_contributor_added_signal(self, mock_send_mail, node, auth):
+    def test_add_contributors_sends_contributor_added_signal(self, node, auth):
         user = UserFactory()
         contributors = [{
             'user': user,
@@ -2222,11 +2221,10 @@ class TestNodeSpam:
                 assert not project.is_public
 
     @pytest.mark.enable_enqueue_task
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @pytest.mark.skip('Technically still true, but skipping because mocking is outdated')
-    def test_check_spam_on_private_node_bans_new_spam_user(self, mock_send_mail, project, user):
+    def test_check_spam_on_private_node_bans_new_spam_user(self, project, user):
         project.is_public = False
         project.save()
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
@@ -2253,10 +2251,9 @@ class TestNodeSpam:
                 project3.reload()
                 assert project3.is_public is True
 
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_node_does_not_ban_existing_user(self, mock_send_mail, project, user):
+    def test_check_spam_on_private_node_does_not_ban_existing_user(self, project, user):
         project.is_public = False
         project.save()
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):

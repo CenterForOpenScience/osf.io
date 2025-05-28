@@ -1202,15 +1202,15 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_enqueue_task
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_project_contribs(self, project_public):
         return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_no_email_if_false(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=false'
         payload = {
@@ -1221,11 +1221,10 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_sends_email(
-        self, mock_mail, app, user, user_two, url_project_contribs
+        self, mock_send_grid, app, user, user_two, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1240,7 +1239,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(
@@ -1281,9 +1280,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_sends_email(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1294,7 +1292,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
@@ -1329,9 +1327,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_contributor_invalid_send_email_param(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=true'
         payload = {
@@ -1345,11 +1342,10 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
         )
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
     def test_add_unregistered_contributor_without_email_no_email(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1365,7 +1361,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
 
 @pytest.mark.django_db

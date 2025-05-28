@@ -10,7 +10,8 @@ from osf.models.queued_mail import QueuedMail, queue_mail, NO_ADDON, NO_LOGIN_TY
 from scripts.send_queued_mails import main, pop_and_verify_mails_for_each_user, find_queued_mails_ready_to_be_sent
 from website import settings
 
-
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestSendQueuedMails(OsfTestCase):
 
     def setUp(self):
@@ -19,6 +20,10 @@ class TestSendQueuedMails(OsfTestCase):
         self.user.date_last_login = timezone.now()
         self.user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         self.user.save()
+
+        from conftest import start_mock_send_grid
+        self.mock_send_grid = start_mock_send_grid(self)
+
 
     def queue_mail(self, mail_type=NO_ADDON, user=None, send_at=None):
         return queue_mail(
@@ -29,21 +34,19 @@ class TestSendQueuedMails(OsfTestCase):
             fullname=user.fullname if user else self.user.fullname,
         )
 
-    @mock.patch('osf.models.queued_mail.execute_email_send')
-    def test_queue_addon_mail(self, mock_send):
+    def test_queue_addon_mail(self):
         self.queue_mail()
         main(dry_run=False)
-        assert mock_send.called
+        assert self.mock_send_grid.called
 
-    @mock.patch('osf.models.queued_mail.execute_email_send')
-    def test_no_two_emails_to_same_person(self, mock_send):
+    def test_no_two_emails_to_same_person(self):
         user = UserFactory()
         user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         user.save()
         self.queue_mail(user=user)
         self.queue_mail(user=user)
         main(dry_run=False)
-        assert mock_send.call_count == 1
+        assert self.mock_send_grid.call_count == 1
 
     def test_pop_and_verify_mails_for_each_user(self):
         user_with_email_sent = UserFactory()

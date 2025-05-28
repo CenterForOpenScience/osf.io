@@ -1,5 +1,4 @@
 import pytest
-from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -8,7 +7,6 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
-from website import mails
 
 
 @pytest.mark.django_db
@@ -115,6 +113,7 @@ class RelationshipInstitutionsTestMixin:
             ]
         }
 
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
 
     def test_node_with_no_permissions(self, app, unauthorized_user_with_affiliation, institution_one, node_institutions_url):
@@ -203,72 +202,59 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
-                                                                 node, node_institutions_url):
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.patch_json_api(
-                node_institutions_url,
-                self.create_payload([institution_one, institution_two]),
-                auth=user.auth
-            )
-            assert res.status_code == 200
-            assert mocked_send_mail.call_count == 2
+                                                                 node, node_institutions_url, mock_send_grid):
 
-            first_call_args = mocked_send_mail.call_args_list[0]
-            assert first_call_args == mock.call(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        mock_send_grid.reset_mock()
+        res = app.patch_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one, institution_two]),
+            auth=user.auth
+        )
+        assert res.status_code == 200
+        assert mock_send_grid.call_count == 2
 
-            second_call_args = mocked_send_mail.call_args_list[1]
-            assert second_call_args == mock.call(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        first_call_args = mock_send_grid.call_args_list[0][1]
+        assert first_call_args['to_addr'] == user.email
+        assert first_call_args['subject'] == 'Project Affiliation Changed'
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    def test_remove_institutions_with_affiliated_user(self, app, user, institution_one, node, node_institutions_url):
+        second_call_args = mock_send_grid.call_args_list[1][1]
+        assert second_call_args['to_addr'] == user.email
+        assert second_call_args['subject'] == 'Project Affiliation Changed'
+
+    def test_remove_institutions_with_affiliated_user(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.put_json_api(
-                node_institutions_url,
-                {
-                    'data': []
-                },
-                auth=user.auth
-            )
+        mock_send_grid.reset_mock()
+        res = app.put_json_api(
+            node_institutions_url,
+            {
+                'data': []
+            },
+            auth=user.auth
+        )
 
-            mocked_send_mail.assert_called_with(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        first_call_args = mock_send_grid.call_args_list[0][1]
+        assert first_call_args['to_addr'] == user.email
+        assert first_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url):
+    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.post_json_api(
-                node_institutions_url,
-                self.create_payload([institution_one]),
-                auth=user.auth
-            )
-            mocked_send_mail.assert_not_called()
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one]),
+            auth=user.auth
+        )
+        mock_send_grid.assert_not_called()
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -289,87 +275,70 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_through_patch_one_inst_to_node_with_inst(
-            self, app, user, institution_one, institution_two, node, node_institutions_url):
+            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.patch_json_api(
-                node_institutions_url,
-                self.create_payload([institution_one, institution_two]),
-                auth=user.auth
-            )
-            assert mocked_send_mail.call_count == 1
-            first_call_args = mocked_send_mail.call_args_list[0]
-            assert first_call_args == mock.call(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        mock_send_grid.reset_mock()
+        res = app.patch_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one, institution_two]),
+            auth=user.auth
+        )
+        assert mock_send_grid.call_count == 1
+        first_call_args = mock_send_grid.call_args_list[0][1]
+        assert first_call_args['to_addr'] == user.email
+        assert first_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_through_patch_one_inst_while_removing_other(
-            self, app, user, institution_one, institution_two, node, node_institutions_url):
+            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.patch_json_api(
-                node_institutions_url,
-                self.create_payload([institution_two]),
-                auth=user.auth
-            )
-            assert mocked_send_mail.call_count == 2
-            first_call_args = mocked_send_mail.call_args_list[0]
-            assert first_call_args == mock.call(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
-            second_call_args = mocked_send_mail.call_args_list[1]
-            assert second_call_args == mock.call(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        mock_send_grid.reset_mock()
+        res = app.patch_json_api(
+            node_institutions_url,
+            self.create_payload([institution_two]),
+            auth=user.auth
+        )
+        assert mock_send_grid.call_count == 2
+
+        first_call_args = mock_send_grid.call_args_list[0][1]
+        assert first_call_args['to_addr'] == user.email
+        assert first_call_args['subject'] == 'Project Affiliation Changed'
+
+        second_call_args = mock_send_grid.call_args_list[1][1]
+        assert second_call_args['to_addr'] == user.email
+        assert second_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
     def test_add_one_inst_with_post_to_node_with_inst(
-            self, app, user, institution_one, institution_two, node, node_institutions_url):
+            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.post_json_api(
-                node_institutions_url,
-                self.create_payload([institution_two]),
-                auth=user.auth
-            )
-            mocked_send_mail.assert_called_with(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        res = app.post_json_api(
+            node_institutions_url,
+            self.create_payload([institution_two]),
+            auth=user.auth
+        )
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == user.email
+        assert call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -383,23 +352,19 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         )
         assert res.status_code == 204
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    def test_delete_existing_inst(self, app, user, institution_one, node, node_institutions_url):
+    def test_delete_existing_inst(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
-        with mock.patch('osf.models.mixins.mails.execute_email_send') as mocked_send_mail:
-            res = app.delete_json_api(
-                node_institutions_url,
-                self.create_payload([institution_one]),
-                auth=user.auth
-            )
-            mocked_send_mail.assert_called_with(
-                user.username,
-                mails.PROJECT_AFFILIATION_CHANGED,
-                user=user,
-                node=node,
-            )
+        res = app.delete_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one]),
+            auth=user.auth
+        )
+
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == user.email
+        assert call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()

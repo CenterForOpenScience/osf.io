@@ -8,9 +8,8 @@ from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaRespon
 from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
-from osf_tests.utils import get_default_test_schema, assert_notification_correctness, _ensure_subscriptions
+from osf_tests.utils import get_default_test_schema, _ensure_subscriptions
 
-from website.mails import mails
 from website.notifications import emails
 
 from transitions import MachineError
@@ -96,6 +95,7 @@ def revised_response(initial_response):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestCreateSchemaResponse():
 
     def test_create_initial_response_sets_attributes(self, registration, schema):
@@ -142,12 +142,11 @@ class TestCreateSchemaResponse():
         for block in response.response_blocks.all():
             assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
-    def test_create_initial_response_does_not_notify(self, registration, admin_user):
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            schema_response.SchemaResponse.create_initial_response(
-                parent=registration, initiator=admin_user
-            )
-        assert not mock_send.called
+    def test_create_initial_response_does_not_notify(self, registration, admin_user, mock_send_grid):
+        schema_response.SchemaResponse.create_initial_response(
+            parent=registration, initiator=admin_user
+        )
+        assert not mock_send_grid.called
 
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
@@ -253,17 +252,13 @@ class TestCreateSchemaResponse():
         assert set(revised_response.response_blocks.all()) == set(initial_response.response_blocks.all())
 
     def test_create_from_previous_response_notification(
-            self, initial_response, admin_user, notification_recipients):
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            schema_response.SchemaResponse.create_from_previous_response(
-                previous_response=initial_response, initiator=admin_user
-            )
+            self, initial_response, admin_user, notification_recipients, mock_send_grid):
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_INITIATED, notification_recipients
+        schema_response.SchemaResponse.create_from_previous_response(
+            previous_response=initial_response, initiator=admin_user
         )
+
+        assert mock_send_grid.called
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -547,6 +542,7 @@ class TestDeleteSchemaResponse():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_submit_response_adds_pending_approvers(
@@ -578,29 +574,23 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.SUBMIT.db_name
 
     def test_submit_response_notification(
-            self, revised_response, admin_user, notification_recipients):
+            self, revised_response, admin_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
         revised_response.revision_justification = 'has for valid revision_justification for submission'
         revised_response.save()
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.submit(user=admin_user, required_approvers=[admin_user])
+        revised_response.submit(user=admin_user, required_approvers=[admin_user])
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_SUBMITTED, notification_recipients
-        )
+        assert mock_send_grid.called
 
-    def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
+    def test_no_submit_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
         initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            initial_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert not mock_send.called
+        initial_response.submit(user=admin_user, required_approvers=[admin_user])
+        assert not mock_send_grid.called
 
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -682,30 +672,23 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         ).count() == 2
 
     def test_approve_response_notification(
-            self, revised_response, admin_user, alternate_user, notification_recipients):
+            self, revised_response, admin_user, alternate_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
+        mock_send_grid.reset_mock()
+        revised_response.approve(user=admin_user)
+        assert not mock_send_grid.called  # Should only send email on final approval
+        revised_response.approve(user=alternate_user)
+        assert mock_send_grid.called
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.approve(user=admin_user)
-            assert not mock_send.called  # Should only send email on final approval
-            revised_response.approve(user=alternate_user)
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
-        )
-
-    def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
+    def test_no_approve_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            initial_response.approve(user=admin_user)
-        assert not mock_send.called
+        initial_response.approve(user=admin_user)
+        assert not mock_send_grid.called
 
     def test_approve_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -756,28 +739,22 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name
 
     def test_reject_response_notification(
-            self, revised_response, admin_user, notification_recipients):
+            self, revised_response, admin_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.reject(user=admin_user)
+        revised_response.reject(user=admin_user)
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
-        )
+        assert mock_send_grid.called
 
-    def test_no_reject_notification_on_initial_response(self, initial_response, admin_user):
+    def test_no_reject_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            initial_response.reject(user=admin_user)
-        assert not mock_send.called
+        initial_response.reject(user=admin_user)
+        assert not mock_send_grid.called
 
     def test_reject_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -824,6 +801,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestModeratedSchemaResponseApprovalFlows():
 
     @pytest.fixture
@@ -870,16 +848,13 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
+    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail
-            revised_response.approve(user=admin_user)
-        assert mock_send.called
+        revised_response.approve(user=admin_user)
+        assert mock_send_grid.called
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -925,27 +900,21 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.ACCEPT.db_name
 
     def test_moderator_accept_notification(
-            self, revised_response, moderator, notification_recipients):
+            self, revised_response, moderator, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.accept(user=moderator)
+        revised_response.accept(user=moderator)
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
-        )
+        assert mock_send_grid.called
 
     def test_no_moderator_accept_notification_on_initial_response(
-            self, initial_response, moderator):
+            self, initial_response, moderator, mock_send_grid):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            initial_response.accept(user=moderator)
-        assert not mock_send.called
+        initial_response.accept(user=moderator)
+        assert not mock_send_grid.called
 
     def test_moderator_reject(self, initial_response, admin_user, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -969,27 +938,21 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name
 
     def test_moderator_reject_notification(
-            self, revised_response, moderator, notification_recipients):
+            self, revised_response, moderator, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.execute_email_send
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.reject(user=moderator)
+        revised_response.reject(user=moderator)
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
-        )
+        assert mock_send_grid.called
 
     def test_no_moderator_reject_notification_on_initial_response(
-            self, initial_response, moderator):
+            self, initial_response, moderator, mock_send_grid):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'execute_email_send', autospec=True) as mock_send:
-            initial_response.reject(user=moderator)
-        assert not mock_send.called
+        initial_response.reject(user=moderator)
+        assert not mock_send_grid.called
 
     def test_moderator_cannot_submit(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)

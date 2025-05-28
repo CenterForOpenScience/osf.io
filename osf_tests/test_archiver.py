@@ -7,7 +7,6 @@ import responses
 from unittest import mock
 from django.utils import timezone
 from django.db import IntegrityError
-from unittest.mock import call
 import pytest
 
 from framework.auth import Auth
@@ -34,6 +33,7 @@ from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
 from tests.utils import unique as _unique
+from conftest import start_mock_send_grid
 
 pytestmark = pytest.mark.django_db
 
@@ -715,10 +715,15 @@ class TestArchiverTasks(ArchiverTestCase):
                     assert child_reg._id in question['extra'][0]['viewUrl']
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverUtils(ArchiverTestCase):
 
-    @mock.patch('website.mails.execute_email_send')
-    def test_handle_archive_fail(self, mock_send_mail):
+    def setUp(self):
+        super().setUp()
+        self.mock_send_grid = start_mock_send_grid(self)
+
+    def test_handle_archive_fail(self):
         archiver_utils.handle_archive_fail(
             ARCHIVER_NETWORK_ERROR,
             self.src,
@@ -726,13 +731,11 @@ class TestArchiverUtils(ArchiverTestCase):
             self.user,
             {}
         )
-        assert mock_send_mail.call_count == 2
+        assert self.mock_send_grid.call_count == 2
         self.dst.reload()
         assert self.dst.is_deleted
 
-    @mock.patch('website.mails.execute_email_send')
-    def test_handle_archive_fail_copy(self, mock_send_mail):
-        url = settings.INTERNAL_DOMAIN + self.src._id
+    def test_handle_archive_fail_copy(self):
         archiver_utils.handle_archive_fail(
             ARCHIVER_NETWORK_ERROR,
             self.src,
@@ -740,31 +743,9 @@ class TestArchiverUtils(ArchiverTestCase):
             self.user,
             {}
         )
-        args_user = dict(
-            to_addr=self.user.username,
-            user=self.user,
-            src=self.src,
-            mail=mails.ARCHIVE_COPY_ERROR_USER,
-            results={},
-            can_change_preferences=False,
-        )
-        args_desk = dict(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            user=self.user,
-            src=self.src,
-            mail=mails.ARCHIVE_COPY_ERROR_DESK,
-            results={},
-            can_change_preferences=False,
-            url=url,
-        )
-        mock_send_mail.assert_has_calls([
-            call(**args_user),
-            call(**args_desk),
-        ], any_order=True)
+        assert self.mock_send_grid.call_count == 2
 
-    @mock.patch('website.mails.execute_email_send')
-    def test_handle_archive_fail_size(self, mock_send_mail):
-        url = settings.INTERNAL_DOMAIN + self.src._id
+    def test_handle_archive_fail_size(self):
         archiver_utils.handle_archive_fail(
             ARCHIVER_SIZE_EXCEEDED,
             self.src,
@@ -772,26 +753,7 @@ class TestArchiverUtils(ArchiverTestCase):
             self.user,
             {}
         )
-        args_user = dict(
-            to_addr=self.user.username,
-            user=self.user,
-            src=self.src,
-            mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
-            can_change_preferences=False,
-        )
-        args_desk = dict(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            user=self.user,
-            src=self.src,
-            mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
-            stat_result={},
-            can_change_preferences=False,
-            url=url,
-        )
-        mock_send_mail.assert_has_calls([
-            call(**args_user),
-            call(**args_desk),
-        ], any_order=True)
+        assert self.mock_send_grid.call_count == 2
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
@@ -878,8 +840,13 @@ class TestArchiverUtils(ArchiverTestCase):
             archiver_utils.get_file_map(node)
             assert mock_get_file_tree.call_count == call_count
 
-
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverListeners(ArchiverTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.archiver.utils.before_archive')
@@ -931,24 +898,21 @@ class TestArchiverListeners(ArchiverTestCase):
             ARCHIVER_SUCCESS
         )
         self.dst.archive_job.save()
-        with mock.patch('website.mails.execute_email_send') as mock_send:
-            with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-                listeners.archive_callback(self.dst)
-        assert not mock_send.called
+        with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
+            listeners.archive_callback(self.dst)
+        assert not self.mock_send_grid.called
         assert not mock_fail.called
         assert mock_delay.called
 
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
-    def test_archive_callback_done_success(self, mock_send, mock_archive_success):
+    def test_archive_callback_done_success(self, mock_archive_success):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
         listeners.archive_callback(self.dst)
-        assert mock_send.call_count == 1
+        assert self.mock_send_grid.call_count == 0
 
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
-    def test_archive_callback_done_embargoed(self, mock_send, mock_archive_success):
+    def test_archive_callback_done_embargoed(self, mock_archive_success):
         end_date = timezone.now() + datetime.timedelta(days=30)
         self.dst.archive_job.meta = {
             'embargo_urls': {
@@ -960,7 +924,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
         listeners.archive_callback(self.dst)
-        assert mock_send.call_count == 1
+        assert self.mock_send_grid.call_count == 0
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1037,9 +1001,8 @@ class TestArchiverListeners(ArchiverTestCase):
         rsibling.save()
         assert not reg.archive_job.archive_tree_finished()
 
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
-    def test_archive_callback_on_tree_sends_only_one_email(self, mock_send_success, mock_arhive_success):
+    def test_archive_callback_on_tree_sends_only_one_email(self, mock_arhive_success):
         proj = factories.NodeFactory()
         child = factories.NodeFactory(parent=proj)
         factories.NodeFactory(parent=child)
@@ -1053,16 +1016,15 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
         listeners.archive_callback(rchild)
-        assert not mock_send_success.called
+        assert not self.mock_send_grid.called
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
         listeners.archive_callback(reg)
-        assert not mock_send_success.called
+        assert not self.mock_send_grid.called
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
         listeners.archive_callback(rchild2)
-        assert mock_send_success.call_count == 1
-        assert mock_send_success.called
+        assert not self.mock_send_grid.called
 
 class TestArchiverScripts(ArchiverTestCase):
 
@@ -1110,7 +1072,13 @@ class TestArchiverScripts(ArchiverTestCase):
             assert pk not in failed
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverBehavior(OsfTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_registrations_not_added_to_search_before_archival(self, mock_update_search):
@@ -1120,9 +1088,8 @@ class TestArchiverBehavior(OsfTestCase):
         assert not mock_update_search.called
 
     @mock.patch('osf.models.AbstractNode.update_search')
-    @mock.patch('website.mails.execute_email_send')
     @mock.patch('website.archiver.tasks.archive_success.delay')
-    def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_update_search, mock_send, mock_archive_success):
+    def test_archiving_nodes_added_to_search_on_archive_success_if_public(self, mock_update_search, mock_archive_success):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()
@@ -1135,8 +1102,7 @@ class TestArchiverBehavior(OsfTestCase):
 
     @pytest.mark.enable_search
     @mock.patch('website.search.elastic_search.delete_doc')
-    @mock.patch('website.mails.execute_email_send')
-    def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_send, mock_delete_index_node):
+    def test_archiving_nodes_not_added_to_search_on_archive_failure(self, mock_delete_index_node):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj, archive=True)
         reg.save()
@@ -1148,8 +1114,7 @@ class TestArchiverBehavior(OsfTestCase):
         assert mock_delete_index_node.called
 
     @mock.patch('osf.models.AbstractNode.update_search')
-    @mock.patch('website.mails.execute_email_send')
-    def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_send, mock_update_search):
+    def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_update_search):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj)
         reg.save()

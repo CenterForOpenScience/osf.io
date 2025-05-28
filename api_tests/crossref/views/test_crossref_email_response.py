@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 import hmac
 import hashlib
@@ -11,6 +10,7 @@ from website import settings
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestCrossRefEmailResponse:
 
     def make_mailgun_payload(self, crossref_response):
@@ -155,49 +155,47 @@ class TestCrossRefEmailResponse:
 
         assert response.status_code == 400
 
-    def test_error_response_sends_message_does_not_set_doi(self, app, url, preprint, error_xml):
+    def test_error_response_sends_message_does_not_set_doi(self, app, url, preprint, error_xml, mock_send_grid):
         assert not preprint.get_identifier_value('doi')
 
-        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
-            context_data = self.make_mailgun_payload(crossref_response=error_xml)
-            app.post(url, context_data)
-        assert mock_send_mail.called
+        context_data = self.make_mailgun_payload(crossref_response=error_xml)
+        app.post(url, context_data)
+        assert mock_send_grid.called
         assert not preprint.get_identifier_value('doi')
 
-    def test_success_response_sets_doi(self, app, url, preprint, success_xml):
+    def test_success_response_sets_doi(self, app, url, preprint, success_xml, mock_send_grid):
         assert not preprint.get_identifier_value('doi')
 
-        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
-            context_data = self.make_mailgun_payload(crossref_response=success_xml)
-            app.post(url, context_data)
+        context_data = self.make_mailgun_payload(crossref_response=success_xml)
+        mock_send_grid.reset_mock()
+        app.post(url, context_data)
 
         preprint.reload()
-        assert not mock_send_mail.called
+        assert not mock_send_grid.called
         assert preprint.get_identifier_value('doi')
         assert preprint.preprint_doi_created
 
-    def test_update_success_response(self, app, preprint, url):
+    def test_update_success_response(self, app, preprint, url, mock_send_grid):
         initial_value = 'TempDOIValue'
         preprint.set_identifier_value(category='doi', value=initial_value)
         update_xml = self.update_success_xml(preprint)
 
-        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
-            context_data = self.make_mailgun_payload(crossref_response=update_xml)
-            app.post(url, context_data)
+        context_data = self.make_mailgun_payload(crossref_response=update_xml)
+        mock_send_grid.reset_mock()
+        app.post(url, context_data)
 
-        assert not mock_send_mail.called
+        assert not mock_send_grid.called
         assert preprint.get_identifier_value(category='doi') != initial_value
 
-    def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url):
+    def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url, mock_send_grid):
         preprint.set_identifier_value(category='doi', value='test')
         preprint.preprint_doi_created = timezone.now()
         preprint.save()
         update_xml = self.update_success_xml(preprint)
 
         pre_created = preprint.preprint_doi_created
-        with mock.patch('framework.auth.views.mails.execute_email_send'):
-            context_data = self.make_mailgun_payload(crossref_response=update_xml)
-            app.post(url, context_data)
+        context_data = self.make_mailgun_payload(crossref_response=update_xml)
+        app.post(url, context_data)
 
         assert preprint.preprint_doi_created == pre_created
 
@@ -214,14 +212,14 @@ class TestCrossRefEmailResponse:
         for preprint in preprint_list:
             assert preprint.get_identifier_value('doi') == settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=preprint._id)
 
-    def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint):
+    def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint, mock_send_grid):
         legacy_value = 'IAmALegacyDOI'
         preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
         update_xml = self.update_success_xml(preprint)
 
-        with mock.patch('framework.auth.views.mails.execute_email_send') as mock_send_mail:
-            context_data = self.make_mailgun_payload(crossref_response=update_xml)
-            app.post(url, context_data)
+        context_data = self.make_mailgun_payload(crossref_response=update_xml)
+        mock_send_grid.reset_mock()
+        app.post(url, context_data)
 
-        assert not mock_send_mail.called
+        assert not mock_send_grid.called
         assert preprint.identifiers.get(category='legacy_doi').deleted

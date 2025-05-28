@@ -227,6 +227,7 @@ class TestUserSettingsUpdateMailingList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUpdateRequestedDeactivation:
 
     @pytest.fixture()
@@ -241,8 +242,7 @@ class TestUpdateRequestedDeactivation:
             }
         }
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_patch_requested_deactivation(self, mock_mail, app, user_one, user_two, url, payload):
+    def test_patch_requested_deactivation(self, app, user_one, user_two, url, payload):
         # Logged out
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -271,18 +271,16 @@ class TestUpdateRequestedDeactivation:
         user_one.reload()
         assert user_one.requested_deactivation is False
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_patch_invalid_type(self, mock_mail, app, user_one, url, payload):
+    def test_patch_invalid_type(self, mock_send_grid, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.execute_email_send')
-    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
+    def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200

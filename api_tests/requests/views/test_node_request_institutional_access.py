@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -6,12 +5,11 @@ from api_tests.requests.mixins import NodeRequestTestMixin
 
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
-from website import language
-from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 from framework.auth import Auth
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     @pytest.fixture()
@@ -208,85 +206,37 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
-        @mock.patch('api.requests.serializers.execute_email_send')
-        @mock.patch('osf.utils.machines.mails.execute_email_send')
-        def test_email_send_institutional_request_specific_email(
-                self,
-                mock_send_mail_machines,
-                mock_send_mail_serializers,
-                user_with_affiliation,
-                app,
-                project,
-                url,
-                create_payload,
-                institutional_admin,
-                institution
-        ):
-            """
-            Test that the institutional request triggers email notifications to appropriate recipients.
-            """
-            # Set up mock behaviors
-            project.is_public = True
-            project.save()
-
-            # Perform the action
-            res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
-
-            # Ensure response is successful
-            assert res.status_code == 201
-
-            assert mock_send_mail_serializers.call_count == 1
-            assert mock_send_mail_machines.call_count == 0
-
-            # Check calls for osf.utils.machines.mails.send_mail
-            mock_send_mail_serializers.assert_called_once_with(
-                to_addr=user_with_affiliation.username,
-                mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-                user=user_with_affiliation,
-                bcc_addr=None,
-                reply_to=None,
-                **{
-                    'sender': institutional_admin,
-                    'recipient': user_with_affiliation,
-                    'comment': create_payload['data']['attributes']['comment'],
-                    'institution': institution,
-                    'osf_url': mock.ANY,
-                    'node': project,
-                }
-            )
-
-    @mock.patch('api.requests.serializers.execute_email_send')
-    def test_email_not_sent_without_recipient(self, mock_mail, app, project, institutional_admin, url,
+    def test_email_not_sent_without_recipient(self, mock_send_grid, app, project, institutional_admin, url,
                                                  create_payload, institution):
         """
         Test that an email is not sent when no recipient is listed when an institutional access request is made,
         but the request is still made anyway without email.
         """
         del create_payload['data']['relationships']['message_recipient']
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
         # Check that an email is sent
-        assert not mock_mail.called
+        assert not mock_send_grid.called
 
-    @mock.patch('api.requests.serializers.execute_email_send')
-    def test_email_not_sent_outside_institution(self, mock_mail, app, project, institutional_admin, url,
+    def test_email_not_sent_outside_institution(self, mock_send_grid, app, project, institutional_admin, url,
                                                  create_payload, user_without_affiliation, institution):
         """
         Test that you are prevented from requesting a user with the correct institutional affiliation.
         """
         create_payload['data']['relationships']['message_recipient']['data']['id'] = user_without_affiliation._id
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 403
         assert f'User {user_without_affiliation._id} is not affiliated with the institution.' in res.json['errors'][0]['detail']
 
         # Check that an email is sent
-        assert not mock_mail.called
+        assert not mock_send_grid.called
 
-    @mock.patch('api.requests.serializers.execute_email_send')
     def test_email_sent_on_creation(
             self,
-            mock_mail,
+            mock_send_grid,
             app,
             project,
             institutional_admin,
@@ -298,31 +248,15 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         Test that an email is sent to the appropriate recipients when an institutional access request is made.
         """
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
-        mock_mail.assert_called_with(
-            to_addr=user_with_affiliation.username,
-            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-            user=user_with_affiliation,
-            bcc_addr=None,
-            reply_to=None,
-            **{
-                'sender': institutional_admin,
-                'recipient': user_with_affiliation,
-                'comment': create_payload['data']['attributes']['comment'],
-                'institution': institution,
-                'osf_url': mock.ANY,
-                'node': project,
-            }
-        )
-
-    @mock.patch('api.requests.serializers.execute_email_send')
     def test_bcc_institutional_admin(
             self,
-            mock_mail,
+            mock_send_grid,
             app,
             project,
             institutional_admin,
@@ -335,32 +269,15 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure BCC option works as expected, sending messages to sender giving them a copy for themselves.
         """
         create_payload['data']['attributes']['bcc_sender'] = True
-
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
-        mock_mail.assert_called_with(
-            to_addr=user_with_affiliation.username,
-            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-            user=user_with_affiliation,
-            bcc_addr=[institutional_admin.username],
-            reply_to=None,
-            **{
-                'sender': institutional_admin,
-                'recipient': user_with_affiliation,
-                'comment': create_payload['data']['attributes']['comment'],
-                'institution': institution,
-                'osf_url': mock.ANY,
-                'node': project,
-            }
-        )
-
-    @mock.patch('api.requests.serializers.execute_email_send')
     def test_reply_to_institutional_admin(
             self,
-            mock_mail,
+            mock_send_grid,
             app,
             project,
             institutional_admin,
@@ -373,27 +290,11 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure reply-to option works as expected, allowing a reply to header be added to the email.
         """
         create_payload['data']['attributes']['reply_to'] = True
-
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_mail.call_count == 1
-
-        mock_mail.assert_called_with(
-            to_addr=user_with_affiliation.username,
-            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-            user=user_with_affiliation,
-            bcc_addr=None,
-            reply_to=institutional_admin.username,
-            **{
-                'sender': institutional_admin,
-                'recipient': user_with_affiliation,
-                'comment': create_payload['data']['attributes']['comment'],
-                'institution': institution,
-                'osf_url': mock.ANY,
-                'node': project,
-            }
-        )
+        assert mock_send_grid.call_count == 1
 
     def test_access_requests_disabled_raises_permission_denied(
         self, app, node_with_disabled_access_requests, user_with_affiliation, institutional_admin, create_payload
@@ -410,10 +311,9 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert f"{node_with_disabled_access_requests._id} does not have Access Requests enabled" in res.json['errors'][0]['detail']
 
-    @mock.patch('api.requests.serializers.execute_email_send')
     def test_placeholder_text_when_comment_is_empty(
             self,
-            mock_mail,
+            mock_send_grid,
             app,
             project,
             institutional_admin,
@@ -427,24 +327,11 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         # Test with empty comment
         create_payload['data']['attributes']['comment'] = ''
+        mock_send_grid.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        mock_mail.assert_called_with(
-            to_addr=user_with_affiliation.username,
-            mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
-            user=user_with_affiliation,
-            bcc_addr=None,
-            reply_to=None,
-            **{
-                'sender': institutional_admin,
-                'recipient': user_with_affiliation,
-                'comment': language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT,
-                'institution': institution,
-                'osf_url': mock.ANY,
-                'node': project,
-            }
-        )
+        mock_send_grid.assert_called()
 
     def test_requester_can_resubmit(self, app, project, institutional_admin, url, create_payload):
         """

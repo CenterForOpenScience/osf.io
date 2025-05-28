@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from framework.auth.core import Auth
@@ -18,7 +17,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
-from website import mails, settings
+from website import settings
 
 
 @pytest.fixture(autouse=True)
@@ -158,6 +157,7 @@ class TestDraftRegistrationListTopLevelEndpoint:
         assert data[0]['attributes']['registration_metadata'] == {}
 
 
+@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
@@ -336,11 +336,11 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
-        with mock.patch.object(mails, 'execute_email_send') as mock_send_mail:
-            app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
+    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
+        mock_send_grid.reset_mock()
+        app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
 
-        assert not mock_send_mail.called
+        assert not mock_send_grid.called
 
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """
@@ -402,6 +402,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
 
 
+@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self):
@@ -428,23 +429,21 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
+    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
-        with mock.patch.object(mails, 'execute_email_send') as mock_send_mail:
-            resp = app.post_json_api(
-                f'{url_draft_registrations}?embed=branched_from&embed=initiator',
-                payload,
-                auth=user.auth
-            )
-        assert mock_send_mail.called
+        app.post_json_api(
+            f'{url_draft_registrations}?embed=branched_from&embed=initiator',
+            payload,
+            auth=user.auth
+        )
+        assert mock_send_grid.called
 
         # Python 3.6 does not support mock.call_args.args/kwargs
         # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
         # (note, this is compatible with later versions)
-        mock_send_kwargs = mock_send_mail.call_args[1]
-        assert mock_send_kwargs['mail'] == mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        assert mock_send_kwargs['user'] == user
-        assert mock_send_kwargs['node'] == DraftRegistration.load(resp.json['data']['id'])
+        mock_send_kwargs = mock_send_grid.call_args[1]
+        assert mock_send_kwargs['subject'] == 'You have a new registration draft.'
+        assert mock_send_kwargs['to_addr'] == user.email
 
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider

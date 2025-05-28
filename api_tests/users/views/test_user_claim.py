@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 from django.utils import timezone
 
@@ -13,12 +12,8 @@ from osf_tests.factories import (
 )
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestClaimUser:
-
-    @pytest.fixture
-    def mock_mail(self):
-        with mock.patch('website.project.views.contributor.mails.execute_email_send') as patch:
-            yield patch
 
     @pytest.fixture()
     def referrer(self):
@@ -121,37 +116,41 @@ class TestClaimUser:
         )
         assert res.status_code == 401
 
-    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user, mock_mail):
+    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(email='david@david.son', id=project._id),
         )
         assert res.status_code == 204
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
-    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer, mock_mail):
+    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer, mock_send_grid):
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(email=claimer.username, id=project._id)
         )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert mock_send_grid.call_count == 2
 
-    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user, mock_mail):
+    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(email='asdf@fdsa.com', id=project._id),
         )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert mock_send_grid.call_count == 2
 
-    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user, mock_mail):
+    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(email='david@david.son', id=preprint._id),
         )
         assert res.status_code == 204
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     def test_claim_auth_failure(self, app, url, claimer, wrong_preprint, project, unreg_user, referrer):
         _url = url.format(unreg_user._id)
@@ -210,9 +209,10 @@ class TestClaimUser:
         )
         assert res.status_code == 403
 
-    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project, mock_mail):
+    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project, mock_send_grid):
         unreg_user.unclaimed_records[project._id]['last_sent'] = timezone.now()
         unreg_user.save()
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
@@ -221,13 +221,14 @@ class TestClaimUser:
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    def test_claim_auth_success(self, app, url, claimer, unreg_user, project, mock_mail):
+    def test_claim_auth_success(self, app, url, claimer, unreg_user, project, mock_send_grid):
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
             auth=claimer.auth
         )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert mock_send_grid.call_count == 2
