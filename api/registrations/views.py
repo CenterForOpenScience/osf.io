@@ -61,7 +61,7 @@ from api.wikis.serializers import RegistrationWikiSerializer
 
 from api.base.utils import get_object_or_error
 from framework.sentry import log_exception
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import WRITE
 
 
 class RegistrationMixin(NodeMixin):
@@ -177,7 +177,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
 
         # A user must be an admin contributor on the node (not group member), and have
         # admin perms on the draft to register
-        if node.is_admin_contributor(user) and draft.has_permission(user, ADMIN):
+        if node.has_permission(user, WRITE) and draft.has_permission(user, WRITE):
             try:
                 serializer.save(draft=draft)
             except ValidationError as e:
@@ -185,7 +185,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
                 raise e
         else:
             raise PermissionDenied(
-                'You must be an admin contributor on both the project and the draft registration to create a registration.',
+                'You must has a write permission on both the project and the draft registration to create a registration.',
             )
 
     def check_branched_from(self, draft):
