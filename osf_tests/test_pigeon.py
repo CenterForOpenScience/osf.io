@@ -61,6 +61,7 @@ class TestPigeon:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.enable_implicit_clean
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_pigeon_archive_embargo(self, embargo, mock_pigeon, mock_celery):
         embargo._get_registration().terminate_embargo()
         guid = embargo._get_registration()._id
