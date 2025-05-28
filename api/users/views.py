@@ -1090,6 +1090,33 @@ class ConfirmEmailView(generics.CreateAPIView):
 
     serializer_class = ConfirmEmailTokenSerializer
 
+    def _process_external_identity(self, user, external_identity, service_url):
+        """Handle all external_identity logic, including task enqueueing and url updates."""
+
+        provider = next(iter(external_identity))
+        if provider not in user.external_identity:
+            raise ValidationError('External-ID provider mismatch.')
+
+        provider_id = next(iter(external_identity[provider]))
+        ensure_external_identity_uniqueness(provider, provider_id, user)
+        external_status = user.external_identity[provider][provider_id]
+        user.external_identity[provider][provider_id] = 'VERIFIED'
+
+        if external_status == 'CREATE':
+            service_url += '&' + urlencode({'new': 'true'})
+        elif external_status == 'LINK':
+            mails.send_mail(
+                user=user,
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
+            )
+
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
+        return service_url
+
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -1105,40 +1132,27 @@ class ConfirmEmailView(generics.CreateAPIView):
         if not verification:
             raise ValidationError('Invalid or expired token.')
 
-        provider = next(iter(verification['external_identity']))
-        provider_id = next(iter(verification['external_identity'][provider]))
+        external_identity = verification.get('external_identity')
+        service_url = self.request.build_absolute_uri()
 
-        if provider not in user.external_identity:
-            raise ValidationError('External-ID provider mismatch.')
-
-        external_status = user.external_identity[provider][provider_id]
-        ensure_external_identity_uniqueness(provider, provider_id, user)
+        if external_identity:
+            service_url = self._process_external_identity(
+                user,
+                external_identity,
+                service_url,
+            )
 
         email = verification['email']
         if not user.is_registered:
             user.register(email)
 
         user.emails.get_or_create(address=email.lower())
-        user.external_identity[provider][provider_id] = 'VERIFIED'
         user.date_last_logged_in = timezone.now()
 
         del user.email_verifications[token]
         user.verification_key = generate_verification_key()
         user.save()
 
-        service_url = self.request.build_absolute_uri()
-        if external_status == 'CREATE':
-            service_url += '&' + urlencode({'new': 'true'})
-        elif external_status == 'LINK':
-            mails.send_mail(
-                user=user,
-                to_addr=user.username,
-                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-                external_id_provider=provider,
-                can_change_preferences=False,
-            )
-
-        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
         serializer.validated_data['redirect_url'] = service_url
         return Response(
             data=serializer.data,
