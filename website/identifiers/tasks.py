@@ -30,11 +30,17 @@ def task__update_verified_links(self, target_guid):
     target_object = Guid.load(target_guid).referent
     try:
         target_object.request_identifier_update(category='doi')
-        target_object.update_search()
         logger.debug(f'DOI metadata for guid with verified links updated: [guid={target_guid}]')
     except GVException as e:
         logger.error(f'DOI metadata for guid with verified links failed to update: [guid={target_guid}]')
         raise self.retry(exc=e)
+
+    try:
+        target_object.update_search()
+    except GVException as e:
+        logger.error(f'Share update for guid with verified links failed to update: [guid={target_guid}]')
+        raise self.retry(exc=e)
+
 
 @queued_task
 @celery_app.task(ignore_results=True)
