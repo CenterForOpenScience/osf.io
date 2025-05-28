@@ -183,19 +183,6 @@ class ReadOnlyIfWithdrawn(permissions.BasePermission):
             return request.method in permissions.SAFE_METHODS
         return True
 
-
-class ReadOnlyIfPublicOrContributor(permissions.BasePermission):
-    def has_object_permission(self, request, view, obj):
-        user_auth = get_user_auth(request)
-        node = view.get_node(check_object_permissions=False)  # recursion if true
-
-        # Allow if public
-        if node.is_public:
-            return True
-
-        # Allow if the user has read permission
-        return node.has_permission(user_auth.user, 'read')
-
 class ContributorDetailPermissions(permissions.BasePermission):
     """Permissions for contributor detail page."""
 

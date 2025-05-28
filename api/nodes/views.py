@@ -98,7 +98,6 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
-    ReadOnlyIfPublicOrContributor,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -1681,7 +1680,7 @@ class NodeCollectionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        ReadOnlyIfPublicOrContributor,
+        ContributorOrPublic,
     )
 
     required_read_scopes = [CoreScopes.NODE_COLLECTIONS_READ]
