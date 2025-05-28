@@ -246,6 +246,7 @@ class TestUsers:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUsersCreate:
 
     @pytest.fixture()
@@ -277,9 +278,8 @@ class TestUsersCreate:
         app.reset()  # clears cookies
         OSFUser.remove()
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(
-            self, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             f'{url_base}?send_email=true',
@@ -290,11 +290,10 @@ class TestUsersCreate:
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_logged_out_user_cannot_create_other_user_or_send_mail(
-            self, mock_mail, app, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             f'{url_base}?send_email=true',
@@ -304,12 +303,11 @@ class TestUsersCreate:
 
         assert res.status_code == 401
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_cookied_requests_can_create_and_email(
-            self, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         # NOTE: skipped tests are not tested during session refactor, only updated to fix import
         session = SessionStore()
         session['auth_user_id'] = user._id
@@ -324,17 +322,16 @@ class TestUsersCreate:
         )
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_can_create_and_send_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -364,17 +361,16 @@ class TestUsersCreate:
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_does_not_send_email_without_kwarg(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -406,17 +402,16 @@ class TestUsersCreate:
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_can_create_without_username_but_not_send_email(
-            self, mock_auth, mock_mail, app, user, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -452,12 +447,11 @@ class TestUsersCreate:
         except ValueError:
             raise AssertionError('Username is not a valid UUID')
         assert OSFUser.objects.filter(fullname='No Email').count() == 1
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_improperly_scoped_token_can_not_create_or_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Unauthorized Token',
@@ -489,17 +483,16 @@ class TestUsersCreate:
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.admin unavailable')
     def test_admin_scoped_token_can_create_and_send_email(
-            self, mock_auth, mock_mail, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Admin Token',
@@ -529,4 +522,4 @@ class TestUsersCreate:
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
