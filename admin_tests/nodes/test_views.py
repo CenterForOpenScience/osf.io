@@ -4,7 +4,22 @@ from unittest import mock
 import pytz
 import datetime
 
-from osf.models import AdminLogEntry, NodeLog, AbstractNode, RegistrationApproval
+from django.utils import timezone
+from django.test import RequestFactory
+from django.urls import reverse
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.contrib.auth.models import Permission
+from django.contrib.contenttypes.models import ContentType
+
+from osf.models import (
+    AdminLogEntry,
+    NodeLog,
+    AbstractNode,
+    RegistrationApproval,
+    Embargo,
+    SchemaResponse,
+    DraftRegistration,
+)
 from admin.nodes.views import (
     NodeConfirmSpamView,
     NodeDeleteView,
@@ -26,16 +41,23 @@ from admin.nodes.views import (
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
 from website import settings
-from django.utils import timezone
-from django.test import RequestFactory
-from django.urls import reverse
-from django.core.exceptions import PermissionDenied
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from framework.auth.core import Auth
 
 from tests.base import AdminTestCase
-from osf_tests.factories import UserFactory, AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationApprovalFactory
+from osf_tests.factories import (
+    UserFactory,
+    AuthUserFactory,
+    ProjectFactory,
+    RegistrationFactory,
+    RegistrationApprovalFactory,
+    RegistrationProviderFactory,
+    DraftRegistrationFactory,
+    get_default_metaschema
+)
+from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
+from osf.utils import permissions
+from osf.exceptions import NodeStateError
+
 
 from website.settings import REGISTRATION_APPROVAL_TIME
 
@@ -557,3 +579,322 @@ class TestConfirmApproveBacklogView(AdminTestCase):
         view = setup_log_view(ConfirmApproveBacklogView(), request)
         view.post(request)
         assert RegistrationApproval.objects.first().state == RegistrationApproval.APPROVED
+
+
+class TestRegistrationRevertToDraft(AdminTestCase):
+
+    def _add_contributor(self, registration, permission, contributor):
+        registration.add_contributor(
+            contributor,
+            permissions=permission,
+            auth=self.auth,
+            save=True
+        )
+
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.auth = Auth(self.user)
+        self.node = ProjectFactory(creator=self.user)
+
+        self.contr1 = UserFactory()
+        self.contr2 = UserFactory()
+        self.contr3 = UserFactory()
+
+        pre_moderation_draft = DraftRegistrationFactory(
+            title='pre-moderation-registration',
+            description='some description',
+            registration_schema=get_default_metaschema(),
+            provider=RegistrationProviderFactory(reviews_workflow='pre-moderation'),
+            creator=self.user
+        )
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr1)
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr2)
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr3)
+        pre_moderation_draft.register(auth=self.auth, save=True)
+        self.pre_moderation_registration = pre_moderation_draft.registered_node
+
+        post_moderation_draft = DraftRegistrationFactory(
+            title='post-moderation-registration',
+            description='some description',
+            registration_schema=get_default_metaschema(),
+            provider=RegistrationProviderFactory(reviews_workflow='post-moderation'),
+            creator=self.user
+        )
+        self._add_contributor(post_moderation_draft, permissions.ADMIN, self.contr1)
+        self._add_contributor(post_moderation_draft, permissions.ADMIN, self.contr2)
+        self._add_contributor(post_moderation_draft, permissions.ADMIN, self.contr3)
+        post_moderation_draft.register(auth=self.auth, save=True)
+        self.post_moderation_registration = post_moderation_draft.registered_node
+
+        self.no_moderation_draft = DraftRegistrationFactory(
+            title='no-moderation-registration',
+            description='some description',
+            registration_schema=get_default_metaschema(),
+            creator=self.user
+        )
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr1)
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr2)
+        self._add_contributor(self.no_moderation_draft, permissions.ADMIN, self.contr3)
+        self.no_moderation_draft.add_tag('tag1', auth=self.auth, save=True)
+        self.no_moderation_draft.add_tag('tag2', auth=self.auth, save=True)
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
+
+    def get_current_version(self, registration):
+        return registration.schema_responses.order_by('-created').first()
+
+    def create_new_version(self, registration, justification=None):
+        SchemaResponse.create_from_previous_response(
+            initiator=registration.creator,
+            previous_response=self.get_current_version(registration),
+            justification=justification or 'new update'
+        )
+
+    def approve_version(self, version):
+        version.approvals_state_machine.set_state(ApprovalStates.APPROVED)
+        version.save()
+
+    def test_cannot_revert_updated_and_approved_registration_new_version(self):
+        self.approve_version(self.get_current_version(self.registration))
+        self.create_new_version(self.registration)
+        self.approve_version(self.get_current_version(self.registration))
+
+        # registration has a few versions including the root
+        assert self.registration.schema_responses.count() == 2
+        with self.assertRaisesMessage(NodeStateError, 'Registration has an approved update thus cannot be reverted to draft'):
+            self.registration.to_draft()
+
+    def test_cannot_revert_approved_by_moderator_registration_in_pre_moderation(self):
+        self.pre_moderation_registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+        self.pre_moderation_registration.save()
+
+        with self.assertRaisesMessage(NodeStateError, 'Registration was approved by moderator thus cannot be reverted to draft'):
+            self.pre_moderation_registration.to_draft()
+
+    def test_cannot_revert_approved_by_moderator_registration_in_post_moderation(self):
+        self.post_moderation_registration.moderation_state = RegistrationModerationStates.ACCEPTED.db_name
+        self.post_moderation_registration.save()
+
+        with self.assertRaisesMessage(NodeStateError, 'Registration was approved by moderator thus cannot be reverted to draft'):
+            self.post_moderation_registration.to_draft()
+
+    def test_cannot_revert_registration_with_minted_doi(self):
+        self.registration.set_identifier_value('doi', value='some_doi')
+        with self.assertRaisesMessage(ValidationError, 'Registration with minted DOI cannot be reverted to draft state'):
+            self.registration.to_draft()
+
+    def test_cannot_revert_registration_after_some_updates_but_allow_updates_is_false(self):
+        # registration provider has allow_updates attribute that either allows users update registration or not
+        # so if user created a new version while allow_updates=True and this attribute was updated to False
+        # we still consider this registration as updated
+
+        self.registration.provider.allow_updates = True
+        self.registration.provider.save()
+
+        assert self.registration.provider.allow_updates
+
+        self.approve_version(self.get_current_version(self.registration))
+        self.create_new_version(self.registration)
+        self.approve_version(self.get_current_version(self.registration))
+
+        self.registration.provider.allow_updates = False
+        self.registration.provider.save()
+
+        with self.assertRaisesMessage(NodeStateError, 'Registration has an approved update thus cannot be reverted to draft'):
+            self.registration.to_draft()
+
+    def test_cannot_revert_previous_registration_without_draft(self):
+        self.approve_version(self.get_current_version(self.registration))
+
+        # revert the initial registration
+        self.registration.to_draft()
+
+        # re-register draft so that it's another registration
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+
+        assert self.registration.draft is None
+
+        # revert the initial registration again without draft
+        with self.assertRaisesMessage(ValueError, 'This registration has not draft'):
+            self.registration.to_draft()
+
+    def test_can_revert_registration_without_updates_to_draft(self):
+        self.approve_version(self.get_current_version(self.registration))
+        from_draft = self.registration.draft
+        assert from_draft.deleted is None
+        assert from_draft.registered_node == self.registration
+
+        self.registration.to_draft()
+        from_draft.reload()
+
+        # draft instance isn't linked to the registered version
+        assert from_draft.registered_node is None
+        assert from_draft.deleted is None
+        # registration is deleted
+        assert self.registration.deleted is not None
+
+    def test_can_revert_registration_with_unapproved_update_to_draft(self):
+        self.approve_version(self.get_current_version(self.registration))
+        self.create_new_version(self.registration)
+        from_draft = self.registration.draft
+
+        latest_version = self.registration.schema_responses.first()
+        assert latest_version.reviews_state == ApprovalStates.IN_PROGRESS.db_name
+
+        self.registration.to_draft()
+        from_draft.reload()
+
+        assert from_draft.deleted is None
+        assert from_draft.registered_node is None
+
+    def test_all_previous_data_is_restored_after_revertion(self):
+        self.approve_version(self.get_current_version(self.registration))
+
+        draft = DraftRegistration.objects.get(registered_node=self.registration)
+
+        assert draft.title == 'no-moderation-registration'
+        assert draft.description == 'some description'
+        assert draft.registration_schema == get_default_metaschema()
+        assert draft.creator == self.user
+        # 3 contributors + creator by default
+        assert draft.contributors.count() == 4
+        assert draft.tags.count() == 2
+
+        self.registration.to_draft()
+        draft.reload()
+        self.registration.reload()
+
+        assert draft.registered_node is None
+        assert self.registration.deleted is not None
+        assert draft.title == 'no-moderation-registration'
+        assert draft.description == 'some description'
+        assert draft.registration_schema == get_default_metaschema()
+        assert draft.creator == self.user
+        assert draft.contributors.count() == 4
+        assert draft.tags.count() == 2
+
+    def test_contributors_approvals_are_reset_after_revertion(self):
+        contributors = self.pre_moderation_registration.contributors.all()
+        for contributor in contributors:
+            self.pre_moderation_registration.require_approval(contributor)
+
+        assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.UNAPPROVED
+
+        for contributor in contributors:
+            self.pre_moderation_registration.sanction.approve(
+                user=contributor,
+                token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
+            )
+            assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
+
+        self.approve_version(self.get_current_version(self.pre_moderation_registration))
+
+        assert self.pre_moderation_registration.draft
+        assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.PENDING_MODERATION
+
+        draft = self.pre_moderation_registration.draft
+        self.pre_moderation_registration.to_draft()
+        draft.reload()
+
+        # the original has no changes but deleted
+        assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.PENDING_MODERATION
+        assert self.pre_moderation_registration.deleted is not None
+
+        # it's unattached from its draft
+        assert draft.registered_node is None
+
+        # draft version is shown and registered again
+        draft.register(auth=self.auth, save=True)
+        recreated_registration = draft.registered_node
+
+        # ask approvals as it's pre-moderation
+        contributors = recreated_registration.contributors.all()
+        for contributor in contributors:
+            recreated_registration.require_approval(contributor)
+
+        # the new version should have reset approvals and unapproved state
+        recreated_registration.sanction.approval_stage is ApprovalStates.UNAPPROVED
+
+        for contributor in contributors:
+            recreated_registration.sanction.approval_state[contributor._id]['has_approved'] is False
+
+    def test_revert_node_based_registration(self):
+        project = ProjectFactory(
+            title='node',
+            description='description',
+            creator=self.user
+        )
+        pre_moderation_draft = DraftRegistrationFactory(branched_from=project)
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr1)
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr2)
+        self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr3)
+        pre_moderation_draft.register(auth=self.auth, save=True)
+        pre_moderation_registration = pre_moderation_draft.registered_node
+
+        assert pre_moderation_registration.branched_from_node
+        assert pre_moderation_draft.registered_node is not None
+
+        pre_moderation_registration.to_draft()
+        pre_moderation_draft.reload()
+
+        assert pre_moderation_draft.registered_node is None
+        assert pre_moderation_draft.title == 'node'
+        assert pre_moderation_draft.description == 'description'
+
+    def test_can_revert_embargo_registration_to_draft(self):
+        self.no_moderation_draft = DraftRegistrationFactory(
+            title='embargo-registration',
+            description='some description',
+            registration_schema=get_default_metaschema(),
+            creator=self.user
+        )
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
+
+        # embargo is created when draft registration is registered, so it's possible to do that for
+        # registration only
+        self.registration._initiate_embargo(
+            user=self.user,
+            end_date=timezone.now() + datetime.timedelta(days=3)
+        )
+
+        assert isinstance(self.registration.sanction, Embargo)
+
+        self.registration.to_draft()
+        self.registration.reload()
+
+        # re-register draft, thus no embargo should be present
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
+
+        assert self.registration.sanction is None
+
+    def test_embargo_is_reset_after_revertion(self):
+        self.no_moderation_draft = DraftRegistrationFactory(
+            title='embargo-registration',
+            description='some description',
+            registration_schema=get_default_metaschema(),
+            creator=self.user
+        )
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
+
+        self.registration._initiate_embargo(
+            user=self.user,
+            end_date=timezone.now() + datetime.timedelta(days=3)
+        )
+
+        assert isinstance(self.registration.sanction, Embargo)
+
+        self.registration.sanction.approvals_machine.set_state(ApprovalStates.COMPLETED)
+        assert self.registration.sanction.approvals_machine.get_current_state()._name == ApprovalStates.COMPLETED
+
+        self.registration.to_draft()
+        self.registration.reload()
+
+        # re-register draft, thus no embargo should be present
+        self.no_moderation_draft.register(auth=self.auth, save=True)
+        self.registration = self.no_moderation_draft.registered_node
+
+        assert self.registration.sanction is None
