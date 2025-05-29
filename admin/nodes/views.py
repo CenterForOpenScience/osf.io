@@ -107,6 +107,7 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
+            'children': node.get_nodes(is_node_link=False),
             'duplicates': detailed_duplicates
         })
 
