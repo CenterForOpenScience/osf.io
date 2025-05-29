@@ -158,6 +158,7 @@ class TestNodeRegistrationSerializer:
             'groups',
             'original_response',
             'latest_response',
+            'collected_in',
         ]
 
         # Attributes
