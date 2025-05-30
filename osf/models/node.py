@@ -1396,7 +1396,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                    contributor=user,
                                                    auth=None, email_template='default', permissions=perm)
 
-    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, guid_str=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1424,7 +1424,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered = original.clone()
         registered.recast('osf.registration')
-
         registered.custom_citation = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
@@ -1441,7 +1440,25 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
-        registered.save()
+        # TODO: implement a `validate_manual_guid_assignment` to make sure the guid_str is valid and the user is prviliged
+        if guid_str:
+            print(f'>>>> manual guid str: {guid_str}')
+            from osf.models import Guid
+            guid_obj = Guid.objects.create(_id=guid_str)
+            print(f'>>>> guid generated: {guid_obj._id}')
+            registered.manual_guid = guid_str
+            registered.save(manually_create_guid=True)
+            print(f'>>>> registered from: {registered.registered_from}')
+            print('>>>> registration saved without guid')
+            guid_obj.referent = registered
+            guid_obj.object_id = registered.pk
+            from django.contrib.contenttypes.models import ContentType
+            guid_obj.content_type = ContentType.objects.get_for_model(registered)
+            guid_obj.save()
+            registered.save(first_save_after_guid_created_manually=True)
+            print('>>>> registration saved right after guid manually created')
+        else:
+            registered.save()
 
         registered.registered_schema.add(schema)
 
@@ -1903,6 +1920,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
+            print(f'>>>> osf/models/node.py::AbstractNode::get_admin_contributors_recursive >>>> node: {node}/{node._id}')
             for contrib in node.contributors.all():
                 if node.has_permission(contrib, ADMIN) and contrib.is_active:
                     if unique_users:
@@ -1941,8 +1959,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
+
         from .registrations import Registration
-        first_save = not bool(self.pk)
+
+        if isinstance(self, Registration):
+            manually_create_guid = kwargs.pop('manually_create_guid', False)
+            first_save_after_guid_created_manually = kwargs.pop('first_save_after_guid_created_manually', False)
+            assert not (manually_create_guid and first_save_after_guid_created_manually)
+            first_save = not bool(self.pk) or first_save_after_guid_created_manually
+            if manually_create_guid and first_save:
+                return super().save(*args, **kwargs)
+        else:
+            first_save = not bool(self.pk)
+
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

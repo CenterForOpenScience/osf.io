@@ -153,6 +153,9 @@ class Registration(AbstractNode):
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
+    from osf.utils.fields import LowercaseCharField
+    manual_guid = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
+
     @staticmethod
     def find_failed_registrations(days_stuck=None):
         expired_if_before = timezone.now() - (days_stuck or settings.ARCHIVE_TIMEOUT_TIMEDELTA)
@@ -442,6 +445,9 @@ class Registration(AbstractNode):
         return self.can_view(auth) or self.registered_from.can_view(auth)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
+
+        print(f'>>>> osf/models/registrations.py::Registration::_initiate_approval >>>> registered from: {self.registered_from}/{self.registered_from._id}')
+
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         self.registration_approval = RegistrationApproval.objects.create(
             initiated_by=user,
@@ -451,11 +457,15 @@ class Registration(AbstractNode):
         self.save()  # Set foreign field reference Node.registration_approval
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
+            print(f'>>>> osf/models/registrations.py::Registration::_initiate_approval >>>> (admin, node): ({admin}, {node}/{node._id})')
             self.registration_approval.add_authorizer(admin, node=node)
         self.registration_approval.save()  # Save approval's approval_state
         return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
+
+        print(f'>>>> osf/models/registrations.py::Registration::require_approval >>>> registered from: {self.registered_from}/{self.registered_from._id}')
+
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.is_admin_contributor(user):
@@ -1362,7 +1372,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 upload['file_name'] = html.unescape(upload['file_name'])
         return registration_responses
 
-    def register(self, auth, save=False, child_ids=None):
+    def register(self, auth, save=False, child_ids=None, guid_str=None):
         node = self.branched_from
 
         if not self.title:
@@ -1374,7 +1384,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             auth=auth,
             draft_registration=self,
             child_ids=child_ids,
-            provider=self.provider
+            provider=self.provider,
+            guid_str=guid_str,
         )
         self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

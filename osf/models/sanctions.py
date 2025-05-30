@@ -436,6 +436,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
     def add_authorizer(self, user, node, **kwargs):
         super().add_authorizer(user, node, **kwargs)
+        print(f'>>>> osf/models/sanctions.py::EmailApprovalSanction::add_authorizer >>>> node: {node}')
         self.stashed_urls[user._id] = {
             'view': self._view_url(user._id, node),
             'approve': self._approval_url(user._id),
@@ -805,6 +806,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if approval_token:
             registration = self._get_registration()
             node_id = user_approval_state.get('node_id', registration._id)
+
             return {
                 'node_id': node_id,
                 'token': approval_token,
@@ -816,7 +818,9 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if rejection_token:
             Registration = apps.get_model('osf.Registration')
             root_registration = self._get_registration()
+            print(f'>>>> osf/models/sanctions.py::RegistrationApproval::_rejection_url_context >>>> root_registration: {root_registration}/{root_registration._id}')
             node_id = user_approval_state.get('node_id', root_registration._id)
+            print(f'>>>> osf/models/sanctions.py::RegistrationApproval::_rejection_url_context >>>> (node_id, root_registration._id) ({node_id}, {root_registration._id})')
             registration = Registration.load(node_id)
             return {
                 'node_id': registration.registered_from._id,
