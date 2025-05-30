@@ -5,7 +5,7 @@ from osf_tests.factories import (
     NodeFactory
 )
 
-from api_tests.nodes.views.test_node_contributors_list import NodeCRUDTestCase
+from api_tests.nodes.views.utils import NodeCRUDTestCase
 
 
 @pytest.mark.django_db
@@ -107,7 +107,7 @@ class TestSparseNodeDelete(NodeCRUDTestCase):
     def sparse_url_public(self, project_public):
         return f'/v2/sparse/nodes/{project_public._id}/'
 
-    def test_deletes_node_errors(self, app, user, project_public, sparse_url_public):
+    def test_deletes_from_sparse_fails(self, app, user, project_public, sparse_url_public):
         #   test_deletes_from_sparse_fails
         res = app.delete_json_api(
             sparse_url_public,
