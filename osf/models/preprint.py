@@ -356,6 +356,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
+        # TODO: implement `validate_guid_assignment()` to make sure the `guid_str` is valid and the auth user is privileged
+        # if validate_guid_assignment():
         if guid_str:
             base_guid_obj = Guid.objects.create(_id=guid_str)
         else:

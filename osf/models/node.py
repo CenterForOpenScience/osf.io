@@ -1440,18 +1440,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
-        # TODO: implement a `validate_manual_guid_assignment` to make sure the guid_str is valid and the user is prviliged
+        # TODO: implement `validate_guid_assignment()` to make sure the `guid_str` is valid and the auth user is privileged
+        # if validate_guid_assignment():
         if guid_str:
             from osf.models import Guid
             guid_obj = Guid.objects.create(_id=guid_str)
-            registered.manual_guid = guid_str
-            registered.save(manually_create_guid=True)
+            registered.guid_assigned = guid_str
+            # Initial save to just to create the PK
+            registered.save(manually_assign_guid=True)
             guid_obj.referent = registered
             guid_obj.object_id = registered.pk
             from django.contrib.contenttypes.models import ContentType
             guid_obj.content_type = ContentType.objects.get_for_model(registered)
             guid_obj.save()
-            registered.save(first_save_after_guid_created_manually=True)
+            # First save after PK created, must be done right after GUID is updated
+            registered.save(first_save_after_guid_assignment=True)
         else:
             registered.save()
 
@@ -1957,11 +1960,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         from .registrations import Registration
 
         if isinstance(self, Registration):
-            manually_create_guid = kwargs.pop('manually_create_guid', False)
-            first_save_after_guid_created_manually = kwargs.pop('first_save_after_guid_created_manually', False)
-            assert not (manually_create_guid and first_save_after_guid_created_manually)
-            first_save = not bool(self.pk) or first_save_after_guid_created_manually
-            if manually_create_guid and first_save:
+            manually_assign_guid = kwargs.pop('manually_assign_guid', False)
+            first_save_after_guid_assignment = kwargs.pop('first_save_after_guid_assignment', False)
+            assert not (manually_assign_guid and first_save_after_guid_assignment)
+            first_save = not bool(self.pk) or first_save_after_guid_assignment
+            if manually_assign_guid and first_save:
                 return super().save(*args, **kwargs)
         else:
             first_save = not bool(self.pk)

@@ -503,7 +503,9 @@ class PreprintCreateSerializer(PreprintSerializer):
     def create(self, validated_data):
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
-        guid_str = validated_data.pop('guid', 'klmno')
+        # TODO: Update this after `guid_str` is provided via FE; in addition
+        guid_str_until_fe_ready = 'edcba'
+        guid_str = validated_data.pop('guid', guid_str_until_fe_ready)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
 

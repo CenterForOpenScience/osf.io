@@ -154,7 +154,7 @@ class Registration(AbstractNode):
     additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
 
     from osf.utils.fields import LowercaseCharField
-    manual_guid = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
+    guid_assigned = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
