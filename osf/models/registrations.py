@@ -446,8 +446,6 @@ class Registration(AbstractNode):
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
 
-        print(f'>>>> osf/models/registrations.py::Registration::_initiate_approval >>>> registered from: {self.registered_from}/{self.registered_from._id}')
-
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         self.registration_approval = RegistrationApproval.objects.create(
             initiated_by=user,
@@ -457,14 +455,11 @@ class Registration(AbstractNode):
         self.save()  # Set foreign field reference Node.registration_approval
         admins = self.get_admin_contributors_recursive(unique_users=True)
         for (admin, node) in admins:
-            print(f'>>>> osf/models/registrations.py::Registration::_initiate_approval >>>> (admin, node): ({admin}, {node}/{node._id})')
             self.registration_approval.add_authorizer(admin, node=node)
         self.registration_approval.save()  # Save approval's approval_state
         return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
-
-        print(f'>>>> osf/models/registrations.py::Registration::require_approval >>>> registered from: {self.registered_from}/{self.registered_from._id}')
 
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')

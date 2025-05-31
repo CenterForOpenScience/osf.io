@@ -812,7 +812,6 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
         try:
             registration = draft.register(auth, save=True, child_ids=children, guid_str=guid_str)
-            print(f'>>>> api/registrations/serializers.py >>>> registered from: {registration.registered_from}')
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
 

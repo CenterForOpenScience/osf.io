@@ -1442,21 +1442,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.is_public = False
         # TODO: implement a `validate_manual_guid_assignment` to make sure the guid_str is valid and the user is prviliged
         if guid_str:
-            print(f'>>>> manual guid str: {guid_str}')
             from osf.models import Guid
             guid_obj = Guid.objects.create(_id=guid_str)
-            print(f'>>>> guid generated: {guid_obj._id}')
             registered.manual_guid = guid_str
             registered.save(manually_create_guid=True)
-            print(f'>>>> registered from: {registered.registered_from}')
-            print('>>>> registration saved without guid')
             guid_obj.referent = registered
             guid_obj.object_id = registered.pk
             from django.contrib.contenttypes.models import ContentType
             guid_obj.content_type = ContentType.objects.get_for_model(registered)
             guid_obj.save()
             registered.save(first_save_after_guid_created_manually=True)
-            print('>>>> registration saved right after guid manually created')
         else:
             registered.save()
 
@@ -1920,7 +1915,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         visited_user_ids = set()
         for node in self.node_and_primary_descendants(*args, **kwargs):
-            print(f'>>>> osf/models/node.py::AbstractNode::get_admin_contributors_recursive >>>> node: {node}/{node._id}')
             for contrib in node.contributors.all():
                 if node.has_permission(contrib, ADMIN) and contrib.is_active:
                     if unique_users:
