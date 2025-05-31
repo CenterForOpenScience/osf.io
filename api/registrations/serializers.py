@@ -788,6 +788,9 @@ class RegistrationCreateSerializer(RegistrationSerializer):
     def create(self, validated_data):
         auth = get_user_auth(self.context['request'])
         draft = validated_data.pop('draft', None)
+        # TODO: Update this after `guid_str` is provided via FE; in addition
+        guid_str_until_fe_ready = 'abcde'
+        guid_str = validated_data.pop('guid', guid_str_until_fe_ready)
         registration_choice = self.get_registration_choice_by_version(validated_data)
         embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
 
@@ -810,7 +813,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             )
 
         try:
-            registration = draft.register(auth, save=True, child_ids=children)
+            registration = draft.register(auth, save=True, child_ids=children, guid_str=guid_str)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
 

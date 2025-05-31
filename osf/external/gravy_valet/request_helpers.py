@@ -275,7 +275,7 @@ def _make_gv_request(
         return None
     if not response.ok:
         # log error to Sentry
-        logger.error(f"GV request failed with status code {response.status_code}: {response.content}")
+        logger.error(f"GV request failed with status code {response.status_code}")
         pass
     return response
 

@@ -1396,7 +1396,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                    contributor=user,
                                                    auth=None, email_template='default', permissions=perm)
 
-    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, guid_str=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1424,7 +1424,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered = original.clone()
         registered.recast('osf.registration')
-
         registered.custom_citation = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
@@ -1441,7 +1440,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
-        registered.save()
+        # TODO: implement `validate_guid_assignment()` to make sure the `guid_str` is valid and the auth user is privileged
+        # if validate_guid_assignment():
+        if guid_str:
+            from osf.models import Guid
+            guid_obj = Guid.objects.create(_id=guid_str)
+            registered.guid_assigned = guid_str
+            # Initial save to just to create the PK
+            registered.save(manually_assign_guid=True)
+            guid_obj.referent = registered
+            guid_obj.object_id = registered.pk
+            from django.contrib.contenttypes.models import ContentType
+            guid_obj.content_type = ContentType.objects.get_for_model(registered)
+            guid_obj.save()
+            # First save after PK created, must be done right after GUID is updated
+            registered.save(first_save_after_guid_assignment=True)
+        else:
+            registered.save()
 
         registered.registered_schema.add(schema)
 
@@ -1941,8 +1956,19 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
+
         from .registrations import Registration
-        first_save = not bool(self.pk)
+
+        if isinstance(self, Registration):
+            manually_assign_guid = kwargs.pop('manually_assign_guid', False)
+            first_save_after_guid_assignment = kwargs.pop('first_save_after_guid_assignment', False)
+            assert not (manually_assign_guid and first_save_after_guid_assignment)
+            first_save = not bool(self.pk) or first_save_after_guid_assignment
+            if manually_assign_guid and first_save:
+                return super().save(*args, **kwargs)
+        else:
+            first_save = not bool(self.pk)
+
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']
