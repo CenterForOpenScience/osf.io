@@ -344,7 +344,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @classmethod
-    def create(cls, provider, title, creator, description):
+    def create(cls, provider, title, creator, description, guid_str=None):
         """Customized creation process to support preprint versions and versioned guid.
         """
         # Step 1: Create the preprint obj
@@ -356,7 +356,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
-        base_guid_obj = Guid.objects.create()
+        if guid_str:
+            base_guid_obj = Guid.objects.create(_id=guid_str)
+        else:
+            base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
         base_guid_obj.object_id = preprint.pk
         base_guid_obj.content_type = ContentType.objects.get_for_model(preprint)
