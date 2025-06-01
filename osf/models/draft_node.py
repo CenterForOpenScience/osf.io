@@ -58,7 +58,7 @@ class DraftNode(AbstractNode):
         )
         return
 
-    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, guid_str=None):
         """Converts the DraftNode to a Node, copies editable fields from the DraftRegistration back to the Node,
          and then registers the Node
 
@@ -73,4 +73,4 @@ class DraftNode(AbstractNode):
         self.copy_editable_fields(draft_registration, save=True)
 
         # Calls super on Node, since self is no longer a DraftNode
-        return super(Node, self).register_node(schema, auth, draft_registration, parent, child_ids, provider)
+        return super(Node, self).register_node(schema, auth, draft_registration, parent, child_ids, provider, guid_str)
