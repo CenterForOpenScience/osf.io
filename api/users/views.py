@@ -2,6 +2,7 @@ import pytz
 from urllib.parse import urlencode
 
 from django.apps import apps
+from django.db import IntegrityError
 from django.db.models import F
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
@@ -1146,7 +1147,12 @@ class ConfirmEmailView(generics.CreateAPIView):
         if not user.is_registered:
             user.register(email)
 
-        user.emails.get_or_create(address=email.lower())
+        if not user.emails.filter(address=email.lower()).exists():
+            try:
+                user.emails.create(address=email.lower())
+            except IntegrityError:
+                raise ValidationError('Email address already exists.')
+
         user.date_last_logged_in = timezone.now()
 
         del user.email_verifications[token]
