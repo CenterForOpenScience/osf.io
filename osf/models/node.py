@@ -33,8 +33,7 @@ from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
-from osf.exceptions import (InvalidTagError, NodeStateError,
-                            TagNotFoundError)
+from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -1437,12 +1436,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.creator = self.creator
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
-
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
-        # TODO: implement `validate_guid_assignment()` to make sure the `guid_str` is valid and the auth user is privileged
-        # if validate_guid_assignment():
+
         if guid_str:
+            from osf.models.base import check_manually_assigned_guid
+            if not check_manually_assigned_guid(guid_str):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')
             from osf.models import Guid
             guid_obj = Guid.objects.create(_id=guid_str)
             registered.guid_assigned = guid_str

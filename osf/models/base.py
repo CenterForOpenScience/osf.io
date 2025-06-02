@@ -28,6 +28,18 @@ logger = logging.getLogger(__name__)
 def _check_blacklist(guid):
     return BlackListGuid.objects.filter(guid=guid).exists()
 
+def check_manually_assigned_guid(guid_id, length=5):
+    if not guid_id or guid_id is str or len(guid_id) != length:
+        logger.error(f'Invalid GUID: guid_id={guid_id}')
+        return False
+    if _check_blacklist(guid_id):
+        logger.error(f'Blacklisted GUID: guid_id={guid_id}')
+        return False
+    if Guid.objects.filter(_id=guid_id).exists():
+        logger.error(f'Duplicate GUID: guid_id={guid_id}')
+        return False
+    return True
+
 
 def generate_guid(length=5, guid_id=None):
     while True:

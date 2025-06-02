@@ -356,9 +356,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
-        # TODO: implement `validate_guid_assignment()` to make sure the `guid_str` is valid and the auth user is privileged
-        # if validate_guid_assignment():
+        from osf.models.base import check_manually_assigned_guid
         if guid_str:
+            if not check_manually_assigned_guid(guid_str):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')
             base_guid_obj = Guid.objects.create(_id=guid_str)
         else:
             base_guid_obj = Guid.objects.create()
