@@ -1,6 +1,5 @@
 import pytest
 
-from addons.osfstorage.models import OsfStorageFolder
 from framework.auth import signing
 
 from osf_tests.factories import (
