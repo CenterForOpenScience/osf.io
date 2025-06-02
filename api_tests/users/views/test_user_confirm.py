@@ -199,3 +199,31 @@ class TestConfirmEmail:
 
         user.reload()
         assert not user.external_identity
+
+    @mock.patch('website.mails.send_mail')
+    def test_post_success_link_with_email_already_exists(
+            self,
+            mock_send_mail,
+            app,
+            confirm_url,
+            user_with_email_verification
+    ):
+        user, token, email = user_with_email_verification
+        AuthUserFactory(username=email)  # User with already existing email
+        user.save()
+
+        res = app.post_json_api(
+            confirm_url,
+            {
+                'data': {
+                    'attributes': {
+                        'uid': user._id,
+                        'token': token,
+                        'destination': 'doesnotmatter'
+                    }
+                }
+            },
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0] == {'detail': 'Email address already exists.'}
