@@ -83,6 +83,7 @@ class RegistrationSerializer(NodeSerializer):
         'has_supplements',
     ])
 
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(required=False)
@@ -786,12 +787,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return validated_data.get('children', [])
 
     def create(self, validated_data):
+
+        guid_str = validated_data.pop('manual_guid', None)
         auth = get_user_auth(self.context['request'])
         draft = validated_data.pop('draft', None)
-        guid_str = validated_data.pop('guid', None)
-        # Note: use the following two lines for manually setting guid before FE is ready
-        # guid_str_until_fe_ready = 'abcde'
-        # guid_str = validated_data.pop('guid', guid_str_until_fe_ready)
         registration_choice = self.get_registration_choice_by_version(validated_data)
         embargo_lifted = self.get_embargo_end_date_by_version(validated_data)
 

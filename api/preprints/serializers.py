@@ -106,6 +106,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     ])
 
     id = IDField(source='_id', read_only=True)
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
     type = TypeField()
 
     date_created = VersionedDateTimeField(source='created', read_only=True)
@@ -501,15 +502,12 @@ class PreprintCreateSerializer(PreprintSerializer):
     id = IDField(source='_id', required=False, allow_null=True)
 
     def create(self, validated_data):
+
+        guid_str = validated_data.pop('manual_guid', None)
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
-        guid_str = validated_data.pop('guid', None)
-        # Note: use the following two lines for manually setting guid before FE is ready
-        # guid_str_until_fe_ready = 'abcde'
-        # guid_str = validated_data.pop('guid', guid_str_until_fe_ready)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
-
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
         preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, guid_str=guid_str)
