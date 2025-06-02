@@ -344,7 +344,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @classmethod
-    def create(cls, provider, title, creator, description):
+    def create(cls, provider, title, creator, description, doi: str = None):
         """Customized creation process to support preprint versions and versioned guid.
         """
         # Step 1: Create the preprint obj
@@ -370,7 +370,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=base_guid_obj
         )
         versioned_guid.save()
-        preprint.save(guid_ready=True, first_save=True)
+        preprint.save(guid_ready=True, first_save=True, doi=doi)
 
         return preprint
 
@@ -1004,6 +1004,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             # thus no need to set creator as the first contributor immediately
             if set_creator_as_contributor:
                 self._add_creator_as_contributor()
+            if doi := kwargs.get('doi'):
+                self.set_identifier_value('doi', doi)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)

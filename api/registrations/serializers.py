@@ -1,5 +1,7 @@
 import pytz
 import json
+
+from api.waffle.utils import flag_is_active
 from website.archiver.utils import normalize_unicode_filenames
 
 from packaging.version import Version
@@ -35,7 +37,7 @@ from api.base.utils import update_contributors_permissions_and_bibliographic_sta
 from api.institutions.utils import update_institutions
 from framework.auth.core import Auth
 from osf.exceptions import NodeStateError
-from osf.models import Node
+from osf.models import Node, Registration
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
 
@@ -747,6 +749,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         always_embed=True,
         required=False,
     )
+    doi = ser.CharField(required=False, write_only=True)
 
     def get_registration_choice_by_version(self, validated_data):
         """
@@ -810,7 +813,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             )
 
         try:
-            registration = draft.register(auth, save=True, child_ids=children)
+            registration: Registration = draft.register(auth, save=True, child_ids=children)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
 
@@ -823,6 +826,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
+            if self.doi and flag_is_active(self.context['request'], 'doi_setter'):
+                registration.set_identifier_value('doi', self.doi)
             try:
                 registration.require_approval(auth.user)
             except NodeStateError as err:

@@ -38,6 +38,7 @@ from api.base.metrics import MetricsSerializerMixin
 from api.institutions.utils import update_institutions_if_user_associated
 from api.preprints.fields import DOIField
 from api.taxonomies.serializers import TaxonomizableSerializerMixin
+from api.waffle.utils import flag_is_active
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from website.project import signals as project_signals
 from osf.exceptions import NodeStateError, PreprintStateError
@@ -499,6 +500,7 @@ class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
     # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
+    doi = ser.CharField(write_only=True, required=False)
 
     def create(self, validated_data):
         creator = self.context['request'].user
@@ -508,7 +510,9 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description)
+        doi = validated_data.pop('doi') if flag_is_active(self.context['request'], 'doi_setter') else None
+
+        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, doi=doi)
 
         return self.update(preprint, validated_data)
 
