@@ -9,25 +9,11 @@ from osf_tests.factories import (
     PreprintFactory
 )
 from api_tests.utils import create_test_file, create_test_preprint_file
-from osf.models import QuickFilesNode
 
 
 @pytest.fixture()
 def user():
     return AuthUserFactory()
-
-@pytest.fixture()
-def quickfiles_node(user):
-    return QuickFilesNode.objects.get_for_user(user)
-
-@pytest.fixture()
-def quickfiles_file(user, quickfiles_node):
-    file = create_test_file(quickfiles_node, user, filename='road_dogg.mp3')
-    return file
-
-@pytest.fixture()
-def quickfiles_folder(quickfiles_node):
-    return OsfStorageFolder.objects.get_root(target=quickfiles_node)
 
 @pytest.fixture()
 def node(user):
@@ -71,10 +57,6 @@ class TestMove():
     @pytest.fixture()
     def move_url(self, node):
         return f'/_/wb/hooks/{node._id}/move/'
-
-    @pytest.fixture()
-    def quickfiles_move_url(self, quickfiles_node):
-        return f'/_/wb/hooks/{quickfiles_node._id}/move/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):
@@ -567,10 +549,6 @@ class TestCopy():
     @pytest.fixture()
     def copy_url(self, node):
         return f'/_/wb/hooks/{node._id}/copy/'
-
-    @pytest.fixture()
-    def quickfiles_copy_url(self, quickfiles_node):
-        return f'/_/wb/hooks/{quickfiles_node._id}/copy/'
 
     @pytest.fixture()
     def payload(self, file, folder, root_node, user):

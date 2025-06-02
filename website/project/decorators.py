@@ -75,7 +75,7 @@ def must_not_be_rejected(func):
 
     return wrapped
 
-def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False, groups_valid=False):
+def must_be_valid_project(func=None, retractions_valid=False, preprints_valid=False, groups_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
@@ -90,7 +90,7 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
 
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
+            if getattr(kwargs['node'], 'is_collection', True):
                 raise HTTPError(
                     http_status.HTTP_404_NOT_FOUND
                 )

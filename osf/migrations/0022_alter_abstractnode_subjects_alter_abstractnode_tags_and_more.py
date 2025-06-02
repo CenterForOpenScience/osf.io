@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='abstractnode',
             name='type',
-            field=models.CharField(choices=[('osf.draftnode', 'draft node'), ('osf.node', 'node'), ('osf.quickfilesnode', 'quick files node'), ('osf.registration', 'registration')], db_index=True, max_length=255),
+            field=models.CharField(choices=[('osf.draftnode', 'draft node'), ('osf.node', 'node'), ('osf.registration', 'registration')], db_index=True, max_length=255),
         ),
         migrations.AlterField(
             model_name='abstractprovider',

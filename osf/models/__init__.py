@@ -81,7 +81,6 @@ from .provider import (
     WhitelistedSHAREPreprintProvider,
 )
 from .queued_mail import QueuedMail
-from .quickfiles import QuickFilesNode
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,

@@ -20,8 +20,7 @@ from osf.models import (
     FileVersion,
     OSFUser,
     Preprint,
-    Registration,
-    QuickFilesNode
+    Registration
 )
 from osf.utils.workflows import DefaultStates
 from scripts.utils import Progress
@@ -146,7 +145,7 @@ def export_resource(node, user, current_dir):
 def export_resources(nodes_to_export, user, dir, nodes_type):
     """
     Creates appropriate directory structure and exports a given set of resources
-    (projects, registrations, quickfiles or preprints) by calling export helper functions.
+    (projects, registrations or preprints) by calling export helper functions.
 
     """
     progress = Progress()
@@ -159,7 +158,7 @@ def export_resources(nodes_to_export, user, dir, nodes_type):
     progress.stop()
 
 def get_usage(user):
-    # includes nodes, registrations, quickfiles
+    # includes nodes, registrations
     nodes = user.nodes.filter(is_deleted=False).exclude(type='osf.collection').values_list('id', flat=True)
     node_ctype = ContentType.objects.get_for_model(AbstractNode)
     node_files = get_resource_files(nodes, node_ctype)
@@ -214,12 +213,6 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
         registrations/
             *same as projects*
 
-        quickfiles/
-            <quickfiles_id>/
-                metadata.json
-                files/
-                    osfstorage-archive.zip
-
     """
     user = OSFUser.objects.get(guids___id=user_id, guids___id__isnull=False)
     proceed = input(f'\nUser has {get_usage(user):.2f} GB of data in OSFStorage that will be exported.\nWould you like to continue? [y/n] ')
@@ -231,13 +224,11 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
     preprints_dir = os.path.join(base_dir, 'preprints')
     projects_dir = os.path.join(base_dir, 'projects')
     registrations_dir = os.path.join(base_dir, 'registrations')
-    quickfiles_dir = os.path.join(base_dir, 'quickfiles')
 
     os.mkdir(base_dir)
     os.mkdir(preprints_dir)
     os.mkdir(projects_dir)
     os.mkdir(registrations_dir)
-    os.mkdir(quickfiles_dir)
 
     preprints_to_export = get_preprints_to_export(user)
 
@@ -251,14 +242,10 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
         .get_roots()
     )
 
-    quickfiles_to_export = (
-        QuickFilesNode.objects.filter(creator=user)
-    )
 
     export_resources(projects_to_export, user, projects_dir, 'projects')
     export_resources(preprints_to_export, user, preprints_dir, 'preprints')
     export_resources(registrations_to_export, user, registrations_dir, 'registrations')
-    export_resources(quickfiles_to_export, user, quickfiles_dir, 'quickfiles')
 
     timestamp = dt.datetime.fromtimestamp(time.time()).strftime('%Y%m%d%H%M%S')
     output = os.path.join(path, f'{user_id}-export-{timestamp}')
