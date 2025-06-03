@@ -426,7 +426,7 @@ WHERE name IS NOT NULL
       AND name != ''
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
-                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -612,7 +612,7 @@ FROM osf_abstractnode AS N
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'abstractnode')
             LIMIT 1
             ) PARENT_GUID ON TRUE
-WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))

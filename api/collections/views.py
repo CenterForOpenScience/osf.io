@@ -11,7 +11,6 @@ from api.base.filters import ListFilterMixin
 from api.base.parsers import JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON
 
 from api.base.views import JSONAPIBaseView
-from api.base.views import BaseLinkedList
 from api.base.views import LinkedNodesRelationship
 from api.nodes.utils import NodeOptimizationMixin
 
@@ -507,7 +506,7 @@ class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, 
         return self.get_collection_submission(check_object_permissions)
 
 
-class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
+class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, NodeOptimizationMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -560,6 +559,10 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
         CollectionWriteOrPublic,
         base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
     serializer_class = NodeSerializer
     view_category = 'collections'
     view_name = 'linked-nodes'
@@ -582,7 +585,7 @@ class LinkedNodesList(BaseLinkedList, CollectionMixin, NodeOptimizationMixin):
         return res
 
 
-class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
+class LinkedRegistrationsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     """List of registrations linked to this node. *Read-only*.
 
     Linked registrations are the registration nodes pointed to by node links.
@@ -656,11 +659,22 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
     view_category = 'collections'
     view_name = 'linked-registrations'
 
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
+
     ordering = ('-modified',)
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
-        return Registration.objects.filter(guids__in=self.get_collection().active_guids.all(), is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
+        return Registration.objects.filter(
+            guids__in=self.get_collection().active_guids.all(),
+            is_deleted=False,
+        ).can_view(
+            user=auth.user,
+            private_link=auth.private_link,
+        ).order_by(
+            '-modified',
+        )
 
     # overrides APIView
     def get_parser_context(self, http_request):
@@ -672,7 +686,7 @@ class LinkedRegistrationsList(BaseLinkedList, CollectionMixin):
         return res
 
 
-class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
+class LinkedPreprintsList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin):
     """List of preprints linked to this collection. *Read-only*.
     """
     permission_classes = (
@@ -683,6 +697,9 @@ class LinkedPreprintsList(BaseLinkedList, CollectionMixin):
     serializer_class = PreprintSerializer
     view_category = 'collections'
     view_name = 'linked-preprints'
+
+    required_read_scopes = [CoreScopes.COLLECTED_META_READ]
+    required_write_scopes = [CoreScopes.COLLECTED_META_WRITE]
 
     ordering = ('-modified',)
 

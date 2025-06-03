@@ -11,7 +11,6 @@ from osf_tests.factories import (
     ForkFactory
 )
 from rest_framework import exceptions
-from website import mails
 from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
@@ -204,6 +203,7 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -419,36 +419,26 @@ class TestNodeForkCreate:
 
     def test_send_email_success(
             self, app, user, public_project_url,
-            fork_data_with_title, public_project):
+            fork_data_with_title, public_project, mock_send_grid):
 
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-            res = app.post_json_api(
-                public_project_url,
-                fork_data_with_title,
-                auth=user.auth)
-            assert res.status_code == 201
-            assert res.json['data']['id'] == public_project.forks.first()._id
-            mock_send_mail.assert_called_with(
-                user.email,
-                mails.FORK_COMPLETED,
-                title=public_project.title,
-                guid=res.json['data']['id'],
-                can_change_preferences=False)
+        res = app.post_json_api(
+            public_project_url,
+            fork_data_with_title,
+            auth=user.auth)
+        assert res.status_code == 201
+        assert res.json['data']['id'] == public_project.forks.first()._id
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == user.email
+        assert call_args['subject'] == 'Your fork has completed'
 
     def test_send_email_failed(
             self, app, user, public_project_url,
-            fork_data_with_title, public_project):
+            fork_data_with_title, public_project, mock_send_grid):
 
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
-            with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-                with pytest.raises(Exception):
-                    app.post_json_api(
-                        public_project_url,
-                        fork_data_with_title,
-                        auth=user.auth)
-                    mock_send_mail.assert_called_with(
-                        user.email,
-                        mails.FORK_FAILED,
-                        title=public_project.title,
-                        guid=public_project._id,
-                        can_change_preferences=False)
+            with pytest.raises(Exception):
+                app.post_json_api(
+                    public_project_url,
+                    fork_data_with_title,
+                    auth=user.auth)
+                assert mock_send_grid.called

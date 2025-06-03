@@ -29,6 +29,7 @@ from osf.models import AbstractNode
 from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
+from conftest import start_mock_send_grid
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -712,7 +713,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
@@ -720,7 +721,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Delete Node and try again
         self.project.is_deleted = True
@@ -731,14 +732,14 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test auth user can approve registration with deleted parent
         res = self.app.get(
@@ -975,7 +976,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
@@ -983,7 +984,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Delete Node and try again
         self.project.is_deleted = True
@@ -994,14 +995,14 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test auth user can approve registration with deleted parent
         res = self.app.get(
@@ -1053,6 +1054,8 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1092,6 +1095,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             }
         })
 
+        self.mock_send_grid = start_mock_send_grid(self)
+
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
@@ -1125,8 +1130,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             with pytest.raises(NodeStateError):
                 reg._nodes.first().request_embargo_termination(node.creator)
 
-    @mock.patch('website.mails.send_mail')
-    def test_embargoed_registration_set_privacy_sends_mail(self, mock_send_mail):
+    def test_embargoed_registration_set_privacy_sends_mail(self):
         """
         Integration test for https://github.com/CenterForOpenScience/osf.io/pull/5294#issuecomment-212613668
         """
@@ -1150,7 +1154,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
                 admin_contributors.append(contributor)
         for admin in admin_contributors:
-            assert any([each[0][0] == admin.username for each in mock_send_mail.call_args_list])
+            assert any([each[1]['to_addr'] == admin.username for each in self.mock_send_grid.call_args_list])
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
@@ -1190,7 +1194,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         res = self.app.get(approval_url, auth=non_contributor.auth)
         self.registration.reload()
-        assert http_status.HTTP_401_UNAUTHORIZED == res.status_code
+        assert http_status.HTTP_403_FORBIDDEN == res.status_code
         assert self.registration.is_pending_embargo
         assert self.registration.embargo.state == Embargo.UNAPPROVED
 
@@ -1207,6 +1211,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_url = self.registration.web_url_for('token_action', token=rejection_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth)
-        assert http_status.HTTP_401_UNAUTHORIZED == res.status_code
+        assert http_status.HTTP_403_FORBIDDEN == res.status_code
         assert self.registration.is_pending_embargo
         assert self.registration.embargo.state == Embargo.UNAPPROVED

@@ -3,7 +3,6 @@ import datetime as dt
 
 
 import pytest
-from unittest import mock
 from django.utils import timezone
 from waffle.testutils import override_switch
 
@@ -35,28 +34,24 @@ class TestQueuedMail:
         )
         return mail
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_no_login_presend_for_active_user(self, mock_mail, user):
+    def test_no_login_presend_for_active_user(self, user):
         mail = self.queue_mail(mail=NO_LOGIN, user=user)
         user.date_last_login = timezone.now() + dt.timedelta(seconds=10)
         user.save()
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_no_login_presend_for_inactive_user(self, mock_mail, user):
+    def test_no_login_presend_for_inactive_user(self, user):
         mail = self.queue_mail(mail=NO_LOGIN, user=user)
         user.date_last_login = timezone.now() - dt.timedelta(weeks=10)
         user.save()
         assert timezone.now() - dt.timedelta(days=1) > user.date_last_login
         assert bool(mail.send_mail()) is True
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_no_addon_presend(self, mock_mail, user):
+    def test_no_addon_presend(self, user):
         mail = self.queue_mail(mail=NO_ADDON, user=user)
         assert mail.send_mail() is True
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_new_public_project_presend_for_no_project(self, mock_mail, user):
+    def test_new_public_project_presend_for_no_project(self, user):
         mail = self.queue_mail(
             mail=NEW_PUBLIC_PROJECT,
             user=user,
@@ -65,8 +60,7 @@ class TestQueuedMail:
         )
         assert bool(mail.send_mail()) is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_new_public_project_presend_success(self, mock_mail, user):
+    def test_new_public_project_presend_success(self, user):
         node = NodeFactory(is_public=True)
         mail = self.queue_mail(
             mail=NEW_PUBLIC_PROJECT,
@@ -76,8 +70,7 @@ class TestQueuedMail:
         )
         assert bool(mail.send_mail()) is True
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_welcome_osf4m_presend(self, mock_mail, user):
+    def test_welcome_osf4m_presend(self, user):
         user.date_last_login = timezone.now() - dt.timedelta(days=13)
         user.save()
         mail = self.queue_mail(
@@ -90,8 +83,7 @@ class TestQueuedMail:
         assert bool(mail.send_mail()) is True
         assert mail.data['downloads'] == 0
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_finding_other_emails_sent_to_user(self, mock_mail, user):
+    def test_finding_other_emails_sent_to_user(self, user):
         mail = self.queue_mail(
             user=user,
             mail=NO_ADDON,
@@ -100,16 +92,14 @@ class TestQueuedMail:
         mail.send_mail()
         assert len(mail.find_sent_of_same_type_and_user()) == 1
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_active(self, mock_mail, user):
+    def test_user_is_active(self, user):
         mail = self.queue_mail(
             user=user,
             mail=NO_ADDON,
         )
         assert bool(mail.send_mail()) is True
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_not_active_no_password(self, mock_mail):
+    def test_user_is_not_active_no_password(self):
         user = UserFactory.build()
         user.set_unusable_password()
         user.save()
@@ -119,8 +109,7 @@ class TestQueuedMail:
         )
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_not_active_not_registered(self, mock_mail):
+    def test_user_is_not_active_not_registered(self):
         user = UserFactory(is_registered=False)
         mail = self.queue_mail(
             user=user,
@@ -128,8 +117,7 @@ class TestQueuedMail:
         )
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_not_active_is_merged(self, mock_mail):
+    def test_user_is_not_active_is_merged(self):
         other_user = UserFactory()
         user = UserFactory(merged_by=other_user)
         mail = self.queue_mail(
@@ -138,8 +126,7 @@ class TestQueuedMail:
         )
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_not_active_is_disabled(self, mock_mail):
+    def test_user_is_not_active_is_disabled(self):
         user = UserFactory(date_disabled=timezone.now())
         mail = self.queue_mail(
             user=user,
@@ -147,8 +134,7 @@ class TestQueuedMail:
         )
         assert mail.send_mail() is False
 
-    @mock.patch('osf.models.queued_mail.send_mail')
-    def test_user_is_not_active_is_not_confirmed(self, mock_mail):
+    def test_user_is_not_active_is_not_confirmed(self):
         user = UserFactory(date_confirmed=None)
         mail = self.queue_mail(
             user=user,

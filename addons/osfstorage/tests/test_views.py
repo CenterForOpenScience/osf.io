@@ -24,7 +24,7 @@ from website.util import rubeus, api_url_for
 from framework.auth import cas
 
 from osf import features
-from osf.models import Tag, QuickFilesNode
+from osf.models import Tag
 from osf.models import files as models
 from addons.osfstorage.apps import osf_storage_root
 from addons.osfstorage import utils

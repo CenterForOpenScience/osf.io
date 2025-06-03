@@ -315,7 +315,6 @@ class TokenApprovableSanction(Sanction):
         if user is None and event_data.args:
             user = event_data.args[0]
         self.approval_state[user._id]['has_approved'] = True
-
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):

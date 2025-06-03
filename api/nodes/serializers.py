@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag
+from osf.models import Tag, CollectionSubmission
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -324,6 +324,12 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_meta={'count': 'get_node_count'},
     )
 
+    collected_in = RelationshipField(
+        related_view='nodes:node-collections',
+        related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_collection_count'},
+    )
+
     comments = RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<_id>'},
@@ -481,6 +487,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     view_only_links = RelationshipField(
         related_view='nodes:node-view-only-links',
         related_view_kwargs={'node_id': '<_id>'},
+        related_meta={'count': 'get_view_only_links_count'},
     )
 
     citation = RelationshipField(
@@ -615,6 +622,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_logs_count(self, obj):
         return obj.logs.count()
 
+    def get_collection_count(self, obj):
+        return CollectionSubmission.objects.filter(guid___id=obj._id).count()
+
     def get_node_count(self, obj):
         """
         Returns the count of a node's direct children that the user has permission to view.
@@ -696,6 +706,9 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         auth = get_user_auth(self.context['request'])
         linked_nodes = obj.linked_nodes.filter(is_deleted=False).exclude(type='osf.collection').exclude(type='osf.registration')
         return linked_nodes.can_view(auth.user, auth.private_link).count()
+
+    def get_view_only_links_count(self, obj):
+        return obj.private_links_active.count()
 
     def get_registration_links_count(self, obj):
         auth = get_user_auth(self.context['request'])
