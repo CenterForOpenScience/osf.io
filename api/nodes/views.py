@@ -63,7 +63,6 @@ from api.base.views import (
     LinkedRegistrationsRelationship,
     WaterButlerMixin,
 )
-from api.base.waffle_decorators import require_flag
 from api.base.permissions import WriteOrPublicForRelationshipInstitutions
 from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSerializer
 from api.cedar_metadata_records.utils import can_view_record
@@ -92,7 +91,6 @@ from api.nodes.permissions import (
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
-    NodeGroupDetailPermissions,
     IsContributorOrGroupMember,
     AdminDeletePermissions,
     ExcludeWithdrawals,
@@ -120,12 +118,8 @@ from api.nodes.serializers import (
     NodeStorageSerializer,
     NodeCitationSerializer,
     NodeCitationStyleSerializer,
-    NodeGroupsSerializer,
-    NodeGroupsCreateSerializer,
-    NodeGroupsDetailSerializer,
 )
 from api.nodes.utils import NodeOptimizationMixin, enforce_no_children
-from api.osf_groups.views import OSFGroupMixin
 from api.preprints.serializers import PreprintSerializer
 from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import (
@@ -143,7 +137,6 @@ from api.wikis.serializers import NodeWikiSerializer
 from framework.exceptions import HTTPError, PermissionsError
 from framework.auth.oauth_scopes import CoreScopes
 from framework.sentry import log_exception
-from osf.features import OSF_GROUPS
 from osf.models import (
     AbstractNode,
     OSFUser,
@@ -154,7 +147,6 @@ from osf.models import (
     DraftRegistration,
     Registration,
     BaseFileNode,
-    OSFGroup,
     NodeRelation,
     Guid,
     File,
@@ -1253,111 +1245,6 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
                 fobj.date_modified = fobj.history[-1]['modified']
 
         return fobj
-
-
-class NodeGroupsBase(JSONAPIBaseView, NodeMixin, OSFGroupMixin):
-    model_class = OSFGroup
-
-    required_read_scopes = [CoreScopes.NODE_OSF_GROUPS_READ]
-    required_write_scopes = [CoreScopes.NODE_OSF_GROUPS_WRITE]
-    view_category = 'nodes'
-
-
-class NodeGroupsList(NodeGroupsBase, generics.ListCreateAPIView, ListFilterMixin):
-    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_list)
-
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        AdminOrPublic,
-        base_permissions.TokenHasScope,
-    )
-
-    serializer_class = NodeGroupsSerializer
-    view_name = 'node-groups'
-
-    @require_flag(OSF_GROUPS)
-    def get_default_queryset(self):
-        return self.get_node().osf_groups
-
-    def get_queryset(self):
-        return self.get_queryset_from_request()
-
-    # overrides FilterMixin
-    def build_query_from_field(self, field_name, operation):
-        if field_name == 'permission':
-            node = self.get_node()
-            try:
-                groups_with_perm_ids = node.get_osf_groups_with_perms(operation['value']).values_list('id', flat=True)
-            except ValueError:
-                raise ValidationError('{} is not a filterable permission.'.format(operation['value']))
-            return Q(id__in=groups_with_perm_ids)
-
-        return super().build_query_from_field(field_name, operation)
-
-    # overrides ListCreateAPIView
-    def get_serializer_class(self):
-        if self.request.method == 'POST':
-            return NodeGroupsCreateSerializer
-        else:
-            return NodeGroupsSerializer
-
-    # overrides ListCreateAPIView
-    def get_serializer_context(self):
-        """
-        Extra context for NodeGroupsSerializer
-        """
-        context = super().get_serializer_context()
-        context['node'] = self.get_node(check_object_permissions=False)
-        return context
-
-    @require_flag(OSF_GROUPS)
-    def perform_create(self, serializer):
-        return super().perform_create(serializer)
-
-
-class NodeGroupsDetail(NodeGroupsBase, generics.RetrieveUpdateDestroyAPIView):
-    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_groups_read)
-
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        NodeGroupDetailPermissions,
-        base_permissions.TokenHasScope,
-    )
-
-    serializer_class = NodeGroupsDetailSerializer
-
-    view_name = 'node-group-detail'
-
-    # Overrides RetrieveUpdateDestroyAPIView
-    @require_flag(OSF_GROUPS)
-    def get_object(self):
-        node = self.get_node(check_object_permissions=False)
-        # Node permissions checked when group is loaded
-        group = self.get_osf_group(self.kwargs.get('group_id'))
-        if not group.get_permission_to_node(node):
-            raise NotFound(f'Group {group._id} does not have permissions to node {node._id}.')
-        return group
-
-    # Overrides RetrieveUpdateDestroyAPIView
-    @require_flag(OSF_GROUPS)
-    def perform_destroy(self, instance):
-        node = self.get_node(check_object_permissions=False)
-        auth = get_user_auth(self.request)
-        try:
-            node.remove_osf_group(instance, auth)
-        except PermissionsError:
-            raise PermissionDenied('Not authorized to remove this group.')
-
-    # Overrides RetrieveUpdateDestroyAPIView
-    def get_serializer_context(self):
-        """
-        Extra context for NodeGroupsSerializer
-        """
-        context = super().get_serializer_context()
-        context['node'] = self.get_node(check_object_permissions=False)
-        return context
 
 
 class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):

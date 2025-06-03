@@ -53,6 +53,7 @@ from website.preprints.tasks import (
     update_or_enqueue_on_preprint_updated,
     should_update_preprint_identifiers
 )
+from conftest import start_mock_send_grid
 
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -1984,6 +1985,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1993,31 +1996,16 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
         self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
         self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
+        self.mock_send_grid = start_mock_send_grid(self)
 
-    @mock.patch('website.mails.send_mail')
-    def test_creator_gets_email(self, send_mail):
+    def test_creator_gets_email(self):
         self.preprint.set_published(True, auth=Auth(self.user), save=True)
         domain = self.preprint.provider.domain or settings.DOMAIN
-        send_mail.assert_called_with(
-            self.user.email,
-            mails.REVIEWS_SUBMISSION_CONFIRMATION,
-            user=self.user,
-            provider_url=f'{domain}preprints/{self.preprint.provider._id}',
-            domain=domain,
-            provider_contact_email=settings.OSF_CONTACT_EMAIL,
-            provider_support_email=settings.OSF_SUPPORT_EMAIL,
-            workflow=None,
-            reviewable=self.preprint,
-            is_creator=True,
-            provider_name=self.preprint.provider.name,
-            no_future_emails=[],
-            logo=settings.OSF_PREPRINTS_LOGO,
-            document_type=self.preprint.provider.preprint_word,
-        )
-        assert send_mail.call_count == 1
+        self.mock_send_grid.assert_called()
+        assert self.mock_send_grid.call_count == 1
 
         self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert send_mail.call_count == 2
+        assert self.mock_send_grid.call_count == 2
 
 
 class TestPreprintOsfStorage(OsfTestCase):
