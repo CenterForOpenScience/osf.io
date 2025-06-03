@@ -433,9 +433,7 @@
                            visible: visible()
                        })}"
                 ><i class="fa fa-plus"></i> Add</button>
-                <span
-                    data-bind="click: function() {respondToAccessRequest('reject', {
-                        permissions: permission(),
+                <span data-bind="click: function() {respondToAccessRequest('reject', {
                         visible: !$root.collapsed()
                     })}"
                 ><i class="fa fa-times fa-2x remove-or-reject"></i></span>
