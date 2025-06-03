@@ -1104,7 +1104,15 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
         node = self.get_node()
         auth = get_user_auth(self.request)
         node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
-        return Registration.objects.filter(id__in=Subquery(node_relation_subquery), retraction__isnull=True).can_view(user=auth.user, private_link=auth.private_link)
+        return Registration.objects.filter(
+            id__in=Subquery(node_relation_subquery),
+            retraction__isnull=True,
+        ).can_view(
+            user=auth.user,
+            private_link=auth.private_link,
+        ).annotate(
+            **resource_annotations.make_open_practice_badge_annotations(),
+        )
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):

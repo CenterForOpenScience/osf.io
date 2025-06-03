@@ -3,7 +3,9 @@ import pytest
 
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from api.base.settings import API_BASE
-from osf_tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory
+from framework.auth import Auth
+from osf.utils.permissions import READ
+from osf_tests.factories import InstitutionFactory, AuthUserFactory, ProjectFactory, RegistrationFactory, NodeFactory
 
 
 @pytest.mark.django_db
@@ -116,3 +118,55 @@ class NodeCRUDTestCase:
 
             return payload_data
         return payload
+
+
+@pytest.mark.django_db
+class LinkedRegistrationsTestCase:
+
+    @pytest.fixture()
+    def user_admin_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_write_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_read_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def user_non_contrib(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def registration(self):
+        return RegistrationFactory(is_public=True)
+
+    @pytest.fixture()
+    def node_public(self, registration):
+        node_public = NodeFactory(is_public=True)
+        node_public.add_pointer(
+            registration,
+            auth=Auth(node_public.creator)
+        )
+        node_public.save()
+        return node_public
+
+    @pytest.fixture()
+    def node_private(self, user_admin_contrib, user_write_contrib, user_read_contrib, registration):
+        node_private = NodeFactory(creator=user_admin_contrib)
+        node_private.add_contributor(
+            user_write_contrib,
+            auth=Auth(user_admin_contrib)
+        )
+        node_private.add_contributor(
+            user_read_contrib,
+            permissions=READ,
+            auth=Auth(user_admin_contrib)
+        )
+        node_private.add_pointer(
+            registration,
+            auth=Auth(user_admin_contrib)
+        )
+        return node_private
