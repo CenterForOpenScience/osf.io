@@ -987,6 +987,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise ValidationError('Cannot set "ever_public" to False')
         if self.has_submitted_preprint and not self.primary_file:
             raise ValidationError('Cannot save non-initial preprint without primary file.')
+        doi = kwargs.pop('doi', None)
 
         ret = super().save(*args, **kwargs)
 
@@ -1004,7 +1005,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             # thus no need to set creator as the first contributor immediately
             if set_creator_as_contributor:
                 self._add_creator_as_contributor()
-            if doi := kwargs.get('doi'):
+            if doi:
                 self.set_identifier_value('doi', doi)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:

@@ -511,7 +511,8 @@ class PreprintCreateSerializer(PreprintSerializer):
 
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        doi = validated_data.pop('manual_doi', None) if flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID) else None
+        doi_candidate = validated_data.pop('manual_doi', None)
+        doi = doi_candidate if flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID) else None
 
         preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, doi=doi)
 
