@@ -26,7 +26,7 @@ from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
 )
-from guardian.shortcuts import get_objects_for_user, get_groups_with_perms
+from guardian.shortcuts import get_objects_for_user
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -799,50 +799,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         else:
             is_api_node = False
         return (user and self.has_permission(user, WRITE)) or is_api_node
-
-    def add_osf_group(self, group, permission=WRITE, auth=None):
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to add an OSF Group.')
-        group.add_group_to_node(self, permission, auth)
-
-    def update_osf_group(self, group, permission=WRITE, auth=None):
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to add an OSF Group.')
-        group.update_group_permissions_to_node(self, permission, auth)
-
-    def remove_osf_group(self, group, auth=None):
-        if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
-            raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
-        group.remove_group_from_node(self, auth)
-
-    @property
-    def osf_groups(self):
-        """Returns a queryset of OSF Groups whose members have some permission to the node
-        """
-        from .osf_group import OSFGroupGroupObjectPermission, OSFGroup
-
-        member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
-        return OSFGroup.objects.filter(
-            id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list(
-                'content_object_id'))
-
-    def get_osf_groups_with_perms(self, permission):
-        """Returns a queryset of OSF Groups whose members have the specified permission to the node
-        """
-        from .osf_group import OSFGroup
-        from .node import NodeGroupObjectPermission
-        try:
-            perm_id = Permission.objects.get(codename=permission + '_node').id
-        except Permission.DoesNotExist:
-            raise ValueError('Specified permission does not exist.')
-        member_groups = NodeGroupObjectPermission.objects.filter(
-            permission_id=perm_id, content_object_id=self.id
-        ).filter(
-            group__name__icontains='osfgroup'
-        ).values_list(
-            'group_id', flat=True
-        )
-        return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
 
     def get_logs_queryset(self, auth):
         return NodeLog.objects.filter(

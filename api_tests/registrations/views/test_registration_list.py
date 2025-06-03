@@ -20,7 +20,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
     DraftRegistrationFactory,
-    OSFGroupFactory,
     NodeLicenseRecordFactory,
     TagFactory,
     SubjectFactory,
@@ -838,13 +837,6 @@ class TestNodeRegistrationCreate(AbstractDraftRegistrationTestCase):
         res = app.post_json_api(url_registrations, payload, expect_errors=True)
         assert res.status_code == 401
 
-        # admin via a group cannot create registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
-
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
             self, mock_enqueue, app, user, payload, url_registrations):
@@ -1564,7 +1556,6 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
     def test_need_admin_perms_on_draft(
             self, mock_enqueue, app, user, schema, payload_ver, url_registrations_ver):
         user_two = AuthUserFactory()
-        group = OSFGroupFactory(creator=user)
 
         # User is an admin contributor on draft registration but not on node
         draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
@@ -1589,17 +1580,6 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration.save()
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth)
         assert res.status_code == 201
-
-        # User is an admin group contributor on the node but not on draft registration
-        draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)
-        draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
-        payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
-        assert draft_registration.branched_from.is_admin_contributor(user) is False
-        assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
-        assert draft_registration.has_permission(user, permissions.ADMIN) is False
-        res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on the draft registration to create a registration.'
 
         # User is an admin contributor on node but not on draft registration
         draft_registration = DraftRegistrationFactory(creator=user_two, registration_schema=schema)

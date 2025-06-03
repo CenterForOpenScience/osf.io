@@ -11,7 +11,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup, Registration
+from osf.models import AbstractNode, Guid, Preprint, Registration
 from osf.utils.permissions import WRITE
 from website import language
 from website.util import web_url_for
@@ -86,10 +86,6 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
             if preprints_valid and Preprint.load(kwargs.get('pid')):
                 _inject_nodes(kwargs)
 
-                return func(*args, **kwargs)
-
-            if groups_valid and OSFGroup.load(kwargs.get('pid')):
-                kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
                 return func(*args, **kwargs)
 
             _inject_nodes(kwargs)

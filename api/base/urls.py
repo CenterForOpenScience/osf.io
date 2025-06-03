@@ -53,7 +53,6 @@ urlpatterns = [
                 re_path(r'^draft_nodes/', include('api.draft_nodes.urls', namespace='draft_nodes')),
                 re_path(r'^draft_registrations/', include('api.draft_registrations.urls', namespace='draft_registrations')),
                 re_path(r'^files/', include('api.files.urls', namespace='files')),
-                re_path(r'^groups/', include('api.osf_groups.urls', namespace='groups')),
                 re_path(r'^guids/', include('api.guids.urls', namespace='guids')),
                 re_path(r'^identifiers/', include('api.identifiers.urls', namespace='identifiers')),
                 re_path(r'^institutions/', include('api.institutions.urls', namespace='institutions')),

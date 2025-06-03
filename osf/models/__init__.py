@@ -68,8 +68,6 @@ from .oauth import (
     ApiOAuth2PersonalToken,
     ApiOAuth2Scope,
 )
-from .osf_group import OSFGroup
-from .osf_grouplog import OSFGroupLog
 from .outcome_artifacts import OutcomeArtifact
 from .outcomes import Outcome
 from .preprint import Preprint
@@ -111,4 +109,3 @@ from .user import (
     OSFUser,
 )
 from .user_message import UserMessage
-

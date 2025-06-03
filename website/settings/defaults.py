@@ -295,9 +295,6 @@ DISK_SAVING_MODE = False
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
-# Seconds before another notification email can be sent to a member when added to an OSFGroup
-GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
-
 # Seconds before another notification email can be sent to group members when added to a project
 GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
 

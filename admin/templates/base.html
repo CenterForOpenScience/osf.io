@@ -288,9 +288,6 @@
               </div>
           {% endif %}
           {% endif %}
-          {% if perms.osf.view_conference %}
-            <li><a href="{% url 'meetings:list' %}"><i class='fa fa-link'></i> <span>Meetings</span></a></li>
-          {% endif %}
           {% if perms.osf.view_metrics %}
             <li><a href="{% url 'metrics:metrics' %}"><i class='fa fa-link'></i> <span>Metrics</span></a></li>
           {% endif %}
@@ -299,17 +296,6 @@
           {% endif %}
           {% if perms.osf.view_management%}
             <li><a href="{% url 'management:commands' %}"><i class='fa fa-link'></i> <span>Management Commands</span></a></li>
-          {% endif %}
-          {% if perms.osf.view_osf_groups %}
-              <li><a role="button" data-toggle="collapse" href="#collapseOSFGroups">
-                  <i class='fa fa-caret-down'></i> OSF Groups
-              </a></li>
-              <div class="collapse" id="collapseOSFGroups">
-                  <ul class="sidebar-menu sidebar-menu-inner">
-                      <li><a href="{% url 'osf_groups:search' %}"><i class='fa fa-link'></i><span> Search</span> </a></li>
-                      <li><a href="{% url 'osf_groups:osf_groups_list' %}"><i class='fa fa-link'></i><span> List</span> </a></li>
-                  </ul>
-              </div>
           {% endif %}
           {% if perms.osf.view_scheduledbanner %}
               <li><a role="button" data-toggle="collapse" href="#collapseBanners">

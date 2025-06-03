@@ -11,7 +11,6 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     AuthUserFactory,
     CollectionFactory,
-    OSFGroupFactory,
     DraftRegistrationFactory,
 )
 from osf.utils import permissions
@@ -51,15 +50,7 @@ class AbstractDraftRegistrationTestCase:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def group_mem(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def group(self, group_mem):
-        return OSFGroupFactory(creator=group_mem)
-
-    @pytest.fixture()
-    def project_public(self, user, user_admin_contrib, user_write_contrib, user_read_contrib, group, group_mem):
+    def project_public(self, user, user_admin_contrib, user_write_contrib, user_read_contrib):
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
@@ -71,7 +62,6 @@ class AbstractDraftRegistrationTestCase:
             user_admin_contrib,
             permissions=permissions.ADMIN)
         project_public.save()
-        project_public.add_osf_group(group, permissions.ADMIN)
         project_public.add_tag('hello', Auth(user), save=True)
         return project_public
 
