@@ -457,6 +457,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             display_text=title,
             help_text='' if description else help,
             example_text=example,
+            readonly=question.get('readonly', False),
             schema_block_group_key=schema_block_group_key
         )
 

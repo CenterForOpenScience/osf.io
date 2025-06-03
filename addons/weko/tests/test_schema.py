@@ -575,6 +575,7 @@ class TestWEKOSchema(OsfTestCase):
         index = mock.MagicMock()
         index.identifier = '1000'
         index.title = 'TITLE'
+        node_id = 'rvm3q'
         files = [
             ('test.jpg', 'image/jpeg'),
         ]
@@ -666,6 +667,7 @@ class TestWEKOSchema(OsfTestCase):
             target_schema._id,
             [file_metadata],
             [project_metadata],
+            node_id
         )
 
         logger.info(f'JSON: {buf.getvalue()}')
@@ -677,8 +679,41 @@ class TestWEKOSchema(OsfTestCase):
       "ams:analysisType": "https://purl.org/rdm/ontology/analysisType",
       "ams:descriptionOfExperimentalCondition": "https://purl.org/rdm/ontology/descriptionOfExperimentalCondition",
       "ams:purposeOfExperiment": "https://purl.org/rdm/ontology/purposeOfExperiment",
+      "ams:analysisOtherType": "https://purl.org/rdm/ontology/analysisOtherType",
+      "ams:anonymousProcessing": "https://purl.org/rdm/ontology/anonymousProcessing",
+      "ams:availabilityOfCommercialUse": "https://purl.org/rdm/ontology/availabilityOfCommercialUse",
+      "ams:conflictOfInterest": "https://purl.org/rdm/ontology/conflictOfInterest",
+      "ams:conflictOfInterestName": "https://purl.org/rdm/ontology/conflictOfInterestName",
+      "ams:consentForProvisionToAThirdParty": "https://purl.org/rdm/ontology/consentForProvisionToAThirdParty",
+      "ams:dataPolicyFree": "https://purl.org/rdm/ontology/dataPolicyFree",
+      "ams:ethicsReviewCommitteeApproval": "https://purl.org/rdm/ontology/ethicsReviewCommitteeApproval",
+      "ams:icIsNo": "https://purl.org/rdm/ontology/icIsNo",
+      "ams:identifier": "https://purl.org/rdm/ontology/identifier",
+      "ams:industrialUse": "https://purl.org/rdm/ontology/industrialUse",
+      "ams:informedConsent": "https://purl.org/rdm/ontology/informedConsent",
+      "ams:license": "https://purl.org/rdm/ontology/license",
+      "ams:namesToBeIncludedInTheAcknowledgments": "https://purl.org/rdm/ontology/namesToBeIncludedInTheAcknowledgments",
+      "ams:necessityOfContactAndPermission": "https://purl.org/rdm/ontology/necessityOfContactAndPermission",
+      "ams:necessityOfIncludingInAcknowledgments": "https://purl.org/rdm/ontology/necessityOfIncludingInAcknowledgments",
+      "ams:otherConditionsOrSpecialNotes": "https://purl.org/rdm/ontology/otherConditionsOrSpecialNotes",
+      "ams:overseasOfferings": "https://purl.org/rdm/ontology/overseasOfferings",
+      "ams:projectId": "https://purl.org/rdm/ontology/projectId",
+      "ams:repository": "https://purl.org/rdm/ontology/repository",
+      "ams:repositoryId": "https://purl.org/rdm/ontology/repositoryId",
+      "ams:repositoryInfo": "https://purl.org/rdm/ontology/repositoryInfo",
+      "ams:targetTypeOfAcquiredData": "https://purl.org/rdm/ontology/targetTypeOfAcquiredData",
+      "ams:existExternalMetadata": "https://purl.org/rdm/ontology/existExternalMetadata",
+      "ams:externalMetadataFiles": "https://purl.org/rdm/ontology/externalMetadataFiles",
+      "rdm:Dataset": "https://purl.org/rdm/ontology/Dataset",
+      "rdm:AccessRights": "https://purl.org/rdm/ontology/AccessRights",
+      "rdm:MetadataDocument": "https://purl.org/rdm/ontology/MetadataDocument",
+      "rdm:field": "https://purl.org/rdm/ontology/field",
+      "rdm:keywords": "https://purl.org/rdm/ontology/keywords",
+      "rdm:metadataFiles": "https://purl.org/rdm/ontology/metadataFiles",
+      "rdm:project": "https://purl.org/rdm/ontology/project",
       "rdm:name": "https://purl.org/rdm/ontology/name",
-      "dc:type": "http://purl.org/dc/elements/1.1/type"
+      "dc:type": "http://purl.org/dc/elements/1.1/type",
+      "jpcoar:addtionalType": "https://github.com/JPCOAR/schema/blob/master/2.0/#addtionalType"
     },
     {
       "ams": "https://purl.org/rdm/ontology/"

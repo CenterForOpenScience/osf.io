@@ -12,11 +12,11 @@
     },
     "@projects": {
         "@type": "object",
-        "root.rdm:project": {
+        "root.rdm:inproject": {
             "@createIf": "{{ project_name_value }}",
             ".@type": "PropertyValue",
             "value": "{{project_name_value}}",
-            ".@id": "_:rdm:Project1"
+            ".@id": "_:Project1"
         },
         "root.ams:identifier": {
             "@createIf": "{{ data_id_value }}",
@@ -53,19 +53,27 @@
             "language": "en",
             ".@id": "_:ams:descriptionOfExperimentalCondition2"
         },
-        "root.rdm:keywords[KEYWORD_ARR]": {
-            "@createIf": "{{ keyword_arr_value }}",
+        "root.rdm:keywords[KEYWORD]":
+        {
+            "@createIf": "{{ keywords_value }}",
+            ".@id": "_:keywords1",
             ".@type": "PropertyValue",
-            "value": "{{keyword_arr_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:Resource1"
-        },
-        "root.rdm:keywords[KEYWORD_ARR_EN]": {
-            "@createIf": "{{ keyword_arr_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{keyword_arr_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Resource2"
+            "keywords[]":[
+                {
+                    "@createIf": "{{ keywords_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_filename":  "{{ keywords_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Resource1"
+                },
+                {
+                    "@createIf": "{{ keywords_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_filename_en":  "{{ keywords_value }}",
+                    "language": "en",
+                    ".@id": "_:rdm:Resource2"
+                }
+            ]
         },
         "root.rdm:field[DATASET_RESEARCH_FIELD]": {
             "@createIf": "{{ dataset_research_field_value }}",
@@ -85,17 +93,17 @@
             "value": "{{Analysis_type_other_value}}",
             ".@id": "_:ams:analysisOtherType"
         },
-        "root.rdm:metadataFiles[THE_PRESENCE_OF_METADATA_FILES_CREATED_FOR_A_SPECIFIC_MODALITY_IN_OTHER_DATABASES]": {
+        "root.ams:existExternalMetadata[THE_PRESENCE_OF_METADATA_FILES_CREATED_FOR_A_SPECIFIC_MODALITY_IN_OTHER_DATABASES]": {
             "@createIf": "{{ the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value }}",
             ".@type": "PropertyValue",
             "value": "{{the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value}}",
-            ".@id": "_:rdm:Dataset4"
+            ".@id": "_:ams:existExternalMetadata"
         },
-        "root.rdm:MetadataDocument[]": {
+        "root.ams:externalMetadataFiles[]": {
             "@createIf": "{{ metadata_filename_value }}",
             ".@type": "PropertyValue",
-            "value": "{{metadata_filename_value}}",
-            ".@id": "_:rdm:MetadataDocument1"
+            "subitem_filename": "{{metadata_filename_value}}",
+            ".@id": "_:ams:externalMetadataFiles"
         },
         "root.ams:necessityOfContactAndPermission[NECESSITY_OF_CONTACT_AND_PERMISSION]": {
             "@createIf": "{{ necessity_of_contact_and_permission_value }}",
@@ -218,20 +226,13 @@
             "value": "{{anonymous_processing_value}}",
             ".@id": "_:ams:anonymousProcessing"
         },
-
-        "root.rdm:AccessRights[ACCESS_RIGHTS]": {
+        "root.rdm:accessRightsInformation[ACCESS_RIGHTS]": {
             "@createIf": "{{ access_rights_value }}",
             ".@type": "PropertyValue",
-            "value": "{{access_rights_value}}",
+            "value": "{{access_rights_tooltip_1}}",
+            "rdm:dateAvailable":"{{ scheduled_release_date_value }}",
             ".@id": "_:rdm:AccessRights1"
         },
-        "root.rdm:AccessRights[SCHEDULED_RELEASE_DATE]": {
-            "@createIf": "{{ scheduled_release_date_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{scheduled_release_date_value}}",
-            ".@id": "_:rdm:AccessRights2"
-        },
-
         "root.ams:repository[REPOSITORY_INFORMATION]": {
             "@createIf": "{{ repository_information_value }}",
             ".@type": "PropertyValue",
@@ -258,140 +259,116 @@
             "language": "en",
             ".@id": "_:rdm:Repository4"
         },
-        "root.creator[]": {
-            "@createIf": "{{ name_of_data_creator_value }}",
-            ".@id": "_:rdm:Person1",
+        "root.creator[DATA_CREATOR]":
+        {
+            "@createIf": "{{ data_creator_value }}",
+            ".@id": "_:Creator1",
             ".@type": "Person",
-            "address[]": [
-                {
-                    ".@id": "_:rdm:Person1Address1"
-                }
-              ],
             "affiliation[]": [
                 {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging":  "{{ data_creator_value }}",
+                    "language": "ja",
                     ".@id": "_:rdm:Person1Affiliation1"
                 },
                 {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging_en": "{{data_creator_value}}",
+                    "language": "en",
                     ".@id": "_:rdm:Person1Affiliation2"
                 }
-              ],
+            ],
+            "email[]":[
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_contact":  "{{ data_creator_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person1Address1"
+                }
+            ],
             "name[]": [
                 {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name": "{{data_creator_value}}",
+                    "language": "ja",
                     ".@id": "_:rdm:Person1Name1"
                 },
                 {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name_en": "{{data_creator_value}}",
+                    "language": "en",
                     ".@id": "_:rdm:Person1Name2"
                 }
-              ]
+            ]
         },
-        "root.creator[NAME_OF_DATA_CREATOR]": {
-            "@createIf": "{{ name_of_data_creator_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{name_of_data_creator_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:Person1Name1"
-        },
-        "root.creator[NAME_OF_DATA_CREATOR_EN]": {
-            "@createIf": "{{ name_of_data_creator_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{name_of_data_creator_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Person1Name2"
-        },
-        "root.creator[BELONG_OF_DATA_CREATER]": {
-            "@createIf": "{{ belonging_of_data_creator_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{belonging_of_data_creator_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:PersPerson1Affiliation1on3"
-        },
-        "root.creator[BELONG_OF_DATA_CREATER_EN]": {
-            "@createIf": "{{ belonging_of_data_creator_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{belonging_of_data_creator_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Person1Affiliation2"
-        },
-        "root.creator[CONTACT_OF_DATA_CREATOR]": {
-            "@createIf": "{{ contact_of_data_creator_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{contact_of_data_creator_value}}",
-            ".@id": "_:rdm:PerPerson1Address1son5"
-        },
-        "root.contributor[]": {
-            "@createIf": "{{ name_of_data_manager_value }}",
-            ".@id": "_:rdm:Person2",
+        "root.contributor[DATA_MANAGER]":
+        {
+            "@createIf": "{{ data_manager_value }}",
+            ".@id": "_:Contributor1",
+            "jpcoar:addtionalType":{
+                ".@id":"https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
             ".@type": "Person",
-            "jpcoar:contributorType": "DataManager",
-            "address[]": [
-                {
-                    ".@id": "_:rdm:Person2Address1"
-                }
-              ],
             "affiliation[]": [
                 {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging":  "{{ data_manager_value }}",
+                    "language": "ja",
                     ".@id": "_:rdm:Person2Affiliation1"
                 },
                 {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging_en":  "{{ data_manager_value }}",
+                    "language": "en",
                     ".@id": "_:rdm:Person2Affiliation2"
                 }
-              ],
+            ],
+            "email[]":[
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_contact":  "{{ data_manager_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person2Address1"
+                }
+            ],
             "name[]": [
                 {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name": "{{data_manager_value}}",
+                    "language": "ja",
                     ".@id": "_:rdm:Person2Name1"
                 },
                 {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name_en": "{{data_manager_value}}",
+                    "language": "en",
                     ".@id": "_:rdm:Person2Name2"
                 }
-              ]
+            ]
         },
-        "root.contributor[NAME_OF_DATA_MANAGER]": {
-            "@createIf": "{{ name_of_data_manager_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{name_of_data_manager_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:Person2Name1"
-        },
-        "root.contributor[NAME_OF_DATA_MANAGER_EN]": {
-            "@createIf": "{{ name_of_data_manager_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{name_of_data_manager_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Person2Name2"
-        },
-        "root.contributor[BELONG_OF_DATA_MANAGER]": {
-            "@createIf": "{{ belonging_of_data_manager_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{belonging_of_data_manager_value}}",
-            "language": "ja",
-            ".@id": "_:rdm:Person2Affiliation1"
-        },
-        "root.contributor[BELONG_OF_DATA_MANAGER_EN]": {
-            "@createIf": "{{ belonging_of_data_manager_en_value }}",
-            ".@type": "PropertyValue",
-            "value": "{{belonging_of_data_manager_en_value}}",
-            "language": "en",
-            ".@id": "_:rdm:Person2Affiliation2"
-        },
-        "root.contributor[CONTACT_OF_DATA_MANAGER]": {
-            "@createIf": "{{ contact_of_data_manager_value }}",
-            ".@type": "PropertyValue",
-            "email": "{{contact_of_data_manager_value}}",
-            ".@id": "_:rdm:Person2Address1"
-        },
-        "root.rdm:Dataset[REMARKS_3]": {
+        "root.ams:remark[REMARKS_3]": {
             "@createIf": "{{ remarks_3_value }}",
             ".@type": "PropertyValue",
             "value": "{{remarks_3_value}}",
             "language": "ja",
-            ".@id": "_:rdm:Dataset5"
+            ".@id": "_:remark_ja"
         },
-        "root.rdm:Dataset[REMARKS_3_EN]": {
+        "root.ams:remark[REMARKS_3_EN]": {
             "@createIf": "{{ remarks_3_en_value }}",
             ".@type": "PropertyValue",
             "value": "{{remarks_3_en_value}}",
             "language": "en",
-            ".@id": "_:rdm:Dataset6"
+            ".@id": "_:remark_en"
         },
         "root.ams:conflictOfInterestName[CONFLICT_OF_INTEREST]": {
             "@createIf": "{{ conflict_of_interest_value }}",
@@ -416,7 +393,8 @@
     },
     "@agent": {
         "@type": "object",
-        "root.wk:feedbackMail[]": "{{ object_username }}"
+        "root.wk:feedbackMail[]": "{{ object_username }}",
+        "root.ams:projectId": "{{ object_absolute_url }}"
     },
     "_": {
         "root": {
@@ -447,7 +425,7 @@
                         ".@id": "_:Name_en"
                     }
                   ],
-                "wk:index[]": ["1623632832836"],
+                "wk:index[]": "{{ index_id }}",
                 "wk:publishStatus": "public"
             },
             "ro_crate_metadata": {
