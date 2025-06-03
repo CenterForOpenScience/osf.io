@@ -975,10 +975,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             )
         except mailchimp_utils.OSFError as error:
             sentry.log_exception(error)
-            sentry.log_message(error)
         except Exception as error:
             sentry.log_exception(error)
-            sentry.log_message(error)
         # Call to `unsubscribe` above saves, and can lead to stale data
         self.reload()
         self.is_disabled = True
@@ -1002,10 +1000,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             subscribe_on_confirm(self)
         except OSFError as error:
             sentry.log_exception(error)
-            sentry.log_message(error)
         except Exception as error:
             sentry.log_exception(error)
-            sentry.log_message(error)
         signals.user_account_reactivated.send(self)
 
     def update_is_active(self):

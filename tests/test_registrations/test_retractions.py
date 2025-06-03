@@ -611,13 +611,13 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         })
 
     # node_registration_retraction_approve_tests
-    def test_GET_approve_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
+    def test_GET_approve_from_unauthorized_user_returns_HTTPError_FORBIDDEN(self):
         unauthorized_user = AuthUserFactory()
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.approval_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert self.registration.is_pending_retraction
@@ -656,14 +656,14 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_302_FOUND
 
     # node_registration_retraction_disapprove_tests
-    def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_UNAUTHORIZED(self):
+    def test_GET_disapprove_from_unauthorized_user_returns_HTTPError_FORBIDDEN(self):
         unauthorized_user = AuthUserFactory()
 
         res = self.app.get(
             self.registration.web_url_for('token_action', token=self.rejection_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert self.registration.is_pending_retraction
@@ -898,24 +898,24 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         args, kwargs = mock_send.call_args
         assert self.user.username in args
 
-    def test_non_contributor_GET_approval_returns_HTTPError_UNAUTHORIZED(self):
+    def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
 
         approval_url = self.registration.web_url_for('token_action', token=approval_token)
         res = self.app.get(approval_url, auth=non_contributor.auth)
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
-    def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
+    def test_non_contributor_GET_disapproval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
 
         disapproval_url = self.registration.web_url_for('token_action', token=rejection_token)
         res = self.app.get(disapproval_url, auth=non_contributor.auth)
-        assert res.status_code == http_status.HTTP_401_UNAUTHORIZED
+        assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted

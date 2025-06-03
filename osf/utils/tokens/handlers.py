@@ -1,114 +1,89 @@
+from django.contrib.sessions.backends.base import UpdateError
 from flask import redirect, request
 import markupsafe
-
-from framework.auth.decorators import must_be_logged_in
-from framework.exceptions import HTTPError, PermissionsError
-from framework import status
-from http import HTTPStatus
 from transitions import MachineError
 
-from osf.exceptions import UnsupportedSanctionHandlerKind, TokenError
+from framework.auth.decorators import must_be_logged_in
+from rest_framework import status as http_status
+
+from framework.exceptions import HTTPError, PermissionsError
+from framework import status
+
+from osf.exceptions import TokenError, UnsupportedSanctionHandlerKind
 
 
-def registration_approval_handler(action, registration, registered_from):
-    # TODO: Unnecessary and duplicated dictionary.
-    status.push_status_message({
-        'approve': 'Your registration approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
-    }[action], kind='success', trust=False)
-    # Allow decorated view function to return response
-    return None
-
-
-def embargo_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your embargo approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
-    }[action], kind='success', trust=False)
-    # Allow decorated view function to return response
-    return None
-
-
-def embargo_termination_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your approval to make this embargo public has been accepted.',
-        'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
-    }[action], kind='success', trust=False)
-    # Allow decorated view function to return response
-    return None
-
-
-def retraction_handler(action, registration, registered_from):
-    status.push_status_message({
-        'approve': 'Your withdrawal approval has been accepted.',
-        'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.'
-    }[action], kind='success', trust=False)
-    # Allow decorated view function to return response
-    return None
-
+from website.language import SANCTION_STATUS_MESSAGES
 
 @must_be_logged_in
-def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
+def sanction_handler_flask(kind, action, payload, encoded_token, **kwargs):
+    sanction_handler(kind, action, payload, encoded_token, user=kwargs['auth'].user)
+
+def sanction_handler(kind, action, payload, encoded_token, user):
     from osf.models import (
+        RegistrationApproval,
         Embargo,
         EmbargoTerminationApproval,
-        RegistrationApproval,
         Retraction
     )
+    match kind:
+        case 'registration':
+            Sanction = RegistrationApproval
+        case 'embargo':
+            Sanction = Embargo
+        case 'embargo_termination_approval':
+            Sanction = EmbargoTerminationApproval
+        case 'retraction':
+            Sanction = Retraction
+        case _:
+            raise UnsupportedSanctionHandlerKind
 
-    Model = {
-        'registration': RegistrationApproval,
-        'embargo': Embargo,
-        'embargo_termination_approval': EmbargoTerminationApproval,
-        'retraction': Retraction
-    }.get(kind, None)
-    if not Model:
-        raise UnsupportedSanctionHandlerKind
-
-    sanction_id = payload.get('sanction_id', None)
-    sanction = Model.load(sanction_id)
-
-    err_code = None
-    err_message = None
+    sanction_id = payload.get('sanction_id')
+    sanction = Sanction.load(sanction_id)
     if not sanction:
-        err_code = HTTPStatus.BAD_REQUEST
-        err_message = f'There is no {markupsafe.escape(Model.DISPLAY_NAME)} associated with this token.'
-    elif sanction.is_approved:
-        # Simply strip query params and redirect if already approved
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_long': f'There is no {markupsafe.escape(Sanction.DISPLAY_NAME)} associated with this token.'}
+        )
+
+    if sanction.is_approved:
         return redirect(request.base_url)
-    elif sanction.is_rejected:
-        err_code = HTTPStatus.GONE if kind in ['registration', 'embargo'] else HTTPStatus.BAD_REQUEST
-        err_message = f'This registration {markupsafe.escape(sanction.DISPLAY_NAME)} has been rejected.'
-    if err_code:
-        raise HTTPError(err_code.value, data=dict(
-            message_long=err_message
-        ))
+
+    if sanction.is_rejected:
+        raise HTTPError(
+            http_status.HTTP_410_GONE if kind in ('registration', 'embargo') else http_status.HTTP_400_BAD_REQUEST,
+            data={'message_long': f'This registration {markupsafe.escape(sanction.DISPLAY_NAME)} has been rejected.'}
+        )
 
     do_action = getattr(sanction, action, None)
-    if do_action:
-        registration = sanction.registrations.get()
-        registered_from = registration.registered_from
-        try:
-            do_action(user=auth.user, token=encoded_token)
-        except TokenError as e:
-            raise HTTPError(HTTPStatus.BAD_REQUEST, data={
-                'message_short': e.message_short,
-                'message_long': str(e)
-            })
-        except PermissionsError as e:
-            raise HTTPError(HTTPStatus.UNAUTHORIZED.value, data={
-                'message_short': 'Unauthorized access',
-                'message_long': str(e)
-            })
-        except MachineError as e:
-            raise HTTPError(HTTPStatus.BAD_REQUEST.value, data={
-                'message_short': 'Operation not allowed at this time',
-                'message_long': e.value
-            })
-        sanction.save()
-        return {
-            'registration': registration_approval_handler,
-            'embargo': embargo_handler,
-            'embargo_termination_approval': embargo_termination_handler,
-            'retraction': retraction_handler,
-        }[kind](action, registration, registered_from)
+    if not do_action:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_long': f'Invalid action "{action}" for sanction type "{kind}".'}
+        )
+
+    try:
+        do_action(user=user, token=encoded_token)
+    except TokenError as e:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_short': getattr(e, 'message_short', 'Token error'), 'message_long': str(e)}
+        )
+    except PermissionsError as e:
+        raise HTTPError(
+            http_status.HTTP_403_FORBIDDEN,
+            data={'message_short': 'Unauthorized access', 'message_long': str(e)}
+        )
+    except MachineError as e:
+        raise HTTPError(
+            http_status.HTTP_400_BAD_REQUEST,
+            data={'message_short': 'Operation not allowed at this time', 'message_long': getattr(e, 'value', str(e))}
+        )
+
+    sanction.save()
+
+    try:
+        message = SANCTION_STATUS_MESSAGES.get(kind, {}).get(action)
+        if message:
+            status.push_status_message(message, kind='success', trust=False)
+    except UpdateError:  # outside of message context in Django
+        pass

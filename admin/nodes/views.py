@@ -16,7 +16,7 @@ from django.views.generic import (
     ListView,
     TemplateView,
 )
-from django.shortcuts import redirect, reverse
+from django.shortcuts import redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
 
 from admin.base.utils import change_embargo_date
@@ -33,6 +33,7 @@ from osf.models import (
     NodeLog,
     AbstractNode,
     Registration,
+    RegistrationProvider,
     RegistrationApproval,
     SpamStatus
 )
@@ -394,6 +395,28 @@ class RegistrationUpdateEmbargoView(NodeMixin, View):
             return HttpResponse(e, status=400)
         except PermissionDenied as e:
             return HttpResponse(e, status=403)
+
+        return redirect(self.get_success_url())
+
+
+class RegistrationChangeProviderView(NodeMixin, View):
+    """ Allows authorized users to update provider of a registration.
+    """
+    permission_required = ('osf.change_node')
+
+    def post(self, request, *args, **kwargs):
+        provider_id = int(request.POST.get('provider_id'))
+        provider = get_object_or_404(RegistrationProvider, pk=provider_id)
+        registration = self.get_object()
+
+        try:
+            provider.validate_schema(registration.registration_schema)
+            registration.provider = provider
+            registration.save()
+        except ValidationError as exc:
+            messages.error(request, str(exc))
+        else:
+            messages.success(request, 'Provider successfully changed.')
 
         return redirect(self.get_success_url())
 
