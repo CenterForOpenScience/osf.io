@@ -2,6 +2,7 @@ import pytz
 import json
 
 from api.waffle.utils import flag_is_active
+from osf import features
 from website.archiver.utils import normalize_unicode_filenames
 
 from packaging.version import Version
@@ -749,7 +750,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         always_embed=True,
         required=False,
     )
-    doi = ser.CharField(required=False, write_only=True)
+    manual_doi = ser.CharField(required=False, write_only=True)
 
     def get_registration_choice_by_version(self, validated_data):
         """
@@ -826,7 +827,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
-            if self.doi and flag_is_active(self.context['request'], 'doi_setter'):
+            doi = validated_data.pop('manual_doi', None)
+            if doi and flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID):
                 registration.set_identifier_value('doi', self.doi)
             try:
                 registration.require_approval(auth.user)
