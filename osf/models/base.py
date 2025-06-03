@@ -616,6 +616,13 @@ class VersionedGuidMixin(GuidMixin):
             raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
         return osfid_iri(_osfid)
 
+
+def _clear_cached_guid(instance):
+    has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
+    if has_cached_guids:
+        del instance._prefetched_objects_cache['guids']
+
+
 @receiver(post_save)
 def ensure_guid(sender, instance, **kwargs):
     """Generate guid if it doesn't exist for subclasses of GuidMixin except for subclasses of VersionedGuidMixin
@@ -634,23 +641,21 @@ def ensure_guid(sender, instance, **kwargs):
     if issubclass(sender, Registration) and instance.guid_assigned:
         # Note: Only skip default GUID generation if the registration has `guid_assigned` set
         # Note: Must clear guid cached because registration is cloned and cast from a draft registration
-        # TODO: turn this into a helper `clear_cached_guid`
-        has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
+        _clear_cached_guid(instance)
         return False
 
     existing_guids = Guid.objects.filter(
         object_id=instance.pk,
         content_type=ContentType.objects.get_for_model(instance)
     )
-    has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-    if not existing_guids.exists():
-        # Clear query cache of instance.guids
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(
-            object_id=instance.pk,
-            content_type=ContentType.objects.get_for_model(instance),
-            _id=generate_guid(instance.__guid_min_length__)
-        )
+    if existing_guids.exists():
+        return False
+
+    # Note: must clear cached guid because the instance could be cloned and cast from existing instance.
+    _clear_cached_guid(instance)
+    Guid.objects.create(
+        object_id=instance.pk,
+        content_type=ContentType.objects.get_for_model(instance),
+        _id=generate_guid(instance.__guid_min_length__)
+    )
+    return True
