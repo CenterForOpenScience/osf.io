@@ -28,6 +28,16 @@ class TestSubscriptionList:
         return notification
 
     @pytest.fixture()
+    def file_updated_notification(self, node, user):
+        notification = NotificationSubscriptionFactory(
+            _id=node._id + 'file_updated',
+            owner=node,
+            event_name='file_updated',
+        )
+        notification.add_user_to_subscription(user, 'email_transactional')
+        return notification
+
+    @pytest.fixture()
     def url(self, user, node):
         return f'/{API_BASE}subscriptions/'
 
@@ -54,8 +64,8 @@ class TestSubscriptionList:
         assert put_res.status_code == 405
         assert delete_res.status_code == 405
 
-    def test_multiple_values_filter(self, app, url, global_user_notification, user):
-        res = app.get(url + '?filter[event_name]=comments,global', auth=user.auth)
+    def test_multiple_values_filter(self, app, url, global_user_notification, file_updated_notification, user):
+        res = app.get(url + '?filter[event_name]=comments,file_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:
             subscription['attributes']['event_name'] in ['global', 'comments']

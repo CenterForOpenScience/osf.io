@@ -357,3 +357,20 @@ def with_class_scoped_db(_class_scoped_db):
     ```
     """
     yield from rolledback_transaction('function_transaction')
+
+
+@pytest.fixture()
+def mock_send_grid():
+    with mock.patch.object(website_settings, 'USE_EMAIL', True):
+        with mock.patch.object(website_settings, 'USE_CELERY', False):
+            with mock.patch('framework.email.tasks.send_email') as mock_sendgrid:
+                mock_sendgrid.return_value = True
+                yield mock_sendgrid
+
+
+def start_mock_send_grid(test_case):
+    patcher = mock.patch('framework.email.tasks.send_email')
+    mocked_send = patcher.start()
+    test_case.addCleanup(patcher.stop)
+    mocked_send.return_value = True
+    return mocked_send

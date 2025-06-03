@@ -314,9 +314,6 @@ def osfstorage_create_child(file_node, payload, **kwargs):
     if not (name or user) or '/' in name:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-    if getattr(file_node.target, 'is_quickfiles', False) and is_folder:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'You may not create a folder for QuickFiles'})
-
     try:
         # Create a save point so that we can rollback and unlock
         # the parent record

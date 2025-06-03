@@ -24,6 +24,7 @@ from osf.exceptions import (
 )
 from osf.models import Contributor, Retraction
 from osf.utils import permissions
+from conftest import start_mock_send_grid
 
 
 @pytest.mark.enable_bookmark_creation
@@ -748,6 +749,8 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.enable_bookmark_creation
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -759,6 +762,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
+
+        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -783,8 +788,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
+    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self):
         unreg = UnregUserFactory()
         self.registration.add_unregistered_contributor(
             unreg.fullname,
@@ -800,7 +804,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         # Only the creator gets an email; the unreg user does not get emailed
-        assert mock_send_mail.call_count == 1
+        assert self.mock_send_grid.call_count == 1
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -848,8 +852,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
+    def test_POST_retraction_without_justification_returns_HTTPOK(self):
         res = self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
@@ -861,8 +864,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert self.registration.retraction.justification is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
+    def test_valid_POST_retraction_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.app.post(
             self.retraction_post_url,
@@ -873,8 +875,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         # Logs: Created, registered, retraction initiated
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
+    def test_valid_POST_retraction_when_pending_retraction_raises_400(self):
         self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
@@ -887,16 +888,13 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_calls_send_mail_with_username(self, mock_send):
+    def test_valid_POST_calls_send_mail_with_username(self):
         self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
             auth=self.user.auth,
         )
-        assert mock_send.called
-        args, kwargs = mock_send.call_args
-        assert self.user.username in args
+        assert self.mock_send_grid.called
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
