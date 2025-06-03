@@ -67,8 +67,6 @@ SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 logger = logging.getLogger(__name__)
 
-MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
-
 
 def get_default_mailing_lists():
     return {'Open Science Framework Help': True}
@@ -808,9 +806,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor (group member only are not included).
         for node in user.contributed:
-            # Skip quickfiles
-            if node.is_quickfiles:
-                continue
             user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -835,10 +830,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
         from .files import BaseFileNode
-        from .quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
-        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -1039,13 +1033,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if 'fullname' in dirty_fields:
-            from .quickfiles import get_quickfiles_project_title, QuickFilesNode
-
-            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
-            if quickfiles:
-                quickfiles.title = get_quickfiles_project_title(self)
-                quickfiles.save()
         if 'username' in dirty_fields:
             for list_name, subscription in self.mailchimp_mailing_lists.items():
                 if subscription:
@@ -1449,7 +1436,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
         # Don't train on resources merely associated with spam user
-        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter(is_public=True, is_deleted=False):
             node.confirm_spam(train_spam_services=train_spam_services)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_spam_services=train_spam_services)
@@ -1459,7 +1446,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
         # Don't train on resources merely associated with spam user
-        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter():
             node.confirm_ham(save=save, train_spam_services=train_spam_services)
         for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_spam_services=train_spam_services)

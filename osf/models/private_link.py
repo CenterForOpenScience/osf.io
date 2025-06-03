@@ -1,6 +1,4 @@
 from django.db import models
-from django.dispatch import receiver
-from django.core.exceptions import ValidationError
 
 from framework.utils import iso8601format
 
@@ -43,13 +41,3 @@ class PrivateLink(ObjectIDMixin, BaseModel):
                       for x in self.nodes.filter(is_deleted=False)],
             'anonymous': self.anonymous
         }
-
-
-##### Signal listeners #####
-@receiver(models.signals.m2m_changed, sender=PrivateLink.nodes.through)
-def check_if_private_link_is_to_quickfiles(sender, instance, action, reverse, model, pk_set, **kwargs):
-    from .node import AbstractNode
-
-    if action == 'pre_add' and pk_set:
-        if model == AbstractNode and model.objects.get(id=list(pk_set)[0]).is_quickfiles:
-            raise ValidationError('A private link cannot be added to a QuickFilesNode')

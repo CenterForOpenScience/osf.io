@@ -24,7 +24,6 @@ urlpatterns = [
     re_path(r'^(?P<user_id>\w+)/registrations/$', views.UserRegistrations.as_view(), name=views.UserRegistrations.view_name),
     re_path(r'^(?P<user_id>\w+)/settings/$', views.UserSettings.as_view(), name=views.UserSettings.view_name),
     re_path(r'^(?P<user_id>\w+)/messages/$', views.UserMessageView.as_view(), name=views.UserMessageView.view_name),
-    re_path(r'^(?P<user_id>\w+)/quickfiles/$', views.UserQuickFiles.as_view(), name=views.UserQuickFiles.view_name),
     re_path(r'^(?P<user_id>\w+)/relationships/institutions/$', views.UserInstitutionsRelationship.as_view(), name=views.UserInstitutionsRelationship.view_name),
     re_path(r'^(?P<user_id>\w+)/settings/emails/$', views.UserEmailsList.as_view(), name=views.UserEmailsList.view_name),
     re_path(r'^(?P<user_id>\w+)/settings/emails/(?P<email_id>\w+)/$', views.UserEmailsDetail.as_view(), name=views.UserEmailsDetail.view_name),

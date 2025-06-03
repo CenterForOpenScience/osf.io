@@ -92,7 +92,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
     def get_roots(self):
         return self.filter(
-            id__in=self.exclude(type__in=['osf.collection', 'osf.quickfilesnode', 'osf.draftnode']).values_list(
+            id__in=self.exclude(type__in=['osf.collection', 'osf.draftnode']).values_list(
                 'root_id', flat=True))
 
     def get_children(self, root, active=False, include_root=False):
@@ -490,10 +490,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_registration(self):
         """For v1 compat."""
-        return False
-
-    @property
-    def is_quickfiles(self):
         return False
 
     @property
@@ -2095,10 +2091,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if not hasattr(self, 'is_bookmark_collection'):
                     self.set_title(title=value, auth=auth, save=False)
                     continue
-                if not self.is_bookmark_collection or not self.is_quickfiles:
+                if not self.is_bookmark_collection:
                     self.set_title(title=value, auth=auth, save=False)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'category':
@@ -2548,7 +2544,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-@receiver(post_save, sender='osf.QuickFilesNode')
 @receiver(post_save, sender='osf.DraftNode')
 def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):
