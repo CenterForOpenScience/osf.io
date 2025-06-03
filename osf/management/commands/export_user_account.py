@@ -242,7 +242,6 @@ def export_account(user_id, path, only_private=False, only_admin=False, export_f
         .get_roots()
     )
 
-
     export_resources(projects_to_export, user, projects_dir, 'projects')
     export_resources(preprints_to_export, user, preprints_dir, 'preprints')
     export_resources(registrations_to_export, user, registrations_dir, 'registrations')
