@@ -295,9 +295,6 @@ DISK_SAVING_MODE = False
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
-# Seconds before another notification email can be sent to a member when added to an OSFGroup
-GROUP_MEMBER_ADDED_EMAIL_THROTTLE = 24 * 3600
-
 # Seconds before another notification email can be sent to group members when added to a project
 GROUP_CONNECTED_EMAIL_THROTTLE = 24 * 3600
 
@@ -463,7 +460,6 @@ class CeleryConfig:
         'website.archiver.tasks',
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
-        'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'api.share.utils',
     }
 
@@ -534,8 +530,6 @@ class CeleryConfig:
         'osf.management.commands.archive_registrations_on_IA',
         'osf.management.commands.populate_initial_schema_responses',
         'osf.management.commands.approve_pending_schema_responses',
-        'osf.management.commands.delete_legacy_quickfiles_nodes',
-        'osf.management.commands.fix_quickfiles_waterbutler_logs',
         'osf.management.commands.sync_doi_metadata',
         'api.providers.tasks',
         'osf.management.commands.daily_reporters_go',
@@ -700,11 +694,6 @@ class CeleryConfig:
                 'task': 'osf.management.commands.approve_pending_schema_responses',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
                 'kwargs': {'dry_run': False},
-            },
-            'delete_legacy_quickfiles_nodes': {
-                'task': 'osf.management.commands.delete_legacy_quickfiles_nodes',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False, 'batch_size': 10000},
             },
         }
 

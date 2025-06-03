@@ -7,7 +7,6 @@ from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesL
 from osf_tests.factories import (
     AuthUserFactory,
     CollectionFactory,
-    OSFGroupFactory,
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -175,24 +174,6 @@ class TestUserNodes:
         assert public_project_user_one._id == ids[1]
         assert private_project_user_one._id == ids[0]
 
-    # test_osf_group_member_node_shows_up_in_user_nodes
-        group_mem = AuthUserFactory()
-        url = f'/{API_BASE}users/{group_mem._id}/nodes/'
-        res = app.get(url, auth=group_mem.auth)
-        assert len(res.json['data']) == 0
-
-        group = OSFGroupFactory(creator=group_mem)
-        private_project_user_one.add_osf_group(group, permissions.READ)
-        res = app.get(url, auth=group_mem.auth)
-        assert len(res.json['data']) == 1
-
-        res = app.get(url, auth=user_one.auth)
-        assert len(res.json['data']) == 1
-
-        private_project_user_one.delete()
-        res = app.get(url, auth=user_one.auth)
-        assert len(res.json['data']) == 0
-
 
 @pytest.mark.django_db
 class TestUserNodesPreprintsFiltering:
@@ -319,27 +300,6 @@ class TestNodeListPermissionFiltering:
         # test filter null
         res = app.get(f'{url}null', auth=contrib.auth, expect_errors=True)
         assert res.status_code == 400
-
-        user2 = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=user2)
-        read_node.add_osf_group(osf_group, permissions.READ)
-        write_node.add_osf_group(osf_group, permissions.WRITE)
-        admin_node.add_osf_group(osf_group, permissions.ADMIN)
-
-        # test filter group member read
-        res = app.get(f'{url}read', auth=user2.auth)
-        assert len(res.json['data']) == 3
-        assert {read_node._id, write_node._id, admin_node._id} == {node['id'] for node in res.json['data']}
-
-        # test filter group member write
-        res = app.get(f'{url}write', auth=user2.auth)
-        assert len(res.json['data']) == 2
-        assert {admin_node._id, write_node._id} == {node['id'] for node in res.json['data']}
-
-        # test filter group member admin
-        res = app.get(f'{url}admin', auth=user2.auth)
-        assert len(res.json['data']) == 1
-        assert [admin_node._id] == [node['id'] for node in res.json['data']]
 
     def test_filter_my_current_user_permissions_to_other_users_nodes(self, app, contrib, no_perm_node, read_node, write_node, admin_node):
         url = f'/{API_BASE}users/{contrib._id}/nodes/?filter[current_user_permissions]='

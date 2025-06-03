@@ -11,7 +11,7 @@ from importlib import import_module
 
 from addons.osfstorage.models import OsfStorageFile
 from framework import analytics
-from osf.models import PageCounter, OSFGroup
+from osf.models import PageCounter
 
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory, ProjectFactory
@@ -126,26 +126,6 @@ class TestPageCounter:
         page_counter.refresh_from_db()
         assert page_counter.total == 0
         assert page_counter.unique == 0
-
-        platform_group = OSFGroup.objects.create(creator=user, name='Platform')
-        group_member = UserFactory()
-        project.add_osf_group(platform_group)
-
-        session['auth_user_id'] = group_member._id
-        session.save()
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={
-            'contributors': project.contributors_and_group_members}, session_key=session.session_key
-        )
-        page_counter.refresh_from_db()
-        assert page_counter.total == 1
-        assert page_counter.unique == 1
-
-        platform_group.make_member(group_member)
-        PageCounter.update_counter(resource, file_node, version=None, action='download', node_info={
-            'contributors': project.contributors_and_group_members}, session_key=session.session_key
-        )
-        assert page_counter.total == 1
-        assert page_counter.unique == 1
 
     def test_get_all_downloads_on_date(self, page_counter, page_counter2):
         """

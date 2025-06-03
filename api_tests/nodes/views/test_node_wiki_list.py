@@ -11,10 +11,8 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
-    OSFGroupFactory,
     RegistrationFactory,
 )
-from osf.utils.permissions import WRITE, READ
 from tests.base import fake
 
 
@@ -123,15 +121,6 @@ class TestNodeWikiList:
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
-
-    #   test_return_private_node_wikis_logged_in_osf_group_member
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, READ)
-        res = app.get(private_url, auth=group_mem.auth)
-        assert res.status_code == 200
-        wiki_ids = [wiki['id'] for wiki in res.json['data']]
-        assert private_wiki._id in wiki_ids
 
     #   test_return_private_node_wikis_logged_in_non_contributor
         res = app.get(private_url, auth=non_contrib.auth, expect_errors=True)
@@ -347,13 +336,6 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
         wiki_page = WikiPage.objects.get_for_node(project_public, page_name)
         assert wiki_page.get_version().content == 'my first wiki page'
 
-        # test_osf_group_member_write
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, WRITE)
-        res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 201
-
     def test_create_public_wiki_page_with_empty_content(self, app, user_write_contributor, url_node_public, project_public):
         page_name = fake.word()
         payload = create_wiki_payload(page_name)
@@ -382,13 +364,6 @@ class TestNodeWikiCreate(WikiCRUDTestCase):
 
         # test_do_not_create_public_wiki_page_as_non_contributor
         res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=user_non_contributor.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test_do_not_create_public_wiki_page_as_read_osf_group_member
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, READ)
-        res = app.post_json_api(url_node_public, create_wiki_payload(fake.word()), auth=group_mem.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_do_not_create_public_wiki_page_as_unauthenticated

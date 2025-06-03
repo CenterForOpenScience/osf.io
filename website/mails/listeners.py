@@ -7,7 +7,6 @@ from django.utils import timezone
 from website import settings
 from framework.auth import signals as auth_signals
 from website.project import signals as project_signals
-from website.conferences import signals as conference_signals
 
 
 @auth_signals.unconfirmed_user_created.connect
@@ -43,21 +42,3 @@ def queue_first_public_project_email(user, node, meeting_creation):
                 project_title=node.title,
                 osf_support_email=settings.OSF_SUPPORT_EMAIL,
             )
-
-@conference_signals.osf4m_user_created.connect
-def queue_osf4m_welcome_email(user, conference, node):
-    """Queue an email once a new user is created for OSF Meetings"""
-    from osf.models.queued_mail import queue_mail, WELCOME_OSF4M
-    root = (node.get_addon('osfstorage')).get_root()
-    root_children = [child for child in root.children if child.is_file]
-    queue_mail(
-        to_addr=user.username,
-        mail=WELCOME_OSF4M,
-        send_at=timezone.now() + settings.WELCOME_OSF4M_WAIT_TIME,
-        user=user,
-        conference=conference.name,
-        fullname=user.fullname,
-        fid=root_children[0]._id if len(root_children) else None,
-        osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        domain=settings.DOMAIN,
-    )
