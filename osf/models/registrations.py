@@ -16,7 +16,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
@@ -152,9 +152,8 @@ class Registration(AbstractNode):
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
-
-    from osf.utils.fields import LowercaseCharField
-    guid_assigned = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
+    # An internal property that is used to set GUID manually during registration creation
+    _manual_guid = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):

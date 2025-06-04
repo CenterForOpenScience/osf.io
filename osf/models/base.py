@@ -29,7 +29,7 @@ def _check_blacklist(guid):
     return BlackListGuid.objects.filter(guid=guid).exists()
 
 def check_manually_assigned_guid(guid_id, length=5):
-    if not guid_id or guid_id is str or len(guid_id) != length:
+    if not guid_id or isinstance(guid_id, str) or len(guid_id) != length:
         logger.error(f'Invalid GUID: guid_id={guid_id}')
         return False
     if _check_blacklist(guid_id):
@@ -638,8 +638,8 @@ def ensure_guid(sender, instance, **kwargs):
         return False
 
     from osf.models import Registration
-    if issubclass(sender, Registration) and instance.guid_assigned:
-        # Note: Only skip default GUID generation if the registration has `guid_assigned` set
+    if issubclass(sender, Registration) and instance._manual_guid:
+        # Note: Only skip default GUID generation if the registration has `_manual_guid` set
         # Note: Must clear guid cached because registration is cloned and cast from a draft registration
         _clear_cached_guid(instance)
         return False

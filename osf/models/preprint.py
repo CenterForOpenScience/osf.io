@@ -44,7 +44,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
+from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin, check_manually_assigned_guid
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -356,7 +356,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
-        from osf.models.base import check_manually_assigned_guid
         if guid_str:
             if not check_manually_assigned_guid(guid_str):
                 raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')

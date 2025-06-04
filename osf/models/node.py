@@ -78,7 +78,7 @@ from osf.utils.permissions import (
 )
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet, check_manually_assigned_guid
 from api.base.exceptions import Conflict
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
@@ -1440,12 +1440,11 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.is_public = False
 
         if guid_str:
-            from osf.models.base import check_manually_assigned_guid
             if not check_manually_assigned_guid(guid_str):
                 raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')
             from osf.models import Guid
             guid_obj = Guid.objects.create(_id=guid_str)
-            registered.guid_assigned = guid_str
+            registered._manual_guid = guid_str
             # Initial save to just to create the PK
             registered.save(manually_assign_guid=True)
             guid_obj.referent = registered
@@ -1962,7 +1961,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if isinstance(self, Registration):
             manually_assign_guid = kwargs.pop('manually_assign_guid', False)
             first_save_after_guid_assignment = kwargs.pop('first_save_after_guid_assignment', False)
-            assert not (manually_assign_guid and first_save_after_guid_assignment)
+            if manually_assign_guid and first_save_after_guid_assignment:
+                raise ValueError('manually_assign_guid and first_save_after_guid_assignment are mutually exclusive')
             first_save = not bool(self.pk) or first_save_after_guid_assignment
             if manually_assign_guid and first_save:
                 return super().save(*args, **kwargs)
