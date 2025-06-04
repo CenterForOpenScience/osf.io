@@ -344,8 +344,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @classmethod
-
-    def create(cls, provider, title, creator, description, guid_str=None, doi: str = None):
+    def create(cls, provider, title, creator, description, manual_guid=None, manual_doi=None):
         """Customized creation process to support preprint versions and versioned guid.
         """
         # Step 1: Create the preprint obj
@@ -357,10 +356,10 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
-        if guid_str:
-            if not check_manually_assigned_guid(guid_str):
-                raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')
-            base_guid_obj = Guid.objects.create(_id=guid_str)
+        if manual_guid:
+            if not check_manually_assigned_guid(manual_guid):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
+            base_guid_obj = Guid.objects.create(_id=manual_guid)
         else:
             base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
@@ -376,7 +375,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             guid=base_guid_obj
         )
         versioned_guid.save()
-        preprint.save(guid_ready=True, first_save=True, doi=doi)
+        preprint.save(guid_ready=True, first_save=True, manual_doi=manual_doi)
 
         return preprint
 
@@ -986,6 +985,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise IntegrityError(err_msg)
 
         first_save = kwargs.pop('first_save', False)
+        manual_doi = kwargs.pop('manual_doi', None)
         set_creator_as_contributor = kwargs.pop('set_creator_as_contributor', True)
         saved_fields = self.get_dirty_fields() or []
 
@@ -993,7 +993,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             raise ValidationError('Cannot set "ever_public" to False')
         if self.has_submitted_preprint and not self.primary_file:
             raise ValidationError('Cannot save non-initial preprint without primary file.')
-        doi = kwargs.pop('doi', None)
 
         ret = super().save(*args, **kwargs)
 
@@ -1011,8 +1010,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             # thus no need to set creator as the first contributor immediately
             if set_creator_as_contributor:
                 self._add_creator_as_contributor()
-            if doi:
-                self.set_identifier_value('doi', doi)
+            if manual_doi:
+                self.set_identifier_value('doi', manual_doi)
 
         if (not first_save and 'is_published' in saved_fields) or self.is_published:
             update_or_enqueue_on_preprint_updated(preprint_id=self._id, saved_fields=saved_fields)

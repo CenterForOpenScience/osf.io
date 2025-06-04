@@ -1366,7 +1366,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 upload['file_name'] = html.unescape(upload['file_name'])
         return registration_responses
 
-    def register(self, auth, save=False, child_ids=None, guid_str=None):
+    def register(self, auth, save=False, child_ids=None, manual_guid=None):
         node = self.branched_from
 
         if not self.title:
@@ -1379,7 +1379,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             draft_registration=self,
             child_ids=child_ids,
             provider=self.provider,
-            guid_str=guid_str,
+            manual_guid=manual_guid,
         )
         self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)

@@ -1395,7 +1395,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                    contributor=user,
                                                    auth=None, email_template='default', permissions=perm)
 
-    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, guid_str=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1439,12 +1439,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
 
-        if guid_str:
-            if not check_manually_assigned_guid(guid_str):
-                raise ValidationError(f'GUID cannot be manually assigned: guid_str={guid_str}.')
+        if manual_guid:
+            if not check_manually_assigned_guid(manual_guid):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
             from osf.models import Guid
-            guid_obj = Guid.objects.create(_id=guid_str)
-            registered._manual_guid = guid_str
+            guid_obj = Guid.objects.create(_id=manual_guid)
+            registered._manual_guid = manual_guid
             # Initial save to just to create the PK
             registered.save(manually_assign_guid=True)
             guid_obj.referent = registered

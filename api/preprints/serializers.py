@@ -108,7 +108,6 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
     ])
 
     id = IDField(source='_id', read_only=True)
-    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
     type = TypeField()
 
     date_created = VersionedDateTimeField(source='created', read_only=True)
@@ -502,20 +501,25 @@ class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
     # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
-    manual_doi = ser.CharField(write_only=True, required=False)
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
+    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True)
 
     def create(self, validated_data):
 
-        guid_str = validated_data.pop('manual_guid', None)
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:
             raise exceptions.ValidationError(detail='You must specify a valid provider to create a preprint.')
         title = validated_data.pop('title')
         description = validated_data.pop('description', '')
-        doi_candidate = validated_data.pop('manual_doi', None)
-        doi = doi_candidate if flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID) else None
-        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, guid_str=guid_str, doi=doi)
+
+        # For manual GUID and DOI assignment during creation for privileged users
+        manual_guid = validated_data.pop('manual_guid', None)
+        manual_doi = validated_data.pop('manual_doi', None)
+        if manual_doi and not flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID):
+            raise exceptions.ValidationError(detail='Manual DOI assignment is not allowed.')
+
+        preprint = Preprint.create(provider=provider, title=title, creator=creator, description=description, manual_guid=manual_guid, manual_doi=manual_doi)
 
         return self.update(preprint, validated_data)
 
