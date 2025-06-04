@@ -57,7 +57,7 @@ from osf.external.gravy_valet import (
 )
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField
-from osf.utils.requests import get_request_and_user_id, string_type_request_headers, get_current_request
+from osf.utils.requests import get_request_and_user_id, string_type_request_headers
 from osf.utils.workflows import CollectionSubmissionStates
 from osf.utils import sanitize
 from website import language, settings
@@ -2467,21 +2467,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 )
 
     def _get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
-        request = get_current_request()
-        # This is to avoid making multiple requests to GV
-        # within the lifespan of one request on the OSF side
-        try:
-            gv_addons = request.gv_addons
-        except AttributeError:
-            requesting_user = OSFUser.load(requesting_user_id)
-            services = gv_translations.get_external_services(requesting_user)
-            for service in services:
-                if service.short_name == gv_pk:
-                    break
-            else:
-                return None
-            gv_addons = request.gv_addons = self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
+        requesting_user = OSFUser.load(requesting_user_id)
+        services = gv_translations.get_external_services(requesting_user)
+        for service in services:
+            if service.short_name == gv_pk:
+                break
+        else:
+            return None
 
+        gv_addons = self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
         for item in gv_addons:
             if item.short_name == gv_pk:
                 return item
