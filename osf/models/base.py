@@ -28,16 +28,30 @@ logger = logging.getLogger(__name__)
 def _check_blacklist(guid):
     return BlackListGuid.objects.filter(guid=guid).exists()
 
+def check_manually_assigned_guid(guid_id, length=5):
+    if not guid_id or not isinstance(guid_id, str) or len(guid_id) != length:
+        logger.error(f'Invalid GUID: guid_id={guid_id}')
+        return False
+    if _check_blacklist(guid_id):
+        logger.error(f'Blacklisted GUID: guid_id={guid_id}')
+        return False
+    if Guid.objects.filter(_id=guid_id).exists():
+        logger.error(f'Duplicate GUID: guid_id={guid_id}')
+        return False
+    return True
 
-def generate_guid(length=5):
+
+def generate_guid(length=5, guid_id=None):
     while True:
-        guid_id = ''.join(random.sample(ALPHABET, length))
+        if guid_id is None:
+            guid_id = ''.join(random.sample(ALPHABET, length))
 
         # is the guid in the blacklist
         if _check_blacklist(guid_id):
             continue
 
         # it's not, check and see if it's already in the database
+
         if not Guid.objects.filter(_id=guid_id).exists():
             return guid_id
 
@@ -602,6 +616,13 @@ class VersionedGuidMixin(GuidMixin):
             raise ValueError(f'no osfid for {self} (cannot build semantic iri)')
         return osfid_iri(_osfid)
 
+
+def _clear_cached_guid(instance):
+    has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
+    if has_cached_guids:
+        del instance._prefetched_objects_cache['guids']
+
+
 @receiver(post_save)
 def ensure_guid(sender, instance, **kwargs):
     """Generate guid if it doesn't exist for subclasses of GuidMixin except for subclasses of VersionedGuidMixin
@@ -615,17 +636,26 @@ def ensure_guid(sender, instance, **kwargs):
         # Only the initial or the latest version is referred to by the base guid in the Guid table. All versions have
         # their "versioned" guid in the GuidVersionsThrough table.
         return False
+
+    from osf.models import Registration
+    if issubclass(sender, Registration) and instance._manual_guid:
+        # Note: Only skip default GUID generation if the registration has `_manual_guid` set
+        # Note: Must clear guid cached because registration is cloned and cast from a draft registration
+        _clear_cached_guid(instance)
+        return False
+
     existing_guids = Guid.objects.filter(
         object_id=instance.pk,
         content_type=ContentType.objects.get_for_model(instance)
     )
-    has_cached_guids = hasattr(instance, '_prefetched_objects_cache') and 'guids' in instance._prefetched_objects_cache
-    if not existing_guids.exists():
-        # Clear query cache of instance.guids
-        if has_cached_guids:
-            del instance._prefetched_objects_cache['guids']
-        Guid.objects.create(
-            object_id=instance.pk,
-            content_type=ContentType.objects.get_for_model(instance),
-            _id=generate_guid(instance.__guid_min_length__)
-        )
+    if existing_guids.exists():
+        return False
+
+    # Note: must clear cached guid because the instance could be cloned and cast from existing instance.
+    _clear_cached_guid(instance)
+    Guid.objects.create(
+        object_id=instance.pk,
+        content_type=ContentType.objects.get_for_model(instance),
+        _id=generate_guid(instance.__guid_min_length__)
+    )
+    return True

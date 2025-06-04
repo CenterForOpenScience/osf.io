@@ -83,6 +83,7 @@ class RegistrationSerializer(NodeSerializer):
         'has_supplements',
     ])
 
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(required=False)
@@ -786,6 +787,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         return validated_data.get('children', [])
 
     def create(self, validated_data):
+
+        guid_str = validated_data.pop('manual_guid', None)
         auth = get_user_auth(self.context['request'])
         draft = validated_data.pop('draft', None)
         registration_choice = self.get_registration_choice_by_version(validated_data)
@@ -810,7 +813,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             )
 
         try:
-            registration = draft.register(auth, save=True, child_ids=children)
+            registration = draft.register(auth, save=True, child_ids=children, guid_str=guid_str)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
 
