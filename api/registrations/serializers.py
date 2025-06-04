@@ -1,5 +1,8 @@
 import pytz
 import json
+
+from api.waffle.utils import flag_is_active
+from osf import features
 from website.archiver.utils import normalize_unicode_filenames
 
 from packaging.version import Version
@@ -83,7 +86,6 @@ class RegistrationSerializer(NodeSerializer):
         'has_supplements',
     ])
 
-    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
     ia_url = ser.URLField(read_only=True)
     reviews_state = ser.CharField(source='moderation_state', read_only=True)
     title = ser.CharField(required=False)
@@ -734,6 +736,10 @@ class RegistrationCreateSerializer(RegistrationSerializer):
         else:
             self.fields['draft_registration'] = ser.CharField(write_only=True)
 
+    # For manual GUID and DOI assignment during creation for privileged users
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
+    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True)
+
     # For newer versions
     embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)
     included_node_ids = ser.ListField(write_only=True, required=False)
@@ -788,7 +794,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
 
     def create(self, validated_data):
 
-        guid_str = validated_data.pop('manual_guid', None)
+        manual_guid = validated_data.pop('manual_guid', None)
         auth = get_user_auth(self.context['request'])
         draft = validated_data.pop('draft', None)
         registration_choice = self.get_registration_choice_by_version(validated_data)
@@ -813,7 +819,7 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             )
 
         try:
-            registration = draft.register(auth, save=True, child_ids=children, guid_str=guid_str)
+            registration = draft.register(auth, save=True, child_ids=children, manual_guid=manual_guid)
         except NodeStateError as err:
             raise exceptions.ValidationError(err)
 
@@ -826,6 +832,11 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             except ValidationError as err:
                 raise exceptions.ValidationError(err.message)
         else:
+            manual_doi = validated_data.pop('manual_doi', None)
+            if manual_doi:
+                if not flag_is_active(self.context['request'], features.MANUAL_DOI_AND_GUID):
+                    raise exceptions.ValidationError(detail='Manual DOI assignment is not allowed.')
+                registration.set_identifier_value('doi', manual_doi)
             try:
                 registration.require_approval(auth.user)
             except NodeStateError as err:
