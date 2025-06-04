@@ -9,7 +9,6 @@ from framework.auth.core import Auth
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
-    OSFGroupFactory,
     ProjectFactory,
     UnconfirmedUserFactory,
     UserFactory,
@@ -175,18 +174,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
         res = app.get(url_private, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
-
-        #   test_return_private_contributor_list_logged_in_osf_group_member
-        res = app.get(url_private, auth=user_two.auth, expect_errors=True)
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.get(url_private, auth=user_two.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == make_contrib_id(
-            project_private._id, user._id
-        )
 
     def test_return_public_contributor_list_logged_out(
         self, app, user, user_two, project_public, url_public, make_contrib_id
@@ -646,25 +633,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         project_public.reload()
         assert user_three not in project_public.contributors.all()
 
-    def test_adds_contributor_public_project_non_admin_osf_group(
-        self,
-        app,
-        user,
-        user_two,
-        user_three,
-        project_public,
-        data_user_three,
-        url_public,
-    ):
-        group = OSFGroupFactory(creator=user_two)
-        project_public.add_osf_group(group, permissions.WRITE)
-        res = app.post_json_api(
-            url_public, data_user_three, auth=user_two.auth, expect_errors=True
-        )
-        assert res.status_code == 403
-        project_public.reload()
-        assert user_three not in project_public.contributors.all()
-
     def test_adds_contributor_public_project_non_contributor(
         self, app, user_two, user_three, project_public, data_user_three, url_public
     ):
@@ -685,27 +653,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_private, data_user_two, url_private
     ):
         res = app.post_json_api(url_private, data_user_two, auth=user.auth)
-        assert res.status_code == 201
-        assert res.json['data']['id'] == '{}-{}'.format(
-            project_private._id, user_two._id
-        )
-
-        project_private.reload()
-        assert user_two in project_private.contributors
-
-    def test_adds_contributor_private_project_osf_group_admin_perms(
-        self,
-        app,
-        user,
-        user_two,
-        user_three,
-        project_private,
-        data_user_two,
-        url_private,
-    ):
-        osf_group = OSFGroupFactory(creator=user_three)
-        project_private.add_osf_group(osf_group, permissions.ADMIN)
-        res = app.post_json_api(url_private, data_user_two, auth=user_three.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == '{}-{}'.format(
             project_private._id, user_two._id
@@ -1255,15 +1202,15 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_enqueue_task
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
     def url_project_contribs(self, project_public):
         return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_no_email_if_false(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=false'
         payload = {
@@ -1274,11 +1221,10 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_sends_email(
-        self, mock_mail, app, user, user_two, url_project_contribs
+        self, mock_send_grid, app, user, user_two, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1293,7 +1239,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(
@@ -1334,9 +1280,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_sends_email(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1347,7 +1292,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
@@ -1382,9 +1327,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             == 'preprint is not a valid email preference.'
         )
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_invalid_send_email_param(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=true'
         payload = {
@@ -1398,11 +1342,10 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
         )
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_without_email_no_email(
-        self, mock_mail, app, user, url_project_contribs
+        self, mock_send_grid, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
@@ -1418,7 +1361,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
 
 @pytest.mark.django_db

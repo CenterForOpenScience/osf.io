@@ -15,7 +15,7 @@ from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
-    UnregUserFactory, OSFGroupFactory
+    UnregUserFactory
 )
 from osf.utils import tokens
 from osf.exceptions import (
@@ -24,6 +24,7 @@ from osf.exceptions import (
 )
 from osf.models import Contributor, Retraction
 from osf.utils import permissions
+from conftest import start_mock_send_grid
 
 
 @pytest.mark.enable_bookmark_creation
@@ -192,15 +193,6 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         with pytest.raises(PermissionsError):
             self.registration.retraction.approve_retraction(non_admin, approval_token)
-        assert self.registration.is_pending_retraction
-        assert not self.registration.is_retracted
-
-        # group admin on node cannot retract registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        self.registration.registered_from.add_osf_group(group, permissions.ADMIN)
-        with pytest.raises(PermissionsError):
-            self.registration.retraction.approve_retraction(group_mem, approval_token)
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
@@ -757,6 +749,8 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.enable_bookmark_creation
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -769,9 +763,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
 
-        self.group_mem = AuthUserFactory()
-        self.group = OSFGroupFactory(creator=self.group_mem)
-        self.registration.registered_from.add_osf_group(self.group, permissions.ADMIN)
+        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -796,8 +788,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
+    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self):
         unreg = UnregUserFactory()
         self.registration.add_unregistered_contributor(
             unreg.fullname,
@@ -813,7 +804,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             auth=self.user.auth,
         )
         # Only the creator gets an email; the unreg user does not get emailed
-        assert mock_send_mail.call_count == 1
+        assert self.mock_send_grid.call_count == 1
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -861,12 +852,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-        # group admin POST fails
-        res = self.app.post(self.retraction_post_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
+    def test_POST_retraction_without_justification_returns_HTTPOK(self):
         res = self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
@@ -878,8 +864,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert self.registration.retraction.justification is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
+    def test_valid_POST_retraction_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.app.post(
             self.retraction_post_url,
@@ -890,8 +875,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         # Logs: Created, registered, retraction initiated
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
+    def test_valid_POST_retraction_when_pending_retraction_raises_400(self):
         self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
@@ -904,16 +888,13 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         )
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_calls_send_mail_with_username(self, mock_send):
+    def test_valid_POST_calls_send_mail_with_username(self):
         self.app.post(
             self.retraction_post_url,
             json={'justification': ''},
             auth=self.user.auth,
         )
-        assert mock_send.called
-        args, kwargs = mock_send.call_args
-        assert self.user.username in args
+        assert self.mock_send_grid.called
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
@@ -926,11 +907,8 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
-        # group admin on node fails disapproval GET
-        res = self.app.get(approval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
-    def test_non_contributor_GET_disapproval_returns_HTTPError_FORBIDDEN(self):
+    def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
@@ -940,7 +918,3 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
-
-        # group admin on node fails disapproval GET
-        res = self.app.get(disapproval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN

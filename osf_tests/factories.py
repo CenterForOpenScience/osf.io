@@ -374,15 +374,6 @@ class RegistrationProviderFactory(DjangoModelFactory):
         return obj
 
 
-class OSFGroupFactory(DjangoModelFactory):
-    name = factory.Faker('company')
-    created = factory.LazyFunction(timezone.now)
-    creator = factory.SubFactory(AuthUserFactory)
-
-    class Meta:
-        model = models.OSFGroup
-
-
 class RegistrationFactory(BaseNodeFactory):
 
     creator = None
@@ -1049,9 +1040,20 @@ class MockOAuth2Provider(models.ExternalProvider):
         }
 
 
+class NotificationSubscriptionLegacyFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationSubscriptionLegacy
+
+
 class NotificationSubscriptionFactory(DjangoModelFactory):
     class Meta:
         model = models.NotificationSubscription
+    notification_type = factory.LazyAttribute(lambda o: NotificationTypeFactory())
+
+
+class NotificationTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationType
 
 
 def make_node_lineage():

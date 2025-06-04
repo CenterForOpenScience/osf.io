@@ -5,6 +5,7 @@
 import logging
 
 import django
+
 django.setup()
 
 from django.core.management.base import BaseCommand
@@ -20,9 +21,9 @@ logger = logging.getLogger(__name__)
 def add_reviews_notification_setting(notification_type, state=None):
     if state:
         OSFUser = state.get_model('osf', 'OSFUser')
-        NotificationSubscription = state.get_model('osf', 'NotificationSubscription')
+        NotificationSubscriptionLegacy = state.get_model('osf', 'NotificationSubscriptionLegacy')
     else:
-        from osf.models import OSFUser, NotificationSubscription
+        from osf.models import OSFUser, NotificationSubscriptionLegacy
 
     active_users = OSFUser.objects.filter(date_confirmed__isnull=False).exclude(date_disabled__isnull=False).exclude(is_active=False).order_by('id')
     total_active_users = active_users.count()
@@ -33,10 +34,10 @@ def add_reviews_notification_setting(notification_type, state=None):
     for user in active_users.iterator():
         user_subscription_id = to_subscription_key(user._id, notification_type)
 
-        subscription = NotificationSubscription.load(user_subscription_id)
+        subscription = NotificationSubscriptionLegacy.load(user_subscription_id)
         if not subscription:
             logger.info(f'No {notification_type} subscription found for user {user._id}. Subscribing...')
-            subscription = NotificationSubscription(_id=user_subscription_id, owner=user, event_name=notification_type)
+            subscription = NotificationSubscriptionLegacy(_id=user_subscription_id, owner=user, event_name=notification_type)
             subscription.save()  # Need to save in order to access m2m fields
             subscription.add_user_to_subscription(user, 'email_transactional')
         else:

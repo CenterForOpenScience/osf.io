@@ -7,7 +7,6 @@ from osf_tests.factories import (
     UserFactory,
     RegistrationFactory,
     NodeFactory,
-    OSFGroupFactory,
     CollectionFactory,
 )
 from osf.models import NodeRelation
@@ -186,23 +185,6 @@ class TestNodeSerializers(OsfTestCase):
         child_component = NodeFactory(creator=user, parent=parent_node)
         result = _view_project(parent_node, Auth(user))
         assert result['node']['child_exists'] == True
-
-    def test_serialize_node_summary_is_contributor_osf_group(self):
-        project = ProjectFactory()
-        user = UserFactory()
-        group = OSFGroupFactory(creator=user)
-        project.add_osf_group(group, permissions.WRITE)
-
-        res = _view_project(
-            project, auth=Auth(user),
-        )
-        assert not res['user']['is_contributor']
-        assert res['user']['is_contributor_or_group_member']
-        assert not res['user']['is_admin']
-        assert res['user']['can_edit']
-        assert res['user']['has_read_permissions']
-        assert set(res['user']['permissions']) == {permissions.READ, permissions.WRITE}
-        assert res['user']['can_comment']
 
     def test_serialize_node_search_returns_only_visible_contributors(self):
         node = NodeFactory()
