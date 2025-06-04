@@ -72,7 +72,8 @@
                           {"name": "Kyoto University, IIMC - Object Storage (StorageGRID)",
                            "host": "s3.rdm.kyoto-u.ac.jp:443"},
                           {"name": "IZUMI - Tohoku University Research Data Lake",
-                           "host": "s3.rdx.tohoku.ac.jp:443"}
+                           "host": "s3.rdx.tohoku.ac.jp:443",
+                           "serverSideEncryption": false}
                            ],
     "encryptUploads": true
 }
