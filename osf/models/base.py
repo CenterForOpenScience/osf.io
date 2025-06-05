@@ -41,17 +41,15 @@ def check_manually_assigned_guid(guid_id, length=5):
     return True
 
 
-def generate_guid(length=5, guid_id=None):
+def generate_guid(length=5):
     while True:
-        if guid_id is None:
-            guid_id = ''.join(random.sample(ALPHABET, length))
+        guid_id = ''.join(random.sample(ALPHABET, length))
 
         # is the guid in the blacklist
         if _check_blacklist(guid_id):
             continue
 
         # it's not, check and see if it's already in the database
-
         if not Guid.objects.filter(_id=guid_id).exists():
             return guid_id
 
