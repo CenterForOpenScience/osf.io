@@ -1,6 +1,7 @@
 import re
 import logging
 import requests
+from framework import sentry
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import run_postcommit
 from django.contrib.contenttypes.models import ContentType
@@ -51,7 +52,7 @@ def _check_resource_for_domains(guid, content):
             domain=domain,
             defaults={'note': note}
         )
-        if notable_domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT:
+        if notable_domain.note == NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT.value:
             spammy_domains.append(notable_domain.domain)
         DomainReference.objects.get_or_create(
             domain=notable_domain,
@@ -62,6 +63,7 @@ def _check_resource_for_domains(guid, content):
             }
         )
     if spammy_domains:
+        sentry.log_message(f"Spammy domains detected for {guid}: {spammy_domains}")
         resource.confirm_spam(save=True, domains=list(spammy_domains))
 
 
