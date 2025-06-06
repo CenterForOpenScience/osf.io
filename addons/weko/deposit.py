@@ -25,6 +25,7 @@ ROCRATE_DATASET_MIME_TYPE = 'application/rdm-dataset'
 ROCRATE_PROJECT_MIME_TYPE = 'application/rdm-project'
 ROCRATE_FILENAME_PATTERN = re.compile(r'\.rdm-project([^\.]+)\.zip$')
 
+
 class ROCrateFactory(BaseROCrateFactory):
 
     def __init__(self, node, work_dir, folder):
@@ -230,6 +231,7 @@ def _deposit_metadata(
                     schema_id,
                     file_metadatas,
                     project_metadatas,
+                    node_id
                 )
         if mapping_def_csv is None and mapping_def_ro_crate_json is None:
             logger.warning('No metadata mapping found')
