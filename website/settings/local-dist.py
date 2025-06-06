@@ -62,6 +62,9 @@ MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
 
+MAILHOG_HOST = 'mailhog'
+MAILHOG_PORT = 1025
+
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
 

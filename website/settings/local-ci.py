@@ -52,6 +52,9 @@ MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
 
+MAILHOG_HOST = 'mailhog'
+MAILHOG_PORT = 1025
+
 # Session
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'

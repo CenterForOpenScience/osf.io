@@ -236,3 +236,9 @@ switches:
     name: countedusage_unified_metrics_2024
     note: use only `osf.metrics.counted_usage`-based metrics where possible; un-use PageCounter, PreprintView, PreprintDownload, etc
     active: false
+
+  - flag_name: ENABLE_MAILHOG
+    name: enable
+    note: This is used to enable the MailHog email testing service, this will allow emails to be sent to the
+          MailHog service before sending them to real email addresses.
+    active: false
