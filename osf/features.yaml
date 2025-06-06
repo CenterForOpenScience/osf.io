@@ -12,6 +12,12 @@
 # 5. When a flag name is no longer referenced anywhere in this repo or in the Ember app remove it from this list.
 flags:
 
+  - flag_name: MANUAL_DOI_AND_GUID
+    name: manual_doi_and_guid
+    note: This is used to allow certain product staff members to manually assign doi and guid during Registration or
+          Preprint creation. DO NOT CHANGE UNLESS ABSOLUTELY NECESSARY.
+    everyone: false
+
   - flag_name: ENABLE_GV
     name: gravy_waffle
     note: This is used to enable GravyValet, the system responible for addons, this will remove the files widget on the
