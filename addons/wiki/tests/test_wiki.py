@@ -1448,7 +1448,7 @@ class TestWikiMenu(OsfTestCase):
     def test_format_project_wiki_pages_contributor(self):
         home_page = WikiPage.objects.create_for_node(self.project, 'home', 'content here', self.consolidate_auth)
         zoo_page = WikiPage.objects.create_for_node(self.project, 'zoo', 'koala', self.consolidate_auth)
-        data = views.format_project_wiki_pages(self.project, self.consolidate_auth)
+        data = views.ç(self.project, self.consolidate_auth)
         expected = [
             {
                 'page': {
