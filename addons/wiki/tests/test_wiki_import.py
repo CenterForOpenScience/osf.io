@@ -339,7 +339,7 @@ class test_utils(OsfTestCase):
         ]
         parent = [
             {
-                
+
             }
         ]
 
@@ -1448,3 +1448,211 @@ class test_views(OsfTestCase):
         expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id})'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
+        
+    def test_filename(self):
+        match_path = 'test.png'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
+
+    def test_filename_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, ' =200')
+
+    def test_filename_invalid_size(self):
+        match_path = 'test.png =abcde'
+        expected_path = match_path
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
+
+    def test_has_slash(self):
+        path = 'meeting 4/24'
+        result = views._exclude_symbols(path)
+        self.assertTrue(result[0])
+        self.assertFalse(result[1])
+        self.assertFalse(result[2])
+
+    def test_is_url(self):
+        path = 'https://example.com'
+        result = views._exclude_symbols(path)
+        self.assertTrue(result[0])
+        self.assertFalse(result[1])
+        self.assertTrue(result[2])
+
+    def test_has_sharp(self):
+        path = 'wiki#anchor'
+        result = views._exclude_symbols(path)
+        self.assertFalse(result[0])
+        self.assertTrue(result[1])
+        self.assertFalse(result[2])
+
+    def test_no_tooltip(self):
+        match_path = 'test.txt'
+        expected_path = 'test.txt'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertIsNone(result_tooptip)
+
+    def test_single_quote_tooltip(self):
+        match_path = "test.txt 'tooltip'"
+        expected_path = 'test.txt'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_double_quote_tooltip(self):
+        match_path = 'test.txt "tooltip"'
+        expected_path = 'test.txt'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_backslash_in_tooltip(self):
+        match_path = r'test.txt "to\\\\ol\"\\tip"'
+        expected_path = 'test.txt'
+        expected_tooltip = 'to\\\\\\\\ol\\"\\\\tip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_empty_tooltip(self):
+        match_path = 'test.txt ""'
+        expected_path = 'test.txt'
+        expected_tooltip = ''
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_single_quote_tooltip_size(self):
+        match_path = "test.png 'tooltip' =200"
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_double_quote_tooltip_size(self):
+        match_path = 'test.png "tooltip" =200'
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_no_tooltip_with_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png =200'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertIsNone(result_tooptip)
+
+    def test_check_attachment_file_name_exist_has_hat(self):
+        wiki_name = 'importpage1'
+        file_name = 'importpage2^attachment3.xlsx'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment3_xlsx._id)
+
+    def test_check_attachment_file_name_exist_has_not_hat(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist_nfd(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
+        file_name_nfd = unicodedata.normalize('NFD', file_name)
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._process_attachment_file_name_exist(wiki_name_nfd, file_name_nfd, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist_not_exist(self):
+        wiki_name = 'importpage1'
+        file_name = 'not_existing_file.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertIsNone(result_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_aborted(self, mock_task):
+        mock_task.is_aborted.return_value = True
+        expected_content = 'wiki paged content'
+        with self.assertRaises(ImportTaskAbortedError):
+            views._wiki_import_create_or_update('/importpagec/importpaged', 'wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_not_changed(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/importpagec/importpaged', 'wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+        self.assertEqual(result, {'status': 'unmodified', 'path': '/importpagec/importpaged'})
+        self.assertIsNone(updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, 'wiki paged content')
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_changed(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'new wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/importpagec/importpaged', 'new wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+        self.assertEqual(result, {'status': 'success', 'path': '/importpagec/importpaged'})
+        self.assertEqual(self.wiki_page4.id, updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_create_home(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'home wiki page content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/HOME', 'home wiki page content', self.consolidate_auth ,self.project2, mock_task)
+        self.assertEqual(result, {'status': 'success', 'path': '/HOME'})
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'home')
+        self.assertEqual(new_wiki_version.wiki_page.id, updated_wiki_id)
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_create(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki page content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/wikipagename', 'wiki page content', self.consolidate_auth ,self.project2, mock_task)
+        self.assertEqual(result, {'status': 'success', 'path': '/wikipagename'})
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'wikipagename')
+        self.assertEqual(new_wiki_version.wiki_page.id, updated_wiki_id)
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_changed_nfd(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        path_nfd = unicodedata.normalize('NFD', '/importpagec/importpaged')
+        content_nfd = unicodedata.normalize('NFD', 'new wiki paged content')
+        parent_name_nfd = unicodedata.normalize('NFD', 'importpagec')
+        expected_content = 'new wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update(path_nfd, content_nfd, self.consolidate_auth ,self.project2, mock_task, parent_name_nfd)
+        self.assertEqual(result, {'status': 'success', 'path': '/importpagec/importpaged'})
+        self.assertEqual(self.wiki_page4.id, updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_does_not_exist_parent(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki page content'
+        with self.assertRaises(Exception) as cm:
+            views._wiki_import_create_or_update('/wikipagename', 'wiki page content', self.consolidate_auth ,self.project2, mock_task, 'notexisitparentwiki')
