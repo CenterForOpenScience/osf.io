@@ -8,6 +8,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from osf.external.askismet.client import AkismetClient
 from osf.external.oopspam.client import OOPSpamClient
+from osf.utils.fields import ensure_str
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -39,11 +40,8 @@ def reclassify_domain_references(notable_domain_id, current_note, previous_note)
             item.referrer.save()
 
 
-def _check_resource_for_domains(guid, content):
-    from osf.models import Guid, NotableDomain, DomainReference
-    resource, _ = Guid.load_referent(guid)
-    if not resource:
-        return f'{guid} not found'
+def _check_resource_for_domains(resource, content):
+    from osf.models import NotableDomain, DomainReference
 
     spammy_domains = []
     referrer_content_type = ContentType.objects.get_for_model(resource)
@@ -62,20 +60,8 @@ def _check_resource_for_domains(guid, content):
                 'is_triaged': notable_domain.note not in (NotableDomain.Note.UNKNOWN, NotableDomain.Note.UNVERIFIED)
             }
         )
-    if spammy_domains:
-        sentry.log_message(f"Spammy domains detected for {guid}: {spammy_domains}")
-        resource.confirm_spam(save=True, domains=list(spammy_domains))
 
-
-@run_postcommit(once_per_request=False, celery=True)
-@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
-def check_resource_for_domains_postcommit(guid, content):
-    _check_resource_for_domains(guid, content)
-
-
-@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
-def check_resource_for_domains_async(guid, content):
-    _check_resource_for_domains(guid, content)
+    return spammy_domains
 
 
 def _extract_domains(content):
@@ -113,16 +99,11 @@ def _extract_domains(content):
             yield domain, note
 
 
-@run_postcommit(once_per_request=False, celery=True)
-@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
-def check_resource_with_spam_services(guid, content, author, author_email, request_kwargs):
+def check_resource_with_spam_services(resource, content, author, author_email, request_kwargs):
     """
     Return statements used only for debugging and recording keeping
     """
     any_is_spam = False
-    from osf.models import Guid, OSFUser
-    guid = Guid.load(guid)
-    resource = guid.referent
 
     kwargs = dict(
         user_ip=request_kwargs.get('remote_addr'),
@@ -165,10 +146,54 @@ def check_resource_with_spam_services(guid, content, author, author_email, reque
         resource.spam_data['author_email'] = author_email
         resource.flag_spam()
 
-        if hasattr(resource, 'check_spam_user'):
-            user = OSFUser.objects.get(username=author_email)
-            resource.check_spam_user(user)
+    return any_is_spam
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
+def check_resource_for_spam_postcommit(guid, content, author, author_email, request_headers):
+    from osf.models import Guid, OSFUser
+
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
+        return f'{guid} not found'
+
+    spammy_domains = _check_resource_for_domains(resource, content)
+    if spammy_domains:
+        sentry.log_message(f"Spammy domains detected for {guid}: {spammy_domains}")
+        resource.confirm_spam(save=False, domains=list(spammy_domains))
+    elif settings.SPAM_SERVICES_ENABLED:
+        request_kwargs = {
+            'remote_addr': request_headers.get('Remote-Addr') or request_headers.get('Host'),  # for local testing
+            'user_agent': request_headers.get('User-Agent'),
+            'referer': request_headers.get('Referer'),
+        }
+        for key, value in request_kwargs.items():
+            request_kwargs[key] = ensure_str(value)
+
+        check_resource_with_spam_services(
+            resource,
+            content,
+            author,
+            author_email,
+            request_kwargs,
+        )
 
     resource.save()
 
-    return f'{resource} is spam: {any_is_spam} {resource.spam_data.get("content")}'
+    if hasattr(resource, 'check_spam_user'):
+        user = OSFUser.objects.get(username=author_email)
+        resource.check_spam_user(user)
+
+
+@celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
+def check_resource_for_domains_async(guid, content):
+    from osf.models import Guid
+
+    resource, _ = Guid.load_referent(guid)
+    if not resource:
+        return f'{guid} not found'
+
+    spammy_domains = _check_resource_for_domains(resource, content)
+    if spammy_domains:
+        resource.confirm_spam(save=True, domains=list(spammy_domains))
