@@ -3,6 +3,11 @@ description: 'Generate test report from junit xml file'
 runs:
   using: "composite"
   steps:
+  - name: Archive code coverage results
+    uses: actions/upload-artifact@v4
+    with:
+      name: code-coverage-report
+      path: report
   - name: Generate Report
     uses: dorny/test-reporter@v2
     if: success() || failure()    # run this step even if previous step failed
