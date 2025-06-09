@@ -30,8 +30,18 @@ def task__update_verified_links(self, target_guid):
     target_object = Guid.load(target_guid).referent
     try:
         target_object.request_identifier_update(category='doi')
+        sentry.log_message(
+            'DOI metadata with verified links updated for guid',
+            extra_data={'guid': target_guid},
+            level=logging.INFO
+        )
         logger.debug(f'DOI metadata for guid with verified links updated: [guid={target_guid}]')
-    except GVException as e:
+    except Exception as e:
+        sentry.log_message(
+            'Failed to update DOI metadata with verified links',
+            extra_data={'guid': target_guid, 'error': str(e)},
+            level=logging.ERROR
+        )
         logger.error(f'DOI metadata for guid with verified links failed to update: [guid={target_guid}]')
         raise self.retry(exc=e)
 
