@@ -296,7 +296,8 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     # https://github.com/gabrielfalcao/HTTPretty/issues/209#issue-54090252
     args = []
     if junit:
-        args.extend(['--html=report/report.html'])
+        args.extend(['--junit-xml', 'report.xml'])
+        args.extend(['--html=report/index.html'])
     if coverage:
         args.extend([
             '--cov-report', 'term-missing',
