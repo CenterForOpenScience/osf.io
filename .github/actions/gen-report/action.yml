@@ -7,7 +7,7 @@ runs:
     uses: actions/upload-artifact@v4
     with:
       name: ${{github.job}} HTML REPORT
-      path: report
+      path: report.html
   - name: Generate Report
     uses: dorny/test-reporter@v2
     if: success() || failure()    # run this step even if previous step failed

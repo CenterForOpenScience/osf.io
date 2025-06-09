@@ -414,8 +414,8 @@ def test_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=Fa
 @task
 def test_api1(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
-    print(f'Testing modules "{API_TESTS1 + ADMIN_TESTS}"')
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    print(f'Testing modules "{API_TESTS1}"')
+    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
@@ -444,8 +444,8 @@ def test_admin(ctx, numprocesses=None, coverage=False, testmon=False, junit=Fals
 def test_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run all the tests in the addons directory.
     """
-    print(f'Testing modules "{ADDON_TESTS}"')
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    print(f'Testing modules "{ADDON_TESTS + ADMIN_TESTS}"')
+    test_module(ctx, module=ADDON_TESTS + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
