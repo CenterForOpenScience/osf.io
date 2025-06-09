@@ -52,7 +52,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-addons -n auto --junit
+      run: poetry run python3 -m invoke test-ci-addons --junit
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -79,7 +79,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-website -n auto --junit
+      run: poetry run python3 -m invoke test-ci-website --junit
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -108,7 +108,7 @@ jobs:
       - name: NVM & yarn install
         run: poetry run python3 -m invoke assets --dev
       - name: Run test
-        run: poetry run python3 -m invoke test-ci-api1-and-js -n auto --junit
+        run: poetry run python3 -m invoke test-ci-api1-and-js --junit
       - name: Upload report
         if: (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
@@ -135,7 +135,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-api2 -n auto --junit
+      run: poetry run python3 -m invoke test-ci-api2 --junit
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
@@ -163,7 +163,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-api3-and-osf -n auto --junit
+      run: poetry run python3 -m invoke test-ci-api3-and-osf --junit
     - name: Upload report
       if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
