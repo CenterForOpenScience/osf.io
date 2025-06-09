@@ -907,8 +907,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
-
-    def test_non_contributor_GET_disapproval_returns_HTTPError_UNAUTHORIZED(self):
+    def test_non_contributor_GET_disapproval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
         rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
