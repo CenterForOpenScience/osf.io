@@ -30,7 +30,7 @@ jobs:
         mkdir -p ~/.cache/testmon
         rm -rf node_modules  ## TODO remove this later
 
-  addons:
+  addons_and_admin:
     runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
