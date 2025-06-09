@@ -24,4 +24,7 @@ PUBLIC_STATES = {
         DefaultStates.PENDING.value,
         DefaultStates.ACCEPTED.value,
     ),
+    Workflows.HYBRID_MODERATION.value: (
+        DefaultStates.ACCEPTED.value,
+    ),
 }
