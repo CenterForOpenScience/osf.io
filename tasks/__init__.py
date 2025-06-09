@@ -297,7 +297,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     args = []
     if junit:
         args.extend(['--junit-xml', 'report.xml'])
-        args.extend(['--html=report/index.html'])
+        args.extend(['--html=report.html', '--self-contained-html'])
     if coverage:
         args.extend([
             '--cov-report', 'term-missing',
