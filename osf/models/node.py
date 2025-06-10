@@ -2464,21 +2464,28 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     force=True
                 )
 
-    def _get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None):
+    def _get_addons_from_gv_without_caching(self, gv_pk, requesting_user_id, auth=None):
+        requesting_user = OSFUser.load(requesting_user_id)
+        services = gv_translations.get_external_services(requesting_user)
+        for service in services:
+            if service.short_name == gv_pk:
+                break
+        else:
+            return None
+
+        return self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
+
+    def _get_addon_from_gv(self, gv_pk, requesting_user_id, auth=None, cached=True):
         request = get_current_request()
         # This is to avoid making multiple requests to GV
         # within the lifespan of one request on the OSF side
-        try:
-            gv_addons = request.gv_addons
-        except AttributeError:
-            requesting_user = OSFUser.load(requesting_user_id)
-            services = gv_translations.get_external_services(requesting_user)
-            for service in services:
-                if service.short_name == gv_pk:
-                    break
-            else:
-                return None
-            gv_addons = request.gv_addons = self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
+        if cached:
+            try:
+                gv_addons = request.gv_addons
+            except AttributeError:
+                gv_addons = request.gv_addons = self._get_addons_from_gv_without_caching(gv_pk, requesting_user_id, auth=auth)
+        else:
+            gv_addons = self._get_addons_from_gv_without_caching(gv_pk, requesting_user_id, auth=auth)
 
         for item in gv_addons:
             if item.short_name == gv_pk:
