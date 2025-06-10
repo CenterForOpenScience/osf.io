@@ -2337,6 +2337,38 @@ class TestNodeSpam:
                 project.check_spam(user, None, None)
                 assert not project.is_public
 
+    @mock.patch('osf.models.node.get_request_and_user_id')
+    def test_do_check_spam_called_on_set_public(self, mock_get_request, project, user):
+        mock_request = {
+            'headers': {
+                'Remote-Addr': '1.2.3.4',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Referer': 'https://osf.io'
+            }
+        }
+        mock_get_request.return_value = (mock_request, user._id)
+
+        project.title = 'Spam'
+        project.description = 'spammy content'
+        project.is_public = False
+        project.save()
+
+        wiki = WikiFactory(node=project, user=user)
+        WikiVersionFactory(wiki_page=wiki, content='Some wiki content')
+
+        with mock.patch.object(Node, 'do_check_spam') as mock_do_check_spam:
+            mock_do_check_spam.return_value = False
+            project.set_privacy('public', auth=Auth(user))
+
+            mock_do_check_spam.assert_called_once()
+            args = mock_do_check_spam.call_args[0]
+            assert args[0] == user.fullname  # author
+            assert args[1] == user.username  # author email
+            # content
+            assert 'Some wiki content' in args[2]
+            assert project.title in args[2]
+            assert project.description in args[2]
+
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     def test_check_spam_skips_ham_user(self, project, user):
         with mock.patch('osf.models.AbstractNode._get_spam_content', mock.Mock(return_value='some content!')):
@@ -2465,6 +2497,19 @@ class TestNodeSpam:
 
         project.confirm_ham()
         assert not project.is_public
+
+    def test_get_spam_content_includes_wiki_content(self, project, user):
+        wiki = WikiFactory(node=project, user=user)
+        WikiVersionFactory(wiki_page=wiki, content='Some wiki content')
+
+        content = project._get_spam_content()
+        assert 'Some wiki content' in content
+
+        project.title = 'Test Title'
+        project.save()
+        content = project._get_spam_content()
+        assert 'Test Title' in content
+        assert 'Some wiki content' in content
 
 
 class TestCheckResourceForSpamPostcommit:
