@@ -737,8 +737,8 @@ class RegistrationCreateSerializer(RegistrationSerializer):
             self.fields['draft_registration'] = ser.CharField(write_only=True)
 
     # For manual GUID and DOI assignment during creation for privileged users
-    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
-    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True)
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
+    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     # For newer versions
     embargo_end_date = VersionedDateTimeField(write_only=True, allow_null=True, default=None)

@@ -501,8 +501,8 @@ class PreprintCreateSerializer(PreprintSerializer):
     # Overrides PreprintSerializer to make id nullable, adds `create`
     # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
-    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True)
-    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True)
+    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
+    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     def create(self, validated_data):
 
