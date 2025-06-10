@@ -162,6 +162,7 @@ MAIL_PASSWORD = ''  # Set this in local.py
 
 MAILHOG_HOST = 'mailhog'
 MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://localhost:8025'
 
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,

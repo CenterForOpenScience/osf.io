@@ -511,7 +511,6 @@ services:
       - rabbitmq
       - elasticsearch
       - redis
-      - mailhog
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
     env_file:
