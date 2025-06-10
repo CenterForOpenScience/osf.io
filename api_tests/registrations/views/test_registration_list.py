@@ -1557,6 +1557,11 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             }
         }
 
+    @mock.patch('framework.celery_tasks.handlers.enqueue_task')
+    def test_registration_draft_must_be_draft_of_current_node(
+            self, mock_enqueue, app, user, schema, url_registrations_ver):
+        # Overrides TestNodeRegistrationCreate - node is not in URL in this workflow
+        return
     @pytest.fixture
     def manual_guid(self):
         return 'abcde'
