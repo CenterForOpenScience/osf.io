@@ -153,7 +153,7 @@ class TestNotableDomain:
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
             spam_tasks._check_resource_for_domains(
-                guid=obj.guids.first()._id,
+                resource=obj,
                 content=spam_domain.geturl(),
             )
 
@@ -169,19 +169,17 @@ class TestNotableDomain:
     def test_check_resource_for_domains_spam(self, spam_domain, marked_as_spam_domain, factory):
         obj = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj,
                 content=spam_domain.geturl(),
             )
 
-        obj.reload()
+        assert spammy_domains == [spam_domain.netloc]
+
         assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         ).count() == 1
-        obj.reload()
-        assert obj.spam_status == SpamStatus.SPAM
-        assert obj.spam_data['domains'] == [spam_domain.netloc]
         assert DomainReference.objects.filter(
             referrer_object_id=obj.id,
             referrer_content_type=ContentType.objects.get_for_model(obj),
@@ -233,19 +231,17 @@ class TestNotableDomain:
         obj.spam_data['domains'] = [spam_domain.netloc]
         obj.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj,
                 content=f'{spam_domain.geturl()}',
             )
 
-        obj.reload()
+        assert spammy_domains == [spam_domain.netloc]
+
         assert NotableDomain.objects.filter(
             domain=spam_domain.netloc,
             note=NotableDomain.Note.EXCLUDE_FROM_ACCOUNT_CREATION_AND_CONTENT
         ).count() == 1
-        obj.reload()
-        assert obj.spam_status == SpamStatus.SPAM
-        assert obj.spam_data['domains'] == [spam_domain.netloc]
         assert DomainReference.objects.filter(
             referrer_object_id=obj.id,
             referrer_content_type=ContentType.objects.get_for_model(obj),
@@ -326,10 +322,12 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_unknown_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_one.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_one,
                 content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_one.confirm_spam(save=True, domains=spammy_domains)
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
@@ -344,10 +342,12 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_unknown_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_two.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_two,
                 content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_two.confirm_spam(save=True, domains=spammy_domains)
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
@@ -364,10 +364,12 @@ class TestNotableDomainReclassification:
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_three.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_three,
                 content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_three.confirm_spam(save=True, domains=spammy_domains)
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
@@ -382,10 +384,12 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_ignored_one_spam_domain(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_one.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_one,
                 content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_one.confirm_spam(save=True, domains=spammy_domains)
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.SPAM
@@ -400,10 +404,12 @@ class TestNotableDomainReclassification:
     def test_from_spam_to_ignored_two_spam_domains(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_two.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_two,
                 content=f'{self.spam_domain_one.geturl()} {self.spam_domain_two.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_two.confirm_spam(save=True, domains=spammy_domains)
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.SPAM
@@ -420,10 +426,12 @@ class TestNotableDomainReclassification:
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_three.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_three,
                 content=f'{self.spam_domain_one.geturl()} {self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_three.confirm_spam(save=True, domains=spammy_domains)
 
         obj_three.reload()
         assert obj_three.spam_status == SpamStatus.SPAM
@@ -438,10 +446,12 @@ class TestNotableDomainReclassification:
     def test_from_unknown_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_one.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_one,
                 content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_one.confirm_spam(save=True, domains=spammy_domains)
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
@@ -456,10 +466,12 @@ class TestNotableDomainReclassification:
     def test_from_unknown_to_spam_unknown_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_two.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_two,
                 content=f'{self.unknown_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_two.confirm_spam(save=True, domains=spammy_domains)
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.UNKNOWN
@@ -474,10 +486,12 @@ class TestNotableDomainReclassification:
     def test_from_ignored_to_spam_unknown_plus_ignored(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_one = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_one.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_one,
                 content=f'{self.unknown_domain.geturl()} {self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_one.confirm_spam(save=True, domains=spammy_domains)
 
         obj_one.reload()
         assert obj_one.spam_status == SpamStatus.UNKNOWN
@@ -492,10 +506,12 @@ class TestNotableDomainReclassification:
     def test_from_ignored_to_spam_ignored_only(self, factory, unknown_notable_domain, ignored_notable_domain):
         obj_two = factory()
         with mock.patch.object(spam_tasks.requests, 'head'):
-            spam_tasks._check_resource_for_domains(
-                guid=obj_two.guids.first()._id,
+            spammy_domains = spam_tasks._check_resource_for_domains(
+                resource=obj_two,
                 content=f'{self.ignored_domain.geturl()}',
             )
+            if spammy_domains:
+                obj_two.confirm_spam(save=True, domains=spammy_domains)
 
         obj_two.reload()
         assert obj_two.spam_status == SpamStatus.UNKNOWN
