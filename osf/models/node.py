@@ -33,8 +33,7 @@ from framework.auth import oauth_scopes
 from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
-from osf.exceptions import (InvalidTagError, NodeStateError,
-                            TagNotFoundError)
+from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -79,7 +78,7 @@ from osf.utils.permissions import (
 )
 from website.util.metrics import OsfSourceTags, CampaignSourceTags
 from website.util import api_url_for, api_v2_url, web_url_for
-from .base import BaseModel, GuidMixin, GuidMixinQuerySet
+from .base import BaseModel, GuidMixin, GuidMixinQuerySet, check_manually_assigned_guid
 from api.base.exceptions import Conflict
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
@@ -1396,7 +1395,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                                                    contributor=user,
                                                    auth=None, email_template='default', permissions=perm)
 
-    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None):
+    def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1424,7 +1423,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         registered = original.clone()
         registered.recast('osf.registration')
-
         registered.custom_citation = ''
         registered.registered_date = timezone.now()
         registered.registered_user = auth.user
@@ -1438,10 +1436,26 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         registered.creator = self.creator
         registered.node_license = original.license.copy() if original.license else None
         registered.wiki_private_uuids = {}
-
         # Need to save here in order to set many-to-many fields, set is_public to false to avoid Spam filter/reindexing.
         registered.is_public = False
-        registered.save()
+
+        if manual_guid:
+            if not check_manually_assigned_guid(manual_guid):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
+            from osf.models import Guid
+            guid_obj = Guid.objects.create(_id=manual_guid)
+            registered._manual_guid = manual_guid
+            # Initial save to just to create the PK
+            registered.save(manually_assign_guid=True)
+            guid_obj.referent = registered
+            guid_obj.object_id = registered.pk
+            from django.contrib.contenttypes.models import ContentType
+            guid_obj.content_type = ContentType.objects.get_for_model(registered)
+            guid_obj.save()
+            # First save after PK created, must be done right after GUID is updated
+            registered.save(first_save_after_guid_assignment=True)
+        else:
+            registered.save()
 
         registered.registered_schema.add(schema)
 
@@ -1941,8 +1955,20 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
 
     def save(self, *args, **kwargs):
+
         from .registrations import Registration
-        first_save = not bool(self.pk)
+
+        if isinstance(self, Registration):
+            manually_assign_guid = kwargs.pop('manually_assign_guid', False)
+            first_save_after_guid_assignment = kwargs.pop('first_save_after_guid_assignment', False)
+            if manually_assign_guid and first_save_after_guid_assignment:
+                raise ValueError('manually_assign_guid and first_save_after_guid_assignment are mutually exclusive')
+            first_save = not bool(self.pk) or first_save_after_guid_assignment
+            if manually_assign_guid and first_save:
+                return super().save(*args, **kwargs)
+        else:
+            first_save = not bool(self.pk)
+
         if 'suppress_log' in kwargs.keys():
             self._suppress_log = kwargs['suppress_log']
             del kwargs['suppress_log']

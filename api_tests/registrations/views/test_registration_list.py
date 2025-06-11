@@ -5,6 +5,8 @@ import pytest
 
 from urllib.parse import urljoin, urlparse
 
+from waffle import testutils
+
 from api.base.settings.defaults import API_BASE
 from api.base.versioning import CREATE_REGISTRATION_FIELD_CHANGE_VERSION
 from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraftRegistrationTestCase
@@ -12,6 +14,7 @@ from api_tests.subjects.mixins import SubjectsFilterMixin
 from api_tests.registrations.filters.test_filters import RegistrationListFilteringMixin
 from api_tests.utils import create_test_file
 from framework.auth.core import Auth
+from osf import features
 from osf.models import RegistrationSchema, Registration
 from osf_tests.factories import (
     EmbargoFactory,
@@ -1559,6 +1562,41 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
             self, mock_enqueue, app, user, schema, url_registrations_ver):
         # Overrides TestNodeRegistrationCreate - node is not in URL in this workflow
         return
+    @pytest.fixture
+    def manual_guid(self):
+        return 'abcde'
+
+    @pytest.fixture
+    def manual_doi(self):
+        return '10.70102/FK2osf.io/abcde'
+
+    @pytest.fixture
+    def enable_flag(self):
+        with testutils.override_flag(features.MANUAL_DOI_AND_GUID, True):
+            yield
+
+    @pytest.fixture
+    def manual_guid_payload(self, payload, manual_guid, manual_doi):
+        payload['data']['attributes'] |= {
+            'manual_doi': manual_doi,
+            'manual_guid': manual_guid,
+        }
+
+        return payload
+
+    def test_fail_create_registration_with_manual_guid(self, app, user, schema, url_registrations, manual_guid_payload, manual_guid, manual_doi):
+        res = app.post_json_api(url_registrations, manual_guid_payload, auth=user.auth, expect_errors=True)
+        assert res.status_code == 400
+        print(res.status_code)
+
+    def test_create_registration_with_manual_guid(self, app, user, schema, url_registrations, manual_guid_payload, manual_guid, manual_doi, enable_flag):
+        res = app.post_json_api(url_registrations, manual_guid_payload, auth=user.auth)
+        data = res.json['data']
+        assert res.status_code == 201
+        assert data['id'] == manual_guid, 'manual guid was not assigned'
+        identifiers_response = app.get(data['relationships']['identifiers']['links']['related']['href'], auth=user.auth)
+        assert identifiers_response.status_code == 200
+        assert identifiers_response.json['data'][0]['attributes']['value'] == manual_doi
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_need_admin_perms_on_draft(
