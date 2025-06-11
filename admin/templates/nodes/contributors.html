@@ -3,58 +3,60 @@
 <tr>
     <td>Contributors</td>
     <td>
-        <table class="table table-bordered table-hover">
-            <thead>
-                <tr>
-                    <td>Email</td>
-                    <td>Name</td>
-                    <td>Permissions</td>
-                    <td>Actions</td>
-                    {%  if perms.osf.change_node %}
-                        <td></td>
-                    {% endif %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for user in node.contributors %}
+        <div style="overflow-x: auto; width: 100%;">
+            <table class="table table-bordered table-hover">
+                <thead>
                     <tr>
-                        <td>
-                            <a href="{{ user | reverse_user }}">
-                                {{ user }}
-                            </a>
-                        </td>
-                        <td>{{ user.fullname }}</td>
-                        <td>{% get_permissions user node %}</td>
+                        <td>Email</td>
+                        <td>Name</td>
+                        <td>Permissions</td>
+                        <td>Actions</td>
                         {%  if perms.osf.change_node %}
-                            <td>
-                                <a data-toggle="modal" data-target="#{{ user.id }}Modal" class="btn btn-danger">Remove</a>
-                                <div class="modal" id="{{ user.id }}Modal">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <form class="well" method="post" action="{% url 'nodes:remove-user'  guid=node.guid user_id=user.id  %}">
-                                                <div class="modal-header">
-                                                    <button type="button" class="close" data-dismiss="modal">x</button>
-                                                    <h3>Removing contributor: {{ user.username }}</h3>
-                                                </div>
-                                                <div class="modal-body">
-                                                    User will be removed. Currently only an admin on this node type will be able to add them back.
-                                                    {% csrf_token %}
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <input class="btn btn-danger" type="submit" value="Confirm" />
-                                                    <button type="button" class="btn btn-default" data-dismiss="modal">
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
+                            <td></td>
                         {% endif %}
                     </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {% for user in node.contributors %}
+                        <tr>
+                            <td>
+                                <a href="{{ user | reverse_user }}">
+                                    {{ user }}
+                                </a>
+                            </td>
+                            <td>{{ user.fullname }}</td>
+                            <td>{% get_permissions user node %}</td>
+                            {%  if perms.osf.change_node %}
+                                <td>
+                                    <a data-toggle="modal" data-target="#{{ user.id }}Modal" class="btn btn-danger">Remove</a>
+                                    <div class="modal" id="{{ user.id }}Modal">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form class="well" method="post" action="{% url 'nodes:remove-user'  guid=node.guid user_id=user.id  %}">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                                        <h3>Removing contributor: {{ user.username }}</h3>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        User will be removed. Currently only an admin on this node type will be able to add them back.
+                                                        {% csrf_token %}
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <input class="btn btn-danger" type="submit" value="Confirm" />
+                                                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </td>
 </tr>
