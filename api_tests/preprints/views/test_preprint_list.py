@@ -3,7 +3,7 @@ import datetime as dt
 
 import pytest
 from django.utils import timezone
-from waffle.testutils import override_switch
+from waffle.testutils import override_switch, override_flag
 
 from addons.github.models import GithubFile
 from api.base.settings.defaults import API_BASE
@@ -351,6 +351,8 @@ class TestPreprintCreate(ApiTestCase):
 
         self.user_two = AuthUserFactory()
         self.url = f'/{API_BASE}preprints/'
+        self.manual_guid = 'abcde'
+        self.manual_doi = '10.70102/FK2osf.io/abcde'
 
     def publish_preprint(self, preprint, user, expect_errors=False):
         preprint_file = test_utils.create_test_preprint_file(preprint, user, 'coffee_manuscript.pdf')
@@ -361,6 +363,30 @@ class TestPreprintCreate(ApiTestCase):
             self.url + f'{preprint._id}/', update_payload, auth=user.auth, expect_errors=expect_errors
         )
         return res
+
+    @property
+    def manual_guid_payload(self):
+        return {
+            'manual_doi': self.manual_doi,
+            'manual_guid': self.manual_guid,
+        }
+
+    def test_fail_create_prerprint_with_manual_guid(self):
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+        assert res.status_code == 400
+        print(res.status_code)
+
+    def test_create_preprint_with_manual_guid(self):
+        public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
+        with override_flag(features.MANUAL_DOI_AND_GUID, True):
+            res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, )
+            data = res.json['data']
+            assert res.status_code == 201
+            assert data['id'] == f'{self.manual_guid}_v1', 'manual guid was not assigned'
+            identifiers_response = self.app.get(data['relationships']['identifiers']['links']['related']['href'], auth=self.user.auth)
+            assert identifiers_response.status_code == 200
+            assert identifiers_response.json['data'][0]['attributes']['value'] == self.manual_doi
 
     def test_create_preprint_with_supplemental_public_project(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id)
