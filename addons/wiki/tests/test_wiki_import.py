@@ -1,0 +1,2494 @@
+from addons.wiki.models import WikiVersion,WikiPageNodeManager, WikiPage
+from framework.auth.core import Auth
+from osf_tests.factories import (
+    UserFactory, NodeFactory, ProjectFactory,
+    AuthUserFactory, RegistrationFactory
+)
+import json
+from freezegun import freeze_time
+from addons.osfstorage.models import OsfStorageFolder, OsfStorageFile
+from addons.wiki.utils import (
+    get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
+    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget,
+    check_file_object_in_node, get_numbered_name_for_existing_wiki, get_import_wiki_name_list,
+    get_wiki_fullpath, _get_wiki_parent, _get_all_child_file_ids, get_node_file_mapping, copy_files_with_timestamp
+)
+from addons.wiki.views import (
+    _get_wiki_versions,_get_wiki_child_pages_latest,_get_wiki_api_urls,project_wiki_delete
+)
+from osf.utils.fields import NonNaiveDateTimeField
+from framework.exceptions import HTTPError
+from osf.models.files import BaseFileNode
+from addons.wiki.models import WikiImportTask, WikiPage, WikiVersion, render_content
+from framework.auth import Auth
+from django.utils import timezone
+from addons.wiki import views
+import time
+import mock
+import pytest
+import pytz
+import datetime
+import re
+import unicodedata
+import uuid
+from unittest.mock import MagicMock, patch
+from addons.wiki.tests.test_utils import MockWbResponse, MockResponse
+from osf.models import BaseFileNode, File, Folder
+from tests.base import OsfTestCase
+
+from addons.wiki.exceptions import ImportTaskAbortedError
+from rest_framework import status as http_status
+from osf.management.commands.import_EGAP import get_creator_auth_header
+from website import settings as website_settings
+from celery.exceptions import CeleryError
+
+pytestmark = pytest.mark.django_db
+
+SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
+SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
+
+class TestFileNodeTmp(BaseFileNode):
+    _provider = 'test',
+
+class TestFolderWiki(TestFileNodeTmp, Folder):
+    pass
+
+class TestFileWiki(TestFileNodeTmp, File):
+    pass
+
+WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
+    message_short='Not found',
+    message_long='A wiki page could not be found.'
+))
+WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+    message_short='Invalid request',
+    message_long='The requested version of this wiki page does not exist.'
+))
+@pytest.mark.enable_bookmark_creation
+class TestWikiPageNodeManager(OsfTestCase):
+
+    def setUp(self):
+        self.page_name = WikiPageNodeManager.CharField(max_length=200, validators=["test", ])
+        self.user = WikiPageNodeManager.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
+        self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.sort_order = WikiPageNodeManager.IntegerField(blank=True, null=True)
+        self.deleted = WikiPageNodeManager.NonNaiveDateTimeField(blank=True, null=True, db_index=True)
+        self.content = WikiVersion.TextField(default='', blank=True)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.project = ProjectFactory()
+
+    def test_create_for_node_true(self,mocker):
+        wiki_page = WikiPage.objects.create(
+            node=self.node,
+            page_name=self.page_name,
+            user=self.page_name,
+            parent=self.parent,
+            is_wiki_import=True
+        )
+
+        mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
+        mock_update = mocker.patch('WikiPage.update', return_value=None)
+        
+        self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
+            self.project,
+            'home child',
+            'home child content',
+            self.consolidate_auth,
+            parent=None,
+            is_wiki_import=False)
+
+        # True?
+        mock_create.assert_called_with(is_wiki_import=True)
+        mock_update.assert_called_with(is_wiki_import=True)
+
+    def test_create_for_node_false(self,mocker):
+        wiki_page = WikiPage.objects.create(
+            node=self.node,
+            page_name=self.page_name,
+            user=self.page_name,
+            parent=self.parent,
+            is_wiki_import=False
+        )
+
+        mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
+        mock_update = mocker.patch('WikiPage.update', return_value=None)
+        
+        self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
+            self.project,
+            'home child',
+            'home child content',
+            self.consolidate_auth,
+            parent=None,
+            is_wiki_import=False)
+
+        # False
+        mock_create.assert_called_with(is_wiki_import=False)
+        mock_update.assert_called_with(is_wiki_import=False)
+
+@pytest.mark.enable_bookmark_creation
+class TestWikiPageNodeManager(OsfTestCase):
+    def setUp(self):
+        self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
+        self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+
+    def test_get_for_child_nodes(self, mocker):
+        mock_child_node = mocker.patch('WikiPage.filter',return_value=None)
+        
+        child_node = WikiPageNodeManager.objects.filter(parent=self.parent, deleted__isnull=True, node=self.node)
+        
+        # モックが1回呼ばれたか
+        mock_child_node.assert_called_once()
+
+    def test_get_for_child_nodes_none(self):
+        child_node = WikiPageNodeManager.objects.get_for_child_nodes(self,self.node,None)
+        
+        # 戻り値がNoneか
+        self.assert_is_not_none(child_node)
+    
+    def test_get_wiki_pages_latest(self, mocker):
+        mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
+                
+        # モックが1回呼ばれたか
+        mock_annotate.assert_called_once()
+
+    def test_get_wiki_child_pages_latest(self, mocker):
+        mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
+                
+        # モックが1回呼ばれたか
+        mock_annotate.assert_called_once()
+
+    def test_create(self, mocker):
+        create_node = WikiPageNodeManager.objects.create(self,False,{'status': 'unmodified', 'path': '/importpagec/importpaged'})
+
+        self.assertIsNotNone(create_node)
+
+@pytest.mark.enable_bookmark_creation
+class TestWikiPage(OsfTestCase):
+    def setUp(self):
+        self.objects = WikiPageNodeManager()
+
+        self.page_name = WikiPage.CharField(max_length=200, validators=["test", ])
+        self.user = WikiPage.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPage.CASCADE)
+        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPage.CASCADE, related_name='wikis')
+        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPage.CASCADE)
+        self.sort_order = WikiPage.IntegerField(blank=True, null=True)
+        self.deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
+        self.content = WikiVersion.TextField(default='', blank=True)
+
+    def test_update_false(self, mocker):
+        mock_save = mocker.patch('WikiVersion.save')
+
+        wiki_page = WikiPage.objects.update(
+            self,
+            self.user,
+            self.content,
+            False
+        )
+
+        # False
+        mock_save.assert_called_with(is_wiki_import=False)
+
+    def test_update_true(self, mocker):
+        mock_save = mocker.patch('WikiVersion.save')
+
+        wiki_page = WikiPage.objects.update(
+            self,
+            self.user,
+            self.content,
+            True
+        )
+
+        # True
+        mock_save.assert_called_with(is_wiki_import=True)
+
+class test_utils(OsfTestCase):
+    def setUp(self):
+        super(test_utils, self).setUp()
+        self.user = AuthUserFactory()
+        self.project1 = ProjectFactory(is_public=True, creator=self.user)
+        self.consolidate_auth = Auth(user=self.project1.creator)
+        self.wiki_import_dir = TestFolderWiki.objects.create(name='wiki import dir', target=self.project1)
+        self.pagefolder1 = TestFolderWiki.objects.create(name='page1', target=self.project1, parent=self.wiki_import_dir)
+        self.pagefolder2 = TestFolderWiki.objects.create(name='page2', target=self.project1, parent=self.wiki_import_dir)
+        self.pagefile1 = TestFileWiki.objects.create(name='page1.md', target=self.project1, parent=self.pagefolder1)
+        self.attachment1 = TestFileWiki.objects.create(name='attachment1.pdf', target=self.project1, parent=self.pagefolder1)
+        self.pagefile2 = TestFileWiki.objects.create(name='page2.md', target=self.project1, parent=self.pagefolder2)
+        self.attachment2 = TestFileWiki.objects.create(name='attachment2.docx', target=self.project1, parent=self.pagefolder2)
+        self.pagefolder3 = TestFolderWiki.objects.create(name='page3', target=self.project1, parent=self.pagefolder2)
+        self.pagefile3 = TestFileWiki.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
+        self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
+
+    
+    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
+    def test_get_node_file_mapping(self, mock_filter):
+        mock_filter.return_value.values_list.return_value = [
+            (self.pagefile1._id, 'page1.md', 'page1'),
+            (self.attachment1._id, 'attachment1.pdf', 'page1'),
+            (self.pagefile2._id, 'page2.md', 'page2'),
+            (self.attachment2._id, 'attachment2.docx', 'page2'),
+            (self.pagefile3._id, 'page3.md', 'page3'),
+            (self.attachment3._id, 'attachment3.xlsx', 'page3'),
+        ]
+        file_mapping = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
+        expected_mapping = {
+            'page1^page1.md': self.pagefile1._id,
+            'page1^attachment1.pdf': self.attachment1._id,
+            'page2^page2.md': self.pagefile2._id,
+            'page2^attachment2.docx': self.attachment2._id,
+            'page3^page3.md': self.pagefile3._id,
+            'page3^attachment3.xlsx': self.attachment3._id,
+        }
+
+        self.assertEqual(file_mapping, expected_mapping)
+    
+    def test_get_import_wiki_name_list(self):
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+            {
+                'parent_wiki_name': 'page2',
+                'path': '/page2/page3',
+                'original_name': 'page3',
+                'wiki_name': 'page3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'zzz',
+                'wiki_content': 'content3'
+            }
+        ]
+        result = get_import_wiki_name_list(wiki_info)
+        expected_result = ['page1', 'page2', 'page3']
+        self.assertEqual(result, expected_result)
+
+    def test_existing_wiki(self):
+        wiki = self.child_wiki
+        parent_wiki_name = self.parent_wiki.page_name
+        wiki_name = wiki.page_name
+        expected_result = '/' + parent_wiki_name + '/' + wiki_name
+        result = get_wiki_fullpath(self.project, wiki_name)
+        self.assertEqual(result, expected_result)
+
+    def test_non_existing_wiki(self):
+        result = get_wiki_fullpath(self.project, 'non existing wiki name')
+        self.assertEqual(result, '')
+
+    def test_no_matching_wiki(self):
+        base_name = 'test'
+        result = get_numbered_name_for_existing_wiki(self.project, base_name)
+        self.assertEqual(result, '')
+
+    def test_matching_wiki_no_number(self):
+        base_name = 'Existing Wiki'
+        result = get_numbered_name_for_existing_wiki(self.project, base_name)
+        self.assertEqual(result, 1)
+
+    def test_matching_wiki_with_number(self):
+        base_name = 'Numbered'
+        result = get_numbered_name_for_existing_wiki(self.project, base_name)
+        self.assertEqual(result, 2)
+
+    def test_matching_wiki_home(self):
+        result = get_numbered_name_for_existing_wiki(self.project, 'home')
+        self.assertEqual(result, 1)
+
+    def test_correct_directory_id(self):
+        dir_id = self.folder1._id
+        result = check_file_object_in_node(dir_id, self.project1)
+        self.assertTrue(result)
+
+    def test_invalid_directory_id(self):
+        with self.assertRaises(HTTPError) as context:
+            check_file_object_in_node('invalid_directory_id', self.project1)
+
+        self.assertEqual(context.exception.data['message_short'], 'directory id does not exist')
+        self.assertEqual(context.exception.data['message_long'], 'directory id does not exist')
+
+    def test_invalid_target_object_id(self):
+        dir_id = self.folder1._id
+        with self.assertRaises(HTTPError) as context:
+            check_file_object_in_node(dir_id, self.project2)
+
+        self.assertEqual(context.exception.data['message_short'], 'directory id is invalid')
+        self.assertEqual(context.exception.data['message_long'], 'directory id is invalid')
+
+    def test_copy_files_with_timestamp(self):
+        src = [
+            {
+                'name': 'TEST',
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content1'
+            }
+        ]
+        target_node = [
+            {
+                'name': 'TargetTest',
+                'path': '/targetpage',
+                'original_name': 'targetpage',
+                'wiki_name': 'targetpage',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            }
+        ]
+        parent = [
+            {
+
+            }
+        ]
+
+        cloned = copy_files_with_timestamp(
+            self.consolidate_auth,
+            src,
+            target_node,
+            parent=None,
+            name=None)
+        cloned_id = cloned._id
+        return cloned_id
+
+    def test_copy_file_same_region(self):
+ 
+        version = MagicMock()
+        version.region = 'regionA'
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        src = MagicMock()
+        src.is_file = True
+        src.name = 'file.txt'
+        src.versions.exists.return_value = True
+        src.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        src.versions.all.return_value = [version]
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.versions.first.return_value = version
+        src.clone.return_value.records.all.return_value = [MagicMock()]
+        src.records.get.return_value.metadata = {'key': 'value'}
+        src.children = []
+        src.clone.return_value.provider = 'osfstorage'
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionA'
+ 
+        cloned = copy_files_with_timestamp(self.auth, src, target_node)
+ 
+        assert cloned.name == src.name
+        assert cloned.copied_from == src
+ 
+    #ファイルコピー（異なるリージョン）
+    def test_copy_file_different_region(self):
+ 
+        version = MagicMock()
+        version.region = 'regionA'
+        version.clone.return_value = MagicMock(region='regionB')
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        src = MagicMock()
+        src.is_file = True
+        src.name = 'file.txt'
+        src.versions.exists.return_value = True
+        src.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        src.versions.all.return_value = [version]
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.versions.first.return_value = version
+        src.clone.return_value.records.all.return_value = [MagicMock()]
+        src.records.get.return_value.metadata = {'key': 'value'}
+        src.children = []
+        src.clone.return_value.provider = 'osfstorage'
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionB'
+ 
+        cloned = copy_files_with_timestamp(self.auth, src, target_node)
+ 
+        assert cloned.name == src.name
+        assert cloned.copied_from == src
+ 
+    #名前変更あり
+    def test_copy_file_with_name_change(self):
+ 
+        version = MagicMock()
+        version.region = 'regionA'
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        src = MagicMock()
+        src.is_file = True
+        src.name = 'original.txt'
+        src.versions.exists.return_value = True
+        src.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        src.versions.all.return_value = [version]
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.versions.first.return_value = version
+        src.clone.return_value.records.all.return_value = [MagicMock()]
+        src.records.get.return_value.metadata = {'key': 'value'}
+        src.children = []
+        src.clone.return_value.provider = 'osfstorage'
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionA'
+ 
+        cloned = copy_files_with_timestamp(self.auth, src, target_node, name='renamed.txt')
+ 
+        assert cloned.name == 'renamed.txt'
+        assert cloned.copied_from == src
+ 
+    #親フォルダ指定あり
+    def test_copy_file_with_parent(self):
+ 
+        version = MagicMock()
+        version.region = 'regionA'
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        parent = MagicMock()
+        parent.is_file = False
+ 
+        src = MagicMock()
+        src.is_file = True
+        src.name = 'file.txt'
+        src.versions.exists.return_value = True
+        src.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        src.versions.all.return_value = [version]
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.versions.first.return_value = version
+        src.clone.return_value.records.all.return_value = [MagicMock()]
+        src.records.get.return_value.metadata = {'key': 'value'}
+        src.children = []
+        src.clone.return_value.provider = 'osfstorage'
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionA'
+ 
+        cloned = copy_files_with_timestamp(self.auth, src, target_node, parent=parent)
+ 
+        assert cloned.parent == parent
+        assert cloned.copied_from == src
+ 
+    #認証なし
+    def test_copy_file_without_auth(self):
+        version = MagicMock()
+        version.region = 'regionA'
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        src = MagicMock()
+        src.is_file = True
+        src.name = 'file.txt'
+        src.versions.exists.return_value = True
+        src.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        src.versions.all.return_value = [version]
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.versions.first.return_value = version
+        src.clone.return_value.records.all.return_value = [MagicMock()]
+        src.records.get.return_value.metadata = {'key': 'value'}
+        src.children = []
+        src.clone.return_value.provider = 'osfstorage'
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionA'
+ 
+        cloned = copy_files_with_timestamp(None, src, target_node)
+ 
+        assert cloned.name == src.name
+        assert cloned.copied_from == src
+ 
+    #フォルダの再帰コピー
+    def test_copy_folder_recursive(self):
+ 
+        version = MagicMock()
+        version.region = 'regionA'
+        version.get_basefilenode_version.return_value = MagicMock()
+ 
+        child_file = MagicMock()
+        child_file.is_file = True
+        child_file.name = 'child.txt'
+        child_file.versions.exists.return_value = True
+        child_file.versions.select_related.return_value.order_by.return_value.first.return_value = version
+        child_file.versions.all.return_value = [version]
+        child_file.clone.return_value = MagicMock()
+        child_file.clone.return_value.versions.first.return_value = version
+        child_file.clone.return_value.records.all.return_value = [MagicMock()]
+        child_file.records.get.return_value.metadata = {'key': 'value'}
+        child_file.clone.return_value.provider = 'osfstorage'
+        child_file.children = []
+ 
+        src = MagicMock()
+        src.is_file = False
+        src.name = 'folder'
+        src.clone.return_value = MagicMock()
+        src.clone.return_value.children = []
+        src.children = [child_file]
+ 
+        target_node = MagicMock()
+        target_node.osfstorage_region = 'regionA'
+ 
+        cloned = copy_files_with_timestamp(self.auth, src, target_node)
+ 
+        assert cloned.name == src.name
+        assert cloned.copied_from == src
+
+class test_views(OsfTestCase):
+    def setUp(self):
+        super(test_views, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.home_wiki = WikiPage.objects.create_for_node(self.project, 'home', 'Version 1', Auth(self.user))
+        self.home_wiki.update(self.user, 'Version 2')
+        self.funpage_wiki = WikiPage.objects.create_for_node(self.project, 'funpage', 'Version 1', Auth(self.user))
+
+        self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
+
+        # root
+        #  └── rootimportfolder1
+        #      └── importpage1
+        #          └── importpage1.md
+        self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
+        self.import_page_folder1 = TestFolderWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
+        self.import_page_md_file1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
+
+        # root
+        # └── rootimportfoldera
+        #     ├── importpagea
+        #     │   └── importpagea.md
+        #     ├── importpageb
+        #     │   ├── importpageb.md
+        #     │   └── pdffile.pdf
+        #     └── importpagec
+        #         └── importpagec.md
+        self.root_import_folder_a = TestFolderWiki.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
+        self.import_page_folder_a = TestFolderWiki.objects.create(name='importpagea', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_a = TestFileWiki.objects.create(name='importpagea.md', target=self.project, parent=self.import_page_folder_a)
+        self.import_page_folder_b = TestFolderWiki.objects.create(name='importpageb', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_b = TestFileWiki.objects.create(name='importpageb.md', target=self.project, parent=self.import_page_folder_b)
+        self.import_page_pdf_file = TestFileWiki.objects.create(name='pdffile.pdf', target=self.project, parent=self.import_page_folder_b)
+        self.import_page_folder_c = TestFolderWiki.objects.create(name='importpagec', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_c = TestFileWiki.objects.create(name='importpagec.md', target=self.project, parent=self.import_page_folder_c)
+
+        # existing wiki page in project1
+        self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
+        self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb', 'wiki pageb content', self.consolidate_auth)
+
+        # importpagex
+        self.root_import_folder_x = TestFolderWiki.objects.create(name='rootimportfolderx', target=self.project, parent=self.root)
+        self.import_page_folder_invalid = TestFolderWiki.objects.create(name='importpagex', target=self.project, parent=self.root_import_folder_x)
+
+        self.project2 = ProjectFactory(is_public=True, creator=self.user)
+        self.root2 = BaseFileNode.objects.get(target_object_id=self.project2.id, is_root=True)
+        self.consolidate_auth2 = Auth(user=self.project2.creator)
+
+        # existing wiki page in project2
+        self.wiki_page3 = WikiPage.objects.create_for_node(self.project2, 'importpagec', 'wiki pagec content', self.consolidate_auth2)
+        self.wiki_page4 = WikiPage.objects.create_for_node(self.project2, 'importpaged', 'wiki paged content', self.consolidate_auth2, self.wiki_page3)
+
+
+        self.root_import_folder_validate = OsfStorageFolder(name='rootimportfolder', target=self.project, parent=self.root)
+        self.root_import_folder_validate.save()
+        self.import_page_folder_1 = OsfStorageFolder(name='importpage1', target=self.project, parent=self.root_import_folder_validate)
+        self.import_page_folder_1.save()
+        self.import_page_md_file_1 = OsfStorageFile(name='importpage1.md', target=self.project, parent=self.import_page_folder_1)
+        self.import_page_md_file_1.save()
+        self.import_page_doc_file = OsfStorageFile(name='docfile.docx', target=self.project, parent=self.import_page_folder_1)
+        self.import_page_doc_file.save()
+        self.import_page_folder_2 = OsfStorageFolder(name='importpage2', target=self.project, parent=self.import_page_folder_1)
+        self.import_page_folder_2.save()
+        self.import_page_md_file_2 = OsfStorageFile(name='importpage2.md', target=self.project, parent=self.import_page_folder_2)
+        self.import_page_md_file_2.save()
+        self.import_page_pdf_file = OsfStorageFile(name='pdffile.pdf', target=self.project, parent=self.import_page_folder_2)
+        self.import_page_pdf_file.save()
+
+        self.data = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno'
+            }
+        ]
+    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
+    def test_get_wiki_version_none(self, mock_filter):
+        mock_filter.return_value = None
+
+        versions = _get_wiki_versions(None, 'test', anonymous=False)
+        self.assertEqual(len(versions),0)
+
+    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
+    def test_get_wiki_version(self, mock_filter):
+        mock_filter.return_value = [
+            {
+                'version': 'Version 1'
+            }
+        ]
+
+        versions = _get_wiki_versions(None, 'test', anonymous=False)
+        self.assertGreaterEqual(len(versions),1)
+
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_wiki_child_pages_latest')
+    def test_get_wiki_child_pages_latest(self, get_wiki_child_pages_latest):
+        
+        name = 'page by id'
+        page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
+
+        get_wiki_child_pages_latest.return_value = page
+
+        rtnPages = _get_wiki_child_pages_latest(None, 'test', anonymous=False)
+        self.assertGreaterEqual(len(rtnPages),1)
+
+    def test_get_wiki_api_urls(self):
+        urls = _get_wiki_api_urls(self.project, self.wname)
+        self.assert_equal(urls['sort'], self.project.api_url_for('project_update_wiki_page_sort'))
+
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.utils.get_sharejs_uuid')
+    def test_project_wiki_delete_404Err(self, mock_get_for_node, mock_get_sharejs_uuid):
+        mock_get_for_node.return_value = None
+        mock_get_sharejs_uuid.return_value = None
+
+        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        self.app.delete(delete_url, auth=self.user.auth)
+        #res = self.app.get(delete_url, expect_errors=True)
+        res = self.app.get(delete_url)
+        self.assert_equal(res.status_code, 404)
+
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.utils.get_sharejs_uuid')
+    def test_project_wiki_delete_404Err(self, mock_get_for_node, mock_get_sharejs_uuid):
+        mock_get_for_node.return_value = None
+        mock_get_sharejs_uuid.return_value = None
+
+        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        self.app.delete(delete_url, auth=self.user.auth)
+        #res = self.app.get(delete_url, expect_errors=True)
+        res = self.app.get(delete_url)
+        self.assert_equal(res.status_code, 404)
+
+    @mock.patch('addons.wiki.utils.get_sharejs_uuid')
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_child_nodes')
+    def test_project_wiki_delete(self, mock_get_sharejs_uuid, mock_get_for_child_nodes):
+        page = self.elephant_wiki
+
+        url = self.project.api_url_for(
+            'project_wiki_delete',
+            wname='Elephants'
+        )
+        mock_get_for_child_nodes.return_value =[
+            {
+                'name': 'TEST',
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            }
+        ]
+        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
+        with mock.patch.object(timezone, 'now', return_value=mock_now):
+            self.app.delete(
+                url,
+                auth=self.auth
+            )
+        self.project.reload()
+        page.reload()
+        self.asserEqual(page.deleted, mock_now)
+
+    def test_get_import_folder_include_invalid_folder(self):
+        root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
+        root_import_folder = OsfStorageFolder(name='rootimportfolder', target=self.project, parent=root)
+        root_import_folder.save()
+        import_page_folder = OsfStorageFolder(name='importpage', target=self.project, parent=root_import_folder)
+        import_page_folder.save()
+        import_page_md_file = OsfStorageFile(name='importpage.md', target=self.project, parent=import_page_folder)
+        import_page_md_file.save()
+        import_page_folder_invalid = OsfStorageFile(name='importpageinvalid.md', target=self.project, parent=root_import_folder)
+        import_page_folder_invalid.save()
+        result = views._get_import_folder(self.project)
+        self.assertEqual(result[0] , {'id': root_import_folder._id, 'name': 'rootimportfolder'})
+
+    def test_project_wiki_edit_post(self):
+        url = self.project.web_url_for('project_wiki_edit_post', wname='home')
+        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
+        self.asserEqual(res.status_code, 200)
+
+
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
+    def test_wiki_validate_name(self, mock_get_for_node, mock_create_for_node):
+        mock_get_for_node.return_value = [
+            {
+                'name': 'TEST',
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            }
+        ]
+        mock_create_for_node.return_value = None
+
+        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='home', node=None)
+        res = self.app.get(url, auth=self.user.auth)
+
+        # モックが1回呼ばれたか
+        mock_create_for_node.assert_called_once()
+
+    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
+    def test_wiki_validate_name_404err(self, mock_get_for_node, mock_create_for_node):
+        mock_get_for_node.return_value = [
+            {
+                'name': 'TEST',
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            }
+        ]
+        mock_create_for_node.return_value = None
+
+        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
+        res = self.app.get(url, auth=self.user.auth)
+
+        self.asserEqual(res.status_code, 404)
+
+    def test_format_home_wiki_page_no_content(self):
+        data = views.format_home_wiki_page(self.project)
+        expected = {
+            'page': {
+                'url': self.project.web_url_for('project_wiki_home'),
+                'name': 'Home',
+                'id': 'None',
+            }
+        }
+        self.assert_equal(data, expected)
+
+    @mock.patch('addons.wiki.views._format_child_wiki_page')
+    def test_format_project_wiki_pages(self,mock_format_child_wiki_pages):
+        mock_format_child_wiki_pages.return_value = [
+            {
+                'name': 'Children',
+                'path': '/Children',
+                'original_name': 'Children',
+                'wiki_name': 'Children',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'ChildrenContent'
+            }
+        ]
+        self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
+        self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
+        self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
+        project_format = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
+
+        self.asserEqual(project_format['kind'], 'folder')
+
+    @mock.patch('addons.wiki.views._get_wiki_child_pages_latest')
+    def test_format_child_wiki_pages(self,mock_get_wiki_child_pages_latest):
+        mock_get_wiki_child_pages_latest.return_value = None
+
+        self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
+        self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
+        self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
+        project_format = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
+
+        self.assertNotEqual(project_format['kind'], 'folder')
+
+    def test_serialize_component_wiki(self):
+        home_page = WikiPage.objects.create_for_node(self.component, 'home', 'content here', self.consolidate_auth)
+        zoo_page = WikiPage.objects.create_for_node(self.component, 'zoo', 'koala', self.consolidate_auth)
+        expected = [
+            {
+                'page': {
+                    'name': self.component.title,
+                    'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='home', _guid=True),
+                            'name': 'Home',
+                            'id': self.component._primary_key,
+                        },
+                    },
+                    {
+                        'page': {
+                            'url': self.component.web_url_for('project_wiki_view', wname='zoo', _guid=True),
+                            'name': 'zoo',
+                            'sort_order': None,
+                            'id': zoo_page._primary_key,
+                        },
+                        'children': [],
+                    }
+                ],
+                'kind': 'component',
+                'category': self.component.category,
+                'pointer': False,
+            }
+        ]
+        data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        self.asserEqual(data, expected)
+
+    @mock.patch('addons.wiki.tasks.run_project_wiki_validate_for_import.delay')
+    def test_project_wiki_validate_for_import(self,mock_delay):
+        mock_delay.return_value = {'id':'id'}
+
+        res = views.project_wiki_validate_for_import()
+        self.asserEqual(res, 'id')
+
+    def test_project_wiki_validate_for_import_process(self):
+        result = views.project_wiki_validate_for_import_process(
+            self.root_import_folder_validate._id,
+            self.project)
+        self.assertEqual(result['duplicated_folder'], [])
+        self.assertTrue(result['canStartImport'])
+        self.assertCountEqual(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
+ 
+    def test_validate_import_folder_invalid(self):
+        folder = BaseFileNode.objects.get(name='importpagex')
+        parent_path = ''
+        result = views._validate_import_folder(self.project, folder, parent_path)
+        for info in result:
+            self.assertEqual(info['path'], '/importpagex')
+            self.assertEqual(info['original_name'], 'importpagex')
+            self.assertEqual(info['name'], 'importpagex')
+            self.assertEqual(info['status'], 'invalid')
+            self.assertEqual(info['message'], 'The wiki page does not exist, so the subordinate pages are not processed.')
+
+    def test_validate_import_folder(self):
+        folder = self.import_page_folder_1
+        parent_path = ''
+        result = views._validate_import_folder(self.project, folder, parent_path)
+        expected_results = [
+            {'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id},
+            {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}
+        ]
+        for expected_result in expected_results:
+            self.assertIn(expected_result, result)
+
+    def test_validate_import_wiki_exists_duplicated_valid_exists_status_change(self):
+        info = {'wiki_name': 'importpagea', 'path': '/importpagea', 'status': 'valid'}
+        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
+        self.assertEqual(result['status'], 'valid_exists')
+        self.assertFalse(can_start_import)
+
+    def test_validate_import_wiki_exists_duplicated_valid_duplicated_status_change(self):
+        info = {'wiki_name': 'importpageb', 'path': '/importpagea/importpageb', 'status': 'valid'}
+        result, can_start_import = views._validate_import_wiki_exists_duplicated(self.project, info)
+        self.assertEqual(result['status'], 'valid_duplicated')
+        self.assertFalse(can_start_import)
+
+    def test_validate_import_duplicated_directry_no_duplicated(self):
+        info_list = []
+        result = views._validate_import_duplicated_directry(info_list)
+        self.assertEqual(result, [])
+
+    def test_validate_import_duplicated_directry_duplicated(self):
+        info_list = [
+            {'original_name': 'folder1'},
+            {'original_name': 'folder2'},
+            {'original_name': 'folder1'},
+            {'original_name': 'folder3'}
+        ]
+        result = views._validate_import_duplicated_directry(info_list)
+        self.assertEqual(result, ['folder1'])
+
+    @mock.patch('addons.wiki.views.project_wiki_import_process')
+    @mock.patch('addons.wiki.utils.check_file_object_in_node')
+    def test_project_wiki_import(self, mock_check_file_object_in_node, mock_project_wiki_import_process):
+        mock_check_file_object_in_node.return_value = True
+        dir_id = self.root_import_folder1._id
+        url = self.project.api_url_for('project_wiki_import', dir_id=dir_id)
+        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.user.auth)
+        response_json = res.json
+        task_id = response_json['taskId']
+        uuid_obj = uuid.UUID(task_id)
+        self.assertIsNotNone(uuid_obj)
+
+    @mock.patch('addons.wiki.views._get_md_content_from_wb')
+    @mock.patch('addons.wiki.views._get_or_create_wiki_folder')
+    @mock.patch('addons.wiki.views._create_wiki_folder')
+    @mock.patch('addons.wiki.views._wiki_copy_import_directory')
+    @mock.patch('addons.wiki.views._wiki_content_replace')
+    @mock.patch('addons.wiki.views._wiki_import_create_or_update')
+    @mock.patch('addons.wiki.views._import_same_level_wiki')
+    @mock.patch('addons.wiki.tasks.run_update_search_and_bulk_index')
+    def test_project_wiki_import_process(self, mock_run_task_elasticsearch, mock_import_same_level_wiki, mock_wiki_import_create_or_update, mock_wiki_content_replace, mock_wiki_copy_import_directory, mock_create_wiki_folder, mock_get_or_create_wiki_folder, mock_get_md_content_from_wb):
+        # root
+        # └── rootimportfolder2
+        #     ├── importpage1
+        #     │   ├── importpage1.md
+        #     │   └── importpage2
+        #     │       ├── importpage2.md
+        #     │       └── importpage3
+        #     │           └── importpage3.md
+        #     └── importpage4
+        #         ├── importpage4.md
+        #         └── importpage5
+        #             └── importpage5.md
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        self.import_page_folder_1 = TestFolderWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder)
+        self.import_page_md_file_1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder_1)
+        self.import_page_folder_2 = TestFolderWiki.objects.create(name='importpage2', target=self.project, parent=self.import_page_folder_1)
+        self.import_page_md_file_2 = TestFileWiki.objects.create(name='importpage2.md', target=self.project, parent=self.import_page_folder_2)
+        self.import_page_folder_3 = TestFolderWiki.objects.create(name='importpage3', target=self.project, parent=self.import_page_folder_2)
+        self.import_page_md_file_3 = TestFileWiki.objects.create(name='importpage3.md', target=self.project, parent=self.import_page_folder_3)
+        self.import_page_folder_4 = TestFolderWiki.objects.create(name='importpage4', target=self.project, parent=self.root_import_folder)
+        self.import_page_md_file_4 = TestFileWiki.objects.create(name='importpage4.md', target=self.project, parent=self.import_page_folder_4)
+        self.import_page_folder_5 = TestFolderWiki.objects.create(name='importpage5', target=self.project, parent=self.import_page_folder_4)
+        self.import_page_md_file_5 = TestFileWiki.objects.create(name='importpage5.md', target=self.project, parent=self.import_page_folder_5)
+        mock_get_md_content_from_wb.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_get_or_create_wiki_folder.side_effect = [(123, 'osfstorage/wikiimage_id/'), (456, 'osfstorage/wikiimportedfolder_id/')]
+        mock_create_wiki_folder.return_value = 789, 'osfstorage/wikisortedcopyfolder_id/'
+        mock_wiki_copy_import_directory.return_value = 'clone_id'
+        mock_wiki_content_replace.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_wiki_import_create_or_update.side_effect = [({'status': 'success', 'path': '/importpage4'}, 4), ({'status': 'success', 'path': '/importpage1'}, 1)]
+        mock_import_same_level_wiki.side_effect = [([{'status': 'success', 'path': '/importpage4/importpage5'}, {'status': 'success', 'path': '/importpage1/importpage2'}], [5, 2]), ([{'status': 'success', 'path': '/importpage1/importpage2/importpage3'}], [3])]
+
+        expected_result = {
+            'ret': [
+                {'status': 'success', 'path': '/importpage4'},
+                {'status': 'success', 'path': '/importpage1'},
+                {'status': 'success', 'path': '/importpage4/importpage5'},
+                {'status': 'success', 'path': '/importpage1/importpage2'},
+                {'status': 'success', 'path': '/importpage1/importpage2/importpage3'}
+            ],
+            'import_errors': []
+        }
+
+        result = views.project_wiki_import_process(self.data, self.root_import_folder._id, 'task_id', self.consolidate_auth, self.project)
+        self.assertEqual(result, expected_result)
+        mock_run_task_elasticsearch.delay.assert_called_once_with(self.project.guids.first()._id, [4, 1, 5, 2, 3])
+        task = WikiImportTask.objects.get(task_id='task_id')
+        self.assertEqual(task.status, task.STATUS_COMPLETED)
+
+    @mock.patch('addons.wiki.views._get_md_content_from_wb')
+    @mock.patch('addons.wiki.views._get_or_create_wiki_folder')
+    @mock.patch('addons.wiki.views._create_wiki_folder')
+    @mock.patch('addons.wiki.views._wiki_copy_import_directory')
+    @mock.patch('addons.wiki.views._wiki_content_replace')
+    @mock.patch('addons.wiki.views._wiki_import_create_or_update')
+    @mock.patch('addons.wiki.tasks.run_update_search_and_bulk_index')
+    @mock.patch('addons.wiki.views.set_wiki_import_task_proces_end')
+    def test_project_wiki_import_process_top_level_aborted(self, mock_wiki_import_task_prcess_end, mock_run_task_elasticsearch, mock_wiki_import_create_or_update, mock_wiki_content_replace, mock_wiki_copy_import_directory, mock_create_wiki_folder, mock_get_or_create_wiki_folder, mock_get_md_content_from_wb):
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        mock_get_md_content_from_wb.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_get_or_create_wiki_folder.side_effect = [(123, 'osfstorage/wikiimage_id/'), (456, 'osfstorage/wikiimportedfolder_id/')]
+        mock_create_wiki_folder.return_value = 789, 'osfstorage/wikisortedcopyfolder_id/'
+        mock_wiki_copy_import_directory.return_value = 'clone_id'
+        mock_wiki_content_replace.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_wiki_import_create_or_update.side_effect = views.ImportTaskAbortedError
+
+        expected_result = {'aborted': True}
+
+        result = views.project_wiki_import_process(self.data, self.root_import_folder._id, 'task_id', self.consolidate_auth, self.project)
+        self.assertEqual(result, expected_result)
+        mock_run_task_elasticsearch.delay.assert_called_once_with(self.project.guids.first()._id, [])
+        mock_wiki_import_task_prcess_end.assert_called_once_with(self.project)
+
+    @mock.patch('addons.wiki.views._get_md_content_from_wb')
+    @mock.patch('addons.wiki.views._get_or_create_wiki_folder')
+    @mock.patch('addons.wiki.views._create_wiki_folder')
+    @mock.patch('addons.wiki.views._wiki_copy_import_directory')
+    @mock.patch('addons.wiki.views._wiki_content_replace')
+    @mock.patch('addons.wiki.views._wiki_import_create_or_update')
+    @mock.patch('addons.wiki.views._import_same_level_wiki')
+    @mock.patch('addons.wiki.tasks.run_update_search_and_bulk_index')
+    @mock.patch('addons.wiki.views.set_wiki_import_task_proces_end')
+    def test_project_wiki_import_process_sub_level_aborted(self, mock_wiki_import_task_prcess_end, mock_run_task_elasticsearch, mock_import_same_level_wiki, mock_wiki_import_create_or_update, mock_wiki_content_replace, mock_wiki_copy_import_directory, mock_create_wiki_folder, mock_get_or_create_wiki_folder, mock_get_md_content_from_wb):
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        mock_get_md_content_from_wb.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_get_or_create_wiki_folder.side_effect = [(123, 'osfstorage/wikiimage_id/'), (456, 'osfstorage/wikiimportedfolder_id/')]
+        mock_create_wiki_folder.return_value = 789, 'osfstorage/wikisortedcopyfolder_id/'
+        mock_wiki_copy_import_directory.return_value = 'clone_id'
+        mock_wiki_content_replace.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_wiki_import_create_or_update.side_effect = [({'status': 'success', 'path': '/importpage4'}, 4), ({'status': 'success', 'path': '/importpage1'}, 1)]
+        mock_import_same_level_wiki.side_effect = ImportTaskAbortedError
+
+        expected_result = {'aborted': True}
+
+        result = views.project_wiki_import_process(self.data, self.root_import_folder._id, 'task_id', self.consolidate_auth, self.project)
+        self.assertEqual(result, expected_result)
+        mock_run_task_elasticsearch.delay.assert_called_once_with(self.project.guids.first()._id, [4, 1])
+        mock_wiki_import_task_prcess_end.assert_called_once_with(self.project)
+
+    @mock.patch('addons.wiki.views._get_md_content_from_wb')
+    def test_project_wiki_import_process_wb_aborted(self, mock_get_md_content_from_wb):
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        mock_get_md_content_from_wb.return_value = None
+        expected_result = {'aborted': True}
+        result = views.project_wiki_import_process(self.data, self.root_import_folder._id, 'task_id', self.consolidate_auth, self.project)
+        self.assertEqual(result, expected_result)
+
+    @mock.patch('addons.wiki.views._get_md_content_from_wb')
+    @mock.patch('addons.wiki.views._get_or_create_wiki_folder')
+    @mock.patch('addons.wiki.views._create_wiki_folder')
+    @mock.patch('addons.wiki.views._wiki_copy_import_directory')
+    @mock.patch('addons.wiki.views._wiki_content_replace')
+    def test_project_wiki_import_process_replace_aborted(self, mock_wiki_content_replace, mock_wiki_copy_import_directory, mock_create_wiki_folder, mock_get_or_create_wiki_folder, mock_get_md_content_from_wb):
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        self.root_import_folder = TestFolderWiki.objects.create(name='rootimportfolder', target=self.project, parent=self.root)
+        mock_get_md_content_from_wb.return_value = [
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage4',
+                'original_name': 'importpage4',
+                'wiki_name': 'importpage4',
+                'status': 'valid',
+                'message': '',
+                '_id': 'abc',
+                'wiki_content': 'importpage4 content'
+            },
+            {
+                'parent_wiki_name': 'importpage4',
+                'path': '/importpage4/importpage5',
+                'original_name': 'importpage5',
+                'wiki_name': 'importpage5',
+                'status': 'valid',
+                'message': '',
+                '_id': 'def',
+                'wiki_content': 'importpage5 content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpage1',
+                'original_name': 'importpage1',
+                'wiki_name': 'importpage1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'ghi',
+                'wiki_content': 'importpage1 content'
+            },
+            {
+                'parent_wiki_name': 'importpage1',
+                'path': '/importpage1/importpage2',
+                'original_name': 'importpage2',
+                'wiki_name': 'importpage2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'jkl',
+                'wiki_content': 'importpage2 content'
+            },
+            {
+                'parent_wiki_name': 'importpage2',
+                'path': '/importpage1/importpage2/importpage3',
+                'original_name': 'importpage3',
+                'wiki_name': 'importpage3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'mno',
+                'wiki_content': 'importpage3 content'
+            }
+        ]
+
+        mock_get_or_create_wiki_folder.side_effect = [(123, 'osfstorage/wikiimage_id/'), (456, 'osfstorage/wikiimportedfolder_id/')]
+        mock_create_wiki_folder.return_value = 789, 'osfstorage/wikisortedcopyfolder_id/'
+        mock_wiki_copy_import_directory.return_value = 'clone_id'
+        mock_wiki_content_replace.return_value = None
+        expected_result = {'aborted': True}
+        result = views.project_wiki_import_process(self.data, self.root_import_folder._id, 'task_id', self.consolidate_auth, self.project)
+        self.assertEqual(result, expected_result)
+
+    def test_replace_wiki_link_notation_wiki_page_with_tooptip(self):
+        wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 "tooltip1")'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ "tooltip1")'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_wiki_page_without_tooptip(self):
+        wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/)'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_attachment_file(self):
+        wiki_content_link_attachment = 'Wiki content with [attachment1.doc](attachment1.doc)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link_attachment))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id})'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_attachment, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_has_slash(self):
+        wiki_content_link_has_slash = 'Wiki content with [wiki/page](wiki/page)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link_has_slash))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = wiki_content_link_has_slash
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_slash, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_has_sharp_and_is_wiki_with_tooltip(self):
+        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor "tooltip text")'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor "tooltip text")'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_has_sharp_and_is_wiki_without_tooltip(self):
+        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor)'
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_is_url(self):
+        wiki_content_link_is_url = 'Wiki content with [example](https://example.com)'
+        link_matches = list(re.finditer(self.rep_link, wiki_content_link_is_url))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = wiki_content_link_is_url
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_is_url, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_replace_wiki_link_notation_no_link(self):
+        wiki_content = 'Wiki content'
+        link_matches = list(re.finditer(self.rep_link, wiki_content))
+        info = self.wiki_info
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        expected_content = wiki_content
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        self.assertEqual(result_content, expected_content)
+
+    def test_check_wiki_name_exist_existing_wiki(self):
+        wiki_name = 'wiki%20page1'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
+        self.assertTrue(result_content)
+
+    def test_check_wiki_name_exist_import_directory(self):
+        wiki_name = 'importpage1'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
+        self.assertTrue(result_content)
+
+    def test_check_wiki_name_exist_not_existing(self):
+        wiki_name = 'not%20existing%20wiki'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
+        self.assertFalse(result_content)
+
+    def test_check_wiki_name_exist_existing_wiki_nfd(self):
+        wiki_name = 'wiki%20page1'
+        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._check_wiki_name_exist(self.project, wiki_name_nfd, self.node_file_mapping, import_wiki_name_list)
+        self.assertTrue(result_content)
+
+
+    def test_replace_file_name_image_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip1")'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render> "tooltip1")'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render)'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_size_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip2" =200)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200> "tooltip2")'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_size_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png =200)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200)'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_invalid_size_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip" =abcde)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = wiki_content_image_tooltip
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_image_with_invalid_size_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png =abcde)'
+        match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
+        notation = 'image'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = wiki_content_image_tooltip
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_link_with_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_link_tooltip = 'Wiki content with [attachment1.doc](attachment1.doc "tooltip1")'
+        match = list(re.finditer(self.rep_link, wiki_content_link_tooltip))[0]
+        notation = 'link'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id} "tooltip1")'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+
+    def test_replace_file_name_link_without_tooltip(self):
+        wiki_name = self.import_page_folder1.name
+        wiki_content_link_tooltip = 'Wiki content with [attachment1.doc](attachment1.doc)'
+        match = list(re.finditer(self.rep_link, wiki_content_link_tooltip))[0]
+        notation = 'link'
+        match_path, tooltip_match = views._exclude_tooltip(match['path'])
+        expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id})'
+        result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
+        self.assertEqual(result, expected_content)
+        
+    def test_filename(self):
+        match_path = 'test.png'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
+
+    def test_filename_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png'
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, ' =200')
+
+    def test_filename_invalid_size(self):
+        match_path = 'test.png =abcde'
+        expected_path = match_path
+        file_name, image_size = views._split_image_and_size(match_path)
+        self.assertEqual(file_name, expected_path)
+        self.assertEqual(image_size, '')
+
+    def test_has_slash(self):
+        path = 'meeting 4/24'
+        result = views._exclude_symbols(path)
+        self.assertTrue(result[0])
+        self.assertFalse(result[1])
+        self.assertFalse(result[2])
+
+    def test_is_url(self):
+        path = 'https://example.com'
+        result = views._exclude_symbols(path)
+        self.assertTrue(result[0])
+        self.assertFalse(result[1])
+        self.assertTrue(result[2])
+
+    def test_has_sharp(self):
+        path = 'wiki#anchor'
+        result = views._exclude_symbols(path)
+        self.assertFalse(result[0])
+        self.assertTrue(result[1])
+        self.assertFalse(result[2])
+
+    def test_no_tooltip(self):
+        match_path = 'test.txt'
+        expected_path = 'test.txt'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertIsNone(result_tooptip)
+
+    def test_single_quote_tooltip(self):
+        match_path = "test.txt 'tooltip'"
+        expected_path = 'test.txt'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_double_quote_tooltip(self):
+        match_path = 'test.txt "tooltip"'
+        expected_path = 'test.txt'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_backslash_in_tooltip(self):
+        match_path = r'test.txt "to\\\\ol\"\\tip"'
+        expected_path = 'test.txt'
+        expected_tooltip = 'to\\\\\\\\ol\\"\\\\tip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_empty_tooltip(self):
+        match_path = 'test.txt ""'
+        expected_path = 'test.txt'
+        expected_tooltip = ''
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_single_quote_tooltip_size(self):
+        match_path = "test.png 'tooltip' =200"
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_double_quote_tooltip_size(self):
+        match_path = 'test.png "tooltip" =200'
+        expected_path = 'test.png =200'
+        expected_tooltip = 'tooltip'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
+
+    def test_no_tooltip_with_size(self):
+        match_path = 'test.png =200'
+        expected_path = 'test.png =200'
+        result_path, result_tooptip = views._exclude_tooltip(match_path)
+        self.assertEqual(result_path, expected_path)
+        self.assertIsNone(result_tooptip)
+
+    def test_check_attachment_file_name_exist_has_hat(self):
+        wiki_name = 'importpage1'
+        file_name = 'importpage2^attachment3.xlsx'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment3_xlsx._id)
+
+    def test_check_attachment_file_name_exist_has_not_hat(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist_nfd(self):
+        wiki_name = 'importpage1'
+        file_name = 'attachment1.doc'
+        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
+        file_name_nfd = unicodedata.normalize('NFD', file_name)
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_id = views._process_attachment_file_name_exist(wiki_name_nfd, file_name_nfd, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(result_id, self.import_attachment1_doc._id)
+
+    def test_process_attachment_file_name_exist_not_exist(self):
+        wiki_name = 'importpage1'
+        file_name = 'not_existing_file.doc'
+        import_wiki_name_list = ['importpage1', 'importpage2']
+        result_content = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertIsNone(result_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_aborted(self, mock_task):
+        mock_task.is_aborted.return_value = True
+        expected_content = 'wiki paged content'
+        with self.assertRaises(ImportTaskAbortedError):
+            views._wiki_import_create_or_update('/importpagec/importpaged', 'wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_not_changed(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/importpagec/importpaged', 'wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+        self.assertEqual(result, {'status': 'unmodified', 'path': '/importpagec/importpaged'})
+        self.assertIsNone(updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, 'wiki paged content')
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_changed(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'new wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/importpagec/importpaged', 'new wiki paged content', self.consolidate_auth ,self.project2, mock_task, 'importpagec')
+        self.assertEqual(result, {'status': 'success', 'path': '/importpagec/importpaged'})
+        self.assertEqual(self.wiki_page4.id, updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_create_home(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'home wiki page content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/HOME', 'home wiki page content', self.consolidate_auth ,self.project2, mock_task)
+        self.assertEqual(result, {'status': 'success', 'path': '/HOME'})
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'home')
+        self.assertEqual(new_wiki_version.wiki_page.id, updated_wiki_id)
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_create(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki page content'
+        result, updated_wiki_id = views._wiki_import_create_or_update('/wikipagename', 'wiki page content', self.consolidate_auth ,self.project2, mock_task)
+        self.assertEqual(result, {'status': 'success', 'path': '/wikipagename'})
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'wikipagename')
+        self.assertEqual(new_wiki_version.wiki_page.id, updated_wiki_id)
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_update_changed_nfd(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        path_nfd = unicodedata.normalize('NFD', '/importpagec/importpaged')
+        content_nfd = unicodedata.normalize('NFD', 'new wiki paged content')
+        parent_name_nfd = unicodedata.normalize('NFD', 'importpagec')
+        expected_content = 'new wiki paged content'
+        result, updated_wiki_id = views._wiki_import_create_or_update(path_nfd, content_nfd, self.consolidate_auth ,self.project2, mock_task, parent_name_nfd)
+        self.assertEqual(result, {'status': 'success', 'path': '/importpagec/importpaged'})
+        self.assertEqual(self.wiki_page4.id, updated_wiki_id)
+        new_wiki_version = WikiVersion.objects.get_for_node(self.project2, 'importpaged')
+        self.assertEqual(new_wiki_version.content, expected_content)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_import_create_or_update_does_not_exist_parent(self, mock_task):
+        mock_task.is_aborted.return_value = False
+        expected_content = 'wiki page content'
+        with self.assertRaises(Exception) as cm:
+            views._wiki_import_create_or_update('/wikipagename', 'wiki page content', self.consolidate_auth ,self.project2, mock_task, 'notexisitparentwiki')
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_content_replace_no_abort(self,mock_task):
+        mock_task.is_aborted.return_value = False
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+            {
+                'parent_wiki_name': 'page2',
+                'path': '/page2/page3',
+                'original_name': 'page3',
+                'wiki_name': 'page3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'zzz',
+                'wiki_content': 'content3'
+            }
+        ]
+        dir_id = self.folder1._id
+        node=self.node
+        replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
+        self.assertEqual(wiki_info, replaced_wiki_info)
+    
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_content_replace_aborted(self,mock_task):
+        mock_task.is_aborted.return_value = True
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+            {
+                'parent_wiki_name': 'page2',
+                'path': '/page2/page3',
+                'original_name': 'page3',
+                'wiki_name': 'page3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'zzz',
+                'wiki_content': 'content3'
+            }
+        ]
+        dir_id = self.folder1._id
+        node=self.node
+        replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
+        self.assertEqual(wiki_info, None)
+    
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_wiki_content_replace_missing_content(self,mock_task):
+        mock_task.is_aborted.return_value = False
+        wiki_info_input_date = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy'
+            },
+            {
+                'parent_wiki_name': 'page2',
+                'path': '/page2/page3',
+                'original_name': 'page3',
+                'wiki_name': 'page3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'zzz',
+                'wiki_content': 'content3'
+            }
+        ]
+
+        wiki_info_output_date = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': 'page2',
+                'path': '/page2/page3',
+                'original_name': 'page3',
+                'wiki_name': 'page3',
+                'status': 'valid',
+                'message': '',
+                '_id': 'zzz',
+                'wiki_content': 'content3'
+            }
+        ]
+        dir_id = self.folder1._id
+        node=self.node
+        replaced_wiki_info = views._wiki_content_replace(wiki_info_input_date,dir_id,node,mock_task)
+        self.assertEqual(wiki_info_output_date, replaced_wiki_info)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_import_same_level_wiki_task_aborted(self,mock_task):
+        mock_task.is_aborted.return_value = True
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            }
+        ]
+        depth = 1
+        with self.assertRaises(ImportTaskAbortedError):
+            views._import_same_level_wiki(wiki_info,depth,self.consolidate_auth,self.project2,mock_task)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_import_same_level_wiki_matching_depth(self,mock_task):
+        mock_task.is_aborted.return_value = False
+        mock.patch('addons.wiki.views._wiki_import_create_or_update',side_effect=['',''])
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+        ]
+        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
+        self.assertTrue(len(ret)>0)
+        self.assertTrue(len(wiki_id_list)>0)
+        
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_import_same_level_wiki_logger_info(self,mock_task):
+        mock_task.is_aborted.return_value = False
+        mock.patch('addons.wiki.views._wiki_import_create_or_update',side_effect=ImportTaskAbortedError)
+        mock_error = mock.patch('addons.wiki.logger.info')
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+        ]
+        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
+        mock_error.assert_called_once()
+        
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_import_same_level_wiki_logger_error(self,mock_task):
+        mock_task.is_aborted.return_value = False
+        mock.patch('addons.wiki.views._wiki_import_create_or_update',side_effect=Exception)
+        mock_error = mock.patch('logger.error')
+        wiki_info = [
+            {
+                'parent_wiki_name': None,
+                'path': '/page1',
+                'original_name': 'page1',
+                'wiki_name': 'page1',
+                'status': 'valid',
+                'message': '',
+                '_id': 'xxx',
+                'wiki_content': 'content1'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/page2',
+                'original_name': 'page2',
+                'wiki_name': 'page2',
+                'status': 'valid',
+                'message': '',
+                '_id': 'yyy',
+                'wiki_content': 'content2'
+            },
+        ]
+        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
+        mock_error.assert_called_once()
+        
+    def project_get_task_result_not_ready(self,mocker):
+        mock_res = MagicMock()
+        mock_res.ready.return_value = False
+        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
+        node = MagicMock()
+        result = views.project_get_task_result('task_id',node)
+        self.assertIsNone(result)
+        
+    def project_get_task_result_not_ready(self,mocker):
+        mock_res = MagicMock()
+        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
+        mock_res.ready.return_value = True
+        mock_res.get.return_value = 'expected_result'
+        node = MagicMock()
+        result = views.project_get_task_result('task_id',node)
+        self.assertEqual(result,'expected_result')
+        
+    def project_get_task_result_not_ready(self,mocker):
+        mock_res = MagicMock()
+        mock_res.ready.return_value = True
+        mock_res.get.side_effect = Exception('exception')
+        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
+        mocker.patch('addons.wiki.views._extract_err_msg', return_value='error500')
+        node = MagicMock()
+        with self.assertRaises(HTTPError) as context:
+            views.project_get_task_result('task_id',node)
+        self.assertEqual(context.exception.data['message_long'], 'error500')
+
+    def test_replace_wiki_image_two_image_matches(self):
+        wiki_content_two_image = 'Wiki content with ![](image1.png) and ![](image2.png)'
+        self.two_image_matches = list(re.finditer(self.rep_image, wiki_content_two_image))
+        expected_content = f'Wiki content with ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render) and ![]({website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image2._id}?mode=render)'
+        wiki_content = views._replace_wiki_image(self.project, self.two_image_matches, wiki_content_two_image, self.wiki_info, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(wiki_content, expected_content)
+
+    def test_replace_wiki_image_match_with_slash(self):
+        wiki_content_image_with_slash = 'Wiki content with ![](ima/ge3.png)'
+        self.slash_image_matches = list(re.finditer(self.rep_image, wiki_content_image_with_slash))
+        expected_content = wiki_content_image_with_slash = 'Wiki content with ![](ima/ge3.png)'
+        wiki_content = views._replace_wiki_image(self.project, self.slash_image_matches, wiki_content_image_with_slash, self.wiki_info, self.root_import_folder1._id, self.node_file_mapping)
+        self.assertEqual(wiki_content, expected_content)
+
+    def test_url_decoding(self):
+        input_name = 'my%20example%20file.txt'
+        expected_output = 'my example file.txt'
+        actual_output = views._replace_common_rule(input_name)
+        self.assertEqual(actual_output, expected_output)
+
+    def test_mixed_url_decoding(self):
+        input_name = 'another%2Bexample%2Bfile.txt'
+        expected_output = 'another+example+file.txt'
+        actual_output = views._replace_common_rule(input_name)
+        self.assertEqual(actual_output, expected_output)
+
+    @mock.patch('addons.wiki.views.BaseFileNode')
+    def test_get_or_create_wiki_folder_get(self, mock_base_file_node):
+        mock_base_file_node_instance = mock.Mock()
+        mock_base_file_node_instance.id = 1
+        mock_base_file_node_instance._id = 'aabbcc'
+        mock_base_file_node.objects.get.return_value = mock_base_file_node_instance
+        osf_cookie = self.osf_cookie
+        creator, creator_auth = get_creator_auth_header(self.user)
+        p_guid = self.guid
+        folder_id, folder_path = views._get_or_create_wiki_folder(osf_cookie, self.project, self.root.id, self.user, creator_auth, 'Wiki images', parent_path='osfstorage/')
+        self.assertEqual(folder_id, 1)
+        self.assertEqual(folder_path, 'osfstorage/aabbcc/')
+
+    @mock.patch('addons.wiki.views._create_wiki_folder')
+    def test_get_or_create_wiki_folder_create(self, mock_create_wiki_folder):
+        mock_create_wiki_folder.return_value = (1, 'osfstorage/xxyyzz/')
+        osf_cookie = self.osf_cookie
+        creator, creator_auth = get_creator_auth_header(self.user)
+        p_guid = self.guid
+        folder_id, folder_path = views._get_or_create_wiki_folder(osf_cookie, self.project, self.root.id, self.user, creator_auth, 'Wiki images', parent_path='osfstorage/')
+        self.assertEqual(folder_id, 1)
+        self.assertEqual(folder_path, 'osfstorage/xxyyzz/')
+
+    @mock.patch('website.util.waterbutler.create_folder')
+    @mock.patch('addons.wiki.views.BaseFileNode')
+    def test_create_wiki_folder_success(self, mock_base_file_node, mock_create_folder):
+        mock_response = {
+            'data': {
+                'id': 'osfstorage/xxyyzz/',
+                'attributes': {
+                    'path': '/xxyyzz/'
+                }
+            }
+        }
+        mock_create_folder.return_value = MockResponse(mock_response, 200)
+        mock_base_file_node_instance = mock.Mock()
+        mock_base_file_node_instance.id = 1
+        mock_base_file_node.objects.get.return_value = mock_base_file_node_instance
+
+        osf_cookie = self.osf_cookie
+        p_guid = self.guid
+        folder_name = 'Wiki images'
+        parent_path = 'osfstorage/'
+        folder_id, folder_path = views._create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path)
+
+        expected_folder_id = 1
+        expected_folder_path = 'osfstorage/xxyyzz/'
+
+        self.assertEqual(folder_id, expected_folder_id)
+        self.assertEqual(folder_path, expected_folder_path)
+
+    @mock.patch('website.util.waterbutler.create_folder')
+    def test_create_wiki_folder_fail(self, mock_create_folder):
+        mock_response = {
+            'data': {
+                'id': 'osfstorage/xxyyzz/',
+                'attributes': {
+                    'path': '/xxyyzz/'
+                }
+            }
+        }
+        mock_create_folder.return_value = MockResponse(mock_response, 400)
+
+        osf_cookie = self.osf_cookie
+        p_guid = self.guid
+        folder_name = 'Wiki images'
+        parent_path = 'osfstorage/'
+        try:
+            views._create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path)
+        except HTTPError as e:
+            self.assertEqual('Error when create wiki folder', e.data['message_short'])
+            self.assertIn('An error occures when create wiki folder', e.data['message_long'])
+
+    @mock.patch('requests.get')
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_get_md_content_from_wb_success(self, mock_task, mock_get):
+        mock_response = b'test content'
+        mock_get.return_value = MockWbResponse(mock_response, 200)
+        mock_task.is_aborted.return_value = False
+        data = [{'wiki_name': 'wikipage1', '_id': 'qwe'}]
+        creator, creator_auth = get_creator_auth_header(self.user)
+        result = views._get_md_content_from_wb(data, self.project, creator_auth, mock_task)
+        self.assertEqual(result[0]['wiki_content'], 'test content')
+
+    @mock.patch('requests.get')
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_get_md_content_from_wb_fail(self, mock_task, mock_get):
+        mock_response = {}
+        mock_get.return_value = MockWbResponse(mock_response, 400)
+        mock_task.is_aborted.return_value = False
+        data = [{'wiki_name': 'wikipage2', '_id': 'rty'}]
+        creator, creator_auth = get_creator_auth_header(self.user)
+        result = views._get_md_content_from_wb(data, self.project, creator_auth, mock_task)
+        self.assertEqual(result, [{'wiki_name': 'wikipage2', '_id': 'rty'}])
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
+    def test_get_md_content_from_wb_aborted(self, mock_task):
+        mock_task.is_aborted.return_value = True
+        data = [{'wiki_name': 'wikipage1', '_id': 'qwe'}]
+        creator, creator_auth = get_creator_auth_header(self.user)
+        result = views._get_md_content_from_wb(data, self.project, creator_auth, mock_task)
+        self.assertIsNone(result)
+
+    @mock.patch('addons.wiki.utils.copy_files_with_timestamp')
+    @mock.patch('addons.wiki.views.BaseFileNode')
+    def test_wiki_copy_import_directory(self, mock_base_file_node, mock_clone):
+        mock_base_file_node_instance = mock.Mock()
+        mock_base_file_node_instance._id = 'ddeeff'
+        mock_base_file_node.objects.get.return_value = mock_base_file_node_instance
+        mock_cloned = mock.Mock()
+        mock_cloned._id = 'ddeeff'
+        mock_clone.return_value = mock_cloned
+        node = NodeFactory(parent=self.project, creator=self.user)
+        expected_id = 'ddeeff'
+        cloned_id = views._wiki_copy_import_directory(self.project, self.copy_to_dir._id, self.root_import_folder1._id, node)
+        self.assertEqual(expected_id, cloned_id)   
+
+    def test_different_depth(self):
+        wiki_infos = [
+            {'path': '/page1/page2/page3'},
+            {'path': '/page4/page5'},
+            {'path': '/page6'}
+        ]
+        max_depth = views._get_max_depth(wiki_infos)
+        self.assertEqual(max_depth, 2)
+
+    def test_non_empty_return(self):
+        wiki_infos = [{'path': '/path1'}, {'path': '/path2'}, {'path': '/path3'}]
+        imported_list = [{'path': '/path1'}]
+        import_errors = views._create_import_error_list(wiki_infos, imported_list)
+        self.assertIn('/path2', import_errors)
+        self.assertIn('/path3', import_errors)  
+
+    def test_err_with_tab(self):
+        err_obj_con = "code=400, data={'message_short': 'Error Message with Tab', 'message_long': '\\tAn error occures with tab\\t', 'code': 400, 'referrer': None}"
+        err = CeleryError(err_obj_con)
+        expected_msg = 'An error occures with tab'
+        result_msg = views._extract_err_msg(err)
+        self.assertEqual(result_msg, expected_msg)
+
+    @mock.patch('celery.contrib.abortable.AbortableAsyncResult.abort')
+    def test_project_clean_celery_task_one_running_task(self, mock_abort):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
+        url = self.project.api_url_for('project_clean_celery_tasks')
+        res = self.app.post(url, auth=self.user.auth)
+        task_completed = WikiImportTask.objects.get(task_id='task-id-11')
+        task_running = WikiImportTask.objects.get(task_id='task-id-2222')
+        self.assertEqual(task_completed.status, 'Completed')
+        self.assertEqual(task_running.status, 'Stopped')
+        mock_abort.assert_called()
+
+    def test_get_abort_wiki_import_result_already_aborted(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-5555', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 11, 00, tzinfo=pytz.utc), creator=self.user)
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-6666', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 9, 00, tzinfo=pytz.utc), creator=self.user)
+        url = self.project.api_url_for('project_get_abort_wiki_import_result')
+        res = self.app.get(url, auth=self.user.auth)
+        json_string = res._app_iter[0].decode('utf-8')
+        result = json.loads(json_string)
+        self.assertEqual(result, {'aborted': True})
+
+    def test_check_running_task_two(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-aaaa', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-bbbb', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
+        with self.assertRaises(HTTPError) as cm:
+            views.check_running_task('task-id-aaaa', self.project)
+        # HTTPErrorの中身がWIKI_IMPORT_TASK_ALREADY_EXISTSのメッセージを持つか確認
+        self.assertEqual(cm.exception.data['message_short'], 'Running Task exists')
+        self.assertEqual(cm.exception.data['message_long'], '\tOnly 1 wiki import task can be executed on 1 node\t')
+        task_running = WikiImportTask.objects.get(task_id='task-id-aaaa')
+        self.assertEqual(task_running.status, 'Error')
+
+    @freeze_time('2024-05-01 12:00:00')
+    def test_change_task_status(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-cccc', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
+        views.change_task_status('task-id-cccc', WikiImportTask.STATUS_COMPLETED, True)
+        task_running = WikiImportTask.objects.get(task_id='task-id-cccc')
+        self.assertEqual(task_running.status, 'Completed')
+        self.assertEqual(task_running.process_end, timezone.make_aware(datetime.datetime(2024, 5, 1, 12, 0, 0)))
+
+    def test_set_wiki_import_task_proces_end_no_tasks_to_update(self):
+        WikiImportTask.objects.create(node=self.project, task_id='task-id-11111', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
+        views.set_wiki_import_task_proces_end(self.project)
+        self.assertEqual(WikiImportTask.objects.count(), 1)
+
+    def test_project_update_wiki_page_sort(self):
+        url = self.project.api_url_for('project_update_wiki_page_sort')
+        res = self.app.post_json(url, { 'sortedData': [{'name': 'wiki page1', 'id': self.guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki page2', 'id': self.guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page1', 'id': self.child_guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki child page2', 'id': self.child_guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page3', 'id': self.child_guid3, 'sortOrder': 1, 'children': [], 'fold': False}], 'fold': False}], 'fold': False}]}, auth=self.user.auth)
+        result_wiki_page1 = WikiPage.objects.filter(page_name='wiki page1').values('parent_id', 'sort_order').first()
+        result_wiki_page2 = WikiPage.objects.filter(page_name='wiki page2').values('parent_id', 'sort_order').first()
+        result_wiki_child_page1 = WikiPage.objects.filter(page_name='wiki child page1').values('parent_id', 'sort_order').first()
+        result_wiki_child_page2 = WikiPage.objects.filter(page_name='wiki child page2').values('parent_id', 'sort_order').first()
+        result_wiki_child_page3 = WikiPage.objects.filter(page_name='wiki child page3').values('parent_id', 'sort_order').first()
+        wiki_page2_id = self.wiki_page2.id
+        wiki_child_page2_id = self.wiki_child_page2.id
+        self.assertEqual(result_wiki_page1, {'parent_id': None, 'sort_order': 1})
+        self.assertEqual(result_wiki_page2, {'parent_id': None, 'sort_order': 2})
+        self.assertEqual(result_wiki_child_page1, {'parent_id': wiki_page2_id, 'sort_order': 1})
+        self.assertEqual(result_wiki_child_page2, {'parent_id': wiki_page2_id, 'sort_order': 2})
+        self.assertEqual(result_wiki_child_page3, {'parent_id': wiki_child_page2_id, 'sort_order': 1})
+    
+    def test_sorted_data_nest(self):
+        sorted_data = [{'name': 'tsta', 'id': '97xuz', 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'tstb', 'id': 'gwd9u', 'sortOrder': 2, 'children': [{'name': 'child1', 'id': '5fhdq', 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'child2', 'id': 'x38vh', 'sortOrder': 2, 'children': [{'name': 'grandchilda', 'id': '64au2', 'sortOrder': 1, 'children': [], 'fold': False}], 'fold': False}], 'fold': False}]
+        id_list, sort_list, parent_wiki_id_list = views._get_sorted_list(sorted_data, None)
+        self.assertEqual(id_list, ['97xuz', 'gwd9u', '5fhdq', 'x38vh', '64au2'])
+        self.assertEqual(sort_list, [1, 2, 1, 2, 1])
+        self.assertEqual(parent_wiki_id_list, [None, None, 'gwd9u', 'gwd9u', 'x38vh'])
+
+    def test_bulk_update_wiki_sort(self):
+        sort_id_list = [self.guid1, self.guid2, self.child_guid2, self.child_guid3, self.child_guid1]
+        sort_num_list = [1, 2, 1, 1, 3]
+        parent_wiki_id_list = [None, None, self.guid2, self.child_guid2, None]
+        views._bulk_update_wiki_sort(self.project, sort_id_list, sort_num_list, parent_wiki_id_list)
+        result_wiki_page1 = WikiPage.objects.filter(page_name='wiki page1').values('parent_id', 'sort_order').first()
+        result_wiki_page2 = WikiPage.objects.filter(page_name='wiki page2').values('parent_id', 'sort_order').first()
+        result_wiki_child_page1 = WikiPage.objects.filter(page_name='wiki child page1').values('parent_id', 'sort_order').first()
+        result_wiki_child_page2 = WikiPage.objects.filter(page_name='wiki child page2').values('parent_id', 'sort_order').first()
+        result_wiki_child_page3 = WikiPage.objects.filter(page_name='wiki child page3').values('parent_id', 'sort_order').first()
+        wiki_page2_id = self.wiki_page2.id
+        wiki_child_page2_id = self.wiki_child_page2.id
+        self.assertEqual(result_wiki_page1, {'parent_id': None, 'sort_order': 1})
+
+ 
+    # テスト用のWikiページを作成
+    def create_wiki_page(has_parent=True):
+        page = MagicMock()
+        page.page_name = 'TestPage'
+        page.parent = has_parent
+        page.parent_id = 'parent123' if has_parent else None
+        page._primary_key = 'wiki123'
+        return page
+ 
+    # テスト用のWikiバージョンを作成
+    def create_wiki_version():
+        version = MagicMock()
+        version.identifier = 'v1'
+        version.is_current = True
+        version.rendered_before_update = True
+        version.content = 'markdown content'
+        return version
+ 
+    # 外部依存をまとめてモックする関数
+    def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
+        return patch.multiple('my_module',
+            WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
+            WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
+            WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
+            _get_wiki_versions=MagicMock(return_value=[]),
+            _get_import_folder=MagicMock(return_value=[]),
+            _get_wiki_pages_latest=MagicMock(return_value=[]),
+            _get_wiki_api_urls=MagicMock(return_value={}),
+            _get_wiki_web_urls=MagicMock(return_value={}),
+            _view_project=MagicMock(return_value={'user': {}}),
+            get_profile_image_url=MagicMock(return_value='http://image.url'),
+            has_anonymous_link=MagicMock(return_value=False),
+            to_mongo_key=MagicMock(return_value='home'),
+            wiki_utils=MagicMock(
+                format_wiki_version=MagicMock(side_effect=format_version_side_effect or (lambda version, num_versions, allow_preview: None)),
+                get_sharejs_uuid=MagicMock(return_value='uuid123'),
+                generate_private_uuid=MagicMock(),
+                get_wiki_fullpath=MagicMock(return_value='home/TestPage')
+            ),
+            request=MagicMock(args=request_args or {}),
+            settings=MagicMock(SHAREJS_URL='http://sharejs', Y_WEBSOCKET_URL='ws://yjs')
+        )
+ 
+    # 編集権限がある場合の正常系テスト
+    def test_valid_view_with_edit_permission(self):
+        auth = self.auth
+        node = self.node
+        page = self.create_wiki_page()
+        version = self.create_wiki_version()
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=page, wiki_version=version):
+            result = views.project_wiki_view(auth, 'Home', **kwargs)
+            # 編集権限があるため、can_edit_wiki_body は True
+            assert result['user']['can_edit_wiki_body'] is True
+            assert result['wiki_name'] == 'TestPage'
+ 
+    # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
+    def test_wiki_page_not_found_error(self):
+        auth = self.auth
+        node = self.node
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
+            with pytest.raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
+                views.project_wiki_view(auth, 'NotHome', **kwargs)
+ 
+    # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
+    def test_edit_arg_public_editable_unauthorized(self):
+        auth = self.auth
+        node = self.node
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+            with pytest.raises(Exception) as excinfo:
+                views.project_wiki_view(auth, 'NotHome', **kwargs)
+            assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
+ 
+    # 'edit' が args に含まれ、閲覧可能 → リダイレクト
+    def test_edit_arg_redirect_if_can_view(self):
+        auth = self.auth
+        node = self.node
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+            result = views.project_wiki_view(auth, 'NotHome', **kwargs)
+            # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
+            assert '/web/wiki' in result.headers['Location']
+ 
+    # 'edit' が args に含まれ、閲覧不可 → 403 エラー
+    def test_edit_arg_forbidden_if_cannot_view(self):
+        auth = self.auth
+        node = self.node
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+            with pytest.raises(Exception) as excinfo:
+                views.project_wiki_view(auth, 'NotHome', **kwargs)
+            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
+ 
+    # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
+    def test_invalid_version_exception(self):
+        auth = self.auth
+        node = self.node
+        page = self.create_wiki_page()
+        version = self.create_wiki_version()
+        kwargs = {'node': node}
+ 
+        with self.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
+            with pytest.raises(self.WIKI_INVALID_VERSION_ERROR):
+                views.project_wiki_view(auth, 'Home', **kwargs)
+
