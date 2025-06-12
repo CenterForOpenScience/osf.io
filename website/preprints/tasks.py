@@ -69,9 +69,11 @@ def update_or_enqueue_on_preprint_updated(preprint_id, saved_fields=None):
 def mint_doi_on_crossref_fail(self, preprint_id):
     from osf.models import Preprint
     preprint = Preprint.load(preprint_id)
+    vg = preprint.versioned_guids.first()
     existing_versions_without_minted_doi = Preprint.objects.filter(
-        versioned_guids__guid=preprint.versioned_guids.first().guid,
-        versioned_guids__version__lt=preprint.versioned_guids.first().version,
+        versioned_guids__guid=vg.guid,
+        versioned_guids__version__lt=vg.version,
+        date_published__isnull=False,
         preprint_doi_created__isnull=True
     ).exclude(id=preprint.id)
     if existing_versions_without_minted_doi:

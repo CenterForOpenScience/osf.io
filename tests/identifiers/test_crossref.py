@@ -349,6 +349,15 @@ class TestCrossRefClient:
         assert contributors.find('.//{%s}institution_name' % crossref.CROSSREF_NAMESPACE).text == institution.name
         assert contributors.find('.//{%s}institution_id' % crossref.CROSSREF_NAMESPACE).text == institution.ror_uri
 
+    def test_metadata_uses_existing_identifier(self, crossref_client, preprint):
+        doi = settings.DOI_FORMAT.format(prefix=preprint.provider.doi_prefix, guid=preprint.id)
+        preprint.set_identifier_values(doi, save=True)
+
+        crossref_xml = crossref_client.build_metadata(preprint)
+        root = lxml.etree.fromstring(crossref_xml)
+
+        assert root.find('.//{%s}doi' % crossref.CROSSREF_NAMESPACE).text == preprint.get_identifier_value('doi')
+
     def test_public_preprint_title_is_composed_correctly(self, crossref_client, preprint):
         preprint.title = 'My Title'
         preprint.save()
