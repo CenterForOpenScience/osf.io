@@ -395,6 +395,9 @@ ADDON_TESTS = [
 ADMIN_TESTS = [
     'admin_tests',
 ]
+MAILHOG_TESTS = [
+    'api_tests/mailhog',
+]
 
 
 @task
@@ -432,6 +435,13 @@ def test_api3(ctx, numprocesses=None, coverage=False, testmon=False, junit=False
 
 
 @task
+def test_mailhog(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    """Run the MAILHOG test suite."""
+    print(f'Testing modules "{MAILHOG_TESTS}"')
+    test_module(ctx, module=MAILHOG_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+
+
+@task
 def test_admin(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the Admin test suite."""
     print('Testing module "admin_tests"')
@@ -463,6 +473,7 @@ def test(ctx, all=False, lint=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
+        test_mailhog(ctx)
 
 @task
 def remove_failures_from_testmon(ctx, db_path=None):
@@ -511,6 +522,12 @@ def test_ci_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=Fa
 def test_ci_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #ci_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+
+
+@task
+def test_ci_mailhog(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    #ci_setup(ctx)
+    test_mailhog(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
