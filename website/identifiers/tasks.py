@@ -30,11 +30,6 @@ def task__update_verified_links(self, target_guid):
     target_object = Guid.load(target_guid).referent
     try:
         target_object.request_identifier_update(category='doi')
-        sentry.log_message(
-            'DOI metadata with verified links updated for guid',
-            extra_data={'guid': target_guid},
-            level=logging.INFO
-        )
         logger.debug(f'DOI metadata for guid with verified links updated: [guid={target_guid}]')
     except Exception as e:
         sentry.log_message(
