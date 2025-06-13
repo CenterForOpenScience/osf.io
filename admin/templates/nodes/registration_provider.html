@@ -1,0 +1,17 @@
+{% load node_extras %}
+
+{% if node.provider %}
+    <form id="provider-list-form"  method="post" action="{% url 'nodes:change-provider' guid=node.guid %}">
+        {% csrf_token %}
+        <select id="provider-list" name="provider_id" onchange="this.form.submit()">
+            <option value="{{ node.provider.id }}">{{ node.provider.name }}</option>  <!-- default value -->
+            {% for provider in node.available_providers %}
+                {% if not provider.id == node.provider.id %}
+                    <option value="{{ provider.id }}">{{ provider.name }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </form>
+{% else %}
+    <p>None</p>
+{% endif %}

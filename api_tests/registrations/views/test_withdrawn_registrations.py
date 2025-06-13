@@ -1,7 +1,7 @@
 import pytest
 from urllib.parse import urlparse
 
-from api_tests.nodes.views.test_node_contributors_list import NodeCRUDTestCase
+from api_tests.nodes.views.utils import NodeCRUDTestCase
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf_tests.factories import (

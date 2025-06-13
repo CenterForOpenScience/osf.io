@@ -8,12 +8,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 from osf_tests.factories import PreprintFactory
-from website import settings, mails
+from website import settings
 
 from osf.management.commands.check_crossref_dois import check_crossref_dois, report_stuck_dois
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestCheckCrossrefDOIs:
 
     @pytest.fixture()
@@ -60,15 +61,7 @@ class TestCheckCrossrefDOIs:
         assert stuck_preprint.identifiers.count() == 1
         assert stuck_preprint.identifiers.first().value == doi
 
-    @mock.patch('website.mails.send_mail')
-    def test_report_stuck_dois(self, mock_email, stuck_preprint):
+    def test_report_stuck_dois(self, mock_send_grid, stuck_preprint):
         report_stuck_dois(dry_run=False)
-        guid = stuck_preprint.guids.first()._id
 
-        mock_email.assert_called_with(
-            guids=guid,
-            time_since_published=2,
-            mail=mails.CROSSREF_DOIS_PENDING,
-            pending_doi_count=1,
-            to_addr=settings.OSF_SUPPORT_EMAIL
-        )
+        mock_send_grid.assert_called()

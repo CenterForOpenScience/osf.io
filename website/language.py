@@ -221,3 +221,22 @@ RESET_PASSWORD_SUCCESS_STATUS_MESSAGE = (
     'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
     'you should have, please contact OSF Support. '
 )
+
+SANCTION_STATUS_MESSAGES = {
+    'registration': {
+        'approve': 'Your registration approval has been accepted.',
+        'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
+    },
+    'embargo': {
+        'approve': 'Your embargo approval has been accepted.',
+        'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
+    },
+    'embargo_termination_approval': {
+        'approve': 'Your approval to make this embargo public has been accepted.',
+        'reject': 'Your disapproval has been accepted and this embargo will not be made public.',
+    },
+    'retraction': {
+        'approve': 'Your withdrawal approval has been accepted.',
+        'reject': 'Your disapproval has been accepted and the withdrawal has been cancelled.',
+    }
+}
