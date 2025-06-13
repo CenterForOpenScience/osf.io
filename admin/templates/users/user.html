@@ -71,6 +71,10 @@
             </thead>
             <tbody>
                 <tr>
+                    <td>id</td>
+                    <td><a href="/admin/osf/osfuser/{{ user.id }}/change/">{{ user.id }}</a></td>
+                </tr>
+                <tr>
                     <td>Full Name</td>
                     <td>{{ user.fullname }}</td>
                 </tr>
@@ -86,19 +90,41 @@
                 </tr>
                 <tr>
                     <td>Disabled</td>
-                    <td>{{ user.is_disabled }}</td>
+                    <td>{{ user.is_disabled }} [{{ user.date_disabled }}]</td>
+                </tr>
+                <tr>
+                    <td>Deactivation request</td>
+                    <td>
+                        {% if user.requested_deactivation %}
+                            {% if user.contacted_deactivation %}
+                                Contacted
+                            {% else %}
+                                Requested
+                            {% endif %}
+                        {% else %}
+                            Not requested
+                        {% endif %}
+                    </td>
                 </tr>
                 <tr>
                     <td>Registered</td>
-                    <td>{{ user.is_registered }}</td>
+                    <td>{{ user.is_registered }} [{{ user.date_registered }}]</td>
                 </tr>
                 <tr>
                     <td>Confirmed</td>
-                    <td>{{ user.is_confirmed }}</td>
+                    <td>{{ user.is_confirmed }} [{{ user.date_confirmed }}]</td>
                 </tr>
                 <tr>
                     <td>Last login</td>
                     <td>{{ user.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>Change password last attempt</td>
+                    <td>{{ user.change_password_last_attempt }}</td>
+                </tr>
+                <tr>
+                    <td>Change password invalid attempts</td>
+                    <td>{{ user.old_password_invalid_attempts }}</td>
                 </tr>
                 <tr>
                     <td>Emails</td>
@@ -116,12 +142,32 @@
                         {% endfor %}
                     </td>
                 </tr>
+                <tr>
+                    <td>Socials</td>
+                    <td>
+                        {% if user.social_links %}
+                            {% for name, link in user.social_links.items %}
+                                <li>
+                                    {{ name }}: {{ link }}
+                                </li>
+                            {% endfor %}
+                        {% else %}
+                            None
+                        {% endif %}
+                    </td>
+                </tr>
                 {% include "users/two_factor.html" with user=user %}
 
                 <tr>
                     <td>User is spammy</td>
                     <td>
                         {{ user.is_spammy }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>User is staff</td>
+                    <td>
+                        {{ user.is_staff }}
                     </td>
                 </tr>
                 {% include "users/add_system_tags.html" with user=user %}
@@ -137,6 +183,20 @@
                     <td>Nodes</td>
                     <td>
                         {% include "util/node_preprint_paginated_list.html" with items=nodes items_paginator=node_page resource_type="node" current_other_param=current_preprint %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>Groups</td>
+                    <td>
+                        {% if user.groups %}
+                            {% for group in user.groups.all %}
+                            <li>
+                                {{ group.name }}
+                            </li>
+                            {% endfor %}
+                        {% else %}
+                            None
+                        {% endif %}
                     </td>
                 </tr>
             </tbody>
