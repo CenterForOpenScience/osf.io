@@ -301,6 +301,30 @@ class NotificationSubscription(BaseModel):
         from api.base.utils import absolute_reverse
         return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
 
+    from django.contrib.contenttypes.models import ContentType
+
+    @property
+    def _id(self):
+        """
+        Legacy subscription id for API compatibility.
+        Provider: <short_name>_<event>
+        User/global: <user_id>_global_<event>
+        Node/etc: <guid>_<event>
+        """
+        # Safety checks
+        event = self.notification_type.name
+        ct = self.notification_type.object_content_type
+        match getattr(ct, 'model', None):
+            case 'preprintprovider' | 'collectionprovider' | 'registrationprovider':
+                # Providers: use subscribed_object._id (which is the provider short name, e.g. 'mindrxiv')
+                return f'{self.subscribed_object._id}_new_pending_submissions'
+            case 'node' | 'collection' | 'preprint':
+                # Node-like objects: use object_id (guid)
+                return f'{self.subscribed_object._id}_{event}'
+            case 'osfuser' | 'user', _:
+                # Global: <user_id>_global
+                return f'{self.subscribed_object._id}_global_{event}'
+
 
 class Notification(models.Model):
     subscription = models.ForeignKey(
