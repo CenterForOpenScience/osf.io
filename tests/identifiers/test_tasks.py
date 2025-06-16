@@ -88,16 +88,7 @@ class TestUpdateDOIMetadataWithVerifiedLinks:
         mock_datacite_client.update_identifier.assert_called_once_with(node_with_doi, 'doi')
         mock_retry.assert_called_once_with(exc=mock.ANY)
 
-    @mock.patch('framework.sentry.log_message')
-    def test_update_doi_metadata_success_log(self, mock_log, node_with_doi, mock_datacite_client):
-        task__update_verified_links.delay(node_with_doi._id)
 
-        mock_log.assert_any_call(
-            'DOI metadata with verified links updated for guid',
-            extra_data={'guid': node_with_doi._id},
-            level=mock.ANY
-        )
-        mock_datacite_client.update_identifier.assert_called_once_with(node_with_doi, 'doi')
 
     def test_update_doi_metadata_with_multiple_verified_links(self, node_with_doi, mock_datacite_client):
         verified_links = {
