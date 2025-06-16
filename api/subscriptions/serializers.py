@@ -7,7 +7,7 @@ from osf.models import Node
 from website.util import api_v2_url
 
 
-from api.base.serializers import JSONAPISerializer
+from api.base.serializers import JSONAPISerializer, LinksField
 from .fields import FrequencyField
 
 class SubscriptionSerializer(JSONAPISerializer):
@@ -23,6 +23,13 @@ class SubscriptionSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'subscription'
+
+    links = LinksField({
+        'self': 'get_absolute_url',
+    })
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_api_v2_url
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
