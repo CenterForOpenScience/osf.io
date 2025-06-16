@@ -1,7 +1,8 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from guardian.shortcuts import get_objects_for_user
 from rest_framework import generics
 from rest_framework import permissions
-from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 
 from api.actions.permissions import ReviewActionPermission
 from api.actions.serializers import NodeRequestActionSerializer, ReviewActionSerializer, PreprintRequestActionSerializer
@@ -186,7 +187,10 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Target
                 ),
             )
 
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except DjangoValidationError as exc:
+            raise ValidationError(str(exc)) from exc
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
