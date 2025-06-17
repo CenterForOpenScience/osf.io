@@ -28,6 +28,7 @@ from osf.exceptions import (
 )
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
+from .notification import NotificationType, FrequencyChoices
 from .subject import Subject
 from .spam import SpamMixin, SpamStatus
 from .validators import validate_title
@@ -1387,7 +1388,7 @@ class ContributorMixin(models.Model):
         return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False, make_curator=False):
+                        send_email=None, auth=None, log=True, save=False, make_curator=False, notification_type=None):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1453,12 +1454,34 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(
-                    self,
-                    contributor=contributor,
-                    auth=auth,
-                    email_template=send_email,
-                    permissions=permissions
+                notification_type_name = 'Add contributor'
+                # Get or create the notification type
+                notification_type, created = NotificationType.objects.get_or_create(
+                    name=notification_type_name,
+                    defaults={
+                        'notification_freq': FrequencyChoices.INSTANTLY.value,
+                        'template':send_email
+                    }
+                )
+
+                event_context = {
+                    'project': {
+                        'id': self._id,
+                        'title': self.title,
+                        'url': getattr(self, 'url', ''),
+                        'absolute_url': getattr(self, 'absolute_url', ''),
+                    },
+                    'contributor': {
+                        'id': contrib_to_add._id,
+                        'fullname': contrib_to_add.fullname,
+                        'username': contrib_to_add.username,
+                    },
+                }
+
+                notification_type.emit(
+                    user=contributor,
+                    subscribed_object=self,
+                    event_context=event_context
                 )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
