@@ -6,13 +6,20 @@ from django.views.generic import FormView
 from django.views.generic import DetailView
 
 from admin.base.forms import GuidForm
+from admin.nodes.queries import STORAGE_USAGE_QUERY
+from admin.nodes.views import StorageMixin
+
 from osf.models.registrations import DraftRegistration
 
 
 class DraftRegistrationMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        draft_registration = DraftRegistration.load(self.kwargs['draft_registration_id'])
+        draft_registration = DraftRegistration.objects.filter(
+            _id=self.kwargs['draft_registration_id']
+        ).annotate(
+            **STORAGE_USAGE_QUERY
+        ).first()
         draft_registration.guid = draft_registration._id
         return draft_registration
 
@@ -52,3 +59,8 @@ class DraftRegistrationView(DraftRegistrationMixin, DetailView):
         return super().get_context_data(**{
             'draft_registration': draft_registration
         }, **kwargs)
+
+
+class DraftRegisrationModifyStorageUsage(DraftRegistrationMixin, StorageMixin):
+    template_name = 'draft_registrations/detail.html'
+    permission_required = 'osf.change_draftregistration'
