@@ -41,7 +41,6 @@ CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
     '.osf.io',
-    '*'
 ]
 
 AUTH_PASSWORD_VALIDATORS = [
