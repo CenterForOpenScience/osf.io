@@ -189,7 +189,7 @@ class ReviewActionListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Target
 
         try:
             serializer.save(user=self.request.user)
-        except DjangoValidationError as exc:
+        except (ValueError, DjangoValidationError) as exc:
             raise ValidationError(str(exc)) from exc
 
     # overrides ListFilterMixin
