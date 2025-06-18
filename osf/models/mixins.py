@@ -1388,7 +1388,7 @@ class ContributorMixin(models.Model):
         return qs
 
     def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False, make_curator=False, notification_type=None):
+                        send_email=None, auth=None, log=True, save=False, make_curator=False):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
@@ -1454,13 +1454,12 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
             if self._id and contrib_to_add:
-                notification_type_name = 'Add contributor'
                 # Get or create the notification type
                 notification_type, created = NotificationType.objects.get_or_create(
-                    name=notification_type_name,
+                    name='Add contributor',
                     defaults={
                         'notification_freq': FrequencyChoices.INSTANTLY.value,
-                        'template':send_email
+                        'template': send_email
                     }
                 )
 
