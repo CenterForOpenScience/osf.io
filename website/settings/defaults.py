@@ -372,8 +372,6 @@ MFR_SERVER_URL = 'http://localhost:7778'
 ###### ARCHIVER ###########
 ARCHIVE_PROVIDER = 'osfstorage'
 
-MAX_ARCHIVE_SIZE = 5 * 1024 ** 3  # == math.pow(1024, 3) == 1 GB
-
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 STUCK_FILES_DELETE_TIMEOUT = timedelta(days=45) # Registration files stuck for x days are marked as deleted.
 

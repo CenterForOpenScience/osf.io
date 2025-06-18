@@ -1,6 +1,5 @@
 import requests
 import json
-import math
 
 from furl import furl
 from rest_framework import status as http_status
@@ -282,7 +281,7 @@ def archive_node(stat_results, job_pk):
     )
 
     draft_registration = DraftRegistration.objects.get(registered_node=dst)
-    disk_usage_in_gb = stat_result.disk_usage / math.pow(1024, 3)
+    disk_usage_in_gb = stat_result.disk_usage / 1024 ** 3
     if src.is_public:
         limit = draft_registration.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
     else:
