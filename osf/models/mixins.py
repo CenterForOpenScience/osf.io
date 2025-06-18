@@ -26,6 +26,7 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
+from website.settings import OSF_CONTACT_EMAIL, DOMAIN
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .notification import NotificationType, FrequencyChoices
@@ -1464,17 +1465,22 @@ class ContributorMixin(models.Model):
                 )
 
                 event_context = {
-                    'project': {
+                    'node': {
                         'id': self._id,
                         'title': self.title,
-                        'url': getattr(self, 'url', ''),
                         'absolute_url': getattr(self, 'absolute_url', ''),
                     },
-                    'contributor': {
+                    'referrer_name': auth.user.fullname,
+                    'user': {
                         'id': contrib_to_add._id,
                         'fullname': contrib_to_add.fullname,
                         'username': contrib_to_add.username,
                     },
+                    'osf_contact_email': OSF_CONTACT_EMAIL,
+                    'all_global_subscriptions_none': None,
+                    'settings': {
+                        'DOMAIN': DOMAIN
+                    }
                 }
 
                 notification_type.emit(
