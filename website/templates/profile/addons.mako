@@ -1,5 +1,5 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Configure Add-on & Link Services Accounts</%def>
+<%def name="title()">Configure add-on & link service accounts</%def>
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
@@ -25,7 +25,7 @@
 
     <div class="col-sm-9 col-md-7">
         <div id="configureAddons" class="panel panel-default">
-          <div class="panel-heading clearfix"><h3 class="panel-title">Configure Add-on & Link Services Accounts</h3></div>
+          <div class="panel-heading clearfix"><h3 class="panel-title">Configure add-on & link service accounts</h3></div>
           <div class="panel-body">
           % for addon in addon_settings:
             ${ render_user_settings(addon) }
