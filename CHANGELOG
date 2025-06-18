@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.10.0 (2025-06-11)
+====================
+
+- Manual GUID and DOI assignment during Preprint and Registration Creation
+
 25.09.0 (2025-05-14)
 ====================
 
