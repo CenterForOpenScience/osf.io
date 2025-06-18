@@ -357,3 +357,17 @@ def with_class_scoped_db(_class_scoped_db):
     ```
     """
     yield from rolledback_transaction('function_transaction')
+
+@pytest.fixture
+def mock_gravy_valet_get_verified_links():
+    """This fixture is used to mock a GV request which is made during node's identifier update. More specifically, when
+    the tree walker in datacite metadata building process asks GV for verified links. As a result, this request must be
+    mocked in many tests. The following decoration can be applied to either a test class or individual test methods.
+
+    ```
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    ```
+    """
+    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_verified_links:
+        mock_get_verified_links.return_value = []
+        yield mock_get_verified_links

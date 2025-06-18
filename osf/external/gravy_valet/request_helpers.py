@@ -10,6 +10,7 @@ from requests.exceptions import RequestException
 from framework import sentry
 from website import settings
 from . import auth_helpers
+from .exceptions import GVException
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ API_BASE = urljoin(settings.GRAVYVALET_URL, 'v1/')
 
 # {{placeholder}} format allows f-string to return a formatable string
 ACCOUNT_ENDPOINT = f'{API_BASE}authorized-storage-accounts/{{pk}}'
-ADDONS_ENDPOINT = f'{API_BASE}configured-storage-addons'
+ADDONS_ENDPOINT = f'{API_BASE}configured-{{addon_type}}-addons'
 GENERIC_ADDONS_ENDPOINT = f'{API_BASE}{{addon_type}}'
 ADDON_ENDPOINT = f'{GENERIC_ADDONS_ENDPOINT}/{{pk}}'
 WB_CONFIG_ENDPOINT = f'{ADDON_ENDPOINT}/waterbutler-credentials'
@@ -42,6 +43,7 @@ class AddonType(enum.StrEnum):
     STORAGE = enum.auto()
     CITATION = enum.auto()
     COMPUTING = enum.auto()
+    LINK = enum.auto()
 
 CITATION_ITEM_TYPE_ALIASES = {
     'COLLECTION': 'folder',
@@ -55,6 +57,13 @@ def get_account(gv_account_pk, requesting_user):  # -> JSONAPIResultEntry
         endpoint_url=ACCOUNT_ENDPOINT.format(pk=gv_account_pk),
         requesting_user=requesting_user,
         params={'include': ACCOUNT_EXTERNAL_STORAGE_SERVICE_PATH},
+    )
+
+def get_verified_links(node_guid, requesting_user=None):
+    return iterate_gv_results(
+        ADDONS_ENDPOINT.format(addon_type=AddonType.LINK) + f'/{node_guid}/verified-links',
+        requesting_user=requesting_user,
+        raise_on_error=True
     )
 
 
@@ -226,7 +235,8 @@ def iterate_gv_results(
     requested_resource=None,
     request_method='GET',
     params: dict = None,
-    auth=None
+    auth=None,
+    raise_on_error: bool = False
 ):  # -> typing.Iterator[JSONAPIResultEntry]
     '''Processes the result of a request to GravyValet list endpoint into a generator of JSONAPIResultEntires.'''
     response = _make_gv_request(
@@ -237,7 +247,10 @@ def iterate_gv_results(
         params=params,
         auth=auth
     )
+
     if not response:
+        if raise_on_error:
+            raise GVException
         return
 
     response_json = response.json()
@@ -423,6 +436,10 @@ class JSONAPIResultEntry:
 
     def json(self):
         return self._result_entry
+
+    @property
+    def attributes(self):
+        return self._attributes
 
     def get_attribute(self, attribute_name):
         return self._attributes.get(attribute_name)

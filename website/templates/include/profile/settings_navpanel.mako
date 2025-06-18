@@ -9,7 +9,7 @@
         <a href="${ '#' if current_page == 'account' else web_url_for('user_account') }">Account settings</a></li>
 
       <li class="${'active' if current_page == 'addons' else ''}">
-        <a href="${ '#' if current_page == 'addons' else  web_url_for('user_addons') }">Configure add-on accounts</a></li>
+        <a href="${ '#' if current_page == 'addons' else  web_url_for('user_addons') }">Configure add-on & link service accounts</a></li>
 
       <li class="${'active' if current_page == 'notifications' else ''}">
         <a href="${ '#' if current_page == 'notifications' else web_url_for('user_notifications') }">Notifications</a></li>

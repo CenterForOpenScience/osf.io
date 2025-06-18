@@ -51,7 +51,6 @@ def project(user, auth, fake):
 def auth(user):
     return Auth(user)
 
-
 # copied from tests/test_models.py
 def test_factory(user, project):
     # Create a registration with kwargs
@@ -119,6 +118,7 @@ class TestRegistration:
 
 
 # copied from tests/test_models.py
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestRegisterNode:
 
     @pytest.fixture()
@@ -404,6 +404,7 @@ class TestRegisterNodeContributors:
         with mock_archive(project_two, autoapprove=True) as registration:
             return registration
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()
@@ -417,6 +418,7 @@ class TestRegisterNodeContributors:
 
 
 # copied from tests/test_registrations
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestNodeApprovalStates:
 
     def test_sanction_none(self):
@@ -633,7 +635,7 @@ class TestRegistrationMixin:
 
         assert registration_metadata == veer_condensed
 
-
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestRegistationModerationStates:
 
     @pytest.fixture
