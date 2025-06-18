@@ -135,19 +135,19 @@ class CrossRefClient(AbstractIdentifierClient):
                 )
             )
 
-        preprint_versions = preprint.get_preprint_versions(include_rejected=False)
+        preprint_versions = preprint.get_preprint_versions(
+            versioned_guids__version__lt=preprint.version,
+            include_rejected=False,
+        )
         if preprint_versions:
-            for preprint_version, previous_version in zip(preprint_versions, preprint_versions[1:]):
-                if preprint_version.version > preprint.version:
-                    continue
+            for previous_version in preprint_versions:
 
                 minted_doi = previous_version.get_identifier_value('doi')
-                if not minted_doi:
-                    previous_doi = self.build_doi(previous_version)
+                previous_doi = minted_doi or self.build_doi(previous_version)
 
                 related_item = element.related_item(
                     element.intra_work_relation(
-                        minted_doi or previous_doi,
+                        previous_doi,
                         **{'relationship-type': 'isVersionOf', 'identifier-type': 'doi'}
                     )
                 )
@@ -156,7 +156,8 @@ class CrossRefClient(AbstractIdentifierClient):
         if len(relations_program) > 0:
             posted_content.append(relations_program)
 
-        doi = self.build_doi(preprint)
+        minted_doi = preprint.get_identifier_value('doi')
+        doi = minted_doi or self.build_doi(preprint)
         doi_data = [
             element.doi(doi),
             element.resource(settings.DOMAIN + preprint._id)
