@@ -3,11 +3,6 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf.models import Outcome, Identifier, OutcomeArtifact
 from osf.utils.outcomes import ArtifactTypes
-from osf_tests.factories import (
-    AuthUserFactory,
-    OSFGroupFactory,
-)
-from osf.utils.permissions import READ
 from rest_framework import exceptions
 from .utils import LinkedRegistrationsTestCase
 
@@ -130,28 +125,6 @@ class TestNodeLinkedRegistrationsList(LinkedRegistrationsTestCase):
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
 
-    def test_osf_group_member_read_can_view_linked_reg(
-            self,
-            app,
-            user_admin_contrib,
-            user_write_contrib,
-            user_read_contrib,
-            user_non_contrib,
-            registration,
-            node_public,
-            node_private
-    ):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, READ)
-        res = self.make_request(
-            app,
-            node_id=node_private._id,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-
 
 @pytest.mark.django_db
 class TestNodeLinkedRegistrationsRelationshipRetrieve(LinkedRegistrationsTestCase):
@@ -263,22 +236,3 @@ class TestNodeLinkedRegistrationsRelationshipRetrieve(LinkedRegistrationsTestCas
         res = self.make_request(app, node_id=node_private._id, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
-
-    def test_osf_group_member_can_view_linked_registration_relationship(
-            self,
-            app,
-            registration,
-            node_private,
-            node_public,
-            user_non_contrib
-    ):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, READ)
-        res = self.make_request(
-            app,
-            node_id=node_private._id,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200

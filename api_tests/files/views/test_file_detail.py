@@ -16,7 +16,7 @@ from addons.osfstorage.tests.factories import FileVersionFactory
 from api.base.settings.defaults import API_BASE
 from api_tests import utils as api_utils
 from framework.auth.core import Auth
-from osf.models import NodeLog, QuickFilesNode, Node, FileVersionUserMetadata
+from osf.models import NodeLog, Node, FileVersionUserMetadata
 from osf.utils.permissions import WRITE, READ
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import (
@@ -55,10 +55,6 @@ class TestFileView:
     @pytest.fixture()
     def node(self, user):
         return ProjectFactory(creator=user, comment_level='public')
-
-    @pytest.fixture()
-    def quickfiles_node(self, user):
-        return QuickFilesNode.objects.get(creator=user)
 
     @pytest.fixture()
     def file(self, user, node):

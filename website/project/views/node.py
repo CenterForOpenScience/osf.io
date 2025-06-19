@@ -216,10 +216,6 @@ def project_new_node(auth, node, **kwargs):
                 else:
                     new_component.add_contributor(contributor, permissions=perm, auth=auth)
 
-            for group in node.osf_groups:
-                if group.is_manager(user):
-                    new_component.add_osf_group(group, group.get_permission_to_node(node), auth=auth)
-
             new_component.save()
             redirect_url = new_component.url + 'contributors/'
             message = (
@@ -837,7 +833,6 @@ def _view_project(node, auth, primary=False,
             'storage_location': node.osfstorage_region.name,
             'waterbutler_url': node.osfstorage_region.waterbutler_url,
             'mfr_url': node.osfstorage_region.mfr_url,
-            'groups': list(node.osf_groups.values_list('name', flat=True)),
             'storage_limit_status': get_storage_limits_css(node),
         },
         'parent_node': {
@@ -1299,7 +1294,7 @@ def search_node(auth, **kwargs):
         can_view_query,
         title__icontains=query,
         is_deleted=False
-    ).exclude(id__in=nin).exclude(type='osf.collection').exclude(type='osf.quickfilesnode'))
+    ).exclude(id__in=nin).exclude(type='osf.collection'))
 
     count = nodes.count()
     pages = math.ceil(count / size)

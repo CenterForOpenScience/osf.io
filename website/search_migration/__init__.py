@@ -27,22 +27,7 @@ SELECT json_agg(
                                LEFT OUTER JOIN osf_guid AS USER_GUID
                                  ON (U.id = USER_GUID.object_id AND (USER_GUID.content_type_id = (SELECT id FROM django_content_type WHERE model = 'osfuser')))
                              WHERE (CONTRIB.node_id = N.id AND CONTRIB.visible = TRUE))
-            , 'groups', (SELECT json_agg(json_build_object(
-                                            'url',  '/' || osf_osfgroup._id || '/'
-                                            , 'name', osf_osfgroup.name
-                                        ))
-                        FROM osf_osfgroup
-                        WHERE osf_osfgroup.id IN (
-                            SELECT GGOP.content_object_id AS osfgroup_id
-                            FROM osf_osfgroupgroupobjectpermission GGOP
-                            WHERE GGOP.group_id IN (
-                                SELECT DISTINCT AG.id AS osfgroup_id
-                                FROM auth_group AG
-                                    INNER JOIN osf_nodegroupobjectpermission NGOP
-                                    ON (AG.id = NGOP.group_id)
-                                WHERE (NGOP.content_object_id = N.id AND UPPER(AG.name::text) LIKE UPPER('%osfgroup_%'))
-                                )
-                            ))
+            , 'groups', NULL
             , 'extra_search_terms', CASE
                                     WHEN strpos(N.title, '-') + strpos(N.title, '_') + strpos(N.title, '.') > 0
                                       THEN translate(N.title, '-_.', '   ')
@@ -441,7 +426,7 @@ WHERE name IS NOT NULL
       AND name != ''
       AND target_object_id = ANY (SELECT id
                          FROM osf_abstractnode
-                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+                         WHERE (TYPE = 'osf.node' OR TYPE = 'osf.registration')
                                AND is_public IS TRUE
                                AND is_deleted IS FALSE
                                AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))
@@ -627,7 +612,7 @@ FROM osf_abstractnode AS N
                   AND content_type_id = (SELECT id FROM django_content_type WHERE model = 'abstractnode')
             LIMIT 1
             ) PARENT_GUID ON TRUE
-WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration' OR TYPE = 'osf.quickfilesnode')
+WHERE NOT ((TYPE = 'osf.node' OR TYPE = 'osf.registration')
   AND N.is_public IS TRUE
   AND N.is_deleted IS FALSE
   AND (spam_status IS NULL OR NOT (spam_status = 2 or (spam_status = 1 AND {spam_flagged_removed_from_search})))

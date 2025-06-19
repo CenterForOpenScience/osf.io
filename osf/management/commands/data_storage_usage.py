@@ -139,23 +139,6 @@ ABSTRACT_NODE_SIZE_SUM_SQL = """
         GROUP BY node.type, node.is_public
     """
 
-# Aggregation of non-deleted quick file sizes (NOTE: This will break when QuickFolders is merged)
-ND_QUICK_FILE_SIZE_SUM_SQL = """
-        SELECT
-           node.type, sum(size)
-        FROM osf_basefileversionsthrough AS obfnv
-        LEFT JOIN osf_basefilenode file ON obfnv.basefilenode_id = file.id
-        LEFT JOIN osf_fileversion version ON obfnv.fileversion_id = version.id
-        LEFT JOIN osf_abstractnode node ON file.target_object_id = node.id
-        WHERE file.provider = 'osfstorage' AND file.target_content_type_id = %s
-          AND node.type = 'osf.quickfilesnode'
-          AND node.is_deleted = False
-          AND file.deleted_on IS NULL
-          AND obfnv.id >= %s AND obfnv.id <= %s
-        GROUP BY node.type
-
-    """
-
 # Aggregation of size of non-deleted files in preprint supplemental nodes based on the node query above
 ND_PREPRINT_SUPPLEMENT_SIZE_SUM_SQL = """
         SELECT
@@ -314,16 +297,6 @@ def gather_usage_data(start, end, dry_run, zip_file):
         logger.debug(f'Gathering regional node summary at {datetime.datetime.now()}')
         summary_data = combine_summary_data(summary_data, summarize(
             sql=REGIONAL_NODE_SIZE_SUM_SQL,
-            content_type=abstractnode_content_type,
-            start=start,
-            end=end,
-            cursor=cursor,
-        ))
-
-        # TODO: Move the next when Quick Folders is done
-        logger.debug(f'Gathering quickfile summary at {datetime.datetime.now()}')
-        summary_data = combine_summary_data(summary_data, summarize(
-            sql=ND_QUICK_FILE_SIZE_SUM_SQL,
             content_type=abstractnode_content_type,
             start=start,
             end=end,
