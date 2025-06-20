@@ -195,15 +195,41 @@ class TestPreprintDelete:
     def url(self, user):
         return f'/{API_BASE}preprints/{{}}/'
 
-    def test_cannot_delete_preprints(
-            self, app, user, url, unpublished_preprint, published_preprint):
-        res = app.delete(url.format(unpublished_preprint._id), auth=user.auth, expect_errors=True)
-        assert res.status_code == 405
-        assert unpublished_preprint.deleted is None
+    def test_can_delete_draft_preprints(
+        self, app, user, url, unpublished_preprint
+    ):
 
-        res = app.delete(url.format(published_preprint._id), auth=user.auth, expect_errors=True)
-        assert res.status_code == 405
-        assert published_preprint.deleted is None
+        url = f'/{API_BASE}preprints/{unpublished_preprint._id}/'
+        res = app.delete(url, auth=user.auth)
+        assert res.status_code == 204
+
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+
+    def test_cannot_delete_published_preprints(self, app, user, url, published_preprint):
+        url = f'/{API_BASE}preprints/{published_preprint._id}/'
+
+        res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'You cannot delete created preprint'
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+    def test_cannot_delete_in_moderation_preprints(self, app, user, url):
+        pre_moderation_preprint = PreprintFactory(creator=user, reviews_workflow='pre-moderation')
+        post_moderation_preprint = PreprintFactory(creator=user, reviews_workflow='post-moderation')
+
+        url = f'/{API_BASE}preprints/{pre_moderation_preprint._id}/'
+        res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'You cannot delete created preprint'
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
+
+        url = f'/{API_BASE}preprints/{post_moderation_preprint._id}/'
+
+        res = app.delete(url, auth=user.auth, expect_errors=True)
+        assert res.json['errors'][0]['detail'] == 'You cannot delete created preprint'
+        res = app.get(url, auth=user.auth)
+        assert res.status_code == 200
 
 
 @pytest.mark.django_db
