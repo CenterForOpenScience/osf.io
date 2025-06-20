@@ -354,7 +354,6 @@ API_TESTS2 = [
     'api_tests/metrics',
     'api_tests/nodes',
     'api_tests/requests',
-    'api_tests/resources',
     'api_tests/schema_responses',
 ]
 API_TESTS3 = [
@@ -375,6 +374,7 @@ API_TESTS3 = [
     'api_tests/meetings',
     'api_tests/metadata_records',
     'api_tests/osf_groups',
+    'api_tests/resources',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
