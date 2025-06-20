@@ -31,16 +31,24 @@ class Event:
         self.timestamp = timezone.now()
 
     def perform(self):
-        """Call emails.notify to notify users of an action"""
-        emails.notify(
-            event=self.event_type,
-            user=self.user,
-            node=self.node,
-            timestamp=self.timestamp,
-            message=self.html_message,
-            profile_image_url=self.profile_image_url,
-            url=self.url
+        """Call NotificationSubscription.emit to notify users of an action"""
+        subscription_qs = self.user.subscriptions.filter(
+            notification_type__name=self.event_type
         )
+        if not subscription_qs.exists():
+            # If the user is not subscribed to this event type, do not send notifications
+            return
+
+        subscription = subscription_qs.first()
+        context = {}
+
+        context['message'] = self.html_message
+        context['profile_image_url'] = self.profile_image_url
+        context['localized_timestamp'] = emails.localize_timestamp(self.timestamp, self.user)
+        context['user_fullname'] = self.user.fullname
+        context['url'] = self.url
+
+        subscription.emit(self.user, event_context=context)
 
     @property
     def text_message(self):
