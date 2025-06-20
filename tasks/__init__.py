@@ -345,6 +345,8 @@ API_TESTS1 = [
     'api_tests/schemas',
     'api_tests/providers',
     'api_tests/preprints',
+    'api_tests/registrations',
+    'api_tests/registries_moderation',
 ]
 API_TESTS2 = [
     'api_tests/cedar_metadata_records',
@@ -383,12 +385,10 @@ API_TESTS3 = [
     'api_tests/tokens',
     'api_tests/view_only_links',
     'api_tests/share',
+    'api_tests/subscriptions',
     'api_tests/wikis',
 ]
 API_TESTS4 = [
-    'api_tests/registrations',
-    'api_tests/registries_moderation',
-    'api_tests/subscriptions',
     'api_tests/users',
     'api_tests/waffle',
     'api_tests/wb',
