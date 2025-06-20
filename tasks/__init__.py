@@ -358,7 +358,6 @@ API_TESTS2 = [
     'api_tests/osf_groups',
     'api_tests/requests',
     'api_tests/resources',
-    'api_tests/schema_responses',
 ]
 API_TESTS3 = [
     'api_tests/actions',
@@ -387,6 +386,7 @@ API_TESTS3 = [
     'api_tests/share',
     'api_tests/subscriptions',
     'api_tests/wikis',
+    'api_tests/schema_responses',
 ]
 API_TESTS4 = [
     'api_tests/users',
