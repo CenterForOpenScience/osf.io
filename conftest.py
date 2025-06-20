@@ -136,7 +136,7 @@ def es6_client(setup_connections):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_metrics_marker(request):
+def _es_metrics_marker(request, worker_id):
     """Clear out all indices and index templates before and after
     tests marked with `es_metrics`.
     """
@@ -144,7 +144,7 @@ def _es_metrics_marker(request):
     if marker:
         es6_client = request.getfixturevalue('es6_client')
         _temp_prefix = 'temp_metrics_'
-        _temp_wildcard = f'{_temp_prefix}*'
+        _temp_wildcard = f'{_temp_prefix}-{worker_id}*'
 
         def _teardown_es_temps():
             es6_client.indices.delete(index=_temp_wildcard)
@@ -160,12 +160,12 @@ def _es_metrics_marker(request):
                     _exit.enter_context(mock.patch.object(
                         _metric_class,
                         '_template_name',  # also used to construct index names
-                        f'{_temp_prefix}{_metric_class._template_name}',
+                        f'{_temp_prefix}-{worker_id}{_metric_class._template_name}',
                     ))
                     _exit.enter_context(mock.patch.object(
                         _metric_class,
                         '_template',  # a wildcard string for indexes and templates
-                        f'{_temp_prefix}{_metric_class._template}',
+                        f'{_temp_prefix}-{worker_id}{_metric_class._template}',
                     ))
                 yield
 
