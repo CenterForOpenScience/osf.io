@@ -2497,7 +2497,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if service.short_name == gv_pk:
                 break
         else:
-            return None
+            return []
 
         return self._get_addons_from_gv(requesting_user_id, service.type, auth=auth)
 
