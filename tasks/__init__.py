@@ -349,11 +349,10 @@ API_TESTS1 = [
     'api_tests/registries_moderation',
 ]
 API_TESTS2 = [
-    'api_tests/cedar_metadata_records',
-    'api_tests/cedar_metadata_templates',
     'api_tests/metrics',
     'api_tests/nodes',
     'api_tests/requests',
+    'api_tests/resources',
     'api_tests/schema_responses',
 ]
 API_TESTS3 = [
@@ -363,6 +362,8 @@ API_TESTS3 = [
     'api_tests/applications',
     'api_tests/banners',
     'api_tests/base',
+    'api_tests/cedar_metadata_records',
+    'api_tests/cedar_metadata_templates',
     'api_tests/chronos',
     'api_tests/collections',
     'api_tests/collection_submissions',
@@ -374,7 +375,6 @@ API_TESTS3 = [
     'api_tests/meetings',
     'api_tests/metadata_records',
     'api_tests/osf_groups',
-    'api_tests/resources',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
