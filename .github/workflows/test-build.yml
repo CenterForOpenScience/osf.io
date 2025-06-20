@@ -21,7 +21,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache
-        key: reqs_${{ hashFiles('**/pyproject.toml') }}
+        key: reqs_${{ hashFiles('poetry.lock') }}
         restore-keys: reqs
     - run: |
         mkdir -p ~/.cache/downloads
