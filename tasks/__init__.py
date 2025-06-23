@@ -362,8 +362,6 @@ API_TESTS3 = [
     'api_tests/applications',
     'api_tests/banners',
     'api_tests/base',
-    'api_tests/cedar_metadata_records',
-    'api_tests/cedar_metadata_templates',
     'api_tests/chronos',
     'api_tests/collections',
     'api_tests/collection_submissions',
@@ -387,11 +385,13 @@ API_TESTS3 = [
     'api_tests/share',
     'api_tests/subscriptions',
     'api_tests/wikis',
+    'api_tests/wb',
 ]
 API_TESTS4 = [
+    'api_tests/cedar_metadata_records',
+    'api_tests/cedar_metadata_templates',
     'api_tests/users',
     'api_tests/waffle',
-    'api_tests/wb',
 ]
 ADDON_TESTS = [
     'addons/base',
