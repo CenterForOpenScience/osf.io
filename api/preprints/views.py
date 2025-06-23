@@ -279,7 +279,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
         return super().create(request, *args, **kwargs)
 
 
-class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -326,6 +326,11 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin
         res['legacy_type_allowed'] = True
         return res
 
+    def delete(self, request, *args, **kwargs):
+        if self.get_preprint().machine_state == 'initial':
+            return super().delete(request, *args, **kwargs)
+
+        raise ValidationError('You cannot delete created preprint')
 
 class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (
