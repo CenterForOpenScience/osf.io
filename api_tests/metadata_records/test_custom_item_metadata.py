@@ -13,6 +13,7 @@ from .utils import ExpectedMetadataRecord
 
 
 @pytest.mark.usefixtures('with_class_scoped_db')
+@pytest.mark.django_db
 class TestCustomItemMetadataRecordDetail:
     APIV2_PATH = 'custom_item_metadata_records/'
     APIV2_RESOURCE_TYPE = 'custom-item-metadata-record'
