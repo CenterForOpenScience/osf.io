@@ -37,6 +37,7 @@ from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorag
 from framework import sentry
 from framework.exceptions import HTTPError
 from osf.models import Node, NodeLog, Registration, BaseFileNode
+from osf.models.files import TrashedFileNode
 from osf.exceptions import RegistrationStuckRecoverableException, RegistrationStuckBrokenException
 from api.base.utils import waterbutler_api_url_for
 from scripts import utils as script_utils
@@ -280,48 +281,71 @@ def get_logs_to_revert(reg):
             Q(node=reg.registered_from) |
             (Q(params__source__nid=reg.registered_from._id) | Q(params__destination__nid=reg.registered_from._id))).order_by('-date')
 
+def get_file_obj_from_log(log, reg):
+    try:
+        return BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
+    except KeyError:
+        if log.action == 'osf_storage_folder_created':
+            return OsfStorageFolder.objects.get(
+                target_object_id=reg.registered_from.id,
+                name=log.params['path'].split('/')[-2]
+            )
+        elif log.action == 'osf_storage_file_removed':
+            return TrashedFileNode.objects.get(
+                target_object_id=reg.registered_from.id,
+                name=log.params['path'].split('/')[-2]
+            )
+        elif log.action in ['addon_file_moved', 'addon_file_renamed']:
+            try:
+                return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
+            except KeyError:
+                return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
+        else:
+            # Generic fallback
+            path = log.params.get('path', '').split('/')
+            if len(path) >= 2:
+                name = path[-1] or path[-2]  # file name or folder name
+                return BaseFileNode.objects.get(
+                    target_object_id=reg.registered_from.id,
+                    name=name
+                )
+
+        raise ValueError(f'Cannot determine file obj for log {log._id} [Registration id {reg._id}]: {log.action}')
+
+
+def handle_file_operation(file_tree, reg, file_obj, log, obj_cache):
+    logger.info(f'Reverting {log.action} {file_obj._id}:{file_obj.name} from {log.date}')
+
+    if log.action in ['osf_storage_file_added', 'osf_storage_folder_created']:
+        return modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=True, cached=bool(file_obj._id in obj_cache))
+    elif log.action == 'osf_storage_file_removed':
+        return modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=False, cached=bool(file_obj._id in obj_cache))
+    elif log.action == 'osf_storage_file_updated':
+        return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), revert=True)
+    elif log.action == 'addon_file_moved':
+        parent = BaseFileNode.objects.get(_id__in=obj_cache, name='/{}'.format(log.params['source']['materialized']).rstrip('/').split('/')[-2])
+        return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), move_under=parent)
+    elif log.action == 'addon_file_renamed':
+        return modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), rename=log.params['source']['name'])
+    else:
+        raise ValueError(f'Unexpected log action: {log.action}')
+
 def revert_log_actions(file_tree, reg, obj_cache, permissible_addons):
     logs_to_revert = get_logs_to_revert(reg)
+
     if len(permissible_addons) > 1:
         logs_to_revert = logs_to_revert.exclude(action__in=PERMISSIBLE_BLACKLIST)
+
     for log in list(logs_to_revert):
-        try:
-            file_obj = BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
-        except KeyError:
-            try:
-                file_obj = BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
-            except BaseFileNode.DoesNotExist:
-                # Bad log data
-                file_obj = BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
+        file_obj = get_file_obj_from_log(log, reg)
         assert file_obj.target in reg.registered_from.root.node_and_primary_descendants()
-        if log.action == 'osf_storage_file_added':
-            # Find and mark deleted
-            logger.info(f'Reverting add {file_obj._id}:{file_obj.name} from {log.date}')
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=True, cached=bool(file_obj._id in obj_cache))
-        elif log.action == 'osf_storage_file_removed':
-            # Find parent and add to children, or undelete
-            logger.info(f'Reverting delete {file_obj._id}:{file_obj.name} from {log.date}')
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=False, cached=bool(file_obj._id in obj_cache))
-        elif log.action == 'osf_storage_file_updated':
-            # Find file and revert version
-            logger.info(f'Reverting update {file_obj._id}:{file_obj.name} from {log.date}')
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), revert=True)
-        elif log.action == 'osf_storage_folder_created':
-            # Find folder and mark deleted
-            logger.info(f'Reverting folder {file_obj._id}:{file_obj.name} from {log.date}')
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, deleted=True, cached=bool(file_obj._id in obj_cache))
-        elif log.action == 'addon_file_moved':
-            logger.info(f'Reverting move {file_obj._id}:{file_obj.name} from {log.date}')
-            parent = BaseFileNode.objects.get(_id__in=obj_cache, name='/{}'.format(log.params['source']['materialized']).rstrip('/').split('/')[-2])
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), move_under=parent)
-        elif log.action == 'addon_file_renamed':
-            logger.info('Reverting rename {}:{} -> {} from {}'.format(file_obj._id, log.params['source']['name'], file_obj.name, log.date))
-            file_tree, noop = modify_file_tree_recursive(reg._id, file_tree, file_obj, cached=bool(file_obj._id in obj_cache), rename=log.params['source']['name'])
-        else:
-            raise Exception(f'Unexpected log action: {log.action}')
+
+        file_tree, noop = handle_file_operation(file_tree, reg, file_obj, log, obj_cache)
         assert not noop, f'{reg._id}: Failed to revert action for NodeLog {log._id}'
+
         if file_obj._id not in obj_cache:
             obj_cache.add(file_obj._id)
+
     return file_tree
 
 def build_file_tree(reg, node_settings, *args, **kwargs):
@@ -337,7 +361,18 @@ def build_file_tree(reg, node_settings, *args, **kwargs):
             'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
-            serialized['children'] = [_recurse(child, node) for child in OsfStorageFileNode.objects.filter(target_object_id=node.id, target_content_type_id=ct_id, parent_id=file_obj.id)]
+            active_children = list(OsfStorageFileNode.objects.filter(
+                target_object_id=node.id,
+                target_content_type_id=ct_id,
+                parent_id=file_obj.id
+            ))
+            trashed_children = list(TrashedFileNode.objects.filter(
+                target_object_id=node.id,
+                target_content_type_id=ct_id,
+                parent_id=file_obj.id
+            ))
+            all_children = active_children + trashed_children
+            serialized['children'] = [_recurse(child, node) for child in all_children]
         return serialized
 
     current_tree = _recurse(node_settings.get_root(), n)
