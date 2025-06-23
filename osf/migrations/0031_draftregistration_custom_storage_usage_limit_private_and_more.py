@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0029_remove_abstractnode_keenio_read_key'),
+        ('osf', '0030_abstractnode__manual_guid'),
     ]
 
     operations = [
