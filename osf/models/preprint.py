@@ -44,7 +44,7 @@ from website.citations.utils import datetime_to_csl
 from website import settings, mails
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
-from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin
+from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin, check_manually_assigned_guid
 from .identifiers import IdentifierMixin, Identifier
 from .mixins import TaxonomizableMixin, ContributorMixin, SpamOverrideMixin, TitleMixin, DescriptionMixin
 from addons.osfstorage.models import OsfStorageFolder, Region, BaseFileNode, OsfStorageFile
@@ -344,7 +344,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return '{} ({} preprint) (guid={}){}'.format(self.title, 'published' if self.is_published else 'unpublished', self._id, ' with supplemental files on ' + self.node.__unicode__() if self.node else '')
 
     @classmethod
-    def create(cls, provider, title, creator, description):
+    def create(cls, provider, title, creator, description, manual_guid=None, manual_doi=None):
         """Customized creation process to support preprint versions and versioned guid.
         """
         # Step 1: Create the preprint obj
@@ -356,7 +356,12 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         preprint.save(guid_ready=False)
         # Step 2: Create the base guid obj
-        base_guid_obj = Guid.objects.create()
+        if manual_guid:
+            if not check_manually_assigned_guid(manual_guid):
+                raise ValidationError(f'GUID cannot be manually assigned: guid_str={manual_guid}.')
+            base_guid_obj = Guid.objects.create(_id=manual_guid)
+        else:
+            base_guid_obj = Guid.objects.create()
         base_guid_obj.referent = preprint
         base_guid_obj.object_id = preprint.pk
         base_guid_obj.content_type = ContentType.objects.get_for_model(preprint)
@@ -371,6 +376,8 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         )
         versioned_guid.save()
         preprint.save(guid_ready=True, first_save=True)
+        if manual_doi:
+            preprint.set_identifier_values(manual_doi, save=True)
 
         return preprint
 
@@ -769,11 +776,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def is_latest_version(self):
         return self.guids.exists()
 
-    def get_preprint_versions(self, include_rejected=True):
+    def get_preprint_versions(self, include_rejected=True, **version_filters):
         guids = self.versioned_guids.first().guid.versions.all()
         preprint_versions = (
             Preprint.objects
-            .filter(id__in=[vg.object_id for vg in guids])
+            .filter(id__in=[vg.object_id for vg in guids], **version_filters)
             .annotate(latest_version=Max('versioned_guids__version'))
             .order_by('-latest_version')
         )

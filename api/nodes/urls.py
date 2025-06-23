@@ -19,6 +19,7 @@ urlpatterns = [
     re_path(r'^(?P<node_id>\w+)/citation/$', views.NodeCitationDetail.as_view(), name=views.NodeCitationDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/citation/(?P<style_id>[-\w]+)/$', views.NodeCitationStyleDetail.as_view(), name=views.NodeCitationStyleDetail.view_name),
     re_path(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name=views.NodeCommentsList.view_name),
+    re_path(r'^(?P<node_id>\w+)/collections/$', views.NodeCollectionsList.as_view(), name=views.NodeCollectionsList.view_name),
     re_path(r'^(?P<node_id>\w+)/contributors_and_group_members/$', views.NodeContributorsAndGroupMembersList.as_view(), name=views.NodeContributorsAndGroupMembersList.view_name),
     re_path(r'^(?P<node_id>\w+)/implicit_contributors/$', views.NodeImplicitContributorsList.as_view(), name=views.NodeImplicitContributorsList.view_name),
     re_path(r'^(?P<node_id>\w+)/contributors/$', views.NodeContributorsList.as_view(), name=views.NodeContributorsList.view_name),

@@ -624,11 +624,15 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
 
     def get_queryset(self):
         auth = get_user_auth(self.request)
+        from api.resources import annotations as resource_annotations
 
         return (
             self.get_node().linked_nodes
+            .annotate(**resource_annotations.make_open_practice_badge_annotations())
             .filter(is_deleted=False)
-            .annotate(region=F('addons_osfstorage_node_settings__region___id'))
+            .annotate(
+                region=F('addons_osfstorage_node_settings__region___id'),
+            )
             .exclude(region=None)
             .exclude(type='osf.collection', region=None)
             .can_view(user=auth.user, private_link=auth.private_link)
