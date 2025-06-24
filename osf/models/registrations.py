@@ -992,8 +992,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         default=get_default_id,
     )
 
-    custom_storage_usage_limit_public = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
-    custom_storage_usage_limit_private = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
+    custom_storage_usage_limit = models.DecimalField(decimal_places=9, max_digits=100, null=True, blank=True)
 
     # Dictionary field mapping question id to a question's comments and answer
     # {

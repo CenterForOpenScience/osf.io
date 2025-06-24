@@ -282,10 +282,7 @@ def archive_node(stat_results, job_pk):
 
     draft_registration = DraftRegistration.objects.get(registered_node=dst)
     disk_usage_in_gb = stat_result.disk_usage / 1024 ** 3
-    if src.is_public:
-        limit = draft_registration.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
-    else:
-        limit = draft_registration.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
+    limit = draft_registration.custom_storage_usage_limit or settings.STORAGE_LIMIT_PRIVATE
 
     if (NO_ARCHIVE_LIMIT not in job.initiator.system_tags) and (disk_usage_in_gb > limit):
         raise ArchiverSizeExceeded(result=stat_result)

@@ -1,13 +1,13 @@
 from django.urls import NoReverseMatch, reverse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db.models import F, Case, When, IntegerField
 from django.shortcuts import redirect
 from django.views.generic import FormView
 from django.views.generic import DetailView
 
 from admin.base.forms import GuidForm
-from admin.nodes.queries import STORAGE_USAGE_QUERY
-from admin.nodes.views import StorageMixin
+from website import settings
 
 from osf.models.registrations import DraftRegistration
 
@@ -18,7 +18,17 @@ class DraftRegistrationMixin(PermissionRequiredMixin):
         draft_registration = DraftRegistration.objects.filter(
             _id=self.kwargs['draft_registration_id']
         ).annotate(
-            **STORAGE_USAGE_QUERY
+            cap=Case(
+                When(
+                    custom_storage_usage_limit=None,
+                    then=settings.STORAGE_LIMIT_PRIVATE,
+                ),
+                When(
+                    custom_storage_usage_limit__gt=0,
+                    then=F('custom_storage_usage_limit'),
+                ),
+                output_field=IntegerField()
+            )
         ).first()
         draft_registration.guid = draft_registration._id
         return draft_registration
@@ -61,6 +71,17 @@ class DraftRegistrationView(DraftRegistrationMixin, DetailView):
         }, **kwargs)
 
 
-class DraftRegisrationModifyStorageUsage(DraftRegistrationMixin, StorageMixin):
+class DraftRegisrationModifyStorageUsage(DraftRegistrationMixin, DetailView):
     template_name = 'draft_registrations/detail.html'
     permission_required = 'osf.change_draftregistration'
+
+    def post(self, request, *args, **kwargs):
+        draft = self.get_object()
+        new_cap = request.POST.get('cap-input')
+
+        draft_cap = draft.custom_storage_usage_limit or settings.STORAGE_LIMIT_PRIVATE
+        if float(new_cap) != draft_cap:
+            draft.custom_storage_usage_limit = new_cap
+
+        draft.save()
+        return redirect(self.get_success_url())

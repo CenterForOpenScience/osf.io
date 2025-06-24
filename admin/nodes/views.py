@@ -6,7 +6,7 @@ from framework import status
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import NoReverseMatch
-from django.db.models import F
+from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.http import HttpResponse
@@ -23,7 +23,6 @@ from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
-from admin.nodes.queries import STORAGE_USAGE_QUERY
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -63,31 +62,32 @@ class NodeMixin(PermissionRequiredMixin):
             guids___id=self.kwargs['guid']
         ).annotate(
             guid=F('guids___id'),
-            **STORAGE_USAGE_QUERY
+            public_cap=Case(
+                When(
+                    custom_storage_usage_limit_public=None,
+                    then=settings.STORAGE_LIMIT_PUBLIC,
+                ),
+                When(
+                    custom_storage_usage_limit_public__gt=0,
+                    then=F('custom_storage_usage_limit_public'),
+                ),
+                output_field=IntegerField()
+            ),
+            private_cap=Case(
+                When(
+                    custom_storage_usage_limit_private=None,
+                    then=settings.STORAGE_LIMIT_PRIVATE,
+                ),
+                When(
+                    custom_storage_usage_limit_private__gt=0,
+                    then=F('custom_storage_usage_limit_private'),
+                ),
+                output_field=IntegerField()
+            )
         ).get()
 
     def get_success_url(self):
         return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
-
-
-class StorageMixin(View):
-
-    def post(self, request, *args, **kwargs):
-        object = self.get_object()
-        new_private_cap = request.POST.get('private-cap-input')
-        new_public_cap = request.POST.get('public-cap-input')
-
-        object_private_cap = object.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
-        object_public_cap = object.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
-
-        if float(new_private_cap) != object_private_cap:
-            object.custom_storage_usage_limit_private = new_private_cap
-
-        if float(new_public_cap) != object_public_cap:
-            object.custom_storage_usage_limit_public = new_public_cap
-
-        object.save()
-        return redirect(self.get_success_url())
 
 
 class NodeView(NodeMixin, GuidView):
@@ -624,10 +624,27 @@ class NodeReindexElastic(NodeMixin, View):
         return redirect(self.get_success_url())
 
 
-class NodeModifyStorageUsage(NodeMixin, StorageMixin):
+class NodeModifyStorageUsage(NodeMixin, View):
     """ Allows an authorized user to view a node's storage usage info and set their public/private storage cap.
     """
     permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        new_private_cap = request.POST.get('private-cap-input')
+        new_public_cap = request.POST.get('public-cap-input')
+
+        node_private_cap = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
+        node_public_cap = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
+
+        if float(new_private_cap) != node_private_cap:
+            node.custom_storage_usage_limit_private = new_private_cap
+
+        if float(new_public_cap) != node_public_cap:
+            node.custom_storage_usage_limit_public = new_public_cap
+
+        node.save()
+        return redirect(self.get_success_url())
 
 
 class NodeRecalculateStorage(NodeMixin, View):

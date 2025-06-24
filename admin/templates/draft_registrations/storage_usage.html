@@ -3,8 +3,7 @@
 <tr>
     <td>Draft registration storage usage</td>
     <td>
-        <b>Public cap:</b> {{ draft_registration.public_cap|floatformat:0 }} GB<br>
-        <b>Private cap:</b> {{ draft_registration.private_cap|floatformat:0 }} GB<br>
+        <b>Public and private cap:</b> {{ draft_registration.cap|floatformat:0 }} GB<br>
         <a href="{% url 'draft_registrations:adjust-draft-registration-storage-usage' draft_registration_id=draft_registration.guid %}"
            data-toggle="modal" data-target="#modifyStorageCaps"
            class="btn btn-warning">
@@ -19,8 +18,7 @@
                         <button type="button" class="close" data-dismiss="modal">x</button>
                         <h3>Adjusting the storage caps for {{ draft_registration.guid }}</h3>
                     </div>
-                    <b>Public cap:</b> <input name='public-cap-input' type="text" value="{{ draft_registration.public_cap|floatformat:0 }}" /> GB<br>
-                    <b>Private cap: </b><input name='private-cap-input' type="text" value="{{ draft_registration.private_cap|floatformat:0 }}" /> GB
+                    <b>Public and Private cap: </b><input name='cap-input' type="text" value="{{ draft_registration.cap|floatformat:0 }}" /> GB
                     <div class="modal-footer">
                         <input class="btn btn-success" type="submit" value="Save" />
                         <button type="button" class="btn btn-default" data-dismiss="modal">
