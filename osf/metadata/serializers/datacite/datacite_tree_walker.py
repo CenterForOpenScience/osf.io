@@ -415,7 +415,7 @@ class DataciteTreeWalker:
                     attrib={
                         'relatedIdentifierType': 'URL',
                         'relationType': 'IsReferencedBy',
-                        'resourceTypeGeneral': resource_type.title()
+                        'resourceTypeGeneral': resource_type
                     }
                 )
             if skipped_items:
