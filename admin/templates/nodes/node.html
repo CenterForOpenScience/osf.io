@@ -85,10 +85,10 @@
                     <tr>
                         <td>Parent</td>
                         <td>
-                            {% if not node.parent %}
+                            {% if not node.parent_node %}
                                 None
                             {% else %}
-                                <a href="{{ node.parent | reverse_node }}">{{ node.parent }}</a>
+                                <a href="{{ node.parent_node | reverse_node }}">{{ node.parent_node.title }}</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -102,7 +102,7 @@
                     {% include "nodes/schema_responses.html" with schema_responses=node.schema_responses.all %}
                     {% include "nodes/retraction.html" with retraction=node.retraction %}
                     {% include "nodes/registrations.html" with registrations=node.registrations.all %}
-                    {% include "nodes/children.html" with children=node.children.all %}
+                    {% include "nodes/children.html" with children=children %}
                     {% include "nodes/embargo.html" with embargo=node.embargo is_registration=node.is_registration%}
                     {% include "nodes/embargo_termination_approval.html" with embargo_termination_approval=node.embargo_termination_approval %}
                     {% include "nodes/registration_approval.html" with registration_approval=node.registration_approval %}
