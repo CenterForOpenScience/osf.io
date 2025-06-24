@@ -257,11 +257,6 @@ class NodeLogSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': '<params.template_node.id>'},
     )
 
-    group = RelationshipField(
-        related_view='groups:group-detail',
-        related_view_kwargs={'group_id': '<params.group>'},
-    )
-
     def get_absolute_url(self, obj):
         return obj.absolute_url
 

@@ -1,5 +1,4 @@
 import pytest
-from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -26,6 +25,7 @@ def make_registration_payload(*node_ids):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()
@@ -373,47 +373,44 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 404
 
     def test_email_sent_on_affiliation_addition(self, app, user, institution, node_without_institution,
-                                                url_institution_nodes):
+                                                url_institution_nodes, mock_send_grid):
         node_without_institution.add_contributor(user, permissions='admin')
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
-            res = app.post_json_api(
-                url_institution_nodes,
-                {
-                    'data': [
-                        {
-                            'type': 'nodes', 'id': node_without_institution._id
-                        }
-                    ]
-                },
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            url_institution_nodes,
+            {
+                'data': [
+                    {
+                        'type': 'nodes', 'id': node_without_institution._id
+                    }
+                ]
+            },
+            auth=user.auth
+        )
 
-            assert res.status_code == 201
-            mocked_send_mail.assert_called_once()
+        assert res.status_code == 201
+        mock_send_grid.assert_called_once()
 
-    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
+    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_send_grid):
         current_institution = InstitutionFactory()
         node_public.affiliated_institutions.add(current_institution)
 
-        with mock.patch('osf.models.mixins.mails.send_mail') as mocked_send_mail:
-            res = app.delete_json_api(
-                url_institution_nodes,
-                {
-                    'data': [
-                        {
-                            'type': 'nodes', 'id': node_public._id
-                        }
-                    ]
-                },
-                auth=admin.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            {
+                'data': [
+                    {
+                        'type': 'nodes', 'id': node_public._id
+                    }
+                ]
+            },
+            auth=admin.auth
+        )
 
-            # Assert response is successful
-            assert res.status_code == 204
+        # Assert response is successful
+        assert res.status_code == 204
 
-            call_args = mocked_send_mail.call_args[1]
-            assert call_args['user'] == admin
-            assert node_public == call_args['node']
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == admin.email
