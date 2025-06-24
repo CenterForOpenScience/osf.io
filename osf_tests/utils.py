@@ -16,7 +16,7 @@ from osf.models import (
     Sanction,
     RegistrationProvider,
     RegistrationSchema,
-    NotificationSubscription
+    NotificationSubscriptionLegacy
 )
 
 from osf.utils.migrations import create_schema_blocks_for_atomic_schema
@@ -229,7 +229,7 @@ def _ensure_subscriptions(provider):
     Avoid that.
     '''
     for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-        NotificationSubscription.objects.get_or_create(
+        NotificationSubscriptionLegacy.objects.get_or_create(
             _id=f'{provider._id}_{subscription}',
             event_name=subscription,
             provider=provider

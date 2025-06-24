@@ -26,8 +26,10 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
+from website.settings import OSF_CONTACT_EMAIL, DOMAIN
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
+from .notification import NotificationType, FrequencyChoices
 from .subject import Subject
 from .spam import SpamMixin, SpamStatus
 from .validators import validate_title
@@ -1453,12 +1455,38 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
             if self._id and contrib_to_add:
-                project_signals.contributor_added.send(
-                    self,
-                    contributor=contributor,
-                    auth=auth,
-                    email_template=send_email,
-                    permissions=permissions
+                # Get or create the notification type
+                notification_type, created = NotificationType.objects.get_or_create(
+                    name='Add contributor',
+                    defaults={
+                        'notification_freq': FrequencyChoices.INSTANTLY.value,
+                        'template': send_email
+                    }
+                )
+
+                event_context = {
+                    'node': {
+                        'id': self._id,
+                        'title': self.title,
+                        'absolute_url': getattr(self, 'absolute_url', ''),
+                    },
+                    'referrer_name': auth.user.fullname,
+                    'user': {
+                        'id': contrib_to_add._id,
+                        'fullname': contrib_to_add.fullname,
+                        'username': contrib_to_add.username,
+                    },
+                    'osf_contact_email': OSF_CONTACT_EMAIL,
+                    'all_global_subscriptions_none': None,
+                    'settings': {
+                        'DOMAIN': DOMAIN
+                    }
+                }
+
+                notification_type.emit(
+                    user=contributor,
+                    subscribed_object=self,
+                    event_context=event_context
                 )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
