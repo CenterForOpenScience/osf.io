@@ -4,6 +4,7 @@ import json
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from google.cloud.storage.client import Client
+from google.api_core.exceptions import ServiceUnavailable
 from google.oauth2.service_account import Credentials
 
 from osf.models import AbstractNode
@@ -51,7 +52,23 @@ def _copy_and_clone_versions(original_file, cloned_file, src_bucket, dest_bucket
         logger.info(f'Preparing to move version {blob_hash}')
         # Copy each version to dest_bucket
         src_blob = src_bucket.get_blob(blob_hash)
-        src_bucket.copy_blob(src_blob, dest_bucket)
+        try:
+            src_bucket.copy_blob(src_blob, dest_bucket)
+        except ServiceUnavailable as e:
+            if 'Rewrite' in e.message:
+                dst_blob = dest_bucket.blob(blob_hash)
+                token = None
+                done = False
+                logger.info(f'Copy timed out. Rewriting blob {blob_hash}...')
+                while not done:
+                    token, _bytes, _total = dst_blob.rewrite(src_blob, token=token)
+                    if not token:
+                        done = True
+                        logger.info('Done rewriting.')
+                    else:
+                        logger.info('...')
+            else:
+                raise e
         logger.info(f'Blob {blob_hash} copied to destination, cloning version object.')
         # Clone each version, update location
         cloned_v = v.clone()
