@@ -20,11 +20,10 @@ def send_email_over_smtp(to_addr, notification_type, context):
         raise NotImplementedError('MAIL_USERNAME and MAIL_PASSWORD are required for STMP')
 
     msg = MIMEText(
-        notification_type.template.format(context),
+        notification_type.template.format(**context),
         'html',
         _charset='utf-8'
     )
-    msg['Subject'] = notification_type.email_subject_line_template.format(context=context)
 
     with smtplib.SMTP(settings.MAIL_SERVER) as server:
         server.ehlo()
