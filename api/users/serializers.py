@@ -118,13 +118,6 @@ class UserSerializer(JSONAPISerializer):
         ),
     )
 
-    groups = HideIfDisabled(
-        RelationshipField(
-            related_view='users:user-groups',
-            related_view_kwargs={'user_id': '<_id>'},
-        ),
-    )
-
     registrations = HideIfDisabled(
         RelationshipField(
             related_view='users:user-registrations',

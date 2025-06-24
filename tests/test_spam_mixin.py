@@ -15,8 +15,8 @@ from website import settings, mails
 
 
 @pytest.mark.django_db
-@mock.patch('framework.auth.views.mails.send_mail')
-def test_throttled_autoban(mock_mail):
+@pytest.mark.usefixtures('mock_send_grid')
+def test_throttled_autoban(mock_send_grid):
     settings.SPAM_THROTTLE_AUTOBAN = True
     user = AuthUserFactory()
     projects = []
@@ -25,11 +25,7 @@ def test_throttled_autoban(mock_mail):
         proj.flag_spam()
         proj.save()
         projects.append(proj)
-    mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            can_change_preferences=False,
-            to_addr=user.username,
-            user=user,
-            mail=mails.SPAM_USER_BANNED)
+    mock_send_grid.assert_called()
     user.reload()
     assert user.is_disabled
     for project in projects:
