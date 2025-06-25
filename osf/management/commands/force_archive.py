@@ -291,14 +291,15 @@ def get_file_obj_from_log(log, reg):
                 name=log.params['path'].split('/')[-2]
             )
         elif log.action == 'osf_storage_file_removed':
+            path = log.params['path'].split('/')
             return TrashedFileNode.objects.get(
                 target_object_id=reg.registered_from.id,
-                name=log.params['path'].split('/')[-2]
+                name=path[-1] or path[-2]  # file name or folder name
             )
         elif log.action in ['addon_file_moved', 'addon_file_renamed']:
             try:
                 return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
-            except KeyError:
+            except (KeyError, BaseFileNode.DoesNotExist):
                 return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
         else:
             # Generic fallback
@@ -361,17 +362,19 @@ def build_file_tree(reg, node_settings, *args, **kwargs):
             'version': int(file_obj.versions.latest('created').identifier) if file_obj.versions.exists() else None
         }
         if not file_obj.is_file:
-            active_children = list(OsfStorageFileNode.objects.filter(
+            nonlocal reg
+            all_children = OsfStorageFileNode.objects.filter(
                 target_object_id=node.id,
                 target_content_type_id=ct_id,
                 parent_id=file_obj.id
-            ))
-            trashed_children = list(TrashedFileNode.objects.filter(
-                target_object_id=node.id,
-                target_content_type_id=ct_id,
-                parent_id=file_obj.id
-            ))
-            all_children = active_children + trashed_children
+            ).union(
+                TrashedFileNode.objects.filter(
+                    target_object_id=node.id,
+                    target_content_type_id=ct_id,
+                    parent_id=file_obj.id,
+                    modified__gt=reg.archive_job.created,
+                )
+            )
             serialized['children'] = [_recurse(child, node) for child in all_children]
         return serialized
 
