@@ -22,8 +22,9 @@ def add_reviews_notification_setting(notification_type, state=None):
     if state:
         OSFUser = state.get_model('osf', 'OSFUser')
         NotificationSubscriptionLegacy = state.get_model('osf', 'NotificationSubscriptionLegacy')
+        NotificationType = state.get_model('osf', 'NotificationType')
     else:
-        from osf.models import OSFUser, NotificationSubscriptionLegacy
+        from osf.models import OSFUser, NotificationSubscriptionLegacy, NotificationType
 
     active_users = OSFUser.objects.filter(date_confirmed__isnull=False).exclude(date_disabled__isnull=False).exclude(is_active=False).order_by('id')
     total_active_users = active_users.count()
@@ -40,6 +41,13 @@ def add_reviews_notification_setting(notification_type, state=None):
             subscription = NotificationSubscriptionLegacy(_id=user_subscription_id, owner=user, event_name=notification_type)
             subscription.save()  # Need to save in order to access m2m fields
             subscription.add_user_to_subscription(user, 'email_transactional')
+
+            subscription_type = NotificationType.objects.filter(name='email_transactional')
+
+            if not subscription_type.exists():
+                continue
+            subscription_type = subscription_type.first()
+            subscription_type.add_user_to_subscription(user=user)
         else:
             logger.info(f'User {user._id} already has a {notification_type} subscription')
         total_created += 1
