@@ -597,6 +597,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'custom_citation',
             'category',
             'provider_specific_metadata',
+            'manual_guid',
         ]
         for field in RegistrationSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]
@@ -623,6 +624,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             'custom_citation',
             'category',
             'provider_specific_metadata',
+            'manual_guid',
         ]
         for field in RegistrationDetailSerializer._declared_fields:
             reg_field = RegistrationSerializer._declared_fields[field]

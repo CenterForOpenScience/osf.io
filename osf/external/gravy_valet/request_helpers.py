@@ -7,6 +7,7 @@ from urllib.parse import urlencode, urljoin, urlparse, urlunparse
 import requests
 from requests.exceptions import RequestException
 
+from framework import sentry
 from website import settings
 from . import auth_helpers
 from .exceptions import GVException
@@ -288,7 +289,7 @@ def _make_gv_request(
         return None
     if not response.ok:
         # log error to Sentry
-        logger.error(f"GV request failed with status code {response.status_code}: {response.content}")
+        sentry.log_message(f"GV request failed with status code {response.status_code}")
         pass
     return response
 
