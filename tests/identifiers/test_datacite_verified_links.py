@@ -35,9 +35,9 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_valid_verified_links(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'target_url': 'https://example.com/dataset', 'resource_type': 'dataset'},
-            {'target_url': 'https://github.com/user/repo', 'resource_type': 'software'},
-            {'target_url': 'https://osf.io/abc123/', 'resource_type': 'text'}
+            {'target_url': 'https://example.com/dataset', 'resource_type': 'Dataset'},
+            {'target_url': 'https://github.com/user/repo', 'resource_type': 'Software'},
+            {'target_url': 'https://osf.io/abc123/', 'resource_type': 'Text'}
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -51,8 +51,8 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_missing_target_url(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'resource_type': 'dataset'},
-            {'target_url': 'https://example.com/valid', 'resource_type': 'software'}  # Valid link
+            {'resource_type': 'Dataset'},
+            {'target_url': 'https://example.com/valid', 'resource_type': 'Software'}  # Valid link
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -67,7 +67,7 @@ class TestDataCiteVerifiedLinks:
     def test_missing_resource_type(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
             {'target_url': 'https://example.com/dataset'},  # Missing resource_type
-            {'target_url': 'https://example.com/valid', 'resource_type': 'software'}  # Valid link
+            {'target_url': 'https://example.com/valid', 'resource_type': 'Software'}  # Valid link
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -81,9 +81,9 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_invalid_url_format(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'target_url': 'not-a-valid-url', 'resource_type': 'dataset'},
-            {'target_url': 'also.invalid', 'resource_type': 'software'},
-            {'target_url': 'https://example.com/valid', 'resource_type': 'text'}
+            {'target_url': 'not-a-valid-url', 'resource_type': 'Dataset'},
+            {'target_url': 'also.invalid', 'resource_type': 'Software'},
+            {'target_url': 'https://example.com/valid', 'resource_type': 'Text'}
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -99,9 +99,9 @@ class TestDataCiteVerifiedLinks:
     def test_multiple_issues_combined(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
             {'resource_type': 'dataset'},
-            {'target_url': 'invalid-url', 'resource_type': 'software'},
+            {'target_url': 'invalid-url', 'resource_type': 'Software'},
             {'target_url': 'https://example.com/missing-type'},
-            {'target_url': 'https://example.com/valid', 'resource_type': 'text'}
+            {'target_url': 'https://example.com/valid', 'resource_type': 'Text'}
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -130,9 +130,9 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_resource_type_title_case(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'target_url': 'https://example.com/dataset', 'resource_type': 'dataset'},
-            {'target_url': 'https://example.com/software', 'resource_type': 'software'},
-            {'target_url': 'https://example.com/text', 'resource_type': 'text'}
+            {'target_url': 'https://example.com/dataset', 'resource_type': 'Dataset'},
+            {'target_url': 'https://example.com/software', 'resource_type': 'Software'},
+            {'target_url': 'https://example.com/text', 'resource_type': 'Text'}
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -173,9 +173,9 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_edge_case_empty_strings(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'target_url': '', 'resource_type': 'dataset'},
+            {'target_url': '', 'resource_type': 'Dataset'},
             {'target_url': 'https://example.com/valid', 'resource_type': ''},
-            {'target_url': 'https://example.com/valid2', 'resource_type': 'software'}
+            {'target_url': 'https://example.com/valid2', 'resource_type': 'Software'}
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
@@ -191,11 +191,11 @@ class TestDataCiteVerifiedLinks:
     @mock.patch('framework.sentry.log_message')
     def test_url_validation_edge_cases(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'target_url': 'http://example.com', 'resource_type': 'dataset'},
-            {'target_url': 'https://example.com', 'resource_type': 'software'},
-            {'target_url': 'ftp://example.com/file', 'resource_type': 'text'},
-            {'target_url': 'example.com', 'resource_type': 'dataset'},
-            {'target_url': 'www.example.com', 'resource_type': 'software'},
+            {'target_url': 'http://example.com', 'resource_type': 'Dataset'},
+            {'target_url': 'https://example.com', 'resource_type': 'Software'},
+            {'target_url': 'ftp://example.com/file', 'resource_type': 'Text'},
+            {'target_url': 'example.com', 'resource_type': 'Dataset'},
+            {'target_url': 'www.example.com', 'resource_type': 'Software'},
         ]
 
         parent_el = {'tag': 'resource', 'children': []}
