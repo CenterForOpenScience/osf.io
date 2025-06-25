@@ -9,14 +9,8 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    User: ${user.fullname} (${user.username}) [${user._id}]
-
-    Tried to register ${src.title} (${url}), but the resulting archive would have exceeded our caps for disk usage 5 GB.
-    <br />
-
-    A report is included below:
-
-    <ul>${str(stat_result)}</ul>
+    Hi,
+    We couldn’t complete the registration for ${src.title} because its' size exceeds your limit of ${str(draft_registration.custom_storage_usage_limit).rstrip('0')}GB.
   </td>
 </tr>
 </%def>
