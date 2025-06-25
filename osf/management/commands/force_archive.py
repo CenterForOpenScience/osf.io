@@ -299,7 +299,7 @@ def get_file_obj_from_log(log, reg):
         elif log.action in ['addon_file_moved', 'addon_file_renamed']:
             try:
                 return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
-            except KeyError:
+            except (KeyError, BaseFileNode.DoesNotExist):
                 return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
         else:
             # Generic fallback
