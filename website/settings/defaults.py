@@ -410,6 +410,13 @@ class CeleryConfig:
     task_external_high_queue = 'external_high'
     task_external_low_queue = 'external_low'
 
+    external_high_modules = {
+        'osf.tasks.log_gv_addon',
+        'website.identifiers.tasks.task__update_verified_links'
+    }
+
+    external_low_modules = {}
+
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
     }
