@@ -850,6 +850,7 @@ class TestArchiverUtils(ArchiverTestCase):
             stat_result={},
             can_change_preferences=False,
             url=url,
+            draft_registration=DraftRegistration.objects.get(registered_node=self.dst)
         )
         mock_send_mail.assert_has_calls([
             call(**args_user),
