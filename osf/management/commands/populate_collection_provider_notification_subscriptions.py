@@ -1,7 +1,7 @@
 import logging
 
 from django.core.management.base import BaseCommand
-from osf.models import NotificationSubscriptionLegacy, CollectionProvider
+from osf.models import NotificationSubscriptionLegacy, CollectionProvider, NotificationType
 
 logger = logging.getLogger(__file__)
 
@@ -11,6 +11,7 @@ def populate_collection_provider_notification_subscriptions():
         provider_admins = provider.get_group('admin').user_set.all()
         provider_moderators = provider.get_group('moderator').user_set.all()
 
+        # Populate NotificationSubscriptionLegacy
         for subscription in provider.DEFAULT_SUBSCRIPTIONS:
             instance, created = NotificationSubscriptionLegacy.objects.get_or_create(
                 _id=f'{provider._id}_{subscription}',
@@ -27,6 +28,18 @@ def populate_collection_provider_notification_subscriptions():
                 # add user to subscription list but set their notification to none by default
                 instance.add_user_to_subscription(user, 'email_transactional', save=True)
                 logger.info(f'User {user._id} is subscribed to {provider._id}_{subscription}')
+
+        # Populate NotificationSubscription
+        for subscription in provider.DEFAULT_SUBSCRIPTIONS:
+            subscription_type = NotificationType.objects.filter(name=subscription)
+
+            if not subscription_type.exists():
+                logger.warning(f'NotificationType {subscription} does not exist, skipping subscription creation for provider {provider._id}')
+                continue
+            subscription_type = subscription_type.first()
+            for user in provider_admins | provider_moderators:
+                subscription_type.add_user_to_subscription(user=user, provider=provider)
+                logger.info(f'User {user._id} is subscribed to {subscription_type.name} for provider {provider._id}')
 
 
 class Command(BaseCommand):
