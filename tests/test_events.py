@@ -131,7 +131,7 @@ class TestFileUpdated(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -157,7 +157,7 @@ class TestFileAdded(NotificationTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -184,7 +184,7 @@ class TestFileRemoved(NotificationTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -219,7 +219,7 @@ class TestFolderCreated(NotificationTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -249,7 +249,7 @@ class TestFolderFileRenamed(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -303,21 +303,21 @@ class TestFileMoved(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -398,21 +398,21 @@ class TestFileCopied(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -480,21 +480,21 @@ class TestCategorizeUsers(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
