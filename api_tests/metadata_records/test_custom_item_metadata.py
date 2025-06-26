@@ -13,6 +13,7 @@ from .utils import ExpectedMetadataRecord
 
 
 @pytest.mark.usefixtures('with_class_scoped_db')
+@pytest.mark.django_db
 class TestCustomItemMetadataRecordDetail:
     APIV2_PATH = 'custom_item_metadata_records/'
     APIV2_RESOURCE_TYPE = 'custom-item-metadata-record'
@@ -56,19 +57,19 @@ class TestCustomItemMetadataRecordDetail:
         return log
 
     @pytest.fixture(scope='class')
-    def user_admin(self):
+    def user_admin(self, _class_scoped_db):
         return AuthUserFactory(username='some admin')
 
     @pytest.fixture(scope='class')
-    def user_readwrite(self):
+    def user_readwrite(self, _class_scoped_db):
         return AuthUserFactory(username='some readwrite')
 
     @pytest.fixture(scope='class')
-    def user_readonly(self):
+    def user_readonly(self, _class_scoped_db):
         return AuthUserFactory(username='some readonly')
 
     @pytest.fixture(scope='class')
-    def user_rando(self):
+    def user_rando(self, _class_scoped_db):
         return AuthUserFactory(username='some rando')
 
     @pytest.fixture(scope='class')

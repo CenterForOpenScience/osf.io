@@ -29,7 +29,9 @@
     osf:supplements <http://localhost:5000/w4ibb> ;
     prov:qualifiedAttribution [ dcat:hadRole osf:admin-contributor ;
             prov:agent <http://localhost:5000/w1ibb> ;
-            osf:order 0 ] .
+            osf:order 0 ] ;
+    osf:verifiedLink [ dcterms:type <https://schema.datacite.org/meta/kernel-4/#Other> ;
+            dcat:accessURL "https://foo.bar" ] .
 
 <http://localhost:5000/w4ibb> a osf:Preprint ;
     dcterms:created "2123-05-04" ;

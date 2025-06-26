@@ -312,6 +312,7 @@ class TestRegistriesModerationSubmissions:
         resp = app.get(registration_log_url, auth=moderator.auth)
         assert resp.status_code == 200
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_accept(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
@@ -378,6 +379,7 @@ class TestRegistriesModerationSubmissions:
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_withdraw_accept(self, app, retract_registration, moderator, retract_registration_actions_url, actions_payload_base, provider):
         retract_registration.sanction.accept()
         retract_registration.refresh_from_db()
@@ -408,6 +410,7 @@ class TestRegistriesModerationSubmissions:
         retract_registration.refresh_from_db()
         assert retract_registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
         registration.require_approval(user=registration.creator)
         registration.registration_approval.accept()
@@ -477,6 +480,7 @@ class TestRegistriesModerationSubmissions:
         resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
         assert resp.status_code == 403
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_admin_cant_force_withdraw(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider, reg_creator):
         registration.require_approval(user=registration.creator)
 
@@ -509,6 +513,7 @@ class TestRegistriesModerationSubmissions:
             RegistrationModerationTriggers.REJECT_SUBMISSION
         ]
     )
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_post_submission_action_persists_comment(self, app, registration, moderator, registration_actions_url, actions_payload_base, moderator_trigger):
         assert registration.actions.count() == 0
         registration.require_approval(user=registration.creator)
@@ -692,6 +697,7 @@ class TestRegistriesModerationSubmissions:
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
         assert registration.is_public is False
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_private_project_without_embargo_is_public_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
         user = AuthUserFactory()
         user.is_staff = True
@@ -728,6 +734,7 @@ class TestRegistriesModerationSubmissions:
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
         assert registration.is_public is True
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_public_project_without_embargo_is_public_after_spam_and_ham_and_moderation_approval(self, app, registration, moderator, registration_actions_url, actions_payload_base, provider):
         user = AuthUserFactory()
         user.is_staff = True

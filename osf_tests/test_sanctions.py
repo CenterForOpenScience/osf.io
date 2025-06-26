@@ -14,6 +14,7 @@ from osf.utils import permissions
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestRegistrationApprovalHooks:
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4940
@@ -29,6 +30,7 @@ class TestRegistrationApprovalHooks:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestNodeEmbargoTerminations:
 
     @pytest.fixture()
@@ -164,6 +166,7 @@ class TestSanctionEmailRendering:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestDOICreation:
 
     def make_test_registration(self, embargoed=False, moderated=False):

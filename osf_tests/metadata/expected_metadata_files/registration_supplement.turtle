@@ -1,5 +1,6 @@
 @prefix osf: <https://osf.io/vocab/2022/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <http://localhost:5000/w5ibb> osf:storageByteCount 17 ;
     osf:storageRegion <http://localhost:8000/v2/regions/us/> .
