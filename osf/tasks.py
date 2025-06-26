@@ -7,7 +7,7 @@ from framework.celery_tasks import app
 from framework.sentry import log_message
 
 logger = logging.getLogger(__name__)
-iri_regex = re.compile(r'http://[^/]+/(?P<id>\w{5})/?')
+iri_regex = re.compile(r'https?://[^/]+/(?P<id>\w{5})/?')
 
 def get_object_by_url[T: Model](url: str, model: type[T]) -> T | None:
     if not (match := iri_regex.match(url)):
