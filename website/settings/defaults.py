@@ -417,6 +417,8 @@ class CeleryConfig:
 
     external_low_modules = {}
 
+    account_status_changes_modules = {}
+
     remote_computing_modules = {
         'addons.boa.tasks.submit_to_boa',
     }
