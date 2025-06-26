@@ -45,7 +45,7 @@ def migrate_CC0PD_to_CC0_for_filemetadata(*args):
         logger.warning(f'Skipped: Failed to find schema "{TARGET_SCHEMA_NAME}"')
         return
     schema_ids = [schema._id for schema in schemas]
-    filemetadatas = FileMetadata.objects.filter(metadata__isnull=False)
+    filemetadatas = FileMetadata.objects.filter(metadata__isnull=False, deleted__isnull=True)
     logger.info('Found {} file metadatas'.format(filemetadatas.count()))
     for filemetadata in filemetadatas:
         try:
