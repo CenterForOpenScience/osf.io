@@ -61,7 +61,7 @@ class TestDataCiteVerifiedLinks:
         mock_sentry_log.assert_called_once()
         call_args = mock_sentry_log.call_args[0]
         assert 'Skipped items for node' in call_args[0]
-        assert 'Missing data: [link=None, type=dataset]' in call_args[0]
+        assert 'Missing data: [link=None, type=Dataset]' in call_args[0]
 
     @mock.patch('framework.sentry.log_message')
     def test_missing_resource_type(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
@@ -92,13 +92,13 @@ class TestDataCiteVerifiedLinks:
         mock_sentry_log.assert_called_once()
         call_args = mock_sentry_log.call_args[0]
         assert 'Skipped items for node' in call_args[0]
-        assert 'Invalid link: [link=not-a-valid-url, type=dataset]' in call_args[0]
-        assert 'Invalid link: [link=also.invalid, type=software]' in call_args[0]
+        assert 'Invalid link: [link=not-a-valid-url, type=Dataset]' in call_args[0]
+        assert 'Invalid link: [link=also.invalid, type=Software]' in call_args[0]
 
     @mock.patch('framework.sentry.log_message')
     def test_multiple_issues_combined(self, mock_sentry_log, tree_walker, mock_gravy_valet_get_verified_links):
         mock_gravy_valet_get_verified_links.return_value = [
-            {'resource_type': 'dataset'},
+            {'resource_type': 'Dataset'},
             {'target_url': 'invalid-url', 'resource_type': 'Software'},
             {'target_url': 'https://example.com/missing-type'},
             {'target_url': 'https://example.com/valid', 'resource_type': 'Text'}
@@ -112,8 +112,8 @@ class TestDataCiteVerifiedLinks:
         log_message = call_args[0]
 
         assert 'Skipped items for node' in log_message
-        assert 'Missing data: [link=None, type=dataset]' in log_message
-        assert 'Invalid link: [link=invalid-url, type=software]' in log_message
+        assert 'Missing data: [link=None, type=Dataset]' in log_message
+        assert 'Invalid link: [link=invalid-url, type=Software]' in log_message
         assert 'Missing data: [link=https://example.com/missing-type, type=None]' in log_message
 
     @mock.patch('framework.sentry.log_message')
@@ -185,7 +185,7 @@ class TestDataCiteVerifiedLinks:
         call_args = mock_sentry_log.call_args[0]
         log_message = call_args[0]
 
-        assert 'Missing data: [link=, type=dataset]' in log_message
+        assert 'Missing data: [link=, type=Dataset]' in log_message
         assert 'Missing data: [link=https://example.com/valid, type=]' in log_message
 
     @mock.patch('framework.sentry.log_message')
@@ -205,5 +205,5 @@ class TestDataCiteVerifiedLinks:
         call_args = mock_sentry_log.call_args[0]
         log_message = call_args[0]
 
-        assert 'Invalid link: [link=example.com, type=dataset]' in log_message
-        assert 'Invalid link: [link=www.example.com, type=software]' in log_message
+        assert 'Invalid link: [link=example.com, type=Dataset]' in log_message
+        assert 'Invalid link: [link=www.example.com, type=Software]' in log_message
