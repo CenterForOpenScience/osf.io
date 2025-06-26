@@ -636,6 +636,9 @@ class NodeModifyStorageUsage(NodeMixin, View):
 
         node_private_cap = node.custom_storage_usage_limit_private or settings.STORAGE_LIMIT_PRIVATE
         node_public_cap = node.custom_storage_usage_limit_public or settings.STORAGE_LIMIT_PUBLIC
+        if float(new_private_cap) <= 0 or float(new_public_cap) <= 0:
+            messages.error(request, 'Node should have positive storage limits')
+            return redirect(self.get_success_url())
 
         if float(new_private_cap) != node_private_cap:
             node.custom_storage_usage_limit_private = new_private_cap

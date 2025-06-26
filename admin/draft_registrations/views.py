@@ -80,6 +80,10 @@ class DraftRegisrationModifyStorageUsage(DraftRegistrationMixin, DetailView):
         new_cap = request.POST.get('cap-input')
 
         draft_cap = draft.custom_storage_usage_limit or settings.STORAGE_LIMIT_PRIVATE
+        if float(new_cap) <= 0:
+            messages.error(request, 'Draft registration should have a positive storage limit')
+            return redirect(self.get_success_url())
+
         if float(new_cap) != draft_cap:
             draft.custom_storage_usage_limit = new_cap
 
