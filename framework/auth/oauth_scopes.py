@@ -210,6 +210,8 @@ class CoreScopes:
     READ_COLLECTION_SUBMISSION = 'read_collection_submission'
     WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
 
+    SEARCH_COLLECTIONS_WRITE = 'search_collections_write'
+
 
 class ComposedScopes:
     """
@@ -370,7 +372,8 @@ class ComposedScopes:
                      CoreScopes.CEDAR_METADATA_RECORD_WRITE,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION,
-                     CoreScopes.USERS_MESSAGE_WRITE_EMAIL
+                     CoreScopes.USERS_MESSAGE_WRITE_EMAIL,
+                     CoreScopes.SEARCH_COLLECTIONS_WRITE
                  )
 
     # Admin permissions- includes functionality not intended for third-party use
