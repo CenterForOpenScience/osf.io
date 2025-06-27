@@ -210,7 +210,7 @@ class CoreScopes:
     READ_COLLECTION_SUBMISSION = 'read_collection_submission'
     WRITE_COLLECTION_SUBMISSION = 'write_collection_submission'
 
-    SEARCH_COLLECTIONS_WRITE = 'search_collections_write'
+    ADVANCED_SEARCH = 'advanced_search'
 
 
 class ComposedScopes:
