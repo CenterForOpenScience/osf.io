@@ -4929,11 +4929,11 @@ msgstr "選択したアイテムの一部はフォルダーです。 これに�
 
 #: website/static/js/fangorn.js:1559
 msgid " may be linked to"
-msgstr "ウィキにリンクされている可能性があります。"
+msgstr "Wikiにリンクされている可能性があります。"
 
 #: website/static/js/fangorn.js:1560
 msgid " your wiki(s). Deleting them will remove images embedded in your wiki(s). "
-msgstr "れらを削除すると、ウィキに埋め込まれた画像が削除されます。"
+msgstr "これらを削除すると、Wikiに埋め込まれた画像が削除されます。"
 
 #: website/static/js/fangorn.js:1568
 msgid "Delete All"
@@ -8748,11 +8748,11 @@ msgstr "通知設定を取得できませんでした。"
 
 #: website/static/js/pages/project-settings-page.js:54
 msgid "Could not retrieve wiki settings."
-msgstr "ウィキ設定を取得できませんでした。"
+msgstr "Wiki設定を取得できませんでした。"
 
 #: website/static/js/pages/project-settings-page.js:55
 msgid "Could not GET wiki settings."
-msgstr "ウィキ設定を取得できませんでした。"
+msgstr "Wiki設定を取得できませんでした。"
 
 #: website/static/js/pages/project-settings-page.js:104
 msgid "Successfully updated settings."

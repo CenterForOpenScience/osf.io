@@ -1267,18 +1267,18 @@ msgid ""
 "real time. Changes will be stored            but not published until you "
 "click the \"Save\" button."
 msgstr ""
-"このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
+"このページは現在、共同Wikiに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
 "変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: addons/wiki/templates/edit.mako:337
 msgid "Connecting to the collaborative wiki"
-msgstr "共同ウィキへの接続"
+msgstr "共同Wikiへの接続"
 
 #: addons/wiki/templates/edit.mako:341
 msgid ""
 "This page is currently attempting to connect to the collaborative wiki. "
 "You may continue to make edits."
-msgstr "このページは現在、共同ウィキに接続しようとしています。 引き続き編集を行うことができます。"
+msgstr "このページは現在、共同Wikiに接続しようとしています。 引き続き編集を行うことができます。"
 
 #: addons/wiki/templates/edit.mako:342 addons/wiki/templates/edit.mako:359
 #: addons/wiki/templates/edit.mako:376
@@ -1290,13 +1290,13 @@ msgstr "[保存]ボタンを押すまで、変更は保存されません。"
 
 #: addons/wiki/templates/edit.mako:354
 msgid "Collaborative wiki is unavailable"
-msgstr "共同ウィキは利用できません"
+msgstr "共同Wikiは利用できません"
 
 #: addons/wiki/templates/edit.mako:358
 msgid ""
 "The collaborative wiki is currently unavailable. You may continue to make"
 " edits."
-msgstr "共同ウィキは現在利用できません。 引き続き編集を行うことができます。"
+msgstr "共同Wikiは現在利用できません。 引き続き編集を行うことができます。"
 
 #: addons/wiki/templates/edit.mako:371
 #: website/templates/project/view_file.mako:164
@@ -4085,7 +4085,7 @@ msgstr "ユーザーがこのプロジェクトへのアクセスをリクエス
 #: website/templates/project/settings.mako:272
 #, python-format
 msgid "Enable the wiki in <b>%(title)s</b>."
-msgstr "<b>%(title)s</b>内でウィキを有効にする"
+msgstr "<b>%(title)s</b>内でWikiを有効にする"
 
 #: website/templates/project/settings.mako:285
 msgid "Configure"
@@ -4102,7 +4102,7 @@ msgstr "Wikiを編集できるユーザーを制御します"
 
 #: website/templates/project/settings.mako:300
 msgid "Loading wiki settings..."
-msgstr "ウィキの設定をロード中..."
+msgstr "Wikiの設定をロード中..."
 
 #: website/templates/project/settings.mako:331
 msgid "Only contributors can post comments"
