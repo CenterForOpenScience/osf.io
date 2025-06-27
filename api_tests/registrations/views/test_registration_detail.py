@@ -32,18 +32,17 @@ from osf_tests.factories import (
 )
 from osf_tests.utils import get_default_test_schema
 
-from api_tests.nodes.views.test_node_detail import TestNodeUpdateLicense
+from api_tests.nodes.views.test_node_detail_license import TestNodeUpdateLicense
 from tests.utils import assert_latest_log
 from api_tests.utils import create_test_file
 
 
-@pytest.fixture()
-def user():
-    return AuthUserFactory()
-
-
 @pytest.mark.django_db
 class TestRegistrationDetail:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def public_project(self, user):
@@ -239,6 +238,10 @@ class TestRegistrationDetail:
 
 
 class TestRegistrationUpdateTestCase:
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
 
     @pytest.fixture()
     def read_only_contributor(self):

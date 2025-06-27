@@ -4,6 +4,8 @@ from collections import Counter
 
 import dataclasses
 import waffle
+
+from api.collections.serializers import CollectionSerializer
 from osf import features
 from packaging.version import Version
 from django.apps import apps
@@ -158,7 +160,7 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint,
+    Preprint, Collection,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -1102,7 +1104,15 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
         node = self.get_node()
         auth = get_user_auth(self.request)
         node_relation_subquery = node._parents.filter(is_node_link=True).values_list('parent', flat=True)
-        return Registration.objects.filter(id__in=Subquery(node_relation_subquery), retraction__isnull=True).can_view(user=auth.user, private_link=auth.private_link)
+        return Registration.objects.filter(
+            id__in=Subquery(node_relation_subquery),
+            retraction__isnull=True,
+        ).can_view(
+            user=auth.user,
+            private_link=auth.private_link,
+        ).annotate(
+            **resource_annotations.make_open_practice_badge_annotations(),
+        )
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
@@ -1672,6 +1682,27 @@ class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMi
         serializer.validated_data['user'] = self.request.user
         serializer.validated_data['node'] = node
         serializer.save()
+
+
+class NodeCollectionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ContributorOrPublic,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_COLLECTIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_COLLECTIONS_WRITE]
+
+    serializer_class = CollectionSerializer
+    view_category = 'nodes'
+    view_name = 'node-collections'
+
+    def get_default_queryset(self):
+        return Collection.objects.filter(guid_links___id=self.get_node()._id)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):

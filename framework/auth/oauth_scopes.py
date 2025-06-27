@@ -32,6 +32,7 @@ class CoreScopes:
     USERS_MESSAGE_READ_EMAIL = 'users_message_read_email'
     USERS_MESSAGE_WRITE_EMAIL = 'users_message_write_email'
     USERS_CREATE = 'users_create'
+    USERS_CONFIRM = 'users_confirm'
 
     USER_SETTINGS_READ = 'user.settings_read'
     USER_SETTINGS_WRITE = 'user.settings_write'
@@ -40,10 +41,15 @@ class CoreScopes:
 
     USER_ADDON_READ = 'users.addon_read'
 
+    SANCTION_RESPONSE = 'sanction_response'
+
     SUBSCRIPTIONS_READ = 'subscriptions_read'
     SUBSCRIPTIONS_WRITE = 'subscriptions_write'
 
     MEETINGS_READ = 'meetings.base_read'
+
+    NODE_COLLECTIONS_READ = 'node_collections_read'
+    NODE_COLLECTIONS_WRITE = 'node_collections_write'
 
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
@@ -214,7 +220,13 @@ class ComposedScopes:
 
     # Users collection
     USERS_READ = (CoreScopes.USERS_READ, CoreScopes.SUBSCRIPTIONS_READ, CoreScopes.ALERTS_READ, CoreScopes.USER_SETTINGS_READ)
-    USERS_WRITE = USERS_READ + (CoreScopes.USERS_WRITE, CoreScopes.SUBSCRIPTIONS_WRITE, CoreScopes.ALERTS_WRITE, CoreScopes.USER_SETTINGS_WRITE)
+    USERS_WRITE = USERS_READ + (
+        CoreScopes.USERS_WRITE,
+        CoreScopes.USERS_CONFIRM,
+        CoreScopes.SUBSCRIPTIONS_WRITE,
+        CoreScopes.ALERTS_WRITE,
+        CoreScopes.USER_SETTINGS_WRITE
+    )
     USERS_CREATE = USERS_READ + (CoreScopes.USERS_CREATE, )
 
     # User extensions
@@ -282,16 +294,26 @@ class ComposedScopes:
     # Privileges relating to editing content uploaded under that preprint
     PREPRINT_DATA_READ = (CoreScopes.PREPRINT_FILE_READ,)
     PREPRINT_DATA_WRITE = PREPRINT_DATA_READ + \
-                        (CoreScopes.PREPRINT_FILE_WRITE,)
+                        (
+                            CoreScopes.PREPRINT_FILE_WRITE,
+                            CoreScopes.SANCTION_RESPONSE,
+                        )
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
                         CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
-                            (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE,
-                             CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
-                             CoreScopes.NODE_REQUESTS_WRITE, CoreScopes.NODE_SETTINGS_WRITE, CoreScopes.NODE_OSF_GROUPS_WRITE)
+                            (
+                                CoreScopes.NODE_CONTRIBUTORS_WRITE,
+                                CoreScopes.NODE_REGISTRATIONS_WRITE,
+                                CoreScopes.NODE_VIEW_ONLY_LINKS_WRITE,
+                                CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
+                                CoreScopes.NODE_REQUESTS_WRITE,
+                                CoreScopes.NODE_SETTINGS_WRITE,
+                                CoreScopes.NODE_OSF_GROUPS_WRITE,
+                                CoreScopes.SANCTION_RESPONSE,
+                            )
 
     # Privileges relating to who can access a preprint via contributors
     PREPRINT_ACCESS_READ = (CoreScopes.PREPRINT_CONTRIBUTORS_READ,)

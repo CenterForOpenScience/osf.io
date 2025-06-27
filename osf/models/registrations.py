@@ -371,6 +371,14 @@ class Registration(AbstractNode):
         return getattr(self.root.retraction, 'justification', None)
 
     @property
+    def available_providers(self):
+        """Return all providers that support current registration schema."""
+        schema = self.registration_schema
+        if not schema:
+            return RegistrationProvider.objects.none()
+        return RegistrationProvider.objects.filter(schemas=schema)
+
+    @property
     def provider_specific_metadata(self):
         """Surfaces the additional_metadata fields supported by the provider.
 

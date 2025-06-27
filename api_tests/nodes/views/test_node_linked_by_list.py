@@ -1,5 +1,7 @@
 import pytest
 from framework.auth.core import Auth
+from osf.models import OutcomeArtifact, Outcome, Identifier
+from osf.models.outcome_artifacts import ArtifactTypes
 
 from osf_tests.factories import ProjectFactory, AuthUserFactory, RegistrationFactory, WithdrawnRegistrationFactory
 from api.base.settings.defaults import API_BASE
@@ -113,6 +115,43 @@ class TestNodeLinkedByRegistrationsList:
         res = app.get(url_public, auth=user.auth)
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == registration._id
+
+    def test_linked_by_registrations_links_registrations_artifacts(self, app, url_public, user, project_public, project_private):
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 0
+
+        project_private.add_pointer(project_public, auth=Auth(user), save=True)
+        # registration will have the same links as its model project
+        registration = RegistrationFactory(project=project_private, creator=user)
+        outcome = Outcome.objects.create()
+        registration_doi = Identifier.objects.create(
+            referent=registration,
+            value='SOME_PROJECT_DOI',
+            category='doi'
+        )
+        # Create the PRIMARY artifact for this registration, so the annotations can resolve
+        OutcomeArtifact.objects.create(
+            outcome=outcome,
+            identifier=registration_doi,
+            artifact_type=ArtifactTypes.PRIMARY,
+            finalized=True,
+        )
+        # Now create the DATA artifact for the same outcome
+        OutcomeArtifact.objects.create(
+            outcome=outcome,
+            identifier=registration_doi,
+            artifact_type=ArtifactTypes.DATA,
+            finalized=True,
+        )
+
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 1
+        assert res.json['data'][0]['id'] == registration._id
+        assert res.json['data'][0]['attributes']['has_data']  # here and true!
+        assert res.json['data'][0]['attributes']['has_analytic_code'] is False  # here and false!
+        assert res.json['data'][0]['attributes']['has_materials'] is False
+        assert res.json['data'][0]['attributes']['has_papers'] is False
+        assert res.json['data'][0]['attributes']['has_supplements'] is False
 
     def test_linked_by_registrations_doesnt_list_nodes(self, app, url_public, user, project_public, project_private):
         project_private.add_pointer(project_public, auth=Auth(user), save=True)
