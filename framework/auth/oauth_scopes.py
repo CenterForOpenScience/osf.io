@@ -373,7 +373,7 @@ class ComposedScopes:
                      CoreScopes.WRITE_COLLECTION_SUBMISSION_ACTION,
                      CoreScopes.WRITE_COLLECTION_SUBMISSION,
                      CoreScopes.USERS_MESSAGE_WRITE_EMAIL,
-                     CoreScopes.SEARCH_COLLECTIONS_WRITE
+                     CoreScopes.ADVANCED_SEARCH
                  )
 
     # Admin permissions- includes functionality not intended for third-party use
