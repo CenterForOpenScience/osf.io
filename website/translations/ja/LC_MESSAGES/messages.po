@@ -1258,7 +1258,7 @@ msgstr "確認"
 
 #: addons/wiki/templates/edit.mako:316
 msgid "Connected to the collaborative wiki"
-msgstr "共同ウィキに接続しました"
+msgstr "共同Wikiに接続しました"
 
 #: addons/wiki/templates/edit.mako:320
 msgid ""
