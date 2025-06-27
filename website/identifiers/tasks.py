@@ -27,7 +27,14 @@ def task__update_verified_links(self, target_guid):
                  f'[guid={target_guid}]')
 
     Guid = apps.get_model('osf.Guid')
-    target_object = Guid.load(target_guid).referent
+    guid = Guid.load(target_guid)
+
+    if guid is not None:
+        target_object = guid.referent
+    else:
+        logger.error(f"Failed to load guid= {target_guid}")
+        return
+
     try:
         target_object.request_identifier_update(category='doi')
         logger.debug(f'DOI metadata for guid with verified links updated: [guid={target_guid}]')
