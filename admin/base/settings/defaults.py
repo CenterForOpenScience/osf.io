@@ -40,7 +40,8 @@ CSRF_COOKIE_SECURE = osf_settings.SECURE_MODE
 CSRF_COOKIE_HTTPONLY = False
 
 ALLOWED_HOSTS = [
-    '.osf.io'
+    '.osf.io',
+    '*'
 ]
 
 AUTH_PASSWORD_VALIDATORS = [

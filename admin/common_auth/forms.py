@@ -22,7 +22,7 @@ class UserRegistrationForm(forms.Form):
 
     # TODO: Moving to guardian, find a better way to distinguish "admin-like" groups from object permission groups
     group_perms = forms.ModelMultipleChoiceField(
-        queryset=Group.objects.exclude(Q(name__startswith='collections_') | Q(name__startswith='reviews_') | Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='osfgroup_') | Q(name__startswith='draft_registration_')),
+        queryset=Group.objects.exclude(Q(name__startswith='collections_') | Q(name__startswith='reviews_') | Q(name__startswith='preprint_') | Q(name__startswith='node_') | Q(name__startswith='draft_registration_')),
         required=False,
         widget=forms.CheckboxSelectMultiple
     )
