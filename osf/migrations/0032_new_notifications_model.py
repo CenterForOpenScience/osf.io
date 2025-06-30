@@ -8,7 +8,7 @@ import django.db.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0030_alter_osfgroupgroupobjectpermission_unique_together_and_more'),
+        ('osf', '0031_alter_osfgroupgroupobjectpermission_unique_together_and_more'),
     ]
 
     operations = [
