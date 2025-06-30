@@ -481,10 +481,14 @@ class PreprintProviderRegisterModeratorOrAdmin(PermissionRequiredMixin, FormView
         if not osf_user:
             raise Http404(f'OSF user with id "{user_id}" not found. Please double check.')
 
-        for group in form.cleaned_data.get('group_perms'):
-            self.target_provider.add_to_group(osf_user, group)
+        if osf_user.has_groups(self.target_provider.group_names):
+            messages.error(self.request, f'User with guid: {user_id} is already a moderator or admin')
+            return super().form_invalid(form)
 
+        group = form.cleaned_data.get('group_perms')
+        self.target_provider.add_to_group(osf_user, group)
         osf_user.save()
+
         messages.success(self.request, f'Permissions update successful for OSF User {osf_user.username}!')
         return super().form_valid(form)
 
