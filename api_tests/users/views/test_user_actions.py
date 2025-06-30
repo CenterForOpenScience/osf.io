@@ -237,6 +237,16 @@ class TestReviewActionCreateRelated:
                 ('rejected', 'edit_comment', 'rejected'),
                 ('rejected', 'submit', 'pending'),
             ],
+            'hybrid-moderation': [
+                ('accepted', 'edit_comment', 'accepted'),
+                ('accepted', 'reject', 'rejected'),
+                ('initial', 'submit', 'pending'),
+                ('pending', 'accept', 'accepted'),
+                ('pending', 'edit_comment', 'pending'),
+                ('pending', 'reject', 'rejected'),
+                ('rejected', 'accept', 'accepted'),
+                ('rejected', 'edit_comment', 'rejected'),
+            ],
         }
         for workflow, transitions in list(valid_transitions.items()):
             provider.reviews_workflow = workflow
