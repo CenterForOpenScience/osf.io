@@ -12,7 +12,19 @@ logger = logging.getLogger(__name__)
 def task__update_doi_metadata_on_change(self, target_guid):
     sentry.log_message('Updating DOI for guid', extra_data={'guid': target_guid}, level=logging.INFO)
     Guid = apps.get_model('osf.Guid')
-    target_object = Guid.load(target_guid).referent
+    guid = Guid.load(target_guid)
+
+    if guid is not None:
+        target_object = guid.referent
+    else:
+        sentry.log_message(
+            'Failed to load GUID in task__update_doi_metadata_on_change',
+            extra_data={'guid': target_guid},
+            level=logging.ERROR
+        )
+        logger.error(f"Failed to load guid= {target_guid}")
+        raise self.retry(exc=Exception(f"Failed to load GUID: {target_guid}"))
+
     if target_object.get_identifier('doi'):
         target_object.request_identifier_update(category='doi')
 
@@ -32,8 +44,13 @@ def task__update_verified_links(self, target_guid):
     if guid is not None:
         target_object = guid.referent
     else:
+        sentry.log_message(
+            'Failed to load GUID in task__update_verified_links',
+            extra_data={'guid': target_guid},
+            level=logging.ERROR
+        )
         logger.error(f"Failed to load guid= {target_guid}")
-        return
+        raise self.retry(exc=Exception(f"Failed to load GUID: {target_guid}"))
 
     try:
         target_object.request_identifier_update(category='doi')
