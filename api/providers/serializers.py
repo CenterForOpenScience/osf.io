@@ -170,6 +170,7 @@ class RegistrationProviderSerializer(ProviderSerializer):
     reviews_comments_anonymous = ser.BooleanField(read_only=True)
     allow_updates = ser.BooleanField(read_only=True)
     allow_bulk_uploads = ser.BooleanField(read_only=True)
+    registration_word = ser.CharField(read_only=True, allow_null=True)
 
     registrations = ReviewableCountsRelationshipField(
         related_view='providers:registration-providers:registrations-list',
