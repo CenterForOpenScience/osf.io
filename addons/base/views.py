@@ -52,7 +52,8 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion,
+    NotificationType,
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -65,6 +66,7 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+from website.notifications.emails import localize_timestamp
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>
@@ -605,7 +607,26 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+
+        f_type, action = action.split('_')
+        if payload['metadata']['materialized'].endswith('/'):
+            f_type = 'folder'
+        html_message = '{action} {f_type} "<b>{name}</b>".'.format(
+            action=markupsafe.escape(action),
+            f_type=markupsafe.escape(f_type),
+            name=markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))
+        )
+
+        context = {}
+        context['message'] = html_message
+        context['profile_image_url'] = user.profile_image_url()
+        context['localized_timestamp'] = localize_timestamp(timezone.now(), user)
+        context['user_fullname'] = user.fullname
+        context['url'] = node.absolute_url
+        NotificationType.objects.get(name=action).emit(
+            user=user,
+            event_context=context,
+        )
 
     return {'status': 'success'}
 
