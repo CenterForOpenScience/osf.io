@@ -2,6 +2,7 @@ import pytz
 from urllib.parse import urlencode
 
 from django.apps import apps
+from django.db import IntegrityError
 from django.db.models import F
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect
@@ -68,7 +69,8 @@ from api.users.serializers import (
     UserChangePasswordSerializer,
     UserMessageSerializer,
     ExternalLoginSerialiser,
-    ExternalLoginConfirmEmailSerializer,
+    ConfirmEmailTokenSerializer,
+    SanctionTokenSerializer,
 )
 from django.contrib.auth.models import AnonymousUser
 from django.http import JsonResponse
@@ -102,6 +104,8 @@ from osf.models import (
     Email,
     Tag,
 )
+from osf.utils.tokens import TokenHandler
+from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
@@ -1060,6 +1064,156 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class ConfirmEmailView(generics.CreateAPIView):
+    """
+    Confirm an e-mail address created during *first-time* OAuth login.
+
+    **URL:**  POST /v2/users/<user_id>/confirm/
+
+    **Body (JSON):**
+    {
+        "uid": "<osf_user_id>",
+        "token": "<email_verification_token>",
+        "destination": "<campaign-code or relative URL>"
+    }
+
+    On success returns a response with a 201 status code with a JSONAPI payload that includes the `redirect_url`
+    attritbute.
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.USERS_CONFIRM]
+    required_write_scopes = [CoreScopes.USERS_CONFIRM]
+
+    view_category = 'users'
+    view_name = 'confirm-user'
+
+    serializer_class = ConfirmEmailTokenSerializer
+
+    def _process_external_identity(self, user, external_identity, service_url):
+        """Handle all external_identity logic, including task enqueueing and url updates."""
+
+        provider = next(iter(external_identity))
+        if provider not in user.external_identity:
+            raise ValidationError('External-ID provider mismatch.')
+
+        provider_id = next(iter(external_identity[provider]))
+        ensure_external_identity_uniqueness(provider, provider_id, user)
+        external_status = user.external_identity[provider][provider_id]
+        user.external_identity[provider][provider_id] = 'VERIFIED'
+
+        if external_status == 'CREATE':
+            service_url += '&' + urlencode({'new': 'true'})
+        elif external_status == 'LINK':
+            mails.send_mail(
+                user=user,
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
+            )
+
+        enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
+
+        return service_url
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        uid = serializer.validated_data['uid']
+        token = serializer.validated_data['token']
+
+        user = OSFUser.load(uid)
+        if not user:
+            raise ValidationError('User not found.')
+
+        verification = user.email_verifications.get(token)
+        if not verification:
+            raise ValidationError('Invalid or expired token.')
+
+        external_identity = verification.get('external_identity')
+        service_url = self.request.build_absolute_uri()
+
+        if external_identity:
+            service_url = self._process_external_identity(
+                user,
+                external_identity,
+                service_url,
+            )
+
+        email = verification['email']
+        if not user.is_registered:
+            user.register(email)
+
+        if not user.emails.filter(address=email.lower()).exists():
+            try:
+                user.emails.create(address=email.lower())
+            except IntegrityError:
+                raise ValidationError('Email address already exists.')
+
+        user.date_last_logged_in = timezone.now()
+
+        del user.email_verifications[token]
+        user.verification_key = generate_verification_key()
+        user.save()
+
+        serializer.validated_data['redirect_url'] = service_url
+        return Response(
+            data=serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+class SanctionResponseView(generics.CreateAPIView, UserMixin):
+    """
+    **URL:**  POST /v2/users/<user_id>/sanction_response/
+
+    **Body (JSON):**
+    {
+        "uid": "<osf_user_id>",
+        "token": "<email_verification_token>",
+        "destination": "<campaign-code or relative URL>"
+    }
+
+    On success the endpoint returns (HTTP 200)
+    """
+    permission_classes = (
+        base_permissions.TokenHasScope,
+    )
+    required_read_scopes = [CoreScopes.NULL]
+    required_write_scopes = [CoreScopes.SANCTION_RESPONSE]
+
+    view_category = 'users'
+    view_name = 'sanction-response'
+
+    serializer_class = SanctionTokenSerializer
+
+    def perform_create(self, serializer):
+        uid = serializer.validated_data['uid']
+        token = serializer.validated_data['token']
+        action = serializer.validated_data['action']
+        if not action:
+            raise ValidationError('`approve` or `reject` action not found.')
+        sanction_type = serializer.validated_data.get('sanction_type')
+        if not sanction_type:
+            raise ValidationError('sanction_type not found.')
+
+        if self.get_user() != OSFUser.load(uid):
+            raise ValidationError('User not found.')
+
+        token_handler = TokenHandler.from_string(token)
+
+        sanction_handler(
+            sanction_type,
+            action,
+            payload=token_handler.payload,
+            encoded_token=token_handler.encoded_token,
+            user=self.get_user(),
+        )
+
+
 class UserEmailsList(JSONAPIBaseView, generics.ListAPIView, generics.CreateAPIView, UserMixin, ListFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1212,7 +1366,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
     permission_classes = (
         drf_permissions.AllowAny,
     )
-    serializer_class = ExternalLoginConfirmEmailSerializer
+    serializer_class = ConfirmEmailTokenSerializer
     view_category = 'users'
     view_name = 'external-login-confirm-email'
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle)

@@ -2,6 +2,25 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.11.0 (2025-06-30)
+====================
+
+- Crossref DOIs not minting with _v1, OSF is displaying DOI versions with _v1
+- When hamming a spammed user, preprints and registrations remain private
+- Fix emabrgoed registrations not becoming public after admin date change
+- Add v2 enpoint for alternative email confirmation
+- Make relationship on v2/nodes for collected_in
+- API V2: get action reviews request not listing latest preprint submit/withdraw requests
+- Add ability for admin app to change registry that a registration belongs to
+- Update to /nodes/<node-id> api
+- Subscription filtering not working correctly
+- API V2: Serialize registation resource attributes in Node Linked By Registrations list view and Node Linked Registrations list view
+
+25.10.0 (2025-06-11)
+====================
+
+- Manual GUID and DOI assignment during Preprint and Registration Creation
+
 25.09.0 (2025-05-14)
 ====================
 

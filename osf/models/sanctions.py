@@ -315,7 +315,6 @@ class TokenApprovableSanction(Sanction):
         if user is None and event_data.args:
             user = event_data.args[0]
         self.approval_state[user._id]['has_approved'] = True
-
         if self.mode == self.ANY or all(
                 authorizer['has_approved']
                 for authorizer in self.approval_state.values()):
@@ -805,6 +804,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         if approval_token:
             registration = self._get_registration()
             node_id = user_approval_state.get('node_id', registration._id)
+
             return {
                 'node_id': node_id,
                 'token': approval_token,

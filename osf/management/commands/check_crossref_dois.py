@@ -80,6 +80,9 @@ def check_crossref_dois(dry_run=True):
                 continue
             pending_dois.append(f'doi:{settings.DOI_FORMAT.format(prefix=doi_prefix, guid=preprint._id)}')
 
+        if not pending_dois:
+            continue
+
         url = '{}works?filter={}'.format(settings.CROSSREF_JSON_API_URL, ','.join(pending_dois))
 
         try:
