@@ -434,3 +434,9 @@ def guid_metadata_download(guid, resource, metadata_format):
                 'Content-Disposition': f'attachment; filename={result.filename}',
             },
         )
+
+
+def metadata_download(guid):
+    format_arg = request.args.get('format', 'datacite-json')
+    resource = Guid.load(guid)
+    return guid_metadata_download(guid, resource, format_arg)
