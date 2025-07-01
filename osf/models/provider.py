@@ -19,7 +19,7 @@ from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
-from .notifications import NotificationSubscription
+from .notifications import NotificationSubscriptionLegacy
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -464,7 +464,7 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
         for subscription in instance.DEFAULT_SUBSCRIPTIONS:
-            NotificationSubscription.objects.get_or_create(
+            NotificationSubscriptionLegacy.objects.get_or_create(
                 _id=f'{instance._id}_{subscription}',
                 event_name=subscription,
                 provider=instance
