@@ -17,7 +17,7 @@ def remove_notification_subscriptions_from_registrations(dry_run=True):
     Registration = apps.get_model('osf.Registration')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
-    notifications_to_delete = NotificationSubscription.objects.filter(node__type='osf.registration')
+    notifications_to_delete = NotificationSubscriptionLegacy.objects.filter(node__type='osf.registration')
     registrations_affected = Registration.objects.filter(
         id__in=notifications_to_delete.values_list(
             'node_id', flat=True
