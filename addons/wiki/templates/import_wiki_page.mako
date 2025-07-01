@@ -198,7 +198,7 @@
                     showErrModal($wikiImportResult, $alertInfoForm);
                 } else {
                     $submitForm.attr('disabled', 'disabled').text('${_("Import Complete")}');
-                    alert('Import Compolete');
+                    alert('Import Complete');
                     //reload
                     const reloadUrl = (location.href).replace(location.search, '')
                     window.location.assign(reloadUrl);
