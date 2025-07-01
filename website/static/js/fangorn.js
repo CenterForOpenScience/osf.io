@@ -2908,7 +2908,7 @@ function addFileStatus(treebeard, file, success, message, link, op){
  * @param {Object} treebeard The treebeard instance currently being run, check Treebeard API
  * @private
  */
-var UPLOAD_MODAL_MIN_FILE_QUANTITY = 4;
+var UPLOAD_MODAL_MIN_FILE_QUANTITY = 3;
 function _fangornQueueComplete(treebeard) {
     var fileStatuses = treebeard.uploadStates;
     treebeard.uploadStates = [];
