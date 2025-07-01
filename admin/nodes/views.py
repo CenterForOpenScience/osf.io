@@ -801,3 +801,12 @@ class NodeResyncDataCiteView(NodeMixin, View):
         registration = self.get_object()
         registration.request_identifier_update('doi', create=True)
         return redirect(self.get_success_url())
+
+
+class NodeRevertToDraft(NodeMixin, View):
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        registration.to_draft()
+        return redirect(self.get_success_url())

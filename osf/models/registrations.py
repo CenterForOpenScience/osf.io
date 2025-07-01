@@ -6,6 +6,7 @@ from urllib.parse import urljoin
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models.signals import post_save
+from django.contrib.contenttypes.models import ContentType
 from django.dispatch import receiver
 from django.utils import timezone
 from guardian.models import (
@@ -16,6 +17,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
+from osf.models import Identifier
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
@@ -58,6 +60,7 @@ from osf.utils.workflows import (
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
+from api.providers.workflows import Workflows as ModerationWorkflows
 from website import settings
 from website.archiver import ARCHIVER_INITIATED
 from website.identifiers.tasks import update_doi_metadata_on_change
@@ -399,6 +402,19 @@ class Registration(AbstractNode):
             provider_supported_metadata.append(metadata_field)
 
         return provider_supported_metadata
+
+    @property
+    def can_be_reverted(self):
+        try:
+            self.validate_draft_conditions()
+        except Exception:
+            return False
+
+        return True
+
+    @property
+    def draft(self):
+        return DraftRegistration.objects.filter(registered_node=self).first()
 
     def update_provider_specific_metadata(self, updated_values):
         """Updates additional_metadata fields supported by the provider.
@@ -890,6 +906,49 @@ class Registration(AbstractNode):
             )
 
         update_doi_metadata_on_change(target_guid=self._id)
+
+    def validate_draft_conditions(self):
+        # Registration shouldn't have any approved updated versions besides the base one
+        if self.schema_responses.exclude(
+            previous_response=None
+        ).filter(
+            reviews_state=ApprovalStates.APPROVED.db_name
+        ).exists():
+            raise NodeStateError('Registration has an approved update thus cannot be reverted to draft')
+
+        # Registration shouldn't be approved by moderator in pre/post-moderation
+        if (
+            self.provider.reviews_workflow in [
+                ModerationWorkflows.PRE_MODERATION.value,
+                ModerationWorkflows.POST_MODERATION.value
+            ] and
+            self.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
+        ):
+            raise NodeStateError('Registration was approved by moderator thus cannot be reverted to draft')
+
+        # Registration shouldn't have minted DOI
+        doi_exists = Identifier.objects.filter(
+            category='doi',
+            content_type_id=ContentType.objects.get_for_model(Registration).id,
+            deleted__isnull=True,
+            object_id=self.id,
+        ).exists()
+        if doi_exists:
+            raise ValidationError('Registration with minted DOI cannot be reverted to draft state')
+
+        if not self.draft:
+            raise ValueError('This registration has not draft')
+
+    def to_draft(self):
+        self.validate_draft_conditions()
+
+        # unattach registration object from draft version so that it's draft again
+        draft = self.draft
+        draft.registered_node = None
+        draft.save()
+
+        self.deleted = timezone.now()
+        self.save()
 
     class Meta:
         # custom permissions for use in the OSF Admin App
