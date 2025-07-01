@@ -526,7 +526,6 @@ def test_ci_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, 
 
 @task
 def test_ci_mailhog(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
-    #ci_setup(ctx)
     test_mailhog(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task

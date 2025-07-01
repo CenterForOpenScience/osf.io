@@ -64,7 +64,7 @@ MAIL_PASSWORD = 'CHANGEME'
 
 MAILHOG_HOST = 'mailhog'
 MAILHOG_PORT = 1025
-MAILHOG_API_HOST = 'http://localhost:8025'
+MAILHOG_API_HOST = 'http://mailhog:8025'
 
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
