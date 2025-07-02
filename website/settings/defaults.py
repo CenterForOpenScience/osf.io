@@ -160,6 +160,10 @@ MAIL_SERVER = 'smtp.sendgrid.net'
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 
+MAILHOG_HOST = 'mailhog'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://mailhog:8025'
+
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
 # `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
