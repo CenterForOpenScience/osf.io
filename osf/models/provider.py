@@ -305,6 +305,7 @@ class RegistrationProvider(AbstractProvider):
     bulk_upload_auto_approval = models.BooleanField(null=True, blank=True, default=False)
     allow_updates = models.BooleanField(null=True, blank=True, default=False)
     allow_bulk_uploads = models.BooleanField(null=True, blank=True, default=False)
+    registration_word = models.CharField(max_length=50, default='registration')
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
