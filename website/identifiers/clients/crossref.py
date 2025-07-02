@@ -267,7 +267,7 @@ class CrossRefClient(AbstractIdentifierClient):
             if response.status_code == 429:
                 raise CrossRefRateLimitError(response.text)
 
-            if response.status_code == 500:
+            if response.status_code >= 500:
                 raise CrossRefUnavailableError(response.text)
 
             return {'doi': doi}
