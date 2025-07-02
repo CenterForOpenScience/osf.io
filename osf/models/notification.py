@@ -100,6 +100,7 @@ class NotificationType(models.Model):
         NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
 
         # Provider notifications
+        PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
         PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
         PROVIDER_REVIEWS_MODERATOR_SUBMISSION_CONFIRMATION = 'provider_reviews_moderator_submission_confirmation'
         PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED = 'preprint_request_withdrawal_requested'
@@ -119,7 +120,6 @@ class NotificationType(models.Model):
         PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
 
         # Collections Submission notifications
-        NEW_PENDING_SUBMISSIONS = 'new_pending_submissions'
         COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
         COLLECTION_SUBMISSION_REMOVED_MODERATOR = 'collection_submission_removed_moderator'
         COLLECTION_SUBMISSION_REMOVED_PRIVATE = 'collection_submission_removed_private'
@@ -135,6 +135,11 @@ class NotificationType(models.Model):
         SCHEMA_RESPONSE_INITIATED = 'schema_response_initiated'
 
         REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
+
+        @property
+        def instance(self):
+            obj, created = NotificationType.objects.get_or_create(name=self.value)
+            return obj
 
         @classmethod
         def user_types(cls):
@@ -271,7 +276,7 @@ class NotificationSubscription(BaseModel):
             raise ValidationError(f'{self.message_frequency!r} is not allowed for {self.notification_type.name!r}.')
 
     def __str__(self) -> str:
-        return f'{self.user} subscribes to {self.notification_type.name} ({self.message_frequency})'
+        return f'<{self.user} via {self.subscribed_object} subscribes to {self.notification_type.name} ({self.message_frequency})>'
 
     class Meta:
         verbose_name = 'Notification Subscription'
@@ -321,9 +326,11 @@ class NotificationSubscription(BaseModel):
             case 'node' | 'collection' | 'preprint':
                 # Node-like objects: use object_id (guid)
                 return f'{self.subscribed_object._id}_{event}'
-            case 'osfuser' | 'user', _:
+            case 'osfuser' | 'user' | None:
                 # Global: <user_id>_global
-                return f'{self.subscribed_object._id}_global_{event}'
+                return f'{self.user._id}_global'
+            case _:
+                raise NotImplementedError()
 
 
 class Notification(models.Model):

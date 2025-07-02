@@ -19,13 +19,12 @@ class TestSubscriptionDetail:
 
     @pytest.fixture()
     def notification(self, user):
-        return NotificationSubscriptionFactory(
-            user=user,
-        )
+        return NotificationSubscriptionFactory(user=user)
 
     @pytest.fixture()
     def url(self, notification):
-        return f'/{API_BASE}subscriptions/{notification.id}/'
+        print('_id', notification._id)
+        return f'/{API_BASE}subscriptions/{notification._id}/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -53,9 +52,7 @@ class TestSubscriptionDetail:
             }
         }
 
-    def test_subscription_detail_invalid_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+    def test_subscription_detail_invalid_user(self, app, user, user_no_auth, notification, url, payload):
         res = app.get(
             url,
             auth=user_no_auth.auth,
@@ -79,7 +76,7 @@ class TestSubscriptionDetail:
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == str(notification.id)
+        assert notification_id == f'{user._id}_global'
 
     def test_subscription_detail_invalid_notification_id_no_user(
         self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid

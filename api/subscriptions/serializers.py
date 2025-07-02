@@ -17,7 +17,11 @@ class SubscriptionSerializer(JSONAPISerializer):
         'frequency',
     ])
 
-    id = ser.CharField(read_only=True)
+    id = ser.CharField(
+        read_only=True,
+        source='legacy_id',
+        help_text='The id of the subscription fixed for backward compatibility',
+    )
     event_name = ser.CharField(read_only=True)
     frequency = FrequencyField(source='message_frequency', required=True)
 
