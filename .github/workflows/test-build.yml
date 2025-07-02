@@ -11,6 +11,7 @@ env:
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
+  GITHUB_ACTIONS: true
 
 jobs:
   build-cache:
@@ -164,6 +165,39 @@ jobs:
     - uses: ./.github/actions/start-build
     - name: Run tests
       run: poetry run python3 -m invoke test-ci-api3-and-osf -n 1 --junit
+    - name: Upload report
+      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
+
+  mailhog:
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+    needs: build-cache
+    services:
+      postgres:
+        image: postgres
+
+        env:
+          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+      mailhog:
+        image: mailhog/mailhog
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/start-build
+    - name: Run tests
+      run: poetry run python3 -m invoke test-ci-mailhog -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
