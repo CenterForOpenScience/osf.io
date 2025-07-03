@@ -4,6 +4,8 @@ from framework import sentry
 from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
+from website.identifiers.clients.exceptions import CrossRefUnavailableError
+from website.settings import CROSSREF_UNAVAILABLE_DELAY
 
 
 CROSSREF_FAIL_RETRY_DELAY = 12 * 60 * 60
@@ -68,6 +70,7 @@ def update_or_enqueue_on_preprint_updated(preprint_id, saved_fields=None):
 @celery_app.task(bind=True, acks_late=True, max_retries=5, default_retry_delay=CROSSREF_FAIL_RETRY_DELAY)
 def mint_doi_on_crossref_fail(self, preprint_id):
     from osf.models import Preprint
+
     preprint = Preprint.load(preprint_id)
     vg = preprint.versioned_guids.first()
     existing_versions_without_minted_doi = Preprint.objects.filter(
@@ -84,5 +87,9 @@ def mint_doi_on_crossref_fail(self, preprint_id):
         self.retry()
     else:
         crossref_client = preprint.get_doi_client()
-        if crossref_client:
-            crossref_client.create_identifier(preprint, category='doi', include_relation=False)
+        try:
+            if crossref_client:
+                crossref_client.create_identifier(preprint, category='doi', include_relation=False)
+        except CrossRefUnavailableError as err:
+            logger.warning(f'CrossRef is unavailable during minting DOI on fail for preprint {preprint_id}. Error: {err.error}')
+            self.retry(countdown=CROSSREF_UNAVAILABLE_DELAY)
