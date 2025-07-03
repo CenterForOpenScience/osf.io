@@ -5,6 +5,7 @@ from framework.exceptions import HTTPError
 from framework.celery_tasks import app as celery_app
 from framework.postcommit_tasks.handlers import enqueue_postcommit_task, get_task_from_postcommit_queue
 from website.identifiers.clients.exceptions import CrossRefUnavailableError
+from website.settings import CROSSREF_UNAVAILABLE_DELAY
 
 
 CROSSREF_FAIL_RETRY_DELAY = 12 * 60 * 60
@@ -69,7 +70,6 @@ def update_or_enqueue_on_preprint_updated(preprint_id, saved_fields=None):
 @celery_app.task(bind=True, acks_late=True, max_retries=5, default_retry_delay=CROSSREF_FAIL_RETRY_DELAY)
 def mint_doi_on_crossref_fail(self, preprint_id):
     from osf.models import Preprint
-    from osf.management.commands.sync_doi_metadata import CROSSREF_UNAVAILABLE_DELAY
 
     preprint = Preprint.load(preprint_id)
     vg = preprint.versioned_guids.first()

@@ -8,12 +8,13 @@ from django.core.management.base import BaseCommand
 from osf.models import GuidMetadataRecord, Identifier, Registration, Preprint
 from framework.celery_tasks import app
 from website.identifiers.clients.exceptions import CrossRefUnavailableError
+from website.settings import CROSSREF_UNAVAILABLE_DELAY
+
 
 logger = logging.getLogger(__name__)
 
 
 RATE_LIMIT_RETRY_DELAY = 60 * 5
-CROSSREF_UNAVAILABLE_DELAY = 24 * 60 * 60
 
 
 @app.task(name='osf.management.commands.sync_doi_metadata', bind=True, acks_late=True, max_retries=5, default_retry_delay=RATE_LIMIT_RETRY_DELAY)
