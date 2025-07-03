@@ -7,6 +7,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from osf.models import GuidMetadataRecord, Identifier, Registration, Preprint
 from framework.celery_tasks import app
+from website.identifiers.clients.exceptions import CrossRefUnavailableError
+from website.settings import CROSSREF_UNAVAILABLE_DELAY
+
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +24,9 @@ def sync_identifier_doi(self, identifier_id):
         identifier.referent.request_identifier_update('doi')
         identifier.save()
         logger.info(f'Doi update for {identifier.value} complete')
+    except CrossRefUnavailableError as err:
+        logger.warning(f'CrossRef is unavailable during sync of {identifier.value} DOI. Error: {err.error}')
+        self.retry(countdown=CROSSREF_UNAVAILABLE_DELAY)
     except Exception as err:
         logger.warning(f'[{err.__class__.__name__}] Doi update for {identifier.value} failed because of error: {err}')
         self.retry()
@@ -75,6 +81,9 @@ def async_request_identifier_update(self, preprint_id):
     preprint = Preprint.load(preprint_id)
     try:
         preprint.request_identifier_update('doi', create=True)
+    except CrossRefUnavailableError as err:
+        logger.warning(f'CrossRef is unavailable during DOI update for preprint {preprint._id}. Error: {err.error}')
+        self.retry(countdown=CROSSREF_UNAVAILABLE_DELAY)
     except Exception as err:
         logger.warning(f'[{err.__class__.__name__}] Doi creation failed for the preprint with id {preprint._id} because of error: {err}')
         self.retry()
