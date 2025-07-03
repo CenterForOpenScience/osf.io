@@ -146,8 +146,6 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 return AbstractNode.objects.filter(id__in=row)
 
     def can_view(self, user=None, private_link=None):
-        qs = self.filter(is_public=True)
-
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
@@ -158,6 +156,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                 is_deleted=False)
 
         if user is not None and not isinstance(user, AnonymousUser):
+            qs = self
             read_user_query = get_objects_for_user(user, READ_NODE, self, with_superuser=False)
             qs |= read_user_query
             qs |= self.extra(where=["""
@@ -179,6 +178,9 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     ) SELECT * FROM implicit_read
                 )
             """], params=(user.id,))
+        else:
+            # show only public nodes for non-authorized users
+            qs = self.filter(is_public=True)
         return qs.filter(is_deleted=False)
 
 
