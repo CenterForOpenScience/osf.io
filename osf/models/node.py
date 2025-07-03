@@ -1253,11 +1253,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     'This project has been marked as spam. Please contact the help desk if you think this is in error.')
             if self.is_registration:
                 if self.is_pending_embargo:
-                    raise NodeStateError('A registration with an unapproved embargo cannot be made public.')
+                    raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_pending_registration:
                     raise NodeStateError('An unapproved registration cannot be made public.')
-                elif self.is_pending_embargo:
-                    raise NodeStateError('An unapproved embargoed registration cannot be made public.')
                 elif self.is_embargoed:
                     # Embargoed registrations can be made public early
                     self.request_embargo_termination(auth.user)

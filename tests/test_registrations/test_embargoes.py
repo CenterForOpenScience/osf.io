@@ -715,7 +715,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
@@ -723,7 +723,7 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Delete Node and try again
         self.project.is_deleted = True
@@ -734,14 +734,14 @@ class LegacyRegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('view_project', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
             self.project.web_url_for('view_project', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test auth user can approve registration with deleted parent
         res = self.app.get(
@@ -980,7 +980,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
@@ -988,7 +988,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Delete Node and try again
         self.project.is_deleted = True
@@ -999,14 +999,14 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             self.registration.web_url_for('token_action', token=app_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test unauth user cannot reject
         res = self.app.get(
             self.project.web_url_for('token_action', token=rej_token),
             auth=unauthorized_user.auth,
         )
-        assert res.status_code == 401
+        assert res.status_code == 403
 
         # Test auth user can approve registration with deleted parent
         res = self.app.get(
@@ -1196,7 +1196,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         res = self.app.get(approval_url, auth=non_contributor.auth)
         self.registration.reload()
-        assert http_status.HTTP_401_UNAUTHORIZED == res.status_code
+        assert http_status.HTTP_403_FORBIDDEN == res.status_code
         assert self.registration.is_pending_embargo
         assert self.registration.embargo.state == Embargo.UNAPPROVED
 
@@ -1213,6 +1213,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         approval_url = self.registration.web_url_for('token_action', token=rejection_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth)
-        assert http_status.HTTP_401_UNAUTHORIZED == res.status_code
+        assert http_status.HTTP_403_FORBIDDEN == res.status_code
         assert self.registration.is_pending_embargo
         assert self.registration.embargo.state == Embargo.UNAPPROVED
