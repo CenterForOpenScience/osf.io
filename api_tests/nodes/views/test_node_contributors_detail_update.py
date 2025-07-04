@@ -4,7 +4,6 @@ from api.base.settings.defaults import API_BASE
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
-    OSFGroupFactory,
     AuthUserFactory,
 )
 from rest_framework import exceptions
@@ -169,29 +168,6 @@ class TestNodeContributorUpdate:
         assert project.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
         assert project.get_visible(contrib)
 
-    def test_change_contributor_non_admin_osf_group_member_auth(self, app, user, contrib, project, url_contrib):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, permissions.WRITE)
-        res = app.put_json_api(
-            url_contrib,
-            {
-                'data': {
-                    'id': contrib._id,
-                    'type': 'contributors',
-                    'attributes': {
-                        'permission': permissions.READ,
-                        'bibliographic': False
-                    }
-                }
-            },
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-        assert project.get_permissions(contrib) == [permissions.READ, permissions.WRITE]
-        assert project.get_visible(contrib)
-
     def test_change_admin_self_without_other_admin(self, app, user, project, url_creator):
         res = app.put_json_api(
             url_creator,
@@ -246,27 +222,6 @@ class TestNodeContributorUpdate:
                 }
             },
             auth=user.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 200
-
-    def test_change_contributor_admin_osf_group_permissions(self, app, user, contrib, project, url_contrib):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, permissions.ADMIN)
-        res = app.put_json_api(
-            url_contrib,
-            {
-                'data': {
-                    'id': f'{project._id}-{contrib._id}',
-                    'type': 'contributors',
-                    'attributes': {
-                        'permission': permissions.ADMIN,
-                        'bibliographic': True
-                    }
-                }
-            },
-            auth=group_mem.auth,
             expect_errors=True
         )
         assert res.status_code == 200

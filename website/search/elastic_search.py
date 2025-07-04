@@ -19,8 +19,6 @@ from osf.models import OSFUser
 from osf.models import BaseFileNode
 from osf.models import GuidMetadataRecord
 from osf.models import Institution
-from osf.models import OSFGroup
-from osf.models import QuickFilesNode
 from osf.models import Preprint
 from osf.models import SpamStatus
 from addons.wiki.models import WikiPage
@@ -59,7 +57,6 @@ DOC_TYPE_TO_MODEL = {
     'institution': Institution,
     'preprint': Preprint,
     'collectionSubmission': CollectionSubmission,
-    'group': OSFGroup
 }
 
 # Prevent tokenizing and stop word removal.
@@ -337,8 +334,6 @@ COMPONENT_CATEGORIES = set(settings.NODE_CATEGORY_MAP.keys())
 def get_doctype_from_node(node):
     if isinstance(node, Preprint):
         return 'preprint'
-    if isinstance(node, OSFGroup):
-        return 'group'
     if node.is_registration:
         return 'registration'
     elif node.parent_node is None:
@@ -368,15 +363,6 @@ def update_preprint_async(self, preprint_id, index=None, bulk=False):
         self.retry(exc=exc)
 
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
-def update_group_async(self, group_id, index=None, bulk=False, deleted_id=None):
-    OSFGroup = apps.get_model('osf.OSFGroup')
-    group = OSFGroup.load(group_id)
-    try:
-        update_group(group=group, index=index, bulk=bulk, async_update=True, deleted_id=deleted_id)
-    except Exception as exc:
-        self.retry(exc=exc)
-
-@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_user_async(self, user_id, index=None):
     OSFUser = apps.get_model('osf.OSFUser')
     user = OSFUser.objects.get(id=user_id)
@@ -399,13 +385,6 @@ def serialize_node(node, category):
             }
             for x in node.contributor_set.filter(visible=True).order_by('_order')
             .values('user__fullname', 'user__guids___id', 'user__is_active')
-        ],
-        'groups': [
-            {
-                'name': x['name'],
-                'url': '/{}/'.format(x['_id'])
-            }
-            for x in node.osf_groups.values('name', '_id')
         ],
         'title': node.title,
         'normalized_title': normalized_title,
@@ -502,7 +481,7 @@ def update_node(node, index=None, bulk=False, async_update=False):
         file_.update_search()
 
     is_qa_node = bool(set(settings.DO_NOT_INDEX_LIST['tags']).intersection(node.tags.all().values_list('name', flat=True))) or any(substring in node.title for substring in settings.DO_NOT_INDEX_LIST['titles'])
-    if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or node.is_quickfiles or is_qa_node:
+    if node.is_deleted or not node.is_public or node.archiving or node.is_spam or (node.spam_status == SpamStatus.FLAGGED and settings.SPAM_FLAGGED_REMOVE_FROM_SEARCH) or is_qa_node:
         delete_doc(node._id, node, index=index)
     else:
         category = get_doctype_from_node(node)
@@ -660,18 +639,6 @@ def update_user(user, index=None):
     if not user.is_active:
         try:
             client().delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
-            # update files in their quickfiles node if the user has been marked as spam
-            if user.spam_status == SpamStatus.SPAM:
-                quickfiles = QuickFilesNode.objects.get_for_user(user)
-                if quickfiles:
-                    for quickfile_id in quickfiles.files.values_list('_id', flat=True):
-                        client().delete(
-                            index=index,
-                            doc_type='file',
-                            id=quickfile_id,
-                            refresh=True,
-                            ignore=[404]
-                        )
         except NotFoundError:
             pass
         return
@@ -730,10 +697,7 @@ def update_file(file_, index=None, delete=False):
         provider=file_.provider,
         path=file_.path,
     )
-    if getattr(target, 'is_quickfiles', None):
-        node_url = f'/{target.creator._id}/quickfiles/'
-    else:
-        node_url = f'/{target._id}/'
+    node_url = f'/{target._id}/'
 
     guid_url = None
     file_guid = file_.get_guid(create=False)

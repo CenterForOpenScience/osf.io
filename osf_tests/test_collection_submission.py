@@ -13,9 +13,6 @@ from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
-from website.mails import mails
-from osf_tests.utils import assert_notification_correctness
-from osf.models.collection_submission import mails as collection_submission_mail
 from osf.management.commands.populate_collection_provider_notification_subscriptions import populate_collection_provider_notification_subscriptions
 from django.utils import timezone
 
@@ -147,6 +144,7 @@ def configure_test_auth(node, user_role, provider=None):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestModeratedCollectionSubmission:
 
     MOCK_NOW = timezone.now()
@@ -161,23 +159,15 @@ class TestModeratedCollectionSubmission:
         # .submit on post_save
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
 
-    def test_notify_contributors_pending(self, node, moderated_collection):
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            collection_submission = CollectionSubmission(
-                guid=node.guids.first(),
-                collection=moderated_collection,
-                creator=node.creator,
-            )
-            collection_submission.save()
-            assert mock_send.called
-        assert collection_submission.state == CollectionSubmissionStates.PENDING
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_SUBMITTED(collection_submission.creator, node),
-            {user.username for user in node.contributors.all()}
+    def test_notify_contributors_pending(self, node, moderated_collection, mock_send_grid):
+        collection_submission = CollectionSubmission(
+            guid=node.guids.first(),
+            collection=moderated_collection,
+            creator=node.creator,
         )
+        collection_submission.save()
+        assert mock_send_grid.called
+        assert collection_submission.state == CollectionSubmissionStates.PENDING
 
     def test_notify_moderators_pending(self, node, moderated_collection):
         from website.notifications import emails
@@ -216,19 +206,11 @@ class TestModeratedCollectionSubmission:
         moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
-    def test_notify_moderated_accepted(self, node, moderated_collection_submission):
+    def test_notify_moderated_accepted(self, node, moderated_collection_submission, mock_send_grid):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            moderated_collection_submission.accept(user=moderator, comment='Test Comment')
-            assert mock_send.called
+        moderated_collection_submission.accept(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
         assert moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_ACCEPTED(moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_reject_fails(self, node, user_role, moderated_collection_submission):
@@ -242,20 +224,12 @@ class TestModeratedCollectionSubmission:
         moderated_collection_submission.reject(user=moderator, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
-    def test_notify_moderated_rejected(self, node, moderated_collection_submission):
+    def test_notify_moderated_rejected(self, node, moderated_collection_submission, mock_send_grid):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            moderated_collection_submission.reject(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REJECTED(moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        moderated_collection_submission.reject(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.ADMIN_USER, UserRoles.MODERATOR]))
     def test_remove_fails(self, node, user_role, moderated_collection_submission):
@@ -274,37 +248,21 @@ class TestModeratedCollectionSubmission:
         moderated_collection_submission.remove(user=user, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_moderator(self, node, moderated_collection_submission):
+    def test_notify_moderated_removed_moderator(self, node, moderated_collection_submission, mock_send_grid):
         moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            moderated_collection_submission.remove(user=moderator, comment='Test Comment')
-            assert mock_send.called
+
+        moderated_collection_submission.remove(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
         assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
-
-    def test_notify_moderated_removed_admin(self, node, moderated_collection_submission):
+    def test_notify_moderated_removed_admin(self, node, moderated_collection_submission, mock_send_grid):
         moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            moderated_collection_submission.remove(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        moderated_collection_submission.remove(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, moderated_collection_submission):
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
@@ -340,6 +298,7 @@ class TestModeratedCollectionSubmission:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUnmoderatedCollectionSubmission:
 
     def test_moderated_submit(self, unmoderated_collection_submission):
@@ -377,21 +336,13 @@ class TestUnmoderatedCollectionSubmission:
         unmoderated_collection_submission.remove(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission):
+    def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission, mock_send_grid):
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            unmoderated_collection_submission.remove(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(unmoderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        unmoderated_collection_submission.remove(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, unmoderated_collection_submission):
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
@@ -427,6 +378,7 @@ class TestUnmoderatedCollectionSubmission:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestHybridModeratedCollectionSubmission:
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.MODERATOR))
@@ -482,20 +434,12 @@ class TestHybridModeratedCollectionSubmission:
         hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
-    def test_notify_moderated_accepted(self, node, hybrid_moderated_collection_submission):
+    def test_notify_moderated_accepted(self, node, hybrid_moderated_collection_submission, mock_send_grid):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_ACCEPTED(hybrid_moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_reject_fails(self, node, user_role, hybrid_moderated_collection_submission):
@@ -509,20 +453,12 @@ class TestHybridModeratedCollectionSubmission:
         hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
-    def test_notify_moderated_rejected(self, node, hybrid_moderated_collection_submission):
+    def test_notify_moderated_rejected(self, node, hybrid_moderated_collection_submission, mock_send_grid):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REJECTED(hybrid_moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(*[UserRoles.ADMIN_USER, UserRoles.MODERATOR]))
     def test_remove_fails(self, node, user_role, hybrid_moderated_collection_submission):
@@ -541,37 +477,21 @@ class TestHybridModeratedCollectionSubmission:
         hybrid_moderated_collection_submission.remove(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_moderator(self, node, hybrid_moderated_collection_submission):
+    def test_notify_moderated_removed_moderator(self, node, hybrid_moderated_collection_submission, mock_send_grid):
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
-            assert mock_send.called
+
+        hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(hybrid_moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
-
-    def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission):
+    def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission, mock_send_grid):
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
-            assert mock_send.called
-        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-        assert_notification_correctness(
-            mock_send,
-            mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(hybrid_moderated_collection_submission.collection, node),
-            {user.username for user in node.contributors.all()}
-        )
+        hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
+        assert mock_send_grid.called
+        assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, hybrid_moderated_collection_submission):
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
