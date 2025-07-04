@@ -475,6 +475,7 @@ class TestNodeIdentifierCreate:
     def client(self, resource):
         return DataCiteClient(resource)
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     @responses.activate
     def test_create_identifier(self, app, resource, client, identifier_url, identifier_payload, user,
             write_contributor, read_contributor, ark_payload):

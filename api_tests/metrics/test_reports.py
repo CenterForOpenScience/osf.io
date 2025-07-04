@@ -2,7 +2,7 @@ from unittest import mock
 
 import pytest
 
-expected_report_names = {
+expected_report_names = [
     # 'addon_usage',
     'download_count',
     'institution_summary',
@@ -10,7 +10,7 @@ expected_report_names = {
     'osfstorage_file_count',
     'preprint_summary',
     'user_summary',
-}
+]
 
 @pytest.mark.django_db
 class TestMetricsReports:

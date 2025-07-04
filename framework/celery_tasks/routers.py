@@ -13,8 +13,12 @@ def match_by_module(task_path):
             return CeleryConfig.task_high_queue
         if task_subpath in CeleryConfig.remote_computing_modules:
             return CeleryConfig.task_remote_computing_queue
-        if task_subpath in CeleryConfig.task_account_status_changes_queue:
+        if task_subpath in CeleryConfig.account_status_changes_modules:
             return CeleryConfig.task_account_status_changes_queue
+        if task_subpath in CeleryConfig.external_low_modules:
+            return CeleryConfig.task_external_low_queue
+        if task_subpath in CeleryConfig.external_high_modules:
+            return CeleryConfig.task_external_high_queue
     return CeleryConfig.task_default_queue
 
 

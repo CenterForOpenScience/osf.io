@@ -35,6 +35,7 @@ def authenticate(user, response, user_updates=None):
         'auth_user_username': user.username,
         'auth_user_id': user._primary_key,
         'auth_user_fullname': user.fullname,
+        'user_reference_uri': user.get_semantic_iri(),
     }
     print_cas_log(f'Finalizing authentication - data updated: user=[{user._id}]', LogLevel.INFO)
     enqueue_task(update_user_from_activity.s(user._id, timezone.now().timestamp(), cas_login=True, updates=user_updates))

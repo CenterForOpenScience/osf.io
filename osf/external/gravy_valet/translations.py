@@ -23,6 +23,12 @@ def make_ephemeral_user_settings(gv_account_data, requesting_user):
         active_user=requesting_user,
     )
 
+def get_verified_links(node_guid, requesting_user=None):
+    links = gv_requests.get_verified_links(node_guid, requesting_user)
+    return [
+        link.attributes for link in links
+    ]
+
 
 def make_ephemeral_node_settings(gv_addon_data: gv_requests.JSONAPIResultEntry, requested_resource, requesting_user):
     addon_type = gv_addon_data.resource_type.split('-')[1]
