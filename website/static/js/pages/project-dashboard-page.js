@@ -29,6 +29,7 @@ var node = window.contextVars.node;
 var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
+var canCreateProject = ctx.canCreateProject;
 
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
@@ -436,8 +437,14 @@ $(document).ready(function () {
         return !(target.hasClass('keep-open') || target.parents('.keep-open').length);
     });
 
+    // If can not create project disable button
+    var buttonState = '.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]';
+    if (!canCreateProject) {
+        buttonState = '.btn.btn-sm.btn-default[data-toggle="modal"][disabled]';
+    }
+
     var AddComponentButton = m.component(AddProject, {
-        buttonTemplate: m('.btn.btn-sm.btn-default[data-toggle="modal"][data-target="#addSubComponent"]', {onclick: function() {
+        buttonTemplate: m(buttonState, {onclick: function() {
             $osf.trackClick('project-dashboard', 'add-component', 'open-add-project-modal');
         }}, _('Add Component')),
         modalID: 'addSubComponent',

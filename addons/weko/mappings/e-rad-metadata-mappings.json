@@ -21,7 +21,7 @@
     "@projects": {
         "@type": "object",
         "metadata.item_30002_funding_reference21[]": {
-            "subitem_funder_identifier": {
+            "subitem_funder_identifiers": {
                 "@createIf": "{{ funder_value }}",
                 "subitem_funder_identifier_type": "e-Rad_funder"
             },
@@ -50,7 +50,7 @@
                 "subitem_funding_stream": "{{program_name_en_value}}",
                 "subitem_funding_stream_language": "en"
             },
-            "subitem_award_number": {
+            "subitem_award_numbers": {
                 "@createIf": "{{ japan_grant_number_value }}",
                 "subitem_award_number_type": "JGN",
                 "subitem_award_number": "{{japan_grant_number_value}}"

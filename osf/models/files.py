@@ -657,7 +657,13 @@ class Folder(models.Model):
         return self.resolve_class(self.provider, kind).objects.get(name=name, parent=self)
 
     def serialize(self):
-        return self._serialize()
+        result = self._serialize()
+        if hasattr(self, 'created'):
+            result['created'] = self.created.isoformat()
+        if hasattr(self, 'modified'):
+            result['modified'] = self.modified.isoformat()
+
+        return result
 
 
 class UnableToDelete(Exception):

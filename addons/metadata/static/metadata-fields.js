@@ -26,8 +26,9 @@ const sizeofFormat = require("./util").sizeofFormat;
 const getLocalizedText = util.getLocalizedText;
 const normalizeText = util.normalizeText;
 
-const logPrefix = '[metadata] ';
+var filteredPages = [];
 
+const logPrefix = '[metadata] ';
 
 const QuestionPage = oop.defclass({
   constructor: function(schema, fileItem, options) {
@@ -51,6 +52,14 @@ const QuestionPage = oop.defclass({
     const self = this;
     self.fields = [];
     const fileItemData = self.options.multiple ? {} : self.fileItem.data || {};
+    filteredPages = [];
+    filteredPages = (self.schema.pages || []).filter(function(page) {
+      return (page.questions || []).some(function(question){
+        return question.concealment_page === "buttonHide";
+      })
+    }).map(function(page){
+      return page;
+    });
     (self.schema.pages || []).forEach(function(page) {
       (page.questions || []).forEach(function(question) {
         if (!self.questionFilter(question)) {
@@ -183,6 +192,36 @@ const QuestionField = oop.extend(Emitter, {
   create: function() {
     const self = this;
     self.element = $('<div></div>').addClass('form-group');
+    if(filteredPages.length > 0 && filteredPages.length != 1){
+      const currentPage = filteredPages.filter(function(page) {
+        return (page.questions || []).some(function (question) {
+          return question.qid === self.question.qid;
+        })
+      });
+
+      const filteredPageIds = currentPage.flatMap(function(page) {
+        return (page.questions || []).filter(function (question) {
+          return question.concealment_page === "buttonHide";
+        })
+        .map(function (question) {
+          return question.qid.split(':')[1];
+        });
+      });
+
+      const isConcealmentPage = currentPage.some(function(page) {
+        return (page.questions || []).some(function (question) {
+          return question.qid === self.question.qid && self.question.qid.split(':')[1] != filteredPageIds && self.question.required != true;
+        })
+      });
+
+      if (isConcealmentPage && filteredPageIds.length == 1) {
+          self.element = $('<div></div>').addClass('concealment-page-'+filteredPageIds).css('height','0').css('overflow', 'scroll');
+      }else{
+        self.element = $('<div></div>').addClass('form-group');
+      }
+    }else{
+      self.element = $('<div></div>').addClass('form-group');
+    }
 
     // construct header
     const header = $('<div></div>');
@@ -198,6 +237,25 @@ const QuestionField = oop.extend(Emitter, {
         .text('*'));
     }
     header.append(label);
+
+    if(self.question.hasOwnProperty('concealment_page') && self.question.concealment_page == "buttonHide"){
+      const p = $('<p></p>');
+      const a = $('<a></a>').text('▼ '+_('Show Items'));
+      p.on('click', function(){
+        $('.concealment-page-'+self.question.qid.split(':')[1]).each(function() {
+          if($(this).height() === 0){
+            $(this).animate({height: $(this).get(0).scrollHeight}, 'fast', function() {
+              $(this).css('height', '').addClass('form-group');
+            });
+            a.text('▲ '+_('Hide Items'));
+          }else {
+            $(this).animate({height: 0}, 'fast').removeClass('form-group');
+            a.text('▼ '+_('Show Items'));
+          }
+        });
+      });
+      self.element.append(p.append(a));
+    }
 
     // construct clear field
     if (self.options.multiple) {
@@ -324,7 +382,7 @@ function createFormField(question, options, value) {
     formField = new TextFormField(question, options);
   }
   formField.create();
-  if (value != null && value !== '') {
+  if (value != null && value !== '' || (question.hasOwnProperty('initial_row_addition') && question.initial_row_addition)) {
     try {
       formField.setValue(value);
     } catch (error) {
@@ -391,6 +449,7 @@ const TextFormField = oop.extend(FormFieldInterface, {
         return value != null && value !== '';
       }
       const suggestionContainer = createSuggestionButton(
+        self.container,
         self.question, buttonSuggestions, self.options,
         onSuggested, enteredValue
       );
@@ -781,9 +840,14 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
     } else {
       rows = value || [];
     }
+
     rows.forEach(function(row) {
       self.addRow(row);
     });
+
+    if(self.question.hasOwnProperty('initial_row_addition') && self.question.initial_row_addition ){
+      self.addRow();
+    }
   },
 
   reset: function() {
@@ -1053,7 +1117,7 @@ function suggestForTypeahead(question, templateSuggestions, keyword, options) {
     });
 }
 
-function createSuggestionButton(question, buttonSuggestions, options, onSuggested, enteredValue) {
+function createSuggestionButton(container, question, buttonSuggestions, options, onSuggested, enteredValue) {
   const suggestionContainer = $('<div>')
     .css('margin', 'auto 0 auto 8px');
   buttonSuggestions.forEach(function(suggestion) {
@@ -1078,7 +1142,17 @@ function createSuggestionButton(question, buttonSuggestions, options, onSuggeste
         indicator.show();
         suggestForButton(question, suggestion, options)
           .then(function (value) {
-            onSuggested(value);
+            if(value == 'error'){
+              return;
+            }else if( value == 'get-filesize-over-error'){
+              var name = question.qid.split(':')[1].replace('/', '-');
+              $('.'+name).remove();
+              container.after(
+                '<div class="'+name+'" style="color: red;">'+ _("File size exceeds the maximum allowed size.")+'</div>'
+               );
+            } else{
+              onSuggested(value);
+            }
           })
           .catch(function (err) {
             console.error(err);

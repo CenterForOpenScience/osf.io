@@ -40,7 +40,7 @@ from api.base.throttling import (
     AddContributorThrottle,
     BurstRateThrottle,
 )
-from api.base.utils import default_node_list_permission_queryset
+from api.base.utils import default_node_list_permission_queryset, check_user_can_create_project, LIMITED_ERROR
 from api.base.utils import get_object_or_error, is_bulk_request, get_user_auth, is_truthy
 from api.base.versioning import DRAFT_REGISTRATION_SERIALIZERS_UPDATE_VERSION
 from api.base.views import JSONAPIBaseView
@@ -71,11 +71,9 @@ from api.logs.serializers import NodeLogSerializer, NodeLogDownloadSerializer
 from api.nodes.filters import NodesFilterMixin
 from api.nodes.permissions import (
     IsAdmin,
-    IsAdminContributor,
     IsPublic,
     AdminOrPublic,
     ContributorOrPublic,
-    AdminContributorOrPublic,
     RegistrationAndPermissionCheckForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
@@ -86,6 +84,7 @@ from api.nodes.permissions import (
     ExcludeWithdrawals,
     NodeLinksShowIfVersion,
     ReadOnlyIfWithdrawn,
+    IsWritableContributorToRegisterDrafts,
 )
 from api.nodes.serializers import (
     NodeSerializer,
@@ -135,10 +134,12 @@ from osf.models import OSFUser
 from osf.models import OSFGroup
 from osf.models import NodeRelation, Guid
 from osf.models import BaseFileNode
+from osf.models import Contributor
 from osf.models.files import File, Folder
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
 from website import mails
+from website.util import quota
 from osf.models import RdmTimestampGrantPattern
 
 from nii.mapcore import (
@@ -328,6 +329,12 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = serializer.save(creator=user)
         if mapcore_sync_is_enabled():
             group_key = mapcore_sync_map_new_group(node.creator, node)
@@ -381,6 +388,13 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
         except PermissionsError as err:
             raise PermissionDenied(str(err))
 
+        if instance.project_or_component == 'project':
+            storage_type = instance.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=instance).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
+
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
@@ -419,6 +433,13 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
             node.remove_node(auth=auth)
         except PermissionsError as err:
             raise PermissionDenied(str(err))
+
+        if node.project_or_component == 'project':
+            storage_type = node.projectstoragetype.storage_type
+            contributor_ids = Contributor.objects.filter(node=node).values_list('user', flat=True)
+            user_list = OSFUser.objects.filter(id__in=contributor_ids)
+            for user in user_list:
+                quota.update_user_used_quota(user, storage_type=storage_type)
 
     def get_renderer_context(self):
         context = super(NodeDetail, self).get_renderer_context()
@@ -663,7 +684,10 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
     Use DraftRegistrationsList endpoint instead.
     """
     permission_classes = (
-        IsAdminContributor,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
@@ -699,7 +723,10 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
-        IsAdminContributor,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        ContributorOrPublic,
     )
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON,)
 
@@ -727,7 +754,11 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     permission_classes = (
-        AdminContributorOrPublic,
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        IsWritableContributorToRegisterDrafts,
+        ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ExcludeWithdrawals,
@@ -800,6 +831,12 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
     # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         serializer.save(creator=user, parent=self.get_node())
 
 
@@ -1075,6 +1112,12 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
         user = get_user_auth(self.request).user
+
+        # Check project limit number permission
+        can_create_project = check_user_can_create_project(user)
+        if not can_create_project:
+            raise PermissionDenied(LIMITED_ERROR)
+
         node = self.get_node()
         try:
             fork = serializer.save(node=node)

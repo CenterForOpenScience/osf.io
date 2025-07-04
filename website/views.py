@@ -35,6 +35,7 @@ from website.project.model import has_anonymous_link
 from osf.utils import permissions
 
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active
+from api.base.utils import check_user_can_create_project
 
 logger = logging.getLogger(__name__)
 preprints_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['preprints']['path']))
@@ -195,10 +196,14 @@ def my_projects(auth):
 
     bookmark_collection = find_bookmark_collection(user)
     my_projects_id = bookmark_collection._id
+
+    # Check project limit number permission
+    can_create_project = check_user_can_create_project(user)
     return {'addons_enabled': user.get_addon_names(),
             'dashboard_id': my_projects_id,
             'storage_regions': region_list,
             'storage_flag_is_active': storage_i18n_flag_active(),
+            'can_create_project': can_create_project
             }
 
 

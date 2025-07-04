@@ -6,7 +6,7 @@
     {
       "id": "page1",
       "title": "メタデータ登録|Metadata Registration",
-      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for reporting the progress of a research project in the Moonshot R&D Program. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
+      "description": "公的資金による研究データの管理・利活用に関するメタデータの入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for the Management and Utilization of Publicly Funded Research Data. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
       "questions": [
         {
           "qid": "funder",
@@ -217,7 +217,7 @@
     {
       "id": "page2",
       "title": "登録データ|Registered Data",
-      "description": "ムーンショット型研究開発制度における研究プロジェクトの成果報告用のメタデータ入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for reporting the progress of a research project in the Moonshot R&D Program. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
+      "description": "公的資金による研究データの管理・利活用に関するメタデータの入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for the Management and Utilization of Publicly Funded Research Data. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
       "questions": [
         {
           "qid": "grdm-files",
@@ -499,10 +499,6 @@
             {
               "text": "CC0",
               "tooltip": "CC0 1.0 Universal"
-            },
-            {
-              "text": "CC0PD",
-              "tooltip": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication"
             },
             {
               "text": "CCBY",

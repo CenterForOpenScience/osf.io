@@ -378,6 +378,19 @@
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
           {% endif %}
+		  {% if user.is_superuser %}
+              <li><a role="button" data-toggle="collapse" href="#collapseProjectLimitNumber">
+                  <i class='fa fa-caret-down'></i> {% trans "Project Limit Number" %}
+              </a></li>
+              <div class="collapse" id="collapseProjectLimitNumber">
+                  <ul class="sidebar-menu sidebar-menu-inner">
+                      {% if user.is_superuser %}
+                      <li><a href="{% url 'project_limit_number:templates:list-template' %}"><i class='fa fa-link'></i><span> {% trans "Setting Template" %}</span> </a></li>
+                      {% endif %}
+                      <li><a href="{% url 'project_limit_number:settings:list-setting' %}"><i class='fa fa-link'></i><span> {% trans "Setting" %}</span> </a></li>
+                  </ul>
+              </div>
+          {% endif %}
           {% if False and user.is_superuser or False and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_storage_location' %}">

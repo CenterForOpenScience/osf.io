@@ -2182,7 +2182,7 @@ function MetadataButtons() {
                   .append(toolbar))
                 .append($('<div class="col-sm-12"></div>')
                   .css('overflow-y', 'scroll')
-                  .css('height', '70vh')
+                  .css('height', '66vh')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
               .css('display', 'flex')

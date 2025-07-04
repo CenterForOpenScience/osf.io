@@ -36,6 +36,16 @@ def make_payload(
         jaOrganizationalUnitName='',
         organizationalUnit='',
         organizationName='',
+        edu_person_affiliation='',
+        edu_person_scoped_affiliation='',
+        edu_person_targeted_id='',
+        edu_person_assurance='',
+        edu_person_unique_id='',
+        edu_person_orcid='',
+        groups='',
+        gakunin_scoped_personal_unique_code='',
+        gakunin_identity_assurance_organization='',
+        gakunin_identity_assurance_method_reference='',
 ):
 
     data = {
@@ -58,6 +68,16 @@ def make_payload(
                 'jaOrganizationalUnitName': jaOrganizationalUnitName,
                 'organizationalUnitName': organizationalUnit,
                 'organizationName': organizationName,
+                'eduPersonAffiliation': edu_person_affiliation,
+                'eduPersonScopedAffiliation': edu_person_scoped_affiliation,
+                'eduPersonTargetedID': edu_person_targeted_id,
+                'eduPersonAssurance': edu_person_assurance,
+                'eduPersonUniqueId': edu_person_unique_id,
+                'eduPersonOrcid': edu_person_orcid,
+                'isMemberOf': groups,
+                'gakuninScopedPersonalUniqueCode': gakunin_scoped_personal_unique_code,
+                'gakuninIdentityAssuranceOrganization': gakunin_identity_assurance_organization,
+                'gakuninIdentityAssuranceMethodReference': gakunin_identity_assurance_method_reference,
             }
         }
     }
@@ -521,3 +541,49 @@ class TestInstitutionAuth:
         user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
         assert user
         assert user.jobs[0]['department'] == organizationnameunit
+
+    @mock.patch('api.institutions.authentication.login_by_eppn')
+    def test_with_new_attribute(self, mock, app, institution, url_auth_institution):
+        mock.return_value = True
+        username = 'user@gmail.com'
+        edu_person_affiliation = 'edu_person_affiliation'
+        edu_person_scoped_affiliation = 'edu_person_scoped_affiliation'
+        edu_person_targeted_id = 'edu_person_targeted_id'
+        edu_person_assurance = 'edu_person_assurance'
+        edu_person_unique_id = 'edu_person_unique_id'
+        edu_person_orcid = 'edu_person_orcid'
+        groups = 'groups'
+        gakunin_scoped_personal_unique_code = 'gakunin_scoped_personal_unique_code'
+        gakunin_identity_assurance_organization = 'gakunin_identity_assurance_organization'
+        gakunin_identity_assurance_method_reference = 'gakunin_identity_assurance_method_reference'
+
+        res = app.post(
+            url_auth_institution,
+            make_payload(institution, username,
+                edu_person_affiliation=edu_person_affiliation,
+                edu_person_scoped_affiliation=edu_person_scoped_affiliation,
+                edu_person_targeted_id=edu_person_targeted_id,
+                edu_person_assurance=edu_person_assurance,
+                edu_person_unique_id=edu_person_unique_id,
+                edu_person_orcid=edu_person_orcid,
+                groups=groups,
+                gakunin_scoped_personal_unique_code=gakunin_scoped_personal_unique_code,
+                gakunin_identity_assurance_organization=gakunin_identity_assurance_organization,
+                gakunin_identity_assurance_method_reference=gakunin_identity_assurance_method_reference,)
+        )
+
+        assert res.status_code == 204
+        user = OSFUser.objects.filter(username='tmp_eppn_' + username).first()
+        assert user
+
+        idp_attr = user.ext.data['idp_attr']
+        assert idp_attr['edu_person_affiliation'] == edu_person_affiliation
+        assert idp_attr['edu_person_scoped_affiliation'] == edu_person_scoped_affiliation
+        assert idp_attr['edu_person_targeted_id'] == edu_person_targeted_id
+        assert idp_attr['edu_person_assurance'] == edu_person_assurance
+        assert idp_attr['edu_person_unique_id'] == edu_person_unique_id
+        assert idp_attr['edu_person_orcid'] == edu_person_orcid
+        assert idp_attr['groups'] == groups
+        assert idp_attr['gakunin_scoped_personal_unique_code'] == gakunin_scoped_personal_unique_code
+        assert idp_attr['gakunin_identity_assurance_organization'] == gakunin_identity_assurance_organization
+        assert idp_attr['gakunin_identity_assurance_method_reference'] == gakunin_identity_assurance_method_reference

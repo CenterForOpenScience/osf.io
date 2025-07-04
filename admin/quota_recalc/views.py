@@ -3,13 +3,18 @@ from django.db import transaction, IntegrityError
 
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
-from osf.models import OSFUser, UserQuota
+from osf.models import OSFUser, UserQuota, Node
+from osf.models.node import set_project_storage_type
 from osf.utils.requests import check_select_for_update
 from website.util.quota import used_quota
 
 
 def calculate_quota(user):
     storage_type_list = [UserQuota.NII_STORAGE]
+
+    projects = Node.objects.filter(is_deleted=False, creator=user)
+    for p in projects:
+        set_project_storage_type(p)
 
     institution = user.affiliated_institutions.first()
     if institution is not None and Region.objects.filter(_id=institution._id).exists():

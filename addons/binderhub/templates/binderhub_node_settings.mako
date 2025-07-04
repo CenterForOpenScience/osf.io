@@ -83,7 +83,8 @@
                                         <a data-bind="attr: {href: binderhub_url}, text: binderhub_url"></a>
                                     </td>
                                     <td>
-                                        <a data-bind="click: $parent.removeHost.bind($parent)">
+                                        <a data-bind="click: $parent.removeHost.bind($parent),
+                                                      visible: 1 < $parent.availableBinderhubs().length">
                                             <i class="fa fa-times text-danger pull-right" title="${_('disconnect binderhub')}"></i>
                                         </a>
                                         <!-- ko if: $parent.binderUrl() != binderhub_url -->

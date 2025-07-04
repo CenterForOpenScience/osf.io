@@ -90,15 +90,31 @@ function UserSettings() {
 
   /* Remove host from binderhub list */
   self.removeHost = function(host) {
-    const removed = self.binderhubs().filter(function(binderhub) {
+    const removed = self.binderhubs().find(function(binderhub) {
       return binderhub.binderhub_url === host.binderhub_url;
     });
-    console.log('Host', host, removed);
-    if (removed.length < 1) {
+    if (typeof removed === "undefined") {
       return;
     }
-    self.binderhubs.remove(removed[0]);
-    self.saveConfig();
+    self.binderhubs.remove(removed);
+    var url = self.baseUrl + 'settings/binderhubs';
+    return osfHelpers.ajaxJSON(
+      'delete',
+      url,
+      {
+        data: {
+          url: host.binderhub_url
+        }
+      }
+    ).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while purging a binderhub from a user', {
+        extra: {
+          url: url,
+          status: status,
+          error: error
+        }
+      });
+    });
   };
 
 }

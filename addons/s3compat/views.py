@@ -107,21 +107,26 @@ def s3compat_add_user_account(auth, **kwargs):
         }, http_status.HTTP_400_BAD_REQUEST
 
     account = None
+    # GRDM-53044 Identify S3 Compatible Storage authentication information
+    # using both the AWS Account and Access Key
+    provider_id = '{}\t{}\t{}'.format(host, user_info.id, access_key)
+    masked_access_key = f'****{access_key[-4:]}' if len(access_key) > 4 else '****'
+    display_name = '{} ({}, {})'.format(user_info.display_name, host, masked_access_key)
     try:
         account = ExternalAccount(
             provider=SHORT_NAME,
             provider_name=FULL_NAME,
             oauth_key=access_key,
             oauth_secret=secret_key,
-            provider_id='{}\t{}'.format(host, user_info.id),
-            display_name=user_info.display_name,
+            provider_id=provider_id,
+            display_name=display_name,
         )
         account.save()
     except ValidationError:
         # ... or get the old one
         account = ExternalAccount.objects.get(
             provider=SHORT_NAME,
-            provider_id='{}\t{}'.format(host, user_info.id)
+            provider_id=provider_id,
         )
         if account.oauth_key != access_key or account.oauth_secret != secret_key:
             account.oauth_key = access_key

@@ -10,7 +10,7 @@
     color: grey;
 }
 
-select option:first-child {
+select > option:first-child {
     color: grey;
 }
 

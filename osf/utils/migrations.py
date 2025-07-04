@@ -31,6 +31,7 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('osf-upload-open', 'osf-upload'): 'file-input',
     ('osf-upload-toggle', 'osf-upload'): 'file-input',
     ('singleselect', 'choose'): 'single-select-input',
+    (None, 'object'): 'single-select-input',
     ('text', 'string'): 'short-text-input',
     ('textarea', 'osf-author-import'): 'contributors-input',
     ('textarea', None): 'long-text-input',
@@ -44,14 +45,17 @@ FORMAT_TYPE_TO_TYPE_MAP = {
     ('funding-stream-code', 'string'): 'funding-stream-code-input',
     ('e-rad-award-funder', 'choose'): 'e-rad-award-funder-input',
     ('e-rad-award-number', 'string'): 'e-rad-award-number-input',
+    ('pulldown', 'choose'): 'pulldown-input',
     ('e-rad-award-title-ja', 'string'): 'e-rad-award-title-ja-input',
     ('e-rad-award-title-en', 'string'): 'e-rad-award-title-en-input',
     ('e-rad-award-field', 'choose'): 'e-rad-award-field-input',
+    ('singleselect-pulldown', 'choose'): 'single-select-pulldown-input',
     ('e-rad-researcher-number', 'string'): 'e-rad-researcher-number-input',
     ('e-rad-researcher-name-ja', 'string'): 'e-rad-researcher-name-ja-input',
     ('e-rad-researcher-name-en', 'string'): 'e-rad-researcher-name-en-input',
     ('e-rad-bunnya', 'string'): 'e-rad-bunnya-input',
     ('file-metadata', 'string'): 'file-metadata-input',
+    ('ad-metadata', 'string'): 'ad-metadata-input',
     ('date', 'string'): 'date-input',
     # deprecated format types are mapped to the simple text type
     ('file-capacity', 'string'): 'short-text-input',
@@ -219,7 +223,7 @@ def remove_schemas(*args):
 def create_schema_block(state, schema_id, block_type, display_text='', required=False, help_text='',
         registration_response_key=None, schema_block_group_key='', example_text='',
         default=False, pattern=None, space_normalization=False, required_if=None,
-        message_required_if=None, enabled_if=None, suggestion=None):
+        message_required_if=None, enabled_if=None, suggestion=None, auto_value=False, auto_date=False, auto_title=False, hide_projectmetadata=False, retrieval_title='', retrieval_date='', concealment_page_navigator=False, multi_language=False, retrieval_version='', readonly=False, sentence=False, required_all_check=None, row_addition_caption=''):
     """
     For mapping schemas to schema blocks: creates a given block from the specified parameters
     """
@@ -261,6 +265,19 @@ def create_schema_block(state, schema_id, block_type, display_text='', required=
         'message_required_if': message_required_if,
         'enabled_if': enabled_if,
         'suggestion': suggestion,
+        'auto_value': auto_value,
+        'auto_date': auto_date,
+        'auto_title': auto_title,
+        'hide_projectmetadata': hide_projectmetadata,
+        'retrieval_title': retrieval_title,
+        'required_all_check': required_all_check,
+        'retrieval_date': retrieval_date,
+        'concealment_page_navigator': concealment_page_navigator,
+        'multi_language': multi_language,
+        'retrieval_version': retrieval_version,
+        'readonly': readonly,
+        'sentence': sentence,
+        'row_addition_caption': row_addition_caption,
     }
 
     try:
@@ -279,6 +296,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
         answer_text = option if isinstance(option, basestring) else option.get('text')
         help_text = '' if isinstance(option, basestring) else option.get('tooltip', '')
         default = False if isinstance(option, basestring) else option.get('default', False)
+        multi_language = False if isinstance(option, basestring) else option.get('multi_language', False)
 
         create_schema_block(
             state,
@@ -287,6 +305,7 @@ def split_options_into_blocks(state, rs, question, schema_block_group_key):
             display_text=answer_text,
             help_text=help_text,
             default=default,
+            multi_language=multi_language,
             schema_block_group_key=schema_block_group_key,
         )
 
@@ -367,6 +386,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
     """
     # If there are subquestions, recurse and format subquestions
     properties = question.get('properties')
+    _help_text = question.get('help', '')
     if properties:
         first_subquestion = properties[0]
         first_subq_text = first_subquestion.get('title') or first_subquestion.get('description', '')
@@ -380,6 +400,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                     rs.id,
                     block_type='subsection-heading' if sub else 'section-heading',
                     display_text=question.get('title', '') or question.get('description', ''),
+                    help_text=_help_text,
                     schema_block_group_key=schema_block_group_key,
                 )
                 create_schema_block(
@@ -395,6 +416,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
                     message_required_if=question.get('message_required_if', None),
                     enabled_if=question.get('enabled_if', None),
                     suggestion=question.get('suggestion', None),
+                    row_addition_caption=question.get('row_addition_caption', ''),
                 )
             else:
                 create_schema_block(
@@ -435,6 +457,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             display_text=title,
             help_text='' if description else help,
             example_text=example,
+            readonly=question.get('readonly', False),
             schema_block_group_key=schema_block_group_key
         )
 
@@ -465,6 +488,16 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
             message_required_if=question.get('message_required_if', None),
             enabled_if=question.get('enabled_if', None),
             suggestion=question.get('suggestion', None),
+            auto_value=question.get('auto_value', False),
+            auto_date=question.get('auto_date', False),
+            auto_title=question.get('auto_title', False),
+            retrieval_title=question.get('retrieval_title', ''),
+            retrieval_date=question.get('retrieval_date', ''),
+            required_all_check=question.get('required_all_check', ''),
+            retrieval_version=question.get('retrieval_version', ''),
+            readonly=question.get('readonly', False),
+            sentence=question.get('sentence', False),
+            row_addition_caption=question.get('row_addition_caption', ''),
         )
 
         # If there are multiple choice answers, create blocks for these as well.
@@ -498,7 +531,8 @@ def map_schemas_to_schemablocks(*args):
                 rs.id,
                 'page-heading',
                 display_text=strip_html(page.get('title', '')),
-                help_text=strip_html(page.get('description', ''))
+                help_text=strip_html(page.get('description', '')),
+                concealment_page_navigator=strip_html(page.get('concealment_page_navigator', False))
             )
             for question in page['questions']:
                 create_schema_blocks_for_question(state, rs, question)

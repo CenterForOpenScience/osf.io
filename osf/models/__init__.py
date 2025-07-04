@@ -67,3 +67,8 @@ from osf.models.institution_entitlement import InstitutionEntitlement  # noqa
 from osf.models.export_data_location import ExportDataLocation  # noqa
 from osf.models.export_data import ExportData  # noqa
 from osf.models.export_data_restore import ExportDataRestore  # noqa
+from osf.models.project_limit_number_default import ProjectLimitNumberDefault  # noqa
+from osf.models.project_limit_number_template import ProjectLimitNumberTemplate  # noqa
+from osf.models.project_limit_number_template_attribute import ProjectLimitNumberTemplateAttribute  # noqa
+from osf.models.project_limit_number_setting import ProjectLimitNumberSetting  # noqa
+from osf.models.project_limit_number_setting_attribute import ProjectLimitNumberSettingAttribute  # noqa

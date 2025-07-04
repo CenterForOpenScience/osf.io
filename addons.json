@@ -31,13 +31,15 @@
         "dropboxbusiness",
         "binderhub",
         "onedrivebusiness",
-        "metadata"
+        "metadata",
+        "onlyoffice"
     ],
     "addons_default": [
         "osfstorage",
         "nextcloudinstitutions",
         "dropboxbusiness",
-        "onedrivebusiness"
+        "onedrivebusiness",
+        "onlyoffice"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -134,7 +136,8 @@
         "dropboxbusiness": "Dropbox Business for Institutions is a file storage add-on for Institutions. Connect your Dropbox Business administrator account to a GakuNin RDM project to interact with files hosted on Dropbox via the GakuNin RDM.",
         "binderhub": "GakuNin Federated Computing Services (Jupyter) is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from GakuNin Federated Computing Services (Jupyter)",
         "onedrivebusiness": "OneDrive for Office365 is a file storage add-on. Connect your Microsoft OneDrive account to a GakuNin RDM project to interact with files hosted on Microsoft OneDrive via the GakuNin RDM.",
-        "metadata": "The Metadata addon provides the functionality to register metadata to files and generate reports."
+        "metadata": "The Metadata addon provides the functionality to register metadata to files and generate reports.",
+        "onlyoffice": "ONLYOFFICE document server."
     },
     "addons_url": {
         "box": "http://www.box.com",
@@ -161,7 +164,8 @@
         "dropboxbusiness": "http://www.dropbox.com",
         "binderhub": "https://binder.cs.rcos.nii.ac.jp",
         "onedrivebusiness": "https://onedrive.live.com",
-        "metadata": "https://rcos.nii.ac.jp/service/rdm/"
+        "metadata": "https://rcos.nii.ac.jp/service/rdm/",
+        "onlyoffice": "https://onlyoffice.com/"
     },
     "institutional_storage_add_on_method": [
         "nextcloudinstitutions",

@@ -1,0 +1,442 @@
+{
+    "@metadata": {
+        "filename": "ro-crate-metadata.json"
+    },
+    "@files": {
+        "@type": "object",
+        "file[]": {
+            ".@type": "File",
+            "name": "{{object_filename}}",
+            "encodingFormat": "{{object_format}}"
+        }
+    },
+    "@projects": {
+        "@type": "object",
+        "root.rdm:inproject": {
+            "@createIf": "{{ project_name_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{project_name_value}}",
+            ".@id": "_:Project1"
+        },
+        "root.ams:identifier": {
+            "@createIf": "{{ data_id_value }}",
+            ".@type": "PropertyValue",
+            "type": "Local",
+            "value": "{{data_id_value}}",
+            ".@id": "_:rdm:Identifier1"
+        },
+        "root.ams:purposeOfExperiment[PURPOSE_OF_EXPERIMENT]": {
+            "@createIf": "{{ purpose_of_experiment_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{purpose_of_experiment_value}}",
+            "language": "ja",
+            ".@id": "_:ams:purposeOfExperiment1"
+        },
+        "root.ams:purposeOfExperiment[PURPOSE_OF_EXPERIMENT_EN]": {
+            "@createIf": "{{ purpose_of_experiment_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{purpose_of_experiment_en_value}}",
+            "language": "en",
+            ".@id": "_:ams:purposeOfExperiment2"
+        },
+        "root.ams:descriptionOfExperimentalCondition[DESCRIPTION_OF_EXPERIMENTAL_CONDITION]": {
+            "@createIf": "{{ description_of_experimental_condition_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{description_of_experimental_condition_value}}",
+            "language": "ja",
+            ".@id": "_:ams:descriptionOfExperimentalCondition1"
+        },
+        "root.ams:descriptionOfExperimentalCondition[DESCRIPTION_OF_EXPERIMENTAL_CONDITION_EN]": {
+            "@createIf": "{{ description_of_experimental_condition_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{description_of_experimental_condition_en_value}}",
+            "language": "en",
+            ".@id": "_:ams:descriptionOfExperimentalCondition2"
+        },
+        "root.rdm:keywords[KEYWORD]":
+        {
+            "@createIf": "{{ keywords_value }}",
+            ".@id": "_:keywords1",
+            ".@type": "PropertyValue",
+            "keywords[]":[
+                {
+                    "@createIf": "{{ keywords_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_filename":  "{{ keywords_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Resource1"
+                },
+                {
+                    "@createIf": "{{ keywords_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_filename_en":  "{{ keywords_value }}",
+                    "language": "en",
+                    ".@id": "_:rdm:Resource2"
+                }
+            ]
+        },
+        "root.rdm:field[DATASET_RESEARCH_FIELD]": {
+            "@createIf": "{{ dataset_research_field_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{dataset_research_field_value}}",
+            ".@id": "_:rdm:Dataset3"
+        },
+        "root.ams:analysisType[ANALYSIS_TYPE]": {
+            "@createIf": "{{ Analysis_type_value }}",
+            ".@type": "PropertyValue",
+            "value": "Analysis_type_value",
+            ".@id": "_:ams:analysisType1"
+        },
+        "root.ams:analysisOtherType[ANALYSIS_TYPE_OTHER]": {
+            "@createIf": "{{ Analysis_type_other_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{Analysis_type_other_value}}",
+            ".@id": "_:ams:analysisOtherType"
+        },
+        "root.ams:existExternalMetadata[THE_PRESENCE_OF_METADATA_FILES_CREATED_FOR_A_SPECIFIC_MODALITY_IN_OTHER_DATABASES]": {
+            "@createIf": "{{ the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{the_presence_of_metadata_files_created_for_a_specific_modality_in_other_databases_value}}",
+            ".@id": "_:ams:existExternalMetadata"
+        },
+        "root.ams:externalMetadataFiles[]": {
+            "@createIf": "{{ metadata_filename_value }}",
+            ".@type": "PropertyValue",
+            "subitem_filename": "{{metadata_filename_value}}",
+            ".@id": "_:ams:externalMetadataFiles"
+        },
+        "root.ams:necessityOfContactAndPermission[NECESSITY_OF_CONTACT_AND_PERMISSION]": {
+            "@createIf": "{{ necessity_of_contact_and_permission_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{necessity_of_contact_and_permission_value}}",
+            ".@id": "_:ams:necessityOfContactAndPermission"
+        },
+        "root.ams:necessityOfIncludingInAcknowledgments[NECESSITY_OF_INCLUDING_IN_ACKNOWLEDGMENTS]": {
+            "@createIf": "{{ necessity_of_including_in_acknowledgments_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{necessity_of_including_in_acknowledgments_value}}",
+            ".@id": "_:ams:necessityOfIncludingInAcknowledgments"
+        },
+        "root.ams:namesToBeIncludedInTheAcknowledgments[NAMES_TO_BE_INCLUDED_IN_THE_ACKNOWLEDGMENTS]": {
+            "@createIf": "{{ names_to_be_included_in_the_acknowledgments_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{names_to_be_included_in_the_acknowledgments_value}}",
+            "language": "ja",
+            ".@id": "_:ams:namesToBeIncludedInTheAcknowledgments1"
+        },
+        "root.ams:namesToBeIncludedInTheAcknowledgments[NAMES_TO_BE_INCLUDED_IN_THE_ACKNOWLEDGMENTS_EN]": {
+            "@createIf": "{{ names_to_be_included_in_the_acknowledgments_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{names_to_be_included_in_the_acknowledgments_en_value}}",
+            "language": "en",
+            ".@id": "_:ams:namesToBeIncludedInTheAcknowledgments2"
+        },
+        "root.ams:otherConditionsOrSpecialNotes[OTHER_CONDITIONS_OR_SPECIAL_NOTES]": {
+            "@createIf": "{{ other_conditions_or_special_notes_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{other_conditions_or_special_notes_value}}",
+            "language": "ja",
+            ".@id": "_:ams:otherConditionsOrSpecialNotes1"
+        },
+        "root.ams:otherConditionsOrSpecialNotes[OTHER_CONDITIONS_OR_SPECIAL_NOTES_EN]": {
+            "@createIf": "{{ other_conditions_or_special_notes_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{other_conditions_or_special_notes_en_value}}",
+            "language": "en",
+            ".@id": "_:ams:otherConditionsOrSpecialNotes2"
+        },
+        "root.ams:license[DATA_POLICY_LICENSE]": {
+            "@createIf": "{{ data_policy_license_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{data_policy_license_value}}",
+            ".@id": "_:rdm:License1"
+        },
+        "root.ams:dataPolicyFree[DATA_POLICY_FREE]": {
+            "@createIf": "{{ data_policy_free_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{data_policy_free_value}}",
+            ".@id": "_:ams:dataPolicyFree"
+        },
+        "root.ams:availabilityOfCommercialUse[AVAILABILITY_OF_COMMERCIAL_USE]": {
+            "@createIf": "{{ availability_of_commercial_use_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{availability_of_commercial_use_value}}",
+            ".@id": "_:ams:availabilityOfCommercialUse"
+        },
+        "root.ams:targetTypeOfAcquiredData[TARGET_TYPE_OF_ACQUIRED_DATA]": {
+            "@createIf": "{{ target_type_of_acquired_data_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{target_type_of_acquired_data_value}}",
+            ".@id": "_:ams:targetTypeOfAcquiredData1",
+            "language": "ja"
+        },
+        "root.ams:targetTypeOfAcquiredData[TARGET_TYPE_OF_ACQUIRED_DATA_EN]": {
+            "@createIf": "{{ target_type_of_acquired_data_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{target_type_of_acquired_data_en_value}}",
+            ".@id": "_:ams:targetTypeOfAcquiredData2",
+            "language": "en"
+        },
+        "root.ams:ethicsReviewCommitteeApproval[ETHICS_REVIEW_COMMITTEE_APPROVAL]": {
+            "@createIf": "{{ ethics_review_committee_approval_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{ethics_review_committee_approval_value}}",
+            ".@id": "_:ams:ethicsReviewCommitteeApproval1"
+        },
+        "root.ams:ethicsReviewCommitteeApproval[ETHICS_REVIEW_COMMITTEE_APPROVAL_EN]": {
+            "@createIf": "{{ ethics_review_committee_approval_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{ethics_review_committee_approval_en_value}}",
+            ".@id": "_:ams:ethicsReviewCommitteeApproval2"
+        },
+        "root.ams:informedConsent[INFORMED_CONSENT]": {
+            "@createIf": "{{ informed_consent_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{informed_consent_value}}",
+            ".@id": "_:ams:informedConsent"
+        },
+        "root.ams:consentForProvisionToAThirdParty[CONSENT_FOR_PROVISION_TO_A_THIRD_PARTY]": {
+            "@createIf": "{{ consent_for_provision_to_a_third_party_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{consent_for_provision_to_a_third_party_value}}",
+            ".@id": "_:ams:consentForProvisionToAThirdParty"
+        },
+        "root.ams:overseasOfferings[OVERSEAS_OFFERINGS]": {
+            "@createIf": "{{ overseas_offerings_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{overseas_offerings_value}}",
+            ".@id": "_:ams:overseasOfferings"
+        },
+        "root.ams:industrialUse[INDUSTRIAL_USE]": {
+            "@createIf": "{{ industrial_use_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{industrial_use_value}}",
+            ".@id": "_:ams:industrialUse"
+
+        },
+        "root.ams:icIsNo[IC_IS_NO]": {
+            "@createIf": "{{ ic_is_no_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{ic_is_no_value}}",
+            ".@id": "_:ams:icIsNo"
+        },
+        "root.ams:anonymousProcessing[ANONYMOUS_PROCESSING]": {
+            "@createIf": "{{ anonymous_processing_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{anonymous_processing_value}}",
+            ".@id": "_:ams:anonymousProcessing"
+        },
+        "root.rdm:accessRightsInformation[ACCESS_RIGHTS]": {
+            "@createIf": "{{ access_rights_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{access_rights_tooltip_1}}",
+            "rdm:dateAvailable":"{{ scheduled_release_date_value }}",
+            ".@id": "_:rdm:AccessRights1"
+        },
+        "root.ams:repository[REPOSITORY_INFORMATION]": {
+            "@createIf": "{{ repository_information_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{repository_information_value}}",
+            ".@id": "_:rdm:Repository1"
+        },
+        "root.ams:repositoryId[REPOSITORY_URL_DOI_LINK]": {
+            "@createIf": "{{ repository_url_doi_link_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{repository_url_doi_link_value}}",
+            ".@id": "_:rdm:Repository2"
+        },
+        "root.ams:repositoryInfo[OTHER_SUPPLEMENTARY_INFORMATION]": {
+            "@createIf": "{{ other_supplementary_information_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{other_supplementary_information_value}}",
+            "language": "ja",
+            ".@id": "_:rdm:Repository3"
+        },
+        "root.ams:repositoryInfo[OTHER_SUPPLEMENTARY_INFORMATION_EN]": {
+            "@createIf": "{{ other_supplementary_information_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{other_supplementary_information_en_value}}",
+            "language": "en",
+            ".@id": "_:rdm:Repository4"
+        },
+        "root.creator[DATA_CREATOR]":
+        {
+            "@createIf": "{{ data_creator_value }}",
+            ".@id": "_:Creator1",
+            ".@type": "Person",
+            "affiliation[]": [
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging":  "{{ data_creator_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person1Affiliation1"
+                },
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging_en": "{{data_creator_value}}",
+                    "language": "en",
+                    ".@id": "_:rdm:Person1Affiliation2"
+                }
+            ],
+            "email[]":[
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_contact":  "{{ data_creator_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person1Address1"
+                }
+            ],
+            "name[]": [
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name": "{{data_creator_value}}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person1Name1"
+                },
+                {
+                    "@createIf": "{{ data_creator_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name_en": "{{data_creator_value}}",
+                    "language": "en",
+                    ".@id": "_:rdm:Person1Name2"
+                }
+            ]
+        },
+        "root.contributor[DATA_MANAGER]":
+        {
+            "@createIf": "{{ data_manager_value }}",
+            ".@id": "_:Contributor1",
+            "jpcoar:addtionalType":{
+                ".@id":"https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            ".@type": "Person",
+            "affiliation[]": [
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging":  "{{ data_manager_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person2Affiliation1"
+                },
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_belonging_en":  "{{ data_manager_value }}",
+                    "language": "en",
+                    ".@id": "_:rdm:Person2Affiliation2"
+                }
+            ],
+            "email[]":[
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_contact":  "{{ data_manager_value }}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person2Address1"
+                }
+            ],
+            "name[]": [
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name": "{{data_manager_value}}",
+                    "language": "ja",
+                    ".@id": "_:rdm:Person2Name1"
+                },
+                {
+                    "@createIf": "{{ data_manager_value }}",
+                    ".@type": "PropertyValue",
+                    "subitem_name_en": "{{data_manager_value}}",
+                    "language": "en",
+                    ".@id": "_:rdm:Person2Name2"
+                }
+            ]
+        },
+        "root.ams:remark[REMARKS_3]": {
+            "@createIf": "{{ remarks_3_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{remarks_3_value}}",
+            "language": "ja",
+            ".@id": "_:remark_ja"
+        },
+        "root.ams:remark[REMARKS_3_EN]": {
+            "@createIf": "{{ remarks_3_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{remarks_3_en_value}}",
+            "language": "en",
+            ".@id": "_:remark_en"
+        },
+        "root.ams:conflictOfInterestName[CONFLICT_OF_INTEREST]": {
+            "@createIf": "{{ conflict_of_interest_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{conflict_of_interest_value}}",
+            "language": "ja",
+            ".@id": "_:ams:conflictOfInterestName1"
+        },
+        "root.ams:conflictOfInterestName[CONFLICT_OF_INTEREST_EN]": {
+            "@createIf": "{{ conflict_of_interest_en_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{conflict_of_interest_en_value}}",
+            "language": "en",
+            ".@id": "_:ams:conflictOfInterestName2"
+        },
+        "root.ams:conflictOfInterest[CONFLICT_OF_INTEREST_YES_OR_NO]": {
+            "@createIf": "{{ conflict_of_interest_Yes_or_No_value }}",
+            ".@type": "PropertyValue",
+            "value": "{{conflict_of_interest_Yes_or_No_value}}",
+            ".@id": "_:ams:conflictOfInterest"
+        }
+    },
+    "@agent": {
+        "@type": "object",
+        "root.wk:feedbackMail[]": "{{ object_username }}",
+        "root.ams:projectId": "{{ object_absolute_url }}"
+    },
+    "_": {
+        "root": {
+                ".@id": "./",
+                ".@type[]": ["Dataset", "rdm:Dataset"],
+                "name": "{% if title_of_dataset_value %}{{ title_of_dataset_en_value }}{% elif title_of_dataset_value %}{{ title_of_dataset_value }}{% endif %}",
+                "description": "{% if purpose_of_experiment_value %}{{ purpose_of_experiment_en_value }}{% elif purpose_of_experiment_value %}{{ purpose_of_experiment_value }}{% endif %}",
+                "dateModified": "{{date_updated_in_metadata_value}}",
+                "dateCreated": "{{ date_registered_in_metadata_value }}",
+                "conformsTo": {
+                    ".@id": "https://w3id.org/ro/crate/1.1"
+                },
+                "dc:type": "dataset",
+                "datePublished": "{{ nowdate }}",
+                "rdm:name[]": [
+                    {
+                        "@createIf": "{{ title_of_dataset_value }}",
+                        ".@type": "PropertyValue",
+                        "value": "{{title_of_dataset_value}}",
+                        "language": "ja",
+                        ".@id": "_:Name_ja"
+                    },
+                    {
+                        "@createIf": "{{ title_of_dataset_en_value }}",
+                        ".@type": "PropertyValue",
+                        "value": "{{title_of_dataset_en_value}}",
+                        "language": "en",
+                        ".@id": "_:Name_en"
+                    }
+                  ],
+                "wk:index[]": "{{ index_id }}",
+                "wk:publishStatus": "public"
+            },
+            "ro_crate_metadata": {
+                ".@id": "ro-crate-metadata.json",
+                ".@type": "CreativeWork",
+                "about": {
+                ".@id": "./"
+                },
+                "conformsTo": {
+                ".@id": "https://w3id.org/ro/crate/1.1"
+            }
+        }
+    }
+}

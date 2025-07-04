@@ -1,6 +1,13 @@
 # -*- coding: utf-8 -*-
+from itertools import chain
 import json
 from rest_framework import status as http_status
+from django.core.exceptions import (
+    ObjectDoesNotExist,
+    MultipleObjectsReturned,
+    ValidationError,
+)
+from django.db import transaction
 from flask import request
 import logging
 from future.moves.urllib.parse import urljoin, urlencode
@@ -8,6 +15,7 @@ from future.moves.urllib.parse import urljoin, urlencode
 from . import SHORT_NAME
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
+from osf.utils.permissions import READ, ADMIN
 from website.project.decorators import (
     must_have_addon,
     must_be_valid_project,
@@ -15,11 +23,17 @@ from website.project.decorators import (
     must_be_contributor,
 )
 from website.ember_osf_web.views import use_ember_app
-from website import settings as website_settings
 from website.util import api_url_for
 from admin.rdm_addons.decorators import must_be_rdm_addons_allowed
 
-from .models import BinderHubToken, get_default_binderhubs, fill_binderhub_secrets
+from .models import (
+    BinderHubToken,
+    CustomBaseImage,
+    InvalidUpdateDirectiveError,
+    ServerAnnotation,
+    get_default_binderhub,
+    fill_binderhub_secrets,
+)
 from . import settings
 
 logger = logging.getLogger(__name__)
@@ -35,19 +49,6 @@ def _get_jupyterhub_logout_url(binderhubs):
 def get_deployment():
     return {
         'images': settings.BINDERHUB_DEPLOYMENT_IMAGES,
-    }
-
-def get_launcher_endpoint(endpoint):
-    endpoint = endpoint.copy()
-    if 'image' in endpoint:
-        endpoint['imageurl'] = urljoin(
-            website_settings.DOMAIN, '/static/addons/binderhub/' + endpoint['image']
-        )
-    return endpoint
-
-def get_launcher():
-    return {
-        'endpoints': [get_launcher_endpoint(e) for e in settings.JUPYTERHUB_LAUNCHERS],
     }
 
 @must_be_logged_in
@@ -74,6 +75,17 @@ def binderhub_set_user_config(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_rdm_addons_allowed(SHORT_NAME)
+def purge_binderhub_from_user(auth, **kwargs):
+    try:
+        auth.user.get_addon(SHORT_NAME).remove_binderhub(
+            request.json['url']
+        )
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    return {}
+
+@must_be_logged_in
+@must_be_rdm_addons_allowed(SHORT_NAME)
 def binderhub_add_user_config(auth, **kwargs):
     addon = auth.user.get_addon(SHORT_NAME)
     if not addon:
@@ -88,7 +100,7 @@ def binderhub_add_user_config(auth, **kwargs):
     return {}
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_get_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -98,25 +110,21 @@ def binderhub_get_config(**kwargs):
     user_binderhubs = []
     if user_addon:
         user_binderhubs = user_addon.get_binderhubs(allow_secrets=False)
-    system_binderhubs = get_default_binderhubs(allow_secrets=False)
     return {
         'binder_url': addon.get_binder_url(),
         'available_binderhubs': addon.get_available_binderhubs(allow_secrets=False),
         'user_binderhubs': user_binderhubs,
-        'system_binderhubs': system_binderhubs,
+        'system_binderhubs': [get_default_binderhub(allow_secrets=False)],
     }
 
 @must_be_valid_project
-@must_have_permission('admin')
+@must_have_permission(ADMIN)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_set_config(**kwargs):
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
     try:
         binder_url = request.json['binder_url']
-    except KeyError:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-    try:
         available_binderhubs = request.json['available_binderhubs']
     except KeyError:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
@@ -128,10 +136,30 @@ def binderhub_set_config(**kwargs):
     user_binderhubs = []
     if user_addon:
         user_binderhubs = user_addon.get_binderhubs(allow_secrets=True)
-    system_binderhubs = get_default_binderhubs(allow_secrets=True)
-    available_binderhubs = fill_binderhub_secrets(available_binderhubs, [old_binderhubs, user_binderhubs, system_binderhubs])
+    available_binderhubs = fill_binderhub_secrets(
+        available_binderhubs,
+        [
+            old_binderhubs,
+            user_binderhubs,
+            [get_default_binderhub(allow_secrets=True)]
+        ]
+    )
     addon.set_binder_url(binder_url)
     addon.set_available_binderhubs(available_binderhubs)
+    return {}
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+@must_have_addon(SHORT_NAME, 'node')
+def delete_binderhub(**kwargs):
+    try:
+        target_url = request.json['url']
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    (
+        kwargs['node'] or kwargs['project']
+    ).get_addon(SHORT_NAME).remove_binderhub(target_url)
+    ServerAnnotation.objects.filter(binderhub_url=target_url).delete()
     return {}
 
 @must_be_valid_project
@@ -141,7 +169,7 @@ def project_binderhub(**kwargs):
     return use_ember_app()
 
 @must_be_valid_project
-@must_have_permission('read')
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_logout(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -178,7 +206,7 @@ def binderhub_logout(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission('read')
+@must_have_permission(READ)
 @must_have_addon(SHORT_NAME, 'node')
 def binderhub_get_config_ember(**kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -263,7 +291,298 @@ def binderhub_get_config_ember(**kwargs):
                          'binderhubs': binderhubs,
                          'jupyterhubs': jupyterhubs,
                          'deployment': get_deployment(),
-                         'launcher': get_launcher(),
                          'node_binderhubs': node_binderhubs,
                          'user_binderhubs': user_binderhubs,
+                         'mpm_releases': settings.MATLAB_RELEASES,
                      }}}
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def get_matlab_product_name_list(**kwargs):
+    try:
+        return {
+            'data': {
+                'type': 'matlab-product-name-list',
+                'id': kwargs['release'],
+                'attributes': {
+                    'release': kwargs['release'],
+                    'names': settings.MATLAB_PRODUCTNAMES_MAP[kwargs['release']],
+                }
+            }
+        }
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def get_server_annotation(**kwargs):
+    try:
+        annotations = ServerAnnotation.objects.filter(
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        )
+        return {
+            'data': [annot.make_resource_object() for annot in annotations]
+        }
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def create_server_annotation(**kwargs):
+    try:
+        attrs = request.json['data']['attributes']
+        if ServerAnnotation.objects.filter(
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+            binderhub_url=attrs['binderhubUrl'],
+            jupyterhub_url=attrs['jupyterhubUrl'],
+            server_url=attrs['serverUrl'],
+        ).exists():
+            raise HTTPError(
+                http_status.HTTP_409_CONFLICT,
+                message='Required server annotation entry already exists.'
+            )
+        annot = ServerAnnotation(
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+            binderhub_url=attrs['binderhubUrl'],
+            jupyterhub_url=attrs['jupyterhubUrl'],
+            server_url=attrs['serverUrl'],
+            name=attrs['name'],
+            memotext='',
+        )
+        annot.save()
+        return {'data': annot.make_resource_object()}
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def patch_server_annotation(**kwargs):
+    try:
+        annot = ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        )
+        annot.memotext = request.json['data']['attributes']['memotext']
+        annot.save()
+        return {'data': annot.make_resource_object()}
+    except KeyError:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'ServerAnnotation with id={kwargs["aid"]} not found.'
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple ServerAnnotations have id={kwargs["aid"]}.'
+        )
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def delete_server_annotation(**kwargs):
+    try:
+        ServerAnnotation.objects.get(
+            id=kwargs['aid'],
+            user=kwargs['auth'].user,
+            node=kwargs['node'] or kwargs['project'],
+        ).delete()
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'ServerAnnotation with id={kwargs["aid"]} not found.'
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple ServerAnnotations have id={kwargs["aid"]}.'
+        )
+    else:
+        return {
+            'data': {
+                'type': 'server-annotation',
+                'id': kwargs['aid'],
+            }
+        }
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def create_custom_base_image(**kwargs):
+    try:
+        attrs = request.json['data']['attributes']
+        imgRef = attrs['imageReference'].strip()
+        if any(imgRef == image['url'] for image in settings.BINDERHUB_DEPLOYMENT_IMAGES):
+            raise HTTPError(
+                http_status.HTTP_409_CONFLICT,
+                message='Custom Base Image with specified image URL is officially offered.',
+            )
+        if imgRef.startswith('#repo2docker'):
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                message='Image URL #repo2docker is not allowed.',
+            )
+
+        with transaction.atomic():
+            if CustomBaseImage.objects.filter(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                image_reference=imgRef,
+            ).exists():
+                raise HTTPError(
+                    http_status.HTTP_409_CONFLICT,
+                    message='Custom Base Image with specified image URL already exists.'
+                )
+
+            image = CustomBaseImage.objects.create(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                name=attrs['name'],
+                image_reference=imgRef,
+                description_ja=attrs.get('descriptionJa', ''),
+                description_en=attrs.get('descriptionEn', ''),
+                deprecated=attrs.get('deprecated', False),
+            )
+        return {'data': image.make_resource_object()}
+    except (KeyError, TypeError) as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except ValidationError as e:
+        raise HTTPError(
+            http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message=str(e)
+        )
+
+def collect_ancestor_nodes(node):
+    def _rec(node, level):
+        parents = [(level, rel.parent) for rel in node._parents.filter(is_node_link=False)]
+        return chain(parents, chain.from_iterable([_rec(p, level + 1) for (_, p) in parents]))
+    return _rec(node, 1)
+
+# It returns a list that consists of following 3 things:
+#
+#  1. the given `node` itself
+#  2. the ancestor nodes
+#  3. linked node of ancestor nodes
+#
+# The graph is directed and cyclic but is never reflective.
+def collect_relative_nodes(node):
+    visited = set()
+
+    def _rec(node, level):
+        if node in visited:
+            return
+        else:
+            visited.add(node)
+            yield (level, node)
+            for parent_node in [rel.parent for rel in node._parents.all()]:
+                yield from _rec(parent_node, level + 1)
+    return sorted(list(_rec(node, 0)), key=lambda x: x[0])
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def get_custom_base_image(**kwargs):
+    try:
+        user = kwargs['auth'].user
+        node = kwargs['node'] or kwargs['project']
+        return {
+            'data': [
+                img.make_resource_object(level)
+                for (level, img)
+                in (
+                    chain.from_iterable([
+                        [
+                            (level, image) for image in (
+                                CustomBaseImage.objects.filter(node=relative)
+                                if relative.has_permission(user, READ) else []
+                            )
+                        ]
+                        for (level, relative) in collect_relative_nodes(node)
+                    ])
+                    if request.args.get('includeParentImages') == 'true'
+                    else [(0, i) for i in CustomBaseImage.objects.filter(node=node)]
+                )
+            ]
+        }
+    except (KeyError, TypeError):
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def update_custom_base_image(**kwargs):
+    try:
+        with transaction.atomic():
+            image = CustomBaseImage.objects.select_for_update().get(
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+                id=kwargs['image_id'],
+            )
+            image.safe_camel_update(request.json['data']['attributes'])
+            image.save()
+            return {'data': image.make_resource_object()}
+    except (KeyError, TypeError) as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except InvalidUpdateDirectiveError as e:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, message=str(e))
+    except ValidationError as e:
+        raise HTTPError(
+            http_status.HTTP_422_UNPROCESSABLE_ENTITY,
+            message=str(e),
+        )
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'CustomBaseImage with id={kwargs["image_id"]} not found.',
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple CustomBaseImage have id={kwargs["image_id"]}.',
+        )
+
+@must_be_valid_project
+@must_have_permission(READ)
+@must_have_addon(SHORT_NAME, 'node')
+def delete_custom_base_image(**kwargs):
+    try:
+        with transaction.atomic():
+            image = CustomBaseImage.objects.select_for_update().get(
+                id=kwargs['image_id'],
+                user=kwargs['auth'].user,
+                node=kwargs['node'] or kwargs['project'],
+            )
+
+            deleted_count, _ = image.delete()
+
+            if deleted_count == 0:
+                raise HTTPError(
+                    http_status.HTTP_404_NOT_FOUND,
+                    message=f'CustomBaseImage with id={kwargs["image_id"]} not found.'
+                )
+
+            return {
+                'data': {
+                    'type': 'custom-base-image',
+                    'id': kwargs['image_id'],
+                }
+            }
+    except ObjectDoesNotExist:
+        raise HTTPError(
+            http_status.HTTP_404_NOT_FOUND,
+            message=f'CustomBaseImage with id={kwargs["image_id"]} not found.'
+        )
+    except MultipleObjectsReturned:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            message=f'Multiple CustomBaseImage have id={kwargs["image_id"]}.'
+        )
