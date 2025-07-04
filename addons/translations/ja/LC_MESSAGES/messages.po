@@ -683,28 +683,28 @@ msgid "Enter your verification code:"
 msgstr "確認コードを入力してください："
 
 #: weko/templates/weko_credentials_modal.mako:6
-msgid "Connect a WEKO Account"
-msgstr "WEKOアカウントに接続"
+msgid "Connect a JAIRO Cloud Account"
+msgstr "JAIRO Cloudアカウントに接続"
 
 #: weko/templates/weko_credentials_modal.mako:18
-msgid "WEKO Repository"
-msgstr "WEKOリポジトリ"
+msgid "JAIRO Cloud Repository"
+msgstr "JAIRO Cloudリポジトリ"
 
 #: weko/templates/weko_credentials_modal.mako:22
-msgid "Select a WEKO repository"
-msgstr "WEKOリポジトリを選択"
+msgid "Select a JAIRO Cloud repository"
+msgstr "JAIRO Cloudリポジトリを選択"
 
 #: weko/templates/weko_credentials_modal.mako:33
-msgid "WEKO SWORD URL"
-msgstr "WEKO SWORDのURL"
+msgid "JAIRO Cloud SWORD URL"
+msgstr "JAIRO Cloud SWORDのURL"
 
 #: weko/templates/weko_credentials_modal.mako:37
-msgid "WEKO Username"
-msgstr "WEKO ユーザ名"
+msgid "JAIRO Cloud Username"
+msgstr "JAIRO Cloud ユーザ名"
 
 #: weko/templates/weko_credentials_modal.mako:41
-msgid "WEKO Password"
-msgstr "WEKO パスワード"
+msgid "JAIRO Cloud Password"
+msgstr "JAIRO Cloud パスワード"
 
 #: weko/templates/weko_credentials_modal.mako:60
 msgid "Connect"

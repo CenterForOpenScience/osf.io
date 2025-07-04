@@ -900,15 +900,15 @@ msgid "Enter your verification code:"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:6
-msgid "Connect a WEKO Account"
+msgid "Connect a JAIRO Cloud Account"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:18
-msgid "WEKO Repository"
+msgid "JAIRO Cloud Repository"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:23
-msgid "Select a WEKO repository"
+msgid "Select a JAIRO Cloud repository"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:45

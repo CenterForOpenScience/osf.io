@@ -919,16 +919,16 @@ msgid "Enter your verification code:"
 msgstr "確認コードを入力してください："
 
 #: addons/weko/templates/weko_credentials_modal.mako:6
-msgid "Connect a WEKO Account"
-msgstr "WEKOアカウントに接続"
+msgid "Connect a JAIRO Cloud Account"
+msgstr "JAIRO Cloudアカウントに接続"
 
 #: addons/weko/templates/weko_credentials_modal.mako:18
-msgid "WEKO Repository"
-msgstr "WEKOリポジトリ"
+msgid "JAIRO Cloud Repository"
+msgstr "JAIRO Cloudリポジトリ"
 
 #: addons/weko/templates/weko_credentials_modal.mako:23
-msgid "Select a WEKO repository"
-msgstr "WEKOリポジトリを選択"
+msgid "Select a JAIRO Cloud repository"
+msgstr "JAIRO Cloudリポジトリを選択"
 
 #: addons/weko/templates/weko_credentials_modal.mako:45
 msgid "Connect"

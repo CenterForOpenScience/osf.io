@@ -1,5 +1,5 @@
 /**
- * Module that controls the WEKO node settings. Includes Knockout view-model
+ * Module that controls the JAIRO Cloud node settings. Includes Knockout view-model
  * for syncing data.
  */
 
@@ -58,7 +58,7 @@ function _flattenIndices(indices, level) {
 function ViewModel(url) {
     var self = this;
 
-    self.addonName = 'WEKO';
+    self.addonName = 'JAIRO Cloud';
     self.url = url;
     self.urls = ko.observable();
 
@@ -191,7 +191,7 @@ function ViewModel(url) {
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
-        Raven.captureMessage('Could not GET WEKO settings', {
+        Raven.captureMessage('Could not GET JAIRO Cloud settings', {
             extra: {
                 url: url,
                 textStatus: textStatus,
@@ -225,7 +225,7 @@ ViewModel.prototype.updateFromData = function(data) {
     }
 };
 
-/** Reset all fields from WEKO host selection modal */
+/** Reset all fields from JAIRO Cloud host selection modal */
 ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
@@ -252,7 +252,7 @@ ViewModel.prototype.setInfo = function() {
         self.submitting(false);
         var errorMessage = self.messages.setIndexError;
         self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with WEKO', {
+        Raven.captureMessage('Could not authenticate with JAIRO Cloud', {
             extra: {
                 url: self.urls().set,
                 textStatus: textStatus,
@@ -262,12 +262,12 @@ ViewModel.prototype.setInfo = function() {
     });
 };
 
-/** Send POST request to authorize WEKO */
+/** Send POST request to authorize JAIRO Cloud */
 ViewModel.prototype.connectOAuth = function() {
     var self = this;
     // Selection should not be empty
     if(!self.selectedRepo()) {
-        self.changeMessage(_('Please select WEKO repository.'), 'text-danger');
+        self.changeMessage(_('Please select JAIRO Cloud repository.'), 'text-danger');
         return;
     }
     window.oauthComplete = function() {

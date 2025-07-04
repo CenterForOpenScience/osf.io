@@ -223,7 +223,7 @@ function findItem(item, item_id) {
 
 function showError(tb, message) {
     if (!tb) {
-        $osf.growl('WEKO Error:', message);
+        $osf.growl('JAIRO Cloud Error:', message);
         return;
     }
     var modalContent = [
@@ -561,7 +561,7 @@ function createMetadataSelectorForJQuery(item, changedCallback) {
                 .text(s.attributes.name));
         });
         if (schemas.length === 0) {
-            errorView.text(_('No file metadata is defined for the schema available for depositting to WEKO.')).show();
+            errorView.text(_('No file metadata is defined for the schema available for depositting to JAIRO Cloud.')).show();
         }
         schemaLoading.hide();
         valueChanged();
@@ -614,7 +614,7 @@ function showConfirmDeposit(contextItem, callback) {
         callback(false);
     };
     const message = sprintf(
-        _('Do you want to deposit the file/folder "%1$s" to WEKO? This operation is irreversible.'),
+        _('Do you want to deposit the file/folder "%1$s" to JAIRO Cloud? This operation is irreversible.'),
         $osf.htmlEscape(contextItem.data.name)
     );
     const dialog = $('<div class="modal fade" data-backdrop="static"></div>');
@@ -667,7 +667,7 @@ function searchMetadatas(tree, recursive) {
             metadata: metadata,
             item: tree
         });
-    } else if (recursive && ((data.extra && data.extra.weko === 'index') || data.addonFullname === 'WEKO')) {
+    } else if (recursive && ((data.extra && data.extra.weko === 'index') || data.addonFullname === 'JAIRO Cloud')) {
         (tree.children || []).forEach(function(item) {
             r = r.concat(searchMetadatas(item, recursive));
         });
@@ -834,7 +834,7 @@ function addDepositButtonToMetadataDialog() {
         contextVars.metadataHandlers = metadataHandlers = {};
     }
     metadataHandlers.weko = {
-        text: _('Save and Deposit to WEKO'),
+        text: _('Save and Deposit to JAIRO Cloud'),
         click: function(item, schema, fileMetadata) {
             if (!item.data.nodeApiUrl) {
                 const item_ = {
