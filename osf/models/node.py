@@ -145,7 +145,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     row.append(root.pk)
                 return AbstractNode.objects.filter(id__in=row)
 
-    def can_view(self, user=None, private_link=None):
+    def can_view(self, user=None, private_link=None, **custom_filters):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
@@ -155,10 +155,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             return self.filter(private_links__is_deleted=False, private_links__key=private_link).filter(
                 is_deleted=False)
 
+        # By default, only public nodes are shown. However, custom filters can be provided.
+        # This is useful when you want to display a specific subset of nodes unrelated to
+        # the current user (e.g. only `pending` nodes for moderators).
+        qs = self.filter(is_public=True) if not custom_filters else self.filter(**custom_filters)
         if user is not None and not isinstance(user, AnonymousUser):
-            qs = self
-            read_user_query = get_objects_for_user(user, READ_NODE, self, with_superuser=False)
-            qs |= read_user_query
+            qs |= get_objects_for_user(user, READ_NODE, self, with_superuser=False)
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -178,9 +180,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     ) SELECT * FROM implicit_read
                 )
             """], params=(user.id,))
-        else:
-            # show only public nodes for non-authorized users
-            qs = self.filter(is_public=True)
+
         return qs.filter(is_deleted=False)
 
 
