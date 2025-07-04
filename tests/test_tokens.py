@@ -95,9 +95,15 @@ class SanctionTokenHandlerBase(OsfTestCase):
         approval_token = self.sanction.approval_state[self.user._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
         with mock_auth(self.user):
-            with mock.patch(f'osf.utils.tokens.handlers.{self.kind}_handler') as mock_handler:
+            action_key = f'approve_{self.kind}'
+            with mock.patch.object(handler, 'HANDLERS') as mock_handlers:
+                mock_partial_func = mock.Mock()
+                mock_handlers.get.return_value = mock_partial_func
+
                 handler.to_response()
-                mock_handler.assert_called_with('approve', self.reg, self.reg.registered_from)
+
+                mock_handlers.get.assert_called_once_with(action_key)
+                mock_partial_func.assert_called_once_with(handler.payload, approval_token)
 
     def test_sanction_handler_no_sanction(self):
         if not self.kind:
