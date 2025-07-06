@@ -5,15 +5,33 @@ from framework.status import pop_status_messages
 
 from website.settings import EXTERNAL_EMBER_APPS
 
-ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+def get_primary_app_config():
+    from website.settings import PRIMARY_WEB_APP
+    return EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP, {})
+
+def get_primary_app_dir():
+    app_config = get_primary_app_config()
+    if 'path' in app_config:
+        return os.path.abspath(os.path.join(os.getcwd(), app_config['path']))
+    return None
 
 routes = [
     '/institutions/',
 ]
 
 def use_ember_app(**kwargs):
+    from rest_framework import status as http_status
+    from framework.exceptions import HTTPError
     from website.views import stream_emberapp
-    resp = stream_emberapp(EXTERNAL_EMBER_APPS['ember_osf_web']['server'], ember_osf_web_dir)
+
+    app_config = get_primary_app_config()
+    if not app_config:
+        raise HTTPError(
+            http_status.HTTP_500_INTERNAL_SERVER_ERROR,
+            data={'message': 'Primary web app not configured'}
+        )
+
+    resp = stream_emberapp(app_config['server'], get_primary_app_dir())
     messages = pop_status_messages()
     if messages:
         try:

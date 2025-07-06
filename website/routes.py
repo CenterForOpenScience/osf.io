@@ -265,7 +265,11 @@ def ember_app(path=None):
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
     if settings.PROXY_EMBER_APPS:
-        path = request.path[len(ember_app['path']):]
+        strip_prefix = ember_app.get('strip_prefix')
+        if strip_prefix or strip_prefix is None:
+            path = request.path[len(ember_app['path']):]
+        else:
+            path = request.path
         url = urljoin(ember_app['server'], path)
         resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
@@ -378,7 +382,11 @@ def make_url_map(app):
                 ),
             ], prefix='/' + prefix)
 
-        if EXTERNAL_EMBER_APPS.get('ember_osf_web'):
+        # Import PRIMARY_WEB_APP setting
+        from website.settings import PRIMARY_WEB_APP
+        
+        primary_app_config = EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP)
+        if primary_app_config:
             process_rules(app, [
                 Rule(
                     ember_osf_web_views.routes,
@@ -387,8 +395,8 @@ def make_url_map(app):
                     notemplate
                 )
             ])
-            if 'routes' in EXTERNAL_EMBER_APPS['ember_osf_web']:
-                for route in EXTERNAL_EMBER_APPS['ember_osf_web']['routes']:
+            if 'routes' in primary_app_config:
+                for route in primary_app_config['routes']:
                     process_rules(app, [
                         Rule(
                             [

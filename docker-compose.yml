@@ -284,6 +284,23 @@ services:
       - ember_osf_web_dist_vol:/code/dist
     stdin_open: true
 
+  #################
+  # Anguler OSF   #
+  #################
+
+  angular_osf:
+    image: chiku314/angular-osf:latest
+    ports:
+      - '4300:4300'
+    depends_on:
+      - api
+      - web
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+      - NG_CLI_ANALYTICS=false
+    command: ['npx', 'ng', 'serve', '--host', '0.0.0.0', '--port', '4300', '--poll', '2000']
+
   #############
   # Preprints #
   #############

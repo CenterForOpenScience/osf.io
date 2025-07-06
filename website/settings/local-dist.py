@@ -33,10 +33,22 @@ USE_EXTERNAL_EMBER = True
 PROXY_EMBER_APPS = True
 EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
 LIVE_RELOAD_DOMAIN = f'http://{EMBER_DOMAIN}:4200'  # Change port for the current app
+# Primary web frontend app configuration - change this to switch between ember and angular
+PRIMARY_WEB_APP = 'angular_osf'
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
         'server': f'http://{EMBER_DOMAIN}:4200/',
         'path': '/ember_osf_web/',
+        'routes': [
+            'collections',
+            'registries',
+            'handbook',
+        ],
+    },
+    'angular_osf': {
+        'server': f'http://{EMBER_DOMAIN}:4300/',
+        'path': '/angular_osf/',
+        'strip_prefix': False,
         'routes': [
             'collections',
             'registries',
