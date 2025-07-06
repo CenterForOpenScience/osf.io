@@ -3,11 +3,11 @@ import json
 from website import settings
 from framework.status import pop_status_messages
 
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_WEB_APPS
 
 def get_primary_app_config():
     from website.settings import PRIMARY_WEB_APP
-    return EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP, {})
+    return EXTERNAL_WEB_APPS.get(PRIMARY_WEB_APP, {})
 
 def get_primary_app_dir():
     app_config = get_primary_app_config()
@@ -19,10 +19,10 @@ routes = [
     '/institutions/',
 ]
 
-def use_ember_app(**kwargs):
+def use_primary_web_app(**kwargs):
     from rest_framework import status as http_status
     from framework.exceptions import HTTPError
-    from website.views import stream_emberapp
+    from website.views import stream_web_app
 
     app_config = get_primary_app_config()
     if not app_config:
@@ -31,7 +31,7 @@ def use_ember_app(**kwargs):
             data={'message': 'Primary web app not configured'}
         )
 
-    resp = stream_emberapp(app_config['server'], get_primary_app_dir())
+    resp = stream_web_app(app_config['server'], get_primary_app_dir())
     messages = pop_status_messages()
     if messages:
         try:

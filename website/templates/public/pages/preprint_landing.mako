@@ -6,8 +6,8 @@
 <h2>Preprints service is not activated.</h2>
 <ul>
 <li>Set the following in local.py:</li>
-<pre><code>USE_EXTERNAL_EMBER = True
-EXTERNAL_EMBER_APPS = {
+<pre><code>USE_EXTERNAL_WEB_APP = True
+EXTERNAL_WEB_APPS = {
   'preprints': {
     'url': '/preprints/',
     'server': 'http://localhost:4200',

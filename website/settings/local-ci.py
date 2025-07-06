@@ -26,9 +26,9 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
-USE_EXTERNAL_EMBER = True
+USE_EXTERNAL_WEB_APP = True
 PRIMARY_WEB_APP = 'ember_osf_web'
-EXTERNAL_EMBER_APPS = {
+EXTERNAL_WEB_APPS = {
     'ember_osf_web': {
         'server': 'http://localhost:4200',
         'path': os.environ.get('HOME') + 'website/ember_osf_web/'

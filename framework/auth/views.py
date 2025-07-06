@@ -35,7 +35,7 @@ from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from osf import features
 
 

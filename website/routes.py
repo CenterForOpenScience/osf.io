@@ -57,10 +57,10 @@ from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
 from website.notifications import views as notification_views
-from website.ember_osf_web import views as ember_osf_web_views
+from website.external_web_app import views as external_web_app_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
-from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
+from website.settings import EXTERNAL_WEB_APPS, EXTERNAL_APP_SERVER_TIMEOUT
 
 from api.waffle.utils import flag_is_active
 
@@ -244,9 +244,9 @@ def ember_app(path=None):
 
     ember_app = None
 
-    for k in EXTERNAL_EMBER_APPS.keys():
+    for k in EXTERNAL_WEB_APPS.keys():
         if request.path.strip('/').startswith(k):
-            ember_app = EXTERNAL_EMBER_APPS[k]
+            ember_app = EXTERNAL_WEB_APPS[k]
             if k == 'preprints':
                 # If a valid guid is provided w/o version, find and redirect to the latest version. This only applies
                 # to route preprints/<provider_id>/<preprint_id>: e.g. /preprints/osf/abcde -> /preprints/osf/abcde_v3
@@ -258,20 +258,20 @@ def ember_app(path=None):
                         if preprint and preprint._id != guid_str:
                             return redirect(f"{settings.DOMAIN}preprints/{path_values[0]}/{preprint._id}", code=302)
                 # For all other cases, let ember app handle it
-                ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
+                ember_app = EXTERNAL_WEB_APPS.get('ember_osf_web', False) or ember_app
             break
 
     if not ember_app:
         raise HTTPError(http_status.HTTP_404_NOT_FOUND)
 
-    if settings.PROXY_EMBER_APPS:
+    if settings.PROXY_WEB_APPS:
         strip_prefix = ember_app.get('strip_prefix')
         if strip_prefix or strip_prefix is None:
             path = request.path[len(ember_app['path']):]
         else:
             path = request.path
         url = urljoin(ember_app['server'], path)
-        resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
+        resp = requests.get(url, stream=True, timeout=EXTERNAL_APP_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
         excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
         headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
         return Response(resp.content, resp.status_code, headers)
@@ -352,10 +352,10 @@ def make_url_map(app):
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
-    # Ember Applications
-    if settings.USE_EXTERNAL_EMBER:
-        # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in EXTERNAL_EMBER_APPS.keys():
+    # External Applications
+    if settings.USE_EXTERNAL_WEB_APP:
+        # Routes that serve up the external application. Hide behind feature flag.
+        for prefix in EXTERNAL_WEB_APPS.keys():
             process_rules(app, [
                 Rule(
                     [
@@ -384,14 +384,14 @@ def make_url_map(app):
 
         # Import PRIMARY_WEB_APP setting
         from website.settings import PRIMARY_WEB_APP
-        
-        primary_app_config = EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP)
+
+        primary_app_config = EXTERNAL_WEB_APPS.get(PRIMARY_WEB_APP)
         if primary_app_config:
             process_rules(app, [
                 Rule(
-                    ember_osf_web_views.routes,
+                    external_web_app_views.routes,
                     'get',
-                    ember_osf_web_views.use_ember_app,
+                    external_web_app_views.use_primary_web_app,
                     notemplate
                 )
             ])
@@ -404,7 +404,7 @@ def make_url_map(app):
                                 '/<path:path>',
                             ],
                             'get',
-                            ember_osf_web_views.use_ember_app,
+                            external_web_app_views.use_primary_web_app,
                             notemplate,
                             endpoint_suffix='__' + route
                         )
