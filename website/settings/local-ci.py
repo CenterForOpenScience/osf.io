@@ -27,6 +27,7 @@ PREPRINT_PROVIDER_DOMAINS = {
     'suffix': ':4201/'
 }
 USE_EXTERNAL_EMBER = True
+PRIMARY_WEB_APP = 'ember_osf_web'
 EXTERNAL_EMBER_APPS = {
     'ember_osf_web': {
         'server': 'http://localhost:4200',

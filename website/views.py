@@ -35,7 +35,14 @@ from osf.metadata.tools import pls_gather_metadata_file
 from api.waffle.utils import storage_i18n_flag_active, flag_is_active
 
 logger = logging.getLogger(__name__)
-ember_osf_web_dir = os.path.abspath(os.path.join(os.getcwd(), EXTERNAL_EMBER_APPS['ember_osf_web']['path']))
+def get_primary_web_app_dir():
+    from website.settings import PRIMARY_WEB_APP
+    primary_app_config = EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP, {})
+    if 'path' in primary_app_config:
+        return os.path.abspath(os.path.join(os.getcwd(), primary_app_config['path']))
+    return None
+
+primary_web_app_dir = get_primary_web_app_dir()
 
 
 def serialize_contributors_for_summary(node, max_count=3):
