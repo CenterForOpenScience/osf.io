@@ -18,7 +18,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from osf.external.gravy_valet.request_helpers import get_gv_citation_url_list_for_project
 from osf.external.gravy_valet.translations import EphemeralAddonConfig
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
@@ -31,7 +31,7 @@ from osf import features
 from website import language
 
 from website.util import rubeus
-from website.ember_osf_web.views import use_ember_app
+from website.external_web_app.views import use_primary_web_app
 from osf.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
@@ -269,7 +269,7 @@ def project_before_template(auth, node, **kwargs):
 def node_registrations(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect(f'/{node._id}/registrations/')
-    return use_ember_app()
+    return use_primary_web_app()
 
 
 @must_be_valid_project
@@ -278,7 +278,7 @@ def node_registrations(auth, node, **kwargs):
 def node_forks(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/forks/')
-    return use_ember_app()
+    return use_primary_web_app()
 
 
 @must_be_valid_project
@@ -576,7 +576,7 @@ def project_reorder_components(node, **kwargs):
 def project_statistics(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/analytics/')
-    return use_ember_app()
+    return use_primary_web_app()
 
 
 ###############################################################################

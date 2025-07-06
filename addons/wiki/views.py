@@ -17,7 +17,7 @@ from osf import features
 from website.profile.utils import get_profile_image_url
 from website.project.views.node import _view_project
 from website.project.model import has_anonymous_link
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from website.project.decorators import (
     must_be_contributor_or_public,
     must_have_addon, must_not_be_registration,

@@ -94,12 +94,12 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': PROTOCOL,
     'suffix': '/'
 }
-# External Ember App Local Development
-USE_EXTERNAL_EMBER = False
-PROXY_EMBER_APPS = False
+# External Web App Local Development
+USE_EXTERNAL_WEB_APP = False
+PROXY_WEB_APPS = False
 # http://docs.python-requests.org/en/master/user/advanced/#timeouts
-EXTERNAL_EMBER_SERVER_TIMEOUT = 3.05
-EXTERNAL_EMBER_APPS = {}
+EXTERNAL_APP_SERVER_TIMEOUT = 3.05
+EXTERNAL_WEB_APPS = {}
 
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')

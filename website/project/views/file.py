@@ -10,7 +10,7 @@ from api.waffle.utils import flag_is_active
 from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_not_be_retracted_registration
 from website.project.views.node import _view_project
-from website.ember_osf_web.views import use_ember_app
+from website.external_web_app.views import use_primary_web_app
 
 
 @must_not_be_retracted_registration
@@ -20,10 +20,10 @@ def collect_file_trees(auth, node, **kwargs):
     format data as appropriate.
     """
     if isinstance(node, Node) and flag_is_active(request, features.EMBER_PROJECT_FILES):
-        return use_ember_app()
+        return use_primary_web_app()
 
     if isinstance(node, Registration) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
-        return use_ember_app()
+        return use_primary_web_app()
 
     serialized = _view_project(node, auth, primary=True)
     # Add addon static assets

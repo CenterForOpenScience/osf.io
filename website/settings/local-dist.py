@@ -29,15 +29,15 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
-USE_EXTERNAL_EMBER = True
-PROXY_EMBER_APPS = True
-EMBER_DOMAIN = environ.get('EMBER_DOMAIN', 'localhost')
-LIVE_RELOAD_DOMAIN = f'http://{EMBER_DOMAIN}:4200'  # Change port for the current app
-# Primary web frontend app configuration - change this to switch between ember and angular
+USE_EXTERNAL_WEB_APP = True
+PROXY_WEB_APPS = True
+PRIMARY_WEB_APP_DOMAIN = environ.get('PRIMARY_WEB_APP_DOMAIN', 'localhost')
+
+# Primary web app configuration - change this to switch between ember and angular
 PRIMARY_WEB_APP = 'angular_osf'
-EXTERNAL_EMBER_APPS = {
+EXTERNAL_WEB_APPS = {
     'ember_osf_web': {
-        'server': f'http://{EMBER_DOMAIN}:4200/',
+        'server': f'http://{PRIMARY_WEB_APP_DOMAIN}:4200/',
         'path': '/ember_osf_web/',
         'routes': [
             'collections',
@@ -46,7 +46,7 @@ EXTERNAL_EMBER_APPS = {
         ],
     },
     'angular_osf': {
-        'server': f'http://{EMBER_DOMAIN}:4300/',
+        'server': f'http://{PRIMARY_WEB_APP_DOMAIN}:4300/',
         'path': '/angular_osf/',
         'strip_prefix': False,
         'routes': [
@@ -56,14 +56,16 @@ EXTERNAL_EMBER_APPS = {
         ],
     },
     'preprints': {
-        'server': f'http://{EMBER_DOMAIN}:4201/',
+        'server': f'http://{PRIMARY_WEB_APP_DOMAIN}:4201/',
         'path': '/preprints/'
     },
     'reviews': {
-        'server': f'http://{EMBER_DOMAIN}:4203/',
+        'server': f'http://{PRIMARY_WEB_APP_DOMAIN}:4203/',
         'path': '/reviews/'
     },
 }
+
+LIVE_RELOAD_DOMAIN = EXTERNAL_WEB_APPS[PRIMARY_WEB_APP]['server']
 
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10

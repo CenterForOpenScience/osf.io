@@ -269,8 +269,8 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 302
         assert f'{WATERBUTLER_URL}/v1/resources/{unpub_pp._id}/providers/{unpub_pp.primary_file.provider}{unpub_pp.primary_file.path}?version=1&action=download&direct' in res.location
 
-    @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
-    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
+    @mock.patch('website.settings.USE_EXTERNAL_WEB_APP', True)
+    @mock.patch('website.settings.EXTERNAL_WEB_APPS', {
         'preprints': {
             'server': 'http://localhost:4200',
             'path': '/preprints/'
@@ -289,8 +289,8 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 302
         assert f'{WATERBUTLER_URL}/v1/resources/{pp._id}/providers/{pp.primary_file.provider}{pp.primary_file.path}?action=download&direct&version=1' in res.location
 
-    @mock.patch('website.settings.USE_EXTERNAL_EMBER', True)
-    @mock.patch('website.settings.EXTERNAL_EMBER_APPS', {
+    @mock.patch('website.settings.USE_EXTERNAL_WEB_APP', True)
+    @mock.patch('website.settings.EXTERNAL_WEB_APPS', {
         'preprints': {
             'server': 'http://localhost:4200',
             'path': '/preprints/'

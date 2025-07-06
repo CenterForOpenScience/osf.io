@@ -25,7 +25,7 @@ from website.project.decorators import (
     must_have_permission,
 )
 from website import settings
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 
 from website.project import utils
 from website.project.metadata.schemas import METASCHEMA_ORDERING

@@ -15,7 +15,7 @@ from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
 from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
 from website.mails import send_mail
 from website.util import web_url_for

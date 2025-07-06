@@ -24,9 +24,9 @@ from addons.osfstorage.models import Region, OsfStorageFile
 from osf import features, exceptions
 from osf.models import Guid, Preprint, AbstractNode, Node, DraftNode, Registration, BaseFileNode
 
-from website.settings import EXTERNAL_EMBER_APPS, PROXY_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT, DOMAIN
-from website.ember_osf_web.decorators import ember_flag_is_active
-from website.ember_osf_web.views import use_ember_app
+from website.settings import EXTERNAL_WEB_APPS, PROXY_WEB_APPS, EXTERNAL_APP_SERVER_TIMEOUT, DOMAIN
+from website.external_web_app.decorators import ember_flag_is_active
+from website.external_web_app.views import use_primary_web_app
 from website.project.decorators import check_contributor_auth
 from website.project.model import has_anonymous_link
 from osf.utils import permissions
@@ -37,7 +37,7 @@ from api.waffle.utils import storage_i18n_flag_active, flag_is_active
 logger = logging.getLogger(__name__)
 def get_primary_web_app_dir():
     from website.settings import PRIMARY_WEB_APP
-    primary_app_config = EXTERNAL_EMBER_APPS.get(PRIMARY_WEB_APP, {})
+    primary_app_config = EXTERNAL_WEB_APPS.get(PRIMARY_WEB_APP, {})
     if 'path' in primary_app_config:
         return os.path.abspath(os.path.join(os.getcwd(), primary_app_config['path']))
     return None
@@ -139,7 +139,7 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
     return summary
 
 def index():
-    return use_ember_app()
+    return use_primary_web_app()
 
 def find_bookmark_collection(user):
     Collection = apps.get_model('osf.Collection')
@@ -147,7 +147,7 @@ def find_bookmark_collection(user):
 
 @must_be_logged_in
 def dashboard(auth):
-    return use_ember_app()
+    return use_primary_web_app()
 
 @must_be_logged_in
 @ember_flag_is_active(features.EMBER_MY_PROJECTS)
@@ -237,9 +237,9 @@ def resolve_guid_download(guid, provider=None):
     return proxy_url(_build_guid_url(unquote(resource.deep_url)))
 
 
-def stream_emberapp(server, directory):
-    if PROXY_EMBER_APPS:
-        resp = requests.get(server, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT)
+def stream_web_app(server, directory):
+    if PROXY_WEB_APPS:
+        resp = requests.get(server, stream=True, timeout=EXTERNAL_APP_SERVER_TIMEOUT)
         return Response(stream_with_context(resp.iter_content()), resp.status_code)
     return send_from_directory(directory, 'index.html')
 
@@ -306,40 +306,40 @@ def resolve_guid(guid, suffix=None):
         if format_arg:
             return guid_metadata_download(guid, resource, format_arg)
         else:
-            return use_ember_app()
+            return use_primary_web_app()
 
     # Stream to ember app if resource has emberized view
     if isinstance(resource, Preprint):
         if resource.provider.domain_redirect_enabled:
             return redirect(resource.absolute_url, http_status.HTTP_301_MOVED_PERMANENTLY)
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Registration) and (clean_suffix in ('', 'comments', 'links', 'components', 'resources',)) and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Registration) and clean_suffix and clean_suffix.startswith('metadata') and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Registration) and (clean_suffix in ('files', 'files/osfstorage')) and flag_is_active(request, features.EMBER_REGISTRATION_FILES):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Registration) and clean_suffix and (clean_suffix.startswith('recent-activity')):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('files') and flag_is_active(request, features.EMBER_PROJECT_FILES):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, Node) and clean_suffix and (clean_suffix.startswith('metadata') or clean_suffix.startswith('components') or clean_suffix.startswith('links')):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, OsfStorageFile) and isinstance(resource.target, DraftNode):
-        return use_ember_app()
+        return use_primary_web_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
-            return use_ember_app()
+            return use_primary_web_app()
         if isinstance(resource.target, Node) and flag_is_active(request, features.EMBER_FILE_PROJECT_DETAIL):
-            return use_ember_app()
+            return use_primary_web_app()
 
     # Redirect to legacy endpoint for Nodes, Wikis etc.
     url = _build_guid_url(unquote(resource.deep_url), suffix)
