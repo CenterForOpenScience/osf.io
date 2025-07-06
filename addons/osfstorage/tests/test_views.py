@@ -36,7 +36,7 @@ from api.caching.utils import storage_usage_cache
 
 from osf_tests.factories import ProjectFactory, ApiOAuth2PersonalTokenFactory, PreprintFactory
 from website.files.utils import attach_versions
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_WEB_APPS
 from api_tests.draft_nodes.views.test_draft_node_files_lists import prepare_mock_wb_response
 
 
@@ -1419,7 +1419,7 @@ class TestFileViews(StorageTestCase):
             file = GithubFile.objects.get(_path='/testpath', provider='github')
             assert file.history
 
-    @mock.patch('website.views.stream_emberapp')
+    @mock.patch('website.views.stream_web_app')
     def test_file_views(self, mock_ember):
         with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
             file = create_test_file(target=self.node, user=self.user)
@@ -1433,8 +1433,8 @@ class TestFileViews(StorageTestCase):
             assert mock_ember.called
             args, kwargs = mock_ember.call_args
 
-            assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-            assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
+            assert args[0] == EXTERNAL_WEB_APPS['ember_osf_web']['server']
+            assert args[1] == EXTERNAL_WEB_APPS['ember_osf_web']['path'].rstrip('/')
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)

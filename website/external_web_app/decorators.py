@@ -3,7 +3,7 @@ import functools
 from flask import request
 
 from api.waffle.utils import flag_is_active
-from website.ember_osf_web.views import use_ember_app
+from website.external_web_app.views import use_primary_web_app
 
 
 def ember_flag_is_active(flag_name):
@@ -15,7 +15,7 @@ def ember_flag_is_active(flag_name):
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             if flag_is_active(request, flag_name):
-                return use_ember_app()
+                return use_primary_web_app()
             else:
                 return func(*args, **kwargs)
         return wrapped
