@@ -342,6 +342,7 @@ CROSSREF_USERNAME = None
 CROSSREF_PASSWORD = None
 CROSSREF_URL = None  # Location to POST crossref data. In production, change this to the production CrossRef API endpoint
 CROSSREF_DEPOSITOR_EMAIL = 'None'  # This email will receive confirmation/error messages from CrossRef on submission
+CROSSREF_UNAVAILABLE_DELAY = 24 * 60 * 60
 
 ECSARXIV_CROSSREF_USERNAME = None
 ECSARXIV_CROSSREF_PASSWORD = None
