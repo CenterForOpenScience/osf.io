@@ -24,7 +24,8 @@ from osf.models import (
     RegistrationProvider,
     AbstractProvider, AbstractNode, Preprint, OSFUser,
 )
-from osf.models.notification import NotificationSubscription, NotificationType
+from osf.models.notification_type import NotificationType
+from osf.models.notification_subscription import NotificationSubscription
 
 
 class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):

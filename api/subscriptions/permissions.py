@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from osf.models.notification import NotificationSubscription
+from osf.models.notification_subscription import NotificationSubscription
 
 
 class IsSubscriptionOwner(permissions.BasePermission):
