@@ -98,8 +98,9 @@ from osf.models import (
     Registration,
     OSFUser,
     Email,
-    Tag,
+    Tag, NotificationType,
 )
+from osf.models.notification import FrequencyChoices
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
@@ -842,11 +843,20 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                notification_type_name = NotificationType.Type.USER_PASSWORD_RESET.value
+                notification_type, created = NotificationType.objects.get_or_create(
+                    name=notification_type_name,
+                    defaults={
+                        'notification_freq': FrequencyChoices.INSTANTLY.value,
+                        'template': mail_template
+                    }
+                )
+                event_context = {
+                    'reset_link': reset_link,
+                }
+                notification_type.emit(
+                    user=email,
+                    event_context=event_context,
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
