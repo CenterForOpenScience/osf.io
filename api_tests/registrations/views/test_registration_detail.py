@@ -338,6 +338,8 @@ class TestRegistrationUpdateTestCase:
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
+
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_update_registration(
             self, app, user, read_only_contributor,
             read_write_contributor, public_registration,
@@ -418,6 +420,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_fields(
             self, app, user, public_registration,
             private_registration, public_url, institution_one,
@@ -564,6 +567,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
             expect_errors=True)
         assert res.status_code == 400
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_turning_private_registrations_public(
             self, app, user, make_payload):
         private_project = ProjectFactory(creator=user, is_public=False)
@@ -781,6 +785,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
         assert mock_send_mail.called
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(
             self, app, user, public_project, public_registration, public_url, public_payload):
         public_registration.embargo_registration(
@@ -939,6 +944,7 @@ class TestRegistrationTags:
             }
         }
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registration_tags(
             self, app, registration_public, registration_private,
             url_registration_public, url_registration_private,

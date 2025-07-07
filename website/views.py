@@ -339,7 +339,7 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Node) and clean_suffix and clean_suffix.startswith('files') and flag_is_active(request, features.EMBER_PROJECT_FILES):
         return use_ember_app()
 
-    elif isinstance(resource, Node) and clean_suffix and (clean_suffix.startswith('metadata') or clean_suffix.startswith('components')):
+    elif isinstance(resource, Node) and clean_suffix and (clean_suffix.startswith('metadata') or clean_suffix.startswith('components') or clean_suffix.startswith('links')):
         return use_ember_app()
 
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):

@@ -3743,6 +3743,7 @@ class TestNodeUpdate:
         last_log = node.logs.latest()
         assert last_log.action == NodeLog.MADE_PRIVATE
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_update_can_make_registration_public(self):
         reg = RegistrationFactory(is_public=False)
         reg.update({'is_public': True})

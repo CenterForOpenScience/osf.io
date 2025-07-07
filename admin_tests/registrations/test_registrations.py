@@ -92,12 +92,14 @@ class TestRegistrationSpamHam:
         embargoed_registration_from_changed_to_private_project.confirm_ham(save=True)
         assert not embargoed_registration_from_changed_to_private_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_public_registration_from_public_project_spam_ham(self, superuser, public_registration_from_public_project):
         public_registration_from_public_project.confirm_spam(save=True)
         assert not public_registration_from_public_project.is_public
         public_registration_from_public_project.confirm_ham(save=True)
         assert public_registration_from_public_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_public_registration_from_private_project_spam_ham(self, superuser, public_registration_from_private_project):
         public_registration_from_private_project.confirm_spam(save=True)
         assert not public_registration_from_private_project.is_public
@@ -110,18 +112,21 @@ class TestRegistrationSpamHam:
         private_registration_from_public_project.confirm_ham(save=True)
         assert not private_registration_from_public_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_public_registration_from_changed_to_public_project_spam_ham(self, superuser, public_registration_from_changed_to_public_project):
         public_registration_from_changed_to_public_project.confirm_spam(save=True)
         assert not public_registration_from_changed_to_public_project.is_public
         public_registration_from_changed_to_public_project.confirm_ham(save=True)
         assert public_registration_from_changed_to_public_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_public_registration_from_changed_to_private_project_spam_ham(self, superuser, public_registration_from_changed_to_private_project):
         public_registration_from_changed_to_private_project.confirm_spam(save=True)
         assert not public_registration_from_changed_to_private_project.is_public
         public_registration_from_changed_to_private_project.confirm_ham(save=True)
         assert public_registration_from_changed_to_private_project.is_public
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_unapproved_registration_task(self, embargoed_registration_from_changed_to_public_project):
         embargoed_registration_from_changed_to_public_project.registration_approval.state = 'unapproved'
         embargoed_registration_from_changed_to_public_project.registration_approval.initiation_date -= timedelta(3)
@@ -131,6 +136,7 @@ class TestRegistrationSpamHam:
         embargoed_registration_from_changed_to_public_project.registration_approval.refresh_from_db()
         assert embargoed_registration_from_changed_to_public_project.registration_approval.state == 'approved'
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_unapproved_registration_task_after_spam(self, embargoed_registration_from_changed_to_public_project):
         embargoed_registration_from_changed_to_public_project.registration_approval.state = 'unapproved'
         embargoed_registration_from_changed_to_public_project.registration_approval.initiation_date -= timedelta(3)
@@ -141,6 +147,7 @@ class TestRegistrationSpamHam:
         embargoed_registration_from_changed_to_public_project.registration_approval.refresh_from_db()
         assert embargoed_registration_from_changed_to_public_project.registration_approval.state == 'unapproved'
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_unapproved_registration_task_after_spam_ham(self, embargoed_registration_from_changed_to_public_project):
         embargoed_registration_from_changed_to_public_project.registration_approval.state = 'unapproved'
         embargoed_registration_from_changed_to_public_project.registration_approval.initiation_date -= timedelta(3)
