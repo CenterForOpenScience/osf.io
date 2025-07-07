@@ -34,7 +34,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -66,7 +65,6 @@ from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
-from website.notifications.emails import localize_timestamp
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>
@@ -579,17 +577,20 @@ def create_waterbutler_log(payload, **kwargs):
                 )
 
             if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                template = 'file_operation_failed' if payload.get('errors') else 'file_operation_success'
+
+                context = {}
+                context['action'] = payload['action']
+                context['source_node'] = source_node
+                context['destination_node'] = destination_node
+                context['source_path'] = payload['source']['materialized']
+                context['source_addon'] = payload['source']['addon']
+                context['destination_addon'] = payload['destination']['addon']
+                context['osf_support_email'] = settings.OSF_SUPPORT_EMAIL
+
+                NotificationType.objects.get(name=template).emit(
+                    user=user,
+                    event_context=context,
                 )
 
             if payload.get('errors'):
@@ -607,26 +608,7 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-
-        f_type, action = action.split('_')
-        if payload['metadata']['materialized'].endswith('/'):
-            f_type = 'folder'
-        html_message = '{action} {f_type} "<b>{name}</b>".'.format(
-            action=markupsafe.escape(action),
-            f_type=markupsafe.escape(f_type),
-            name=markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))
-        )
-
-        context = {}
-        context['message'] = html_message
-        context['profile_image_url'] = user.profile_image_url()
-        context['localized_timestamp'] = localize_timestamp(timezone.now(), user)
-        context['user_fullname'] = user.fullname
-        context['url'] = node.absolute_url
-        NotificationType.objects.get(name=action).emit(
-            user=user,
-            event_context=context,
-        )
+        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
