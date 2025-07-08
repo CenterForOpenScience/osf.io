@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from osf.models.notification_type import get_default_frequency_choices
+from osf.models.notification import Notification
 
 from .base import BaseModel
 
@@ -38,9 +40,8 @@ class NotificationSubscription(BaseModel):
         else:
             if self.content_type or self.object_id:
                 raise ValidationError('Global subscriptions must not have an object.')
-        from . import NotificationType
 
-        allowed_freqs = self.notification_type.notification_interval_choices or NotificationType.DEFAULT_FREQUENCY_CHOICES
+        allowed_freqs = self.notification_type.notification_interval_choices or get_default_frequency_choices()
         if self.message_frequency not in allowed_freqs:
             raise ValidationError(f'{self.message_frequency!r} is not allowed for {self.notification_type.name!r}.')
 
@@ -59,8 +60,6 @@ class NotificationSubscription(BaseModel):
             subscribed_object (optional): The object the subscription is related to.
             event_context (dict, optional): Context for rendering the notification template.
         """
-        from . import Notification
-
         if self.message_frequency == 'instantly':
             Notification.objects.create(
                 subscription=self,

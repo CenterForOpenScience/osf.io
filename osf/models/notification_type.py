@@ -2,8 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
-from .notification_subscription import NotificationSubscription
-from .notification import Notification
+from osf.models.notification import Notification
 from enum import Enum
 
 
@@ -190,7 +189,7 @@ class NotificationType(models.Model):
         help_text='Template used to render the subject line of email. Supports Django template syntax.'
     )
 
-    def emit(self, user, subscribed_object=None, event_context=None):
+    def emit(self, user, subscribed_object=None, message_frequency=None, event_context=None):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
         Args:
@@ -198,12 +197,13 @@ class NotificationType(models.Model):
             subscribed_object (optional): The object the subscription is related to.
             event_context (dict, optional): Context for rendering the notification template.
         """
+        from osf.models.notification_subscription import NotificationSubscription
         subscription, created = NotificationSubscription.objects.get_or_create(
             notification_type=self,
             user=user,
             content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
             object_id=subscribed_object.pk if subscribed_object else None,
-            defaults={'message_frequency': self.notification_freq},
+            defaults={'message_frequency': message_frequency},
         )
         if subscription.message_frequency == 'instantly':
             Notification.objects.create(
@@ -214,6 +214,8 @@ class NotificationType(models.Model):
     def add_user_to_subscription(self, user, *args, **kwargs):
         """
         """
+        from osf.models.notification_subscription import NotificationSubscription
+
         provider = kwargs.pop('provider', None)
         node = kwargs.pop('node', None)
         data = {}
@@ -233,6 +235,7 @@ class NotificationType(models.Model):
     def remove_user_from_subscription(self, user):
         """
         """
+        from osf.models.notification_subscription import NotificationSubscription
         notification, _ = NotificationSubscription.objects.update_or_create(
             user=user,
             notification_type=self,

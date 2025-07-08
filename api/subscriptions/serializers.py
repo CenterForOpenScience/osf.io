@@ -37,7 +37,8 @@ class SubscriptionSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         user = self.context['request'].user
-        frequency = validated_data.get('frequency')
+        frequency = validated_data.get('frequency') or 'none'
+        instance.message_frequency = frequency
 
         if frequency != 'none' and instance.content_type == ContentType.objects.get_for_model(Node):
             node = Node.objects.get(
