@@ -2,6 +2,7 @@ import re
 from packaging.version import Version
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework import permissions as drf_permissions
@@ -704,7 +705,10 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintAs
                 f'If you are an admin, set up moderation by setting `reviews_workflow` at {url}',
             )
 
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except (ValueError, DjangoValidationError) as exc:
+            raise ValidationError(str(exc)) from exc
 
     # overrides ListFilterMixin
     def get_default_queryset(self):
