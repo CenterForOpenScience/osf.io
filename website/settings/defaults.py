@@ -175,6 +175,7 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 MAILCHIMP_LIST_MAP = {
     MAILCHIMP_GENERAL_LIST: '123',
 }
+NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'

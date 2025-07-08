@@ -1,0 +1,124 @@
+# This file contains the configuration for our notification system using the NotificationType object, this is intended to
+# exist as a simple declarative list of NotificationTypes and their attributes. Every notification sent by OSF should be
+# represented here for bussiness logic dnd metrics reasons.
+
+# Workflow:
+# 1. Add a new notification template
+# 2. Add a entry here with the desired notification types
+# 3. Add name tp Enum osf.notification.NotificationType.Type
+# 4. Use the emit method to send or subscribe the notification for immediate deliver or periodic digest.
+notification_types:
+  #### GLOBAL (User Notifications)
+  - name: user_pending_verification_registered
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### PROVIDER
+  - name: new_pending_submissions
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: new_pending_withdraw_requests
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### NODE
+  - name: file_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: wiki_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_contributor_added_access_request
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: node_request_institutional_access_request
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+
+  #### PREPRINT
+  - name: pending_retraction_admin
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+
+  #### SUPPORT
+  - name: crossref_error
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### Collection Submissions
+  - name: collection_submission_removed_moderator
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_removed_private
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_removed_admin
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_submitted
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_cancel
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_accepted
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: collection_submission_rejected
+    __docs__: ...
+    object_content_type_model_name: collectionsubmission
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  #### DESK
+  - name: desk_archive_job_exceeded
+    __docs__: Archive job failed due to size exceeded. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_copy_error
+    __docs__: Archive job failed due to copy error. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_file_not_found
+    __docs__: Archive job failed because files were not found. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_archive_job_uncaught_error
+    __docs__: Archive job failed due to an uncaught error. Sent to support desk.
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: desk_osf_support_email
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly

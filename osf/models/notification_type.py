@@ -170,7 +170,7 @@ class NotificationType(models.Model):
         blank=True
     )
 
-    name: str = models.CharField(max_length=255, unique=True)
+    name: str = models.CharField(max_length=255, unique=True, null=False, blank=False)
 
     object_content_type = models.ForeignKey(
         ContentType,
