@@ -100,7 +100,7 @@ from osf.models import (
     Email,
     Tag, NotificationType,
 )
-from osf.models.notification import FrequencyChoices
+from osf.models.notification_type import FrequencyChoices
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
@@ -823,7 +823,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError('Request must include email in query params.')
 
         institutional = bool(request.query_params.get('institutional', None))
-        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+        mail_template = "forgot_password" if not institutional else "forgot_password_institution"
 
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
@@ -843,21 +843,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                notification_type_name = NotificationType.Type.USER_PASSWORD_RESET.value
-                notification_type, created = NotificationType.objects.get_or_create(
-                    name=notification_type_name,
-                    defaults={
-                        'notification_freq': FrequencyChoices.INSTANTLY.value,
-                        'template': mail_template
-                    }
-                )
-                event_context = {
-                    'reset_link': reset_link,
-                }
-                notification_type.emit(
-                    user=email,
-                    event_context=event_context,
-                )
+                notification_type = NotificationType.objects.filter(name=mail_template)
+                if not notification_type.exists():
+                    raise NotificationType.DoesNotExist(
+                        f'NotificationType with name {mail_template} does not exist.'
+                    )
+                notification_type = notification_type.first()
+                notification_type.emit(user=user_obj,
+                                       event_context={'can_change_preferences': False, 'reset_link': reset_link})
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
     @method_decorator(csrf_protect)
