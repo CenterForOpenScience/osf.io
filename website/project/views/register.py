@@ -20,7 +20,7 @@ from osf.models import Identifier, RegistrationSchema
 from website.project.utils import serialize_node
 from osf.utils.permissions import ADMIN
 from website import language
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from website.project.metadata.schemas import _id_to_name
 from website import util
 from website.project.metadata.utils import serialize_meta_schema

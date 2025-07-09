@@ -16,7 +16,7 @@ from osf import features
 from osf.models import OSFUser, AbstractNode
 from website import settings
 from website.project.views.contributor import get_node_contributors_abbrev
-from website.ember_osf_web.decorators import ember_flag_is_active
+from website.external_web_app.decorators import ember_flag_is_active
 from website.search import exceptions
 import website.search.search as search
 from website.search.util import build_query
