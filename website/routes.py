@@ -384,7 +384,7 @@ def make_url_map(app):
 
         # Import PRIMARY_WEB_APP setting
         from website.settings import PRIMARY_WEB_APP
-        
+
         primary_app_config = EXTERNAL_WEB_APPS.get(PRIMARY_WEB_APP)
         if primary_app_config:
             process_rules(app, [
