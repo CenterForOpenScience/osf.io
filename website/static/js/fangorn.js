@@ -1802,7 +1802,7 @@ function gotoFileEvent (item, toUrl) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
     redir.segment('files').segment(item.data.provider).segmentCoded(item.data.path.substring(1));
-    var fileurl  = redir.toString() + toUrl;
+    var fileurl  = encodeURI(redir.toString() + toUrl);
 
     // construct view only link into file url as it gets removed from url params in IE
     if ($osf.isIE()) {
