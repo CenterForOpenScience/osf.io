@@ -64,6 +64,11 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_success.html.mako'
     notification_freq_default: instantly
+  - name: forgot_password_institution
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forgot_password_institution.html.mako'
+    notification_freq_default: instantly
 
   #### PROVIDER
   - name: new_pending_submissions

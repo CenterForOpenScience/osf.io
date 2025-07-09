@@ -924,6 +924,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.save()
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
     # log users out before they land on institutional forgot password page
     def test_forgot_password_logs_out_user(self):
@@ -950,7 +951,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert self.mock_send_grid.called
+        assert self.start_mock_notification_send.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword

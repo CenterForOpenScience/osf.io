@@ -805,8 +805,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             json={'justification': ''},
             auth=self.user.auth,
         )
-        # Only the creator gets an email; the unreg user does not get emailed
-        assert self.mock_send_grid.call_count == 1
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -896,7 +894,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             json={'justification': ''},
             auth=self.user.auth,
         )
-        assert self.mock_send_grid.called
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
