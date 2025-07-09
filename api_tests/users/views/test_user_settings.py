@@ -44,7 +44,7 @@ class TestUserRequestExport:
             }
         }
 
-    def test_get(self, app, user_one, url):
+    def test_get(self, app, user_one, url, mock_notification_send):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
@@ -169,6 +169,7 @@ class TestUserChangePassword:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestResetPassword:
 
     @pytest.fixture()
@@ -187,14 +188,14 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    def test_get(self, mock_send_grid, app, url, user_one):
+    def test_get(self, mock_notification_send, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
         assert res.status_code == 200
 
         user_one.reload()
-        assert mock_send_grid.call_args[1]['to_addr'] == user_one.username
+        assert mock_notification_send.called
 
     def test_get_invalid_email(self, mock_send_grid, app, url):
         url = f'{url}?email={'invalid_email'}'

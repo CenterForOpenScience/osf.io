@@ -6,6 +6,7 @@ from osf_tests.factories import AuthUserFactory
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_notification_send')
 class TestConfirmEmail:
 
     @pytest.fixture()
@@ -147,8 +148,7 @@ class TestConfirmEmail:
         assert user.external_identity == {'ORCID': {'0002-0001-0001-0001': 'VERIFIED'}}
         assert user.emails.filter(address=email.lower()).exists()
 
-    @mock.patch('website.mails.send_mail')
-    def test_post_success_link(self, mock_send_mail, app, confirm_url, user_with_email_verification):
+    def test_post_success_link(self, mock_notification_send, app, confirm_url, user_with_email_verification):
         user, token, email = user_with_email_verification
         user.external_identity['ORCID']['0000-0000-0000-0000'] = 'LINK'
         user.save()
@@ -168,7 +168,7 @@ class TestConfirmEmail:
         )
         assert res.status_code == 201
 
-        assert mock_send_mail.called
+        assert mock_notification_send.called
 
         user.reload()
         assert user.external_identity['ORCID']['0000-0000-0000-0000'] == 'VERIFIED'
