@@ -21,7 +21,8 @@ function fixData(data) {
         totalCtn++;
         if (data[i].children !== undefined && data[i].children.length > 0) {
             var koChildArrayData = fixData(data[i].children);
-            koChildArray = fixData(data[i].children)[0];            
+            koChildArray = fixData(data[i].children)[0];
+
             var childCount = koChildArrayData[1];
             totalCtn += childCount;
             koArray.push(new wikiItem({name: name, id: id, sortOrder:sort_order, children: koChildArray}));
@@ -56,9 +57,9 @@ function wikiItem(item) {
             $angle.attr('class', 'fa fa-angle-down angle');
         }
         self.fold(!self.fold());
-    }
+    };
 
-  }
+  };
 
 function assignSortOrderNumber(jsonData) {
     for (var i=0 ; i < jsonData.length ; i++) {
@@ -85,9 +86,9 @@ function assignSortOrderNumber(jsonData) {
             }
         }
         return true;
-    }
+    };
     return countItems(data) && totalCount === originalCount;
-}
+};
 
 function ViewModel(data, totalCtn){
     var self = this;
@@ -100,7 +101,7 @@ function ViewModel(data, totalCtn){
             isSortCancelled = true;
             return;
         }
-    }
+    };
     self.afterMove = function(obj) {
         var $SaveBtn = $('#treeSave');
         if (!checkTotalCtn(self.data(), totalCtn)) {
@@ -117,8 +118,9 @@ function ViewModel(data, totalCtn){
         if (fold) {
             $display.css('display', 'none');
             $angle.attr('fa fa-angle-right');
-        } 
-    }
+        }
+
+    };
     self.submit = function() {
         var jsonData = JSON.parse(ko.toJSON(self.data));
         var sortedJsonData = assignSortOrderNumber(jsonData);
@@ -132,7 +134,7 @@ function ViewModel(data, totalCtn){
             alert('error')
         });
     };
-}
+};
 
 var WikiTree = function(selector, data) {
     var self = this;

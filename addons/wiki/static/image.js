@@ -53,13 +53,13 @@ export const extendedImageSchemaPlugin = mCommonmark.imageSchema.extendSchema((p
           toMarkdown: {
               ...prevSchema(ctx).toMarkdown,
               runner: (state, node) => {
-                  var url = node.attrs.src;   
-            
+                  var url = node.attrs.src;
+
                   if (node.attrs.width || node.attrs.height) {
                       const width = node.attrs.width ? `=${node.attrs.width}` : '';
                       const height = node.attrs.height ? `${node.attrs.height}` : '';
                       url += ` ${height ? `${width}x${height}` : width}`;
-                  }              
+                  }
                   state.addNode('image', undefined, undefined, {
                       title: node.attrs.title,
                       url,
@@ -78,13 +78,13 @@ export const extendedInsertImageCommand = $command('ExtendedIpdateImage', ctx =>
         return function(state, dispatch) {
             if (!dispatch)
                 return true;
-      
+
             const { src = '', alt = '', title = '', width = '' } = payload;
-      
+
             const node = mCommonmark.imageSchema.type(ctx).create({ src, alt, title, width });
             if (!node)
                 return true;
-      
+
             dispatch(state.tr.replaceSelectionWith(node).scrollIntoView());
             return true;
         };
@@ -97,9 +97,9 @@ export const extendedUpdateImageCommand = $command('ExtendedUpdateImage', ctx =>
             const nodeWithPos = findSelectedNodeOfType(state.selection, mCommonmark.imageSchema.type(ctx));
             if (!nodeWithPos)
                 return false;
-          
+
             const { node, pos } = nodeWithPos;
-          
+
             var newAttrs = Object.assign({}, node.attrs);
             const { src, alt, title, width } = payload;
             if (src !== undefined)
@@ -110,7 +110,7 @@ export const extendedUpdateImageCommand = $command('ExtendedUpdateImage', ctx =>
                 newAttrs.title = title;
             if (width !== undefined)
                 newAttrs.width = width;
-          
+
             dispatch?.(state.tr.setNodeMarkup(pos, undefined, newAttrs).scrollIntoView());
             return true;
         };

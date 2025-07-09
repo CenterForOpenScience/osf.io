@@ -68,7 +68,7 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
 class TestWikiPageNodeManager(OsfTestCase):
 
     def setUp(self):
-        self.page_name = WikiPageNodeManager.CharField(max_length=200, validators=["test", ])
+        self.page_name = WikiPageNodeManager.CharField(max_length=200, validators=['test', ])
         self.user = WikiPageNodeManager.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
         self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
         self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
@@ -89,7 +89,7 @@ class TestWikiPageNodeManager(OsfTestCase):
 
         mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
         mock_update = mocker.patch('WikiPage.update', return_value=None)
-        
+
         self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
             self.project,
             'home child',
@@ -113,7 +113,7 @@ class TestWikiPageNodeManager(OsfTestCase):
 
         mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
         mock_update = mocker.patch('WikiPage.update', return_value=None)
-        
+
         self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
             self.project,
             'home child',
@@ -134,27 +134,27 @@ class TestWikiPageNodeManager(OsfTestCase):
 
     def test_get_for_child_nodes(self, mocker):
         mock_child_node = mocker.patch('WikiPage.filter',return_value=None)
-        
+
         child_node = WikiPageNodeManager.objects.filter(parent=self.parent, deleted__isnull=True, node=self.node)
-        
+
         # モックが1回呼ばれたか
         mock_child_node.assert_called_once()
 
     def test_get_for_child_nodes_none(self):
         child_node = WikiPageNodeManager.objects.get_for_child_nodes(self,self.node,None)
-        
+
         # 戻り値がNoneか
         self.assert_is_not_none(child_node)
-    
+
     def test_get_wiki_pages_latest(self, mocker):
         mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
-                
+
         # モックが1回呼ばれたか
         mock_annotate.assert_called_once()
 
     def test_get_wiki_child_pages_latest(self, mocker):
         mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
-                
+
         # モックが1回呼ばれたか
         mock_annotate.assert_called_once()
 
@@ -219,7 +219,6 @@ class test_utils(OsfTestCase):
         self.pagefile3 = TestFileWiki.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
 
-    
     @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
     def test_get_node_file_mapping(self, mock_filter):
         mock_filter.return_value.values_list.return_value = [
@@ -241,7 +240,7 @@ class test_utils(OsfTestCase):
         }
 
         self.assertEqual(file_mapping, expected_mapping)
-    
+
     def test_get_import_wiki_name_list(self):
         wiki_info = [
             {
@@ -371,11 +370,11 @@ class test_utils(OsfTestCase):
         return cloned_id
 
     def test_copy_file_same_region(self):
- 
+
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         src = MagicMock()
         src.is_file = True
         src.name = 'file.txt'
@@ -388,23 +387,23 @@ class test_utils(OsfTestCase):
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
         src.clone.return_value.provider = 'osfstorage'
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
- 
+
         cloned = copy_files_with_timestamp(self.auth, src, target_node)
- 
+
         assert cloned.name == src.name
         assert cloned.copied_from == src
- 
+
     #ファイルコピー（異なるリージョン）
     def test_copy_file_different_region(self):
- 
+
         version = MagicMock()
         version.region = 'regionA'
         version.clone.return_value = MagicMock(region='regionB')
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         src = MagicMock()
         src.is_file = True
         src.name = 'file.txt'
@@ -417,22 +416,22 @@ class test_utils(OsfTestCase):
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
         src.clone.return_value.provider = 'osfstorage'
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionB'
- 
+
         cloned = copy_files_with_timestamp(self.auth, src, target_node)
- 
+
         assert cloned.name == src.name
         assert cloned.copied_from == src
- 
+
     #名前変更あり
     def test_copy_file_with_name_change(self):
- 
+
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         src = MagicMock()
         src.is_file = True
         src.name = 'original.txt'
@@ -445,25 +444,25 @@ class test_utils(OsfTestCase):
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
         src.clone.return_value.provider = 'osfstorage'
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
- 
+
         cloned = copy_files_with_timestamp(self.auth, src, target_node, name='renamed.txt')
- 
+
         assert cloned.name == 'renamed.txt'
         assert cloned.copied_from == src
- 
+
     #親フォルダ指定あり
     def test_copy_file_with_parent(self):
- 
+
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         parent = MagicMock()
         parent.is_file = False
- 
+
         src = MagicMock()
         src.is_file = True
         src.name = 'file.txt'
@@ -476,21 +475,21 @@ class test_utils(OsfTestCase):
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
         src.clone.return_value.provider = 'osfstorage'
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
- 
+
         cloned = copy_files_with_timestamp(self.auth, src, target_node, parent=parent)
- 
+
         assert cloned.parent == parent
         assert cloned.copied_from == src
- 
+
     #認証なし
     def test_copy_file_without_auth(self):
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         src = MagicMock()
         src.is_file = True
         src.name = 'file.txt'
@@ -503,22 +502,22 @@ class test_utils(OsfTestCase):
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
         src.clone.return_value.provider = 'osfstorage'
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
- 
+
         cloned = copy_files_with_timestamp(None, src, target_node)
- 
+
         assert cloned.name == src.name
         assert cloned.copied_from == src
- 
+
     #フォルダの再帰コピー
     def test_copy_folder_recursive(self):
- 
+
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
- 
+
         child_file = MagicMock()
         child_file.is_file = True
         child_file.name = 'child.txt'
@@ -531,19 +530,19 @@ class test_utils(OsfTestCase):
         child_file.records.get.return_value.metadata = {'key': 'value'}
         child_file.clone.return_value.provider = 'osfstorage'
         child_file.children = []
- 
+
         src = MagicMock()
         src.is_file = False
         src.name = 'folder'
         src.clone.return_value = MagicMock()
         src.clone.return_value.children = []
         src.children = [child_file]
- 
+
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
- 
+
         cloned = copy_files_with_timestamp(self.auth, src, target_node)
- 
+
         assert cloned.name == src.name
         assert cloned.copied_from == src
 
@@ -600,7 +599,6 @@ class test_views(OsfTestCase):
         # existing wiki page in project2
         self.wiki_page3 = WikiPage.objects.create_for_node(self.project2, 'importpagec', 'wiki pagec content', self.consolidate_auth2)
         self.wiki_page4 = WikiPage.objects.create_for_node(self.project2, 'importpaged', 'wiki paged content', self.consolidate_auth2, self.wiki_page3)
-
 
         self.root_import_folder_validate = OsfStorageFolder(name='rootimportfolder', target=self.project, parent=self.root)
         self.root_import_folder_validate.save()
@@ -684,7 +682,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_wiki_child_pages_latest')
     def test_get_wiki_child_pages_latest(self, get_wiki_child_pages_latest):
-        
+
         name = 'page by id'
         page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
 
@@ -769,7 +767,6 @@ class test_views(OsfTestCase):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
         res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         self.asserEqual(res.status_code, 200)
-
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
@@ -908,7 +905,7 @@ class test_views(OsfTestCase):
         self.assertEqual(result['duplicated_folder'], [])
         self.assertTrue(result['canStartImport'])
         self.assertCountEqual(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
- 
+
     def test_validate_import_folder_invalid(self):
         folder = BaseFileNode.objects.get(name='importpagex')
         parent_path = ''
@@ -1563,7 +1560,6 @@ class test_views(OsfTestCase):
         result_content = views._check_wiki_name_exist(self.project, wiki_name_nfd, self.node_file_mapping, import_wiki_name_list)
         self.assertTrue(result_content)
 
-
     def test_replace_file_name_image_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
         wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip1")'
@@ -1643,7 +1639,7 @@ class test_views(OsfTestCase):
         expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id})'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
-        
+
     def test_filename(self):
         match_path = 'test.png'
         expected_path = 'test.png'
@@ -1891,7 +1887,7 @@ class test_views(OsfTestCase):
         node=self.node
         replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
         self.assertEqual(wiki_info, replaced_wiki_info)
-    
+
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_wiki_content_replace_aborted(self,mock_task):
         mock_task.is_aborted.return_value = True
@@ -1931,7 +1927,7 @@ class test_views(OsfTestCase):
         node=self.node
         replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
         self.assertEqual(wiki_info, None)
-    
+
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_wiki_content_replace_missing_content(self,mock_task):
         mock_task.is_aborted.return_value = False
@@ -2042,7 +2038,7 @@ class test_views(OsfTestCase):
         ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
         self.assertTrue(len(ret)>0)
         self.assertTrue(len(wiki_id_list)>0)
-        
+
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_import_same_level_wiki_logger_info(self,mock_task):
         mock_task.is_aborted.return_value = False
@@ -2072,7 +2068,7 @@ class test_views(OsfTestCase):
         ]
         ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
         mock_error.assert_called_once()
-        
+
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_import_same_level_wiki_logger_error(self,mock_task):
         mock_task.is_aborted.return_value = False
@@ -2102,7 +2098,7 @@ class test_views(OsfTestCase):
         ]
         ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
         mock_error.assert_called_once()
-        
+
     def project_get_task_result_not_ready(self,mocker):
         mock_res = MagicMock()
         mock_res.ready.return_value = False
@@ -2110,7 +2106,7 @@ class test_views(OsfTestCase):
         node = MagicMock()
         result = views.project_get_task_result('task_id',node)
         self.assertIsNone(result)
-        
+
     def project_get_task_result_not_ready(self,mocker):
         mock_res = MagicMock()
         mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
@@ -2119,7 +2115,7 @@ class test_views(OsfTestCase):
         node = MagicMock()
         result = views.project_get_task_result('task_id',node)
         self.assertEqual(result,'expected_result')
-        
+
     def project_get_task_result_not_ready(self,mocker):
         mock_res = MagicMock()
         mock_res.ready.return_value = True
@@ -2272,7 +2268,7 @@ class test_views(OsfTestCase):
         node = NodeFactory(parent=self.project, creator=self.user)
         expected_id = 'ddeeff'
         cloned_id = views._wiki_copy_import_directory(self.project, self.copy_to_dir._id, self.root_import_folder1._id, node)
-        self.assertEqual(expected_id, cloned_id)   
+        self.assertEqual(expected_id, cloned_id)
 
     def test_different_depth(self):
         wiki_infos = [
@@ -2288,7 +2284,7 @@ class test_views(OsfTestCase):
         imported_list = [{'path': '/path1'}]
         import_errors = views._create_import_error_list(wiki_infos, imported_list)
         self.assertIn('/path2', import_errors)
-        self.assertIn('/path3', import_errors)  
+        self.assertIn('/path3', import_errors)
 
     def test_err_with_tab(self):
         err_obj_con = "code=400, data={'message_short': 'Error Message with Tab', 'message_long': '\\tAn error occures with tab\\t', 'code': 400, 'referrer': None}"
@@ -2357,7 +2353,7 @@ class test_views(OsfTestCase):
         self.assertEqual(result_wiki_child_page1, {'parent_id': wiki_page2_id, 'sort_order': 1})
         self.assertEqual(result_wiki_child_page2, {'parent_id': wiki_page2_id, 'sort_order': 2})
         self.assertEqual(result_wiki_child_page3, {'parent_id': wiki_child_page2_id, 'sort_order': 1})
-    
+
     def test_sorted_data_nest(self):
         sorted_data = [{'name': 'tsta', 'id': '97xuz', 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'tstb', 'id': 'gwd9u', 'sortOrder': 2, 'children': [{'name': 'child1', 'id': '5fhdq', 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'child2', 'id': 'x38vh', 'sortOrder': 2, 'children': [{'name': 'grandchilda', 'id': '64au2', 'sortOrder': 1, 'children': [], 'fold': False}], 'fold': False}], 'fold': False}]
         id_list, sort_list, parent_wiki_id_list = views._get_sorted_list(sorted_data, None)
@@ -2379,7 +2375,6 @@ class test_views(OsfTestCase):
         wiki_child_page2_id = self.wiki_child_page2.id
         self.assertEqual(result_wiki_page1, {'parent_id': None, 'sort_order': 1})
 
- 
     # テスト用のWikiページを作成
     def create_wiki_page(has_parent=True):
         page = MagicMock()
@@ -2388,7 +2383,7 @@ class test_views(OsfTestCase):
         page.parent_id = 'parent123' if has_parent else None
         page._primary_key = 'wiki123'
         return page
- 
+
     # テスト用のWikiバージョンを作成
     def create_wiki_version():
         version = MagicMock()
@@ -2397,7 +2392,7 @@ class test_views(OsfTestCase):
         version.rendered_before_update = True
         version.content = 'markdown content'
         return version
- 
+
     # 外部依存をまとめてモックする関数
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         return patch.multiple('my_module',
@@ -2422,7 +2417,7 @@ class test_views(OsfTestCase):
             request=MagicMock(args=request_args or {}),
             settings=MagicMock(SHAREJS_URL='http://sharejs', Y_WEBSOCKET_URL='ws://yjs')
         )
- 
+
     # 編集権限がある場合の正常系テスト
     def test_valid_view_with_edit_permission(self):
         auth = self.auth
@@ -2430,56 +2425,56 @@ class test_views(OsfTestCase):
         page = self.create_wiki_page()
         version = self.create_wiki_version()
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=page, wiki_version=version):
             result = views.project_wiki_view(auth, 'Home', **kwargs)
             # 編集権限があるため、can_edit_wiki_body は True
             assert result['user']['can_edit_wiki_body'] is True
             assert result['wiki_name'] == 'TestPage'
- 
+
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
         auth = self.auth
         node = self.node
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
             with pytest.raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
- 
+
     # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
     def test_edit_arg_public_editable_unauthorized(self):
         auth = self.auth
         node = self.node
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with pytest.raises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
- 
+
     # 'edit' が args に含まれ、閲覧可能 → リダイレクト
     def test_edit_arg_redirect_if_can_view(self):
         auth = self.auth
         node = self.node
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             result = views.project_wiki_view(auth, 'NotHome', **kwargs)
             # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
             assert '/web/wiki' in result.headers['Location']
- 
+
     # 'edit' が args に含まれ、閲覧不可 → 403 エラー
     def test_edit_arg_forbidden_if_cannot_view(self):
         auth = self.auth
         node = self.node
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with pytest.raises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
- 
+
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
     def test_invalid_version_exception(self):
         auth = self.auth
@@ -2487,8 +2482,7 @@ class test_views(OsfTestCase):
         page = self.create_wiki_page()
         version = self.create_wiki_version()
         kwargs = {'node': node}
- 
+
         with self.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
             with pytest.raises(self.WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
-

@@ -117,7 +117,7 @@ async function createMEditor(editor, vm, template) {
         });
         return ret;
     };
-     
+
     const indexeddbProvider = wikiId ? new yIndexeddb.IndexeddbPersistence(wikiId, doc) : (console.error('Invalid wikiId: it must not be null, undefined, or empty'), null);
     const wsProvider = new yWebsocket.WebsocketProvider(wsUrl, docId, doc);
 
@@ -132,10 +132,12 @@ async function createMEditor(editor, vm, template) {
                 enableHtmlFileUploader,
             }));
             const debouncedMarkdownUpdated = $osf.debounce(async (ctx, markdown, prevMarkdown) => {
-                const compareWidgetElement = document.getElementById("compareWidget"); 
+                const compareWidgetElement = document.getElementById("compareWidget");
+
                 if (compareWidgetElement && compareWidgetElement.style.display !== 'none') {
                     vm.viewVM.displaySource(markdown);
-                } 
+                }
+
                 const view = ctx.get(mCore.editorViewCtx);
                 const state = view.state;
                 const undoElement = document.getElementById("undoWiki");
@@ -539,7 +541,7 @@ function ViewModel(options){
                 self.viewVersion('preview');
             }
         }
-        
+
         if (panel === 'compare') {
             if(display && self.compareVis()){
                 self.viewVersion('preview');
@@ -552,7 +554,7 @@ function ViewModel(options){
                 self.viewVM.displaySource(toMarkdown);
             }
         }
-        
+
     });
 
     bodyElement.on('toggleMenu', function(event, menuVisible) {
@@ -606,13 +608,13 @@ function ViewModel(options){
 
             linkHref.value = '';
             linkTitle.value = '';
-    
+
             state.doc.nodesBetween(from, to, (node, pos) => {
                 const linkMark = node.marks.find(mark => mark.type === markType);
                 if (linkMark) {
                     const href = linkMark.attrs.href || '';
                     const title = linkMark.attrs.title || '';
-                    
+
                     linkHref.value = href;
                     linkTitle.value = title;
                 }
@@ -627,14 +629,14 @@ function ViewModel(options){
             const state = view.state;
             const { from, to } = state.selection;
             const markType = ctx.get(mCore.schemaCtx).marks.link;
-            
+
             let hasLink = false;
             state.doc.nodesBetween(from, to, node => {
                 if (node.marks.some(mark => mark.type === markType)) {
                     hasLink = true;
                 }
             });
-    
+
             if (hasLink && linkHref.value === '') {
                 mUtils.callCommand(mCommonmark.toggleLinkCommand.key, {})(ctx);
             } else if (hasLink && linkHref.value !== '') {
@@ -670,7 +672,7 @@ function ViewModel(options){
             imageTitle.value = '';
             imageAlt.value = '';
             imageWidth.value = '';
-            
+
             state.doc.nodesBetween(from, to, (node, pos) => {
                 if (node.type === imageType) {
                     const src = node.attrs.src || '';
@@ -699,7 +701,7 @@ function ViewModel(options){
             const state = view.state;
             const { from, to } = state.selection;
             const imageType = ctx.get(mCore.schemaCtx).nodes.image;
-            
+
             var hasImage = false;
 
             state.doc.nodesBetween(from, to, (node) => {
@@ -793,7 +795,7 @@ function ViewModel(options){
             const view = ctx.get(mCore.editorViewCtx);
             const state = view.state;
             const parser = ctx.get(mCore.parserCtx);
-    
+
             const nodes = view.state.doc.content.content;
 
             const mokuji = nodes
@@ -806,7 +808,7 @@ function ViewModel(options){
                     const listPrefix = '* '.repeat(headingLevel);
                     return listPrefix + '[' + headingText + ']' + '(#' + headingId + ')';
                 });
-            
+
             const markdownText = mokuji.join('\n');
             const listNode = parser(markdownText);
             var pos = state.selection.from;
@@ -815,7 +817,7 @@ function ViewModel(options){
             view.dispatch(tr);
             view.focus();
         });
-    }; 
+    };
 
     self.color = ko.observable('#000000');
     self.colortext = function() {
@@ -830,7 +832,7 @@ function ViewModel(options){
                 }
                 return state.doc.rangeHasMark(r.$from.pos - 1, r.$to.pos, colortextSchema.type(ctx));
             });
-            
+
             if (colortextMarkExists) {
                 if (self.color() !== '#000000') {
                     mUtils.callCommand(toggleColortextCommand.key, self.color())(ctx);
@@ -996,7 +998,7 @@ function ViewModel(options){
 
     self.validateInputs = function () {
         const width = self.imageWidthInput().trim();
-    
+
         const sizePattern = /^(\d+|\d+%)$/;
 
         const isValidSrc = document.getElementById("imageSrc").value !== '';
@@ -1215,4 +1217,3 @@ var WikiPageMilkdown = function(selector, options) {
 };
 
 export default WikiPageMilkdown;
-

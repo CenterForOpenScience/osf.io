@@ -48,18 +48,18 @@ const underlineFromMarkdownPlugin = function underlineFromMarkdownPlugin() {
         if (node.type === 'inlineCode') return [node];
 
         if (!isLiteral(node)) return [node];
-  
+
         const value = node.value;
         const output = [];
         const regex = /<u>(.*?)<\/u>/g;
         let match;
         let str = value;
         let lastIndex = 0;
-  
+
         while ((match = regex.exec(str))) {
           const { index } = match;
           const underlineText = match[1];
-  
+
           if (index > lastIndex) {
             output.push({
               ...node,
@@ -81,7 +81,7 @@ const underlineFromMarkdownPlugin = function underlineFromMarkdownPlugin() {
               };
             }
           }
-  
+
           if (underlineText) {
             const underlineNode = {
               type: 'underline',
@@ -120,7 +120,7 @@ const underlineFromMarkdownPlugin = function underlineFromMarkdownPlugin() {
             }
             output.push(underlineNode);
           }
-  
+
           lastIndex = index + match[0].length;
           regex.lastIndex = lastIndex;
         }
@@ -131,7 +131,7 @@ const underlineFromMarkdownPlugin = function underlineFromMarkdownPlugin() {
             value: value.slice(lastIndex)
           });
         }
-  
+
         return output;
       });
     }
@@ -146,7 +146,6 @@ const constructsWithoutUnderline = [
     'titleQuote',
     'titleApostrophe'
   ];
-  
 
 const underlineToMarkdown = function underlineToMarkdown() {
     return {
@@ -165,7 +164,6 @@ const underlineToMarkdown = function underlineToMarkdown() {
       handlers: {underline: handleUnderline}
     };
   };
-  
 
 const handleUnderline = function handleUnderline(node, _, state, info) {
     const tracker = state.createTracker(info);
@@ -182,9 +180,9 @@ const handleUnderline = function handleUnderline(node, _, state, info) {
 var underlineToMarkdownPlugin = function underlineToMarkdownPlugin() {
     var self = this;
     var data = self.data();
-  
+
     var toMarkdownExtensions =
       data.toMarkdownExtensions || (data.toMarkdownExtensions = []);
-  
+
     toMarkdownExtensions.push(underlineToMarkdown());
   };

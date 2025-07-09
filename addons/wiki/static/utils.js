@@ -3,7 +3,7 @@
 function isParent(node) {
     return !!(node && node.children && Array.isArray(node.children));
   }
-  
+
 export function isLiteral(node) {
     return !!(node && typeof node.value === 'string');
   }

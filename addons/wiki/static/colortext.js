@@ -166,7 +166,7 @@ const handleColortext = function handleColortext(node, _, state, info) {
     ...tracker.current()
   });
   value += '\\</span>';
-  
+
   exit();
   return value;
 };
