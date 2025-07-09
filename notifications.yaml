@@ -14,6 +14,57 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
+  - name: password_reset
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/password_reset.html.mako'
+    notification_freq_default: instantly
+  - name: forgot_password
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forgot_password.html.mako'
+    notification_freq_default: instantly
+  - name: welcome_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/welcome_osf4i.html.mako'
+    notification_freq_default: instantly
+  - name: invite_preprints_osf
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_preprints_osf.html.mako'
+    notification_freq_default: instantly
+  - name: invite_preprints
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_preprints.html.mako'
+    notification_freq_default: instantly
+  - name: invite_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_draft_registration.html.mako'
+    notification_freq_default: instantly
+  - name: invite_default
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_default.html.mako'
+    notification_freq_default: instantly
+  - name: pending_invite
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/pending_invite.html.mako'
+    notification_freq_default: instantly
+  - name: forward_invite
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forward_invite.html.mako'
+    notification_freq_default: instantly
+  - name: external_confirm_success
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/external_confirm_success.html.mako'
+    notification_freq_default: instantly
+
   #### PROVIDER
   - name: new_pending_submissions
     __docs__: ...

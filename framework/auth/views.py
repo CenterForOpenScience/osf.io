@@ -33,7 +33,7 @@ from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
-from osf.models.notification import NotificationType
+from osf.models.notification_type import NotificationType
 from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -279,7 +279,7 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                         f'NotificationType with name {mail_template} does not exist.'
                     )
                 notification_type = notification_type.first()
-                notification_type.emit(user=user_obj, event_context={'can_change_preferences': False, 'reset_link': reset_link})
+                notification_type.emit(user=user_obj, message_frequency='instantly', event_context={'can_change_preferences': False, 'reset_link': reset_link})
 
         # institutional forgot password page displays the message as main text, not as an alert
         if institutional:

@@ -99,7 +99,7 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
-    NotificationType
+    NotificationType,
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
@@ -847,10 +847,10 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 notification_type = NotificationType.objects.filter(name=mail_template)
                 if not notification_type.exists():
                     raise NotificationType.DoesNotExist(
-                        f'NotificationType with name {mail_template} does not exist.'
+                        f'NotificationType with name {mail_template} does not exist.',
                     )
                 notification_type = notification_type.first()
-                notification_type.emit(user=user_obj, event_context={'can_change_preferences': False, 'reset_link': reset_link})
+                notification_type.emit(user=user_obj, message_frequency='instantly', event_context={'can_change_preferences': False, 'reset_link': reset_link})
 
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
@@ -1066,10 +1066,10 @@ class ConfirmEmailView(generics.CreateAPIView):
             notification_type = NotificationType.objects.filter(name='external_confirm_success')
             if not notification_type.exists():
                 raise NotificationType.DoesNotExist(
-                    'NotificationType with name external_confirm_success does not exist.'
+                    'NotificationType with name external_confirm_success does not exist.',
                 )
             notification_type = notification_type.first()
-            notification_type.emit(user=user, event_context={'can_change_preferences': False, 'external_id_provider': provider})
+            notification_type.emit(user=user, message_frequency='instantly', event_context={'can_change_preferences': False, 'external_id_provider': provider})
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
@@ -1387,10 +1387,10 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
             notification_type = NotificationType.objects.filter(name='external_confirm_success')
             if not notification_type.exists():
                 raise NotificationType.DoesNotExist(
-                    'NotificationType with name external_confirm_success does not exist.'
+                    'NotificationType with name external_confirm_success does not exist.',
                 )
             notification_type = notification_type.first()
-            notification_type.emit(user=user, event_context={'can_change_preferences': False, 'external_id_provider': provider})
+            notification_type.emit(user=user, message_frequency='instantly', event_context={'can_change_preferences': False, 'external_id_provider': provider})
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
