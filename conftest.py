@@ -18,6 +18,7 @@ from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
+from osf.management.commands.migrate_notifications import update_notification_types
 
 
 logger = logging.getLogger(__name__)
@@ -374,3 +375,25 @@ def start_mock_send_grid(test_case):
     test_case.addCleanup(patcher.stop)
     mocked_send.return_value = True
     return mocked_send
+
+
+@pytest.fixture()
+def mock_notification_send():
+    with mock.patch.object(website_settings, 'USE_EMAIL', True):
+        with mock.patch.object(website_settings, 'USE_CELERY', False):
+            with mock.patch('osf.models.notification.Notification.send') as mock_emit:
+                mock_emit.return_value = None  # Or True, if needed
+                yield mock_emit
+
+
+def start_mock_notification_send(test_case):
+    patcher = mock.patch('osf.models.notification.Notification.send')
+    mocked_emit = patcher.start()
+    test_case.addCleanup(patcher.stop)
+    mocked_emit.return_value = None
+    return mocked_emit
+
+
+@pytest.fixture(autouse=True)
+def load_notification_types(*args, **kwargs):
+    update_notification_types(*args, **kwargs)

@@ -5,6 +5,7 @@ import urllib
 from api.base.settings.defaults import API_BASE
 from api.base.settings import CSRF_COOKIE_NAME
 from api.base.utils import hashids
+from conftest import start_mock_notification_send
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -12,6 +13,7 @@ from osf_tests.factories import (
 from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
+from osf.models import NotificationType
 
 @pytest.fixture()
 def user_one():
@@ -172,6 +174,10 @@ class TestUserChangePassword:
 class TestResetPassword:
 
     @pytest.fixture()
+    def setUp(self):
+        self.start_mock_notification_send = start_mock_notification_send(self)
+
+    @pytest.fixture()
     def user_one(self):
         user = UserFactory()
         user.set_password('password1')
@@ -187,6 +193,7 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
+    @pytest.mark.usefixtures('mock_notification_send')
     def test_get(self, mock_send_grid, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
@@ -202,6 +209,7 @@ class TestResetPassword:
         assert res.status_code == 200
         assert not mock_send_grid.called
 
+    @pytest.mark.usefixtures('mock_notification_send')
     def test_post(self, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
@@ -248,6 +256,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
+    @pytest.mark.usefixtures('mock_notification_send')
     def test_post_invalid_password(self, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
@@ -267,6 +276,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
+    @pytest.mark.usefixtures('mock_notification_send')
     def test_throrrle(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
