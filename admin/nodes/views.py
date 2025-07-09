@@ -762,7 +762,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = set(force_archive_params.getlist('addons', []))
+        addons = set(registration.registered_from.get_addon_names())
         addons.update(DEFAULT_PERMISSIBLE_ADDONS)
 
         try:
@@ -781,8 +781,8 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                     registration,
                     permissible_addons=addons,
                     allow_unconfigured=allow_unconfigured,
-                    skip_collision=skip_collision,
-                    delete_collision=delete_collision,
+                    skip_collisions=skip_collision,
+                    delete_collisions=delete_collision,
                 )
                 messages.success(request, 'Registration archive process has finished.')
             except Exception as exc:
