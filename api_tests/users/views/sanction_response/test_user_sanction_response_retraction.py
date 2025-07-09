@@ -31,6 +31,7 @@ class TestRetractionApprovalAPI:
     def rejection_token(self, sanction):
         return sanction.approval_state[sanction.initiated_by._id]['rejection_token']
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_approve_retraction(self, app, url, sanction, registration, approval_token):
         user = sanction.initiated_by
         res = app.post_json_api(

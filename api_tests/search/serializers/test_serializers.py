@@ -16,6 +16,7 @@ SCHEMA_VERSION = 2
 @pytest.mark.django_db
 class TestSearchSerializer:
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_search_serializer_mixed_model(self):
 
         user = AuthUserFactory()
