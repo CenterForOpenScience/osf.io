@@ -98,9 +98,9 @@ from osf.models import (
     Registration,
     OSFUser,
     Email,
-    Tag, NotificationType,
+    Tag,
+    NotificationType,
 )
-from osf.models.notification_type import FrequencyChoices
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language

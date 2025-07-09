@@ -5,7 +5,6 @@ import urllib
 from api.base.settings.defaults import API_BASE
 from api.base.settings import CSRF_COOKIE_NAME
 from api.base.utils import hashids
-from conftest import start_mock_notification_send
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -13,7 +12,6 @@ from osf_tests.factories import (
 from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
-from osf.models import NotificationType
 
 @pytest.fixture()
 def user_one():
@@ -30,6 +28,7 @@ def unconfirmed_address():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_notification_send')
 @pytest.mark.usefixtures('mock_send_grid')
 class TestUserRequestExport:
 
@@ -50,7 +49,7 @@ class TestUserRequestExport:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
-    def test_post(self, mock_send_grid, app, user_one, user_two, url, payload):
+    def test_post(self, mock_send_grid, mock_notification_send, app, user_one, user_two, url, payload):
         # Logged out
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -67,14 +66,14 @@ class TestUserRequestExport:
         assert user_one.email_last_sent is not None
         assert mock_send_grid.call_count == 1
 
-    def test_post_invalid_type(self, mock_send_grid, app, user_one, url, payload):
+    def test_post_invalid_type(self, mock_notification_send, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_send_grid.call_count == 0
+        assert mock_notification_send.call_count == 0
 
     def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
@@ -89,6 +88,7 @@ class TestUserRequestExport:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_notification_send')
 class TestUserChangePassword:
 
     @pytest.fixture()
@@ -170,12 +170,8 @@ class TestUserChangePassword:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestResetPassword:
-
-    @pytest.fixture()
-    def setUp(self):
-        self.start_mock_notification_send = start_mock_notification_send(self)
 
     @pytest.fixture()
     def user_one(self):
@@ -193,24 +189,22 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    @pytest.mark.usefixtures('mock_notification_send')
-    def test_get(self, mock_send_grid, app, url, user_one):
+    def test_get(self, mock_notification_send, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
         assert res.status_code == 200
 
         user_one.reload()
-        assert mock_send_grid.call_args[1]['to_addr'] == user_one.username
+        assert mock_notification_send.called
 
-    def test_get_invalid_email(self, mock_send_grid, app, url):
+    def test_get_invalid_email(self, mock_notification_send, app, url):
         url = f'{url}?email={'invalid_email'}'
         res = app.get(url)
         assert res.status_code == 200
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
-    @pytest.mark.usefixtures('mock_notification_send')
-    def test_post(self, app, url, user_one, csrf_token):
+    def test_post(self, mock_notification_send, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
@@ -230,6 +224,7 @@ class TestResetPassword:
         user_one.reload()
         assert res.status_code == 200
         assert user_one.check_password('password2')
+        assert mock_notification_send.called
 
     def test_post_empty_payload(self, app, url, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
@@ -256,7 +251,6 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    @pytest.mark.usefixtures('mock_notification_send')
     def test_post_invalid_password(self, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
@@ -276,7 +270,6 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    @pytest.mark.usefixtures('mock_notification_send')
     def test_throrrle(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
