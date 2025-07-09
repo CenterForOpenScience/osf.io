@@ -395,5 +395,5 @@ def start_mock_notification_send(test_case):
 
 
 @pytest.fixture(autouse=True)
-def load_notification_types(*args, **kwargs):
+def load_notification_types(db, *args, **kwargs):
     update_notification_types(*args, **kwargs)
