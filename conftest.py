@@ -140,7 +140,7 @@ def es6_client(setup_connections):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def _es_metrics_marker(request):
+def _es_metrics_marker(request, worker_id):
     """Clear out all indices and index templates before and after
     tests marked with `es_metrics`.
     """
@@ -148,7 +148,7 @@ def _es_metrics_marker(request):
     if marker:
         es6_client = request.getfixturevalue('es6_client')
         _temp_prefix = 'temp_metrics_'
-        _temp_wildcard = f'{_temp_prefix}*'
+        _temp_wildcard = f'{_temp_prefix}-{worker_id}*'
 
         def _teardown_es_temps():
             es6_client.indices.delete(index=_temp_wildcard)
@@ -164,12 +164,12 @@ def _es_metrics_marker(request):
                     _exit.enter_context(mock.patch.object(
                         _metric_class,
                         '_template_name',  # also used to construct index names
-                        f'{_temp_prefix}{_metric_class._template_name}',
+                        f'{_temp_prefix}-{worker_id}{_metric_class._template_name}',
                     ))
                     _exit.enter_context(mock.patch.object(
                         _metric_class,
                         '_template',  # a wildcard string for indexes and templates
-                        f'{_temp_prefix}{_metric_class._template}',
+                        f'{_temp_prefix}-{worker_id}{_metric_class._template}',
                     ))
                 yield
 
@@ -362,7 +362,6 @@ def with_class_scoped_db(_class_scoped_db):
     """
     yield from rolledback_transaction('function_transaction')
 
-
 @pytest.fixture()
 def mock_send_grid():
     with mock.patch.object(website_settings, 'USE_EMAIL', True):
@@ -378,3 +377,17 @@ def start_mock_send_grid(test_case):
     test_case.addCleanup(patcher.stop)
     mocked_send.return_value = True
     return mocked_send
+
+@pytest.fixture
+def mock_gravy_valet_get_verified_links():
+    """This fixture is used to mock a GV request which is made during node's identifier update. More specifically, when
+    the tree walker in datacite metadata building process asks GV for verified links. As a result, this request must be
+    mocked in many tests. The following decoration can be applied to either a test class or individual test methods.
+
+    ```
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    ```
+    """
+    with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_verified_links:
+        mock_get_verified_links.return_value = []
+        yield mock_get_verified_links
