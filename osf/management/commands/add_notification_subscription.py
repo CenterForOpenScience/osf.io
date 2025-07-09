@@ -41,15 +41,15 @@ def add_reviews_notification_setting(notification_type, state=None):
             subscription = NotificationSubscriptionLegacy(_id=user_subscription_id, owner=user, event_name=notification_type)
             subscription.save()  # Need to save in order to access m2m fields
             subscription.add_user_to_subscription(user, 'email_transactional')
-
-            subscription_type = NotificationType.objects.filter(name='email_transactional')
-
-            if not subscription_type.exists():
-                continue
-            subscription_type = subscription_type.first()
-            subscription_type.add_user_to_subscription(user=user)
         else:
             logger.info(f'User {user._id} already has a {notification_type} subscription')
+
+        subscription_type = NotificationType.objects.filter(name=notification_type)
+        if not subscription_type.exists():
+            logger.info(f'NotificationType {notification_type} does not exist.')
+            continue
+        subscription_type = subscription_type.first()
+        subscription_type.add_user_to_subscription(user=user)
         total_created += 1
 
     logger.info(f'Added subscriptions for {total_created}/{total_active_users} users')
