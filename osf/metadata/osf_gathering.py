@@ -142,6 +142,7 @@ OSFMAP = {
         **OSF_OBJECT,
         OSF.supplements: OSF_OBJECT_REFERENCE,
         OSF.hasCedarTemplate: None,
+        OSF.verifiedLink: None,
     },
     OSF.ProjectComponent: {
         **OSF_OBJECT,
@@ -921,6 +922,14 @@ def gather_qualified_attributions(focus):
                 yield (_attribution_ref, DCAT.hadRole, _osfrole_ref)
                 yield (_attribution_ref, OSF.order, index)
 
+@gather.er(OSF.verifiedLink)
+def gather_verified_link(focus):
+    links = focus.dbmodel.get_verified_links()
+    for link in links:
+        ref = rdflib.BNode()
+        yield (OSF.verifiedLink, ref)
+        yield (ref, DCAT.accessURL, link['target_url'])
+        yield (ref, DCTERMS.type, DATACITE[link['resource_type']])
 
 @gather.er(OSF.affiliation)
 def gather_affiliated_institutions(focus):
