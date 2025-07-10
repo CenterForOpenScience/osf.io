@@ -19,6 +19,10 @@ from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 
+def pytest_configure(config):
+    if not os.getenv('GITHUB_ACTIONS') == 'true':
+        config.option.allow_hosts += ',mailhog'
+
 
 logger = logging.getLogger(__name__)
 
