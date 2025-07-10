@@ -27,7 +27,9 @@ from osf.utils import permissions
 from conftest import start_mock_send_grid
 
 
+
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationRetractionModelsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -392,6 +394,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -749,8 +752,7 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_400_BAD_REQUEST
 
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()

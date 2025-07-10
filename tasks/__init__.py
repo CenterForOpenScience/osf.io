@@ -297,6 +297,7 @@ def test_module(ctx, module=None, numprocesses=None, nocapture=False, params=Non
     args = []
     if junit:
         args.extend(['--junit-xml', 'report.xml'])
+        args.extend(['--html=report.html', '--self-contained-html'])
     if coverage:
         args.extend([
             '--cov-report', 'term-missing',
@@ -346,21 +347,13 @@ API_TESTS1 = [
     'api_tests/preprints',
     'api_tests/registrations',
     'api_tests/registries_moderation',
-    'api_tests/users',
 ]
 API_TESTS2 = [
-    'api_tests/cedar_metadata_records',
-    'api_tests/cedar_metadata_templates',
-    'api_tests/chronos',
-    'api_tests/meetings',
     'api_tests/metrics',
     'api_tests/nodes',
     'api_tests/requests',
     'api_tests/resources',
     'api_tests/schema_responses',
-    'api_tests/subscriptions',
-    'api_tests/waffle',
-    'api_tests/wb',
 ]
 API_TESTS3 = [
     'api_tests/actions',
@@ -369,6 +362,7 @@ API_TESTS3 = [
     'api_tests/applications',
     'api_tests/banners',
     'api_tests/base',
+    'api_tests/chronos',
     'api_tests/collections',
     'api_tests/collection_submissions',
     'api_tests/collection_submission_actions',
@@ -376,7 +370,9 @@ API_TESTS3 = [
     'api_tests/crossref',
     'api_tests/files',
     'api_tests/guids',
+    'api_tests/meetings',
     'api_tests/metadata_records',
+    'api_tests/osf_groups',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
@@ -387,13 +383,29 @@ API_TESTS3 = [
     'api_tests/tokens',
     'api_tests/view_only_links',
     'api_tests/share',
+    'api_tests/subscriptions',
     'api_tests/wikis',
+    'api_tests/wb',
+]
+API_TESTS4 = [
+    'api_tests/cedar_metadata_records',
+    'api_tests/cedar_metadata_templates',
+    'api_tests/users',
+    'api_tests/waffle',
 ]
 ADDON_TESTS = [
-    'addons',
+    'addons/base',
+    'addons/boa',
+    'addons/forward',
+    'addons/osfstorage',
+    'addons/twofactor',
+    'addons/wiki',
 ]
 ADMIN_TESTS = [
     'admin_tests',
+]
+MAILHOG_TESTS = [
+    'api_tests/mailhog',
 ]
 
 
@@ -406,14 +418,14 @@ def test_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False)
 @task
 def test_website(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the old test suite."""
-    print(f'Testing modules "{WEBSITE_TESTS}"')
-    test_module(ctx, module=WEBSITE_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    print(f'Testing modules "{WEBSITE_TESTS + API_TESTS4}"')
+    test_module(ctx, module=WEBSITE_TESTS + API_TESTS4, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
 def test_api1(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
-    print(f'Testing modules "{API_TESTS1 + ADMIN_TESTS}"')
-    test_module(ctx, module=API_TESTS1 + ADMIN_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    print(f'Testing modules "{API_TESTS1}"')
+    test_module(ctx, module=API_TESTS1, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
@@ -426,9 +438,16 @@ def test_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=False
 @task
 def test_api3(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     """Run the API test suite."""
-    print(f'Testing modules "{API_TESTS3 + OSF_TESTS}"')
+    print(f'Testing modules "{API_TESTS3}"')
     # NOTE: There may be some concurrency issues with ES
-    test_module(ctx, module=API_TESTS3 + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    test_module(ctx, module=API_TESTS3, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+
+
+@task
+def test_mailhog(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    """Run the MAILHOG test suite."""
+    print(f'Testing modules "{MAILHOG_TESTS}"')
+    test_module(ctx, module=MAILHOG_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
@@ -440,10 +459,9 @@ def test_admin(ctx, numprocesses=None, coverage=False, testmon=False, junit=Fals
 
 @task
 def test_addons(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
-    """Run all the tests in the addons directory.
-    """
-    print(f'Testing modules "{ADDON_TESTS}"')
-    test_module(ctx, module=ADDON_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+    """Run all the tests in the addons directory."""
+    print(f'Testing modules "{ADDON_TESTS + ADMIN_TESTS + OSF_TESTS}"')
+    test_module(ctx, module=ADDON_TESTS + ADMIN_TESTS + OSF_TESTS, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 
 @task
@@ -463,6 +481,7 @@ def test(ctx, all=False, lint=False):
         test_addons(ctx)
         # TODO: Enable admin tests
         test_admin(ctx)
+        test_mailhog(ctx)
 
 @task
 def remove_failures_from_testmon(ctx, db_path=None):
@@ -511,6 +530,11 @@ def test_ci_api2(ctx, numprocesses=None, coverage=False, testmon=False, junit=Fa
 def test_ci_api3_and_osf(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
     #ci_setup(ctx)
     test_api3(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
+
+
+@task
+def test_ci_mailhog(ctx, numprocesses=None, coverage=False, testmon=False, junit=False):
+    test_mailhog(ctx, numprocesses=numprocesses, coverage=coverage, testmon=testmon, junit=junit)
 
 @task
 def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
