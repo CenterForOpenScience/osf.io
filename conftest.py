@@ -362,6 +362,7 @@ def with_class_scoped_db(_class_scoped_db):
     """
     yield from rolledback_transaction('function_transaction')
 
+
 @pytest.fixture
 def mock_gravy_valet_get_verified_links():
     """This fixture is used to mock a GV request which is made during node's identifier update. More specifically, when
