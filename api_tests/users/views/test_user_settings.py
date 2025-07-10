@@ -283,6 +283,7 @@ class TestResetPassword:
         }
 
         res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 429
 
         res = app.get(url, expect_errors=True)
