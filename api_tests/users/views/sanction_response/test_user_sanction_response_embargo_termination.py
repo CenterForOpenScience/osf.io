@@ -31,6 +31,7 @@ class TestEmbargoTerminationApproval:
     def rejection_token(self, sanction):
         return sanction.approval_state[sanction.initiated_by._id]['rejection_token']
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_approve_embargo_termination(self, app, url, sanction, registration, approval_token):
         assert registration.embargo_termination_approval
         user = sanction.initiated_by

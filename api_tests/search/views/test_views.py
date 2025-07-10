@@ -566,6 +566,7 @@ class TestSearchRegistrations(ApiSearchTestCase):
             registration_private.update_search()
             return registration_private
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_search_registrations(
             self, app, url_registration_search, user, user_one, user_two,
             registration, registration_public, registration_private):

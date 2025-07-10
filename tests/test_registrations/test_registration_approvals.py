@@ -114,6 +114,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.registration.registration_approval.approve(user=non_admin, token=approval_token)
         assert self.registration.is_pending_registration
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_approval_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
         self.registration.require_approval(
@@ -126,6 +127,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         # adds initiated, approved, and registered logs
         assert self.registration.registered_from.logs.count() == initial_project_logs + 3
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_one_approval_with_two_admins_stays_pending(self):
         admin2 = UserFactory()
         Contributor.objects.create(node=self.registration, user=admin2)
@@ -251,6 +253,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_registration
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_should_suppress_emails(self):
         self.registration = RegistrationFactory(project=self.project)
         self.registration.external_registration = True
@@ -280,6 +283,7 @@ class RegistrationApprovalModelTestCase(OsfTestCase):
             self.registration.sanction.ask(contributors)
         assert mock_notify_non_authorizer.call_count == 0
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_on_complete_notify_initiator(self):
         self.registration.require_approval(
             self.user,
