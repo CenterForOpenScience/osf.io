@@ -23,7 +23,7 @@
                         </a>
                     </td>
                     <td>{{ child.title }}</td>
-                    <td>{{ child.public }}</td>
+                    <td>{{ child.is_public }}</td>
                     <td>{{ child.contributors|length }}</td>
                     {%  if perms.osf.delete_node %}
                     <td>
