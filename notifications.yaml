@@ -92,12 +92,12 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: node_contributor_added_access_request
+  - name: node_request_institutional_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: node_request_institutional_access_request
+  - name: node_contributor_added_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'
