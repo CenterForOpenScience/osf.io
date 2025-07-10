@@ -289,6 +289,9 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
 
+        res = app.get(url, expect_errors=True)
+        assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'
+
 @pytest.mark.django_db
 class TestUserEmailsList:
 
