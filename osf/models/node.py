@@ -2318,6 +2318,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def is_registration_of(self, other):
         return self.is_derived_from(other, 'registered_from')
 
+    def get_verified_links(self):
+        return gv_translations.get_verified_links(self._id)
+
     def serialize_waterbutler_credentials(self, provider_name):
         return self.get_addon(provider_name).serialize_waterbutler_credentials()
 

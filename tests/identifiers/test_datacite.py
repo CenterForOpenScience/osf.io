@@ -1,6 +1,7 @@
 import lxml
 import pytest
 import responses
+from unittest import mock
 
 from datacite import schema40
 from django.utils import timezone
@@ -27,6 +28,7 @@ def _assert_unordered_list_of_dicts_equal(actual_list_of_dicts, expected_list_of
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestDataCiteClient:
 
     @pytest.fixture()
@@ -260,6 +262,7 @@ class TestDataCiteViews(OsfTestCase):
         self.client = DataCiteClient(self.node)
 
     @responses.activate
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_datacite_create_identifiers_not_exists(self):
         responses.add(
             responses.Response(
