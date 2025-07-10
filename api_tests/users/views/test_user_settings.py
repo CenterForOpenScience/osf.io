@@ -285,7 +285,6 @@ class TestResetPassword:
                 }
             }
         }
-
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
 
