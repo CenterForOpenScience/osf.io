@@ -68,7 +68,15 @@ class TestRegistrationsChildrenList:
         assert component_one._id in ids
         assert component_two._id in ids
 
-    def test_return_registrations_list_no_auth_approved(self, user, app, registration_with_children_approved, registration_with_children_approved_url):
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
+    def test_return_registrations_list_no_auth_approved(
+        self,
+        user,
+        app,
+        registration_with_children_approved,
+        registration_with_children_approved_url
+    ):
+
         component_one, component_two, component_three, component_four = registration_with_children_approved.nodes
 
         res = app.get(registration_with_children_approved_url)
