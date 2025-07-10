@@ -26,6 +26,7 @@ from mako.lookup import TemplateLookup, Template
 from framework.email import tasks
 from osf import features
 from website import settings
+from django.core.mail import EmailMessage, get_connection
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +76,34 @@ def render_message(tpl_name, **context):
     return tpl.render(**context)
 
 
+def send_to_mailhog(subject, message, from_email, to_email, attachment_name=None, attachment_content=None):
+    email = EmailMessage(
+        subject=subject,
+        body=message,
+        from_email=from_email,
+        to=[to_email],
+        connection=get_connection(
+            backend='django.core.mail.backends.smtp.EmailBackend',
+            host=settings.MAILHOG_HOST,
+            port=settings.MAILHOG_PORT,
+            username='',
+            password='',
+            use_tls=False,
+            use_ssl=False,
+        )
+    )
+    email.content_subtype = 'html'
+
+    if attachment_name and attachment_content:
+        email.attach(attachment_name, attachment_content)
+
+    try:
+        email.send()
+    except ConnectionRefusedError:
+        logger.debug('Mailhog is not running. Please start it to send emails.')
+    return
+
+
 def send_mail(
         to_addr,
         mail,
@@ -118,6 +147,17 @@ def send_mail(
     ttls = login = not settings.DEBUG_MODE
     logger.debug('Sending email...')
     logger.debug(f'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
+
+    if waffle.switch_is_active(features.ENABLE_MAILHOG):
+        logger.debug('Intercepting email: sending via MailHog')
+        send_to_mailhog(
+            subject=subject,
+            message=message,
+            from_email=from_addr,
+            to_email=to_addr,
+            attachment_name=attachment_name,
+            attachment_content=attachment_content
+        )
 
     kwargs = dict(
         from_addr=from_addr,

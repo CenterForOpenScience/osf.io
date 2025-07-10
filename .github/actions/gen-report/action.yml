@@ -3,8 +3,13 @@ description: 'Generate test report from junit xml file'
 runs:
   using: "composite"
   steps:
+  - name: Archive code coverage results
+    uses: actions/upload-artifact@v4
+    with:
+      name: ${{github.job}} HTML REPORT
+      path: report.html
   - name: Generate Report
-    uses: dorny/test-reporter@v1
+    uses: dorny/test-reporter@v2
     if: success() || failure()    # run this step even if previous step failed
     with:
       name: ${{github.job}} REPORT   # Name of the check run which will be created

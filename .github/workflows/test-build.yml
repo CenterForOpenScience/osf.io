@@ -11,6 +11,7 @@ env:
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
+  GITHUB_ACTIONS: true
 
 jobs:
   build-cache:
@@ -21,7 +22,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache
-        key: reqs_${{ hashFiles('**/pyproject.toml') }}
+        key: reqs_${{ hashFiles('poetry.lock') }}
         restore-keys: reqs
     - run: |
         mkdir -p ~/.cache/downloads
@@ -30,7 +31,7 @@ jobs:
         mkdir -p ~/.cache/testmon
         rm -rf node_modules  ## TODO remove this later
 
-  addons:
+  addons_and_admin:
     runs-on: ubuntu-22.04
     needs: build-cache
     permissions:
@@ -52,9 +53,9 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-addons -n 1 --junit
+      run: poetry run python3 -m invoke test-ci-addons --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   website:
@@ -79,9 +80,9 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-website -n 1 --junit
+      run: poetry run python3 -m invoke test-ci-website --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api1_and_js:
@@ -108,9 +109,9 @@ jobs:
       - name: NVM & yarn install
         run: poetry run python3 -m invoke assets --dev
       - name: Run test
-        run: poetry run python3 -m invoke test-ci-api1-and-js -n 1 --junit
+        run: poetry run python3 -m invoke test-ci-api1-and-js --junit
       - name: Upload report
-        if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+        if: (success() || failure())    # run this step even if previous step failed
         uses: ./.github/actions/gen-report
 
   api2:
@@ -135,9 +136,9 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-api2 -n 1 --junit
+      run: poetry run python3 -m invoke test-ci-api2 --junit
     - name: Upload report
-      if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
+      if: (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
 
   api3_and_osf:
@@ -163,7 +164,40 @@ jobs:
     - uses: actions/checkout@v2
     - uses: ./.github/actions/start-build
     - name: Run tests
-      run: poetry run python3 -m invoke test-ci-api3-and-osf -n 1 --junit
+      run: poetry run python3 -m invoke test-ci-api3-and-osf --junit
+    - name: Upload report
+      if: (success() || failure())    # run this step even if previous step failed
+      uses: ./.github/actions/gen-report
+
+  mailhog:
+    runs-on: ubuntu-22.04
+    permissions:
+      checks: write
+    needs: build-cache
+    services:
+      postgres:
+        image: postgres
+
+        env:
+          POSTGRES_PASSWORD: ${{ env.OSF_DB_PASSWORD }}
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+      mailhog:
+        image: mailhog/mailhog
+        ports:
+          - 1025:1025
+          - 8025:8025
+    steps:
+    - uses: actions/checkout@v2
+    - uses: ./.github/actions/start-build
+    - name: Run tests
+      run: poetry run python3 -m invoke test-ci-mailhog -n 1 --junit
     - name: Upload report
       if: (github.event_name != 'pull_request') && (success() || failure())    # run this step even if previous step failed
       uses: ./.github/actions/gen-report
