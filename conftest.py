@@ -24,6 +24,10 @@ def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
         config.option.allow_hosts += ',mailhog'
 
+def pytest_configure(config):
+    if not os.getenv('GITHUB_ACTIONS') == 'true':
+        config.option.allow_hosts += ',mailhog'
+
 
 logger = logging.getLogger(__name__)
 
@@ -362,6 +366,7 @@ def with_class_scoped_db(_class_scoped_db):
     ```
     """
     yield from rolledback_transaction('function_transaction')
+
 
 @pytest.fixture()
 def mock_send_grid():

@@ -703,10 +703,6 @@ class CeleryConfig:
             #   'task': 'management.commands.addon_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
             # },
-            # 'populate_branched_from': {
-            #   'task': 'management.commands.populate_branched_from',
-            #   'schedule': crontab(minute=0, hour=3),
-            # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',
                 'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
