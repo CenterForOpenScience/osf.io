@@ -19,6 +19,11 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password.html.mako'
     notification_freq_default: instantly
+  - name: forgot_password_institution
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forgot_password_institution.html.mako'
+    notification_freq_default: instantly
   - name: password_reset
     __docs__: ...
     object_content_type_model_name: osfuser

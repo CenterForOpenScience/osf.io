@@ -852,7 +852,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 notification_type.emit(
                     user=user_obj,
                     message_frequency='instantly',
-                    event_context={'can_change_preferences': False, 'reset_link': reset_link}
+                    event_context={'can_change_preferences': False, 'reset_link': reset_link},
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
