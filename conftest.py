@@ -18,11 +18,11 @@ from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
+from osf.management.commands.populate_notification_types import populate_notification_types
 
 def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
         config.option.allow_hosts += ',mailhog'
-
 
 logger = logging.getLogger(__name__)
 
@@ -363,6 +363,22 @@ def with_class_scoped_db(_class_scoped_db):
     yield from rolledback_transaction('function_transaction')
 
 
+@pytest.fixture()
+def mock_send_grid():
+    with mock.patch.object(website_settings, 'USE_EMAIL', True):
+        with mock.patch.object(website_settings, 'USE_CELERY', False):
+            with mock.patch('framework.email.tasks.send_email') as mock_sendgrid:
+                mock_sendgrid.return_value = True
+                yield mock_sendgrid
+
+
+def start_mock_send_grid(test_case):
+    patcher = mock.patch('framework.email.tasks.send_email')
+    mocked_send = patcher.start()
+    test_case.addCleanup(patcher.stop)
+    mocked_send.return_value = True
+    return mocked_send
+
 @pytest.fixture
 def mock_gravy_valet_get_verified_links():
     """This fixture is used to mock a GV request which is made during node's identifier update. More specifically, when
@@ -379,17 +395,22 @@ def mock_gravy_valet_get_verified_links():
 
 
 @pytest.fixture()
-def mock_send_grid():
+def mock_notification_send():
     with mock.patch.object(website_settings, 'USE_EMAIL', True):
         with mock.patch.object(website_settings, 'USE_CELERY', False):
-            with mock.patch('framework.email.tasks.send_email') as mock_sendgrid:
-                mock_sendgrid.return_value = True
-                yield mock_sendgrid
+            with mock.patch('osf.models.notification.Notification.send') as mock_emit:
+                mock_emit.return_value = None  # Or True, if needed
+                yield mock_emit
 
 
-def start_mock_send_grid(test_case):
-    patcher = mock.patch('framework.email.tasks.send_email')
-    mocked_send = patcher.start()
+def start_mock_notification_send(test_case):
+    patcher = mock.patch('osf.models.notification.Notification.send')
+    mocked_emit = patcher.start()
     test_case.addCleanup(patcher.stop)
-    mocked_send.return_value = True
-    return mocked_send
+    mocked_emit.return_value = None
+    return mocked_emit
+
+
+@pytest.fixture(autouse=True)
+def load_notification_types(db, *args, **kwargs):
+    populate_notification_types(*args, **kwargs)

@@ -108,7 +108,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throrrle(self, app, url, user_one, csrf_token):
+    def test_throttle(self, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'

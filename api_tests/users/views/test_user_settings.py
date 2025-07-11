@@ -41,7 +41,7 @@ class TestUserRequestExport:
             }
         }
 
-    def test_get(self, app, user_one, url):
+    def test_get(self, app, user_one, url, mock_notification_send):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
@@ -163,8 +163,6 @@ class TestUserChangePassword:
         assert res.json['errors'][0]['detail'] == 'Old password is invalid'
         assert res.json['errors'][1]['detail'] == 'Password should be at least eight characters'
 
-
-@pytest.mark.django_db
 class TestUserEmailsList:
 
     @pytest.fixture(autouse=True)
