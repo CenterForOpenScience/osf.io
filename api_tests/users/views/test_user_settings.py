@@ -274,7 +274,7 @@ class TestResetPassword:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        app.get(url)
+        res = app.get(url)
         user_one.reload()
         payload = {
             'data': {
@@ -285,7 +285,6 @@ class TestResetPassword:
                 }
             }
         }
-
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
 

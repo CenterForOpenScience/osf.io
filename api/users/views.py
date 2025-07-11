@@ -850,7 +850,8 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                     message_frequency=FrequencyChoices.INSTANTLY.value,
                     event_context={
                         'can_change_preferences': False,
-                        'reset_link': reset_link},
+                        'reset_link': reset_link
+                    },
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
