@@ -208,14 +208,14 @@ def redirect_unsupported_institution(auth):
 def forgot_password_post():
     """Dispatches to ``_forgot_password_post`` passing non-institutional user mail template
     and reset action."""
-    return _forgot_password_post(mail_template='forgot_password',
+    return _forgot_password_post(mail_template=NotificationType.Type.USER_FORGOT_PASSWORD.value,
                                  reset_route='reset_password_get')
 
 
 def forgot_password_institution_post():
     """Dispatches to `_forgot_password_post` passing institutional user mail template, reset
     action, and setting the ``institutional`` flag."""
-    return _forgot_password_post(mail_template='forgot_password_institution',
+    return _forgot_password_post(mail_template=NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value,
                                  reset_route='reset_password_institution_get',
                                  institutional=True)
 
@@ -274,12 +274,14 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                     )
                 )
                 notification_type = NotificationType.objects.filter(name=mail_template)
-                if not notification_type.exists():
-                    raise NotificationType.DoesNotExist(
-                        f'NotificationType with name {mail_template} does not exist.'
-                    )
-                notification_type = notification_type.first()
-                notification_type.emit(user=user_obj, message_frequency='instantly', event_context={'can_change_preferences': False, 'reset_link': reset_link})
+                notification_type.emit(
+                    user=user_obj,
+                    message_frequency='instantly',
+                    event_context={
+                        'can_change_preferences': False,
+                        'reset_link': reset_link
+                    }
+                )
 
         # institutional forgot password page displays the message as main text, not as an alert
         if institutional:

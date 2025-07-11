@@ -334,13 +334,16 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
-            notification_type = NotificationType.objects.filter(name='welcome_osf4i')
-            if not notification_type.exists():
-                raise NotificationType.DoesNotExist(
-                    'NotificationType with name welcome_osf4i does not exist.',
-                )
-            notification_type = notification_type.first()
-            notification_type.emit(user=user, message_frequency='instantly', event_context={'domain': DOMAIN, 'osf_support_email': OSF_SUPPORT_EMAIL, 'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N)})
+            notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_WELCOME_OSF4I.value)
+            notification_type.emit(
+                user=user,
+                message_frequency='instantly',
+                event_context={
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N)
+                }
+            )
 
         # Add the email to the user's account if it is identified by the eppn
         if email_to_add:

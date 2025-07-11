@@ -1072,13 +1072,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            notification_type = NotificationType.objects.filter(name='password_reset')
-            if not notification_type.exists():
-                raise NotificationType.DoesNotExist(
-                    'NotificationType with name password_reset does not exist.',
-                )
-            notification_type = notification_type.first()
-            notification_type.emit(user=self, message_frequency='instantly', event_context={'can_change_preferences': False, 'osf_contact_email': website_settings.OSF_CONTACT_EMAIL})
+            notification_type = NotificationType.objects.filter(name=NotificationType.Type.USER_PASSWORD_RESET.value)
+            notification_type.emit(
+                user=self,
+                message_frequency='instantly',
+                event_context={
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
+            )
             remove_sessions_for_user(self)
 
     @classmethod
