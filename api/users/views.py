@@ -99,7 +99,9 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
+    NotificationType,
 )
+from osf.models.notification_type import FrequencyChoices
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
 from website import mails, settings, language
@@ -822,7 +824,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError('Request must include email in query params.')
 
         institutional = bool(request.query_params.get('institutional', None))
-        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+        notification_type_name = NotificationType.Type.USER_FORGOT_PASSWORD.value if not institutional else NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value
 
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
@@ -842,11 +844,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                notification_type = NotificationType.objects.get(name=notification_type_name)
+                notification_type.emit(
+                    user=user_obj,
+                    message_frequency=FrequencyChoices.INSTANTLY.value,
+                    event_context={
+                        'can_change_preferences': False,
+                        'reset_link': reset_link,
+                    },
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 

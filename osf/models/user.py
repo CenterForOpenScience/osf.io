@@ -57,11 +57,12 @@ from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
 from website import settings as website_settings
-from website import filters, mails
+from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+from osf.models.notification_type import NotificationType, FrequencyChoices
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1071,12 +1072,15 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            mails.send_mail(
-                to_addr=self.username,
-                mail=mails.PASSWORD_RESET,
+            notification_type_name = NotificationType.Type.USER_PASSWORD_RESET.value
+            notification_type = NotificationType.objects.get(name=notification_type_name)
+            notification_type.emit(
                 user=self,
-                can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                message_frequency=FrequencyChoices.INSTANTLY.value,
+                event_context={
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
             )
             remove_sessions_for_user(self)
 
