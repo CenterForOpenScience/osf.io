@@ -824,7 +824,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError('Request must include email in query params.')
 
         institutional = bool(request.query_params.get('institutional', None))
-        mail_template = NotificationType.Type.USER_FORGOT_PASSWORD.value if not institutional else NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value
+        notification_type_name = NotificationType.Type.USER_FORGOT_PASSWORD.value if not institutional else NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value
 
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
@@ -844,7 +844,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                notification_type = NotificationType.objects.get(name=mail_template)
+                notification_type = NotificationType.objects.get(name=notification_type_name)
                 notification_type.emit(
                     user=user_obj,
                     message_frequency=FrequencyChoices.INSTANTLY.value,
