@@ -92,7 +92,6 @@
     "subjects_updated": "A user updated the subjects",
     "view_only_link_added": "A user created a view-only link to a project",
     "view_only_link_removed": "A user removed a view-only link to a project",
-    "migrated_quickfiles": "QuickFiles were migrated into a public project",
 	"resource_identifier_added": "A Resource has been added to the Node",
 	"resource_identifier_removed": "A Resource has been removed from the Node",
 	"resource_identifier_updated": "A Resource on the Node has had its PID updated"

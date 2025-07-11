@@ -1,7 +1,6 @@
 import datetime
 import time
 import functools
-import logging
 from importlib import import_module
 from unittest.mock import Mock
 
@@ -16,13 +15,12 @@ from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import get_session
-from tests.base import OsfTestCase, get_default_metaschema
+from tests.base import OsfTestCase
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     RegistrationFactory,
-    DraftRegistrationFactory,
 )
 from website import settings
 from addons.base import views
@@ -44,8 +42,6 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
-from api.base.settings.defaults import API_BASE
-from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 from django.conf import settings as django_conf_settings

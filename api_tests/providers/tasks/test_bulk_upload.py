@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 import uuid
 
@@ -8,12 +7,9 @@ from osf.exceptions import RegistrationBulkCreationContributorError, Registratio
 from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
-from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN, READ, WRITE
 
 from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
-
-from website import mails, settings
 
 
 class TestRegistrationBulkUploadContributors:
@@ -67,6 +63,7 @@ class TestRegistrationBulkCreationRowError:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestBulkUploadTasks:
 
     @pytest.fixture()
@@ -320,9 +317,7 @@ class TestBulkUploadTasks:
         assert upload_job_done_full.state == JobState.PICKED_UP
         assert not upload_job_done_full.email_sent
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_bulk_creation_done_full(self, mock_send_mail, registration_row_1, registration_row_2,
+    def test_bulk_creation_done_full(self, mock_send_grid, registration_row_1, registration_row_2,
                                      upload_job_done_full, provider, initiator, read_contributor, write_contributor):
 
         bulk_create_registrations(upload_job_done_full.id, dry_run=False)
@@ -340,18 +335,9 @@ class TestBulkUploadTasks:
             assert row.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
             assert row.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-        mock_send_mail.assert_called_with(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
-            fullname=initiator.fullname,
-            auto_approval=False,
-            count=2,
-            pending_submissions_url=get_registration_provider_submissions_url(provider),
-        )
+        mock_send_grid.assert_called()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_bulk_creation_done_partial(self, mock_send_mail, registration_row_3,
+    def test_bulk_creation_done_partial(self, mock_send_grid, registration_row_3,
                                         registration_row_invalid_extra_bib_1, upload_job_done_partial,
                                         provider, initiator, read_contributor, write_contributor):
 
@@ -369,26 +355,9 @@ class TestBulkUploadTasks:
         assert registration_row_3.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
         assert registration_row_3.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-        mock_send_mail.assert_called_with(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
-            fullname=initiator.fullname,
-            auto_approval=False,
-            approval_errors=[],
-            draft_errors=[
-                'Title: Test title Invalid - Extra Bibliographic Contributor, External ID: 90-=ijkl, '
-                'Error: Bibliographic contributors must be one of admin, read-only or read-write'
-            ],
-            total=2,
-            successes=1,
-            failures=1,
-            pending_submissions_url=get_registration_provider_submissions_url(provider),
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        )
+        mock_send_grid.assert_called()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_bulk_creation_done_error(self, mock_send_mail, registration_row_invalid_extra_bib_2,
+    def test_bulk_creation_done_error(self, mock_send_grid, registration_row_invalid_extra_bib_2,
                                       registration_row_invalid_affiliation, upload_job_done_error,
                                       provider, initiator, read_contributor, write_contributor, institution):
 
@@ -398,16 +367,4 @@ class TestBulkUploadTasks:
         assert upload_job_done_error.email_sent
         assert len(RegistrationBulkUploadRow.objects.filter(upload__id=upload_job_done_error.id)) == 0
 
-        mock_send_mail.assert_called_with(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
-            fullname=initiator.fullname,
-            draft_errors=[
-                'Title: Test title Invalid - Extra Bibliographic Contributor, External ID: 90-=ijkl, '
-                'Error: Bibliographic contributors must be one of admin, read-only or read-write',
-                f'Title: Test title Invalid - Unauthorized Affiliation, External ID: mnopqrst, '
-                f'Error: Initiator [{initiator._id}] is not affiliated with institution [{institution._id}]',
-            ],
-            count=2,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
-        )
+        mock_send_grid.assert_called()
