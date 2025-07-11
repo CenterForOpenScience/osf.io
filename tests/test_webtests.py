@@ -36,7 +36,7 @@ from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import language
 from website.util import web_url_for, api_url_for
-from conftest import start_mock_send_grid
+from conftest import start_mock_send_grid, start_mock_notification_send
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -805,6 +805,7 @@ class TestForgotPassword(OsfTestCase):
         self.user.save()
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
     # log users out before they land on forgot password page
     def test_forgot_password_logs_out_user(self):
@@ -833,7 +834,7 @@ class TestForgotPassword(OsfTestCase):
         res = form.submit(self.app)
 
         # check mail was sent
-        assert self.mock_send_grid.called
+        assert self.start_mock_notification_send.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -923,6 +924,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.save()
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
     # log users out before they land on institutional forgot password page
     def test_forgot_password_logs_out_user(self):
@@ -949,7 +951,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert self.mock_send_grid.called
+        assert self.start_mock_notification_send.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
