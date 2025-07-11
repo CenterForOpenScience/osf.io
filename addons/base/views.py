@@ -577,7 +577,7 @@ def create_waterbutler_log(payload, **kwargs):
                 )
 
             if payload.get('email') is True or payload.get('errors'):
-                template = 'file_operation_failed' if payload.get('errors') else 'file_operation_success'
+                template = NotificationType.Type.FILE_OPERATION_FAILED.value if payload.get('errors') else NotificationType.Type.FILE_OPERATION_SUCCESS.value
 
                 context = {}
                 context['action'] = payload['action']

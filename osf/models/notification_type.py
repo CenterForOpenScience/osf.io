@@ -134,6 +134,8 @@ class NotificationType(models.Model):
         SCHEMA_RESPONSE_INITIATED = 'schema_response_initiated'
 
         REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
+        FILE_OPERATION_FAILED = 'file_operation_failed'
+        FILE_OPERATION_SUCCESS = 'file_operation_success'
 
         @property
         def instance(self):
