@@ -273,7 +273,7 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                         token=user_obj.verification_key_v2['token']
                     )
                 )
-                notification_type = NotificationType.objects.filter(name=mail_template)
+                notification_type = NotificationType.objects.get(name=mail_template)
                 notification_type.emit(
                     user=user_obj,
                     message_frequency='instantly',

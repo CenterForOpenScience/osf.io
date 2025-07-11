@@ -1072,7 +1072,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            notification_type = NotificationType.objects.filter(name=NotificationType.Type.USER_PASSWORD_RESET.value)
+            notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_PASSWORD_RESET.value)
             notification_type.emit(
                 user=self,
                 message_frequency='instantly',
