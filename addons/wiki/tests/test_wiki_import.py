@@ -44,8 +44,8 @@ from celery.exceptions import CeleryError
 
 pytestmark = pytest.mark.django_db
 
-SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''"'
-SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''"'
+SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''\"'
+SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''\"'
 
 class TestFileNodeTmp(BaseFileNode):
     _provider = 'test',
@@ -168,7 +168,7 @@ class TestWikiPage(OsfTestCase):
     def setUp(self):
         self.objects = WikiPageNodeManager()
 
-        self.page_name = WikiPage.CharField(max_length=200, validators=["test", ])
+        self.page_name = WikiPage.CharField(max_length=200, validators=['test', ])
         self.user = WikiPage.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPage.CASCADE)
         self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPage.CASCADE, related_name='wikis')
         self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPage.CASCADE)
@@ -1464,11 +1464,11 @@ class test_views(OsfTestCase):
         self.assertEqual(result, expected_result)
 
     def test_replace_wiki_link_notation_wiki_page_with_tooptip(self):
-        wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 "tooltip1")'
+        wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
         import_wiki_name_list = ['importpage1', 'importpage2']
-        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ "tooltip1")'
+        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ \"tooltip1\")'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
         self.assertEqual(result_content, expected_content)
 
@@ -1500,11 +1500,11 @@ class test_views(OsfTestCase):
         self.assertEqual(result_content, expected_content)
 
     def test_replace_wiki_link_notation_has_sharp_and_is_wiki_with_tooltip(self):
-        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor "tooltip text")'
+        wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor \"tooltip text\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
         import_wiki_name_list = ['importpage1', 'importpage2']
-        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor "tooltip text")'
+        expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor \"tooltip text\")'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
         self.assertEqual(result_content, expected_content)
 
@@ -1562,11 +1562,11 @@ class test_views(OsfTestCase):
 
     def test_replace_file_name_image_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
-        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip1")'
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png \"tooltip1\")'
         match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
         notation = 'image'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
-        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render> "tooltip1")'
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render> \"tooltip1\")'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
 
@@ -1582,11 +1582,11 @@ class test_views(OsfTestCase):
 
     def test_replace_file_name_image_with_size_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
-        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip2" =200)'
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png \"tooltip2\" =200)'
         match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
         notation = 'image'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
-        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200> "tooltip2")'
+        expected_content = f'Wiki content with ![](<{website_settings.WATERBUTLER_URL}/v1/resources/{self.guid}/providers/osfstorage/{self.import_attachment_image1._id}?mode=render =200> \"tooltip2\")'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_image_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
 
@@ -1602,7 +1602,7 @@ class test_views(OsfTestCase):
 
     def test_replace_file_name_image_with_invalid_size_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
-        wiki_content_image_tooltip = 'Wiki content with ![](image1.png "tooltip" =abcde)'
+        wiki_content_image_tooltip = 'Wiki content with ![](image1.png \"tooltip\" =abcde)'
         match = list(re.finditer(self.rep_image, wiki_content_image_tooltip))[0]
         notation = 'image'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
@@ -1622,11 +1622,11 @@ class test_views(OsfTestCase):
 
     def test_replace_file_name_link_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
-        wiki_content_link_tooltip = 'Wiki content with [attachment1.doc](attachment1.doc "tooltip1")'
+        wiki_content_link_tooltip = 'Wiki content with [attachment1.doc](attachment1.doc \"tooltip1\")'
         match = list(re.finditer(self.rep_link, wiki_content_link_tooltip))[0]
         notation = 'link'
         match_path, tooltip_match = views._exclude_tooltip(match['path'])
-        expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id} "tooltip1")'
+        expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id} \"tooltip1\")'
         result = views._replace_file_name(self.project, wiki_name, wiki_content_link_tooltip, match, notation, self.root_import_folder1._id, match_path, tooltip_match, self.node_file_mapping)
         self.assertEqual(result, expected_content)
 
@@ -1690,7 +1690,7 @@ class test_views(OsfTestCase):
         self.assertIsNone(result_tooptip)
 
     def test_single_quote_tooltip(self):
-        match_path = "test.txt 'tooltip'"
+        match_path = 'test.txt \'tooltip\''
         expected_path = 'test.txt'
         expected_tooltip = 'tooltip'
         result_path, result_tooptip = views._exclude_tooltip(match_path)
@@ -1698,7 +1698,7 @@ class test_views(OsfTestCase):
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
 
     def test_double_quote_tooltip(self):
-        match_path = 'test.txt "tooltip"'
+        match_path = 'test.txt \"tooltip\"'
         expected_path = 'test.txt'
         expected_tooltip = 'tooltip'
         result_path, result_tooptip = views._exclude_tooltip(match_path)
@@ -1706,15 +1706,15 @@ class test_views(OsfTestCase):
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
 
     def test_backslash_in_tooltip(self):
-        match_path = r'test.txt "to\\\\ol\"\\tip"'
+        match_path = r'test.txt \"to\\\\ol\"\\tip\"'
         expected_path = 'test.txt'
-        expected_tooltip = 'to\\\\\\\\ol\\"\\\\tip'
+        expected_tooltip = 'to\\\\\\\\ol\\\"\\\\tip'
         result_path, result_tooptip = views._exclude_tooltip(match_path)
         self.assertEqual(result_path, expected_path)
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
 
     def test_empty_tooltip(self):
-        match_path = 'test.txt ""'
+        match_path = 'test.txt \"\"'
         expected_path = 'test.txt'
         expected_tooltip = ''
         result_path, result_tooptip = views._exclude_tooltip(match_path)
@@ -1722,7 +1722,7 @@ class test_views(OsfTestCase):
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
 
     def test_single_quote_tooltip_size(self):
-        match_path = "test.png 'tooltip' =200"
+        match_path = 'test.png \'tooltip\' =200'
         expected_path = 'test.png =200'
         expected_tooltip = 'tooltip'
         result_path, result_tooptip = views._exclude_tooltip(match_path)
@@ -1730,7 +1730,7 @@ class test_views(OsfTestCase):
         self.assertEqual(result_tooptip['tooltip'], expected_tooltip)
 
     def test_double_quote_tooltip_size(self):
-        match_path = 'test.png "tooltip" =200'
+        match_path = 'test.png \"tooltip\" =200'
         expected_path = 'test.png =200'
         expected_tooltip = 'tooltip'
         result_path, result_tooptip = views._exclude_tooltip(match_path)
@@ -2287,7 +2287,8 @@ class test_views(OsfTestCase):
         self.assertIn('/path3', import_errors)
 
     def test_err_with_tab(self):
-        err_obj_con = "code=400, data={'message_short': 'Error Message with Tab', 'message_long': '\\tAn error occures with tab\\t', 'code': 400, 'referrer': None}"
+        eff_obj = {'message_short': 'Error Message with Tab', 'message_long': '\tAn error occures with tab\t', 'code': 400, 'referrer': None}
+        err_obj_con = 'code=400, data=' + json.dumps(err_obj)
         err = CeleryError(err_obj_con)
         expected_msg = 'An error occures with tab'
         result_msg = views._extract_err_msg(err)

@@ -108,7 +108,7 @@ function ViewModel(data, totalCtn){
         if (!checkTotalCtn(self.data(), totalCtn)) {
             $SaveBtn.prop('disabled', true);
             $SaveBtn.attr('id', 'treeSaveDisabled');
-            alert('sort error! Please reload.');
+            $osf.growl('sort error! Please reload.');
             return;
         }
         $SaveBtn.prop('disabled', false);
