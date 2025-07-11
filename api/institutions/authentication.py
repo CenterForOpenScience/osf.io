@@ -341,8 +341,8 @@ class InstitutionAuthentication(BaseAuthentication):
                 event_context={
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
-                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N)
-                }
+                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
+                },
             )
 
         # Add the email to the user's account if it is identified by the eppn

@@ -850,8 +850,8 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                     message_frequency='instantly',
                     event_context={
                         'can_change_preferences': False,
-                        'reset_link': reset_link
-                    }
+                        'reset_link': reset_link,
+                    },
                 )
 
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
@@ -1071,8 +1071,8 @@ class ConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'can_change_preferences': False,
-                    'external_id_provider': provider
-                }
+                    'external_id_provider': provider,
+                },
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
@@ -1394,8 +1394,8 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'can_change_preferences': False,
-                    'external_id_provider': provider
-                }
+                    'external_id_provider': provider,
+                },
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
