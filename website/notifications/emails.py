@@ -2,7 +2,8 @@ from django.apps import apps
 
 from babel import dates, core, Locale
 
-from osf.models import AbstractNode, NotificationDigest, NotificationSubscription
+from osf.models import AbstractNode, NotificationSubscriptionLegacy
+from osf.models.notifications import NotificationDigest
 from osf.utils.permissions import ADMIN, READ
 from website import mails
 from website.notifications import constants
@@ -159,7 +160,7 @@ def check_node(node, event):
     """Return subscription for a particular node and event."""
     node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
     if node:
-        subscription = NotificationSubscription.load(utils.to_subscription_key(node._id, event))
+        subscription = NotificationSubscriptionLegacy.load(utils.to_subscription_key(node._id, event))
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
             if users:
@@ -172,7 +173,7 @@ def check_node(node, event):
 def get_user_subscriptions(user, event):
     if user.is_disabled:
         return {}
-    user_subscription = NotificationSubscription.load(utils.to_subscription_key(user._id, event))
+    user_subscription = NotificationSubscriptionLegacy.load(utils.to_subscription_key(user._id, event))
     if user_subscription:
         return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
     else:

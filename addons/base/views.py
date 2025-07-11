@@ -34,7 +34,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -52,7 +51,8 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion,
+    NotificationType,
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -577,17 +577,20 @@ def create_waterbutler_log(payload, **kwargs):
                 )
 
             if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+                template = NotificationType.Type.FILE_OPERATION_FAILED.value if payload.get('errors') else NotificationType.Type.FILE_OPERATION_SUCCESS.value
+
+                context = {}
+                context['action'] = payload['action']
+                context['source_node'] = source_node
+                context['destination_node'] = destination_node
+                context['source_path'] = payload['source']['materialized']
+                context['source_addon'] = payload['source']['addon']
+                context['destination_addon'] = payload['destination']['addon']
+                context['osf_support_email'] = settings.OSF_SUPPORT_EMAIL
+
+                NotificationType.objects.get(name=template).emit(
+                    user=user,
+                    event_context=context,
                 )
 
             if payload.get('errors'):
