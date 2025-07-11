@@ -1,15 +1,12 @@
 from unittest import mock
 import pytest
-import urllib
 
 from api.base.settings.defaults import API_BASE
-from api.base.settings import CSRF_COOKIE_NAME
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
 
