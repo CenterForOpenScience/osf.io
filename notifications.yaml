@@ -14,57 +14,57 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: password_reset
+  - name: user_password_reset
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/password_reset.html.mako'
     notification_freq_default: instantly
-  - name: forgot_password
+  - name: user_forgot_password
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password.html.mako'
     notification_freq_default: instantly
-  - name: welcome_osf4i
+  - name: user_welcome_osf4i
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/welcome_osf4i.html.mako'
     notification_freq_default: instantly
-  - name: invite_preprints_osf
+  - name: user_invite_osf_preprint
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints_osf.html.mako'
     notification_freq_default: instantly
-  - name: invite_preprints
+  - name: user_invite_preprint
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints.html.mako'
     notification_freq_default: instantly
-  - name: invite_draft_registration
+  - name: user_invite_draft_registration
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_draft_registration.html.mako'
     notification_freq_default: instantly
-  - name: invite_default
+  - name: user_invite_default
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_default.html.mako'
     notification_freq_default: instantly
-  - name: pending_invite
+  - name: user_pending_invite
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_invite.html.mako'
     notification_freq_default: instantly
-  - name: forward_invite
+  - name: user_forward_invite
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'
     notification_freq_default: instantly
-  - name: external_confirm_success
+  - name: user_external_confirm_success
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_success.html.mako'
     notification_freq_default: instantly
-  - name: forgot_password_institution
+  - name: user_forgot_password_institution
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password_institution.html.mako'
