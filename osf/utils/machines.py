@@ -6,7 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
-from osf.models.notification import FrequencyChoices, NotificationType
+from osf.models.notification_type import FrequencyChoices, NotificationType
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
@@ -242,16 +242,11 @@ class NodeRequestMachine(BaseMachine):
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
                 notification_type_name = NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.value
-                notification_type, created = NotificationType.objects.get_or_create(
-                    name=notification_type_name,
-                    defaults={
-                        'notification_freq': FrequencyChoices.INSTANTLY.value,
-                        'template': mails.ACCESS_REQUEST_SUBMITTED
-                    }
-                )
+                notification_type = NotificationType.objects.get(name=notification_type_name)
                 event_context = dict(**context)
                 notification_type.emit(
                     user=admin.username,
+                    message_frequency=FrequencyChoices.INSTANTLY.value,
                     event_context=event_context
                 )
 

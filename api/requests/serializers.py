@@ -17,7 +17,8 @@ from osf.models import (
     OSFUser,
     NotificationType,
 )
-from osf.models.notification import FrequencyChoices
+from osf.models.notification_type import FrequencyChoices
+
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
 from website import language, settings
@@ -191,13 +192,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
             notification_type_name = NotificationType.Type.NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST.value
-            notification_type, created = NotificationType.objects.get_or_create(
-                name=notification_type_name,
-                defaults={
-                    'notification_freq': FrequencyChoices.INSTANTLY.value,
-                    'template': NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
-                }
-            )
+            notification_type = NotificationType.objects.get(name=notification_type_name)
             event_context = {
                 'recipient': {
                     'fullname': recipient.full_name,
@@ -216,9 +211,9 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                     'OSF_CONTACT_EMAIL': settings.OSF_CONTACT_EMAIL,
                 },
             }
-
             notification_type.emit(
                 user=recipient,
+                message_frequency=FrequencyChoices.INSTANTLY.value,
                 subscribed_object=node_request.target,
                 event_context=event_context
             )
