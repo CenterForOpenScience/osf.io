@@ -9,6 +9,7 @@ from osf.utils.workflows import DefaultStates, NodeRequestTypes
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestNodeRequestListCreate(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, project):
@@ -80,25 +81,25 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         res = app.get(url, create_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_email_sent_to_all_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_sent_to_all_admins_on_submit(self, mock_notification_send, app, project, noncontrib, url, create_payload, second_admin):
         project.is_public = True
         project.save()
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 2
+        assert mock_notification_send.call_count == 2
 
-    def test_email_not_sent_to_parent_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_not_sent_to_parent_admins_on_submit(self, mock_notification_send, app, project, noncontrib, url, create_payload, second_admin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True
         project.save()
         url = f'/{API_BASE}nodes/{component._id}/requests/'
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     def test_request_followed_by_added_as_contrib(elf, app, project, noncontrib, admin, url, create_payload):
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)

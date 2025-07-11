@@ -195,11 +195,11 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             notification_type = NotificationType.objects.get(name=notification_type_name)
             event_context = {
                 'recipient': {
-                    'fullname': recipient.full_name,
+                    'fullname': recipient.fullname,
                 },
                 'sender': {
                     'absolute_url': sender.get_absolute_url(),
-                    'full_name': sender.full_name,
+                    'full_name': sender.fullname,
                 },
                 'node':{
                     'absolute_url': node.absolute_url,

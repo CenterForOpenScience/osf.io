@@ -243,9 +243,18 @@ class NodeRequestMachine(BaseMachine):
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
                 notification_type_name = NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.value
                 notification_type = NotificationType.objects.get(name=notification_type_name)
-                event_context = dict(**context)
+                event_context = {
+                    'node_id': context['node'].id,
+                    'node_title': context['node'].title,
+                    'node_category': context['node'].category,
+                    'requester_id': context['requester'].id,
+                    'requester_email': context['requester'].email,
+                    'contributors_url': context['contributors_url'],
+                    'project_settings_url': context['project_settings_url'],
+                }
+
                 notification_type.emit(
-                    user=admin.username,
+                    user=admin,
                     message_frequency=FrequencyChoices.INSTANTLY.value,
                     event_context=event_context
                 )
