@@ -33,6 +33,7 @@ from website.util import web_url_for
 from osf.exceptions import ValidationValueError, BlockedEmailError
 from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
+from osf.models.notification_type import NotificationType
 from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from website.ember_osf_web.decorators import ember_flag_is_active
@@ -207,14 +208,14 @@ def redirect_unsupported_institution(auth):
 def forgot_password_post():
     """Dispatches to ``_forgot_password_post`` passing non-institutional user mail template
     and reset action."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD,
+    return _forgot_password_post(mail_template=NotificationType.Type.USER_FORGOT_PASSWORD.value,
                                  reset_route='reset_password_get')
 
 
 def forgot_password_institution_post():
     """Dispatches to `_forgot_password_post` passing institutional user mail template, reset
     action, and setting the ``institutional`` flag."""
-    return _forgot_password_post(mail_template=mails.FORGOT_PASSWORD_INSTITUTION,
+    return _forgot_password_post(mail_template=NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value,
                                  reset_route='reset_password_institution_get',
                                  institutional=True)
 
@@ -272,11 +273,14 @@ def _forgot_password_post(mail_template, reset_route, institutional=False):
                         token=user_obj.verification_key_v2['token']
                     )
                 )
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+                notification_type = NotificationType.objects.get(name=mail_template)
+                notification_type.emit(
+                    user=user_obj,
+                    message_frequency='instantly',
+                    event_context={
+                        'can_change_preferences': False,
+                        'reset_link': reset_link
+                    }
                 )
 
         # institutional forgot password page displays the message as main text, not as an alert

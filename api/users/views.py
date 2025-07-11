@@ -99,6 +99,7 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
+    NotificationType,
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
@@ -822,7 +823,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             raise ValidationError('Request must include email in query params.')
 
         institutional = bool(request.query_params.get('institutional', None))
-        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+        mail_template = NotificationType.Type.USER_FORGOT_PASSWORD.value if not institutional else NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION.value
 
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         kind = 'success'
@@ -842,12 +843,17 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
+
+                notification_type = NotificationType.objects.get(name=mail_template)
+                notification_type.emit(
+                    user=user_obj,
+                    message_frequency='instantly',
+                    event_context={
+                        'can_change_preferences': False,
+                        'reset_link': reset_link,
+                    },
                 )
+
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
     @method_decorator(csrf_protect)
@@ -1059,12 +1065,14 @@ class ConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
-            mails.send_mail(
+            notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_EXTERNAL_CONFIRM_SUCCESS.value)
+            notification_type.emit(
                 user=user,
-                to_addr=user.username,
-                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-                external_id_provider=provider,
-                can_change_preferences=False,
+                message_frequency='instantly',
+                event_context={
+                    'can_change_preferences': False,
+                    'external_id_provider': provider,
+                },
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
@@ -1380,12 +1388,14 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&{}'.format(urlencode({'new': 'true'}))
         elif external_status == 'LINK':
-            mails.send_mail(
+            notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_EXTERNAL_CONFIRM_SUCCESS.value)
+            notification_type.emit(
                 user=user,
-                to_addr=user.username,
-                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
-                external_id_provider=provider,
-                can_change_preferences=False,
+                message_frequency='instantly',
+                event_context={
+                    'can_change_preferences': False,
+                    'external_id_provider': provider,
+                },
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
