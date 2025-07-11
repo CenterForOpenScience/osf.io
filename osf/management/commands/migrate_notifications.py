@@ -4,7 +4,7 @@ from osf.models import NotificationType, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from osf.management.commands.local_setup.populate_notification_types import populate_notification_types
+from osf.management.commands.populate_notification_types import populate_notification_types
 
 logger = logging.getLogger(__name__)
 
