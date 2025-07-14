@@ -413,29 +413,17 @@ class EmailApprovableSanction(TokenApprovableSanction):
         context = self._email_template_context(authorizer,
                                             node,
                                             is_authorizer=True)
-        if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(
-                authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
-        else:
-            raise NotImplementedError()
+        notification_type = self._get_authoriser_notification_type()
 
-        try:
-            notification_type = self._get_authoriser_notification_type()
-        except NotificationType.DoesNotExist:
-            raise NotImplementedError()
         if notification_type:
-            notification_type.emit(authorizer, context=context)
+            notification_type.emit(authorizer, message_frequency='instantly', event_context=context)
 
     def _notify_non_authorizer(self, user, node):
         context = self._email_template_context(user, node)
-        if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
-            self._send_approval_request_email(
-                user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
-        else:
-            raise NotImplementedError
+        notification_type = self._get_non_authoriser_notification_type()
 
-        if notification_type := self._get_non_authoriser_notification_type():
-            notification_type.emit(user, context=context)
+        if notification_type:
+            notification_type.emit(user, event_context=context)
 
     def ask(self, group):
         """
@@ -484,12 +472,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
-
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_embargo_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_embargo_non_admin'
-
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -523,20 +505,12 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         return not self.for_existing_registration and self.is_pending_approval
 
     def _get_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.filter(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_EMBARGO_ADMIN)
+        return notification_type
 
     def _get_non_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_EMBARGO_NON_ADMIN)
+        return notification_type
 
     def _get_registration(self):
         return self.registrations.first()
@@ -591,19 +565,19 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'project_name': registration.title,
                 'disapproval_link': disapproval_link,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': str(self.end_date),
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
             })
         else:
             context.update({
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-                'embargo_end_date': self.end_date,
+                'embargo_end_date': str(self.end_date),
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
             })
         return context
 
@@ -683,12 +657,6 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
-
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_retraction_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_retraction_non_admin'
-
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -698,20 +666,12 @@ class Retraction(EmailApprovableSanction):
     date_retracted = NonNaiveDateTimeField(null=True, blank=True)
 
     def _get_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.filter(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_RETRACTION_ADMIN)
+        return notification_type
 
     def _get_non_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_RETRACTION_NON_ADMIN)
+        return notification_type
 
     def _get_registration(self):
         Registration = apps.get_model('osf.Registration')
@@ -764,7 +724,7 @@ class Retraction(EmailApprovableSanction):
             return {
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
@@ -777,7 +737,7 @@ class Retraction(EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'approval_time_span': approval_time_span,
             }
 
@@ -822,12 +782,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
-
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_registration_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_registration_non_admin'
-
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -847,20 +801,12 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         ).order_by('-initiation_date')
 
     def _get_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.filter(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_REGISTRATION_ADMIN)
+        return notification_type
 
     def _get_non_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_REGISTRATION_NON_ADMIN)
+        return notification_type
 
     def _get_registration(self):
         return self.registrations.first()
@@ -910,7 +856,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -922,7 +868,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'approval_time_span': approval_time_span,
             })
         return context
@@ -1006,12 +952,6 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
-
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_embargo_termination_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'pending_embargo_termination_non_admin'
-
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -1027,20 +967,12 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         return self.embargoed_registration
 
     def _get_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.filter(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_EMBARGO_TERMINATION_ADMIN)
+        return notification_type
 
     def _get_non_authoriser_notification_type(self):
-        notification_type = NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
-        if not notification_type.exists():
-            raise NotificationType.DoesNotExist(
-                f'NotificationType with name {self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE} does not exist.'
-            )
-        return notification_type.first()
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PENDING_EMBARGO_TERMINATION_NON_ADMIN)
+        return notification_type
 
     def _view_url_context(self, user_id, node):
         registration = node or self._get_registration()
@@ -1088,7 +1020,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
@@ -1104,7 +1036,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration(),
+                'reviewable': self._get_registration()._id,
                 'approval_time_span': approval_time_span,
             })
         return context

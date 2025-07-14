@@ -122,3 +122,44 @@ notification_types:
     object_content_type_model_name: desk
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
+
+  - name: pending_embargo_termination_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_embargo_termination_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_termination_non_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_embargo_termination_non_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_registration_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_registration_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_registration_non_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_registration_non_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_embargo_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_embargo_non_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_embargo_non_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_retraction_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_retraction_admin.html.mako'
+    notification_freq_default: instantly
+  - name: pending_retraction_non_admin
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/pending_retraction_non_admin.html.mako'
+    notification_freq_default: instantly

@@ -17,6 +17,8 @@ class Notification(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def send(self, protocol_type='email', recipient=None):
+        if not settings.USE_EMAIL:
+            return
         if not protocol_type == 'email':
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
 

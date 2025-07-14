@@ -134,6 +134,17 @@ class NotificationType(models.Model):
         SCHEMA_RESPONSE_INITIATED = 'schema_response_initiated'
 
         REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
+        PENDING_EMBARGO_TERMINATION_ADMIN = 'pending_embargo_termination_admin'
+        PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'pending_embargo_termination_non_admin'
+
+        PENDING_REGISTRATION_ADMIN = 'pending_registration_admin'
+        PENDING_REGISTRATION_NON_ADMIN = 'pending_registration_non_admin'
+
+        PENDING_EMBARGO_ADMIN = 'pending_embargo_admin'
+        PENDING_EMBARGO_NON_ADMIN = 'pending_embargo_non_admin'
+
+        PENDING_RETRACTION_ADMIN = 'pending_retraction_admin'
+        PENDING_RETRACTION_NON_ADMIN = 'pending_retraction_non_admin'
 
         @property
         def instance(self):

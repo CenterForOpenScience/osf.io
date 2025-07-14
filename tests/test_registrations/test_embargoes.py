@@ -29,7 +29,7 @@ from osf.models import AbstractNode
 from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
-from conftest import start_mock_send_grid
+from conftest import start_mock_notification_send
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -1101,7 +1101,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             }
         })
 
-        self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
@@ -1159,8 +1159,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for contributor in self.registration.contributors:
             if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
                 admin_contributors.append(contributor)
-        for admin in admin_contributors:
-            assert any([each[1]['to_addr'] == admin.username for each in self.mock_send_grid.call_args_list])
+        assert len(admin_contributors) == len(self.start_mock_notification_send.call_args_list)
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):
