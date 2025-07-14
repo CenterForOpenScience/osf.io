@@ -199,7 +199,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 },
                 'sender': {
                     'absolute_url': sender.get_absolute_url(),
-                    'full_name': sender.fullname,
+                    'fullname': sender.fullname,
                 },
                 'node':{
                     'absolute_url': node.absolute_url,
