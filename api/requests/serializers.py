@@ -215,7 +215,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 user=recipient,
                 message_frequency=FrequencyChoices.INSTANTLY.value,
                 subscribed_object=node_request.target,
-                event_context=event_context
+                event_context=event_context,
             )
         return node_request
 
