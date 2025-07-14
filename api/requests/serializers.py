@@ -22,7 +22,6 @@ from osf.models.notification_type import FrequencyChoices
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
 from website import language, settings
-from website.mails import NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -201,7 +200,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                     'absolute_url': sender.get_absolute_url(),
                     'fullname': sender.fullname,
                 },
-                'node':{
+                'node': {
                     'absolute_url': node.absolute_url,
                     'title': node.title,
                 },
