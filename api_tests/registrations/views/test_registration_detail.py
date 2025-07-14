@@ -695,6 +695,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 @pytest.mark.usefixtures('mock_notification_send')
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
@@ -754,7 +755,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_initiate_withdrawal_success(self, mock_notification_send, app, user, public_registration, public_url, public_payload):
+    def test_initiate_withdrawal_success(self, mock_notification_send, mock_send_grid, app, user, public_registration, public_url, public_payload):
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
@@ -786,7 +787,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert not public_registration.is_pending_embargo
 
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
-            self, mock_notification_send, app, user, public_registration, public_url, public_payload):
+            self, mock_notification_send, mock_send_grid, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()
         with disconnected_from_listeners(contributor_added):
             public_registration.add_unregistered_contributor(
