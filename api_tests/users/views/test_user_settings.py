@@ -188,14 +188,14 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    def test_get(self, mock_notification_send, app, url, user_one):
+    def test_get(self, mock_send_grid, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
         assert res.status_code == 200
 
         user_one.reload()
-        assert mock_notification_send.called
+        assert mock_send_grid.call_args[1]['to_addr'] == user_one.username
 
     def test_get_invalid_email(self, mock_send_grid, app, url):
         url = f'{url}?email={'invalid_email'}'
@@ -268,8 +268,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throttle(self, app, url, user_one, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+    def test_throttle(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         app.get(url)
@@ -283,12 +282,9 @@ class TestResetPassword:
                 }
             }
         }
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
-        assert res.status_code == 200
 
-        res = app.get(url, expect_errors=True)
-        assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'
-
+        res = app.post_json_api(url, payload, expect_errors=True)
+        assert res.status_code == 429
 
 @pytest.mark.django_db
 class TestUserEmailsList:
