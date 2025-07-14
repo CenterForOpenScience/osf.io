@@ -1,6 +1,12 @@
-from rest_framework import generics, mixins, permissions as drf_permissions
+from rest_framework import generics, mixins, permissions as drf_permissions, status
 from rest_framework.exceptions import ValidationError, NotFound, PermissionDenied
+from rest_framework.response import Response
+from framework.exceptions import HTTPError
 from framework.auth.oauth_scopes import CoreScopes
+
+from addons.base.views import DOWNLOAD_ACTIONS
+from website.archiver import signals, ARCHIVER_NETWORK_ERROR, ARCHIVER_SUCCESS, ARCHIVER_FAILURE
+from website.project import signals as project_signals
 
 from osf.models import Registration, OSFUser, RegistrationProvider, OutcomeArtifact, CedarMetadataRecord
 from osf.utils.permissions import WRITE_NODE
@@ -28,6 +34,7 @@ from api.base.parsers import (
     JSONAPIMultipleRelationshipsParser,
     JSONAPIRelationshipParserForRegularJSON,
     JSONAPIMultipleRelationshipsParserForRegularJSON,
+    HMACSignedParser,
 )
 from api.base.utils import (
     get_user_auth,
@@ -1040,3 +1047,47 @@ class RegistrationCedarMetadataRecordsList(JSONAPIBaseView, generics.ListAPIView
 
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, RegistrationMixin):
+    permission_classes = [drf_permissions.AllowAny]
+
+    view_category = 'registrations'
+    view_name = 'registration-callbacks'
+
+    parser_classes = [HMACSignedParser]
+
+    def update(self, request, *args, **kwargs):
+        registration = self.get_node()
+
+        try:
+            payload = request.data
+            if payload.get('action', None) in DOWNLOAD_ACTIONS:
+                return Response({'status': 'success'}, status=status.HTTP_200_OK)
+            errors = payload.get('errors')
+            src_provider = payload['source']['provider']
+            if errors:
+                registration.archive_job.update_target(
+                    src_provider,
+                    ARCHIVER_FAILURE,
+                    errors=errors,
+                )
+            else:
+                # Dataverse requires two seperate targets, one
+                # for draft files and one for published files
+                if src_provider == 'dataverse':
+                    src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())
+                registration.archive_job.update_target(
+                    src_provider,
+                    ARCHIVER_SUCCESS,
+                )
+            project_signals.archive_callback.send(registration)
+            return Response(status=status.HTTP_200_OK)
+        except HTTPError as e:
+            registration.archive_status = ARCHIVER_NETWORK_ERROR
+            registration.save()
+            signals.archive_fail.send(
+                registration,
+                errors=[str(e)],
+            )
+            return Response(status=status.HTTP_200_OK)

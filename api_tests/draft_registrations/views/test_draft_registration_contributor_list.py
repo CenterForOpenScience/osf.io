@@ -6,7 +6,6 @@ from framework.auth.core import Auth
 from api.base.settings.defaults import API_BASE
 from api.draft_registrations.serializers import DraftRegistrationContributorsCreateSerializer
 from api_tests.nodes.views.test_node_contributors_list import (
-    NodeCRUDTestCase,
     TestNodeContributorList,
     TestNodeContributorAdd,
     TestNodeContributorCreateValidation,
@@ -17,6 +16,7 @@ from api_tests.nodes.views.test_node_contributors_list import (
     TestNodeContributorBulkDelete,
     TestNodeContributorFiltering,
 )
+from api_tests.nodes.views.utils import NodeCRUDTestCase
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,

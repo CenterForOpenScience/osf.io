@@ -20,7 +20,7 @@ from website import settings
 from website.project.tasks import on_node_updated
 
 from framework.auth.core import Auth
-from api.share.utils import shtrove_ingest_url, sharev2_push_url
+from api.share.utils import shtrove_ingest_url
 from ._utils import expect_ingest_request
 
 
@@ -99,11 +99,11 @@ class TestNodeShare:
         return o
 
     def test_update_node_share(self, mock_share_responses, node, user):
-        with expect_ingest_request(mock_share_responses, node._id):
+        with expect_ingest_request(mock_share_responses, node):
             on_node_updated(node._id, user._id, False, {'is_public'})
 
     def test_update_registration_share(self, mock_share_responses, registration, user):
-        with expect_ingest_request(mock_share_responses, registration._id):
+        with expect_ingest_request(mock_share_responses, registration):
             on_node_updated(registration._id, user._id, False, {'is_public'})
 
     def test_update_share_correctly_for_projects(self, mock_share_responses, node, user):
@@ -125,7 +125,7 @@ class TestNodeShare:
         for i, case in enumerate(cases):
             for attr, value in case['attrs'].items():
                 setattr(node, attr, value)
-            with expect_ingest_request(mock_share_responses, node._id, delete=case['is_deleted']):
+            with expect_ingest_request(mock_share_responses, node, delete=case['is_deleted']):
                 node.save()
 
     def test_update_share_correctly_for_registrations(self, mock_share_responses, registration, user):
@@ -144,38 +144,38 @@ class TestNodeShare:
         for i, case in enumerate(cases):
             for attr, value in case['attrs'].items():
                 setattr(registration, attr, value)
-            with expect_ingest_request(mock_share_responses, registration._id, delete=case['is_deleted']):
+            with expect_ingest_request(mock_share_responses, registration, delete=case['is_deleted']):
                 registration.save()
             assert registration.is_registration
 
     def test_update_share_correctly_for_projects_with_qa_tags(self, mock_share_responses, node, user):
-        with expect_ingest_request(mock_share_responses, node._id, delete=True):
+        with expect_ingest_request(mock_share_responses, node, delete=True):
             node.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        with expect_ingest_request(mock_share_responses, node._id, delete=False):
+        with expect_ingest_request(mock_share_responses, node, delete=False):
             node.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
 
     def test_update_share_correctly_for_registrations_with_qa_tags(self, mock_share_responses, registration, user):
-        with expect_ingest_request(mock_share_responses, registration._id, delete=True):
+        with expect_ingest_request(mock_share_responses, registration, delete=True):
             registration.add_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user))
-        with expect_ingest_request(mock_share_responses, registration._id):
+        with expect_ingest_request(mock_share_responses, registration):
             registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
 
     def test_update_share_correctly_for_projects_with_qa_titles(self, mock_share_responses, node, user):
         node.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
         node.save()
-        with expect_ingest_request(mock_share_responses, node._id, delete=True):
+        with expect_ingest_request(mock_share_responses, node, delete=True):
             on_node_updated(node._id, user._id, False, {'is_public'})
         node.title = 'Not a qa title'
-        with expect_ingest_request(mock_share_responses, node._id):
+        with expect_ingest_request(mock_share_responses, node):
             node.save()
         assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
 
     def test_update_share_correctly_for_registrations_with_qa_titles(self, mock_share_responses, registration, user):
         registration.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
-        with expect_ingest_request(mock_share_responses, registration._id, delete=True):
+        with expect_ingest_request(mock_share_responses, registration, delete=True):
             registration.save()
         registration.title = 'Not a qa title'
-        with expect_ingest_request(mock_share_responses, registration._id):
+        with expect_ingest_request(mock_share_responses, registration):
             registration.save()
         assert registration.title not in settings.DO_NOT_INDEX_LIST['titles']
 
@@ -189,22 +189,18 @@ class TestNodeShare:
         """This is meant to simulate a temporary outage, so the retry mechanism should kick in and complete it."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
         mock_share_responses.add(responses.POST, shtrove_ingest_url(), status=200)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)
-        mock_share_responses.add(responses.POST, sharev2_push_url(), status=200)
-        with expect_ingest_request(mock_share_responses, node._id, count=2):
+        with expect_ingest_request(mock_share_responses, node, count=2):
             on_node_updated(node._id, user._id, False, {'is_public'})
 
     @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_call_async_update_on_500_failure(self, mock_share_responses, node, user):
         """This is meant to simulate a total outage, so the retry mechanism should try X number of times and quit."""
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=500)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=500)
-        with expect_ingest_request(mock_share_responses, node._id, count=5):  # tries five times
+        with expect_ingest_request(mock_share_responses, node, count=5):  # tries five times
             on_node_updated(node._id, user._id, False, {'is_public'})
 
     @mark.skip('Synchronous retries not supported if celery >=5.0')
     def test_no_call_async_update_on_400_failure(self, mock_share_responses, node, user):
         mock_share_responses.replace(responses.POST, shtrove_ingest_url(), status=400)
-        mock_share_responses.replace(responses.POST, sharev2_push_url(), status=400)
-        with expect_ingest_request(mock_share_responses, node._id):
+        with expect_ingest_request(mock_share_responses, node):
             on_node_updated(node._id, user._id, False, {'is_public'})

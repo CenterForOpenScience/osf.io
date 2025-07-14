@@ -2,6 +2,60 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.12.0 (2025-07-08)
+====================
+
+- Verified Resource Linking project release - BE
+- OSF support for GV session optimization
+- OSF node log for add-ons
+- CI improvements
+- Task routing fixes
+
+
+25.11.1 (2025-07-03)
+====================
+
+- Hotfix to handle crossref's anticipated downtime
+
+25.11.0 (2025-06-30)
+====================
+
+- Crossref DOIs not minting with _v1, OSF is displaying DOI versions with _v1
+- When hamming a spammed user, preprints and registrations remain private
+- Fix emabrgoed registrations not becoming public after admin date change
+- Add v2 enpoint for alternative email confirmation
+- Make relationship on v2/nodes for collected_in
+- API V2: get action reviews request not listing latest preprint submit/withdraw requests
+- Add ability for admin app to change registry that a registration belongs to
+- Update to /nodes/<node-id> api
+- Subscription filtering not working correctly
+- API V2: Serialize registation resource attributes in Node Linked By Registrations list view and Node Linked Registrations list view
+
+25.10.0 (2025-06-11)
+====================
+
+- Manual GUID and DOI assignment during Preprint and Registration Creation
+
+25.09.0 (2025-05-14)
+====================
+
+- Accounts confirmed but not registered
+- Action requests creation for preprints and nodes not working
+- Reviews Dashboard not displaying contributors for preprint provider moderators
+- Backend Support for Static Contact Indicator in Institutional Dashboard
+- Add ability to remove categories from active collections
+- Add scopes for applications to full_read and full_write scopes
+
+25.08.0 (2025-05-02)
+====================
+
+- Bugfix and Improvements
+
+25.07.0 (2025-04-21)
+====================
+
+- Bugfix and Improvements
+
 25.06.0 (2025-04-07)
 ====================
 

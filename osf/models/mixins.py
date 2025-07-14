@@ -1061,11 +1061,16 @@ class ReviewProviderMixin(GuardianMixin):
         return counts
 
     def add_to_group(self, user, group):
+        if isinstance(group, Group):
+            group.user_set.add(user)
+        elif isinstance(group, str):
+            self.get_group(group).user_set.add(user)
+        else:
+            raise TypeError(f"Unsupported group type: {type(group)}")
+
         # Add default notification subscription
         for subscription in self.DEFAULT_SUBSCRIPTIONS:
             self.add_user_to_subscription(user, f'{self._id}_{subscription}')
-
-        return self.get_group(group).user_set.add(user)
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
@@ -1116,25 +1121,26 @@ class TaxonomizableMixin(models.Model):
     def subjects_url(self):
         return self.absolute_api_v2_url + 'subjects/'
 
-    def check_subject_perms(self, auth):
+    def check_subject_perms(self, auth, ignore_permission=False):
         AbstractNode = apps.get_model('osf.AbstractNode')
         Preprint = apps.get_model('osf.Preprint')
         CollectionSubmission = apps.get_model('osf.CollectionSubmission')
         DraftRegistration = apps.get_model('osf.DraftRegistration')
 
-        if isinstance(self, AbstractNode):
-            if not self.has_permission(auth.user, ADMIN):
-                raise PermissionsError('Only admins can change subjects.')
-        elif isinstance(self, Preprint):
-            if not self.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
-        elif isinstance(self, DraftRegistration):
-            if not self.has_permission(auth.user, WRITE):
-                raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
-        elif isinstance(self, CollectionSubmission):
-            if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(
-                    self.collection.groups[ADMIN], self.collection):
-                raise PermissionsError('Only admins can change subjects.')
+        if not ignore_permission:
+            if isinstance(self, AbstractNode):
+                if not self.has_permission(auth.user, ADMIN):
+                    raise PermissionsError('Only admins can change subjects.')
+            elif isinstance(self, Preprint):
+                if not self.has_permission(auth.user, WRITE):
+                    raise PermissionsError('Must have admin or write permissions to change a preprint\'s subjects.')
+            elif isinstance(self, DraftRegistration):
+                if not self.has_permission(auth.user, WRITE):
+                    raise PermissionsError('Must have write permissions to change a draft registration\'s subjects.')
+            elif isinstance(self, CollectionSubmission):
+                if not self.guid.referent.has_permission(auth.user, ADMIN) and not auth.user.has_perms(
+                        self.collection.groups[ADMIN], self.collection):
+                    raise PermissionsError('Only admins can change subjects.')
         return
 
     def add_subjects_log(self, old_subjects, auth):
@@ -1157,7 +1163,7 @@ class TaxonomizableMixin(models.Model):
         if (expect_list and not is_list) or (not expect_list and is_list):
             raise ValidationValueError(f'Subjects are improperly formatted. {error_msg}')
 
-    def set_subjects(self, new_subjects, auth, add_log=True):
+    def set_subjects(self, new_subjects, auth, add_log=True, **kwargs):
         """ Helper for setting M2M subjects field from list of hierarchies received from UI.
         Only authorized admins may set subjects.
 
@@ -1168,7 +1174,7 @@ class TaxonomizableMixin(models.Model):
         :return: None
         """
         if auth:
-            self.check_subject_perms(auth)
+            self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(new_subjects, expect_list=True, error_msg='Expecting list of lists.')
 
         old_subjects = list(self.subjects.values_list('id', flat=True))
@@ -1190,7 +1196,7 @@ class TaxonomizableMixin(models.Model):
         if hasattr(self, 'update_search'):
             self.update_search()
 
-    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True):
+    def set_subjects_from_relationships(self, subjects_list, auth, add_log=True, **kwargs):
         """ Helper for setting M2M subjects field from list of flattened subjects received from UI.
         Only authorized admins may set subjects.
 
@@ -1200,7 +1206,7 @@ class TaxonomizableMixin(models.Model):
 
         :return: None
         """
-        self.check_subject_perms(auth)
+        self.check_subject_perms(auth, **kwargs)
         self.assert_subject_format(subjects_list, expect_list=True, error_msg='Expecting a list of subjects.')
         if subjects_list:
             self.assert_subject_format(subjects_list[0], expect_list=False, error_msg='Expecting a list of subjects.')
@@ -2075,6 +2081,22 @@ class SpamOverrideMixin(SpamMixin):
     def log_params(self):
         return NotImplementedError()
 
+    @property
+    def was_public_at_spam(self):
+        was_public = self.is_public
+        try:
+            latest_privacy_edit = self.logs.filter(
+                action__in=[self.log_class.MADE_PRIVATE, self.log_class.MADE_PUBLIC]
+            ).latest('created')
+            first_spam_log = self.logs.filter(
+                action__in=[self.log_class.FLAG_SPAM, self.log_class.CONFIRM_SPAM],
+                created__gt=latest_privacy_edit.created
+            ).earliest('created')
+
+            return first_spam_log.params.get('was_public', was_public)
+        except ObjectDoesNotExist:
+            return was_public
+
     def get_spam_fields(self, saved_fields=None):
         return NotImplementedError()
 
@@ -2104,15 +2126,8 @@ class SpamOverrideMixin(SpamMixin):
         """
         super().confirm_spam(save=save, domains=domains or [], train_spam_services=train_spam_services)
         self.deleted = timezone.now()
-        was_public = self.is_public
-        # the approach below helps to update to public true on ham just the objects that were public before were spammed
-        is_public_changings = self.logs.filter(action__in=['made_public', 'made_private'])
-        if is_public_changings:
-            latest_privacy_edit_time = is_public_changings.latest('created').created
-            last_spam_log = self.logs.filter(action__in=['confirm_spam', 'flag_spam'],
-                                                 created__gt=latest_privacy_edit_time)
-            if last_spam_log:
-                was_public = last_spam_log.latest().params.get('was_public', was_public)
+        was_public = self.was_public_at_spam
+
         self.set_privacy('private', auth=None, log=False, save=False, force=True, should_hide=True)
 
         log = self.add_log(
@@ -2215,13 +2230,11 @@ class SpamOverrideMixin(SpamMixin):
         if user.is_hammy:
             return False
         self.confirm_spam(save=True, train_spam_services=False)
-        self.set_privacy('private', log=False, save=True)
 
         # Suspend the flagged user for spam.
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            user.is_registered = False
             mails.send_mail(
                 to_addr=user.username,
                 mail=mails.SPAM_USER_BANNED,
@@ -2235,20 +2248,18 @@ class SpamOverrideMixin(SpamMixin):
         for node in user.all_nodes:
             if self._id != node._id and len(node.contributors) == 1 and node.is_public and not node.is_quickfiles:
                 node.confirm_spam(save=True, train_spam_services=False)
-                node.set_privacy('private', log=False, save=True, force=True)
 
         # Make preprints private from this contributor
         for preprint in user.preprints.all():
             if self._id != preprint._id and len(preprint.contributors) == 1 and preprint.is_public:
                 preprint.confirm_spam(save=True, train_spam_services=False)
-                preprint.set_privacy('private', log=False, save=True)
 
     def flag_spam(self):
         """ Overrides SpamMixin#flag_spam.
         """
         super().flag_spam()
         if settings.SPAM_FLAGGED_MAKE_NODE_PRIVATE:
-            was_public = self.is_public
+            was_public = self.was_public_at_spam
             self.set_privacy('private', auth=None, log=False, save=False, check_addons=False, force=True, should_hide=True)
             log = self.add_log(
                 action=self.log_class.FLAG_SPAM,

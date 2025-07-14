@@ -17,7 +17,7 @@
                     <a href="{% url 'nodes:search' %}" class="btn btn-primary"> <i class="fa fa-search"></i></a>
                     <a href="{% url 'nodes:node-logs' guid=node.guid %}" class="btn btn-primary">View Logs</a>
                     {% include "nodes/remove_node.html" with node=node %}
-                    {% include "nodes/restart_stuck_registration.html" with node=node %}
+                    {% include "nodes/registration_force_archive.html" with node=node %}
                     {% include "nodes/make_private.html" with node=node %}
                     {% include "nodes/make_public.html" with node=node %}
                     {% include "nodes/mark_spam.html" with node=node %}
@@ -78,11 +78,9 @@
                     </tr>
                     <tr>
                         <td>Provider</td>
-                        {% if node.provider %}
-                            <td><a href="{{ node | reverse_registration_provider }}">{{ node.provider.name }}</a></td>
-                        {% else %}
-                            <td>None</td>
-                        {% endif %}
+                        <td>
+                            {% include "nodes/registration_provider.html" with node=node %}
+                        </td>
                     </tr>
                     <tr>
                         <td>Parent</td>

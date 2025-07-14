@@ -150,10 +150,12 @@ class IngestCedarMetadataTemplates(ManagementCommandPermissionView):
 class BulkResync(ManagementCommandPermissionView):
 
     def post(self, request):
+        missing_dois_only = request.POST.get('missing_preprint_dois_only', False)
         sync_doi_metadata.apply_async(kwargs={
             'modified_date': timezone.now(),
             'batch_size': None,
-            'dry_run': False
+            'dry_run': False,
+            'missing_preprint_dois_only': missing_dois_only
         })
         messages.success(request, 'Resyncing with CrossRef and DataCite! It will take some time.')
         return redirect(reverse('management:commands'))

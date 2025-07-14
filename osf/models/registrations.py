@@ -16,7 +16,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
-from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.fields import NonNaiveDateTimeField, LowercaseCharField
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
@@ -152,6 +152,8 @@ class Registration(AbstractNode):
     )
     # A dictionary of key: value pairs to store additional metadata defined by third-party sources
     additional_metadata = DateTimeAwareJSONField(blank=True, null=True)
+    # An internal property that is used to set GUID manually during registration creation
+    _manual_guid = LowercaseCharField(max_length=255, null=True, blank=True, default=None)
 
     @staticmethod
     def find_failed_registrations(days_stuck=None):
@@ -326,6 +328,11 @@ class Registration(AbstractNode):
         return job and not job.done and not job.archive_tree_finished()
 
     @property
+    def archived(self):
+        job = self.archive_job
+        return job and job.done and job.archive_tree_finished()
+
+    @property
     def is_moderated(self):
         if not self.provider:
             return False
@@ -362,6 +369,14 @@ class Registration(AbstractNode):
     @property
     def withdrawal_justification(self):
         return getattr(self.root.retraction, 'justification', None)
+
+    @property
+    def available_providers(self):
+        """Return all providers that support current registration schema."""
+        schema = self.registration_schema
+        if not schema:
+            return RegistrationProvider.objects.none()
+        return RegistrationProvider.objects.filter(schemas=schema)
 
     @property
     def provider_specific_metadata(self):
@@ -437,6 +452,7 @@ class Registration(AbstractNode):
         return self.can_view(auth) or self.registered_from.can_view(auth)
 
     def _initiate_approval(self, user, notify_initiator_on_complete=False):
+
         end_date = timezone.now() + settings.REGISTRATION_APPROVAL_TIME
         self.registration_approval = RegistrationApproval.objects.create(
             initiated_by=user,
@@ -451,6 +467,7 @@ class Registration(AbstractNode):
         return self.registration_approval
 
     def require_approval(self, user, notify_initiator_on_complete=False):
+
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.is_admin_contributor(user):
@@ -1357,7 +1374,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 upload['file_name'] = html.unescape(upload['file_name'])
         return registration_responses
 
-    def register(self, auth, save=False, child_ids=None):
+    def register(self, auth, save=False, child_ids=None, manual_guid=None):
         node = self.branched_from
 
         if not self.title:
@@ -1369,7 +1386,8 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             auth=auth,
             draft_registration=self,
             child_ids=child_ids,
-            provider=self.provider
+            provider=self.provider,
+            manual_guid=manual_guid,
         )
         self.registered_node = registration
         self.add_status_log(auth.user, DraftRegistrationLog.REGISTERED)
