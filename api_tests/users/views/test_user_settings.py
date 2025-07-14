@@ -267,10 +267,10 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throrrle(self, app, url, user_one):
+    def test_throttle(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        res = app.get(url)
+        app.get(url)
         user_one.reload()
         payload = {
             'data': {
@@ -282,6 +282,7 @@ class TestResetPassword:
             }
         }
 
+        res = app.post_json_api(url, payload, expect_errors=True)
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 429
 
