@@ -34,7 +34,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -52,11 +51,12 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion, NotificationType
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
 from osf.external.gravy_valet import request_helpers
+from website.notifications.emails import localize_timestamp
 from website.profile.utils import get_profile_image_url
 from website.project import decorators
 from website.project.decorators import must_be_contributor_or_public, must_be_valid_project, check_contributor_auth
@@ -576,25 +576,29 @@ def create_waterbutler_log(payload, **kwargs):
                     params=payload
                 )
 
-            if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
-                )
+            if payload.get('email') is True:
+                notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
+            elif payload.get('errors'):
+                notification_type = NotificationType.Type.FILE_OPERATION_FAILED
+            else:
+                raise NotImplementedError('No email template for this')
 
+            NotificationType.objects.get(name=notification_type.value).emit(
+                user=user,
+                event_context={
+                    'action': payload['action'],
+                    'source_node': source_node,
+                    'destination_node': destination_node,
+                    'source_path': payload['source']['materialized'],
+                    'source_addon': payload['source']['addon'],
+                    'destination_addon': payload['destination']['addon'],
+                    'osf_support_email': settings.OSF_SUPPORT_EMAIL
+                }
+            )
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
                 return {'status': 'success'}
-
         else:
             node.create_waterbutler_log(auth, action, payload)
 
@@ -605,7 +609,25 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+        f_type, action = action.split('_')
+        if payload['metadata']['materialized'].endswith('/'):
+            f_type = 'folder'
+        html_message = '{action} {f_type} "<b>{name}</b>".'.format(
+            action=markupsafe.escape(action),
+            f_type=markupsafe.escape(f_type),
+            name=markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))
+        )
+
+        context = {}
+        context['message'] = html_message
+        context['profile_image_url'] = user.profile_image_url()
+        context['localized_timestamp'] = localize_timestamp(timezone.now(), user)
+        context['user_fullname'] = user.fullname
+        context['url'] = node.absolute_url
+        NotificationType.objects.get(name=action).emit(
+            user=user,
+            event_context=context,
+        )
 
     return {'status': 'success'}
 

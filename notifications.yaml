@@ -82,12 +82,12 @@ notification_types:
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
   #### NODE
-  - name: file_updated
+  - name: node_file_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: wiki_updated
+  - name: node_wiki_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'

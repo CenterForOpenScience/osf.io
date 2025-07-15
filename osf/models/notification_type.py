@@ -97,6 +97,7 @@ class NotificationType(models.Model):
         NODE_PENDING_REGISTRATION_ADMIN = 'node_pending_registration_admin'
         NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'
         NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
+        NODE_FILE_UPDATED = 'node_file_updated'
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'

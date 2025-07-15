@@ -20,7 +20,7 @@ def send_email_over_smtp(to_addr, notification_type, context):
         raise NotImplementedError('MAIL_USERNAME and MAIL_PASSWORD are required for STMP')
 
     msg = MIMEText(
-        notification_type.template.format(context),
+        notification_type.template.format(**context),
         'html',
         _charset='utf-8'
     )
