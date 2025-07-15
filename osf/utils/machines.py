@@ -6,6 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
+from osf.models.notification_type import FrequencyChoices, NotificationType
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
@@ -240,12 +241,22 @@ class NodeRequestMachine(BaseMachine):
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-                mails.send_mail(
-                    admin.username,
-                    mails.ACCESS_REQUEST_SUBMITTED,
-                    admin=admin,
-                    osf_contact_email=OSF_CONTACT_EMAIL,
-                    **context
+                notification_type_name = NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.value
+                notification_type = NotificationType.objects.get(name=notification_type_name)
+                event_context = {
+                    'node_id': context['node'].id,
+                    'node_title': context['node'].title,
+                    'node_category': context['node'].category,
+                    'requester_id': context['requester'].id,
+                    'requester_email': context['requester'].email,
+                    'contributors_url': context['contributors_url'],
+                    'project_settings_url': context['project_settings_url'],
+                }
+
+                notification_type.emit(
+                    user=admin,
+                    message_frequency=FrequencyChoices.INSTANTLY.value,
+                    event_context=event_context
                 )
 
     def notify_resubmit(self, ev):

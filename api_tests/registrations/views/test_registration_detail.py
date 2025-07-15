@@ -696,6 +696,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @pytest.fixture
