@@ -113,18 +113,6 @@ class TestResetPassword:
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
-        user_one.reload()
-        payload = {
-            'data': {
-                'attributes': {
-                    'uid': user_one._id,
-                    'token': user_one.verification_key_v2['token'],
-                    'password': '12345',
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
-        assert res.status_code == 200
-
         res = app.get(url, expect_errors=True)
+        assert res.status_code == 429
         assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'

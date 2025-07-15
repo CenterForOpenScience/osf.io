@@ -163,6 +163,8 @@ class TestUserChangePassword:
         assert res.json['errors'][0]['detail'] == 'Old password is invalid'
         assert res.json['errors'][1]['detail'] == 'Password should be at least eight characters'
 
+
+@pytest.mark.django_db
 class TestUserEmailsList:
 
     @pytest.fixture(autouse=True)
