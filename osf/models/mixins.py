@@ -27,9 +27,9 @@ from osf.exceptions import (
     BlockedEmailError,
 )
 from website.settings import OSF_CONTACT_EMAIL, DOMAIN
+from osf.models.notification_type import NotificationType, FrequencyChoices
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
-from .notification import NotificationType, FrequencyChoices
 from .subject import Subject
 from .spam import SpamMixin, SpamStatus
 from .validators import validate_title
@@ -1456,13 +1456,15 @@ class ContributorMixin(models.Model):
                 self.save()
             if self._id and contrib_to_add:
                 # Get or create the notification type
-                notification_type, created = NotificationType.objects.get_or_create(
-                    name='Add contributor',
-                    defaults={
-                        'notification_freq': FrequencyChoices.INSTANTLY.value,
-                        'template': send_email
-                    }
-                )
+                if send_email == 'default':
+                    notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
+                else:
+                    notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
+                notification_type = NotificationType.objects.get(name=notification_type_name)
+
+                auth_user_fullname = None
+                if auth:
+                    auth_user_fullname = auth.user.fullname
 
                 event_context = {
                     'node': {
@@ -1470,7 +1472,7 @@ class ContributorMixin(models.Model):
                         'title': self.title,
                         'absolute_url': getattr(self, 'absolute_url', ''),
                     },
-                    'referrer_name': auth.user.fullname,
+                    'referrer_name': auth_user_fullname,
                     'user': {
                         'id': contrib_to_add._id,
                         'fullname': contrib_to_add.fullname,
@@ -1482,9 +1484,10 @@ class ContributorMixin(models.Model):
                         'DOMAIN': DOMAIN
                     }
                 }
-
+                breakpoint()
                 notification_type.emit(
-                    user=contributor,
+                    user=contrib_to_add,
+                    message_frequency=FrequencyChoices.INSTANTLY.value,
                     subscribed_object=self,
                     event_context=event_context
                 )
