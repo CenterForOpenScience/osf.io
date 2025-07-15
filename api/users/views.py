@@ -1065,7 +1065,7 @@ class ConfirmEmailView(generics.CreateAPIView):
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
             NotificationType.objects.get(
-                name=NotificationType.Type.USER_EXTERNAL_CONFIRM_SUCCESS.value,
+                name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.value,
             ).emit(
                 user=user,
                 message_frequency='instantly',
