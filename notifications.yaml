@@ -102,6 +102,11 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
+  - name: node_pending_registration_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_registration_admin.html.mako'
+    notification_freq_default: instantly
 
   #### PREPRINT
   - name: pending_retraction_admin

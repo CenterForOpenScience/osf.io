@@ -844,13 +844,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
 
-                notification_type = NotificationType.objects.filter(name=mail_template)
-                if not notification_type.exists():
-                    raise NotificationType.DoesNotExist(
-                        f'NotificationType with name {mail_template} does not exist.',
-                    )
-                notification_type = notification_type.first()
-                notification_type.emit(user=user_obj, message_frequency='instantly', event_context={'can_change_preferences': False, 'reset_link': reset_link})
+                NotificationType.objects.get(name=mail_template).emit(
+                    user=user_obj,
+                    message_frequency='instantly',
+                    event_context={
+                        'can_change_preferences': False,
+                        'reset_link': reset_link,
+                    },
+                )
 
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
@@ -1063,14 +1064,16 @@ class ConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
-            notification_type = NotificationType.objects.filter(name='external_confirm_success')
-            if not notification_type.exists():
-                raise NotificationType.DoesNotExist(
-                    'NotificationType with name external_confirm_success does not exist.',
-                )
-            notification_type = notification_type.first()
-            notification_type.emit(user=user, message_frequency='instantly', event_context={'can_change_preferences': False, 'external_id_provider': provider})
-
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_EXTERNAL_CONFIRM_SUCCESS.value,
+            ).emit(
+                user=user,
+                message_frequency='instantly',
+                event_context={
+                    'can_change_preferences': False,
+                    'external_id_provider': provider,
+                },
+            )
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
         return service_url

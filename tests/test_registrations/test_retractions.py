@@ -24,7 +24,7 @@ from osf.exceptions import (
 )
 from osf.models import Contributor, Retraction
 from osf.utils import permissions
-from conftest import start_mock_send_grid
+from conftest import start_mock_notification_send
 
 
 
@@ -767,7 +767,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
 
-        self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -807,7 +807,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             json={'justification': ''},
             auth=self.user.auth,
         )
-        assert self.mock_send_grid.call_count == 1
+        assert self.start_mock_notification_send.call_count == 1
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -897,7 +897,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             json={'justification': ''},
             auth=self.user.auth,
         )
-        assert self.mock_send_grid.called
+        assert self.start_mock_notification_send.called
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
