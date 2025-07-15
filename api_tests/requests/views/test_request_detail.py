@@ -4,7 +4,6 @@ from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestMixin
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_notification_send')
 class TestNodeRequestDetail(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):

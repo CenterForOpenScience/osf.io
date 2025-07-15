@@ -14,7 +14,7 @@ from osf.models import (
 )
 from osf.management.commands.migrate_notifications import (
     migrate_legacy_notification_subscriptions,
-    populate_notification_types
+    update_notification_types
 )
 
 @pytest.mark.django_db
@@ -22,7 +22,7 @@ class TestNotificationSubscriptionMigration:
 
     @pytest.fixture(autouse=True)
     def notification_types(self):
-        return populate_notification_types()
+        return update_notification_types()
 
     @pytest.fixture()
     def user(self):
