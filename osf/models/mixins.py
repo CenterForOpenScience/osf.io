@@ -1484,7 +1484,6 @@ class ContributorMixin(models.Model):
                         'DOMAIN': DOMAIN
                     }
                 }
-                breakpoint()
                 notification_type.emit(
                     user=contrib_to_add,
                     message_frequency=FrequencyChoices.INSTANTLY.value,
