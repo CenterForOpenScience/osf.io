@@ -6,6 +6,7 @@ import website.maintenance as maintenance
 from admin.maintenance.forms import MaintenanceForm
 
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.forms.models import model_to_dict
 from django.views.generic import DeleteView, TemplateView
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -15,11 +16,13 @@ class DeleteMaintenance(PermissionRequiredMixin, DeleteView):
     permission_required = 'osf.delete_maintenancestate'
     raise_exception = True
     template_name = 'maintenance/delete_maintenance.html'
+    success_url = reverse_lazy('maintenance:display')
 
     def get_object(self, queryset=None):
         return MaintenanceState.objects.first()
 
-    def delete(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
+        super().post(request, *args, **kwargs)
         maintenance.unset_maintenance()
         return redirect('maintenance:display')
 
