@@ -6,6 +6,7 @@ from api_tests.requests.mixins import PreprintRequestTestMixin
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestPreprintRequestListCreate(PreprintRequestTestMixin):
     def url(self, preprint):
         return f'/{API_BASE}preprints/{preprint._id}/requests/'
@@ -65,7 +66,7 @@ class TestPreprintRequestListCreate(PreprintRequestTestMixin):
         assert res.json['errors'][0]['detail'] == 'Users may not have more than one withdrawal request per preprint.'
 
     @pytest.mark.skip('TODO: IN-284 -- add emails')
-    def test_email_sent_to_moderators_on_submit(self, mock_send_grid, app, admin, create_payload, moderator, post_mod_preprint):
+    def test_email_sent_to_moderators_on_submit(self, mock_notification_send, app, admin, create_payload, moderator, post_mod_preprint):
         res = app.post_json_api(self.url(post_mod_preprint), create_payload, auth=admin.auth)
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1

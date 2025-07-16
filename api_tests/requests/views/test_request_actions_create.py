@@ -8,6 +8,7 @@ from osf.utils import permissions
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
@@ -190,8 +191,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert initial_state == node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
 
-    def test_email_sent_on_approve(self, mock_send_grid, app, admin, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_approve(self, mock_notification_send, app, admin, url, node_request):
+        mock_notification_send.reset_mock()
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept')
@@ -200,10 +201,9 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         node_request.reload()
         assert initial_state != node_request.machine_state
         assert node_request.creator in node_request.target.contributors
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
-    def test_email_sent_on_reject(self, mock_send_grid, app, admin, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_reject(self, mock_notification_send, app, admin, url, node_request):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='reject')
@@ -212,10 +212,10 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         node_request.reload()
         assert initial_state != node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
-    def test_email_not_sent_on_reject(self, mock_send_grid, app, requester, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_not_sent_on_reject(self, mock_notification_send, app, requester, url, node_request):
+        mock_notification_send.reset_mock()
         initial_state = node_request.machine_state
         initial_comment = node_request.comment
         payload = self.create_payload(node_request._id, trigger='edit_comment', comment='ASDFG')
@@ -224,7 +224,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         node_request.reload()
         assert initial_state == node_request.machine_state
         assert initial_comment != node_request.comment
-        assert mock_send_grid.call_count == 0
+        assert mock_notification_send.call_count == 0
 
     def test_set_permissions_on_approve(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
@@ -256,6 +256,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
     @pytest.fixture()
     def url(self, pre_request, post_request, none_request):
@@ -385,8 +386,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
                 assert initial_state == request.machine_state
                 assert initial_comment == request.comment
 
-    def test_email_sent_on_approve(self, mock_send_grid, app, moderator, url, pre_request, post_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_approve(self, mock_notification_send, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
             assert not request.target.is_retracted
@@ -398,10 +398,10 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             assert initial_state != request.machine_state
             assert request.target.is_retracted
         # There are two preprints withdrawn and each preprint have 2 contributors. So 4 emails are sent in total.
-        assert mock_send_grid.call_count == 4
+        assert mock_notification_send.call_count == 4
 
     @pytest.mark.skip('TODO: IN-331 -- add emails')
-    def test_email_sent_on_reject(self, mock_send_grid, app, moderator, url, pre_request, post_request):
+    def test_email_sent_on_reject(self, mock_notification_send, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
             assert not request.target.is_retracted
@@ -411,10 +411,10 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             request.reload()
             assert initial_state != request.machine_state
             assert not request.target.is_retracted
-        assert mock_send_grid.call_count == 2
+        assert mock_notification_send.call_count == 2
 
     @pytest.mark.skip('TODO: IN-284/331 -- add emails')
-    def test_email_not_sent_on_edit_comment(self, mock_send_grid, app, moderator, url, pre_request, post_request):
+    def test_email_not_sent_on_edit_comment(self, mock_notification_send, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
             assert not request.target.is_retracted
@@ -424,7 +424,7 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             request.reload()
             assert initial_state != request.machine_state
             assert not request.target.is_retracted
-        assert mock_send_grid.call_count == 0
+        assert mock_notification_send.call_count == 0
 
     def test_auto_approve(self, app, auto_withdrawable_pre_mod_preprint, auto_approved_pre_request):
         assert auto_withdrawable_pre_mod_preprint.is_retracted
