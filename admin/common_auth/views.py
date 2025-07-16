@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
-from osf.models import AdminProfile, AbstractProvider
+from osf.models import AdminProfile, AbstractProvider, NotificationType
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -78,6 +78,10 @@ class RegisterUser(PermissionRequiredMixin, FormView):
                 provider_id = split[2]
                 provider = AbstractProvider.objects.get(id=provider_id)
                 provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
+
+                notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_NEW_PENDING_SUBMISSIONS.value)
+
+                notification_type.emit(user=osf_user, message_frequency='instantly', event_context={'provider': provider._id})
 
         osf_user.save()
 
