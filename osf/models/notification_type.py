@@ -78,6 +78,7 @@ class NotificationType(models.Model):
         USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
         USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
+        USER_NEW_PENDING_SUBMISSIONS = 'user_new_pending_submissions'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'

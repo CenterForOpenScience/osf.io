@@ -79,12 +79,9 @@ class RegisterUser(PermissionRequiredMixin, FormView):
                 provider = AbstractProvider.objects.get(id=provider_id)
                 provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
 
-                subscription_type = NotificationType.objects.filter(name='new_pending_submissions')
+                notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_NEW_PENDING_SUBMISSIONS.value)
 
-                if not subscription_type.exists():
-                    continue
-                subscription_type = subscription_type.first()
-                subscription_type.add_user_to_subscription(user=osf_user, provider=provider)
+                notification_type.add_user_to_subscription(user=osf_user, provider=provider)
 
         osf_user.save()
 
