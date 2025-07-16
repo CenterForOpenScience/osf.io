@@ -23,4 +23,4 @@ class Migration(migrations.Migration):
             name='sort_order',
             field=models.IntegerField(blank=True, null=True),
         ),
-   ]
+    ]
