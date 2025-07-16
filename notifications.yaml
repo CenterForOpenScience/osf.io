@@ -19,6 +19,26 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/password_reset.html.mako'
     notification_freq_default: instantly
+  - name: user_contributor_added_default
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_default.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_draft_registration.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_preprint_node_from_osf
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_preprint_node_from_osf.html.mako'
+    notification_freq_default: instantly
+  - name: user_contributor_added_access_request
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_access_request.html.mako'
+    notification_freq_default: instantly
   - name: forgot_password
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -121,6 +141,21 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/pending_embargo_non_admin.html.mako'
+    notification_freq_default: instantly
+  - name: node_affiliation_changed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/project_affiliation_changed.html.mako'
+    notification_freq_default: instantly
+  - name: node_request_access_denied
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/access_request_rejected.html.mako'
+    notification_freq_default: instantly
+  - name: node_access_request_submitted
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/access_request_submitted.html.mako'
     notification_freq_default: instantly
 
   #### PREPRINT

@@ -79,6 +79,7 @@ class NotificationType(models.Model):
         USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
         USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
+        USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'

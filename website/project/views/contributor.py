@@ -592,7 +592,7 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
         elif email_template == 'draft_registration':
             email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
         elif email_template == 'access_request':
-            email_template = mails.CONTRIBUTOR_ADDED_ACCESS_REQUEST
+            email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
             email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
@@ -600,7 +600,7 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
         else:
             email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
 
-        NotificationType.objects.create(name=email_template).emit(
+        NotificationType.objects.get(name=email_template).emit(
             user=contributor,
             event_context={
                 'node': node.id,

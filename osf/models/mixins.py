@@ -306,15 +306,18 @@ class AffiliatedInstitutionMixin(models.Model):
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
+            from . import NotificationType
+
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    mails.send_mail(
-                        user.username,
-                        mails.PROJECT_AFFILIATION_CHANGED,
-                        **{
+                    NotificationType.objects.get(
+                        name=NotificationType.Type.NODE_AFFILIATION_CHANGED
+                    ).emit(
+                        user=user,
+                        event_context={
                             'user': user,
                             'node': self,
-                        },
+                        }
                     )
         if log:
             params = self.log_params
@@ -345,16 +348,18 @@ class AffiliatedInstitutionMixin(models.Model):
             if save:
                 self.save()
             self.update_search()
+            from . import NotificationType
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    mails.send_mail(
-                        user.username,
-                        mails.PROJECT_AFFILIATION_CHANGED,
-                        **{
+                    NotificationType.objects.get(
+                        name=NotificationType.Type.NODE_AFFILIATION_CHANGED
+                    ).emit(
+                        user=user,
+                        event_context={
                             'user': user,
                             'node': self,
-                        },
+                        }
                     )
 
             return True
