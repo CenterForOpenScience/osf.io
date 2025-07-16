@@ -81,7 +81,7 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
                 notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_NEW_PENDING_SUBMISSIONS.value)
 
-                notification_type.add_user_to_subscription(user=osf_user, provider=provider)
+                notification_type.emit(user=osf_user, message_frequency='instantly', event_context={'provider': provider._id})
 
         osf_user.save()
 
