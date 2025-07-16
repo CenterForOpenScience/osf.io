@@ -158,6 +158,7 @@ class TestDraftRegistrationListTopLevelEndpoint:
 
 
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
@@ -336,11 +337,11 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
-        mock_send_grid.reset_mock()
+    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload, mock_notification_send):
+        mock_notification_send.reset_mock()
         app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
 
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """
@@ -403,6 +404,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 
 
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self):
@@ -429,19 +431,19 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
+    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload, mock_notification_send):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
         app.post_json_api(
             f'{url_draft_registrations}?embed=branched_from&embed=initiator',
             payload,
             auth=user.auth
         )
-        assert mock_send_grid.called
+        assert mock_notification_send.called
 
         # Python 3.6 does not support mock.call_args.args/kwargs
         # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
         # (note, this is compatible with later versions)
-        mock_send_kwargs = mock_send_grid.call_args[1]
+        mock_send_kwargs = mock_notification_send.call_args[1]
         assert mock_send_kwargs['subject'] == 'You have a new registration draft.'
         assert mock_send_kwargs['to_addr'] == user.email
 

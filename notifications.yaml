@@ -79,6 +79,21 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite_registered.html.mako'
     notification_freq_default: instantly
+  - name: user_invite_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_draft_registration.html.mako'
+    notification_freq_default: instantly
+  - name: user_invite_default
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/invite_default.html.mako'
+    notification_freq_default: instantly
+  - name: user_invite_osf_preprint
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_preprints_osf.html.mako'
+    notification_freq_default: instantly
   #### PROVIDER
   - name: new_pending_submissions
     __docs__: ...
@@ -89,6 +104,11 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/new_pending_submissions.html.mako'
+    notification_freq_default: instantly
+  - name: provider_user_invite_preprint
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/contributor_added_preprints.html.mako'
     notification_freq_default: instantly
   #### NODE
   - name: file_updated

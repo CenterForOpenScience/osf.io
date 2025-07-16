@@ -23,7 +23,7 @@ from osf.models import AbstractNode, DraftRegistration, OSFUser, Preprint, Prepr
 from osf.models.notification_type import FrequencyChoices
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
-from website import mails, language, settings
+from website import language, settings
 from website.notifications.utils import check_if_all_global_subscriptions_are_none
 from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project, must_not_be_registration,
@@ -429,7 +429,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
             'fullname': referrer.fullname,
         },
         'node': {
-          'title': node.title,
+            'title': node.title,
         },
         'fullname': unclaimed_record['name'],
         'claim_url': claim_url,
