@@ -74,7 +74,11 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_default.html.mako'
     notification_freq_default: instantly
-
+  - name: user_forward_invite_registered
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forward_invite_registered.html.mako'
+    notification_freq_default: instantly
   #### PROVIDER
   - name: new_pending_submissions
     __docs__: ...

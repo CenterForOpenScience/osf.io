@@ -145,6 +145,7 @@ def configure_test_auth(node, user_role, provider=None):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestModeratedCollectionSubmission:
 
     MOCK_NOW = timezone.now()
@@ -299,6 +300,7 @@ class TestModeratedCollectionSubmission:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestUnmoderatedCollectionSubmission:
 
     def test_moderated_submit(self, unmoderated_collection_submission):
@@ -336,12 +338,12 @@ class TestUnmoderatedCollectionSubmission:
         unmoderated_collection_submission.remove(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission, mock_send_grid):
+    def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission, mock_notification_send):
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
 
         unmoderated_collection_submission.remove(user=moderator, comment='Test Comment')
-        assert mock_send_grid.called
+        assert mock_notification_send.called
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, unmoderated_collection_submission):
@@ -379,6 +381,7 @@ class TestUnmoderatedCollectionSubmission:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestHybridModeratedCollectionSubmission:
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.MODERATOR))
@@ -485,12 +488,12 @@ class TestHybridModeratedCollectionSubmission:
         assert mock_send_grid.called
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission, mock_send_grid):
+    def test_notify_moderated_removed_admin(self, node, hybrid_moderated_collection_submission, mock_notification_send):
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
 
         hybrid_moderated_collection_submission.remove(user=moderator, comment='Test Comment')
-        assert mock_send_grid.called
+        assert mock_notification_send.called
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_resubmit_success(self, node, hybrid_moderated_collection_submission):
