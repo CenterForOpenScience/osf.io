@@ -26,6 +26,7 @@ def make_registration_payload(*node_ids):
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()
@@ -373,7 +374,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 404
 
     def test_email_sent_on_affiliation_addition(self, app, user, institution, node_without_institution,
-                                                url_institution_nodes, mock_send_grid):
+                                                url_institution_nodes, mock_notification_send):
         node_without_institution.add_contributor(user, permissions='admin')
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
@@ -391,9 +392,9 @@ class TestInstitutionRelationshipNodes:
         )
 
         assert res.status_code == 201
-        mock_send_grid.assert_called_once()
+        mock_notification_send.assert_called_once()
 
-    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_send_grid):
+    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_notification_send):
         current_institution = InstitutionFactory()
         node_public.affiliated_institutions.add(current_institution)
 
@@ -412,5 +413,5 @@ class TestInstitutionRelationshipNodes:
         # Assert response is successful
         assert res.status_code == 204
 
-        call_args = mock_send_grid.call_args[1]
+        call_args = mock_notification_send.call_args[1]
         assert call_args['to_addr'] == admin.email
