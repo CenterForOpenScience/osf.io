@@ -5,9 +5,11 @@ from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
+    RegistrationProviderFactory,
     AuthUserFactory,
     PrivateLinkFactory,
 )
+from osf.utils.workflows import RegistrationModerationStates
 
 
 @pytest.fixture()
@@ -69,15 +71,13 @@ class TestRegistrationsChildrenList:
         assert component_two._id in ids
 
     def test_return_registrations_list_no_auth_approved(self, user, app, registration_with_children_approved, registration_with_children_approved_url):
-        component_one, component_two, component_three, component_four = registration_with_children_approved.nodes
-
         res = app.get(registration_with_children_approved_url)
         ids = [node['id'] for node in res.json['data']]
 
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert component_one._id in ids
-        assert component_two._id in ids
+        for component in registration_with_children_approved.nodes:
+            assert component._id in ids
 
     def test_registrations_list_no_auth_unapproved(self, user, app, registration_with_children, registration_with_children_url):
         res = app.get(registration_with_children_url, expect_errors=True)
@@ -137,6 +137,36 @@ class TestRegistrationsChildrenList:
         view_only_link.save()
         res = app.get(view_only_link_url, expect_errors=True)
         assert res.status_code == 401
+
+    def test_registration_children_count_and_visibility_for_moderator(self, app, user):
+        non_contrib_moderator = AuthUserFactory()
+
+        # Setup provider and assign moderator permission
+        provider = RegistrationProviderFactory(reviews_workflow='pre-moderation')
+        provider.add_to_group(non_contrib_moderator, 'admin')
+        provider.save()
+
+        project = ProjectFactory(creator=user)
+        child = NodeFactory(parent=project, creator=user)
+
+        registration = RegistrationFactory(project=project, provider=provider)
+        registration.moderation_state = RegistrationModerationStates.PENDING.db_name
+        registration.save()
+
+        pending_child = RegistrationFactory(project=child, parent=registration, provider=provider)
+        pending_child.moderation_state = RegistrationModerationStates.PENDING.db_name
+        pending_child.save()
+
+        url = f'/v2/registrations/{registration._id}/children/'
+
+        res = app.get(url, auth=non_contrib_moderator.auth)
+        ids = [node['id'] for node in res.json['data']]
+        assert pending_child._id in ids
+
+        # Count should be 1
+        node_url = f'/v2/registrations/{registration._id}/?related_counts=children'
+        res = app.get(node_url, auth=non_contrib_moderator.auth)
+        assert res.json['data']['relationships']['children']['links']['related']['meta']['count'] == 1
 
 
 @pytest.mark.django_db
