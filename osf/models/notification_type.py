@@ -78,6 +78,7 @@ class NotificationType(models.Model):
         USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
         USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
+        USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'
@@ -98,6 +99,7 @@ class NotificationType(models.Model):
         NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'
         NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
         NODE_FILE_UPDATED = 'node_file_updated'
+        NODE_FILE_ADDED = 'node_file_added'
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'

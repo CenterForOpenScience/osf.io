@@ -609,25 +609,26 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        f_type, action = action.split('_')
+        f_type, item_action = action.split('_')
         if payload['metadata']['materialized'].endswith('/'):
             f_type = 'folder'
-        html_message = '{action} {f_type} "<b>{name}</b>".'.format(
-            action=markupsafe.escape(action),
-            f_type=markupsafe.escape(f_type),
-            name=markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))
-        )
-
-        context = {}
-        context['message'] = html_message
-        context['profile_image_url'] = user.profile_image_url()
-        context['localized_timestamp'] = localize_timestamp(timezone.now(), user)
-        context['user_fullname'] = user.fullname
-        context['url'] = node.absolute_url
-        NotificationType.objects.get(name=action).emit(
-            user=user,
-            event_context=context,
-        )
+        match f'node_{action}':
+            case NotificationType.Type.NODE_FILE_ADDED:
+                NotificationType.objects.get(
+                    name=NotificationType.Type.NODE_FILE_ADDED
+                ).emit(
+                    user=user,
+                    event_context={
+                        'message': f'{markupsafe.escape(item_action)} {markupsafe.escape(f_type)} "'
+                                   f'<b>{markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))}</b>".',
+                        'profile_image_url': user.profile_image_url(),
+                        'localized_timestamp': localize_timestamp(timezone.now(), user),
+                        'user_fullname': user.fullname,
+                        'url': node.absolute_url,
+                    }
+                )
+            case _:
+                raise NotImplementedError(f'action {action} not implemented')
 
     return {'status': 'success'}
 

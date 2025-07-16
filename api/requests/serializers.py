@@ -188,16 +188,17 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
             NotificationType.objects.get(
-                name=NotificationType.Type.NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST.value,
+                name=NotificationType.Type.NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
             ).emit(
                 user=recipient,
+                message_frequency='instantly',
                 event_context={
-                    'sender': sender,
+                    'sender': sender.username,
                     'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,
                     'reply_to': sender.username if validated_data['reply_to'] else None,
-                    'recipient': recipient,
+                    'recipient': recipient.username if recipient else None,
                     'comment': comment,
-                    'institution': institution,
+                    'institution': institution.id if institution else None,
                     'osf_url': settings.DOMAIN,
                     'node': node_request.target._id,
                 },

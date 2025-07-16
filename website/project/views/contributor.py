@@ -17,7 +17,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import get_session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import Tag
+from osf.models import Tag, NotificationType
 from osf.exceptions import NodeStateError
 from osf.models import AbstractNode, DraftRegistration, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
 from osf.utils import sanitize
@@ -584,35 +584,35 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
     if contrib_on_parent_node:
         if email_template == 'preprint':
             if node.provider.is_default:
-                email_template = mails.CONTRIBUTOR_ADDED_OSF_PREPRINT
+                email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
                 email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
                 logo = node.provider._id
         elif email_template == 'draft_registration':
-            email_template = mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+            email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
         elif email_template == 'access_request':
             email_template = mails.CONTRIBUTOR_ADDED_ACCESS_REQUEST
         elif node.has_linked_published_preprints:
             # Project holds supplemental materials for a published preprint
-            email_template = mails.CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
+            email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
             logo = settings.OSF_PREPRINTS_LOGO
         else:
-            email_template = mails.CONTRIBUTOR_ADDED_DEFAULT
+            email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
 
-        mails.send_mail(
-            to_addr=contributor.username,
-            mail=email_template,
+        NotificationType.objects.create(name=email_template).emit(
             user=contributor,
-            node=node,
-            referrer_name=auth.user.fullname if auth else '',
-            is_initiator=getattr(auth, 'user', False) == contributor,
-            all_global_subscriptions_none=check_if_all_global_subscriptions_are_none(contributor),
-            branded_service=node.provider,
-            can_change_preferences=False,
-            logo=logo,
-            osf_contact_email=settings.OSF_CONTACT_EMAIL,
-            published_preprints=[] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
+            event_context={
+                'node': node.id,
+                'referrer_name': auth.user.fullname if auth else '',
+                'is_initiator': getattr(auth, 'user', False) == contributor,
+                'all_global_subscriptions_none': check_if_all_global_subscriptions_are_none(contributor),
+                'branded_service': node.provider,
+                'can_change_preferences': False,
+                'logo': logo,
+                'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                'published_preprints': [] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, contributor)
+            }
         )
 
         contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
