@@ -92,6 +92,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
+        'title',
         'date_created',
         'date_modified',
         'date_published',
