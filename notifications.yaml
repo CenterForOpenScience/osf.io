@@ -17,7 +17,7 @@ notification_types:
   - name: user_new_pending_submissions
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/user_new_pending_submissions.html.mako'
+    template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
   #### PROVIDER
   - name: new_pending_submissions
