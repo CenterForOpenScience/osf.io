@@ -474,6 +474,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_embargo_admin'
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_embargo_non_admin'
+
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
     REJECT_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'

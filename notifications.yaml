@@ -14,7 +14,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: password_reset
+  - name: user_password_reset
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/password_reset.html.mako'
@@ -85,27 +85,37 @@ notification_types:
   - name: node_file_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/file_updated.html.mako'
     notification_freq_default: instantly
   - name: node_wiki_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/file_updated.html.mako'
     notification_freq_default: instantly
   - name: node_request_institutional_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/node_request_institutional_access_request.html.mako'
     notification_freq_default: instantly
   - name: node_contributor_added_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/contributor_added_access_request.html.mako'
     notification_freq_default: instantly
   - name: node_pending_registration_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/pending_registration_admin.html.mako'
+    notification_freq_default: instantly
+  - name: node_embargo_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_embargo_admin.html.mako'
+    notification_freq_default: instantly
+  - name: node_embargo_nonadmin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_embargo_non_admin.html.mako'
     notification_freq_default: instantly
 
   #### PREPRINT
