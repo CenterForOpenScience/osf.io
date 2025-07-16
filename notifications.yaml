@@ -54,7 +54,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_invite.html.mako'
     notification_freq_default: instantly
-  - name: forward_invite
+  - name: user_forward_invite
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'
