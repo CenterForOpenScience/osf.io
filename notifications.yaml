@@ -1,6 +1,5 @@
 # This file contains the configuration for our notification system using the NotificationType object, this is intended to
-# exist as a simple declarative list of NotificationTypes and their attributes. Every notification sent by OSF should be
-# represented here for bussiness logic dnd metrics reasons.
+# exist as a simple declarative list of NotificationTypes and their attributes.
 
 # Workflow:
 # 1. Add a new notification template
@@ -39,12 +38,17 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_access_request.html.mako'
     notification_freq_default: instantly
+  - name: user_external_login_link_success
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/external_confirm_success.html.mako'
+    notification_freq_default: instantly
   - name: forgot_password
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password.html.mako'
     notification_freq_default: instantly
-  - name: welcome_osf4i
+  - name: user_welcome_osf4i
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/welcome_osf4i.html.mako'
