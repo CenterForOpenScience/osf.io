@@ -587,7 +587,7 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
                 email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
                 logo = settings.OSF_PREPRINTS_LOGO
             else:
-                email_template = mails.CONTRIBUTOR_ADDED_PREPRINT(node.provider)
+                email_template = NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
                 logo = node.provider._id
         elif email_template == 'draft_registration':
             email_template = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
