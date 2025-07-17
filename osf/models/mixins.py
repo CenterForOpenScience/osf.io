@@ -1456,10 +1456,7 @@ class ContributorMixin(models.Model):
                 self.save()
             if self._id and contrib_to_add:
                 # Get or create the notification type
-                if send_email == 'default':
-                    notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
-                else:
-                    notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
+                notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
                 notification_type = NotificationType.objects.get(name=notification_type_name)
 
                 auth_user_fullname = None
@@ -1484,9 +1481,13 @@ class ContributorMixin(models.Model):
                         'DOMAIN': DOMAIN
                     }
                 }
+                breakpoint()
+                message_message_frequency = FrequencyChoices.INSTANTLY.value
+                if send_email == 'false':
+                    message_message_frequency = FrequencyChoices.NONE.value
                 notification_type.emit(
                     user=contrib_to_add,
-                    message_frequency=FrequencyChoices.INSTANTLY.value,
+                    message_frequency=message_message_frequency,
                     subscribed_object=self,
                     event_context=event_context
                 )
