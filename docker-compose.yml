@@ -518,7 +518,6 @@ services:
       - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
-#      OSF_DOMAIN: host.docker.internal
     env_file:
       - .docker-compose.env
       - .docker-compose.sharejs.env
