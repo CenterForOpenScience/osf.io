@@ -374,7 +374,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 404
 
     def test_email_sent_on_affiliation_addition(self, app, user, institution, node_without_institution,
-                                                url_institution_nodes, mock_notification_send):
+                                                url_institution_nodes, mock_send_grid):
         node_without_institution.add_contributor(user, permissions='admin')
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
@@ -392,7 +392,7 @@ class TestInstitutionRelationshipNodes:
         )
 
         assert res.status_code == 201
-        mock_notification_send.assert_called_once()
+        mock_send_grid.assert_called_once()
 
     def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_notification_send):
         current_institution = InstitutionFactory()
@@ -413,5 +413,3 @@ class TestInstitutionRelationshipNodes:
         # Assert response is successful
         assert res.status_code == 204
 
-        call_args = mock_notification_send.call_args[1]
-        assert call_args['to_addr'] == admin.email

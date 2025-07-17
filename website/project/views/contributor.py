@@ -620,13 +620,11 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
 
         notification_type = NotificationType.objects.get(name=notification_type_name)
         event_context = {
-            'to_addr': contributor.username,
             'referrer_name': auth.user.fullname if auth else '',
             'is_initiator': getattr(auth, 'user', False) == contributor,
             'all_global_subscriptions_none': check_if_all_global_subscriptions_are_none(contributor),
             'branded_service': node.id,
             'can_change_preferences': False,
-            'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
         notification_type.emit(

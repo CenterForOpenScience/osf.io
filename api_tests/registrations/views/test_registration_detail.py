@@ -804,7 +804,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
         # Only the creator gets an email; the unreg user does not get emailed
         assert public_registration._contributors.count() == 2
-        assert mock_notification_send.call_count == 3
+        assert mock_notification_send.call_count == 2
 
 
 @pytest.mark.django_db

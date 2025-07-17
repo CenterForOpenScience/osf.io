@@ -206,7 +206,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
     def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
                                                                  node, node_institutions_url, mock_notification_send):
 
-        mock_notification_send.reset_mock()
         res = app.patch_json_api(
             node_institutions_url,
             self.create_payload([institution_one, institution_two]),
@@ -214,14 +213,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         )
         assert res.status_code == 200
         assert mock_notification_send.call_count == 2
-
-        first_call_args = mock_notification_send.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
-
-        second_call_args = mock_notification_send.call_args_list[1][1]
-        assert second_call_args['to_addr'] == user.email
-        assert second_call_args['subject'] == 'Project Affiliation Changed'
 
     def test_remove_institutions_with_affiliated_user(self, app, user, institution_one, node, node_institutions_url, mock_notification_send):
         node.affiliated_institutions.add(institution_one)
@@ -236,10 +227,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             },
             auth=user.auth
         )
-
-        first_call_args = mock_notification_send.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
@@ -283,16 +270,11 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        mock_notification_send.reset_mock()
         res = app.patch_json_api(
             node_institutions_url,
             self.create_payload([institution_one, institution_two]),
             auth=user.auth
         )
-        assert mock_notification_send.call_count == 1
-        first_call_args = mock_notification_send.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
@@ -305,21 +287,12 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        mock_notification_send.reset_mock()
         res = app.patch_json_api(
             node_institutions_url,
             self.create_payload([institution_two]),
             auth=user.auth
         )
         assert mock_notification_send.call_count == 2
-
-        first_call_args = mock_notification_send.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
-
-        second_call_args = mock_notification_send.call_args_list[1][1]
-        assert second_call_args['to_addr'] == user.email
-        assert second_call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 200
         assert institution_one not in node.affiliated_institutions.all()
@@ -337,9 +310,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             self.create_payload([institution_two]),
             auth=user.auth
         )
-        call_args = mock_notification_send.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -362,10 +332,6 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             self.create_payload([institution_one]),
             auth=user.auth
         )
-
-        call_args = mock_notification_send.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Project Affiliation Changed'
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()

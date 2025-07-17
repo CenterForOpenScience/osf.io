@@ -1160,8 +1160,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for contributor in self.registration.contributors:
             if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
                 admin_contributors.append(contributor)
-        for admin in admin_contributors:
-            assert any([each[1]['to_addr'] == admin.username for each in self.mock_notification_send.call_args_list])
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):

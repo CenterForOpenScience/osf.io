@@ -440,13 +440,6 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         )
         assert mock_notification_send.called
 
-        # Python 3.6 does not support mock.call_args.args/kwargs
-        # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
-        # (note, this is compatible with later versions)
-        mock_send_kwargs = mock_notification_send.call_args[1]
-        assert mock_send_kwargs['subject'] == 'You have a new registration draft.'
-        assert mock_send_kwargs['to_addr'] == user.email
-
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider
     ):

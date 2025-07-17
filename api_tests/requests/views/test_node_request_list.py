@@ -88,7 +88,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         assert res.status_code == 201
         assert mock_notification_send.call_count == 2
 
-    def test_email_not_sent_to_parent_admins_on_submit(self, mock_notification_send, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_not_sent_to_parent_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True
         project.save()
@@ -97,7 +97,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
-        assert mock_notification_send.call_count == 1
+        assert mock_send_grid.call_count == 1
 
     def test_request_followed_by_added_as_contrib(self, app, project, noncontrib, admin, url, create_payload):
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)

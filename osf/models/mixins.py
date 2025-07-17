@@ -26,8 +26,6 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
-from website.settings import OSF_CONTACT_EMAIL, DOMAIN
-from osf.models.notification_type import NotificationType, FrequencyChoices
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject

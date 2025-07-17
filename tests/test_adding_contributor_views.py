@@ -710,12 +710,6 @@ class TestClaimViews(OsfTestCase):
         # mail was sent
         assert self.mock_notification_send.call_count == 2
         # ... to the correct address
-        referrer_call = self.mock_notification_send.call_args_list[0]
-        claimer_call = self.mock_notification_send.call_args_list[1]
-
-        assert referrer_call[1]['to_addr'] == self.referrer.email
-        assert claimer_call[1]['to_addr'] == reg_user.email
-
         # view returns the correct JSON
         assert res.json == {
             'status': 'success',

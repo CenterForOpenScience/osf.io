@@ -358,7 +358,7 @@ class TestBulkUploadTasks:
 
         mock_notification_send.assert_called()
 
-    def test_bulk_creation_done_error(self, mock_notification_send, registration_row_invalid_extra_bib_2,
+    def test_bulk_creation_done_error(self, mock_send_grid, registration_row_invalid_extra_bib_2,
                                       registration_row_invalid_affiliation, upload_job_done_error,
                                       provider, initiator, read_contributor, write_contributor, institution):
 
@@ -368,4 +368,4 @@ class TestBulkUploadTasks:
         assert upload_job_done_error.email_sent
         assert len(RegistrationBulkUploadRow.objects.filter(upload__id=upload_job_done_error.id)) == 0
 
-        mock_notification_send.assert_called()
+        mock_send_grid.assert_called()

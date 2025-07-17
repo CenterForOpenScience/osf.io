@@ -213,6 +213,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that an email is not sent when no recipient is listed when an institutional access request is made,
         but the request is still made anyway without email.
         """
+        mock_notification_send.reset_mock()
         del create_payload['data']['relationships']['message_recipient']
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201

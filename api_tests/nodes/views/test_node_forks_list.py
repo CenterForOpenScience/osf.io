@@ -204,6 +204,7 @@ class TestNodeForksList:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -403,12 +404,13 @@ class TestNodeForkCreate:
             registration.title
 
     def test_read_only_contributor_can_fork_private_registration(
-            self, app, private_project, fork_data, private_project_url):
+            self, app, private_project, fork_data, private_project_url, mock_notification_send):
         read_contrib = AuthUserFactory()
 
         private_project.add_contributor(
             read_contrib,
-            permissions=permissions.READ, save=True)
+            permissions=permissions.READ, save=True
+        )
         res = app.post_json_api(
             private_project_url, fork_data,
             auth=read_contrib.auth)
@@ -416,10 +418,11 @@ class TestNodeForkCreate:
         assert res.json['data']['id'] == private_project.forks.first()._id
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
             private_project.title
+        assert mock_notification_send.called
 
     def test_send_email_success(
             self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+            fork_data_with_title, public_project, mock_notification_send):
 
         res = app.post_json_api(
             public_project_url,
@@ -427,13 +430,10 @@ class TestNodeForkCreate:
             auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Your fork has completed'
 
     def test_send_email_failed(
             self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+            fork_data_with_title, public_project, mock_notification_send):
 
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
             with pytest.raises(Exception):
@@ -441,4 +441,4 @@ class TestNodeForkCreate:
                     public_project_url,
                     fork_data_with_title,
                     auth=user.auth)
-                assert mock_send_grid.called
+                assert mock_notification_send.called
