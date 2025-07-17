@@ -49,7 +49,8 @@ from website.project.views.contributor import (
     send_claim_registered_email,
 )
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
-from conftest import start_mock_send_grid
+from conftest import start_mock_send_grid, start_mock_notification_send
+
 
 @pytest.mark.enable_implicit_clean
 @mock.patch('website.mails.settings.USE_EMAIL', True)
@@ -65,6 +66,7 @@ class TestAddingContributorViews(OsfTestCase):
         contributor_added.connect(notify_added_contributor)
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.mock_notification_send = start_mock_notification_send(self)
 
     def test_serialize_unregistered_without_record(self):
         name, email = fake.name(), fake_email()
@@ -241,7 +243,7 @@ class TestAddingContributorViews(OsfTestCase):
         self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail should only have been called once
-        assert self.mock_send_grid.call_count == 1
+        assert self.mock_notification_send.call_count == 1
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
         # Project has a component with a sub-component
@@ -268,7 +270,7 @@ class TestAddingContributorViews(OsfTestCase):
         self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
-        assert self.mock_send_grid.call_count == 2
+        assert self.mock_notification_send.call_count == 2
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -299,7 +301,7 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory(creator=self.auth.user)
         project.add_contributors(contributors, auth=self.auth)
         project.save()
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
         assert contributor.contributor_added_email_records[project._id]['last_sent'] == approx(int(time.time()), rel=1)
 
@@ -308,17 +310,17 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
         project.save()
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
     def test_forking_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
         project.fork_node(auth=Auth(project.creator))
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     def test_templating_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
         project.use_as_template(auth=Auth(project.creator))
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     @mock.patch('website.archiver.tasks.archive')
     def test_registering_project_does_not_send_contributor_added_email(self, mock_archive):
@@ -331,18 +333,18 @@ class TestAddingContributorViews(OsfTestCase):
             None,
             provider=provider
         )
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
         notify_added_contributor(project, contributor, auth)
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
         # 2nd call does not send email because throttle period has not expired
         notify_added_contributor(project, contributor, auth)
-        assert self.mock_send_grid.call_count == 1
+        assert self.mock_notification_send.call_count == 1
 
     def test_notify_contributor_email_sends_after_throttle_expires(self):
         throttle = 0.5
@@ -351,37 +353,37 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(project.creator)
         notify_added_contributor(project, contributor, auth, throttle=throttle)
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
         time.sleep(1)  # throttle period expires
         notify_added_contributor(project, contributor, auth, throttle=throttle)
-        assert self.mock_send_grid.call_count == 2
+        assert self.mock_notification_send.call_count == 2
 
     def test_add_contributor_to_fork_sends_email(self):
         contributor = UserFactory()
         fork = self.project.fork_node(auth=Auth(self.creator))
         fork.add_contributor(contributor, auth=Auth(self.creator))
         fork.save()
-        assert self.mock_send_grid.called
-        assert self.mock_send_grid.call_count == 1
+        assert self.mock_notification_send.called
+        assert self.mock_notification_send.call_count == 1
 
     def test_add_contributor_to_template_sends_email(self):
         contributor = UserFactory()
         template = self.project.use_as_template(auth=Auth(self.creator))
         template.add_contributor(contributor, auth=Auth(self.creator))
         template.save()
-        assert self.mock_send_grid.called
-        assert self.mock_send_grid.call_count == 1
+        assert self.mock_notification_send.called
+        assert self.mock_notification_send.call_count == 1
 
     def test_creating_fork_does_not_email_creator(self):
         contributor = UserFactory()
         fork = self.project.fork_node(auth=Auth(self.creator))
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     def test_creating_template_does_not_email_creator(self):
         contributor = UserFactory()
         template = self.project.use_as_template(auth=Auth(self.creator))
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
@@ -448,6 +450,7 @@ class TestUserInviteViews(OsfTestCase):
         self.invite_url = f'/api/v1/project/{self.project._primary_key}/invite_contributor/'
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.mock_notification_send = start_mock_notification_send(self)
 
     def test_invite_contributor_post_if_not_in_db(self):
         name, email = fake.name(), fake_email()
@@ -527,7 +530,7 @@ class TestUserInviteViews(OsfTestCase):
         project.save()
         send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
 
-        self.mock_send_grid.assert_called()
+        self.mock_notification_send.assert_called()
 
     def test_send_claim_email_to_referrer(self):
         project = ProjectFactory()
@@ -540,7 +543,7 @@ class TestUserInviteViews(OsfTestCase):
         project.save()
         send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
 
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
     def test_send_claim_email_before_throttle_expires(self):
         project = ProjectFactory()
@@ -552,11 +555,11 @@ class TestUserInviteViews(OsfTestCase):
         )
         project.save()
         send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        self.mock_send_grid.reset_mock()
+        self.mock_notification_send.reset_mock()
         # 2nd call raises error because throttle hasn't expired
         with pytest.raises(HTTPError):
             send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
 
 @pytest.mark.enable_implicit_clean
@@ -594,6 +597,7 @@ class TestClaimViews(OsfTestCase):
         self.project.save()
 
         self.mock_send_grid = start_mock_send_grid(self)
+        self.mock_notification_send = start_mock_notification_send(self)
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_claim_user_already_registered_redirects_to_claim_user_registered(self, claim_email):
@@ -704,10 +708,10 @@ class TestClaimViews(OsfTestCase):
         res = self.app.post(url, json=payload)
 
         # mail was sent
-        assert self.mock_send_grid.call_count == 2
+        assert self.mock_notification_send.call_count == 2
         # ... to the correct address
-        referrer_call = self.mock_send_grid.call_args_list[0]
-        claimer_call = self.mock_send_grid.call_args_list[1]
+        referrer_call = self.mock_notification_send.call_args_list[0]
+        claimer_call = self.mock_notification_send.call_args_list[1]
 
         assert referrer_call[1]['to_addr'] == self.referrer.email
         assert claimer_call[1]['to_addr'] == reg_user.email
@@ -726,10 +730,10 @@ class TestClaimViews(OsfTestCase):
             unclaimed_user=self.user,
             node=self.project
         )
-        assert self.mock_send_grid.call_count == 2
-        first_call_args = self.mock_send_grid.call_args_list[0][1]
+        assert self.mock_notification_send.call_count == 2
+        first_call_args = self.mock_notification_send.call_args_list[0][1]
         assert first_call_args['to_addr'] == self.referrer.email
-        second_call_args = self.mock_send_grid.call_args_list[1][1]
+        second_call_args = self.mock_notification_send.call_args_list[1][1]
         assert second_call_args['to_addr'] == reg_user.email
 
     def test_send_claim_registered_email_before_throttle_expires(self):
@@ -739,7 +743,7 @@ class TestClaimViews(OsfTestCase):
             unclaimed_user=self.user,
             node=self.project,
         )
-        self.mock_send_grid.reset_mock()
+        self.mock_notification_send.reset_mock()
         # second call raises error because it was called before throttle period
         with pytest.raises(HTTPError):
             send_claim_registered_email(
@@ -747,7 +751,7 @@ class TestClaimViews(OsfTestCase):
                 unclaimed_user=self.user,
                 node=self.project,
             )
-        assert not self.mock_send_grid.called
+        assert not self.mock_notification_send.called
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')
     def test_claim_user_post_with_email_already_registered_sends_correct_email(
@@ -935,17 +939,17 @@ class TestClaimViews(OsfTestCase):
             },
         )
         assert res.json['fullname'] == self.given_name
-        assert self.mock_send_grid.called
+        assert self.mock_notification_send.called
 
     def test_claim_user_post_if_email_is_different_from_given_email(self):
         email = fake_email()  # email that is different from the one the referrer gave
         url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
         self.app.post(url, json={'value': email, 'pk': self.user._primary_key} )
-        assert self.mock_send_grid.called
-        assert self.mock_send_grid.call_count == 2
-        call_to_invited = self.mock_send_grid.mock_calls[0]
+        assert self.mock_notification_send.called
+        assert self.mock_notification_send.call_count == 2
+        call_to_invited = self.mock_notification_send.mock_calls[0]
         call_to_invited.assert_called_with(to_addr=email)
-        call_to_referrer = self.mock_send_grid.mock_calls[1]
+        call_to_referrer = self.mock_notification_send.mock_calls[1]
         call_to_referrer.assert_called_with(to_addr=self.given_email)
 
     def test_claim_url_with_bad_token_returns_400(self):

@@ -209,6 +209,7 @@ class TestDraftRegistrationContributorCreateValidation(DraftRegistrationCRUDTest
 
 
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeContributorCreateEmail):
     @pytest.fixture()
     def url_project_contribs(self, project_public):
@@ -217,7 +218,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
 
     def test_add_contributor_sends_email(
             self, app, user, user_two,
-            url_project_contribs, mock_send_grid):
+            url_project_contribs, mock_notification_send):
         # Overrides TestNodeContributorCreateEmail
         url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
@@ -238,7 +239,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
 
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
@@ -265,7 +266,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_sends_email(
-            self, mock_send_grid, app, user, url_project_contribs):
+            self, mock_notification_send, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
@@ -278,7 +279,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     # Overrides TestNodeContributorCreateEmail
     @mock.patch('website.project.signals.unreg_contributor_added.send')
@@ -301,7 +302,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_without_email_no_email(
-            self, mock_send_grid, app, user, url_project_contribs):
+            self, mock_notification_send, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
@@ -316,7 +317,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
+        assert mock_notification_send.call_count == 0
 
 
 class TestDraftContributorBulkCreate(DraftRegistrationCRUDTestCase, TestNodeContributorBulkCreate):

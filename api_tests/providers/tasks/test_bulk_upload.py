@@ -64,6 +64,7 @@ class TestRegistrationBulkCreationRowError:
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestBulkUploadTasks:
 
     @pytest.fixture()
@@ -317,7 +318,7 @@ class TestBulkUploadTasks:
         assert upload_job_done_full.state == JobState.PICKED_UP
         assert not upload_job_done_full.email_sent
 
-    def test_bulk_creation_done_full(self, mock_send_grid, registration_row_1, registration_row_2,
+    def test_bulk_creation_done_full(self, mock_notification_send, registration_row_1, registration_row_2,
                                      upload_job_done_full, provider, initiator, read_contributor, write_contributor):
 
         bulk_create_registrations(upload_job_done_full.id, dry_run=False)
@@ -335,9 +336,9 @@ class TestBulkUploadTasks:
             assert row.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
             assert row.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-        mock_send_grid.assert_called()
+        mock_notification_send.assert_called()
 
-    def test_bulk_creation_done_partial(self, mock_send_grid, registration_row_3,
+    def test_bulk_creation_done_partial(self, mock_notification_send, registration_row_3,
                                         registration_row_invalid_extra_bib_1, upload_job_done_partial,
                                         provider, initiator, read_contributor, write_contributor):
 
@@ -355,9 +356,9 @@ class TestBulkUploadTasks:
         assert registration_row_3.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
         assert registration_row_3.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-        mock_send_grid.assert_called()
+        mock_notification_send.assert_called()
 
-    def test_bulk_creation_done_error(self, mock_send_grid, registration_row_invalid_extra_bib_2,
+    def test_bulk_creation_done_error(self, mock_notification_send, registration_row_invalid_extra_bib_2,
                                       registration_row_invalid_affiliation, upload_job_done_error,
                                       provider, initiator, read_contributor, write_contributor, institution):
 
@@ -367,4 +368,4 @@ class TestBulkUploadTasks:
         assert upload_job_done_error.email_sent
         assert len(RegistrationBulkUploadRow.objects.filter(upload__id=upload_job_done_error.id)) == 0
 
-        mock_send_grid.assert_called()
+        mock_notification_send.assert_called()
