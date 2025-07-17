@@ -589,12 +589,11 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
     if not getattr(node, 'is_published', True):
         return
     if not contributor.is_registered:
-        notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
-        notification_type = NotificationType.objects.get(name=notification_type_name)
-        notification_type.emit(
-            user=contributor,
-            message_frequency=FrequencyChoices.INSTANTLY.value,
-            subsribed_object=node,
+        unreg_contributor_added.send(
+            node,
+            contributor=contributor,
+            auth=auth,
+            email_template=email_template
         )
         return
 

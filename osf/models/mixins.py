@@ -1455,40 +1455,12 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
             if self._id and contrib_to_add:
-                # Get or create the notification type
-                notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
-                notification_type = NotificationType.objects.get(name=notification_type_name)
-
-                auth_user_fullname = None
-                if auth:
-                    auth_user_fullname = auth.user.fullname
-
-                event_context = {
-                    'node': {
-                        'id': self._id,
-                        'title': self.title,
-                        'absolute_url': getattr(self, 'absolute_url', ''),
-                    },
-                    'referrer_name': auth_user_fullname,
-                    'user': {
-                        'id': contrib_to_add._id,
-                        'fullname': contrib_to_add.fullname,
-                        'username': contrib_to_add.username,
-                    },
-                    'osf_contact_email': OSF_CONTACT_EMAIL,
-                    'all_global_subscriptions_none': None,
-                    'settings': {
-                        'DOMAIN': DOMAIN
-                    }
-                }
-                message_message_frequency = FrequencyChoices.INSTANTLY.value
-                if send_email == 'false':
-                    message_message_frequency = FrequencyChoices.NONE.value
-                notification_type.emit(
-                    user=contrib_to_add,
-                    message_frequency=message_message_frequency,
-                    subscribed_object=self,
-                    event_context=event_context
+                project_signals.contributor_added.send(
+                    self,
+                    contributor=contributor,
+                    auth=auth,
+                    email_template=send_email,
+                    permissions=permissions
                 )
 
             # enqueue on_node_updated/on_preprint_updated to update DOI metadata when a contributor is added
