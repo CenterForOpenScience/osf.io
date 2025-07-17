@@ -626,16 +626,15 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
             'referrer_name': auth.user.fullname if auth else '',
             'is_initiator': getattr(auth, 'user', False) == contributor,
             'all_global_subscriptions_none': check_if_all_global_subscriptions_are_none(contributor),
-            'branded_service': node.provider,
+            'branded_service': node.id,
             'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-            'published_preprints': [] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None)
         }
         notification_type.emit(
             user=contributor,
             message_frequency=FrequencyChoices.INSTANTLY.value,
-            subsribed_object=node,
+            subscribed_object=node,
             event_context=event_context,
         )
 
