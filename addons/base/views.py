@@ -576,25 +576,24 @@ def create_waterbutler_log(payload, **kwargs):
                     params=payload
                 )
 
-            if payload.get('email') is True:
-                notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
-            elif payload.get('errors'):
-                notification_type = NotificationType.Type.FILE_OPERATION_FAILED
-            else:
-                raise NotImplementedError('No email template for this')
+            if payload.get('email') or payload.get('errors'):
+                if payload.get('email'):
+                    notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
+                if payload.get('errors'):
+                    notification_type = NotificationType.Type.FILE_OPERATION_FAILED
 
-            NotificationType.objects.get(name=notification_type.value).emit(
-                user=user,
-                event_context={
-                    'action': payload['action'],
-                    'source_node': source_node,
-                    'destination_node': destination_node,
-                    'source_path': payload['source']['materialized'],
-                    'source_addon': payload['source']['addon'],
-                    'destination_addon': payload['destination']['addon'],
-                    'osf_support_email': settings.OSF_SUPPORT_EMAIL
-                }
-            )
+                NotificationType.objects.get(name=notification_type.value).emit(
+                    user=user,
+                    event_context={
+                        'action': payload['action'],
+                        'source_node': source_node,
+                        'destination_node': destination_node,
+                        'source_path': payload['source']['materialized'],
+                        'source_addon': payload['source']['addon'],
+                        'destination_addon': payload['destination']['addon'],
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL
+                    }
+                )
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -608,27 +607,35 @@ def create_waterbutler_log(payload, **kwargs):
     if target_node and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
 
-    with transaction.atomic():
-        f_type, item_action = action.split('_')
-        if payload['metadata']['materialized'].endswith('/'):
-            f_type = 'folder'
-        match f'node_{action}':
-            case NotificationType.Type.NODE_FILE_ADDED:
-                NotificationType.objects.get(
-                    name=NotificationType.Type.NODE_FILE_ADDED
-                ).emit(
-                    user=user,
-                    event_context={
-                        'message': f'{markupsafe.escape(item_action)} {markupsafe.escape(f_type)} "'
-                                   f'<b>{markupsafe.escape(payload['metadata']['materialized'].lstrip('/'))}</b>".',
-                        'profile_image_url': user.profile_image_url(),
-                        'localized_timestamp': localize_timestamp(timezone.now(), user),
-                        'user_fullname': user.fullname,
-                        'url': node.absolute_url,
-                    }
-                )
-            case _:
-                raise NotImplementedError(f'action {action} not implemented')
+    file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+
+    match f'node_{action}':
+        case NotificationType.Type.NODE_FILE_ADDED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_ADDED)
+        case NotificationType.Type.NODE_FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_REMOVED)
+        case NotificationType.Type.NODE_FILE_UPDATED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+        case NotificationType.Type.NODE_ADDON_FILE_RENAMED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_RENAMED)
+        case NotificationType.Type.NODE_ADDON_FILE_COPIED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_COPIED)
+        case NotificationType.Type.NODE_ADDON_FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_REMOVED)
+        case NotificationType.Type.NODE_ADDON_FILE_MOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_MOVED)
+        case _:
+            raise NotImplementedError(f'action {action} not implemented')
+
+    notification.emit(
+        user=user,
+        event_context={
+            'profile_image_url': user.profile_image_url(),
+            'localized_timestamp': localize_timestamp(timezone.now(), user),
+            'user_fullname': user.fullname,
+            'url': node.absolute_url,
+        }
+    )
 
     return {'status': 'success'}
 

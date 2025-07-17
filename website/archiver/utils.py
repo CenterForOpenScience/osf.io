@@ -5,11 +5,9 @@ from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 from framework.utils import sanitize_html
+from osf.models import NotificationType
 
-from website import (
-    mails,
-    settings
-)
+from website import settings
 from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
@@ -29,79 +27,100 @@ def normalize_unicode_filenames(filename):
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
-        user=user,
-        src=src,
-        stat_result=stat_result,
-        can_change_preferences=False,
-        url=url,
+    NotificationType.objects.get(
+        name=NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
+    ).emit(
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'stat_result': stat_result,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED,
+    ).emit(
         user=user,
-        src=src,
-        can_change_preferences=False,
+        event_context={
+            'user': user,
+            'src': src,
+            'can_change_preferences': False,
+        }
     )
 
 
 def send_archiver_copy_error_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_COPY_ERROR_DESK,
+    NotificationType.objects.get(
+        name=NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
+    ).emit(
         user=user,
-        src=src,
-        results=results,
-        url=url,
-        can_change_preferences=False,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_COPY_ERROR_USER,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+    ).emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'can_change_preferences': False,
+        }
     )
 
 def send_archiver_file_not_found_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
-        can_change_preferences=False,
-        user=user,
-        src=src,
-        results=results,
-        url=url,
+    NotificationType.objects.get(
+        name=NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND
+    ).emit(
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_FILE_NOT_FOUND_USER,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND
+    ).emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'can_change_preferences': False,
+        }
     )
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
-        user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
-        url=url,
+    NotificationType.objects.get(
+        name=NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
+    ).emit(
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_UNCAUGHT_ERROR_USER,
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
+    ).emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'can_change_preferences': False,
+        }
     )
 
 

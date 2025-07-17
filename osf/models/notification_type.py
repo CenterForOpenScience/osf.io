@@ -59,7 +59,6 @@ class NotificationType(models.Model):
         USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
         USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
-        USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
         USER_COMMENT_REPLIES = 'user_comment_replies'
         USER_COMMENTS = 'user_comments'
         USER_FILE_UPDATED = 'user_file_updated'
@@ -101,6 +100,11 @@ class NotificationType(models.Model):
         NODE_PENDING_EMBARGO_TERMINATION_ADMIN = 'node_pending_embargo_termination_admin'
         NODE_FILE_UPDATED = 'node_file_updated'
         NODE_FILE_ADDED = 'node_file_added'
+        NODE_FILE_REMOVED = 'node_file_removed'
+        NODE_ADDON_FILE_COPIED = 'node_addon_file_copied'
+        NODE_ADDON_FILE_RENAMED = 'node_addon_file_renamed'
+        NODE_ADDON_FILE_MOVED = 'node_addon_file_moved'
+        NODE_ADDON_FILE_REMOVED = 'node_addon_file_removed'
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
