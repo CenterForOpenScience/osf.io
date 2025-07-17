@@ -161,7 +161,7 @@ services:
     extra_hosts:
       - "localhost:192.168.168.167"
     volumes:
-      - mfr_requirements_vol:/usr/local/lib/python3.5
+      - mfr_requirements_vol:/usr/local/lib/python3.13
       - mfr_requirements_local_bin_vol:/usr/local/bin
       - wb_tmp_vol:/tmp
     stdin_open: true
