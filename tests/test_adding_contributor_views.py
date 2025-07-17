@@ -39,7 +39,7 @@ from tests.base import (
     OsfTestCase,
 )
 from tests.test_cas_authentication import generate_external_user_with_resp
-from website import mails, settings
+from website import settings
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.project.signals import contributor_added
 from website.project.views.contributor import (

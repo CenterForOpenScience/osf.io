@@ -8,6 +8,7 @@ from rdflib import Literal, URIRef
 
 from api_tests.utils import create_test_file
 from framework.auth import Auth
+from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.metadata import osf_gathering
 from osf.metadata.rdfutils import (
     FOAF,
@@ -36,6 +37,8 @@ from osf_tests.metadata._utils import assert_triples
 class TestOsfGathering(TestCase):
     @classmethod
     def setUpTestData(cls):
+
+        populate_notification_types()
         # users:
         cls.user__admin = factories.UserFactory()
         cls.user__readwrite = factories.UserFactory(
