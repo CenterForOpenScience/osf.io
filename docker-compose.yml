@@ -140,13 +140,14 @@ services:
     command:
       - /bin/bash
       - -c
-      - invoke install --develop &&
-        (python -m compileall /usr/local/lib/python3.5 || true) &&
-        rm -Rf /python3.5/* &&
-        cp -Rf -p /usr/local/lib/python3.5 /
-    restart: 'no'
+      - >
+        pip install poetry==2.1.2 &&
+        poetry config virtualenvs.create false &&
+        poetry install --no-root --with=dev --without=docs --compile &&
+        rm -rf /python3.13/* &&
+        cp -Rf -p /usr/local/lib/python3.13 /
     volumes:
-      - mfr_requirements_vol:/python3.5
+      - mfr_requirements_vol:/python3.13
       - mfr_requirements_local_bin_vol:/usr/local/bin
 
   mfr:
@@ -157,6 +158,8 @@ services:
       - 7778:7778
     env_file:
       - .docker-compose.mfr.env
+    extra_hosts:
+      - "localhost:192.168.168.167"
     volumes:
       - mfr_requirements_vol:/usr/local/lib/python3.5
       - mfr_requirements_local_bin_vol:/usr/local/bin
@@ -191,7 +194,7 @@ services:
       - |
         python3 -m venv /tmp/venv && \
         /tmp/venv/bin/pip install poetry==2.1.2 && \
-        /tmp/venv/bin/poetry install --no-root --with=dev --without=docs --compile && \
+        /tmp/venv/bin/poetry install --with=dev --without=docs --compile && \
         rm -rf /python3.13/* && \
         cp -Rf -p /usr/local/lib/python3.13 /
     restart: 'no'
@@ -515,6 +518,7 @@ services:
       - redis
     environment:
       DJANGO_SETTINGS_MODULE: api.base.settings
+#      OSF_DOMAIN: host.docker.internal
     env_file:
       - .docker-compose.env
       - .docker-compose.sharejs.env
