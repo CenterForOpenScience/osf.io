@@ -121,6 +121,12 @@ class CollectionProviderSerializer(ProviderSerializer):
         related_view='providers:collection-providers:notification-subscription-list',
         related_view_kwargs={'provider_id': '<_id>'},
     )
+
+    brand = RelationshipField(
+        related_view='brands:brand-detail',
+        related_view_kwargs={'brand_id': '<brand.id>'},
+    )
+
     filterable_fields = frozenset([
         'allow_submissions',
         'allow_commenting',
@@ -129,6 +135,7 @@ class CollectionProviderSerializer(ProviderSerializer):
         'reviews_workflow',
         'domain_redirect_enabled',
         'id',
+        'brand',
         'name',
     ])
 
