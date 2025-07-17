@@ -166,21 +166,29 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
-  unoconv:
-    image: centerforopenscience/unoconv
+  unoserver:
+    image: python:3.13-slim
     environment:
-      UNO_PATH: /usr/lib/libreoffice
-    command:
-      - /bin/bash
-      - -c
-      - /usr/bin/python3.7 /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
-        chmod -R 777 /tmp/mfrlocalcache
+      UNO_INTERFACE: 0.0.0.0
+      UNO_PORT: 2002
+      PORT: 2003
+    command: >
+      /bin/bash -c "
+        apt-get update &&
+        apt-get install -y libreoffice &&
+        pip install --no-cache-dir unoserver &&
+        unoserver \
+          --uno-interface ${UNO_INTERFACE} --uno-port ${UNO_PORT} \
+          --interface 0.0.0.0 --port ${PORT}
+      "
     restart: unless-stopped
     ports:
-      - 2002:2002
+      - "2002:2002"
+      - "2003:2003"
     volumes:
       - wb_tmp_vol:/tmp
     stdin_open: true
+
 
   ###############
   # WaterButler #
