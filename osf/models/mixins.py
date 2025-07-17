@@ -1481,7 +1481,6 @@ class ContributorMixin(models.Model):
                         'DOMAIN': DOMAIN
                     }
                 }
-                breakpoint()
                 message_message_frequency = FrequencyChoices.INSTANTLY.value
                 if send_email == 'false':
                     message_message_frequency = FrequencyChoices.NONE.value
