@@ -17,10 +17,10 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import get_session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import Tag, NotificationType
+from osf.models import Tag
 from osf.exceptions import NodeStateError
 from osf.models import AbstractNode, DraftRegistration, OSFUser, Preprint, PreprintProvider, RecentlyAddedContributor
-from osf.models.notification_type import FrequencyChoices
+from osf.models.notification_type import FrequencyChoices, NotificationType
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN
 from website import language, settings

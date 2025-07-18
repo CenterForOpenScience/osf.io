@@ -576,7 +576,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.SUBMIT.db_name
 
     def test_submit_response_notification(
-            self, revised_response, admin_user, notification_recipients, mock_notification_send):
+            self, revised_response, admin_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         revised_response.update_responses({'q1': 'must change one response or can\'t submit'})
         revised_response.revision_justification = 'has for valid revision_justification for submission'
@@ -584,7 +584,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         revised_response.submit(user=admin_user, required_approvers=[admin_user])
 
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -674,15 +674,15 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         ).count() == 2
 
     def test_approve_response_notification(
-            self, revised_response, admin_user, alternate_user, notification_recipients, mock_notification_send):
+            self, revised_response, admin_user, alternate_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
-        mock_notification_send.reset_mock()
+        mock_send_grid.reset_mock()
         revised_response.approve(user=admin_user)
-        assert not mock_notification_send.called  # Should only send email on final approval
+        assert not mock_send_grid.called  # Should only send email on final approval
         revised_response.approve(user=alternate_user)
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_no_approve_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -741,14 +741,14 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.ADMIN_REJECT.db_name
 
     def test_reject_response_notification(
-            self, revised_response, admin_user, notification_recipients, mock_notification_send):
+            self, revised_response, admin_user, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
         revised_response.reject(user=admin_user)
 
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_no_reject_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -851,13 +851,13 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user, mock_notification_send):
+    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
         revised_response.approve(user=admin_user)
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -903,13 +903,13 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.ACCEPT.db_name
 
     def test_moderator_accept_notification(
-            self, revised_response, moderator, notification_recipients, mock_notification_send):
+            self, revised_response, moderator, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
         revised_response.accept(user=moderator)
 
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_no_moderator_accept_notification_on_initial_response(
             self, initial_response, moderator, mock_notification_send):
@@ -941,13 +941,13 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.trigger == SchemaResponseTriggers.MODERATOR_REJECT.db_name
 
     def test_moderator_reject_notification(
-            self, revised_response, moderator, notification_recipients, mock_notification_send):
+            self, revised_response, moderator, notification_recipients, mock_send_grid):
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
         revised_response.reject(user=moderator)
 
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     def test_no_moderator_reject_notification_on_initial_response(
             self, initial_response, moderator, mock_notification_send):

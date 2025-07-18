@@ -31,11 +31,13 @@ from osf_tests import factories
 from website import settings as website_settings
 from website.project import new_bookmark_collection
 from osf_tests.metadata._utils import assert_triples
+from osf.management.commands.populate_notification_types import populate_notification_types
 
 
 class TestOsfGathering(TestCase):
     @classmethod
     def setUpTestData(cls):
+        populate_notification_types()
         # users:
         cls.user__admin = factories.UserFactory()
         cls.user__readwrite = factories.UserFactory(
