@@ -24,7 +24,7 @@ class Notification(models.Model):
         if not protocol_type == 'email':
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
 
-        recipient_address = getattr(recipient, 'username', None) or self.subscription.user
+        recipient_address = getattr(recipient, 'username', None) or self.subscription.user.username
 
         if protocol_type == 'email' and settings.DEV_MODE and settings.ENABLE_TEST_EMAIL:
             email.send_email_over_smtp(

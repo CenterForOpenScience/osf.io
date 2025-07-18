@@ -823,14 +823,14 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     :return:
     :raises: KeyError if user does not have a confirmation token for the given email.
     """
-    # confirmation_url = user.get_confirmation_url(
-    #     email,
-    #     external=True,
-    #     force=True,
-    #     renew=renew,
-    #     external_id_provider=external_id_provider,
-    #     destination=destination
-    # )
+    confirmation_url = user.get_confirmation_url(
+        email,
+        external=True,
+        force=True,
+        renew=renew,
+        external_id_provider=external_id_provider,
+        destination=destination
+    )
 
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
@@ -858,11 +858,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         # Account creation confirmation: from OSF
         notificaton_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    NotificationType.objects.get(
-        name=notificaton_type.value,
-    ).emit(
+    NotificationType.objects.get(name=notificaton_type).emit(
         user=user,
         event_context={
+            'user_fullname': user.fullname,
+            'confirmation_url': confirmation_url,
             'can_change_preferences': False,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         },

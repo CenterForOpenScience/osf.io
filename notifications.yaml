@@ -103,6 +103,11 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'
     notification_freq_default: instantly
+  - name: user_initial_confirm_email
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/initial_confirm.html.mako'
+    notification_freq_default: instantly
   - name: external_confirm_success
     __docs__: ...
     object_content_type_model_name: osfuser

@@ -19,14 +19,13 @@ from tests.base import (
     OsfTestCase,
 )
 from website.util import api_url_for
-from conftest import start_mock_send_grid
 
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
 class TestMailHog:
 
-    def test_mailhog_recived_mail(self, mock_send_grid):
+    def test_mailhog_received_mail(self, mock_send_grid):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
             mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
@@ -43,6 +42,7 @@ class TestMailHog:
 
 @pytest.mark.django_db
 @mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.ENABLE_TEST_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthMailhog(OsfTestCase):
 
@@ -51,15 +51,12 @@ class TestAuthMailhog(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
-        self.mock_send_grid = start_mock_send_grid(self)
-
-    def test_recived_confirmation(self):
+    def test_received_confirmation(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
         mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
         mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
         requests.delete(mailhog_v1)
-
         with override_switch(features.ENABLE_MAILHOG, active=True):
             with capture_signals() as mock_signals:
                 self.app.post(
@@ -74,10 +71,13 @@ class TestAuthMailhog(OsfTestCase):
         res = requests.get(mailhog_v2).json()
 
         assert mock_signals.signals_sent() == {auth.signals.user_registered, auth.signals.unconfirmed_user_created}
-        assert self.mock_send_grid.called
 
         user = OSFUser.objects.get(username=email)
+        assert res['total'] == 1
+        full_email = f"{res['items'][0]['To'][0]['Mailbox']}@{res['items'][0]['To'][0]['Domain']}"
+        assert full_email == user.username
+        decoded_body = res['items'][0]['Content']['Body']
+
         user_token = list(user.email_verifications.keys())[0]
         ideal_link_path = f'/confirm/{user._id}/{user_token}/'
-
-        assert ideal_link_path in res['items'][0]['Content']['Body']
+        assert ideal_link_path in decoded_body

@@ -54,13 +54,13 @@ def populate_notification_types(*args, **kwargs):
         with open(notification_type['template']) as stream:
             template = stream.read()
 
-        notification_types['template'] = template
         notification_types['notification_freq'] = notification_freq
         nt, _ = NotificationType.objects.update_or_create(
             name=notification_type['name'],
             defaults=notification_type,
         )
         nt.object_content_type = content_type
+        nt.template = template
         nt.save()
 
 
