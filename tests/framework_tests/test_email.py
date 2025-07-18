@@ -66,13 +66,14 @@ class TestEmail(unittest.TestCase):
         mock_mail.return_value.add_personalization.assert_called_once()
 
         # Capture the categories added via add_category
-        mock_mail.return_value.add_category.assert_called_once()
-        added_categories = mock_mail.return_value.add_category.call_args.args[0]
+        # mock_mail.return_value.add_category.assert_called_once()
+        assert mock_mail.return_value.add_category.call_count == 2
+        added_categories = mock_mail.return_value.add_category.call_args_list
         assert len(added_categories) == 2
-        assert isinstance(added_categories[0], Category)
-        assert isinstance(added_categories[1], Category)
-        assert added_categories[0].get() == category1
-        assert added_categories[1].get() == category2
+        assert isinstance(added_categories[0].args[0], Category)
+        assert isinstance(added_categories[1].args[0], Category)
+        assert added_categories[0].args[0].get() == category1
+        assert added_categories[1].args[0].get() == category2
 
         mock_client.send.assert_called_once_with(mock_mail.return_value)
 
@@ -102,6 +103,18 @@ class TestEmail(unittest.TestCase):
         assert kwargs['html_content'] == message
 
         mock_client.send.assert_called_once_with(mock_mail.return_value)
+
+        mock_client.send.return_value = mock.Mock(status_code=200, body='correct')
+        to_addr = 'not-an-email'
+        ret = _send_with_sendgrid(
+            from_addr=from_addr,
+            to_addr=to_addr,
+            subject=subject,
+            message=message,
+            client=mock_client
+        )
+        assert not ret
+        sentry_mock.assert_called()
 
 
 if __name__ == '__main__':
