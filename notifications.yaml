@@ -11,7 +11,12 @@ notification_types:
   - name: user_pending_verification_registered
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/pending_registered.html.mako'
+    notification_freq_default: instantly
+  - name: user_pending_verification
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/pending_invite.html.mako'
     notification_freq_default: instantly
   - name: user_password_reset
     __docs__: ...
@@ -38,10 +43,20 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_access_request.html.mako'
     notification_freq_default: instantly
+  - name: user_contributor_added_draft_registration
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/contributor_added_draft_registration.html.mako'
+    notification_freq_default: instantly
   - name: user_external_login_link_success
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_success.html.mako'
+    notification_freq_default: instantly
+  - name: user_confirm_email
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/confirm.html.mako'
     notification_freq_default: instantly
   - name: forgot_password
     __docs__: ...
@@ -53,12 +68,12 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/welcome_osf4i.html.mako'
     notification_freq_default: instantly
-  - name: invite_preprints_osf
+  - name: user_invite_preprints_osf
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints_osf.html.mako'
     notification_freq_default: instantly
-  - name: invite_preprints
+  - name: user_invite_preprints
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints.html.mako'
@@ -68,17 +83,22 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_draft_registration.html.mako'
     notification_freq_default: instantly
-  - name: invite_default
+  - name: user_invite_default
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_default.html.mako'
     notification_freq_default: instantly
-  - name: pending_invite
+  - name: user_pending_invite
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_invite.html.mako'
     notification_freq_default: instantly
-  - name: forward_invite
+  - name: user_forward_invite_registered
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/forward_invite.html.mako'
+    notification_freq_default: instantly
+  - name: user_forward_invite
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'

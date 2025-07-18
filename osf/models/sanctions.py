@@ -20,7 +20,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SanctionTypes
-from osf.models import NotificationType
+from osf.models.notification_type import NotificationType
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 

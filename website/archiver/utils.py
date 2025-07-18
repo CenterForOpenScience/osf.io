@@ -5,7 +5,7 @@ from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 from framework.utils import sanitize_html
-from osf.models import NotificationType
+from osf.models.notification_type import NotificationType
 
 from website import settings
 from website.archiver import (

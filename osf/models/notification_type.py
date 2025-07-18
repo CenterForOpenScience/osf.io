@@ -197,12 +197,13 @@ class NotificationType(models.Model):
         help_text='Template used to render the subject line of email. Supports Django template syntax.'
     )
 
-    def emit(self, user, subscribed_object=None, message_frequency=None, event_context=None):
+    def emit(self, user, subscribed_object=None, message_frequency='instantly', event_context=None):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
         Args:
             user (OSFUser): The recipient of the notification.
             subscribed_object (optional): The object the subscription is related to.
+            message_frequency (optional): Initializing message frequency.
             event_context (dict, optional): Context for rendering the notification template.
         """
         from osf.models.notification_subscription import NotificationSubscription

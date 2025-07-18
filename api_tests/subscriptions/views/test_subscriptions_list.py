@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,

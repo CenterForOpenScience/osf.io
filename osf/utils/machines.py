@@ -238,7 +238,7 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
-        from osf.models import NotificationType
+        from osf.models.notification_type import NotificationType
 
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
@@ -261,7 +261,7 @@ class NodeRequestMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         """ Notify requester that admins have approved/denied
         """
-        from osf.models import NotificationType
+        from osf.models.notification_type import NotificationType
 
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
