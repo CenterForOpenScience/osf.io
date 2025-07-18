@@ -336,7 +336,7 @@ class TestUnmoderatedCollectionSubmission:
         unmoderated_collection_submission.remove(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
-    def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission, mock_send_grid):
+    def test_notify_moderated_removed_admin(self, mock_send_grid, node, unmoderated_collection_submission):
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         moderator = configure_test_auth(node, UserRoles.ADMIN_USER)
 

@@ -96,6 +96,7 @@ def revised_response(initial_response):
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestCreateSchemaResponse():
 
     def test_create_initial_response_sets_attributes(self, registration, schema):
@@ -142,11 +143,11 @@ class TestCreateSchemaResponse():
         for block in response.response_blocks.all():
             assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
-    def test_create_initial_response_does_not_notify(self, registration, admin_user, mock_send_grid):
+    def test_create_initial_response_does_not_notify(self, registration, admin_user, mock_notification_send):
         schema_response.SchemaResponse.create_initial_response(
             parent=registration, initiator=admin_user
         )
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
@@ -543,6 +544,7 @@ class TestDeleteSchemaResponse():
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestUnmoderatedSchemaResponseApprovalFlows():
 
     def test_submit_response_adds_pending_approvers(
@@ -584,13 +586,13 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         assert mock_send_grid.called
 
-    def test_no_submit_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
+    def test_no_submit_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
         initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
         initial_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -682,13 +684,13 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.approve(user=alternate_user)
         assert mock_send_grid.called
 
-    def test_no_approve_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
+    def test_no_approve_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
         initial_response.approve(user=admin_user)
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_approve_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -748,13 +750,13 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         assert mock_send_grid.called
 
-    def test_no_reject_notification_on_initial_response(self, initial_response, admin_user, mock_send_grid):
+    def test_no_reject_notification_on_initial_response(self, initial_response, admin_user, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
         initial_response.reject(user=admin_user)
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_reject_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -802,6 +804,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestModeratedSchemaResponseApprovalFlows():
 
     @pytest.fixture
@@ -909,12 +912,12 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert mock_send_grid.called
 
     def test_no_moderator_accept_notification_on_initial_response(
-            self, initial_response, moderator, mock_send_grid):
+            self, initial_response, moderator, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
         initial_response.accept(user=moderator)
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_moderator_reject(self, initial_response, admin_user, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -947,12 +950,12 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert mock_send_grid.called
 
     def test_no_moderator_reject_notification_on_initial_response(
-            self, initial_response, moderator, mock_send_grid):
+            self, initial_response, moderator, mock_notification_send):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
         initial_response.reject(user=moderator)
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_moderator_cannot_submit(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)

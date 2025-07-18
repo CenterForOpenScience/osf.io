@@ -24,7 +24,7 @@ from osf.models import UserSessionMap
 from tests.utils import run_celery_tasks
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
-from conftest import start_mock_send_grid
+from conftest import start_mock_send_grid, start_mock_notification_send
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -40,6 +40,7 @@ class TestUserMerging(OsfTestCase):
         with self.context:
             handlers.celery_before_request()
         self.mock_send_grid = start_mock_send_grid(self)
+        self.mock_notification_send = start_mock_notification_send(self)
 
     def _add_unconfirmed_user(self):
         self.unconfirmed = UnconfirmedUserFactory()
@@ -297,4 +298,4 @@ class TestUserMerging(OsfTestCase):
         with override_flag(ENABLE_GV, active=True):
             self.user.merge_user(other_user)
         assert other_user.merged_by._id == self.user._id
-        assert self.mock_send_grid.called is False
+        assert self.mock_notification_send.called is False
