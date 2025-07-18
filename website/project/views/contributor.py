@@ -604,17 +604,14 @@ def notify_added_contributor(node, contributor, auth=None, email_template='defau
         if email_template == 'preprint':
             if node.provider.is_default:
                 notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT.value
-                logo = settings.OSF_PREPRINTS_LOGO
             else:
                 notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT.value
-                logo = node.provider._id
         elif email_template == 'draft_registration':
             notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION.value
         elif email_template == 'access_request':
             notification_type_name = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST.value
         elif node.has_linked_published_preprints:
             notification_type_name = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF.value
-            logo = settings.OSF_PREPRINTS_LOGO
         else:
             notification_type_name = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT.value
 

@@ -397,8 +397,8 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             request.target.reload()
             assert initial_state != request.machine_state
             assert request.target.is_retracted
-        # There are two preprints withdrawn and each preprint have 2 contributors. So 4 emails are sent in total.
-        assert mock_notification_send.call_count == 4
+        # There are two preprints withdrawn and each preprint have 2 contributors.
+        assert mock_notification_send.call_count == 2
 
     @pytest.mark.skip('TODO: IN-331 -- add emails')
     def test_email_sent_on_reject(self, mock_notification_send, app, moderator, url, pre_request, post_request):

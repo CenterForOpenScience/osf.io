@@ -412,4 +412,3 @@ class TestInstitutionRelationshipNodes:
 
         # Assert response is successful
         assert res.status_code == 204
-

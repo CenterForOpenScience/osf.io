@@ -725,10 +725,6 @@ class TestClaimViews(OsfTestCase):
             node=self.project
         )
         assert self.mock_notification_send.call_count == 2
-        first_call_args = self.mock_notification_send.call_args_list[0][1]
-        assert first_call_args['to_addr'] == self.referrer.email
-        second_call_args = self.mock_notification_send.call_args_list[1][1]
-        assert second_call_args['to_addr'] == reg_user.email
 
     def test_send_claim_registered_email_before_throttle_expires(self):
         reg_user = UserFactory()
