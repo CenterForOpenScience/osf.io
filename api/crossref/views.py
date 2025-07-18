@@ -6,8 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.views import APIView
 
 from api.crossref.permissions import RequestComesFromMailgun
-from framework.auth.views import mails
-from osf.models import Preprint
+from osf.models import Preprint, NotificationType
 from website import settings
 from website.preprints.tasks import mint_doi_on_crossref_fail
 
@@ -77,13 +76,14 @@ class ParseCrossRefConfirmation(APIView):
 
         if dois_processed != record_count or status != 'completed':
             if unexpected_errors:
-                batch_id = crossref_email_content.find('batch_id').text
                 email_error_text = request.POST['body-plain']
-                mails.send_mail(
-                    to_addr=settings.OSF_SUPPORT_EMAIL,
-                    mail=mails.CROSSREF_ERROR,
-                    batch_id=batch_id,
-                    email_content=email_error_text,
+                batch_id = crossref_email_content.find('batch_id').text
+                NotificationType.objects.get(name=NotificationType.Type.DESK_OSF_SUPPORT_EMAIL).emit(
+                    user=type('staff', (), {'username': settings.OSF_SUPPORT_EMAIL}),
+                    event_context={
+                        'batch_id': batch_id,
+                        'email_content': request.POST['body-plain'],
+                    },
                 )
                 logger.error(f'Error submitting metadata for batch_id {batch_id} with CrossRef, email sent to help desk: {email_error_text}')
 

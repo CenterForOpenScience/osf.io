@@ -3,10 +3,10 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     An Institutional admin has made changes to the affiliations of your project:
-    <a href=${node.absolute_url}>${node.title}</a>.<br>
+    <a href=${node.absolute_url}>${node_title}</a>.<br>
     <br>
     Want more information? Visit <a href="https://osf.io">OSF</a> to learn about OSF, or
     <a href="https://cos.io">COS</a> for information about its supporting organization,

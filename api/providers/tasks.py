@@ -26,7 +26,7 @@ from osf.models import (
     RegistrationBulkUploadRow,
     RegistrationProvider,
     RegistrationSchema,
-    Subject,
+    Subject, NotificationType,
 )
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
@@ -34,7 +34,7 @@ from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContri
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 
-from website import mails, settings
+from website import settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -136,13 +136,16 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     # Cancel the preparation task if duplicates are found in the CSV and/or in DB
     if draft_error_list:
         upload.delete()
-        mails.send_mail(
-            to_addr=initiator.username,
-            mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES,
-            fullname=initiator.fullname,
-            count=initial_row_count,
-            draft_errors=draft_error_list,
-            osf_support_email=settings.OSF_SUPPORT_EMAIL,
+        NotificationType.objects.get(
+            name=NotificationType.Type.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES,
+        ).emit(
+            user=initiator,
+            event_context={
+                'fullname': initiator.fullname,
+                'count': initial_row_count,
+                'draft_errors': draft_error_list,
+                'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+            },
         )
         return
 
@@ -636,88 +639,78 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
     approval_errors.sort()
     if not dry_run:
         upload.save()
+        notification_type = None
+        event_context = {
+            'initiator_fullname': initiator.fullname,
+            'auto_approval': auto_approval,
+            'count': row_count,
+            'pending_submissions_url': get_registration_provider_submissions_url(provider),
+            'draft_errors': draft_errors,
+            'approval_errors': approval_errors,
+            'successes': success_count,
+            'failures': len(draft_errors),
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
+
         if upload.state == JobState.DONE_FULL:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_ALL,
-                fullname=initiator.fullname,
-                auto_approval=auto_approval,
-                count=row_count,
-                pending_submissions_url=get_registration_provider_submissions_url(provider),
-            )
+            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL
         elif upload.state == JobState.DONE_PARTIAL:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL,
-                fullname=initiator.fullname,
-                auto_approval=auto_approval,
-                total=row_count,
-                successes=success_count,
-                draft_errors=draft_errors,
-                approval_errors=approval_errors,
-                failures=len(draft_errors),
-                pending_submissions_url=get_registration_provider_submissions_url(provider),
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            )
+            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL
         elif upload.state == JobState.DONE_ERROR:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_FAILURE_ALL,
-                fullname=initiator.fullname,
-                count=row_count,
-                draft_errors=draft_errors,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            )
+            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
         else:
-            message = f'Failed to send registration bulk upload outcome email due to invalid ' \
-                      f'upload state: [upload={upload.id}, state={upload.state.name}]'
-            logger.error(message)
-            sentry.log_message(message)
+            logger.error(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
             return
+
+        NotificationType.objects.get(
+            name=notification_type,
+        ).emit(
+            user=initiator,
+            event_context=event_context,
+        )
+
         upload.email_sent = timezone.now()
         upload.save()
-        logger.info(f'Email sent to bulk upload initiator [{initiator._id}]')
+        logger.info(f'Notification sent to bulk upload initiator [{initiator._id}]')
 
 
 def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):
-    """Log errors that happened due to unexpected bug and send emails the uploader (if available)
-    about failures. Product owner (if available) is informed as well with more details. Emails are
-    not sent during dry run.
-    """
-
+    """Log errors due to unexpected bugs and send notifications instead of direct emails."""
     if not message:
         message = 'Registration bulk upload failure'
     logger.error(message)
     sentry.log_message(message)
 
-    if not dry_run:
-        if initiator:
-            mails.send_mail(
-                to_addr=initiator.username,
-                mail=mails.REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
-                fullname=initiator.fullname,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            )
-        inform_product_of_errors(initiator=initiator, provider=provider, message=message)
-
+    if not dry_run and initiator:
+        NotificationType.objects.get(
+            name=NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
+        ).emit(
+            user=initiator,
+            event_context={
+                'initiator_fullname': initiator.fullname,
+                'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                'message': message,
+            },
+        )
+    inform_product_of_errors(initiator=initiator, provider=provider, message=message)
 
 def inform_product_of_errors(initiator=None, provider=None, message=None):
-    """Inform product owner of internal errors.
-    """
-
+    """Inform product owner of internal errors via notifications."""
     email = settings.PRODUCT_OWNER_EMAIL_ADDRESS.get('Registration')
     if not email:
         logger.warning('Missing email for OSF Registration product owner.')
         return
 
-    if not message:
-        message = 'Bulk upload preparation failure'
-    user = f'{initiator._id}, {initiator.fullname}, {initiator.username}' if initiator else 'UNIDENTIFIED'
+    user_info = f'{initiator._id}, {initiator.fullname}, {initiator.username}' if initiator else 'UNIDENTIFIED'
     provider_name = provider.name if provider else 'UNIDENTIFIED'
-    mails.send_mail(
-        to_addr=email,
-        mail=mails.REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
-        message=message,
-        user=user,
-        provider_name=provider_name,
+
+    NotificationType.objects.get(
+        name=NotificationType.Type.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
+    ).emit(
+        user=object('mockuser', (), {'username': email}),
+        event_context={
+            'user': user_info,
+            'provider_name': provider_name,
+            'message': message,
+        },
     )

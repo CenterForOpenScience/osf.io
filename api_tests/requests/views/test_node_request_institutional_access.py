@@ -9,7 +9,7 @@ from framework.auth import Auth
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
+@pytest.mark.usefixtures('mock_notification_send')
 class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     @pytest.fixture()
@@ -206,37 +206,37 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         assert res.status_code == 403
         assert 'Institutional request access is not enabled.' in res.json['errors'][0]['detail']
 
-    def test_email_not_sent_without_recipient(self, mock_send_grid, app, project, institutional_admin, url,
+    def test_email_not_sent_without_recipient(self, mock_notification_send, app, project, institutional_admin, url,
                                                  create_payload, institution):
         """
         Test that an email is not sent when no recipient is listed when an institutional access request is made,
         but the request is still made anyway without email.
         """
         del create_payload['data']['relationships']['message_recipient']
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
         # Check that an email is sent
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
-    def test_email_not_sent_outside_institution(self, mock_send_grid, app, project, institutional_admin, url,
+    def test_email_not_sent_outside_institution(self, mock_notification_send, app, project, institutional_admin, url,
                                                  create_payload, user_without_affiliation, institution):
         """
         Test that you are prevented from requesting a user with the correct institutional affiliation.
         """
         create_payload['data']['relationships']['message_recipient']['data']['id'] = user_without_affiliation._id
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         assert res.status_code == 403
         assert f'User {user_without_affiliation._id} is not affiliated with the institution.' in res.json['errors'][0]['detail']
 
         # Check that an email is sent
-        assert not mock_send_grid.called
+        assert not mock_notification_send.called
 
     def test_email_sent_on_creation(
             self,
-            mock_send_grid,
+            mock_notification_send,
             app,
             project,
             institutional_admin,
@@ -248,15 +248,15 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         Test that an email is sent to the appropriate recipients when an institutional access request is made.
         """
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     def test_bcc_institutional_admin(
             self,
-            mock_send_grid,
+            mock_notification_send,
             app,
             project,
             institutional_admin,
@@ -269,15 +269,15 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure BCC option works as expected, sending messages to sender giving them a copy for themselves.
         """
         create_payload['data']['attributes']['bcc_sender'] = True
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     def test_reply_to_institutional_admin(
             self,
-            mock_send_grid,
+            mock_notification_send,
             app,
             project,
             institutional_admin,
@@ -290,11 +290,11 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Ensure reply-to option works as expected, allowing a reply to header be added to the email.
         """
         create_payload['data']['attributes']['reply_to'] = True
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        assert mock_send_grid.call_count == 1
+        assert mock_notification_send.call_count == 1
 
     def test_access_requests_disabled_raises_permission_denied(
         self, app, node_with_disabled_access_requests, user_with_affiliation, institutional_admin, create_payload
@@ -313,7 +313,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     def test_placeholder_text_when_comment_is_empty(
             self,
-            mock_send_grid,
+            mock_notification_send,
             app,
             project,
             institutional_admin,
@@ -327,11 +327,11 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         # Test with empty comment
         create_payload['data']['attributes']['comment'] = ''
-        mock_send_grid.reset_mock()
+        mock_notification_send.reset_mock()
         res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         assert res.status_code == 201
 
-        mock_send_grid.assert_called()
+        mock_notification_send.assert_called()
 
     def test_requester_can_resubmit(self, app, project, institutional_admin, url, create_payload):
         """

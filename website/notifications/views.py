@@ -6,7 +6,8 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from osf.models import AbstractNode, NotificationSubscription, Registration
+from osf.models import AbstractNode, Registration
+from osf.models.notifications import NotificationSubscriptionLegacy
 from osf.utils.permissions import READ
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -95,17 +96,17 @@ def configure_subscription(auth):
                     raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
             # If adopt_parent make sure that this subscription is None for the current User
-            subscription = NotificationSubscription.load(event_id)
+            subscription = NotificationSubscriptionLegacy.load(event_id)
             if not subscription:
                 return {}  # We're done here
 
             subscription.remove_user_from_subscription(user)
             return {}
 
-    subscription = NotificationSubscription.load(event_id)
+    subscription = NotificationSubscriptionLegacy.load(event_id)
 
     if not subscription:
-        subscription = NotificationSubscription(_id=event_id, owner=owner, event_name=event)
+        subscription = NotificationSubscriptionLegacy(_id=event_id, owner=owner, event_name=event)
         subscription.save()
 
     if node and node._id not in user.notifications_configured:
