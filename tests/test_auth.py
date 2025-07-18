@@ -36,7 +36,7 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 from website.util import api_url_for
-from conftest import start_mock_send_grid
+from conftest import start_mock_send_grid, start_mock_notification_send
 
 from tests.test_cas_authentication import generate_external_user_with_resp
 
@@ -50,6 +50,7 @@ class TestAuthUtils(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.mock_send_grid = start_mock_send_grid(self)
+        self.start_mock_notification_send = start_mock_notification_send(self)
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()
@@ -173,11 +174,7 @@ class TestAuthUtils(OsfTestCase):
         user = UserFactory()
         user.set_password('killerqueen')
         user.save()
-        assert len(self.mock_send_grid.call_args_list) == 1
-        empty, kwargs = self.mock_send_grid.call_args
-
-        assert empty == ()
-        assert kwargs['to_addr'] == user.username
+        assert len(self.start_mock_notification_send.call_args_list) == 1
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):

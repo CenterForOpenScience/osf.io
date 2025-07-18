@@ -62,7 +62,11 @@ from .node import AbstractNode, Node
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .notable_domain import NotableDomain, DomainReference
-from .notifications import NotificationDigest, NotificationSubscription
+from .notifications import NotificationDigest, NotificationSubscriptionLegacy
+from .notification_subscription import NotificationSubscription
+from .notification_type import NotificationType
+from .notification import Notification
+
 from .oauth import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,

@@ -20,10 +20,10 @@ from framework.auth import get_or_create_institutional_user
 
 from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
-from osf.models import Institution
+from osf.models import Institution, NotificationType
 from osf.models.institution import SsoFilterCriteriaAction
 
-from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
+from website.mails import send_mail, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 from website.util.metrics import institution_source_tag
 
@@ -334,14 +334,13 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
-            send_mail(
-                to_addr=user.username,
-                mail=WELCOME_OSF4I,
-                user=user,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
-                storage_flag_is_active=flag_is_active(request, features.STORAGE_I18N),
-            )
+            notification_type = NotificationType.objects.filter(name='welcome_osf4i')
+            if not notification_type.exists():
+                raise NotificationType.DoesNotExist(
+                    'NotificationType with name welcome_osf4i does not exist.',
+                )
+            notification_type = notification_type.first()
+            notification_type.emit(user=user, message_frequency='instantly', event_context={'domain': DOMAIN, 'osf_support_email': OSF_SUPPORT_EMAIL, 'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N)})
 
         # Add the email to the user's account if it is identified by the eppn
         if email_to_add:
