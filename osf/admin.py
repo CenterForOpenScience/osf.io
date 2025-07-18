@@ -162,15 +162,15 @@ class NotificationTypeAdminForm(forms.ModelForm):
     default_intervals = forms.MultipleChoiceField(
         choices=[(c, c) for c in get_default_frequency_choices()],
         required=False,
-        widget=forms.CheckboxSelectMultiple,  # Or use SelectMultiple
-        label="Default Intervals"
+        widget=forms.CheckboxSelectMultiple,
+        label='Default Intervals'
     )
 
     custom_intervals = SimpleArrayField(
         base_field=forms.CharField(),
         required=False,
         widget=forms.Textarea(attrs={'rows': 2}),
-        label="Custom Intervals (comma-separated)"
+        label='Custom Intervals (comma-separated)'
     )
 
     class Meta:
@@ -326,7 +326,7 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
 
     def preview_button(self, obj):
         url = reverse(
-            'admin:notificationtype_preview',  # app_label_modelname_viewname
+            'admin:notificationtype_preview',
             args=[obj.notification_type.id]
         )
         return format_html(

@@ -19,15 +19,15 @@ class TestNotificationAdmin(AdminTestCase):
         super().setUp()
         self.user = OSFUser.objects.create(username='admin', is_staff=True)
         self.notification_type = NotificationType.objects.create(
-            name="Test Notification",
-            subject="Hello",
-            template="Sample Template",
-            notification_interval_choices=["daily", "custom"]
+            name='Test Notification',
+            subject='Hello',
+            template='Sample Template',
+            notification_interval_choices=['daily', 'custom']
         )
         self.subscription = NotificationSubscription.objects.create(
             user=self.user,
             notification_type=self.notification_type,
-            message_frequency="daily",
+            message_frequency='daily',
             subscribed_object=None
         )
         self.admin_site = AdminSite()
@@ -37,7 +37,7 @@ class TestNotificationAdmin(AdminTestCase):
         admin = NotificationTypeAdmin(NotificationType, self.admin_site)
         html = admin.preview_button(self.notification_type)
         assert f'{self.notification_type.id}/preview/' in html
-        assert "Preview" in html
+        assert 'Preview' in html
 
     def test_notification_type_admin_preview_view(self):
         admin = NotificationTypeAdmin(NotificationType, self.admin_site)
@@ -47,7 +47,7 @@ class TestNotificationAdmin(AdminTestCase):
         content = response.content.decode()
 
         assert response.status_code == 200
-        assert "Template Preview for" in content
+        assert 'Template Preview for' in content
         assert self.notification_type.name in content
         assert self.notification_type.subject in content
 
@@ -68,7 +68,7 @@ class TestNotificationAdmin(AdminTestCase):
         admin = NotificationSubscriptionAdmin(NotificationSubscription, self.admin_site)
         html = admin.preview_button(self.subscription)
         assert f'/admin/osf/notificationtype/{self.notification_type.id}/preview/' in html
-        assert "Preview" in html
+        assert 'Preview' in html
 
     def test_notification_subscription_admin_get_intervals(self):
         admin = NotificationSubscriptionAdmin(NotificationSubscription, self.admin_site)
