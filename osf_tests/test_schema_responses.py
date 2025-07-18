@@ -253,13 +253,13 @@ class TestCreateSchemaResponse():
         assert set(revised_response.response_blocks.all()) == set(initial_response.response_blocks.all())
 
     def test_create_from_previous_response_notification(
-            self, initial_response, admin_user, notification_recipients, mock_notification_send):
+            self, initial_response, admin_user, notification_recipients, mock_send_grid):
 
         schema_response.SchemaResponse.create_from_previous_response(
             previous_response=initial_response, initiator=admin_user
         )
 
-        assert mock_notification_send.called
+        assert mock_send_grid.called
 
     @pytest.mark.parametrize(
         'invalid_response_state',
