@@ -166,6 +166,22 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
+  mfr_worker:
+    image: quay.io/centerforopenscience/mfr:develop
+    command: invoke celery --concurrency=1
+    restart: unless-stopped
+    ports:
+      - 7778:7778
+    env_file:
+      - .docker-compose.mfr.env
+    extra_hosts:
+      - "localhost:192.168.168.167"
+    volumes:
+      - mfr_requirements_vol:/usr/local/lib/python3.13
+      - mfr_requirements_local_bin_vol:/usr/local/bin
+      - wb_tmp_vol:/tmp
+    stdin_open: true
+
   unoconv:
     image: centerforopenscience/unoconv
     environment:
