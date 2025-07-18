@@ -13,6 +13,14 @@ from django.middleware import csrf
 class TestResetPassword:
 
     @pytest.fixture()
+    def throttle_user(self):
+        user = UserFactory()
+        user.set_password('password1')
+        user.auth = (user.username, 'password1')
+        user.save()
+        return user
+
+    @pytest.fixture()
     def user_one(self):
         user = UserFactory()
         user.set_password('password1')
@@ -108,17 +116,17 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throttle(self, app, url, user_one, csrf_token):
+    def test_throttle(self, app, url, throttle_user, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        encoded_email = urllib.parse.quote(user_one.email)
+        encoded_email = urllib.parse.quote(throttle_user.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
-        user_one.reload()
+        throttle_user.reload()
         payload = {
             'data': {
                 'attributes': {
-                    'uid': user_one._id,
-                    'token': user_one.verification_key_v2['token'],
+                    'uid': throttle_user._id,
+                    'token': throttle_user.verification_key_v2['token'],
                     'password': '12345',
                 }
             }
