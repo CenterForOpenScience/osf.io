@@ -1,6 +1,8 @@
 import logging
 
 from django.db import models
+from django.utils import timezone
+
 from website import settings
 from api.base import settings as api_settings
 from osf import email
@@ -50,9 +52,8 @@ class Notification(models.Model):
         self.mark_sent()
 
     def mark_sent(self) -> None:
-        raise NotImplementedError('mark_sent must be implemented by subclasses.')
-        # self.sent = timezone.now()
-        # self.save(update_fields=['sent'])
+        self.sent = timezone.now()
+        self.save(update_fields=['sent'])
 
     def mark_seen(self) -> None:
         raise NotImplementedError('mark_seen must be implemented by subclasses.')

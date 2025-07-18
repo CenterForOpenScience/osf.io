@@ -285,5 +285,5 @@ notification_types:
   - name: desk_osf_support_email
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'website/templates/emails/crossref_error.html.mako'
+    template: 'website/templates/emails/crossref_doi_error.html.mako'
     notification_freq_default: instantly

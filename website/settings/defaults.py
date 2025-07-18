@@ -142,7 +142,7 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-
+ENABLE_TEST_EMAIL = False
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 # contact email
