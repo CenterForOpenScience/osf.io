@@ -486,16 +486,13 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
     # Option 1:
     #   When adding the contributor, the referrer provides both name and email.
     #   The given email is the same provided by user, just send to that email.
-    logo = None
     if unclaimed_record.get('email') == claimer_email:
         # check email template for branded preprints
         if email_template == 'preprint':
             if node.provider.is_default:
                 notification_type_name = NotificationType.Type.USER_INVITE_OSF_PREPRINT.value
-                logo = settings.OSF_PREPRINTS_LOGO
             else:
                 notification_type_name = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT.value
-                logo = node.provider._id
         elif email_template == 'draft_registration':
             notification_type_name = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION.value
         else:
@@ -530,7 +527,6 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             notification_type_name = NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED.value
             notification_type = NotificationType.objects.get(name=notification_type_name)
             event_context = {
-                'logo': logo,
                 'fullname': unclaimed_record['name'],
                 'can_change_preferences': False,
                 'osf_contact_email': settings.OSF_CONTACT_EMAIL,
@@ -581,7 +577,6 @@ def check_email_throttle(node, contributor, throttle=None):
 
 @contributor_added.connect
 def notify_added_contributor(node, contributor, auth=None, email_template='default', throttle=None, *args, **kwargs):
-    logo = settings.OSF_LOGO
     if check_email_throttle(node, contributor, throttle=throttle):
         return
     if email_template == 'false':
