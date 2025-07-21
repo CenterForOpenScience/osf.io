@@ -307,7 +307,8 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         preprint.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True)
+            auth=Auth(user)
+        )
         url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
@@ -318,7 +319,10 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
         preprint_two = PreprintFactory(creator=user, is_published=True)
         preprint_two.add_unregistered_contributor(
-            'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True)
+            'Bob Jackson',
+            'robert@gmail.com',
+            auth=Auth(user)
+        )
         url = f'/{API_BASE}preprints/{preprint_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
@@ -333,7 +337,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         preprint_published.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True
+            auth=Auth(user)
         )
 
         for i in range(0, 10):
@@ -1058,7 +1062,10 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             self, app, user, preprint_published, url_published):
         name, email = fake.name(), fake_email()
         preprint_published.add_unregistered_contributor(
-            auth=Auth(user), fullname=name, email=email)
+            auth=Auth(user),
+            fullname=name,
+            email=email
+        )
         payload = {
             'data': {
                 'type': 'contributors',

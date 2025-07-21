@@ -1505,8 +1505,16 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
-    def add_unregistered_contributor(self, fullname, email, auth, send_email=None,
-                                     visible=True, permissions=None, save=False, existing_user=None):
+    def add_unregistered_contributor(
+            self,
+            fullname,
+            email,
+            auth,
+            send_email=None,
+            visible=True,
+            permissions=None,
+            existing_user=None
+    ):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -1553,16 +1561,27 @@ class ContributorMixin(models.Model):
                 raise e
 
         self.add_contributor(
-            contributor, permissions=permissions, auth=auth,
-            visible=visible, send_email=send_email, log=True, save=False
+            contributor,
+            permissions=permissions,
+            auth=auth,
+            visible=visible,
+            send_email=send_email,
+            log=True,
+            save=False
         )
         self._add_related_source_tags(contributor)
         self.save()
         return contributor
 
-    def add_contributor_registered_or_not(self, auth, user_id=None,
-                                          full_name=None, email=None, send_email=None,
-                                          permissions=None, bibliographic=True, index=None, save=False):
+    def add_contributor_registered_or_not(self,
+                                          auth,
+                                          user_id=None,
+                                          full_name=None,
+                                          email=None,
+                                          send_email=None,
+                                          permissions=None,
+                                          bibliographic=True,
+                                          index=None):
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
 
@@ -1575,8 +1594,14 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor.is_registered:
-                contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                                   permissions=permissions, send_email=send_email, save=True)
+                contributor = self.add_contributor(
+                    contributor=contributor,
+                    auth=auth,
+                    visible=bibliographic,
+                    permissions=permissions,
+                    send_email=send_email,
+                    save=True
+                )
             else:
                 if not full_name:
                     raise ValueError(
@@ -1584,9 +1609,13 @@ class ContributorMixin(models.Model):
                         .format(user_id, self._id)
                     )
                 contributor = self.add_unregistered_contributor(
-                    fullname=full_name, email=contributor.username, auth=auth,
-                    send_email=send_email, permissions=permissions,
-                    visible=bibliographic, existing_user=contributor, save=True
+                    fullname=full_name,
+                    email=contributor.username,
+                    auth=auth,
+                    send_email=send_email,
+                    permissions=permissions,
+                    visible=bibliographic,
+                    existing_user=contributor,
                 )
 
         else:
@@ -1599,9 +1628,12 @@ class ContributorMixin(models.Model):
                                      send_email=send_email, permissions=permissions, save=True)
             else:
                 contributor = self.add_unregistered_contributor(
-                    fullname=full_name, email=email, auth=auth,
-                    send_email=send_email, permissions=permissions,
-                    visible=bibliographic, save=True
+                    fullname=full_name,
+                    email=email,
+                    auth=auth,
+                    send_email=send_email,
+                    permissions=permissions,
+                    visible=bibliographic
                 )
 
         auth.user.email_last_sent = timezone.now()

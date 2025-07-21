@@ -66,8 +66,12 @@ def comment(user, project):
 def unreg_contributor(project):
     unreg_user = UnregUserFactory()
     unreg_user.save()
-    project.add_unregistered_contributor(unreg_user.fullname, unreg_user.email, Auth(project.creator),
-                                         permissions=permissions.READ, save=True)
+    project.add_unregistered_contributor(
+        unreg_user.fullname,
+        unreg_user.email,
+        Auth(project.creator),
+        permissions=permissions.READ
+    )
     return unreg_user
 
 

@@ -795,7 +795,6 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
                 auth=Auth(user),
                 permissions=permissions.ADMIN,
                 existing_user=unreg,
-                save=True
             )
 
         res = app.put_json_api(public_url, public_payload, auth=user.auth)

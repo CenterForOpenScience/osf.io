@@ -16,6 +16,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
+from tests.utils import capture_notifications
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -284,7 +285,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
     ):
         project = ProjectFactory(creator=user, is_public=True)
         project.add_unregistered_contributor(
-            'Robert Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(user)
         )
         url = f'/{API_BASE}nodes/{project._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -301,7 +304,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
         project_two = ProjectFactory(creator=user, is_public=True)
         project_two.add_unregistered_contributor(
-            'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Bob Jackson',
+            'robert@gmail.com',
+            auth=Auth(user),
         )
         url = f'/{API_BASE}nodes/{project_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -312,16 +317,15 @@ class TestNodeContributorList(NodeCRUDTestCase):
             res.json['data'][1]['embeds']['users']['data']['attributes']['full_name']
             == 'Robert Jackson'
         )
-        assert (
-            res.json['data'][1]['attributes'].get('unregistered_contributor')
-            == 'Bob Jackson'
-        )
+        assert res.json['data'][1]['attributes'].get('unregistered_contributor') == 'Bob Jackson'
 
     def test_contributors_order_is_the_same_over_multiple_requests(
         self, app, user, project_public, url_public
     ):
         project_public.add_unregistered_contributor(
-            'Robert Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(user),
         )
 
         for i in range(0, 10):
@@ -956,7 +960,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     ):
         name, email = fake.name(), fake_email()
         project_public.add_unregistered_contributor(
-            auth=Auth(user), fullname=name, email=email
+            auth=Auth(user),
+            fullname=name,
+            email=email
         )
         payload = {
             'data': {
@@ -1226,20 +1232,22 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def test_add_contributor_sends_email(
         self, mock_send_grid, app, user, user_two, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {},
-                'relationships': {
-                    'users': {'data': {'type': 'users', 'id': user_two._id}}
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {},
+                        'relationships': {
+                            'users': {'data': {'type': 'users', 'id': user_two._id}}
+                        },
+                    }
                 },
-            }
-        }
-
-        res = app.post_json_api(url, payload, auth=user.auth)
-        assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
 
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(

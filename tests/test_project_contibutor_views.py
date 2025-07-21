@@ -326,9 +326,9 @@ class TestProjectContributorViews(OsfTestCase):
         )
         # Add a non-registered user
         unregistered_user = project.add_unregistered_contributor(
-            fullname=fake.name(), email=fake_email(),
+            fullname=fake.name(),
+            email=fake_email(),
             auth=self.consolidate_auth1,
-            save=True,
         )
 
         url = project.api_url + 'contributors/manage/'
@@ -554,7 +554,6 @@ class TestProjectContributorViews(OsfTestCase):
             fullname='Jalen Hurts',
             email='gobirds@eagle.fly',
             auth=self.consolidate_auth1,
-            save=True,
         )
 
         res = self.app.get(

@@ -432,10 +432,6 @@ class TestAddingContributorViews(OsfTestCase):
         child.reload()
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 
-    def tearDown(self):
-        super().tearDown()
-        contributor_added.disconnect(notify_added_contributor)
-
 
 @mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)

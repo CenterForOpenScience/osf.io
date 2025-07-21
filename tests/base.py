@@ -100,8 +100,6 @@ class AppTestCase(unittest.TestCase):
 
     PUSH_CONTEXT = True
     DISCONNECTED_SIGNALS = {
-        # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
-        contributor_added: [notify_added_contributor]
     }
 
     def setUp(self):
@@ -280,8 +278,6 @@ class NotificationTestCase(OsfTestCase):
     """
     DISCONNECTED_SIGNALS = {
         # disconnect signals so that add_contributor does not send "fake" emails in tests
-        contributor_added: [notify_added_contributor, subscribe_contributor],
-        project_created: [subscribe_creator]
     }
 
     def setUp(self):

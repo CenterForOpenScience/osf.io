@@ -124,8 +124,8 @@ class TestContributorDetail(ContributorDetailMixin):
         project_public.add_unregistered_contributor(
             'Rheisen Dennis',
             'reason@gmail.com',
-            auth=Auth(user),
-            save=True)
+            auth=Auth(user)
+        )
         unregistered_contributor = project_public.contributors[1]
         url = self.make_resource_url(project_public._id, unregistered_contributor._id)
 
@@ -138,7 +138,6 @@ class TestContributorDetail(ContributorDetailMixin):
             'Nesiehr Sinned',
             'reason@gmail.com',
             auth=Auth(user),
-            save=True
         )
         url = self.make_resource_url(project_private._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth)
