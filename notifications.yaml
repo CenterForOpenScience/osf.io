@@ -100,11 +100,19 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/storage_cap_exceeded_announcement.html.mako'
-  - name: external_confirm_success
+  - name: user_duplicate_accounts_sso_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/duplicate_accounts_sso_osf4i.html.mako'
+  - name: user_external_confirm_success_lik
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_success.html.mako'
-  - name: forgot_password_institution
+  - name: user_duplicate_accounts_osf4i
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/duplicate_accounts_sso_osf4i.html.mako'
+  - name: user_forgot_password_institution
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password_institution.html.mako'

@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     Congratulations! You have successfully linked your ${external_id_provider} account to the Open Science Framework (OSF).<br>
     <br>

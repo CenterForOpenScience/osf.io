@@ -786,7 +786,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         # Don't go anywhere
         return JsonResponse(
             {
-                'external_id_provider': external_id_provider,
+                'external_id_provider': external_id_provider.name,
                 'auth_user_fullname': fullname,
             },
             status=status.HTTP_200_OK,
@@ -1071,7 +1071,7 @@ class ConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'can_change_preferences': False,
-                    'external_id_provider': provider,
+                    'external_id_provider': provider.name,
                 },
             )
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
@@ -1387,13 +1387,16 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&{}'.format(urlencode({'new': 'true'}))
         elif external_status == 'LINK':
-            notification_type = NotificationType.objects.filter(name='external_confirm_success')
-            if not notification_type.exists():
-                raise NotificationType.DoesNotExist(
-                    'NotificationType with name external_confirm_success does not exist.',
-                )
-            notification_type = notification_type.first()
-            notification_type.emit(user=user, message_frequency='instantly', event_context={'can_change_preferences': False, 'external_id_provider': provider})
+            NotificationType.objects.filter(
+                name=NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK,
+            ).emit(
+                user=user,
+                message_frequency='instantly',
+                event_context={
+                    'can_change_preferences': False,
+                    'external_id_provider': provider.name,
+                },
+            )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 

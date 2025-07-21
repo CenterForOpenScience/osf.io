@@ -665,9 +665,8 @@ def external_login_confirm_email_get(auth, uid, token):
             name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS,
         ).emit(
             user=user,
-            subscribed_object=user,  # or whatever the correct related object is
             event_context={
-                'external_id_provider': getattr(provider, 'id', None),
+                'external_id_provider': provider.name,
                 'can_change_preferences': False,
                 'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             },

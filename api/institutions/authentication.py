@@ -373,7 +373,12 @@ class InstitutionAuthentication(BaseAuthentication):
             ).emit(
                 user=user,
                 event_context={
-                    'duplicate_user': duplicate_user,
+                    'user_fullname': user.fullname,
+                    'user_username': user.username,
+                    'user__id': user._id,
+                    'duplicate_user_fullname': duplicate_user.fullname,
+                    'duplicate_user_username': duplicate_user.username,
+                    'duplicate_user__id': duplicate_user._id,
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
                 },
