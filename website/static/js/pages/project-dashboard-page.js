@@ -794,6 +794,11 @@ $(document).ready(function () {
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
+            truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
+            //#47039　Add　Start
+            truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
+            truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
+            //#47039　Add　End
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
             markdownElement.show();
@@ -869,3 +874,20 @@ $(document).ready(function () {
     initDatetimepicker('#LogSearchS');
     initDatetimepicker('#LogSearchE');
 });
+
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+            document.querySelectorAll('#markdownRender ul li').forEach(function(li) {
+                const a = li.querySelector('a');
+                if (a && li.childElementCount === 1 && a.parentElement === li) {
+                    li.style.listStyleType = 'disc';
+                }
+            });
+        }
+    });
+});
+
+const targetNode = document.getElementById('markdownRender');
+const config = { childList: true, subtree: true };
+observer.observe(targetNode, config);

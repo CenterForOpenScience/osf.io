@@ -7,7 +7,7 @@
                 <h3 class="modal-title">${_("Delete wiki page")}</h3>
             </div><!-- end modal-header -->
             <div class="modal-body">
-                <div id="alert" style="padding-bottom:10px">${_("Are you sure you want to delete this wiki page?")}</div>
+                <div id="alert" style="padding-bottom:10px">${_("This wiki page and all content under it will be deleted. This action is irreversible.")}</div>
             </div><!-- end modal-body -->
             <div class="modal-footer">
                 <a id="close" href="#" class="btn btn-default" data-dismiss="modal">${_("Cancel")}</a>

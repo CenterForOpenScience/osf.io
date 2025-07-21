@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.11.0\n"
 
 #: addons/github/static/githubFangornConfig.js:215
 #: website/static/js/fangorn.js:2427
@@ -8999,7 +8999,9 @@ msgid "A server error occurred. Please contact %1$s."
 msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:108
-msgid "<p>Could not retrieve wiki pages. If this issue persists, "
+msgid ""
+"<p>Could not retrieve wiki pages. Please reload the page. If this issue "
+"persists, "
 msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:109
