@@ -108,6 +108,21 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/initial_confirm.html.mako'
     notification_freq_default: instantly
+  - name: user_export_data_request
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/initial_confirm.html.mako'
+    notification_freq_default: instantly
+  - name: user_request_deactivation
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/initial_confirm.html.mako'
+    notification_freq_default: instantly
+  - name: user_storage_cap_exceeded_announcement
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/storage_cap_exceeded_announcement.html.mako'
+    notification_freq_default: instantly
   - name: external_confirm_success
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -328,4 +343,9 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: desk
     template: 'website/templates/emails/crossref_doi_error.html.mako'
+    notification_freq_default: instantly
+  - name: desk_request_deactivation
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/support_request.html.mako'
     notification_freq_default: instantly
