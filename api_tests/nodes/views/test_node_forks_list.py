@@ -3,7 +3,7 @@ from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models import NotificationType
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,

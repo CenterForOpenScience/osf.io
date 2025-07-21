@@ -6,6 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
+from osf.models.notification_type import NotificationType
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
@@ -21,7 +22,6 @@ from osf.utils.workflows import (
     COLLECTION_SUBMISSION_TRANSITIONS,
     NodeRequestTypes
 )
-from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 
@@ -181,11 +181,14 @@ class ReviewsMachine(BaseMachine):
             context['contributor'] = contributor
             if context.get('requester', None):
                 context['is_requester'] = context['requester'].username == contributor.username
-            mails.send_mail(
-                contributor.username,
-                mails.WITHDRAWAL_REQUEST_GRANTED,
-                document_type=self.machineable.provider.preprint_word,
-                **context
+            NotificationType.objects.get(
+                name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            ).emit(
+                user=contributor,
+                event_context={
+                    **{'document_type': self.machineable.provider.preprint_word},
+                    **context
+                }
             )
 
     def get_context(self):
@@ -321,10 +324,11 @@ class PreprintRequestMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
-            mails.send_mail(
-                self.machineable.creator.username,
-                mails.WITHDRAWAL_REQUEST_DECLINED,
-                **context
+            NotificationType.objects.get(
+                name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
+            ).emit(
+                user=self.machineable.creator,
+                event_context=context
             )
         else:
             pass

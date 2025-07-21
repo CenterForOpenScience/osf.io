@@ -4,7 +4,7 @@ from website import settings
 
 import logging
 from django.contrib.contenttypes.models import ContentType
-from osf.models import NotificationType
+from osf.models.notification_type import NotificationType
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
