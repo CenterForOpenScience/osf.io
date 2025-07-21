@@ -105,6 +105,10 @@ class NotificationType(models.Model):
         NODE_ADDON_FILE_RENAMED = 'node_addon_file_renamed'
         NODE_ADDON_FILE_MOVED = 'node_addon_file_moved'
         NODE_ADDON_FILE_REMOVED = 'node_addon_file_removed'
+        NODE_SCHEMA_RESPONSE_REJECTED = 'node_schema_response_rejected'
+        NODE_SCHEMA_RESPONSE_APPROVED = 'node_schema_response_approved'
+        NODE_SCHEMA_RESPONSE_SUBMITTED = 'node_schema_response_submitted'
+        NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
@@ -134,12 +138,6 @@ class NotificationType(models.Model):
         COLLECTION_SUBMISSION_ACCEPTED = 'collection_submission_accepted'
         COLLECTION_SUBMISSION_REJECTED = 'collection_submission_rejected'
         COLLECTION_SUBMISSION_CANCEL = 'collection_submission_cancel'
-
-        # Schema Response notifications
-        SCHEMA_RESPONSE_REJECTED = 'schema_response_rejected'
-        SCHEMA_RESPONSE_APPROVED = 'schema_response_approved'
-        SCHEMA_RESPONSE_SUBMITTED = 'schema_response_submitted'
-        SCHEMA_RESPONSE_INITIATED = 'schema_response_initiated'
 
         REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
 

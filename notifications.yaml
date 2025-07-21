@@ -233,6 +233,26 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/fork_completed.html.mako'
     notification_freq_default: instantly
+  - name: node_schema_response_initiated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/updates_initiated.html.mako'
+    notification_freq_default: instantly
+  - name: node_schema_response_submitted
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/updates_pending_approval.html.mako'
+    notification_freq_default: instantly
+  - name: node_schema_response_approved
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/updates_approved.html.mako'
+    notification_freq_default: instantly
+  - name: node_schema_response_rejected
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/updates_rejected.html.mako'
+    notification_freq_default: instantly
 
   #### PREPRINT
   - name: pending_retraction_admin

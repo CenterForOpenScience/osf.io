@@ -23,7 +23,6 @@ from osf.exceptions import InstitutionAffiliationStateError
 from osf.models import Institution, NotificationType
 from osf.models.institution import SsoFilterCriteriaAction
 
-from website.mails import send_mail, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 from website.util.metrics import institution_source_tag
 
@@ -350,13 +349,15 @@ class InstitutionAuthentication(BaseAuthentication):
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            send_mail(
-                to_addr=user.username,
-                mail=ADD_SSO_EMAIL_OSF4I,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_WELCOME_OSF4I,
+            ).emit(
                 user=user,
-                email_to_add=email_to_add,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
+                event_context={
+                    'email_to_add': email_to_add,
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                },
             )
 
         # Inform the user that a potential duplicate account is found
@@ -367,13 +368,15 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
-            send_mail(
-                to_addr=user.username,
-                mail=DUPLICATE_ACCOUNTS_OSF4I,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I,
+            ).emit(
                 user=user,
-                duplicate_user=duplicate_user,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
+                event_context={
+                    'duplicate_user': duplicate_user,
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                },
             )
 
         # Affiliate the user to the primary institution if not previously affiliated
