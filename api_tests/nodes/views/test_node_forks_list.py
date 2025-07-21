@@ -3,6 +3,7 @@ from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf.models import NotificationType
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -14,6 +15,7 @@ from rest_framework import exceptions
 from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -421,15 +423,18 @@ class TestNodeForkCreate:
             self, app, user, public_project_url,
             fork_data_with_title, public_project, mock_send_grid):
 
-        res = app.post_json_api(
-            public_project_url,
-            fork_data_with_title,
-            auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                public_project_url,
+                fork_data_with_title,
+                auth=user.auth
+            )
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Your fork has completed'
+        assert len(notifications) == 1
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['kwargs']['event_context']['guid'] == public_project.forks.first()._id
+        assert notifications[0]['type'] == NotificationType.Type.NODE_FORK_COMPLETED
 
     def test_send_email_failed(
             self, app, user, public_project_url,

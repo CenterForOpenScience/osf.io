@@ -6,6 +6,7 @@ import random
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
+from osf.models import NotificationType
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -1291,32 +1292,42 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def test_add_unregistered_contributor_sends_email(
         self, mock_send_grid, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
+                    }
+                },
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
         self, mock_send, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'default' == kwargs['email_template']
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Kanye West',
+                            'email': 'kanye@west.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
         self, app, user, url_project_contribs

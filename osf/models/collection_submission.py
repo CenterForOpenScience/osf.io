@@ -123,7 +123,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_moderators_pending(self, event_data):
         user = event_data.kwargs.get('user', None)
         NotificationType.objects.get(
-            name=NotificationType.Type.NEW_PENDING_SUBMISSIONS,
+            name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
         ).emit(
             user=user,
             subscribed_object=self.guid.referent,

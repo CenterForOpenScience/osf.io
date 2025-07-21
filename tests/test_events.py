@@ -12,7 +12,7 @@ from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
 from osf.utils.permissions import WRITE
-from tests.base import OsfTestCase, NotificationTestCase
+from tests.base import OsfTestCase
 
 email_transactional = 'email_transactional'
 email_digest = 'email_digest'
@@ -151,7 +151,7 @@ class TestFileUpdated(OsfTestCase):
         assert mock_notify.called
 
 
-class TestFileAdded(NotificationTestCase):
+class TestFileAdded(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
@@ -178,7 +178,7 @@ class TestFileAdded(NotificationTestCase):
         assert mock_notify.called
 
 
-class TestFileRemoved(NotificationTestCase):
+class TestFileRemoved(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
@@ -213,7 +213,7 @@ class TestFileRemoved(NotificationTestCase):
         assert mock_notify.called
 
 
-class TestFolderCreated(NotificationTestCase):
+class TestFolderCreated(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
@@ -286,7 +286,7 @@ class TestFolderFileRenamed(OsfTestCase):
         assert self.event.text_message == 'renamed folder "/One/Two/Three" to "/One/Two/Four".'
 
 
-class TestFileMoved(NotificationTestCase):
+class TestFileMoved(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user_1 = factories.AuthUserFactory()
@@ -379,7 +379,7 @@ class TestFileMoved(NotificationTestCase):
         assert 1 == mock_store.call_count
 
 
-class TestFileCopied(NotificationTestCase):
+class TestFileCopied(OsfTestCase):
     # Test the copying of files
     def setUp(self):
         super().setUp()
@@ -460,7 +460,7 @@ class TestFileCopied(NotificationTestCase):
         assert 0 == mock_store.call_count
 
 
-class TestCategorizeUsers(NotificationTestCase):
+class TestCategorizeUsers(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user_1 = factories.AuthUserFactory()

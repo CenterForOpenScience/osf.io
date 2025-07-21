@@ -99,8 +99,6 @@ class AppTestCase(unittest.TestCase):
     """
 
     PUSH_CONTEXT = True
-    DISCONNECTED_SIGNALS = {
-    }
 
     def setUp(self):
         super().setUp()
@@ -120,9 +118,6 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             celery_before_request()
-        for signal in self.DISCONNECTED_SIGNALS:
-            for receiver in self.DISCONNECTED_SIGNALS[signal]:
-                signal.disconnect(receiver)
 
     def tearDown(self):
         super().tearDown()
@@ -130,9 +125,6 @@ class AppTestCase(unittest.TestCase):
             return
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
-        for signal in self.DISCONNECTED_SIGNALS:
-            for receiver in self.DISCONNECTED_SIGNALS[signal]:
-                signal.connect(receiver)
 
 
 class ApiAppTestCase(unittest.TestCase):
@@ -269,22 +261,6 @@ class ApiAddonTestCase(ApiTestCase):
 @override_settings(ROOT_URLCONF='admin.base.urls')
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
-
-
-class NotificationTestCase(OsfTestCase):
-    """An `OsfTestCase` to use when testing specific subscription behavior.
-    Use when you'd like to manually create all Node subscriptions and subscriptions
-    for added contributors yourself, and not rely on automatically added ones.
-    """
-    DISCONNECTED_SIGNALS = {
-        # disconnect signals so that add_contributor does not send "fake" emails in tests
-    }
-
-    def setUp(self):
-        super().setUp()
-
-    def tearDown(self):
-        super().tearDown()
 
 
 class ApiWikiTestCase(ApiTestCase):

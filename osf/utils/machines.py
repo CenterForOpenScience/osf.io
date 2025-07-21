@@ -236,6 +236,7 @@ class NodeRequestMachine(BaseMachine):
         """ Notify admins that someone is requesting access
         """
         context = self.get_context()
+        print('context', context)
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
         from osf.models.notification_type import NotificationType
@@ -285,8 +286,9 @@ class NodeRequestMachine(BaseMachine):
 
     def get_context(self):
         return {
-            'node': self.machineable.target,
-            'requester': self.machineable.creator
+            'node_title': self.machineable.target.title,
+            'node_absolute_url': self.machineable.target.absolute_url,
+            'requester_absolute_url': self.machineable.creator.absolute_url,
         }
 
 

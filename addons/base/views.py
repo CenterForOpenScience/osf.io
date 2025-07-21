@@ -598,6 +598,7 @@ def create_waterbutler_log(payload, **kwargs):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
                 return {'status': 'success'}
+
         else:
             node.create_waterbutler_log(auth, action, payload)
 

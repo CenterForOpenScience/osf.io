@@ -388,7 +388,6 @@ def project_remove_contributor(auth, **kwargs):
     return redirect_url
 
 
-# TODO: consider moving this into utils
 def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 3600):
     """
     A registered user claiming the unclaimed user account as an contributor to a project.
@@ -470,67 +469,64 @@ def check_email_throttle_claim_email(node, contributor):
     else:
         contributor.contributor_added_email_records[node._id] = {}
 
-# TODO: consider moving this into utils
-def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 3600, email_template='default'):
+def send_claim_email(
+    email, unclaimed_user, node, notify=True, throttle=24 * 3600, email_template='default'
+):
     """
-    Unregistered user claiming a user account as an contributor to a project. Send an email for claiming the account.
-    Either sends to the given email or the referrer's email, depending on the email address provided.
+    Send a claim email to an unregistered contributor or the referrer, depending on the scenario.
 
-    :param str email: The address given in the claim user form
-    :param User unclaimed_user: The User record to claim.
-    :param Node node: The node where the user claimed their account.
-    :param bool notify: If True and an email is sent to the referrer, an email
-        will also be sent to the invited user about their pending verification.
-    :param int throttle: Time period (in seconds) after the referrer is
-        emailed during which the referrer will not be emailed again.
-    :param str email_template: the email template to use
-    :return
-    :raise http_status.HTTP_400_BAD_REQUEST
-
+    Args:
+        email (str): Email address provided for claim.
+        unclaimed_user (User): The user record to claim.
+        node (Node): The node where the user claimed their account.
+        notify (bool): Whether to notify the invited user about their pending verification.
+        throttle (int): Throttle period (in seconds) to prevent repeated emails.
+        email_template (str): The email template identifier.
+    Returns:
+        str: The address the notification was sent to.
+    Raises:
+        HTTPError: If the throttle period has not expired.
     """
 
     claimer_email = email.lower().strip()
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
     referrer = OSFUser.load(unclaimed_record['referrer_id'])
-    # Option 1:
-    #   When adding the contributor, the referrer provides both name and email.
-    #   The given email is the same provided by user, just send to that email.
     logo = None
-    if unclaimed_record.get('email') == claimer_email:
-        # check email template for branded preprints
-        if email_template == 'preprint':
-            if node.provider.is_default:
-                notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
-                logo = settings.OSF_PREPRINTS_LOGO
-            else:
-                notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
-                logo = node.provider._id
-        elif email_template == 'draft_registration':
-            notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        else:
-            notification_type = NotificationType.Type.USER_INVITE_DEFAULT
 
-        to_addr = claimer_email
+    # Option 1: Referrer provided name and email (send to claimer)
+    if unclaimed_record.get('email') == claimer_email:
+        # Select notification type and logo using match
+        match email_template:
+            case 'preprint':
+                if getattr(node.provider, 'is_default', False):
+                    notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
+                    logo = settings.OSF_PREPRINTS_LOGO
+                else:
+                    notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+                    logo = getattr(node.provider, '_id', None)
+            case 'draft_registration':
+                notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+            case _:
+                notification_type = NotificationType.Type.USER_INVITE_DEFAULT
+
         unclaimed_record['claimer_email'] = claimer_email
         unclaimed_user.save()
-    # Option 2:
-    # TODO: [new improvement ticket] this option is disabled from preprint but still available on the project page
-    #   When adding the contributor, the referred only provides the name.
-    #   The account is later claimed by some one who provides the email.
-    #   Send email to the referrer and ask her/him to forward the email to the user.
+
+    # Option 2: Referrer only provided name (send to referrer)
     else:
-        # check throttle
         timestamp = unclaimed_record.get('last_sent')
         if not throttle_period_expired(timestamp, throttle):
-            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
-                message_long='User account can only be claimed with an existing user once every 24 hours'
-            ))
-        # roll the valid token for each email, thus user cannot change email and approve a different email address
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={'message_long': 'User account can only be claimed with an existing user once every 24 hours'}
+            )
         verification_key = generate_verification_key(verification_type='claim')
-        unclaimed_record['last_sent'] = get_timestamp()
-        unclaimed_record['token'] = verification_key['token']
-        unclaimed_record['expires'] = verification_key['expires']
-        unclaimed_record['claimer_email'] = claimer_email
+        unclaimed_record.update({
+            'last_sent': get_timestamp(),
+            'token': verification_key['token'],
+            'expires': verification_key['expires'],
+            'claimer_email': claimer_email,
+        })
         unclaimed_user.save()
 
         if notify:
@@ -548,8 +544,8 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 }
             )
+
         notification_type = NotificationType.Type.USER_FORWARD_INVITE
-        to_addr = referrer.username
 
     NotificationType.objects.get(name=notification_type).emit(
         user=referrer,
@@ -563,8 +559,6 @@ def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 360
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
     )
-
-    return to_addr
 
 
 def check_email_throttle(node, contributor, throttle=None):
@@ -631,7 +625,6 @@ def notify_added_contributor(node, contributor, auth=None, email_template=None, 
         contributor (OSFUser): The user being added.
         auth (Auth, optional): Authorization context.
         email_template (str, optional): Template identifier.
-        throttle (int, optional): Throttle period in seconds.
     """
     if check_email_throttle_claim_email(node, contributor):
         return
@@ -639,23 +632,23 @@ def notify_added_contributor(node, contributor, auth=None, email_template=None, 
         return
 
     # Default values
-    notification_type = email_template or NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
+    notification_type = email_template or NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
     logo = settings.OSF_LOGO
 
     # Use match for notification type/logic
-    match (getattr(node, 'has_linked_published_preprints', None), notification_type):
-        case (True, _):
-            notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
-            logo = settings.OSF_PREPRINTS_LOGO
-        case (_, 'default'):
-            notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DEFAULT
-        case (_, 'preprint'):
-            notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
-        case (_, 'draft_registration'):
-            notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        case _:
-            # use whatever was passed or default above
-            raise NotImplementedError(f'email_template: {email_template} not implemented.')
+    if notification_type == 'default':
+        notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+    elif notification_type == 'preprint':
+        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+    elif notification_type == 'draft_registration':
+        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+    elif notification_type == 'access_request':
+        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+    elif getattr(node, 'has_linked_published_preprints', None):
+        notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
+        logo = settings.OSF_PREPRINTS_LOGO
+    else:
+        raise NotImplementedError(f'email_template: {email_template} not implemented.')
 
     NotificationType.objects.get(name=notification_type).emit(
         user=contributor,

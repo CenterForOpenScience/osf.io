@@ -357,8 +357,8 @@ class AffiliatedInstitutionMixin(models.Model):
                     ).emit(
                         user=user,
                         event_context={
-                            'user': user,
-                            'node': self,
+                            'user_fullname': user.fullname,
+                            'node_title': self.title,
                         }
                     )
 

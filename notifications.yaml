@@ -23,11 +23,6 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/password_reset.html.mako'
     notification_freq_default: instantly
-  - name: user_contributor_added_default
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/emails/contributor_added_default.html.mako'
-    notification_freq_default: instantly
   - name: user_contributor_added_draft_registration
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -125,12 +120,12 @@ notification_types:
     notification_freq_default: instantly
 
   #### PROVIDER
-  - name: new_pending_submissions
+  - name: provider_new_pending_submissions
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/new_pending_submissions.html.mako'
     notification_freq_default: instantly
-  - name: new_pending_withdraw_requests
+  - name: provider_new_pending_withdraw_requests
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/new_pending_submissions.html.mako'
@@ -140,6 +135,7 @@ notification_types:
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/contributor_added_preprints.html.mako'
     notification_freq_default: instantly
+
   #### NODE
   - name: node_file_updated
     __docs__: ...
@@ -185,6 +181,11 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/node_request_institutional_access_request.html.mako'
+    notification_freq_default: instantly
+  - name: node_contributor_added_default
+    __docs__: This email notifies the user that they have been added as a contributor to a node.
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/contributor_added_default.html.mako'
     notification_freq_default: instantly
   - name: node_contributor_added_access_request
     __docs__: ...
