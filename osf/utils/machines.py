@@ -220,7 +220,7 @@ class NodeRequestMachine(BaseMachine):
                         auth=Auth(ev.kwargs['user']),
                         permissions=contributor_permissions,
                         visible=visible,
-                        send_email=f'{self.machineable.request_type}_request',
+                        send_email=self.machineable.request_type,
                         make_curator=make_curator,
                     )
                 except IntegrityError as e:

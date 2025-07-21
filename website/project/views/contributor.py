@@ -644,6 +644,8 @@ def notify_added_contributor(node, contributor, auth=None, email_template=None, 
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
     elif notification_type == 'access_request':
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+    elif notification_type == 'institutional_request':
+        notification_type = NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
     elif getattr(node, 'has_linked_published_preprints', None):
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO

@@ -192,7 +192,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/file_updated.html.mako'
     notification_freq_default: instantly
-  - name: node_request_institutional_access_request
+  - name: node_institutional_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/node_request_institutional_access_request.html.mako'

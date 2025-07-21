@@ -188,7 +188,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
             NotificationType.objects.get(
-                name=NotificationType.Type.NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+                name=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
             ).emit(
                 user=recipient,
                 message_frequency='instantly',

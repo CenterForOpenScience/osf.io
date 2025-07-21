@@ -87,7 +87,7 @@ class NotificationType(models.Model):
         NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
         NODE_FORK_COMPLETED = 'node_fork_completed'
         NODE_FORK_FAILED = 'node_fork_failed'
-        NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST = 'node_request_institutional_access_request'
+        NODE_INSTITUTIONAL_ACCESS_REQUEST = 'node_institutional_access_request'
         NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'node_contributor_added_access_request'
         NODE_CONTRIBUTOR_ADDED_DEFAULT = 'node_contributor_added_default'
         NODE_PENDING_EMBARGO_ADMIN = 'node_pending_embargo_admin'
