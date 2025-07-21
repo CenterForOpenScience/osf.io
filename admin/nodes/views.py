@@ -14,7 +14,6 @@ from django.views.generic import (
     View,
     FormView,
     ListView,
-    TemplateView,
 )
 from django.shortcuts import redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
@@ -102,12 +101,15 @@ class NodeView(NodeMixin, GuidView):
         node = self.get_object()
 
         detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
+        children = node.get_nodes(is_node_link=False)
+        for child in children:
+            child.guid = child._id
 
         context.update({
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
-            'children': node.get_nodes(is_node_link=False),
+            'children': children,
             'duplicates': detailed_duplicates
         })
 
@@ -194,7 +196,7 @@ class NodeRemoveContributorView(NodeMixin, View):
         ).save()
 
 
-class NodeDeleteView(NodeMixin, TemplateView):
+class NodeDeleteView(NodeMixin, View):
     """ Allows authorized users to mark nodes as deleted.
     """
     template_name = 'nodes/remove_node.html'
