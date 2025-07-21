@@ -93,7 +93,6 @@ class NotificationType(models.Model):
         NODE_PENDING_EMBARGO_ADMIN = 'node_pending_embargo_admin'
         NODE_PENDING_EMBARGO_NON_ADMIN = 'node_pending_embargo_non_admin'
         NODE_PENDING_RETRACTION_NON_ADMIN = 'node_pending_retraction_non_admin'
-        NODE_PENDING_RETRACTION_ADMIN = 'node_pending_retraction_admin'
         NODE_PENDING_REGISTRATION_NON_ADMIN = 'node_pending_registration_non_admin'
         NODE_PENDING_REGISTRATION_ADMIN = 'node_pending_registration_admin'
         NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'
@@ -129,6 +128,7 @@ class NotificationType(models.Model):
         PREPRINT_REQUEST_WITHDRAWAL_APPROVED = 'preprint_request_withdrawal_approved'
         PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
         PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
+        PREPRINT_PENDING_RETRACTION_ADMIN = 'preprint_pending_retraction_admin'
 
         # Collections Submission notifications
         COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'

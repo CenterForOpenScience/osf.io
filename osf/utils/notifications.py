@@ -1,4 +1,6 @@
 from django.utils import timezone
+
+from osf.models.notification_type import NotificationType
 from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
@@ -64,7 +66,7 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
 
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
-    context['requester'] = action.creator
+    context['requester_fullname'] = action.creator.fullname
     context['is_rejected'] = action.to_state == states.REJECTED.db_name
     context['was_pending'] = action.from_state == states.PENDING.db_name
     reviews_signals.reviews_email.send(
@@ -89,11 +91,11 @@ def notify_edit_comment(resource, user, action, *args, **kwargs):
 
 def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['requester'] = action.creator
+    context['requester_fullname'] = action.creator.fullname
 
     for contributor in resource.contributors.all():
         context['contributor'] = contributor
-        context['requester'] = action.creator
+        context['requester_fullname'] = action.creator.fullname
         context['is_requester'] = action.creator == contributor
 
         mails.send_mail(
@@ -116,15 +118,19 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
 
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
-    context['requester'] = resource.retraction.initiated_by
+    context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
 
     for contributor in resource.contributors.all():
         context['contributor'] = contributor
-        context['is_requester'] = context['requester'] == contributor
-        mails.send_mail(
-            contributor.username,
-            mails.WITHDRAWAL_REQUEST_GRANTED,
-            **context
+        context['is_requester'] = resource.retraction.initiated_by == contributor
+        NotificationType.objects.get(
+            name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+        ).emit(
+            user=contributor,
+            event_context={
+                'is_requester': contributor,
+
+            },
         )

@@ -6,7 +6,7 @@
     <%!
         from website import settings
     %>
-    Hello ${requester.fullname},<br>
+    Hello ${requester_fullname},<br>
     <br>
     This email is to inform you that your request for access to the project at ${node.absolute_url} has been declined.<br>
     <br>

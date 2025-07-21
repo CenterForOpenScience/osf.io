@@ -168,19 +168,23 @@ class ReviewsMachine(BaseMachine):
         context = self.get_context()
         context['ever_public'] = self.machineable.ever_public
         try:
-            preprint_request_action = PreprintRequestAction.objects.get(target__target__id=self.machineable.id,
-                                                                   from_state='pending',
-                                                                   to_state='accepted',
-                                                                   trigger='accept')
-            context['requester'] = preprint_request_action.target.creator
+            preprint_request_action = PreprintRequestAction.objects.get(
+                target__target__id=self.machineable.id,
+                from_state='pending',
+                to_state='accepted',
+                trigger='accept'
+            )
+            requester = preprint_request_action.target.creator
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['force_withdrawal'] = True
 
+        context['requester_fullname'] = requester.fullname
         for contributor in self.machineable.contributors.all():
-            context['contributor'] = contributor
-            if context.get('requester', None):
-                context['is_requester'] = context['requester'].username == contributor.username
+            context['contributor_fullname'] = contributor.fullname
+            if context.get('requester_fullname', None):
+                context['is_requester'] = requester == contributor
+
             NotificationType.objects.get(
                 name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
             ).emit(
@@ -194,7 +198,8 @@ class ReviewsMachine(BaseMachine):
     def get_context(self):
         return {
             'domain': DOMAIN,
-            'reviewable': self.machineable,
+            'reviewable_title': self.machineable.title,
+            'reviewable_absolute_url': self.machineable.absolute_url,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
@@ -348,7 +353,7 @@ class PreprintRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'reviewable': self.machineable.target,
-            'requester': self.machineable.creator,
+            'requester_fullname': self.machineable.creator.fullname,
             'is_request_email': True,
             'document_type': self.machineable.target.provider.preprint_word
         }

@@ -23,7 +23,6 @@ def populate_notification_types(*args, **kwargs):
     for notification_type in notification_types['notification_types']:
         notification_type.pop('__docs__')
         object_content_type_model_name = notification_type.pop('object_content_type_model_name')
-        notification_freq = notification_type.pop('notification_freq_default')
 
         if object_content_type_model_name == 'desk':
             content_type = None
@@ -54,7 +53,6 @@ def populate_notification_types(*args, **kwargs):
         with open(notification_type['template']) as stream:
             template = stream.read()
 
-        notification_types['notification_freq'] = notification_freq
         nt, _ = NotificationType.objects.update_or_create(
             name=notification_type['name'],
             defaults=notification_type,

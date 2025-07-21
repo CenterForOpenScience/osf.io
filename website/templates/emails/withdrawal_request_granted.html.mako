@@ -29,9 +29,9 @@
                 The ${document_type} has been removed from ${reviewable.provider.name}.
                 <br>
             % else:
-                ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
+                ${requester_fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
                 % if reviewable.withdrawal_justification:
-                    ${requester.fullname} provided the following justification: "${reviewable.withdrawal_justification}"
+                    ${requester_fullname} provided the following justification: "${reviewable.withdrawal_justification}"
                 % endif
                 <br>
                 The ${document_type} has been removed from ${reviewable.provider.name}.
@@ -53,11 +53,11 @@
                 % endif
                 <br>
             % else:
-                ${requester.fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
+                ${requester_fullname} has withdrawn your ${document_type} <a href="${reviewable.absolute_url}">"${reviewable.title}"</a> from ${reviewable.provider.name}.
                 <br>
                 The ${document_type} has been removed from ${reviewable.provider.name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, and DOI.
                 % if reviewable.withdrawal_justification:
-                    ${requester.fullname} provided the following justification: "${reviewable.withdrawal_justification}".
+                    ${requester_fullname} provided the following justification: "${reviewable.withdrawal_justification}".
                     <br>
                 % endif
                 <br>
