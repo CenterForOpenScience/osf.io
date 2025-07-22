@@ -135,14 +135,13 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context, u
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
-def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user):
+def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     # imports moved here to avoid AppRegistryNotReady error
     from osf.models import NotificationSubscriptionLegacy
     from website.profile.utils import get_profile_image_url
     from website.notifications.emails import store_emails
     context['referrer_fullname'] = user.fullname
 
-    resource = context['reviewable']
     provider = resource.provider
 
     # Get NotificationSubscription instance, which contains reference to all subscribers

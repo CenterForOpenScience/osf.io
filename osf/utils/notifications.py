@@ -120,6 +120,7 @@ def notify_moderator_registration_requests_withdrawal(resource, user, *args, **k
     reviews_signals.reviews_withdraw_requests_notification_moderators.send(
         timestamp=timezone.now(),
         context=context,
+        resource=resource,
         user=user
     )
 

@@ -1,6 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 from osf_tests.factories import (
     RegistrationFactory,
     InstitutionFactory,
@@ -8,6 +9,7 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 def make_payload(*node_ids):
@@ -372,45 +374,56 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 404
 
-    def test_email_sent_on_affiliation_addition(self, app, user, institution, node_without_institution,
-                                                url_institution_nodes, mock_send_grid):
+    def test_email_sent_on_affiliation_addition(
+            self,
+            app,
+            user,
+            institution,
+            node_without_institution,
+            url_institution_nodes,
+    ):
         node_without_institution.add_contributor(user, permissions='admin')
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
-
-        res = app.post_json_api(
-            url_institution_nodes,
-            {
-                'data': [
-                    {
-                        'type': 'nodes', 'id': node_without_institution._id
-                    }
-                ]
-            },
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_institution_nodes,
+                {
+                    'data': [
+                        {
+                            'type': 'nodes', 'id': node_without_institution._id
+                        }
+                    ]
+                },
+                auth=user.auth
+            )
 
         assert res.status_code == 201
-        mock_send_grid.assert_called_once()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
-    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_send_grid):
+    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
         current_institution = InstitutionFactory()
         node_public.affiliated_institutions.add(current_institution)
 
-        res = app.delete_json_api(
-            url_institution_nodes,
-            {
-                'data': [
-                    {
-                        'type': 'nodes', 'id': node_public._id
-                    }
-                ]
-            },
-            auth=admin.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                url_institution_nodes,
+                {
+                    'data': [
+                        {
+                            'type': 'nodes', 'id': node_public._id
+                        }
+                    ]
+                },
+                auth=admin.auth
+            )
 
         # Assert response is successful
         assert res.status_code == 204
 
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == admin.email
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications[0]['kwargs']['user'] == node_public.creator
+        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications[1]['kwargs']['user'] == admin
