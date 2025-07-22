@@ -52,7 +52,7 @@ class NotificationSubscription(BaseModel):
         verbose_name = 'Notification Subscription'
         verbose_name_plural = 'Notification Subscriptions'
 
-    def emit(self, user, subscribed_object=None, event_context=None):
+    def emit(self, event_context=None):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
         Args:

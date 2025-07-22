@@ -449,7 +449,8 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         event_context={
             'claim_url': claim_url,
             'fullname': unclaimed_record['name'],
-            'referrer': referrer.username,
+            'referrer_username': referrer.username,
+            'referrer_fullname': referrer.fullname,
             'node': node.title,
             'can_change_preferences': False,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
@@ -549,6 +550,7 @@ def send_claim_email(
 
     NotificationType.objects.get(name=notification_type).emit(
         user=referrer,
+        destination_address=email,
         event_context={
             'user': unclaimed_user.id,
             'referrer': referrer.id,
@@ -992,7 +994,7 @@ def claim_user_post(node, **kwargs):
         claimer = get_user(email=email)
         # registered user
         if claimer and claimer.is_registered:
-            send_claim_registered_email(claimer, unclaimed_user, node)
+            send_claim_registered_email(claimer, unclaimed_user, node, email)
         # unregistered user
         else:
             send_claim_email(email, unclaimed_user, node, notify=True)

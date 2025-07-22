@@ -18,13 +18,13 @@ class Notification(models.Model):
     seen = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
 
-    def send(self, protocol_type='email', recipient=None):
+    def send(self, protocol_type='email', destination_address=None):
         if not settings.USE_EMAIL:
             return
         if not protocol_type == 'email':
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
 
-        recipient_address = getattr(recipient, 'username', None) or self.subscription.user.username
+        recipient_address = destination_address or self.subscription.user.username
 
         if protocol_type == 'email' and settings.DEV_MODE and settings.ENABLE_TEST_EMAIL:
             email.send_email_over_smtp(
@@ -42,7 +42,7 @@ class Notification(models.Model):
                 )
         elif protocol_type == 'email':
             email.send_email_with_send_grid(
-                getattr(recipient, 'username', None) or self.subscription.user,
+                self.subscription.user,
                 self.subscription.notification_type,
                 self.event_context
             )

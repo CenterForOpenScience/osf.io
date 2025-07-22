@@ -195,11 +195,19 @@ class NotificationType(models.Model):
         help_text='Template used to render the subject line of email. Supports Django template syntax.'
     )
 
-    def emit(self, user, subscribed_object=None, message_frequency='instantly', event_context=None):
+    def emit(
+            self,
+            user,
+            destination_address=None,
+            subscribed_object=None,
+            message_frequency='instantly',
+            event_context=None
+    ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
         Args:
             user (OSFUser): The recipient of the notification.
+            destination_address (optional): For use in case where user's maybe using alternate email addresses.
             subscribed_object (optional): The object the subscription is related to.
             message_frequency (optional): Initializing message frequency.
             event_context (dict, optional): Context for rendering the notification template.
@@ -216,7 +224,7 @@ class NotificationType(models.Model):
             Notification.objects.create(
                 subscription=subscription,
                 event_context=event_context
-            ).send()
+            ).send(destination_address=destination_address)
 
     def add_user_to_subscription(self, user, *args, **kwargs):
         """
