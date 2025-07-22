@@ -132,8 +132,16 @@ notification_types:
     template: 'website/templates/emails/contributor_added_preprints.html.mako'
   - name: provider_reviews_submission_confirmation
     __docs__: ...
-    object_content_type_model_name: preprint
+    object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/reviews_submission_confirmation.html.mako'
+  - name: provider_confirm_email_moderation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/confirm_moderation.html.mako'
+  - name: provider_moderator_added
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/moderator_added.html.mako'
 
   #### NODE
   - name: node_file_updated
