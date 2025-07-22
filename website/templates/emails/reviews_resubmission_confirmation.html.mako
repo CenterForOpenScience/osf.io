@@ -2,7 +2,7 @@
 <%def name="content()">
     <div style="margin: 40px;">
        <p>
-            Hello ${referrer.fullname},
+            Hello ${referrer_fullname},
        </p>
        <p>
             The ${document_type} <a href="${reviewable_absolute_url}">${reviewable_title}</a> has been successfully

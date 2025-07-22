@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${referrer.fullname},<br>
+    Hello ${referrer_fullname},<br>
     <br>
     You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.<br>
     <br>
@@ -17,7 +17,7 @@
     <br>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To claim yourself as a contributor to the project, visit this url:<br>
+    You have been added by ${referrer_fullname} as a contributor to the project "${node.title}" on the Open Science Framework. To claim yourself as a contributor to the project, visit this url:<br>
     <br>
     ${claim_url}<br>
     <br>

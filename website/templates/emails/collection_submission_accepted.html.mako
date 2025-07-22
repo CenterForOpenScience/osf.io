@@ -5,7 +5,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <p>
         % if is_admin:
             Your request to add <a href="${node.absolute_url}">${node.title}</a> to

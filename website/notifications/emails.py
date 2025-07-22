@@ -102,7 +102,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     template = f'{template or event}.html.mako'
 
     # user whose action triggered email sending
-    context['user'] = user
+    context['user_fullname'] = user.fullname
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for recipient_id in recipient_ids:
@@ -112,7 +112,7 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
         if recipient.is_disabled:
             continue
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
-        context['recipient'] = recipient
+        context['recipient_fullname'] = recipient.fullname
         message = mails.render_message(template, **context)
         digest = NotificationDigest(
             timestamp=timestamp,

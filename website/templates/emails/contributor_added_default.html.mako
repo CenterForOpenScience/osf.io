@@ -6,7 +6,7 @@
     <%!
         from website import settings
     %>
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}<br>
     <br>

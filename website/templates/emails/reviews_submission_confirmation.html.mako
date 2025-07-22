@@ -9,7 +9,7 @@
         <td>
             % if document_type == 'registration':
                 <div style="margin: 40px; background: white;">
-					Hello ${user.fullname},
+					Hello ${user_fullname},
 					<p>
 					Your ${document_type} <a href="${reviewable_absolute_url}">${reviewable_title}</a> has been successfully submitted to ${reviewable_provider_name}.
 					<p>
@@ -24,7 +24,7 @@
 				</div>
             % else:
                 <div style="margin: 40px; background: white;">
-                    <p>Hello ${user.fullname},</p>
+                    <p>Hello ${user_fullname},</p>
                     % if is_creator:
                         <p>
                             Your ${document_type}
@@ -33,7 +33,7 @@
                         </p>
                     % else:
                         <p>
-                            ${referrer.fullname} has added you as a contributor to the
+                            ${referrer_fullname} has added you as a contributor to the
                             ${document_type}
                             <a href="${reviewable_absolute_url}">${reviewable_title}</a>
                             on ${reviewable_provider_name}, which is hosted on the OSF.

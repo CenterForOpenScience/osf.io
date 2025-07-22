@@ -8,7 +8,7 @@
     %>
     Hello ${fullname},
     <p>
-    ${referrer.fullname} has added you as a contributor on
+    ${referrer_fullname} has added you as a contributor on
     % if not node.title or node.title == 'Untitled':
       <a href="${node.absolute_url}">a new registration draft</a>
     % else:

@@ -1,15 +1,15 @@
 ## -*- coding: utf-8 -*-
 <% from website import settings %>
 <div style="margin: 15px 30px 30px; background: white;">
-    <p>Hello ${recipient.fullname},</p>
+    <p>Hello ${recipient_fullname},</p>
     <p>
     % if document_type == 'registration':
         % if is_rejected:
-			Your submission ${reviewable_title}, submitted to ${reviewable.provider.name},
+			Your submission ${reviewable_title}, submitted to ${reviewable_provider_name},
             has not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission.
 			<a href=${draft_registration_absolute_url}>Click here</a> to view your draft.
         % else:
-			Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
+			Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable_provider_name}, has been accepted by the moderator.
         % endif
 		<p>
         % if notify_comment:
@@ -18,7 +18,7 @@
         % endif
     % else:
         % if workflow == 'pre-moderation':
-            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name} has
+            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable_provider_name} has
             % if is_rejected:
                 not been accepted. Contributors with admin permissions may edit the ${document_type} and
                 resubmit, at which time it will return to a pending state and be reviewed by a moderator.
@@ -26,7 +26,7 @@
                 been accepted by the moderator and is now discoverable to others.
             % endif
         % elif workflow == 'post-moderation':
-            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name} has
+            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable_provider_name} has
             % if is_rejected:
                 not been accepted and will be made private and not discoverable by others.
                 Contributors with admin permissions may edit the ${document_type} and contact
@@ -66,17 +66,17 @@
                                         <tbody>
                                             <tr>
                                                 <td>
-                                                    <a href="${u'https://twitter.com/home?status=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}'.format(word=document_type, title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                        <a href="https://twitter.com/home?status=Read%20my%20${document_type}%2C%20%E2%80%9C${reviewable_title}%E2%80%9D%20on%20${reviewable_provider_name}%20${reviewable_absolute_url}" target="_blank">
                                                         <img src="${'{}static/img/fa-twitter-blue.png'.format(settings.DOMAIN)}" alt="twitter" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    <a href="${u'https://www.facebook.com/sharer/sharer.php?u={link}%3Futm_source%3Dnotification%26utm_medium%3Demail%26utm_campaign%3Dpreprint_review_status'.format(link=reviewable.absolute_url)}" target="_blank">
+                                                    <a href="${u'https://www.facebook.com/sharer/sharer.php?u={link}%3Futm_source%3Dnotification%26utm_medium%3Demail%26utm_campaign%3Dpreprint_review_status'.format(link=reviewable_absolute_url)}" target="_blank">
                                                         <img src="${'{}static/img/fa-facebook-blue.png'.format(settings.DOMAIN)}" alt="facebook" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
                                                 <td>
-                                                    <a href="${u'https://www.linkedin.com/shareArticle?mini=true&url={link}&summary=Read%20my%20{word}%2C%20%E2%80%9C{title}%E2%80%9D%20on%20{name}%20{link}&title=I%20just%20posted%20a%20{word}&source='.format(word=document_type, title=reviewable.title, name=reviewable.provider.name, link=reviewable.absolute_url)}" target="_blank">
+                                                        <a href="https://www.linkedin.com/shareArticle?mini=true&url=${reviewable_absolute_url}&summary=Read%20my%20${document_type}%2C%20%E2%80%9C${reviewable_title}%E2%80%9D%20on%20${reviewable_provider_name}%20${reviewable_absolute_url}&title=I%20just%20posted%20a%20${document_type}&source=" target="_blank">
                                                         <img src="${'{}static/img/fa-linkedin-blue.png'.format(settings.DOMAIN)}" alt="LinkedIn" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
@@ -98,10 +98,10 @@
         </p>
         % endif
     % endif
-    <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.</p>
+    <p>Learn more about <a href="${provider_url}">${reviewable_provider_name}</a> or <a href="https://osf.io/">OSF</a>.</p>
     <br>
     <p>
         Sincerely,<br>
-        The ${reviewable.provider.name} and OSF teams
+        The ${reviewable_provider_name} and OSF teams
     </p>
 </div>

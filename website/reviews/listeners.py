@@ -66,7 +66,7 @@ def reviews_submit_notification(self, recipients, context, resource, template=No
 
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
-def reviews_submit_notification_moderators(self, timestamp, resource, context):
+def reviews_submit_notification_moderators(self, timestamp, resource, context, user):
     """
     Handle email notifications to notify moderators of new submissions or resubmission.
     """
@@ -88,7 +88,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 
     # Set url for profile image of the submitter
-    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    context['profile_image_url'] = get_profile_image_url(user)
 
     # Set message
     revision_id = context.get('revision_id')
@@ -126,7 +126,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
             recipient_ids,
             subscription_type,
             'new_pending_submissions',
-            context['referrer'],
+            user,
             resource,
             timestamp,
             abstract_provider=provider,
@@ -135,11 +135,12 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
-def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
+def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user):
     # imports moved here to avoid AppRegistryNotReady error
     from osf.models import NotificationSubscriptionLegacy
     from website.profile.utils import get_profile_image_url
     from website.notifications.emails import store_emails
+    context['referrer_fullname'] = user.fullname
 
     resource = context['reviewable']
     provider = resource.provider
@@ -153,7 +154,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set url for profile image of the submitter
-    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    context['profile_image_url'] = get_profile_image_url(user)
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
@@ -165,7 +166,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
         email_transactional_ids,
         'email_transactional',
         'new_pending_withdraw_requests',
-        context['referrer'],
+        user,
         resource,
         timestamp,
         abstract_provider=provider,
@@ -178,7 +179,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
         email_digest_ids,
         'email_digest',
         'new_pending_withdraw_requests',
-        context['referrer'],
+        user,
         resource,
         timestamp,
         abstract_provider=provider,

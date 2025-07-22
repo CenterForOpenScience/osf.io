@@ -480,10 +480,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
-            email_context['referrer'] = self.initiator
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(),
-                context=email_context
+                context=email_context,
+                user=self.initiator
             )
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)

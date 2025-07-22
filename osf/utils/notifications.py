@@ -37,8 +37,8 @@ def get_email_template_context(resource):
 
 def notify_submit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['referrer'] = user
     recipients = list(resource.contributors)
+    context['referrer_fullname'] = user.fullname
     reviews_signals.reviews_email_submit.send(
         context=context,
         recipients=recipients,
@@ -48,12 +48,13 @@ def notify_submit(resource, user, *args, **kwargs):
         timestamp=timezone.now(),
         context=context,
         resource=resource,
+        user=user
     )
 
 
 def notify_resubmit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['referrer'] = user
+    context['referrer_fullname'] = user.fullname
     context['resubmission'] = True
     recipients = list(resource.contributors)
     reviews_signals.reviews_email_submit.send(
@@ -66,6 +67,7 @@ def notify_resubmit(resource, user, *args, **kwargs):
         timestamp=timezone.now(),
         context=context,
         resource=resource,
+        user=user
     )
 
 
@@ -115,10 +117,10 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
 
 def notify_moderator_registration_requests_withdrawal(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
-    context['referrer'] = user
     reviews_signals.reviews_withdraw_requests_notification_moderators.send(
         timestamp=timezone.now(),
-        context=context
+        context=context,
+        user=user
     )
 
 
