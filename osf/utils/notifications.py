@@ -13,16 +13,20 @@ def get_email_template_context(resource):
 
     base_context = {
         'domain': DOMAIN,
-        'reviewable': resource,
+        'reviewable_title': resource.title,
+        'reviewable_absolute_url': resource.absolute_url,
+        'reviewable_provider_name': resource.provider.name,
         'workflow': resource.provider.reviews_workflow,
         'provider_url': resource.provider.domain or f'{DOMAIN}{url_segment}/{resource.provider._id}',
+        'provider_type': resource.provider.type,
+        'provider_name': resource.provider.name,
         'provider_contact_email': resource.provider.email_contact or OSF_CONTACT_EMAIL,
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
         'document_type': document_type
     }
 
     if document_type == 'registration':
-        base_context['draft_registration'] = resource.draft_registration.get()
+        base_context['draft_registration_absolute_url'] = resource.draft_registration.get().absolute_url
     if document_type == 'registration' and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
@@ -37,11 +41,13 @@ def notify_submit(resource, user, *args, **kwargs):
     recipients = list(resource.contributors)
     reviews_signals.reviews_email_submit.send(
         context=context,
-        recipients=recipients
+        recipients=recipients,
+        resource=resource,
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(
         timestamp=timezone.now(),
-        context=context
+        context=context,
+        resource=resource,
     )
 
 
@@ -54,10 +60,12 @@ def notify_resubmit(resource, user, *args, **kwargs):
         recipients=recipients,
         context=context,
         template=mails.REVIEWS_RESUBMISSION_CONFIRMATION,
+        resource=resource,
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(
         timestamp=timezone.now(),
-        context=context
+        context=context,
+        resource=resource,
     )
 
 

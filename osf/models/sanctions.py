@@ -571,7 +571,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_end_date': str(self.end_date),
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
             })
         else:
             context.update({
@@ -580,7 +581,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'embargo_end_date': str(self.end_date),
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
             })
         return context
 
@@ -719,7 +721,8 @@ class Retraction(EmailApprovableSanction):
             return {
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
@@ -732,7 +735,8 @@ class Retraction(EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
             }
 
@@ -855,7 +859,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -867,7 +872,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': self._get_registration().title,
+                'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
             })
         return context
@@ -1005,16 +1011,17 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
         urls = urls or self.stashed_urls.get(user._id, {})
         registration_link = urls.get('view', self._view_url(user._id, node))
         approval_time_span = osf_settings.EMBARGO_TERMINATION_PENDING_TIME.days * 24
+        registration = self._get_registration()
+
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            registration = self._get_registration()
-
             context.update({
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': registration.title,
+                'reviewable_absolute_url': registration.absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
@@ -1030,7 +1037,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,
-                'reviewable': self._get_registration()._id,
+                'reviewable_title': registration.title,
+                'reviewable_absolute_url': registration.absolute_url,
                 'approval_time_span': approval_time_span,
             })
         return context

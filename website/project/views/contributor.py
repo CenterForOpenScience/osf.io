@@ -642,6 +642,8 @@ def notify_added_contributor(node, contributor, auth=None, email_template=None, 
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
     elif notification_type == 'draft_registration':
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+    elif notification_type == 'access':
+        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
     elif notification_type == 'access_request':
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
     elif notification_type == 'institutional_request':

@@ -5,7 +5,7 @@
             Hello ${referrer.fullname},
        </p>
        <p>
-            The ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully
+            The ${document_type} <a href="${reviewable_absolute_url}">${reviewable_title}</a> has been successfully
             resubmitted to ${reviewable.provider.name}.
        </p>
        <p>
@@ -20,7 +20,7 @@
             for this ${document_type}.
        </p>
        <p>
-           If you have been erroneously associated with "${reviewable.title}", then you may visit the ${document_type}'s
+           If you have been erroneously associated with "${reviewable_title}", then you may visit the ${document_type}'s
            "Edit" page and remove yourself as a contributor.
        </p>
        <p>

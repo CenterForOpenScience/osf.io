@@ -2,9 +2,11 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
+from osf.models import NotificationType
 
 from osf_tests.factories import NodeFactory, NodeRequestFactory, InstitutionFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -80,25 +82,32 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         res = app.get(url, create_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_email_sent_to_all_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_sent_to_all_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
         project.is_public = True
         project.save()
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
-        assert res.status_code == 201
-        assert mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
 
-    def test_email_not_sent_to_parent_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert notifications[1]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert res.status_code == 201
+
+    def test_email_not_sent_to_parent_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True
         project.save()
-        url = f'/{API_BASE}nodes/{component._id}/requests/'
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'/{API_BASE}nodes/{component._id}/requests/',
+                create_payload,
+                auth=noncontrib.auth
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
-        assert mock_send_grid.call_count == 1
 
     def test_request_followed_by_added_as_contrib(elf, app, project, noncontrib, admin, url, create_payload):
         res = app.post_json_api(url, create_payload, auth=noncontrib.auth)

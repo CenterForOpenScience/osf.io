@@ -20,6 +20,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
+from . import NotificationType
 
 from .subject import Subject
 from .tag import Tag
@@ -41,7 +42,7 @@ from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
 from website.util.metrics import provider_source_tag
 from website.citations.utils import datetime_to_csl
-from website import settings, mails
+from website import settings
 from website.preprints.tasks import update_or_enqueue_on_preprint_updated
 
 from .base import BaseModel, Guid, GuidVersionsThrough, GuidMixinQuerySet, VersionedGuidMixin, check_manually_assigned_guid
@@ -1040,7 +1041,9 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
         context = {
             'domain': settings.DOMAIN,
-            'reviewable': self,
+            'reviewable_title': self.title,
+            'reviewable_absolute_url': self.absolute_url,
+            'reviewable_provider_name': self.provider.name,
             'workflow': self.provider.reviews_workflow,
             'provider_url': '{domain}preprints/{provider_id}'.format(
                             domain=self.provider.domain or settings.DOMAIN,
@@ -1054,11 +1057,11 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             'document_type': self.provider.preprint_word
         }
 
-        mails.send_mail(
-            recipient.username,
-            mails.REVIEWS_SUBMISSION_CONFIRMATION,
+        NotificationType.objects.get(
+            name=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        ).emit(
             user=recipient,
-            **context
+            event_context=context,
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS

@@ -3,9 +3,7 @@
 <%def name="content()">
     <% from website import settings %>
     <%
-        isOsfSubmission = reviewable.provider.name == 'Open Science Framework'
-        if isOsfSubmission:
-            reviewable.provider.name = 'OSF Preprints'
+        isOsfSubmission = reviewable_provider_name == 'Open Science Framework'
     %>
     <tr>
         <td>
@@ -13,16 +11,16 @@
                 <div style="margin: 40px; background: white;">
 					Hello ${user.fullname},
 					<p>
-					Your ${document_type} <a href="${reviewable.absolute_url}">${reviewable.title}</a> has been successfully submitted to ${reviewable.provider.name}.
+					Your ${document_type} <a href="${reviewable_absolute_url}">${reviewable_title}</a> has been successfully submitted to ${reviewable_provider_name}.
 					<p>
-					${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
+					${reviewable_provider_name} has chosen to moderate their submissions using a pre-moderation workflow, which means your submission is pending until accepted by a moderator.
 					<p>
 					You will receive a separate notification informing you of any status changes.
 					<p>
-					Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.
+					Learn more about <a href="${provider_url}">${reviewable_provider_name}</a> or <a href="https://osf.io/">OSF</a>.
 					<p>
 					Sincerely,
-					The ${reviewable.provider.name} and OSF teams.
+					The ${reviewable_provider_name} and OSF teams.
 				</div>
             % else:
                 <div style="margin: 40px; background: white;">
@@ -30,23 +28,23 @@
                     % if is_creator:
                         <p>
                             Your ${document_type}
-                            <a href="${reviewable.absolute_url}">${reviewable.title}</a>
-                            has been successfully submitted to ${reviewable.provider.name}.
+                            <a href="${reviewable_absolute_url}">${reviewable_title}</a>
+                            has been successfully submitted to ${reviewable_provider_name}.
                         </p>
                     % else:
                         <p>
                             ${referrer.fullname} has added you as a contributor to the
                             ${document_type}
-                            <a href="${reviewable.absolute_url}">${reviewable.title}</a>
-                            on ${reviewable.provider.name}, which is hosted on the OSF.
+                            <a href="${reviewable_absolute_url}">${reviewable_title}</a>
+                            on ${reviewable_provider_name}, which is hosted on the OSF.
                         </p>
                     % endif
                           <p>
                               % if workflow == 'pre-moderation':
-                                  ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow,
+                                  ${reviewable_provider_name} has chosen to moderate their submissions using a pre-moderation workflow,
                                   which means your submission is pending until accepted by a moderator.
                               % elif workflow == 'post-moderation':
-                                  ${reviewable.provider.name} has chosen to moderate their submissions using a
+                                  ${reviewable_provider_name} has chosen to moderate their submissions using a
                                   post-moderation workflow, which means your submission is public and discoverable,
                                   while still pending acceptance by a moderator.
                               % else:
@@ -94,11 +92,11 @@
                     </p>
                     % if not is_creator:
                     <p>
-                        If you have been erroneously associated with "${reviewable.title}," then you may visit the ${document_type}
+                        If you have been erroneously associated with "${reviewable_title}," then you may visit the ${document_type}
                         and remove yourself as a contributor.
                     </p>
                     % endif
-                    <p>Learn more about <a href="${provider_url}">${reviewable.provider.name}</a> or <a href="https://osf.io/">OSF</a>.</p>
+                    <p>Learn more about <a href="${provider_url}">${reviewable_provider_name}</a> or <a href="https://osf.io/">OSF</a>.</p>
                     <br>
                     <p>
                         Sincerely,<br>

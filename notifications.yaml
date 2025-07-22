@@ -130,6 +130,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/contributor_added_preprints.html.mako'
+  - name: provider_reviews_submission_confirmation
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/reviews_submission_confirmation.html.mako'
 
   #### NODE
   - name: node_file_updated
@@ -239,7 +243,6 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: preprint
     template: 'website/templates/emails/withdrawal_request_declined.html.mako'
-
   #### SUPPORT
   - name: crossref_error
     __docs__: ...

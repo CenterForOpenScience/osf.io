@@ -482,7 +482,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             email_context['revision_id'] = self._id
             email_context['referrer'] = self.initiator
             reviews_email_submit_moderators_notifications.send(
-                timestamp=timezone.now(), context=email_context
+                timestamp=timezone.now(),
+                context=email_context
             )
 
         template = EMAIL_TEMPLATES_PER_EVENT.get(event)

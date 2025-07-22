@@ -5,11 +5,11 @@
     <p>
     % if document_type == 'registration':
         % if is_rejected:
-			Your submission ${reviewable.title}, submitted to ${reviewable.provider.name},
+			Your submission ${reviewable_title}, submitted to ${reviewable.provider.name},
             has not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission.
-			<a href=${draft_registration.absolute_url}>Click here</a> to view your draft.
+			<a href=${draft_registration_absolute_url}>Click here</a> to view your draft.
         % else:
-			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
+			Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
         % endif
 		<p>
         % if notify_comment:
@@ -18,7 +18,7 @@
         % endif
     % else:
         % if workflow == 'pre-moderation':
-            Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
+            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name} has
             % if is_rejected:
                 not been accepted. Contributors with admin permissions may edit the ${document_type} and
                 resubmit, at which time it will return to a pending state and be reviewed by a moderator.
@@ -26,7 +26,7 @@
                 been accepted by the moderator and is now discoverable to others.
             % endif
         % elif workflow == 'post-moderation':
-            Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name} has
+            Your submission <a href="${reviewable_absolute_url}">${reviewable_title}</a>, submitted to ${reviewable.provider.name} has
             % if is_rejected:
                 not been accepted and will be made private and not discoverable by others.
                 Contributors with admin permissions may edit the ${document_type} and contact
@@ -93,7 +93,7 @@
         % endif
         % if not is_creator:
         <p>
-            If you have been erroneously associated with "${reviewable.title}," then you
+            If you have been erroneously associated with "${reviewable_title}," then you
             may visit the project's "Contributors" page and remove yourself as a contributor.
         </p>
         % endif
