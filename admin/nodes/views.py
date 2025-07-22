@@ -102,9 +102,10 @@ class NodeView(NodeMixin, GuidView):
 
         detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
         children = node.get_nodes(is_node_link=False)
-        for child in children:
-            child.guid = child._id
-
+        # Annotate guid because django templates prohibit accessing attributes that start with underscores
+        children = AbstractNode.objects.filter(
+            id__in=[child.id for child in children]
+        ).prefetch_related('guids').annotate(guid=F('guids___id'))
         context.update({
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
@@ -199,7 +200,6 @@ class NodeRemoveContributorView(NodeMixin, View):
 class NodeDeleteView(NodeMixin, View):
     """ Allows authorized users to mark nodes as deleted.
     """
-    template_name = 'nodes/remove_node.html'
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
 
