@@ -116,6 +116,22 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password_institution.html.mako'
+  - name: user_registration_bulk_upload_success_all
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/registration_bulk_upload_success_all.html.mako'
+  - name: user_registration_bulk_upload_failure_all
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/registration_bulk_upload_failure_all.html.mako'
+  - name: user_registration_bulk_upload_success_partial
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/registration_bulk_upload_success_partial.html.mako'
+  - name: user_registration_bulk_upload_failure_duplicates
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/registration_bulk_upload_failure_duplicates.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
