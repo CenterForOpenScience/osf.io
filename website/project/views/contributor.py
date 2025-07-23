@@ -471,7 +471,12 @@ def check_email_throttle_claim_email(node, contributor):
         contributor.contributor_added_email_records[node._id] = {}
 
 def send_claim_email(
-    email, unclaimed_user, node, notify=True, throttle=24 * 3600, email_template='default'
+    email,
+    unclaimed_user,
+    node,
+    notify=True,
+    throttle=24 * 3600,
+    email_template='default'
 ):
     """
     Send a claim email to an unregistered contributor or the referrer, depending on the scenario.

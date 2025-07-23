@@ -158,6 +158,14 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/moderator_added.html.mako'
+  - name: provider_reviews_submission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/reviews_submission_confirmation.html.mako'
+  - name: provider_reviews_resubmission_confirmation
+    __docs__: ...
+    object_content_type_model_name: abstractprovider
+    template: 'website/templates/emails/reviews_resubmission_confirmation.html.mako'
 
   #### NODE
   - name: node_file_updated

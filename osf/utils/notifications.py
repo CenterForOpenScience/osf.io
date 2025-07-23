@@ -60,7 +60,7 @@ def notify_resubmit(resource, user, *args, **kwargs):
     reviews_signals.reviews_email_submit.send(
         recipients=recipients,
         context=context,
-        template=mails.REVIEWS_RESUBMISSION_CONFIRMATION,
+        template=NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
         resource=resource,
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(

@@ -13,7 +13,7 @@ from rest_framework import status as http_status
 from framework import auth
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from osf.models import NodeRelation
+from osf.models import NodeRelation, NotificationType
 from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,
@@ -30,6 +30,7 @@ from tests.base import (
     get_default_metaschema,
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website.profile.utils import add_contributor_json, serialize_unregistered
 from website.project.signals import contributor_added
 from website.project.views.contributor import (
@@ -171,11 +172,10 @@ class TestAddingContributorViews(OsfTestCase):
         assert rec['email'] == email
 
     @mock.patch('website.project.views.contributor.send_claim_email')
-    def test_add_contributors_post_only_sends_one_email_to_unreg_user(
-            self, mock_send_claim_email):
+    def test_add_contributors_post_only_sends_one_email_to_unreg_user(self, mock_send_claim_email):
         # Project has components
-        comp1, comp2 = NodeFactory(
-            creator=self.creator), NodeFactory(creator=self.creator)
+        comp1 = NodeFactory(creator=self.creator)
+        comp2 = NodeFactory(creator=self.creator)
         NodeRelation.objects.create(parent=self.project, child=comp1)
         NodeRelation.objects.create(parent=self.project, child=comp2)
         self.project.save()
@@ -224,10 +224,13 @@ class TestAddingContributorViews(OsfTestCase):
         # send request
         url = self.project.api_url_for('project_contributors_post')
         assert self.project.can_edit(user=self.creator)
-        self.app.post(url, json=payload, auth=self.creator.auth)
+        with capture_notifications() as notifications:
+            self.app.post(url, json=payload, auth=self.creator.auth)
+        assert len(notifications) == 3
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications[2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-        # send_mail should only have been called once
-        assert self.mock_notification_send.call_count == 1
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
         # Project has a component with a sub-component
