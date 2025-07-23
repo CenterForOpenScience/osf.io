@@ -8,7 +8,6 @@ from osf.utils.fields import NonNaiveDateTimeField
 from framework.auth import Auth
 from framework.exceptions import PermissionsError
 from website import settings as osf_settings
-from website import mails
 from osf.exceptions import (
     InvalidSanctionRejectionToken,
     InvalidSanctionApprovalToken,
@@ -404,7 +403,12 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return None
 
     def _send_approval_request_email(self, user, template, context):
-        mails.send_mail(user.username, template, user=user, can_change_preferences=False, **context)
+        NotificationType.objects.get(
+            name=template
+        ).emit(
+            user=user,
+            event_context=context
+        )
 
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
@@ -781,8 +785,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
 
     AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_pending_registration_admin'
     NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_pending_registration_non_admin'
@@ -957,8 +961,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
