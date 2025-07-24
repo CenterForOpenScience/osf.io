@@ -10,10 +10,8 @@ from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
+from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse, NotificationType
 from framework.auth import Auth
-from website.project.signals import contributor_added
-from api_tests.utils import disconnected_from_listeners
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf.migrations import update_provider_auth_groups
@@ -32,7 +30,7 @@ from osf_tests.factories import (
 from osf_tests.utils import get_default_test_schema
 
 from api_tests.nodes.views.test_node_detail_license import TestNodeUpdateLicense
-from tests.utils import assert_latest_log
+from tests.utils import assert_latest_log, capture_notifications
 from api_tests.utils import create_test_file
 
 
@@ -786,9 +784,9 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert not public_registration.is_pending_embargo
 
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
-            self, mock_notification_send, app, user, public_registration, public_url, public_payload):
+            self, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()
-        with disconnected_from_listeners(contributor_added):
+        with capture_notifications() as notifications:
             public_registration.add_unregistered_contributor(
                 unreg.fullname,
                 unreg.email,
@@ -802,7 +800,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
         # Only the creator gets an email; the unreg user does not get emailed
         assert public_registration._contributors.count() == 2
-        assert mock_notification_send.call_count == 3
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
 @pytest.mark.django_db
