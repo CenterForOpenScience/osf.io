@@ -11,7 +11,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     provider = resource.provider
 
     provider_subscription, _ = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
+        notification_type__name=NotificationType.Type.PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED,
         object_id=provider.id,
         content_type=ContentType.objects.get_for_model(provider.__class__),
     )

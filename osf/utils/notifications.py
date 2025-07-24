@@ -1,7 +1,6 @@
 from django.utils import timezone
 
 from osf.models.notification_type import NotificationType
-from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import DOMAIN, OSF_SUPPORT_EMAIL, OSF_CONTACT_EMAIL
 from osf.utils.workflows import RegistrationModerationTriggers
@@ -104,16 +103,18 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context['requester_fullname'] = action.creator.fullname
 
     for contributor in resource.contributors.all():
-        context['contributor'] = contributor
+        context['contributor_fullname'] = contributor.fullname
         context['requester_fullname'] = action.creator.fullname
         context['is_requester'] = action.creator == contributor
-
-        mails.send_mail(
-            contributor.username,
-            mails.WITHDRAWAL_REQUEST_DECLINED,
-            **context
+        NotificationType.objects.get(
+            name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
+        ).emit(
+            user=contributor,
+            event_context={
+                'is_requester': contributor,
+                **context
+            },
         )
-
 
 def notify_moderator_registration_requests_withdrawal(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
