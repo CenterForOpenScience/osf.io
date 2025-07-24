@@ -452,14 +452,7 @@ class Registration(AbstractNode):
         if not auth or not auth.user or not self.is_moderated:
             return False
 
-        moderator_viewable_states = {
-            RegistrationModerationStates.PENDING.db_name,
-            RegistrationModerationStates.PENDING_WITHDRAW.db_name,
-            RegistrationModerationStates.EMBARGO.db_name,
-            RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name,
-        }
-        user_is_moderator = auth.user.has_perm('view_submissions', self.provider)
-        if self.moderation_state in moderator_viewable_states and user_is_moderator:
+        if self.moderation_state in RegistrationModerationStates.in_moderation_states() and self.provider.is_moderator(auth.user):
             return True
 
         return False
