@@ -1,5 +1,5 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
-    'file_updated': 'Files updated'
+    'node_file_updated': 'Files updated'
 }
 
 # Note: if the subscription starts with 'global_', it will be treated like a default

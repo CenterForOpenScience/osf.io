@@ -7,7 +7,7 @@
                 % if is_request_email:
                     <span class="person" style="font-weight: bold;">${requester_fullname}</span>
                 % else:
-                    <span class="person" style="font-weight: bold;">${', '.join(reviewable.contributors.values_list('fullname', flat=True))}</span>
+                    <span class="person" style="font-weight: bold;">${requester_contributor_names}</span>
                 % endif
                 ${message}
             </span>

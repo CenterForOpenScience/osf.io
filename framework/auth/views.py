@@ -666,7 +666,7 @@ def external_login_confirm_email_get(auth, uid, token):
         ).emit(
             user=user,
             event_context={
-                'external_id_provider': provider.name,
+                'external_id_provider': provider,
                 'can_change_preferences': False,
                 'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             },

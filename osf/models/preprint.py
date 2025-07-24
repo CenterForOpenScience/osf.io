@@ -35,8 +35,6 @@ from osf.utils.workflows import DefaultStates, ReviewStates
 from osf.utils import sanitize
 from osf.utils.permissions import ADMIN, WRITE
 from osf.utils.requests import get_request_and_user_id, string_type_request_headers
-from website.notifications.emails import get_user_subscriptions
-from website.notifications import utils
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient
 from website.project.licenses import set_license
 from website.util import api_v2_url, api_url_for, web_url_for
@@ -1032,8 +1030,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        event_type = utils.find_subscription_type('global_reviews')
-        user_subscriptions = get_user_subscriptions(recipient, event_type)
         if self.provider._id == 'osf':
             logo = settings.OSF_PREPRINTS_LOGO
         else:
@@ -1050,7 +1046,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                             provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
             'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
             'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
-            'no_future_emails': user_subscriptions['none'],
+            'no_future_emails': False,
             'is_creator': True,
             'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
             'logo': logo,

@@ -238,8 +238,13 @@ class AddonFileMoved(ComplexFileEvent):
             return
         # File
         if self.payload['destination']['kind'] != 'folder':
-            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
-                                                                 self.event_type, self.node)
+            moved, warn, rm_users = event_utils.categorize_users(
+                self.user,
+                self.event_type,
+                self.source_node,
+                self.event_type,
+                self.node
+            )
             warn_message = f'{self.html_message} You are no longer tracking that file based on the settings you selected for the component.'
             remove_message = (
                 f'{self.html_message} Your subscription has been removed due to '
@@ -248,11 +253,20 @@ class AddonFileMoved(ComplexFileEvent):
         # Folder
         else:
             # Gets all the files in a folder to look for permissions conflicts
-            files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
-                                                          self.payload['destination']['path'],
-                                                          self.payload['destination']['name'])
+            files = event_utils.get_file_subs_from_folder(
+                self.addon,
+                self.user,
+                self.payload['destination']['kind'],
+                self.payload['destination']['path'],
+                self.payload['destination']['name']
+            )
             # Bins users into different permissions
-            moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
+            moved, warn, rm_users = event_utils.compile_user_lists(
+                files,
+                self.user,
+                self.source_node,
+                self.node
+            )
 
             # For users that don't have individual file subscription but has permission on the new node
             warn_message = f'{self.html_message} You are no longer tracking that folder or files within based on the settings you selected for the component.'

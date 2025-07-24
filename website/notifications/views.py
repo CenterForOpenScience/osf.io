@@ -6,8 +6,7 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from osf.models import AbstractNode, Registration
-from osf.models.notifications import NotificationSubscriptionLegacy
+from osf.models import AbstractNode, Registration, NotificationSubscription
 from osf.utils.permissions import READ
 from website.notifications import utils
 from website.notifications.constants import NOTIFICATION_TYPES
@@ -69,7 +68,6 @@ def configure_subscription(auth):
                 f'{user!r} attempted to adopt_parent of a none node id, {target_id}'
             )
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
-        owner = user
     else:
         if not node.has_permission(user, READ):
             sentry.log_message(f'{user!r} attempted to subscribe to private node, {target_id}')
@@ -81,39 +79,27 @@ def configure_subscription(auth):
             )
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-        if notification_type != 'adopt_parent':
-            owner = node
+        if 'file_updated' in event and len(event) > len('file_updated'):
+            pass
         else:
-            if 'file_updated' in event and len(event) > len('file_updated'):
-                pass
-            else:
-                parent = node.parent_node
-                if not parent:
-                    sentry.log_message(
-                        '{!r} attempted to adopt_parent of '
-                        'the parentless project, {!r}'.format(user, node)
-                    )
-                    raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
+            parent = node.parent_node
+            if not parent:
+                sentry.log_message(
+                    '{!r} attempted to adopt_parent of '
+                    'the parentless project, {!r}'.format(user, node)
+                )
+                raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
-            # If adopt_parent make sure that this subscription is None for the current User
-            subscription = NotificationSubscriptionLegacy.load(event_id)
-            if not subscription:
-                return {}  # We're done here
-
-            subscription.remove_user_from_subscription(user)
-            return {}
-
-    subscription = NotificationSubscriptionLegacy.load(event_id)
-
-    if not subscription:
-        subscription = NotificationSubscriptionLegacy(_id=event_id, owner=owner, event_name=event)
-        subscription.save()
+    subscription, _ = NotificationSubscription.objects.get_or_create(
+        user=user,
+        subscribed_object=node,
+        notification_type__name=event
+    )
+    subscription.save()
 
     if node and node._id not in user.notifications_configured:
         user.notifications_configured[node._id] = True
         user.save()
-
-    subscription.add_user_to_subscription(user, notification_type)
 
     subscription.save()
 

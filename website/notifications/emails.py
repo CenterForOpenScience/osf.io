@@ -2,7 +2,7 @@ from django.apps import apps
 
 from babel import dates, core, Locale
 
-from osf.models import AbstractNode, NotificationSubscriptionLegacy
+from osf.models import AbstractNode, NotificationSubscription
 from osf.models.notifications import NotificationDigest
 from osf.utils.permissions import ADMIN, READ
 from website import mails
@@ -13,7 +13,7 @@ from website.util import web_url_for
 
 def notify(event, user, node, timestamp, **context):
     """Retrieve appropriate ***subscription*** and passe user list
-
+website/notifications/u
     :param event: event that triggered the notification
     :param user: user who triggered notification
     :param node: instance of Node
@@ -160,7 +160,10 @@ def check_node(node, event):
     """Return subscription for a particular node and event."""
     node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
     if node:
-        subscription = NotificationSubscriptionLegacy.load(utils.to_subscription_key(node._id, event))
+        subscription = NotificationSubscription.objects.filter(
+            node=node,
+            notification_type__name=event
+        )
         for notification_type in node_subscriptions:
             users = getattr(subscription, notification_type, [])
             if users:
@@ -173,11 +176,11 @@ def check_node(node, event):
 def get_user_subscriptions(user, event):
     if user.is_disabled:
         return {}
-    user_subscription = NotificationSubscriptionLegacy.load(utils.to_subscription_key(user._id, event))
-    if user_subscription:
-        return {key: list(getattr(user_subscription, key).all().values_list('guids___id', flat=True)) for key in constants.NOTIFICATION_TYPES}
-    else:
-        return {key: [user._id] if (event in constants.USER_SUBSCRIPTIONS_AVAILABLE and key == 'email_transactional') else [] for key in constants.NOTIFICATION_TYPES}
+    user_subscription, _ = NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type__name=event
+    )
+    return user_subscription
 
 
 def get_node_lineage(node):

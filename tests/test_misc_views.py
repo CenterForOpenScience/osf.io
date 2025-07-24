@@ -21,7 +21,7 @@ from osf.models import (
     Comment,
     OSFUser,
     SpamStatus,
-    NodeRelation,
+    NodeRelation, NotificationType,
 )
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -50,6 +50,7 @@ from website.project.views.node import _should_show_wiki_widget
 from website.util import web_url_for
 from website.util import rubeus
 from conftest import start_mock_send_grid
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -426,13 +427,15 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.save()
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url)
+        with capture_notifications() as notification:
+            res = self.app.get(url)
+        assert len(notification) == 1
+        assert notification[0]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
         assert 'new=true' not in parse.unquote(res.location)
 
-        assert self.mock_send_grid.call_count == 1
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
