@@ -182,21 +182,20 @@ services:
       - wb_tmp_vol:/tmp
     stdin_open: true
 
-  unoconv:
-    image: centerforopenscience/unoconv
+  unoserver:
+    image: ghcr.io/unoconv/unoserver-docker:latest
+    command: >
+      unoserver --interface 0.0.0.0 --port 2003 \
+                --uno-interface 127.0.0.1 --uno-port 2002 --daemon
     environment:
-      UNO_PATH: /usr/lib/libreoffice
-    command:
-      - /bin/bash
-      - -c
-      - /usr/bin/python3.7 /usr/local/bin/unoconv --listener --server=0.0.0.0 --port=2002 -vvv &&
-        chmod -R 777 /tmp/mfrlocalcache
-    restart: unless-stopped
+      LISTEN_INTERFACE: 0.0.0.0
+      LISTEN_PORT: 2003
     ports:
-      - 2002:2002
+      - "2003:2003"
     volumes:
       - wb_tmp_vol:/tmp
     stdin_open: true
+
 
   ###############
   # WaterButler #
