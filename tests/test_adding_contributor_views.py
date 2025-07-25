@@ -1,8 +1,6 @@
-
 from unittest.mock import ANY
 
 import time
-from http.cookies import SimpleCookie
 from unittest import mock
 
 import pytest
@@ -197,10 +195,9 @@ class TestAddingContributorViews(OsfTestCase):
         # send request
         url = self.project.api_url_for('project_contributors_post')
         assert self.project.can_edit(user=self.creator)
-        self.app.post(url, json=payload, auth=self.creator.auth)
-
-        # finalize_invitation should only have been called once
-        assert mock_send_claim_email.call_count == 1
+        with capture_notifications() as noitification:
+            self.app.post(url, json=payload, auth=self.creator.auth)
+        assert len(noitification) == 1
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -506,22 +503,28 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
+        with capture_notifications() as notifications:
+            send_claim_email(email=given_email, unclaimed_user=unreg_user, node=project)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
-        self.mock_notification_send.assert_called()
 
     def test_send_claim_email_to_referrer(self):
         project = ProjectFactory()
         referrer = project.creator
         given_email, real_email = fake_email(), fake_email()
-        unreg_user = project.add_unregistered_contributor(fullname=fake.name(),
-                                                          email=given_email, auth=Auth(
-                                                              referrer)
-                                                          )
+        unreg_user = project.add_unregistered_contributor(
+            fullname=fake.name(),
+            email=given_email,
+            auth=Auth(referrer)
+        )
         project.save()
-        send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
+        with capture_notifications() as notifications:
+            send_claim_email(email=real_email, unclaimed_user=unreg_user, node=project)
 
-        assert self.mock_notification_send.called
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications[1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
 
     def test_send_claim_email_before_throttle_expires(self):
         project = ProjectFactory()
@@ -533,10 +536,11 @@ class TestUserInviteViews(OsfTestCase):
         )
         project.save()
         send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        self.mock_notification_send.reset_mock()
         # 2nd call raises error because throttle hasn't expired
-        with pytest.raises(HTTPError):
-            send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        assert not self.mock_notification_send.called
+
+        with capture_notifications() as notifications:
+            with pytest.raises(HTTPError):
+                send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
+        assert not notifications
 
 

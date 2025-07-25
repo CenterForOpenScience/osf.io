@@ -111,6 +111,7 @@ class NotificationType(models.Model):
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
+        PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
         PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
         PROVIDER_REVIEWS_MODERATOR_SUBMISSION_CONFIRMATION = 'provider_reviews_moderator_submission_confirmation'
         PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED = 'preprint_request_withdrawal_requested'

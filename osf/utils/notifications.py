@@ -135,14 +135,11 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
 
     for contributor in resource.contributors.all():
-        context['contributor'] = contributor
+        context['contributor_fullname'] = contributor.fullname
         context['is_requester'] = resource.retraction.initiated_by == contributor
         NotificationType.objects.get(
             name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
         ).emit(
             user=contributor,
-            event_context={
-                'is_requester': contributor,
-
-            },
+            event_context=context
         )

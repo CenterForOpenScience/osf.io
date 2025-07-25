@@ -20,7 +20,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     context['profile_image_url'] = get_profile_image_url(user)
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
-    for recipient in provider_subscription.preorint.moderators.all():
+    for recipient in provider_subscription.subscribed_object.get_group('moderator').user_set.all():
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         ).emit(
