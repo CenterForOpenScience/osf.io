@@ -140,6 +140,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/primary_email_changed.html.mako'
+  - name: user_spam_banned
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/spam_user_banned.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions

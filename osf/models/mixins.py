@@ -26,6 +26,7 @@ from osf.exceptions import (
     InvalidTagError,
     BlockedEmailError,
 )
+from osf.models.notification_type import NotificationType
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
@@ -54,7 +55,7 @@ from osf.utils.workflows import (
 
 from osf.utils.requests import get_request_and_user_id
 from website.project import signals as project_signals
-from website import settings, mails, language
+from website import settings, language
 from website.project.licenses import set_license
 
 logger = logging.getLogger(__name__)
@@ -306,7 +307,7 @@ class AffiliatedInstitutionMixin(models.Model):
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
-            from . import NotificationType
+            from osf.models.notification_type import NotificationType
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
@@ -348,7 +349,7 @@ class AffiliatedInstitutionMixin(models.Model):
             if save:
                 self.save()
             self.update_search()
-            from . import NotificationType
+            from osf.models.notification_type import NotificationType
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
@@ -2272,12 +2273,14 @@ class SpamOverrideMixin(SpamMixin):
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            mails.send_mail(
-                to_addr=user.username,
-                mail=mails.SPAM_USER_BANNED,
-                user=user,
-                osf_support_email=settings.OSF_SUPPORT_EMAIL,
-                can_change_preferences=False,
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_SPAM_BANNED
+            ).emit(
+                user,
+                event_context={
+                    'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                    'can_change_preferences': False
+                }
             )
         user.save()
 

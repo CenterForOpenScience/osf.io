@@ -20,7 +20,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
-from . import NotificationType
+from osf.models.notification_type import NotificationType
 
 from .subject import Subject
 from .tag import Tag

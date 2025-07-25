@@ -26,7 +26,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from admin_tests.utilities import setup_view
 from api.preprints.views import PreprintContributorDetail
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, NotificationType
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf_tests.factories import (
     ProjectFactory,
@@ -43,7 +43,7 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewStates
 from tests.base import assert_datetime_equal, OsfTestCase
-from tests.utils import assert_preprint_logs
+from tests.utils import assert_preprint_logs, capture_notifications
 from website import settings, mails
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
@@ -1999,13 +1999,15 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.mock_send_grid = start_mock_send_grid(self)
 
     def test_creator_gets_email(self):
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
-        domain = self.preprint.provider.domain or settings.DOMAIN
-        self.mock_send_grid.assert_called()
-        assert self.mock_send_grid.call_count == 1
+        with capture_notifications() as notifications:
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
 
-        self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
 
 
 class TestPreprintOsfStorage(OsfTestCase):

@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
-from . import NotificationType
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 from .metaschema import RegistrationSchemaBlock
 from .schema_response_block import SchemaResponseBlock

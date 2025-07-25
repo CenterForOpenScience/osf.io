@@ -188,7 +188,7 @@ class TestFileRemoved(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscription(
+        self.project_subscription = factories.NotificationSubscriptionFactory(
             user=self.user,
             notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_ADDED),
         )
@@ -224,10 +224,9 @@ class TestFolderCreated(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
+        self.project_subscription = factories.NotificationSubscriptionFactory(
+            user=self.user,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_ADDED),
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
@@ -236,7 +235,7 @@ class TestFolderCreated(OsfTestCase):
         )
 
     def test_info_formed_correct(self):
-        assert 'file_updated' == self.event.event_type
+        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
         assert 'created folder "<b>Three/</b>".' == self.event.html_message
         assert 'created folder "Three/".' == self.event.text_message
 
