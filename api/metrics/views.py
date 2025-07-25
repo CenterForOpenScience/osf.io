@@ -273,6 +273,7 @@ VIEWABLE_REPORTS = {
     'user_summary': reports.UserSummaryReport,
     'spam_summary': reports.SpamSummaryReport,
     'new_user_domains': reports.NewUserDomainReport,
+    'notification_summary': reports.NotificationSummaryReport
 }
 
 

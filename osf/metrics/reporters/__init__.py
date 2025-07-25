@@ -14,6 +14,7 @@ from .public_item_usage import PublicItemUsageReporter
 from .user_count import UserCountReporter
 from .spam_count import SpamCountReporter
 from .private_spam_metrics import PrivateSpamMetricsReporter
+from .notification_count import NotificationCountReporter
 
 
 class AllDailyReporters(enum.Enum):
@@ -34,3 +35,4 @@ class AllMonthlyReporters(enum.Enum):
     INSTITUTIONAL_SUMMARY = InstitutionalSummaryMonthlyReporter
     ITEM_USAGE = PublicItemUsageReporter
     PRIVATE_SPAM_METRICS = PrivateSpamMetricsReporter
+    NOTIFICATIONS_COUNT = NotificationCountReporter

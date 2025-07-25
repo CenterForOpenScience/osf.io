@@ -12,6 +12,7 @@ where ``$which_metric`` is one of:
   institution_summary
   user_summary
   node_summary
+  notification_summary
 
 """
 import csv
@@ -28,6 +29,7 @@ from osf.metrics import (
     PreprintSummaryReport,
     # StorageAddonUsage,
     UserSummaryReport,
+    NotificationSummaryReport
 )
 
 
@@ -361,6 +363,12 @@ def _map_user_summary(row):
         'unconfirmed': int(row['status.unconfirmed'] or 0),
     }
 
+def _map_notification_summary(row):
+    return {
+        'notifications_count': int(row['notification_subscriptions_count'] or 0),
+        'users_count': int(row['notification_subscriptions_users_count'] or 0),
+    }
+
 SUMMARIES = {
     'download_count': {
         'mapper': _map_download_count,
@@ -386,6 +394,10 @@ SUMMARIES = {
         'mapper': _map_user_summary,
         'class': UserSummaryReport,
     },
+    'notification_summary': {
+        'mapper': _map_notification_summary,
+        'class': NotificationSummaryReport,
+    }
 }
 
 def _timestamp_to_dt(timestamp):
