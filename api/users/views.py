@@ -103,7 +103,7 @@ from osf.models import (
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
-from website import mails, settings, language
+from website import settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
@@ -639,11 +639,14 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
-        mails.send_mail(
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            mail=mails.REQUEST_EXPORT,
+        NotificationType.objects.get(
+            name=NotificationType.Type.DESK_REQUEST_EXPORT,
+        ).emit(
             user=user,
-            can_change_preferences=False,
+            destination_address=settings.OSF_SUPPORT_EMAIL,
+            event_context={
+                'can_change_preferences': False,
+            },
         )
         user.email_last_sent = timezone.now()
         user.save()

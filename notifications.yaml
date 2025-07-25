@@ -136,6 +136,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_create.html.mako'
+  - name: user_primary_email_changed
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/primary_email_changed.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
@@ -335,6 +339,10 @@ notification_types:
     object_content_type_model_name: desk
     template: 'website/templates/emails/crossref_doi_error.html.mako'
   - name: desk_request_deactivation
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/support_request.html.mako'
+  - name: desk_request_export
     __docs__: ...
     object_content_type_model_name: desk
     template: 'website/templates/emails/support_request.html.mako'
