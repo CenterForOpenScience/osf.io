@@ -168,7 +168,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
 
         # check mail was sent
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
+        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword

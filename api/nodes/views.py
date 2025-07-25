@@ -1051,7 +1051,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 user=user,
                 event_context={
                     'guid': node._id,
-                    'title': node._id,
+                    'title': node.title,
                     'can_change_preferences': False,
                 },
             )
@@ -1063,7 +1063,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 user=user,
                 event_context={
                     'guid': fork._id,
-                    'title': node._id,
+                    'title': node.title,
                     'can_change_preferences': False,
                 },
             )

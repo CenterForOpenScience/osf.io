@@ -347,10 +347,6 @@ class ModeratorSerializer(JSONAPISerializer):
 
         if bool(get_perms(user, provider)):
             raise ValidationError('Specified user is already a moderator.')
-        if 'claim_url' in context:
-            template = NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
-        else:
-            template = NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in REVIEW_GROUPS:
@@ -362,9 +358,12 @@ class ModeratorSerializer(JSONAPISerializer):
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
-        print(template, context)
+        if 'claim_url' in context:
+            notification_type = NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        else:
+            notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
         NotificationType.objects.get(
-            name=template,
+            name=notification_type,
         ).emit(
             user=user,
             event_context=context,

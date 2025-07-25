@@ -639,18 +639,6 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
     approval_errors.sort()
     if not dry_run:
         upload.save()
-        notification_type = None
-        event_context = {
-            'initiator_fullname': initiator.fullname,
-            'auto_approval': auto_approval,
-            'count': row_count,
-            'pending_submissions_url': get_registration_provider_submissions_url(provider),
-            'draft_errors': draft_errors,
-            'approval_errors': approval_errors,
-            'successes': success_count,
-            'failures': len(draft_errors),
-            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-        }
 
         if upload.state == JobState.DONE_FULL:
             notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL
@@ -666,12 +654,22 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             name=notification_type,
         ).emit(
             user=initiator,
-            event_context=event_context,
+            event_context={
+                'initiator_fullname': initiator.fullname,
+                'auto_approval': auto_approval,
+                'count': row_count,
+                'pending_submissions_url': get_registration_provider_submissions_url(provider),
+                'draft_errors': draft_errors,
+                'approval_errors': approval_errors,
+                'successes': success_count,
+                'failures': len(draft_errors),
+                'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+            },
         )
 
         upload.email_sent = timezone.now()
         upload.save()
-        logger.info(f'Notification sent to bulk upload initiator [{initiator._id}]')
+        logger.info(f'Email sent to bulk upload initiator [{initiator._id}]')
 
 
 def handle_internal_error(initiator=None, provider=None, message=None, dry_run=True):

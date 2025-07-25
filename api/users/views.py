@@ -825,29 +825,33 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
         if not email:
             raise ValidationError('Request must include email in query params.')
 
-        institutional = bool(request.query_params.get('institutional', None))
-        mail_template = 'forgot_password' if not institutional else 'forgot_password_institution'
-
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
-        kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
+        institutional = bool(request.query_params.get('institutional', None))
 
         if user_obj:
             # rate limit forgot_password_post
             if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
-                                 'before trying again.'
-                kind = 'error'
-                return Response({'message': status_message, 'kind': kind}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+                return Response(
+                    {
+                        'message': language.THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE,
+                        'kind': 'error',
+                    },
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
             elif user_obj.is_active:
                 # new random verification key (v2)
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
                 reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
+                if institutional:
+                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
+                else:
+                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD
 
-                NotificationType.objects.get(name=mail_template).emit(
+                NotificationType.objects.get(name=notification_type).emit(
                     user=user_obj,
                     message_frequency='instantly',
                     event_context={
@@ -856,7 +860,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                     },
                 )
 
-        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'message': status_message,
+                'kind': 'success',
+                'institutional': institutional,
+            },
+        )
 
     @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
