@@ -786,7 +786,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
         # Don't go anywhere
         return JsonResponse(
             {
-                'external_id_provider': external_id_provider.name,
+                'external_id_provider': external_id_provider,
                 'auth_user_fullname': fullname,
             },
             status=status.HTTP_200_OK,

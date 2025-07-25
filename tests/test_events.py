@@ -1,7 +1,11 @@
 from collections import OrderedDict
 
 from unittest import mock
+
+from django.contrib.contenttypes.models import ContentType
 from pytest import raises
+
+from osf.models import NotificationType
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
@@ -184,11 +188,12 @@ class TestFileRemoved(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
+        self.project_subscription = factories.NotificationSubscription(
+            user=self.user,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_ADDED),
         )
+        self.project_subscription.object_id = self.project.id
+        self.project_subscription.content_type = ContentType.objects.get_for_model(self.project)
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
         self.event = event_registry['file_removed'](
@@ -196,12 +201,12 @@ class TestFileRemoved(OsfTestCase):
         )
 
     def test_info_formed_correct_file(self):
-        assert 'file_updated' == self.event.event_type
+        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
         assert f'removed file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
         assert f'removed file "{materialized.lstrip("/")}".' == self.event.text_message
 
     def test_info_formed_correct_folder(self):
-        assert 'file_updated' == self.event.event_type
+        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
         self.event.payload['metadata']['materialized'] += '/'
         assert f'removed folder "<b>{materialized.lstrip("/")}/</b>".' == self.event.html_message
         assert f'removed folder "{materialized.lstrip("/")}/".' == self.event.text_message

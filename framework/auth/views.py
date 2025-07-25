@@ -841,23 +841,24 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
-            notificaton_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
-            notificaton_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
     elif merge_target:
         # Merge account confirmation
-        notificaton_type = NotificationType.Type.USER_CONFIRM_MERGE
+        notification_type = NotificationType.Type.USER_CONFIRM_MERGE
     elif user.is_active:
         # Add email confirmation
-        notificaton_type = NotificationType.Type.USER_CONFIRM_EMAIL
+        notification_type = NotificationType.Type.USER_CONFIRM_EMAIL
     elif campaign:
         # Account creation confirmation: from campaign
-        notificaton_type = campaigns.email_template_for_campaign(campaign)
+        notification_type = campaigns.email_template_for_campaign(campaign)
     else:
         # Account creation confirmation: from OSF
-        notificaton_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    NotificationType.objects.get(name=notificaton_type).emit(
+    print(notification_type)
+    NotificationType.objects.get(name=notification_type).emit(
         user=user,
         event_context={
             'user_fullname': user.fullname,

@@ -66,7 +66,7 @@ class NotificationType(models.Model):
         USER_PASSWORD_RESET = 'user_password_reset'
         USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = 'user_contributor_added_draft_registration'
         USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = 'user_external_login_confirm_email_create'
-        USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_confirm_email_link'
+        USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_email_confirm_link'
         USER_CONFIRM_MERGE = 'user_confirm_merge'
         USER_CONFIRM_EMAIL = 'user_confirm_email'
         USER_INITIAL_CONFIRM_EMAIL = 'user_initial_confirm_email'

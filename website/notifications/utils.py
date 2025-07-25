@@ -149,14 +149,15 @@ def users_to_remove(source_event, source_node, new_node):
     removed_users = {key: [] for key in constants.NOTIFICATION_TYPES}
     if source_node == new_node:
         return removed_users
-    old_sub = NotificationSubscription.objects.get(
-        subscribed_object=source_node,
+    sub = NotificationSubscription.objects.get(
+        object_id=source_node.id,
+        content_type=ContentType.objects.get_for_model(source_node),
         notification_type__name=source_event
     )
     for notification_type in constants.NOTIFICATION_TYPES:
         users = []
-        if hasattr(old_sub, notification_type):
-            users += list(getattr(old_sub, notification_type).values_list('guids___id', flat=True))
+        if hasattr(sub, notification_type):
+            users += list(getattr(sub, notification_type).values_list('guids___id', flat=True))
     return removed_users
 
 

@@ -1,15 +1,11 @@
 # This file contains the configuration for our notification system using the NotificationType object, this is intended to
-# exist as a simple declarative list of NotificationTypes and their attributes.
+# exist as a simple declarative list of NotificationTypes and their attributes to populate the type data.
 
-# Workflow:
-# 1. Add a new notification template
-# 2. Add a entry here with the desired notification types
-# 3. Add name tp Enum osf.notification.NotificationType.Type
-# 4. Use the emit method to send or subscribe the notification for immediate deliver or periodic digest.
 notification_types:
-  #### GLOBAL (User Notifications)
+  #### User Notifications
   - name: user_pending_verification_registered
-    __docs__: ...
+    __docs__: This email is sent when a user requests access to a node and has confirm their identity,
+      `referrer` is sent an email to forward the confirmation link.
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_registered.html.mako'
   - name: user_pending_verification
@@ -132,6 +128,14 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/registration_bulk_upload_failure_duplicates.html.mako'
+  - name: user_external_login_email_confirm_link
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/external_confirm_link.html.mako'
+  - name: user_external_login_confirm_email_create
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/external_confirm_create.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
