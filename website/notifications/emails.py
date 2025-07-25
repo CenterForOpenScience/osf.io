@@ -1,8 +1,9 @@
 from django.apps import apps
 
 from babel import dates, core, Locale
+from django.contrib.contenttypes.models import ContentType
 
-from osf.models import AbstractNode, NotificationSubscription
+from osf.models import AbstractNode, NotificationSubscription, NotificationType
 from osf.models.notifications import NotificationDigest
 from osf.utils.permissions import ADMIN, READ
 from website import mails
@@ -22,37 +23,14 @@ website/notifications/u
         target_user: used with comment_replies
     :return: List of user ids notifications were sent to
     """
-    sent_users = []
-    # The user who the current comment is a reply to
-    target_user = context.get('target_user', None)
-    exclude = context.get('exclude', [])
-    # do not notify user who initiated the emails
-    exclude.append(user._id)
-
-    event_type = utils.find_subscription_type(event)
-    if target_user and event_type in constants.USER_SUBSCRIPTIONS_AVAILABLE:
-        # global user
-        subscriptions = get_user_subscriptions(target_user, event_type)
-    else:
-        # local project user
-        subscriptions = compile_subscriptions(node, event_type, event)
-
-    for notification_type in subscriptions:
-        if notification_type == 'none' or not subscriptions[notification_type]:
-            continue
-        # Remove excluded ids from each notification type
-        subscriptions[notification_type] = [guid for guid in subscriptions[notification_type] if guid not in exclude]
-
-        # If target, they get a reply email and are removed from the general email
-        if target_user and target_user._id in subscriptions[notification_type]:
-            subscriptions[notification_type].remove(target_user._id)
-            store_emails([target_user._id], notification_type, 'comment_replies', user, node, timestamp, **context)
-            sent_users.append(target_user._id)
-
-        if subscriptions[notification_type]:
-            store_emails(subscriptions[notification_type], notification_type, event_type, user, node, timestamp, **context)
-            sent_users.extend(subscriptions[notification_type])
-    return sent_users
+    if event.endswith('_file_updated'):
+        NotificationType.objects.get(
+            name=NotificationType.Type.NODE_FILE_ADDED
+        ).emit(
+            user=user,
+            subscribed_object=node,
+            event_context=context
+        )
 
 def notify_mentions(event, user, node, timestamp, **context):
     OSFUser = apps.get_model('osf', 'OSFUser')
@@ -161,7 +139,8 @@ def check_node(node, event):
     node_subscriptions = {key: [] for key in constants.NOTIFICATION_TYPES}
     if node:
         subscription = NotificationSubscription.objects.filter(
-            node=node,
+            object_id=node.id,
+            content_type=ContentType.objects.get_for_model(node),
             notification_type__name=event
         )
         for notification_type in node_subscriptions:

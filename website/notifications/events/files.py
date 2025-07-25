@@ -68,7 +68,7 @@ class FileEvent(Event):
     @property
     def event_type(self):
         """Most basic event type."""
-        return 'file_updated'
+        return 'node_file_updated'
 
     @property
     def waterbutler_id(self):

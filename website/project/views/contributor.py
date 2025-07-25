@@ -588,7 +588,7 @@ def check_email_throttle(node, contributor, throttle=None):
 
     try:
         notification_type = NotificationType.objects.get(
-            name=NotificationType.Type.NODE_COMMENT.value  # or whatever event type you're using for 'contributor added'
+            name=NotificationType.Type.NODE_COMMENT.value
         )
     except NotificationType.DoesNotExist:
         return False  # Fail-safe: if the notification type isn't set up, don't throttle
@@ -600,7 +600,7 @@ def check_email_throttle(node, contributor, throttle=None):
         user=contributor,
         notification_type=notification_type,
         content_type=ContentType.objects.get_for_model(node),
-        object_id=str(node.id)
+        object_id=node.id
     ).first()
 
     if not subscription:
@@ -619,7 +619,7 @@ def check_email_throttle(node, contributor, throttle=None):
     return False  # No previous sent notification, not throttled
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, auth=None, email_template=None, *args, **kwargs):
+def notify_added_contributor(node, contributor, email_template, auth=None, *args, **kwargs):
     """Send a notification to a contributor who was just added to a node.
 
     Handles:
