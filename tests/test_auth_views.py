@@ -40,11 +40,9 @@ from tests.base import (
 )
 from website import mails, settings
 from website.util import api_url_for, web_url_for
-from conftest import start_mock_send_grid
 
 pytestmark = pytest.mark.django_db
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthViews(OsfTestCase):
 
@@ -52,8 +50,6 @@ class TestAuthViews(OsfTestCase):
         super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
-
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_register_ok(self):
         url = api_url_for('register_user')

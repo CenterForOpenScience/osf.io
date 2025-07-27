@@ -65,7 +65,6 @@ class TestRegistrationBulkCreationRowError:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestBulkUploadTasks:
 
     @pytest.fixture()

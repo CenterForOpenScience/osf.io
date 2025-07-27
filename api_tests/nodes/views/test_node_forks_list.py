@@ -205,7 +205,6 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -419,9 +418,7 @@ class TestNodeForkCreate:
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
             private_project.title
 
-    def test_send_email_success(
-            self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+    def test_send_email_success(self, app, user, public_project_url, fork_data_with_title, public_project):
 
         with capture_notifications() as notifications:
             res = app.post_json_api(
@@ -437,13 +434,15 @@ class TestNodeForkCreate:
         assert notifications[0]['type'] == NotificationType.Type.NODE_FORK_COMPLETED
 
     def test_send_email_failed(
-            self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+            self, app, user, public_project_url, fork_data_with_title, public_project):
 
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
-            with pytest.raises(Exception):
-                app.post_json_api(
-                    public_project_url,
-                    fork_data_with_title,
-                    auth=user.auth)
-                assert mock_send_grid.called
+            with capture_notifications() as notifications:
+                with pytest.raises(Exception):
+                    app.post_json_api(
+                        public_project_url,
+                        fork_data_with_title,
+                        auth=user.auth
+                    )
+                assert len(notifications) == 1
+                assert notifications[0]['type'] == NotificationType.Type.NODE_FORK_FAILED

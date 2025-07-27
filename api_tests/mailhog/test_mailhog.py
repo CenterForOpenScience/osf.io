@@ -1,6 +1,7 @@
 import requests
 import pytest
-from website.mails import send_mail, TEST
+from django.core.mail import send_mail
+from website.mails import TEST
 from waffle.testutils import override_switch
 from osf import features
 from website import settings
@@ -22,10 +23,9 @@ from website.util import api_url_for
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestMailHog:
 
-    def test_mailhog_received_mail(self, mock_send_grid):
+    def test_mailhog_received_mail(self):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
             mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
@@ -36,12 +36,10 @@ class TestMailHog:
             assert res['count'] == 1
             assert res['items'][0]['Content']['Headers']['To'][0] == 'to_addr@mail.com'
             assert res['items'][0]['Content']['Headers']['Subject'][0] == 'A test email to Mailhog'
-            mock_send_grid.assert_called()
             requests.delete(mailhog_v1)
 
 
 @pytest.mark.django_db
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.ENABLE_TEST_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthMailhog(OsfTestCase):

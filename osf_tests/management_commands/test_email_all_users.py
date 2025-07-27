@@ -2,11 +2,13 @@ import pytest
 
 from django.utils import timezone
 
+from osf.models import NotificationType
 from osf_tests.factories import UserFactory
 
 from osf.management.commands.email_all_users import email_all_users
+from tests.utils import capture_notifications
 
-@pytest.mark.usefixtures('mock_send_grid')
+
 class TestEmailAllUsers:
 
     @pytest.fixture()
@@ -41,25 +43,29 @@ class TestEmailAllUsers:
         return UserFactory(is_registered=False)
 
     @pytest.mark.django_db
-    def test_email_all_users_dry(self, mock_send_grid, superuser):
-        email_all_users('TOU_NOTIF', dry_run=True)
-
-        mock_send_grid.assert_called()
+    def test_email_all_users_dry(self, superuser):
+        with capture_notifications() as notifications:
+            email_all_users('TOU_NOTIF', dry_run=True)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     @pytest.mark.django_db
     def test_dont_email_inactive_users(
-            self, mock_send_grid, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
+            self, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
 
-        email_all_users('TOU_NOTIF')
-
-        mock_send_grid.assert_not_called()
+        with capture_notifications() as notifications:
+            email_all_users('TOU_NOTIF')
+        assert not notifications
 
     @pytest.mark.django_db
-    def test_email_all_users_offset(self, mock_send_grid, user, user2):
-        email_all_users('TOU_NOTIF', offset=1, start_id=0)
+    def test_email_all_users_offset(self, user, user2):
+        with capture_notifications() as notifications:
+            email_all_users('TOU_NOTIF', offset=1, start_id=0)
 
-        email_all_users('TOU_NOTIF', offset=1, start_id=1)
+            email_all_users('TOU_NOTIF', offset=1, start_id=1)
 
-        email_all_users('TOU_NOTIF', offset=1, start_id=2)
+            email_all_users('TOU_NOTIF', offset=1, start_id=2)
 
-        assert mock_send_grid.call_count == 2
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED

@@ -21,17 +21,15 @@ from osf_tests.factories import (
 from importlib import import_module
 from django.conf import settings as django_conf_settings
 from osf.models import UserSessionMap
-from tests.utils import run_celery_tasks
+from tests.utils import run_celery_tasks, capture_notifications
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
-from conftest import start_mock_send_grid
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestUserMerging(OsfTestCase):
     def setUp(self):
@@ -39,7 +37,6 @@ class TestUserMerging(OsfTestCase):
         self.user = UserFactory()
         with self.context:
             handlers.celery_before_request()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def _add_unconfirmed_user(self):
         self.unconfirmed = UnconfirmedUserFactory()
@@ -294,7 +291,8 @@ class TestUserMerging(OsfTestCase):
         #Explictly reconnect signal as it is disconnected by default for test
         contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
-        with override_flag(ENABLE_GV, active=True):
-            self.user.merge_user(other_user)
+        with capture_notifications() as notifications:
+            with override_flag(ENABLE_GV, active=True):
+                self.user.merge_user(other_user)
+            assert not notifications
         assert other_user.merged_by._id == self.user._id
-        assert self.mock_send_grid.called is False

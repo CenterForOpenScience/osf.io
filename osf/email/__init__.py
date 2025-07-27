@@ -3,7 +3,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 import waffle
-from sendgrid import SendGridAPIClient
+from sendgrid import SendGridAPIClient, Personalization, To, Cc, Category, ReplyTo, Bcc
 from sendgrid.helpers.mail import Mail
 
 from osf import features
@@ -11,7 +11,7 @@ from website import settings
 from django.core.mail import EmailMessage, get_connection
 
 
-def send_email_over_smtp(to_addr, notification_type, context):
+def send_email_over_smtp(to_addr, notification_type, context, email_context):
     """Send an email notification using SMTP. This is typically not used in productions as other 3rd party mail services
     are preferred. This is to be used for tests and on staging environments and special situations.
 
@@ -19,6 +19,7 @@ def send_email_over_smtp(to_addr, notification_type, context):
         to_addr (str): The recipient's email address.
         notification_type (str): The subject of the notification.
         context (dict): The email content context.
+        email_context (dict): The email context for sending, such as header changes for BCC or reply-to
     """
     if not settings.MAIL_SERVER:
         raise NotImplementedError('MAIL_SERVER is not set')
@@ -53,7 +54,7 @@ def send_email_over_smtp(to_addr, notification_type, context):
         )
 
 
-def send_email_with_send_grid(to_addr, notification_type, context):
+def send_email_with_send_grid(to_addr, notification_type, context, email_context):
     """Send an email notification using SendGrid.
 
     Args:
@@ -70,6 +71,39 @@ def send_email_with_send_grid(to_addr, notification_type, context):
         subject=notification_type,
         html_content=context.get('message', '')
     )
+    in_allowed_list = to_addr in settings.SENDGRID_EMAIL_WHITELIST
+    if settings.SENDGRID_WHITELIST_MODE and not in_allowed_list:
+        from framework.sentry import sentry
+
+        sentry.log_message(
+            f'SENDGRID_WHITELIST_MODE is True. Failed to send emails to non-whitelisted recipient {to_addr}.'
+        )
+        return False
+
+    # Personalization to handle To, CC, and BCC sendgrid client concept
+    personalization = Personalization()
+
+    personalization.add_to(To(to_addr))
+
+    if cc_addr := email_context.get('cc_addr'):
+        if isinstance(cc_addr, str):
+            cc_addr = [cc_addr]
+        for email in cc_addr:
+            personalization.add_cc(Cc(email))
+
+    if bcc_addr := email_context.get('cc_addr'):
+        if isinstance(bcc_addr, str):
+            bcc_addr = [bcc_addr]
+        for email in bcc_addr:
+            personalization.add_bcc(Bcc(email))
+
+    if reply_to := email_context.get('reply_to'):
+        message.reply_to = ReplyTo(reply_to)
+
+    message.add_personalization(personalization)
+
+    if email_categories := email_context.get('email_categories'):
+        message.add_category([Category(x) for x in email_categories])
 
     try:
         sg = SendGridAPIClient(settings.SENDGRID_API_KEY)

@@ -18,6 +18,7 @@ from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, Chan
 from framework.auth.signals import user_account_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
+from tests.utils import capture_notifications
 from website import settings
 from website import filters
 from website.views import find_bookmark_collection
@@ -32,7 +33,7 @@ from osf.models import (
     DraftRegistrationContributor,
     DraftRegistration,
     DraftNode,
-    UserSessionMap,
+    UserSessionMap, NotificationType,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
@@ -885,8 +886,6 @@ class TestCookieMethods:
         assert OSFUser.from_cookie(cookie) is None
 
 
-@pytest.mark.usefixtures('mock_send_grid')
-@pytest.mark.usefixtures('mock_notification_send')
 class TestChangePassword:
 
     def test_change_password(self, user):
@@ -898,19 +897,23 @@ class TestChangePassword:
         user.change_password(old_password, new_password, confirm_password)
         assert bool(user.check_password(new_password)) is True
 
-    def test_set_password_notify_default(self, mock_notification_send, user):
+    def test_set_password_notify_default(self, user):
         old_password = 'password'
-        user.set_password(old_password)
-        user.save()
-        assert mock_notification_send.called is True
+        with capture_notifications() as notifications:
+            user.set_password(old_password)
+            user.save()
 
-    def test_set_password_no_notify(self, mock_notification_send, user):
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PASSWORD_CHANGED
+
+    def test_set_password_no_notify(self, user):
         old_password = 'password'
-        user.set_password(old_password, notify=False)
-        user.save()
-        assert mock_notification_send.called is False
+        with capture_notifications() as notifications:
+            user.set_password(old_password, notify=False)
+            user.save()
+        assert not notifications
 
-    def test_check_password_upgrade_hasher_no_notify(self, mock_notification_send, user, settings):
+    def test_check_password_upgrade_hasher_no_notify(self, user, settings):
         # NOTE: settings fixture comes from pytest-django.
         # changes get reverted after tests run
         settings.PASSWORD_HASHERS = (
@@ -919,9 +922,10 @@ class TestChangePassword:
         )
         raw_password = 'password'
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
-        user.check_password(raw_password)
+        with capture_notifications() as notifications:
+            user.check_password(raw_password)
+        assert not notifications
         assert user.password.startswith('md5$')
-        assert mock_notification_send.called is False
 
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
                                      error_message='Old password is invalid'):

@@ -27,7 +27,6 @@ def make_registration_payload(*node_ids):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()

@@ -12,6 +12,8 @@ from datetime import timedelta
 from collections import OrderedDict
 import enum
 
+from celery.schedules import crontab
+
 os_env = os.environ
 
 
@@ -140,7 +142,6 @@ OSF_SERVER_CERT = None
 # External services
 USE_CDN_FOR_CLIENT_LIBS = True
 
-USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
 ENABLE_TEST_EMAIL = False
 # support email
@@ -550,7 +551,6 @@ class CeleryConfig:
     # Modules to import when celery launches
     imports = (
         'framework.celery_tasks',
-        'framework.email.tasks',
         'osf.external.chronos.tasks',
         'osf.management.commands.data_storage_usage',
         'osf.management.commands.registration_schema_metrics',
@@ -598,149 +598,104 @@ class CeleryConfig:
     #     'scripts.analytics.upload',
     # )
 
-    # celery.schedule will not be installed when running invoke requirements the first time.
-    try:
-        from celery.schedules import crontab
-    except ImportError:
-        pass
-    else:
-        #  Setting up a scheduler, essentially replaces an independent cron job
-        # Note: these times must be in UTC
-        beat_schedule = {
-            '5-minute-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute='*/5'),
-                'args': ('email_transactional',),
-            },
-            'daily-emails': {
-                'task': 'website.notifications.tasks.send_users_email',
-                'schedule': crontab(minute=0, hour=5),  # Daily at 12 a.m. EST
-                'args': ('email_digest',),
-            },
-            # 'refresh_addons': {  # Handled by GravyValet now
-            #     'task': 'scripts.refresh_addon_tokens',
-            #     'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m
-            #     'kwargs': {'dry_run': False, 'addons': {
-            #         'box': 60,          # https://docs.box.com/docs/oauth-20#section-6-using-the-access-and-refresh-tokens
-            #         'googledrive': 14,  # https://developers.google.com/identity/protocols/OAuth2#expiration
-            #         'mendeley': 14      # http://dev.mendeley.com/reference/topics/authorization_overview.html
-            #     }},
-            # },
-            'retract_registrations': {
-                'task': 'scripts.retract_registrations',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'embargo_registrations': {
-                'task': 'scripts.embargo_registrations',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'add_missing_identifiers_to_preprints': {
-                'task': 'scripts.add_missing_identifiers_to_preprints',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'approve_registrations': {
-                'task': 'scripts.approve_registrations',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'approve_embargo_terminations': {
-                'task': 'scripts.approve_embargo_terminations',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'triggered_mails': {
-                'task': 'scripts.triggered_mails',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'clear_expired_sessions': {
-                'task': 'osf.management.commands.clear_expired_sessions',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-            'send_queued_mails': {
-                'task': 'scripts.send_queued_mails',
-                'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
-                'kwargs': {'dry_run': False},
-            },
-            'new-and-noteworthy': {
-                'task': 'scripts.populate_new_and_noteworthy_projects',
-                'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
-                'kwargs': {'dry_run': False}
-            },
-            'registration_schema_metrics': {
-                'task': 'management.commands.registration_schema_metrics',
-                'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
-                'kwargs': {'dry_run': False}
-            },
-            'daily_reporters_go': {
-                'task': 'management.commands.daily_reporters_go',
-                'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
-            },
-            'monthly_reporters_go': {
-                'task': 'management.commands.monthly_reporters_go',
-                'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
-            },
-            # 'data_storage_usage': {
-            #   'task': 'management.commands.data_storage_usage',
-            #   'schedule': crontab(day_of_month=1, minute=30, hour=4),  # Last of the month at 11:30 p.m.
-            # },
-            # 'migrate_pagecounter_data': {
-            #   'task': 'management.commands.migrate_pagecounter_data',
-            #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
-            # },
-            # 'migrate_deleted_date': {
-            #   'task': 'management.commands.migrate_deleted_date',
-            #   'schedule': crontab(minute=0, hour=3),
-            # 'addon_deleted_date': {
-            #   'task': 'management.commands.addon_deleted_date',
-            #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
-            # },
-            'generate_sitemap': {
-                'task': 'scripts.generate_sitemap',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
-            },
-            'deactivate_requested_accounts': {
-                'task': 'management.commands.deactivate_requested_accounts',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
-            },
-            'check_crossref_doi': {
-                'task': 'management.commands.check_crossref_dois',
-                'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
-            },
-            'update_institution_project_counts': {
-                'task': 'management.commands.update_institution_project_counts',
-                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
-            },
-#            'archive_registrations_on_IA': {
-#                'task': 'osf.management.commands.archive_registrations_on_IA',
-#                'schedule': crontab(minute=0, hour=5),  # Daily 4:00 a.m.
-#                'kwargs': {'dry_run': False}
-#            },
-            'delete_withdrawn_or_failed_registration_files': {
-                'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {
-                    'dry_run': False,
-                    'batch_size_withdrawn': 10,
-                    'batch_size_stuck': 10
-                }
-            },
-            'monitor_registration_bulk_upload_jobs': {
-                'task': 'api.providers.tasks.monitor_registration_bulk_upload_jobs',
-                # 'schedule': crontab(hour='*/3'),  # Every 3 hours
-                'schedule': crontab(minute='*/5'),  # Every 5 minutes for staging server QA test
-                'kwargs': {'dry_run': False}
-            },
-            'approve_registration_updates': {
-                'task': 'osf.management.commands.approve_pending_schema_responses',
-                'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-                'kwargs': {'dry_run': False},
-            },
-        }
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    # Note: these times must be in UTC
+    beat_schedule = {
+        'retract_registrations': {
+            'task': 'scripts.retract_registrations',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'embargo_registrations': {
+            'task': 'scripts.embargo_registrations',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'add_missing_identifiers_to_preprints': {
+            'task': 'scripts.add_missing_identifiers_to_preprints',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_registrations': {
+            'task': 'scripts.approve_registrations',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'approve_embargo_terminations': {
+            'task': 'scripts.approve_embargo_terminations',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'triggered_mails': {
+            'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'clear_expired_sessions': {
+            'task': 'osf.management.commands.clear_expired_sessions',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_queued_mails': {
+            'task': 'scripts.send_queued_mails',
+            'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
+            'kwargs': {'dry_run': False},
+        },
+        'new-and-noteworthy': {
+            'task': 'scripts.populate_new_and_noteworthy_projects',
+            'schedule': crontab(minute=0, hour=7, day_of_week=6),  # Saturday 2:00 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'registration_schema_metrics': {
+            'task': 'management.commands.registration_schema_metrics',
+            'schedule': crontab(minute=45, hour=7, day_of_month=3),  # Third day of month 2:45 a.m.
+            'kwargs': {'dry_run': False}
+        },
+        'daily_reporters_go': {
+            'task': 'management.commands.daily_reporters_go',
+            'schedule': crontab(minute=0, hour=6),  # Daily 1:00 a.m.
+        },
+        'monthly_reporters_go': {
+            'task': 'management.commands.monthly_reporters_go',
+            'schedule': crontab(minute=30, hour=6, day_of_month=2),     # Second day of month 1:30 a.m.
+        },
+        'generate_sitemap': {
+            'task': 'scripts.generate_sitemap',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+        },
+        'deactivate_requested_accounts': {
+            'task': 'management.commands.deactivate_requested_accounts',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
+        },
+        'check_crossref_doi': {
+            'task': 'management.commands.check_crossref_dois',
+            'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
+        },
+        'update_institution_project_counts': {
+            'task': 'management.commands.update_institution_project_counts',
+            'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
+        },
+        'delete_withdrawn_or_failed_registration_files': {
+            'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {
+                'dry_run': False,
+                'batch_size_withdrawn': 10,
+                'batch_size_stuck': 10
+            }
+        },
+        'monitor_registration_bulk_upload_jobs': {
+            'task': 'api.providers.tasks.monitor_registration_bulk_upload_jobs',
+            # 'schedule': crontab(hour='*/3'),  # Every 3 hours
+            'schedule': crontab(minute='*/5'),  # Every 5 minutes for staging server QA test
+            'kwargs': {'dry_run': False}
+        },
+        'approve_registration_updates': {
+            'task': 'osf.management.commands.approve_pending_schema_responses',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+    }
 
         # Tasks that need metrics and release requirements
         # beat_schedule.update({

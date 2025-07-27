@@ -57,7 +57,6 @@ SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
 # Email
-USE_EMAIL = False
 MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'

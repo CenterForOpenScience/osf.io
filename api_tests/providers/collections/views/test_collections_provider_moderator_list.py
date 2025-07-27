@@ -91,27 +91,27 @@ class TestGETCollectionsModeratorList:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestPOSTCollectionsModeratorList:
 
-    def test_POST_unauthorized(self, mock_send_grid, app, url, nonmoderator, moderator, provider):
+    def test_POST_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
-        res = app.post(url, payload, expect_errors=True)
+        with capture_notifications() as notification:
+            res = app.post(url, payload, expect_errors=True)
+        assert not notification
         assert res.status_code == 401
-        assert mock_send_grid.call_count == 0
 
-    def test_POST_forbidden(self, mock_send_grid, app, url, nonmoderator, moderator, provider):
+    def test_POST_forbidden(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
-        res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert res.status_code == 403
+        with capture_notifications() as notification:
+            res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
+            assert res.status_code == 403
 
-        res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
-        assert res.status_code == 403
+            res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
+            assert res.status_code == 403
+        assert not notification
 
-        assert mock_send_grid.call_count == 0
-
-    def test_POST_admin_success_existing_user(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
         with capture_notifications() as notifications:
@@ -122,11 +122,13 @@ class TestPOSTCollectionsModeratorList:
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
 
-    def test_POST_admin_failure_existing_moderator(self, mock_send_grid, app, url, moderator, admin, provider):
+    def test_POST_admin_failure_existing_moderator(self, app, url, moderator, admin, provider):
         payload = make_payload(user_id=moderator._id, permission_group='moderator')
-        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        assert not notifications
+
         assert res.status_code == 400
-        assert mock_send_grid.call_count == 0
 
     def test_POST_admin_failure_unreg_moderator(self, app, url, moderator, nonmoderator, admin, provider):
         unreg_user = {'full_name': 'Jalen Hurts', 'email': '1eagles@allbatman.org'}
@@ -147,13 +149,14 @@ class TestPOSTCollectionsModeratorList:
         assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
         assert notifications[0]['kwargs']['user'].username == unreg_user['email']
 
-    def test_POST_admin_failure_invalid_group(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_failure_invalid_group(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
-        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
+        assert not notifications
         assert res.status_code == 400
-        assert mock_send_grid.call_count == 0
 
-    def test_POST_admin_success_email(self, mock_send_grid, app, url, nonmoderator, moderator, admin, provider):
+    def test_POST_admin_success_email(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(email='somenewuser@gmail.com', full_name='Some User', permission_group='moderator')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)

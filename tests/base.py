@@ -175,9 +175,6 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    def setUp(self):
-        super().setUp()
-        settings.USE_EMAIL = False
 
 class ApiAddonTestCase(ApiTestCase):
     """Base `TestCase` for tests that require interaction with addons.

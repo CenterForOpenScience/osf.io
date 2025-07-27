@@ -22,10 +22,9 @@ from osf.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
-from osf.models import Contributor, Retraction
+from osf.models import Contributor, Retraction, NotificationType
 from osf.utils import permissions
-from conftest import start_mock_notification_send
-
+from tests.utils import capture_notifications
 
 
 @pytest.mark.enable_bookmark_creation
@@ -753,7 +752,6 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
@@ -766,8 +764,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_post_url = self.registration.api_url_for('node_registration_retraction_post')
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
-
-        self.start_mock_notification_send = start_mock_notification_send(self)
 
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
@@ -802,12 +798,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             existing_user=unreg
         )
         self.registration.save()
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        assert self.start_mock_notification_send.call_count == 1
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -892,12 +890,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == 400
 
     def test_valid_POST_calls_send_mail_with_username(self):
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        assert self.start_mock_notification_send.called
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()

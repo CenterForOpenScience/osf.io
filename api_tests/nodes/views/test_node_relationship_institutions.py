@@ -115,7 +115,6 @@ class RelationshipInstitutionsTestMixin:
             ]
         }
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
 
     def test_node_with_no_permissions(self, app, unauthorized_user_with_affiliation, institution_one, node_institutions_url):
@@ -254,18 +253,18 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
 
-    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
+    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one]),
-            auth=user.auth
-        )
-        mock_send_grid.assert_not_called()
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+        assert not notifications
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()

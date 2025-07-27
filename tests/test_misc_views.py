@@ -49,7 +49,6 @@ from website.project.model import has_anonymous_link
 from website.project.views.node import _should_show_wiki_widget
 from website.util import web_url_for
 from website.util import rubeus
-from conftest import start_mock_send_grid
 from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
@@ -362,7 +361,6 @@ class TestPublicViews(OsfTestCase):
         assert res.status_code == 200
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestExternalAuthViews(OsfTestCase):
 
@@ -384,8 +382,6 @@ class TestExternalAuthViews(OsfTestCase):
         )
         self.user.save()
         self.auth = (self.user.username, password)
-
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_external_login_email_get_with_invalid_session(self):
         url = web_url_for('external_login_email_get')
@@ -410,12 +406,12 @@ class TestExternalAuthViews(OsfTestCase):
         # TODO: check in qa url encoding
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url)
+        with capture_notifications() as notifications:
+            res = self.app.get(url)
+        assert not notifications
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
         assert quote_plus('new=true') in res.location
-
-        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
@@ -436,7 +432,6 @@ class TestExternalAuthViews(OsfTestCase):
         assert '/login?service=' in res.location
         assert 'new=true' not in parse.unquote(res.location)
 
-
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
         assert self.user.is_registered
@@ -446,12 +441,12 @@ class TestExternalAuthViews(OsfTestCase):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert dupe_user.external_identity == self.user.external_identity
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url)
+        with capture_notifications() as notifications:
+            res = self.app.get(url)
+        assert not notifications
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
-
-        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         dupe_user.reload()
@@ -462,10 +457,10 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duping_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        res = self.app.get(url)
+        with capture_notifications() as notifications:
+            res = self.app.get(url)
+        assert not notifications
         assert res.status_code == 403, 'only allows one user to link an id'
-
-        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         dupe_user.reload()

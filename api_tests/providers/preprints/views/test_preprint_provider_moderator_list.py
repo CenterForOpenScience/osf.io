@@ -10,7 +10,6 @@ from osf.utils import permissions
 from tests.utils import capture_notifications
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class ProviderModeratorListTestClass:
 
     @pytest.fixture()
@@ -70,18 +69,18 @@ class ProviderModeratorListTestClass:
         assert res.json['data'][0]['id'] == admin._id
         assert res.json['data'][0]['attributes']['permission_group'] == permissions.ADMIN
 
-    def test_list_post_unauthorized(self, mock_send_grid, app, url, nonmoderator, moderator, provider):
+    def test_list_post_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
-        res = app.post(url, payload, expect_errors=True)
-        assert res.status_code == 401
+        with capture_notifications() as notification:
+            res = app.post(url, payload, expect_errors=True)
+            assert res.status_code == 401
 
-        res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert res.status_code == 403
+            res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
+            assert res.status_code == 403
 
-        res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        assert mock_send_grid.call_count == 0
+            res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
+            assert res.status_code == 403
+        assert not notification
 
     def test_list_post_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
@@ -94,7 +93,7 @@ class ProviderModeratorListTestClass:
         assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
-    def test_list_post_admin_failure_existing_moderator(self, mock_send_grid, app, url, moderator, admin):
+    def test_list_post_admin_failure_existing_moderator(self, app, url, moderator, admin):
         payload = self.create_payload(user_id=moderator._id, permission_group='moderator')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)

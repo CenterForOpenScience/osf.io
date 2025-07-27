@@ -18,9 +18,15 @@ class Notification(models.Model):
     seen = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
 
-    def send(self, protocol_type='email', destination_address=None):
-        if not settings.USE_EMAIL:
-            return
+    def send(
+            self,
+            protocol_type='email',
+            destination_address=None,
+            email_context=None,
+    ):
+        """
+
+        """
         if not protocol_type == 'email':
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
 
@@ -30,7 +36,8 @@ class Notification(models.Model):
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
-                self.event_context
+                self.event_context,
+                email_context
             )
         elif protocol_type == 'email' and settings.DEV_MODE:
             if not api_settings.CI_ENV:
@@ -39,12 +46,14 @@ class Notification(models.Model):
                     f"\nto={recipient_address}"
                     f"\ntype={self.subscription.notification_type.name}"
                     f"\ncontext={self.event_context}"
+                    f"\nemail_context={self.email_context}"
                 )
         elif protocol_type == 'email':
             email.send_email_with_send_grid(
                 self.subscription.user,
                 self.subscription.notification_type,
-                self.event_context
+                self.event_context,
+                email_context
             )
         else:
             raise NotImplementedError(f'protocol `{protocol_type}` is not supported.')

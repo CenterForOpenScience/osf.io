@@ -67,9 +67,9 @@ services:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
 
-  # Temporary: Remove when we've upgraded to ES6
   elasticsearch6:
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
+    image: quay.io/centerforopenscience/elasticsearch:es6-arm-6.3.1
+    platform: linux/arm64
     ports:
       - 9201:9200
     volumes:

@@ -265,8 +265,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
 
     # Overrides TestNodeContributorCreateEmail
-    def test_add_unregistered_contributor_sends_email(
-            self, mock_send_grid, app, user, url_project_contribs):
+    def test_add_unregistered_contributor_sends_email(self, app, user, url_project_contribs):
         with capture_notifications() as notifications:
             res = app.post_json_api(
                 f'{url_project_contribs}?send_email=draft_registration',
@@ -305,8 +304,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
-    def test_add_unregistered_contributor_without_email_no_email(
-            self, mock_send_grid, app, user, url_project_contribs):
+    def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
@@ -318,10 +316,11 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         }
 
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=user.auth)
+            assert not notifications
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
 
 class TestDraftContributorBulkCreate(DraftRegistrationCRUDTestCase, TestNodeContributorBulkCreate):

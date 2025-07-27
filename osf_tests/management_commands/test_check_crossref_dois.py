@@ -4,6 +4,10 @@ import pytest
 import json
 from datetime import timedelta
 import responses
+
+from osf.models import NotificationType
+from tests.utils import capture_notifications
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
@@ -14,7 +18,6 @@ from osf.management.commands.check_crossref_dois import check_crossref_dois, rep
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestCheckCrossrefDOIs:
 
     @pytest.fixture()
@@ -61,7 +64,9 @@ class TestCheckCrossrefDOIs:
         assert stuck_preprint.identifiers.count() == 1
         assert stuck_preprint.identifiers.first().value == doi
 
-    def test_report_stuck_dois(self, mock_send_grid, stuck_preprint):
-        report_stuck_dois(dry_run=False)
+    def test_report_stuck_dois(self, stuck_preprint):
+        with capture_notifications() as notifications:
+            report_stuck_dois(dry_run=False)
 
-        mock_send_grid.assert_called()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_DENIED

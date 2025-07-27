@@ -1209,7 +1209,6 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_enqueue_task
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1217,7 +1216,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     def test_add_contributor_no_email_if_false(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=false'
         payload = {
@@ -1226,12 +1225,13 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth)
+        assert not notifications
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
     def test_add_contributor_sends_email(
-        self, mock_send_grid, app, user, user_two, url_project_contribs
+        self, app, user, user_two, url_project_contribs
     ):
         with capture_notifications() as notifications:
             res = app.post_json_api(
@@ -1290,7 +1290,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         )
 
     def test_add_unregistered_contributor_sends_email(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
         with capture_notifications() as notifications:
             res = app.post_json_api(
@@ -1347,7 +1347,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         )
 
     def test_add_contributor_invalid_send_email_param(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=true'
         payload = {
@@ -1356,16 +1356,15 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert not notifications
         assert res.status_code == 400
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
         )
-        assert mock_send_grid.call_count == 0
 
-    def test_add_unregistered_contributor_without_email_no_email(
-        self, mock_send_grid, app, user, url_project_contribs
-    ):
+    def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
@@ -1377,10 +1376,11 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
 
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=user.auth)
+            assert not notifications
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
 
 @pytest.mark.django_db

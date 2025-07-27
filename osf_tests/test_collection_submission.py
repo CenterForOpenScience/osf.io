@@ -303,7 +303,6 @@ class TestModeratedCollectionSubmission:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestUnmoderatedCollectionSubmission:
 
     def test_moderated_submit(self, unmoderated_collection_submission):
@@ -386,7 +385,6 @@ class TestUnmoderatedCollectionSubmission:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestHybridModeratedCollectionSubmission:
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.MODERATOR))

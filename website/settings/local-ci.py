@@ -44,7 +44,6 @@ EXTERNAL_EMBER_APPS = {
 
 SEARCH_ENGINE = 'elastic'
 
-USE_EMAIL = False
 USE_CELERY = False
 
 # Email

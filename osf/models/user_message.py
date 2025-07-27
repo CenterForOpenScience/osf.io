@@ -3,8 +3,8 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from . import NotificationType
 from .base import BaseModel, ObjectIDMixin
-from website.mails import send_mail, USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
 
 
 class MessageTypes(models.TextChoices):
@@ -31,7 +31,7 @@ class MessageTypes(models.TextChoices):
             str: The email template string for the specified message type.
         """
         return {
-            cls.INSTITUTIONAL_REQUEST: USER_MESSAGE_INSTITUTIONAL_ACCESS_REQUEST
+            cls.INSTITUTIONAL_REQUEST: NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         }[message_type]
 
 
@@ -84,18 +84,20 @@ class UserMessage(BaseModel, ObjectIDMixin):
         """
         Sends an institutional access request email to the recipient of the message.
         """
-        send_mail(
-            mail=MessageTypes.get_template(self.message_type),
-            to_addr=self.recipient.username,
-            bcc_addr=[self.sender.username] if self.is_sender_BCCed else None,
-            reply_to=self.sender.username if self.reply_to else None,
+        NotificationType.objects.get(
+            name=MessageTypes.get_template(self.message_type)
+        ).emit(
             user=self.recipient,
-            **{
+            event_context={
                 'sender': self.sender,
                 'recipient': self.recipient,
                 'message_text': self.message_text,
                 'institution': self.institution,
             },
+            email_context={
+                'bcc_addr': [self.sender.username] if self.is_sender_BCCed else None,
+                'reply_to': self.sender.username if self.reply_to else None,
+            }
         )
 
 

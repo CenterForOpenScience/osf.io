@@ -29,7 +29,7 @@ from osf.models import AbstractNode
 from osf.models.sanctions import SanctionCallbackMixin, Embargo
 from osf.utils import permissions
 from osf.models import Registration, Contributor, OSFUser, SpamStatus
-from conftest import start_mock_notification_send
+from tests.utils import capture_notifications
 
 DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
@@ -1060,7 +1060,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
@@ -1100,9 +1099,6 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
                 'type': 'registrations',
             }
         })
-
-        self.start_mock_notification_send = start_mock_notification_send(self)
-
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_embargoed_registration_set_privacy_requests_embargo_termination(self, mock_ask):
@@ -1154,13 +1150,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             self.registration.embargo.approve_embargo(OSFUser.load(user_id), approval_token)
         self.registration.refresh_from_db()
 
-        self.registration.set_privacy('public', Auth(self.registration.creator))
+        with capture_notifications() as notifications:
+            self.registration.set_privacy('public', Auth(self.registration.creator))
         admin_contributors = []
         for contributor in self.registration.contributors:
             if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
                 admin_contributors.append(contributor)
         for admin in admin_contributors:
-            assert any([each[1]['to_addr'] == admin.username for each in self.start_mock_notification_send.call_args_list])
+            assert any([each['kwargs']['user'] == admin for each in notifications])
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):

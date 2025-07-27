@@ -158,7 +158,6 @@ class TestDraftRegistrationListTopLevelEndpoint:
         assert data[0]['attributes']['registration_metadata'] == {}
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
 
     @pytest.fixture()
@@ -337,11 +336,10 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
-        mock_send_grid.reset_mock()
-        app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
-
-        assert not mock_send_grid.called
+    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
+        with capture_notifications() as notifications:
+            app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
+        assert not notifications
 
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """
@@ -403,7 +401,6 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     @pytest.fixture()
     def url_draft_registrations(self):
@@ -430,7 +427,7 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
 
-    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
+    def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
         with capture_notifications() as notifications:
             app.post_json_api(

@@ -10,7 +10,6 @@ from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRequestListCreate(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, project):

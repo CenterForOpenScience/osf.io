@@ -693,7 +693,6 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_notification_send')
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @pytest.fixture
@@ -752,14 +751,16 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_initiate_withdrawal_success(self, mock_notification_send, app, user, public_registration, public_url, public_payload):
-        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+    def test_initiate_withdrawal_success(self, app, user, public_registration, public_url, public_payload):
+        with capture_notifications() as notifications:
+            res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_REVIEWS
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
         assert public_registration.is_pending_retraction
         assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
-        assert mock_notification_send.called
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(

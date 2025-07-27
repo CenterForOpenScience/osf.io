@@ -7,8 +7,10 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from osf.models import Email, NotableDomain
+from osf.models import Email, NotableDomain, NotificationType
 from framework.auth.views import auth_email_logout
+from tests.utils import capture_notifications
+
 
 @pytest.fixture()
 def user_one():
@@ -25,7 +27,6 @@ def unconfirmed_address():
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestUserRequestExport:
 
     @pytest.fixture()
@@ -41,11 +42,11 @@ class TestUserRequestExport:
             }
         }
 
-    def test_get(self, app, user_one, url, mock_notification_send):
+    def test_get(self, app, user_one, url):
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
-    def test_post(self, mock_send_grid, app, user_one, user_two, url, payload):
+    def test_post(self, app, user_one, user_two, url, payload):
         # Logged out
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -56,20 +57,23 @@ class TestUserRequestExport:
 
         # Logged in
         assert user_one.email_last_sent is None
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications() as notification:
+            res = app.post_json_api(url, payload, auth=user_one.auth)
+        assert len(notification) == 1
+        assert notification[0]['type'] == NotificationType.Type.USER_ACCOUNT_EXPORT_FORM
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None
-        assert mock_send_grid.call_count == 1
 
-    def test_post_invalid_type(self, mock_send_grid, app, user_one, url, payload):
+    def test_post_invalid_type(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
-        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        with capture_notifications() as notification:
+            res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
+        assert not notification
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_send_grid.call_count == 0
 
     def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None

@@ -176,17 +176,16 @@ def send_mail(
     )
 
     logger.debug('Preparing to send...')
-    if settings.USE_EMAIL:
-        if settings.USE_CELERY and celery:
-            logger.debug('Sending via celery...')
-            return mailer.apply_async(kwargs=kwargs, link=callback)
-        else:
-            logger.debug('Sending without celery')
-            ret = mailer(**kwargs)
-            if callback:
-                callback()
+    if settings.USE_CELERY and celery:
+        logger.debug('Sending via celery...')
+        return mailer.apply_async(kwargs=kwargs, link=callback)
+    else:
+        logger.debug('Sending without celery')
+        ret = mailer(**kwargs)
+        if callback:
+            callback()
 
-            return ret
+        return ret
 
 
 def get_english_article(word):

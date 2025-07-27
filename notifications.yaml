@@ -326,10 +326,14 @@ notification_types:
     object_content_type_model_name: collectionsubmission
     template: 'website/templates/emails/new_pending_submissions.html.mako'
   #### DESK
-  - name: desk_archive_job_exceeded
-    __docs__: Archive job failed due to size exceeded. Sent to support desk.
+  - name: addon_boa_job_failure
+    __docs__: ...
     object_content_type_model_name: desk
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/addon_boa_job_failure.html.mako'
+  - name: addon_boa_job_complete
+    __docs__: ...
+    object_content_type_model_name: desk
+    template: 'website/templates/emails/addon_boa_job_complete.html.mako'
   - name: desk_archive_job_copy_error
     __docs__: Archive job failed due to copy error. Sent to support desk.
     object_content_type_model_name: desk

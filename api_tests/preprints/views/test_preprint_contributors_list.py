@@ -78,7 +78,6 @@ class NodeCRUDTestCase:
             return f'{preprint_id}-{user_id}'
         return contrib_id
 
-
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
 class TestPreprintContributorList(NodeCRUDTestCase):
@@ -1352,7 +1351,6 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
 
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
-@pytest.mark.usefixtures('mock_send_grid')
 class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1360,7 +1358,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
     def test_add_contributor_no_email_if_false(
-            self, mock_send_grid, app, user, url_preprint_contribs):
+            self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=false'
         payload = {
             'data': {
@@ -1371,14 +1369,12 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth)
+        assert not notifications
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
-    def test_add_contributor_needs_preprint_filter_to_send_email(
-            self, mock_send_grid, app, user, user_two,
-            url_preprint_contribs):
+    def test_add_contributor_needs_preprint_filter_to_send_email(self, app, user, user_two, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=default'
         payload = {
             'data': {
@@ -1395,12 +1391,11 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert not notifications
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
-        assert mock_send_grid.call_count == 0
 
     def test_add_contributor_signal_if_preprint(
             self, app, user, user_two, url_preprint_contribs):
@@ -1467,8 +1462,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
 
-    def test_add_contributor_invalid_send_email_param(
-            self, mock_send_grid, app, user, url_preprint_contribs):
+    def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
         payload = {
             'data': {
@@ -1479,16 +1473,19 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(
-            url, payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url,
+                payload,
+                auth=user.auth,
+                expect_errors=True
+            )
+        assert not notifications
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
-        assert mock_send_grid.call_count == 0
 
     def test_add_unregistered_contributor_without_email_no_email(
-            self, mock_send_grid, app, user, url_preprint_contribs):
+            self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
@@ -1499,16 +1496,16 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             }
         }
 
-        mock_send_grid.reset_mock()
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=user.auth)
+        assert not notifications
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_publishing_preprint_sends_emails_to_contributors(
-            self, mock_update, mock_send_grid, app, user, url_preprint_contribs, preprint_unpublished):
+            self, mock_update, app, user, url_preprint_contribs, preprint_unpublished):
         url = f'/{API_BASE}preprints/{preprint_unpublished._id}/'
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
@@ -1547,7 +1544,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
 
     def test_contributor_added_not_sent_if_unpublished(
-            self, mock_send_grid, app, user, preprint_unpublished):
+            self, app, user, preprint_unpublished):
         url = f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint'
         payload = {
             'data': {
@@ -1558,10 +1555,10 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth)
+        assert not notifications
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
 
 @pytest.mark.django_db

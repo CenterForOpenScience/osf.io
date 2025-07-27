@@ -24,8 +24,9 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.sessions import get_session
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils import permissions
+from tests.utils import capture_notifications
 from website import mails
 from website import settings
 from website.project.decorators import (
@@ -36,21 +37,17 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 from website.util import api_url_for
-from conftest import start_mock_send_grid, start_mock_notification_send
 
 from tests.test_cas_authentication import generate_external_user_with_resp
 
 logger = logging.getLogger(__name__)
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthUtils(OsfTestCase):
 
     def setUp(self):
         super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
-        self.start_mock_notification_send = start_mock_notification_send(self)
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()
@@ -91,24 +88,25 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        res = self.app.get(f'/confirm/{user._id}/{token}')
-        res = self.app.resolve_redirect(res)
+        with capture_notifications() as notifications:
+            res = self.app.get(f'/confirm/{user._id}/{token}')
+            res = self.app.resolve_redirect(res)
+        assert not notifications
         assert res.status_code == 302
         assert 'login?service=' in res.location
 
         user.reload()
 
-        self.mock_send_grid.assert_not_called()
 
+        with capture_notifications() as notifications:
+            self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
+            res = self.app.get(f'/confirm/{user._id}/{token}')
 
-        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-        res = self.app.get(f'/confirm/{user._id}/{token}')
-
-        res = self.app.resolve_redirect(res)
+            res = self.app.resolve_redirect(res)
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert len(self.mock_send_grid.call_args_list) == 0
+        assert not notifications
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
@@ -172,9 +170,11 @@ class TestAuthUtils(OsfTestCase):
 
     def test_password_change_sends_email(self):
         user = UserFactory()
-        user.set_password('killerqueen')
-        user.save()
-        assert len(self.start_mock_notification_send.call_args_list) == 1
+        with capture_notifications() as notifications:
+            user.set_password('killerqueen')
+            user.save()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -216,11 +216,15 @@ class TestAuthUtils(OsfTestCase):
             'password': 'brutusisajerk'
         }
 
-        self.app.post(url, json=sign_up_data)
-        assert len(self.mock_send_grid.call_args_list) == 1
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
 
-        self.app.post(url, json=sign_up_data)
-        assert len(self.mock_send_grid.call_args_list) == 2
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
 
 
 class TestAuthObject(OsfTestCase):

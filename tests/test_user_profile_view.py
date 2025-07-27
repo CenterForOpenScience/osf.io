@@ -27,7 +27,6 @@ from tests.utils import capture_notifications
 from website import mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST
 from website.util import api_url_for, web_url_for
-from conftest import start_mock_send_grid
 
 
 @pytest.mark.enable_enqueue_task
@@ -514,8 +513,6 @@ class TestUserAccount(OsfTestCase):
         self.user.set_password('password')
         self.user.auth = (self.user.username, 'password')
         self.user.save()
-
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_password_change_valid(self,
                                    old_password='password',

@@ -26,6 +26,9 @@ class NotificationType(models.Model):
 
     class Type(str, Enum):
         # Desk notifications
+        ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
+        ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
+
         DESK_REQUEST_EXPORT = 'desk_request_export'
         DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
         DESK_OSF_SUPPORT_EMAIL = 'desk_osf_support_email'
@@ -202,7 +205,8 @@ class NotificationType(models.Model):
             destination_address=None,
             subscribed_object=None,
             message_frequency='instantly',
-            event_context=None
+            event_context=None,
+            email_context=None,
     ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
@@ -212,6 +216,7 @@ class NotificationType(models.Model):
             subscribed_object (optional): The object the subscription is related to.
             message_frequency (optional): Initializing message frequency.
             event_context (dict, optional): Context for rendering the notification template.
+            email_context (dict, optional): Context for additional email notification information, so as blind cc etc
         """
         from osf.models.notification_subscription import NotificationSubscription
         subscription, created = NotificationSubscription.objects.get_or_create(
@@ -225,7 +230,10 @@ class NotificationType(models.Model):
             Notification.objects.create(
                 subscription=subscription,
                 event_context=event_context
-            ).send(destination_address=destination_address)
+            ).send(
+                destination_address=destination_address,
+                email_context=email_context
+            )
 
     def add_user_to_subscription(self, user, *args, **kwargs):
         """

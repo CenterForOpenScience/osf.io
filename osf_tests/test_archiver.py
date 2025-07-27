@@ -22,7 +22,7 @@ from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
 
-from osf.models import Guid, RegistrationSchema, Registration
+from osf.models import Guid, RegistrationSchema, Registration, NotificationType
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
@@ -32,8 +32,7 @@ from api.base.utils import waterbutler_api_url_for
 from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
-from tests.utils import unique as _unique
-from conftest import start_mock_send_grid
+from tests.utils import unique as _unique, capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -721,45 +720,49 @@ class TestArchiverTasks(ArchiverTestCase):
                     assert child_reg._id in question['extra'][0]['viewUrl']
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverUtils(ArchiverTestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def test_handle_archive_fail(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_NETWORK_ERROR,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_NETWORK_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
         self.dst.reload()
         assert self.dst.is_deleted
 
     def test_handle_archive_fail_copy(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_NETWORK_ERROR,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_NETWORK_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     def test_handle_archive_fail_size(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_SIZE_EXCEEDED,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_SIZE_EXCEEDED,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
@@ -846,13 +849,8 @@ class TestArchiverUtils(ArchiverTestCase):
             archiver_utils.get_file_map(node)
             assert mock_get_file_tree.call_count == call_count
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverListeners(ArchiverTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.archiver.utils.before_archive')
@@ -905,8 +903,9 @@ class TestArchiverListeners(ArchiverTestCase):
         )
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-            listeners.archive_callback(self.dst)
-        assert not self.mock_send_grid.called
+            with capture_notifications() as notifications:
+                listeners.archive_callback(self.dst)
+            assert not notifications
         assert not mock_fail.called
         assert mock_delay.called
 
@@ -914,8 +913,9 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_callback_done_success(self, mock_archive_success):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
-        listeners.archive_callback(self.dst)
-        assert self.mock_send_grid.call_count == 0
+        with capture_notifications() as notifications:
+            listeners.archive_callback(self.dst)
+        assert not notifications
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_archive_success):
@@ -929,8 +929,9 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.embargo_registration(self.user, end_date)
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
-        listeners.archive_callback(self.dst)
-        assert self.mock_send_grid.call_count == 0
+        with capture_notifications() as notifications:
+            listeners.archive_callback(self.dst)
+        assert not notifications
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1021,16 +1022,19 @@ class TestArchiverListeners(ArchiverTestCase):
             node.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
-        listeners.archive_callback(rchild)
-        assert not self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            listeners.archive_callback(rchild)
+        assert not notifications
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
-        listeners.archive_callback(reg)
-        assert not self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            listeners.archive_callback(reg)
+        assert not notifications
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
-        listeners.archive_callback(rchild2)
-        assert not self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            listeners.archive_callback(rchild2)
+        assert not notifications
 
 class TestArchiverScripts(ArchiverTestCase):
 
@@ -1078,13 +1082,8 @@ class TestArchiverScripts(ArchiverTestCase):
             assert pk not in failed
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
 @mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverBehavior(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_registrations_not_added_to_search_before_archival(self, mock_update_search):
