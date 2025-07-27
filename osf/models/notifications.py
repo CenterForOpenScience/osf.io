@@ -70,12 +70,6 @@ class NotificationSubscriptionLegacy(BaseModel):
                 if nt == notification_type:
                     getattr(self, nt).add(user)
 
-        if notification_type != 'none' and isinstance(self.owner, Node) and self.owner.parent_node:
-            user_subs = self.owner.parent_node.child_node_subscriptions
-            if self.owner._id not in user_subs.setdefault(user._id, []):
-                user_subs[user._id].append(self.owner._id)
-                self.owner.parent_node.save()
-
         if save:
             # Do not clean legacy objects
             self.save(clean=False)
@@ -84,13 +78,6 @@ class NotificationSubscriptionLegacy(BaseModel):
         for notification_type in NOTIFICATION_TYPES:
             try:
                 getattr(self, notification_type, []).remove(user)
-            except ValueError:
-                pass
-
-        if isinstance(self.owner, Node) and self.owner.parent_node:
-            try:
-                self.owner.parent_node.child_node_subscriptions.get(user._id, []).remove(self.owner._id)
-                self.owner.parent_node.save()
             except ValueError:
                 pass
 

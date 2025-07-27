@@ -318,10 +318,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     ) SELECT {fields} FROM "{nodelicenserecord}"
     WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
-    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
-    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')

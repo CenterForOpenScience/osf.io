@@ -96,16 +96,11 @@ def remove_supplemental_node(node):
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-
     node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(node=node).delete()
-    parent = node.parent_node
-
-    if parent and parent.child_node_subscriptions:
-        for user_id in parent.child_node_subscriptions:
-            if node._id in parent.child_node_subscriptions[user_id]:
-                parent.child_node_subscriptions[user_id].remove(node._id)
-        parent.save()
+    NotificationSubscription.objects.filter(
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node),
+    ).delete()
 
 
 @run_postcommit(once_per_request=False, celery=True)

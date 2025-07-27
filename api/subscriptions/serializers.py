@@ -1,9 +1,7 @@
-from django.contrib.contenttypes.models import ContentType
 from rest_framework import serializers as ser
 from api.nodes.serializers import RegistrationProviderRelationshipField
 from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
-from osf.models import Node
 from website.util import api_v2_url
 
 
@@ -23,7 +21,10 @@ class SubscriptionSerializer(JSONAPISerializer):
         help_text='The id of the subscription fixed for backward compatibility',
     )
     event_name = ser.CharField(read_only=True)
-    frequency = FrequencyField(source='message_frequency', required=True)
+    frequency = FrequencyField(
+        source='message_frequency',
+        required=True,
+    )
 
     class Meta:
         type_ = 'subscription'
@@ -36,20 +37,7 @@ class SubscriptionSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     def update(self, instance, validated_data):
-        user = self.context['request'].user
-        frequency = validated_data.get('frequency') or 'none'
-        instance.message_frequency = frequency
-
-        if frequency != 'none' and instance.content_type == ContentType.objects.get_for_model(Node):
-            node = Node.objects.get(
-                id=instance.id,
-                content_type=instance.content_type,
-            )
-            user_subs = node.parent_node.child_node_subscriptions
-            if node._id not in user_subs.setdefault(user._id, []):
-                user_subs[user._id].append(node._id)
-                node.parent_node.save()
-
+        instance.message_frequency = validated_data.get['frequency']
         return instance
 
 

@@ -1,7 +1,6 @@
 import logging
 
 from osf import apps
-from osf.models import NotificationType, Node
 from website.project.signals import contributor_added, project_created
 from framework.auth.signals import user_confirmed
 
@@ -17,7 +16,9 @@ def subscribe_creator(resource):
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     from website.notifications.utils import subscribe_user_to_notifications
-    if isinstance(resource, Node) == 'osf.node':
+    from osf.models import Node
+
+    if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
             return None
         subscribe_user_to_notifications(resource, contributor)
@@ -25,6 +26,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
 @user_confirmed.connect
 def subscribe_confirmed_user(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    NotificationType = apps.get_model('osf.NotificationType')
     user_events = [
         NotificationType.Type.USER_FILE_UPDATED,
         NotificationType.Type.USER_REVIEWS,

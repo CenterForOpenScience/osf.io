@@ -9,16 +9,12 @@ FileEvent and ComplexFileEvent are parent classes with shared functionality.
 from furl import furl
 import markupsafe
 
-from website.notifications import emails
-from website.notifications.constants import NOTIFICATION_TYPES
-from website.notifications import utils
 from website.notifications.events.base import (
     register,
     Event,
     event_registry,
     RegistryError,
 )
-from website.notifications.events import utils as event_utils
 from osf.models import AbstractNode, NodeLog, Preprint, NotificationType
 from addons.base.signals import file_updated as signal
 
@@ -236,81 +232,16 @@ class AddonFileMoved(ComplexFileEvent):
         if self.node == self.source_node:
             super().perform()
             return
-        # File
-        if self.payload['destination']['kind'] != 'folder':
-            moved, warn, rm_users = event_utils.categorize_users(
-                self.user,
-                self.event_type,
-                self.source_node,
-                self.event_type,
-                self.node
-            )
-            warn_message = f'{self.html_message} You are no longer tracking that file based on the settings you selected for the component.'
-            remove_message = (
-                f'{self.html_message} Your subscription has been removed due to '
-                'insufficient permissions in the new component.'
-            )
-        # Folder
-        else:
-            # Gets all the files in a folder to look for permissions conflicts
-            files = event_utils.get_file_subs_from_folder(
-                self.addon,
-                self.user,
-                self.payload['destination']['kind'],
-                self.payload['destination']['path'],
-                self.payload['destination']['name']
-            )
-            # Bins users into different permissions
-            moved, warn, rm_users = event_utils.compile_user_lists(
-                files,
-                self.user,
-                self.source_node,
-                self.node
-            )
 
-            # For users that don't have individual file subscription but has permission on the new node
-            warn_message = f'{self.html_message} You are no longer tracking that folder or files within based on the settings you selected for the component.'
-            # For users without permission on the new node
-            remove_message = (
-                f'{self.html_message} Your subscription has been removed for the '
-                'folder, or a file within, due to insufficient permissions in the new '
-                'component.'
-            )
-
-        # Move the document from one subscription to another because the old one isn't needed
-        utils.move_subscription(
-            rm_users,
-            self.event_type,
-            self.source_node,
-            self.event_type,
-            self.node
+        NotificationType.objects.get(
+            name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
+        ).emit(
+            user=self.user,
+            event_context={
+                'profile_image_url': self.profile_image_url,
+                'url': self.url
+            }
         )
-
-        # Notify each user
-        for notification in NOTIFICATION_TYPES:
-            if notification == 'none':
-                continue
-            if moved[notification]:
-                NotificationType.objects.get(
-                    name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
-                ).emit(
-                    user=self.user,
-                    event_context={
-                        'profile_image_url': self.profile_image_url,
-                        'url': self.url
-                    }
-                )
-                emails.store_emails(moved[notification], notification, 'file_updated', self.user, self.node,
-                                    self.timestamp, message=self.html_message,
-                                    profile_image_url=self.profile_image_url, url=self.url)
-            if warn[notification]:
-                emails.store_emails(warn[notification], notification, 'file_updated', self.user, self.node,
-                                    self.timestamp, message=warn_message, profile_image_url=self.profile_image_url,
-                                    url=self.url)
-            if rm_users[notification]:
-                emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
-                                    self.timestamp, message=remove_message,
-                                    profile_image_url=self.profile_image_url, url=self.source_url)
 
 
 @register(NodeLog.FILE_COPIED)
@@ -324,26 +255,16 @@ class AddonFileCopied(ComplexFileEvent):
          together because they both don't have a subscription to a
          newly copied file.
         """
-        remove_message = self.html_message + ' You do not have permission in the new component.'
         if self.node == self.source_node:
             super().perform()
             return
-        if self.payload['destination']['kind'] != 'folder':
-            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
-                                                                 self.event_type, self.node)
-        else:
-            files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
-                                                          self.payload['destination']['path'],
-                                                          self.payload['destination']['name'])
-            moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
-        for notification in NOTIFICATION_TYPES:
-            if notification == 'none':
-                continue
-            if moved[notification] or warn[notification]:
-                users = list(set(moved[notification]).union(set(warn[notification])))
-                emails.store_emails(users, notification, 'file_updated', self.user, self.node, self.timestamp,
-                                    message=self.html_message, profile_image_url=self.profile_image_url, url=self.url)
-            if rm_users[notification]:
-                emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
-                                    self.timestamp, message=remove_message,
-                                    profile_image_url=self.profile_image_url, url=self.source_url)
+
+        NotificationType.objects.get(
+            name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
+        ).emit(
+            user=self.user,
+            event_context={
+                'profile_image_url': self.profile_image_url,
+                'url': self.url
+            }
+        )
