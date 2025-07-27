@@ -1085,7 +1085,7 @@ class ConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'can_change_preferences': False,
-                    'external_id_provider': provider.name,
+                    'external_id_provider': provider,
                 },
             )
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
@@ -1408,7 +1408,7 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
                 message_frequency='instantly',
                 event_context={
                     'can_change_preferences': False,
-                    'external_id_provider': provider.name,
+                    'external_id_provider': provider,
                 },
             )
 
