@@ -1,7 +1,6 @@
 import requests
 import pytest
 from django.core.mail import send_mail
-from website.mails import TEST
 from waffle.testutils import override_switch
 from osf import features
 from website import settings
@@ -31,7 +30,12 @@ class TestMailHog:
             mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
             requests.delete(mailhog_v1)
 
-            send_mail('to_addr@mail.com', TEST, name='Mailhog')
+            send_mail(
+                'test email',
+                'test message',
+                from_email=settings.OSF_CONTACT_EMAIL,
+                recipient_list=['to_addr@mail.com',]
+            )
             res = requests.get(mailhog_v2).json()
             assert res['count'] == 1
             assert res['items'][0]['Content']['Headers']['To'][0] == 'to_addr@mail.com'

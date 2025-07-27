@@ -93,11 +93,17 @@ notification_types:
   - name: user_export_data_request
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/.html.mako'
+    template: 'website/templates/emails/support_request.html.mako'
   - name: user_request_deactivation
+    subject: '[via OSF] Deactivation Request'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/.html.mako'
+    template: 'website/templates/emails/support_request.html.mako'
+  - name: user_request_deactivation_complete
+    subject: '[via OSF] OSF account deactivated'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/request_deactivation_complete.html.mako'
   - name: user_storage_cap_exceeded_announcement
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -153,6 +159,16 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/spam_user_banned.html.mako'
+  - name: user_file_operation_success
+    subject: 'Your ${action} has finished'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/file_operation_success.html.mako'
+  - name: user_file_operation_failed
+    subject: 'Your ${action} has failed'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/file_operation_failed.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
@@ -336,11 +352,11 @@ notification_types:
   - name: addon_boa_job_failure
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'website/templates/emails/addon_boa_job_failure.html.mako'
+    template: 'website/templates/emails/addons_boa_job_failure.html.mako'
   - name: addon_boa_job_complete
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'website/templates/emails/addon_boa_job_complete.html.mako'
+    template: 'website/templates/emails/addons_boa_job_complete.html.mako'
   - name: desk_archive_job_copy_error
     __docs__: Archive job failed due to copy error. Sent to support desk.
     object_content_type_model_name: desk

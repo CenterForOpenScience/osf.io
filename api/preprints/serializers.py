@@ -468,7 +468,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         preprint,
                         contributor=author,
                         auth=auth,
-                        email_template='preprint',
+                        notification_type='preprint',
                     )
 
         return preprint

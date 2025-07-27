@@ -2,6 +2,7 @@ import json
 import requests
 
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
 from django.db import connection
@@ -14,12 +15,12 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
+from . import NotificationType, NotificationSubscription
 from .base import BaseModel, TypedObjectIDMixin
 from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
-from .notifications import NotificationSubscriptionLegacy
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -252,7 +253,9 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 
 class CollectionProvider(AbstractProvider):
-    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
+    DEFAULT_SUBSCRIPTIONS = [
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+    ]
 
     class Meta:
         permissions = (
@@ -292,7 +295,11 @@ class RegistrationProvider(AbstractProvider):
     REVIEW_STATES = RegistrationModerationStates
     STATE_FIELD_NAME = 'moderation_state'
 
-    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
+    DEFAULT_SUBSCRIPTIONS = [
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
+        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
+
+    ]
 
     # A list of dictionaries describing new fields that providers want to surface on their registrations
     # Each entry must provide a 'field_name' key. In the future, other keys may be supported to enable
@@ -464,10 +471,10 @@ def create_provider_auth_groups(sender, instance, created, **kwargs):
 def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
     if created:
         for subscription in instance.DEFAULT_SUBSCRIPTIONS:
-            NotificationSubscriptionLegacy.objects.get_or_create(
-                _id=f'{instance._id}_{subscription}',
-                event_name=subscription,
-                provider=instance
+            NotificationSubscription.objects.get_or_create(
+                notification_type__name=subscription,
+                object_id=instance.id,
+                content_type=ContentType.objects.get_for_model(instance)
             )
 
 

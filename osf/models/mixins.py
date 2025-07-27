@@ -1029,7 +1029,9 @@ class ReviewProviderMixin(GuardianMixin):
     reviews_comments_private = models.BooleanField(null=True, blank=True)
     reviews_comments_anonymous = models.BooleanField(null=True, blank=True)
 
-    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
+    DEFAULT_SUBSCRIPTIONS = [
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+    ]
 
     @property
     def is_reviewed(self):
@@ -1463,7 +1465,7 @@ class ContributorMixin(models.Model):
                     self,
                     contributor=contributor,
                     auth=auth,
-                    email_template=send_email,
+                    notification_type=send_email,
                     permissions=permissions
                 )
 

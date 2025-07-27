@@ -178,25 +178,11 @@ CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     subject='Your access request to an OSF project has been approved'
 )
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
-REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
-
-REQUEST_DEACTIVATION_COMPLETE = Mail('request_deactivation_complete', subject='[via OSF] OSF account deactivated')
 
 SPAM_USER_BANNED = Mail('spam_user_banned', subject='[OSF] Account flagged as spam')
 SPAM_FILES_DETECTED = Mail(
     'spam_files_detected',
     subject='[auto] Spam files audit'
-)
-
-
-DIGEST = Mail(
-    'digest', subject='OSF Notifications',
-    categories=['notifications', 'notifications-digest']
-)
-
-DIGEST_REVIEWS_MODERATORS = Mail(
-    'digest_reviews_moderators',
-    subject='Recent submissions to ${provider_name}',
 )
 
 # Retraction related Mail objects

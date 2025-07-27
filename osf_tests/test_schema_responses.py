@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from api.providers.workflows import Workflows
@@ -10,8 +9,6 @@ from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema, _ensure_subscriptions
 from tests.utils import capture_notifications
-
-from website.notifications import emails
 
 from transitions import MachineError
 
@@ -870,13 +867,11 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        store_emails = emails.store_emails
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
-            mock_store.side_effect = store_emails
+        with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-
-        assert mock_store.called
-        assert mock_store.call_args[0][0] == [moderator._id]
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['kwargs']['user'] == moderator
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(
             self, initial_response, admin_user):
@@ -884,9 +879,9 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
+        with capture_notifications() as notifications:
             initial_response.approve(user=admin_user)
-        assert not mock_store.called
+        assert not notifications
 
     def test_moderator_accept(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)

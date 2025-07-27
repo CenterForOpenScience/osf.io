@@ -1339,11 +1339,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         and send emails to users that they have been added to the project.
         (DraftNodes are hidden until registration).
         """
+        from . import NotificationType
+
         for user in self.contributors.filter(is_registered=True):
             perm = self.contributor_set.get(user=user).permission
-            project_signals.contributor_added.send(self,
-                                                   contributor=user,
-                                                   auth=None, email_template='default', permissions=perm)
+            project_signals.contributor_added.send(
+                self,
+                contributor=user,
+                auth=None,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                permissions=perm
+            )
 
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
@@ -1671,7 +1677,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            forked,
+            contributor=user,
+            auth=auth,
+            notification_type=None
+        )
 
         return forked
 
@@ -1780,7 +1791,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save(suppress_log=True)
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            new,
+            contributor=auth.user,
+            auth=auth,
+            notification_type=None
+        )
 
         # Log the creation
         new.add_log(

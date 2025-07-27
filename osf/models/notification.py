@@ -46,7 +46,7 @@ class Notification(models.Model):
                     f"\nto={recipient_address}"
                     f"\ntype={self.subscription.notification_type.name}"
                     f"\ncontext={self.event_context}"
-                    f"\nemail_context={self.email_context}"
+                    f"\nemail_context={email_context}"
                 )
         elif protocol_type == 'email':
             email.send_email_with_send_grid(

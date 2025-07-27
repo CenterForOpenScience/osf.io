@@ -19,7 +19,7 @@ from website.notifications.events.base import (
     RegistryError,
 )
 from website.notifications.events import utils as event_utils
-from osf.models import AbstractNode, NodeLog, Preprint
+from osf.models import AbstractNode, NodeLog, Preprint, NotificationType
 from addons.base.signals import file_updated as signal
 
 
@@ -278,12 +278,28 @@ class AddonFileMoved(ComplexFileEvent):
             )
 
         # Move the document from one subscription to another because the old one isn't needed
-        utils.move_subscription(rm_users, self.event_type, self.source_node, self.event_type, self.node)
+        utils.move_subscription(
+            rm_users,
+            self.event_type,
+            self.source_node,
+            self.event_type,
+            self.node
+        )
+
         # Notify each user
         for notification in NOTIFICATION_TYPES:
             if notification == 'none':
                 continue
             if moved[notification]:
+                NotificationType.objects.get(
+                    name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
+                ).emit(
+                    user=self.user,
+                    event_context={
+                        'profile_image_url': self.profile_image_url,
+                        'url': self.url
+                    }
+                )
                 emails.store_emails(moved[notification], notification, 'file_updated', self.user, self.node,
                                     self.timestamp, message=self.html_message,
                                     profile_image_url=self.profile_image_url, url=self.url)

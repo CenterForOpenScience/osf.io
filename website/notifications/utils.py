@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from framework.postcommit_tasks.handlers import run_postcommit
-from osf.models import NotificationSubscription
+from osf.models import NotificationSubscription, NotificationType
 from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
@@ -95,10 +95,10 @@ def remove_supplemental_node(node):
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
     node = AbstractNode.load(node_id)
-    NotificationSubscriptionLegacy.objects.filter(node=node).delete()
+    NotificationSubscription.objects.filter(node=node).delete()
     parent = node.parent_node
 
     if parent and parent.child_node_subscriptions:
@@ -172,11 +172,11 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     :param new_node: Instance of Node
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     OSFUser = apps.get_model('osf.OSFUser')
     if source_node == new_node:
         return
-    old_sub = NotificationSubscriptionLegacy.load(to_subscription_key(source_node._id, source_event))
+    old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
     if not old_sub:
         return
     elif old_sub:
@@ -236,8 +236,8 @@ def check_project_subscriptions_are_all_none(user, node):
 
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
-    queryset = NotificationSubscriptionLegacy.objects.filter(
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    queryset = NotificationSubscription.objects.filter(
         Q(none=user.pk) |
         Q(email_digest=user.pk) |
         Q(email_transactional=user.pk)
@@ -391,14 +391,13 @@ def get_parent_notification_type(node, event, user):
     :return: str notification type (e.g. 'email_transactional')
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
 
     if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, READ):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
-            subscription = NotificationSubscriptionLegacy.objects.get(_id=key)
-        except NotificationSubscriptionLegacy.DoesNotExist:
+            subscription = NotificationSubscription.objects.get(_id=key)
+        except NotificationSubscription.DoesNotExist:
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in constants.NOTIFICATION_TYPES:
@@ -424,60 +423,25 @@ def get_global_notification_type(global_subscription, user):
             return notification_type
 
 
-def check_if_all_global_subscriptions_are_none(user):
-    # This function predates comment mentions, which is a global_ notification that cannot be disabled
-    # Therefore, an actual check would never return True.
-    # If this changes, an optimized query would look something like:
-    # not NotificationSubscriptionLegacy.objects.filter(Q(event_name__startswith='global_') & (Q(email_digest=user.pk)|Q(email_transactional=user.pk))).exists()
-    return False
-
-
-def subscribe_user_to_global_notifications(user):
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
-    notification_type = 'email_transactional'
-    user_events = constants.USER_SUBSCRIPTIONS_AVAILABLE
-    for user_event in user_events:
-        user_event_id = to_subscription_key(user._id, user_event)
-
-        # get_or_create saves on creation
-        subscription, created = NotificationSubscriptionLegacy.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
-        subscription.add_user_to_subscription(user, notification_type)
-        subscription.save()
-
-
 def subscribe_user_to_notifications(node, user):
     """ Update the notification settings for the creator or contributors
     :param user: User to subscribe to notifications
     """
-    Preprint = apps.get_model('osf.Preprint')
-    DraftRegistration = apps.get_model('osf.DraftRegistration')
-    if isinstance(node, Preprint):
-        raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
-
-    if isinstance(node, DraftRegistration):
-        raise InvalidSubscriptionError('DraftRegistrations are invalid targets for subscriptions at this time.')
-
-    if node.is_collection:
-        raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
-
-    if node.is_deleted:
-        raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
 
     if getattr(node, 'is_registration', False):
         raise InvalidSubscriptionError('Registrations are invalid targets for subscriptions')
 
     if user.is_registered:
-        for event in ['node_file_updated',]:
-            subscription, _ = NotificationSubscription.objects.get_or_create(
-                user=user,
-                notification_type__name=event
-            )
-            subscription, _ = NotificationSubscription.objects.get_or_create(
-                user=user,
-                notification_type__name=event,
-                object_id=node.id,
-                content_type=ContentType.objects.get_for_model(node)
-            )
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+        )
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED,
+            object_id=node.id,
+            content_type=ContentType.objects.get_for_model(node)
+        )
 
 
 def format_user_and_project_subscriptions(user):

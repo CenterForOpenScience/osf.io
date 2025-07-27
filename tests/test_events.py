@@ -135,7 +135,7 @@ class TestFileUpdated(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionLegacyFactory(
+        self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -161,7 +161,7 @@ class TestFileAdded(OsfTestCase):
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
+        self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -253,7 +253,7 @@ class TestFolderFileRenamed(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionLegacyFactory(
+        self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -307,21 +307,21 @@ class TestFileMoved(OsfTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionLegacyFactory(
+        self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.private_sub = factories.NotificationSubscriptionFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.file_sub = factories.NotificationSubscriptionFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -337,8 +337,7 @@ class TestFileMoved(OsfTestCase):
         # assert 'moved file "<b>{}</b>".' == self.event.html_message
         # assert 'created folder "Three/".' == self.event.text_message
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_user_performing_action_no_email(self, mock_store):
+    def test_user_performing_action_no_email(self):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
         self.sub.email_digest.add(self.user_2)
@@ -346,16 +345,13 @@ class TestFileMoved(OsfTestCase):
         self.event.perform()
         assert 0 == mock_store.call_count
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_perform_store_called_once(self, mock_store):
-        # Move Event: Tests that store_emails is called once from perform
+    def test_perform_store_called_once(self):
         self.sub.email_transactional.add(self.user_1)
         self.sub.save()
         self.event.perform()
         assert 1 == mock_store.call_count
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_perform_store_one_of_each(self, mock_store):
+    def test_perform_store_one_of_each(self):
         # Move Event: Tests that store_emails is called 3 times, one in
         # each category
         self.sub.email_transactional.add(self.user_1)
@@ -372,8 +368,7 @@ class TestFileMoved(OsfTestCase):
         self.event.perform()
         assert 3 == mock_store.call_count
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_remove_user_sent_once(self, mock_store):
+    def test_remove_user_sent_once(self):
         # Move Event: Tests removed user is removed once. Regression
         self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
@@ -402,21 +397,21 @@ class TestFileCopied(OsfTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionLegacyFactory(
+        self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.private_sub = factories.NotificationSubscriptionFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.file_sub = factories.NotificationSubscriptionFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -436,8 +431,7 @@ class TestFileCopied(OsfTestCase):
                       ' in Consolidate to "Two/Paper13.txt" in OSF'
                       ' Storage in Consolidate.') == self.event.text_message
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_copied_one_of_each(self, mock_store):
+    def test_copied_one_of_each(self):
         # Copy Event: Tests that store_emails is called 2 times, two with
         # permissions, one without
         self.sub.email_transactional.add(self.user_1)
@@ -454,8 +448,7 @@ class TestFileCopied(OsfTestCase):
         self.event.perform()
         assert 2 == mock_store.call_count
 
-    @mock.patch('website.notifications.emails.store_emails')
-    def test_user_performing_action_no_email(self, mock_store):
+    def test_user_performing_action_no_email(self):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
         self.sub.email_digest.add(self.user_2)
@@ -484,21 +477,21 @@ class TestCategorizeUsers(OsfTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionLegacyFactory(
+        self.sub = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.private_sub = factories.NotificationSubscriptionFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
+        self.file_sub = factories.NotificationSubscriptionFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id

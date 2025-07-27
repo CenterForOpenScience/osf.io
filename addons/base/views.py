@@ -582,7 +582,7 @@ def create_waterbutler_log(payload, **kwargs):
                 if payload.get('errors'):
                     notification_type = NotificationType.Type.FILE_OPERATION_FAILED
 
-                NotificationType.objects.get(name=notification_type.value).emit(
+                NotificationType.objects.get(name=notification_type).emit(
                     user=user,
                     event_context={
                         'action': payload['action'],
@@ -608,7 +608,12 @@ def create_waterbutler_log(payload, **kwargs):
     if target_node and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
 
-    file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+    file_signals.file_updated.send(
+        target=node,
+        user=user,
+        event_type=action,
+        payload=payload
+    )
 
     match f'node_{action}':
         case NotificationType.Type.NODE_FILE_ADDED:

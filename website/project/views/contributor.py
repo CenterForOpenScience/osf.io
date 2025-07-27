@@ -619,7 +619,7 @@ def check_email_throttle(node, contributor, throttle=None):
     return False  # No previous sent notification, not throttled
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, email_template, auth=None, *args, **kwargs):
+def notify_added_contributor(node, contributor, notification_type, auth=None, *args, **kwargs):
     """Send a notification to a contributor who was just added to a node.
 
     Handles:
@@ -631,15 +631,15 @@ def notify_added_contributor(node, contributor, email_template, auth=None, *args
         node (AbstractNode): The node to which the contributor was added.
         contributor (OSFUser): The user being added.
         auth (Auth, optional): Authorization context.
-        email_template (str, optional): Template identifier.
+        notification_type (str, optional): Template identifier.
     """
     if check_email_throttle_claim_email(node, contributor):
         return
-    if email_template == 'false':
+    if not notification_type:
         return
 
     # Default values
-    notification_type = email_template or NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+    notification_type = notification_type or NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
     logo = settings.OSF_LOGO
 
     # Use match for notification type/logic
@@ -659,13 +659,13 @@ def notify_added_contributor(node, contributor, email_template, auth=None, *args
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
     else:
-        raise NotImplementedError(f'email_template: {email_template} not implemented.')
+        raise NotImplementedError(f'notification_type: {notification_type} not implemented.')
 
     NotificationType.objects.get(name=notification_type).emit(
         user=contributor,
         event_context={
             'user': contributor.id,
-            'node': node.id,
+            'node': node.title,
             'referrer_name': getattr(getattr(auth, 'user', None), 'fullname', '') if auth else '',
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
             'all_global_subscriptions_none': False,

@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from osf.models import AbstractNode, NotificationSubscription, NotificationType
 from osf.models.notifications import NotificationDigest
-from osf.utils.permissions import ADMIN, READ
+from osf.utils.permissions import READ
 from website import mails
 from website.notifications import constants
 from website.notifications import utils
@@ -31,32 +31,6 @@ website/notifications/u
             subscribed_object=node,
             event_context=context
         )
-
-def notify_mentions(event, user, node, timestamp, **context):
-    OSFUser = apps.get_model('osf', 'OSFUser')
-    recipient_ids = context.get('new_mentions', [])
-    recipients = OSFUser.objects.filter(guids___id__in=recipient_ids)
-    sent_users = notify_global_event(event, user, node, timestamp, recipients, context=context)
-    return sent_users
-
-def notify_global_event(event, sender_user, node, timestamp, recipients, template=None, context=None):
-    event_type = utils.find_subscription_type(event)
-    sent_users = []
-    if not context:
-        context = {}
-
-    for recipient in recipients:
-        subscriptions = get_user_subscriptions(recipient, event_type)
-        context['is_creator'] = recipient == node.creator
-        if node.provider:
-            context['has_psyarxiv_chronos_text'] = node.has_permission(recipient, ADMIN) and 'psyarxiv' in node.provider.name.lower()
-        for notification_type in subscriptions:
-            if (notification_type != 'none' and subscriptions[notification_type] and recipient._id in subscriptions[notification_type]):
-                store_emails([recipient._id], notification_type, event, sender_user, node, timestamp, template=template, **context)
-                sent_users.append(recipient._id)
-
-    return sent_users
-
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):
     """Store notification emails

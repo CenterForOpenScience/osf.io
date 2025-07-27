@@ -12,7 +12,6 @@ from osf.models import CollectionSubmission, NotificationType
 from osf.utils.workflows import CollectionSubmissionStates
 from framework.exceptions import PermissionsError
 from api_tests.utils import UserRoles
-from osf.management.commands.populate_collection_provider_notification_subscriptions import populate_collection_provider_notification_subscriptions
 from django.utils import timezone
 
 from tests.utils import capture_notifications
@@ -150,10 +149,6 @@ class TestModeratedCollectionSubmission:
 
     MOCK_NOW = timezone.now()
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        populate_collection_provider_notification_subscriptions()
-
     def test_submit(self, moderated_collection_submission):
         # .submit on post_save
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
@@ -179,7 +174,6 @@ class TestModeratedCollectionSubmission:
                 collection=moderated_collection,
                 creator=node.creator,
             )
-            populate_collection_provider_notification_subscriptions()
             collection_submission.save()
         assert len(notifications) == 2
         assert notifications[0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED

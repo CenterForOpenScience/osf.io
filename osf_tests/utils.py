@@ -3,6 +3,8 @@ import datetime as dt
 import functools
 from unittest import mock
 
+from django.contrib.contenttypes.models import ContentType
+
 from framework.auth import Auth
 from django.utils import timezone
 from google.cloud.storage import Client, Bucket, Blob
@@ -16,7 +18,7 @@ from osf.models import (
     Sanction,
     RegistrationProvider,
     RegistrationSchema,
-    NotificationSubscriptionLegacy
+    NotificationSubscription
 )
 
 from osf.utils.migrations import create_schema_blocks_for_atomic_schema
@@ -228,11 +230,11 @@ def _ensure_subscriptions(provider):
     This has led to observed race conditions and probabalistic test failures.
     Avoid that.
     '''
-    for subscription in provider.DEFAULT_SUBSCRIPTIONS:
-        NotificationSubscriptionLegacy.objects.get_or_create(
-            _id=f'{provider._id}_{subscription}',
-            event_name=subscription,
-            provider=provider
+    for notification_type in provider.DEFAULT_SUBSCRIPTIONS:
+        NotificationSubscription.objects.get_or_create(
+            notification_type=notification_type,
+            object_id=provider.id,
+            content_type=ContentType.objects.get_for_model(provider)
         )
 
 def assert_notification_correctness(send_mail_mock, expected_template, expected_recipients):
