@@ -92,15 +92,6 @@ def get_campaigns():
             })
 
             newest_campaigns.update({
-                'agu_conference_2023': {
-                    'system_tag': CampaignSourceTags.AguConference2023.value,
-                    'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': mails.CONFIRM_EMAIL_AGU_CONFERENCE_2023,
-                    'login_type': 'native',
-                }
-            })
-
-            newest_campaigns.update({
                 'agu_conference': {
                     'system_tag': CampaignSourceTags.AguConference.value,
                     'redirect_url': furl(DOMAIN).add(path='dashboard/').url,

@@ -6,6 +6,8 @@ import logging
 
 
 import django
+from django.core.mail import send_mail
+
 django.setup()
 
 from django.core.management.base import BaseCommand
@@ -44,7 +46,7 @@ def email_all_users(email_template, dry_run=False, ids=None, start_id=0, offset=
     for user in active_users.iterator():
         logger.info(f'Sending email to {user.id}')
         try:
-            mails.send_mail(
+            send_mail(
                 to_addr=user.email,
                 mail=template,
                 given_name=user.given_name or user.fullname,

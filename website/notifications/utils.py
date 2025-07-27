@@ -40,8 +40,10 @@ def find_subscription_type(subscription):
     """Find subscription type string within specific subscription.
      Essentially removes extraneous parts of the string to get the type.
     """
-    subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
-    subs_available.extend(list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys()))
+    subs_available = constants.USER_SUBSCRIPTIONS_AVAILABLE
+    subs_available.extend(list({
+        'node_file_updated': 'Files updated'
+    }.keys()))
     for available in subs_available:
         if available in subscription:
             return available
@@ -279,7 +281,7 @@ def format_data(user, nodes):
         # user is contributor on a component of the project/node
 
         if can_read:
-            node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
+            node_sub_available = ['node_file_updated']
             subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
 
             for subscription in subscriptions:
@@ -314,7 +316,7 @@ def format_data(user, nodes):
 
 def format_user_subscriptions(user):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
-    user_subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
+    user_subs_available = constants.USER_SUBSCRIPTIONS_AVAILABLE
     subscriptions = [
         serialize_event(
             user, subscription,
@@ -338,8 +340,8 @@ def format_file_subscription(user, node_id, path, provider):
     return serialize_event(user, node=node, event_description='file_updated')
 
 
-all_subs = constants.NODE_SUBSCRIPTIONS_AVAILABLE.copy()
-all_subs.update(constants.USER_SUBSCRIPTIONS_AVAILABLE)
+all_subs = ['node_file_updated']
+all_subs += constants.USER_SUBSCRIPTIONS_AVAILABLE
 
 def serialize_event(user, subscription=None, node=None, event_description=None):
     """
@@ -464,10 +466,8 @@ def subscribe_user_to_notifications(node, user):
     if getattr(node, 'is_registration', False):
         raise InvalidSubscriptionError('Registrations are invalid targets for subscriptions')
 
-    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
-
     if user.is_registered:
-        for event in events:
+        for event in ['node_file_updated',]:
             subscription, _ = NotificationSubscription.objects.get_or_create(
                 user=user,
                 notification_type__name=event

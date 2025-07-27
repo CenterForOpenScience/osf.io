@@ -5,7 +5,6 @@ from collections import defaultdict
 from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 from framework.utils import sanitize_html
-from osf.models.notification_type import NotificationType
 
 from website import settings
 from website.archiver import (
@@ -27,6 +26,8 @@ def normalize_unicode_filenames(filename):
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
+    from osf.models.notification_type import NotificationType
+
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
     ).emit(
@@ -51,6 +52,8 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
 
 
 def send_archiver_copy_error_mails(src, user, results, url):
+    from osf.models.notification_type import NotificationType
+
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
     ).emit(
@@ -76,6 +79,8 @@ def send_archiver_copy_error_mails(src, user, results, url):
     )
 
 def send_archiver_file_not_found_mails(src, user, results, url):
+    from osf.models.notification_type import NotificationType
+
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND
     ).emit(
@@ -100,6 +105,8 @@ def send_archiver_file_not_found_mails(src, user, results, url):
     )
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
+    from osf.models.notification_type import NotificationType
+
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
     ).emit(

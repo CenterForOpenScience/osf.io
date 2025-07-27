@@ -3,6 +3,7 @@ import csv
 from datetime import timedelta
 import logging
 
+from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -52,7 +53,7 @@ def find_spammy_files(sniff_r=None, n=None, t=None, to_addrs=None):
         if ct:
             if to_addrs:
                 for addr in to_addrs:
-                    mails.send_mail(
+                    send_mail(
                         mail=mails.SPAM_FILES_DETECTED,
                         to_addr=addr,
                         ct=ct,

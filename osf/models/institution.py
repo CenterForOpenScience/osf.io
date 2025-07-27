@@ -7,6 +7,7 @@ from dirtyfields import DirtyFieldsMixin
 
 from django.conf import settings as django_conf_settings
 from django.contrib.postgres import fields
+from django.core.mail import send_mail
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -221,7 +222,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         for user in self.get_institution_users():
             try:
                 attempts += 1
-                mails.send_mail(
+                send_mail(
                     to_addr=user.username,
                     mail=mails.INSTITUTION_DEACTIVATION,
                     user=user,

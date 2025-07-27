@@ -84,7 +84,6 @@ from .provider import (
     RegistrationProvider,
     WhitelistedSHAREPreprintProvider,
 )
-from .queued_mail import QueuedMail
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,

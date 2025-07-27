@@ -19,14 +19,10 @@ Usage: ::
 """
 import os
 import logging
-import waffle
 
 from mako.lookup import TemplateLookup, Template
 
-from framework.email import tasks
-from osf import features
 from website import settings
-from django.core.mail import EmailMessage, get_connection
 
 logger = logging.getLogger(__name__)
 
@@ -37,11 +33,6 @@ _tpl_lookup = TemplateLookup(
 )
 
 HTML_EXT = '.html.mako'
-
-DISABLED_MAILS = [
-    'welcome',
-    'welcome_osf4i'
-]
 
 class Mail:
     """An email object.
@@ -75,119 +66,6 @@ def render_message(tpl_name, **context):
     tpl = _tpl_lookup.get_template(tpl_name)
     return tpl.render(**context)
 
-
-def send_to_mailhog(subject, message, from_email, to_email, attachment_name=None, attachment_content=None):
-    email = EmailMessage(
-        subject=subject,
-        body=message,
-        from_email=from_email,
-        to=[to_email],
-        connection=get_connection(
-            backend='django.core.mail.backends.smtp.EmailBackend',
-            host=settings.MAILHOG_HOST,
-            port=settings.MAILHOG_PORT,
-            username='',
-            password='',
-            use_tls=False,
-            use_ssl=False,
-        )
-    )
-    email.content_subtype = 'html'
-
-    if attachment_name and attachment_content:
-        email.attach(attachment_name, attachment_content)
-
-    try:
-        email.send()
-    except ConnectionRefusedError:
-        logger.debug('Mailhog is not running. Please start it to send emails.')
-    return
-
-
-def send_mail(
-        to_addr,
-        mail,
-        from_addr=None,
-        bcc_addr=None,
-        reply_to=None,
-        mailer=None,
-        celery=True,
-        username=None,
-        password=None,
-        callback=None,
-        attachment_name=None,
-        attachment_content=None,
-        **context):
-    """
-    Send an email from the OSF.
-    Example:
-        from website import mails
-
-        mails.send_email('foo@bar.com', mails.TEST, name="Foo")
-
-    :param str to_addr: The recipient's email address
-    :param str bcc_addr: The BCC senders's email address (or list of addresses)
-    :param str reply_to: The sender's email address will appear in the reply-to header
-    :param Mail mail: The mail object
-    :param str mimetype: Either 'plain' or 'html'
-    :param function callback: celery task to execute after send_mail completes
-    :param **context: Context vars for the message template
-
-    .. note:
-         Uses celery if available
-    """
-    if waffle.switch_is_active(features.DISABLE_ENGAGEMENT_EMAILS) and mail.engagement:
-        return False
-
-    from_addr = from_addr or settings.FROM_EMAIL
-    mailer = mailer or tasks.send_email
-    subject = mail.subject(**context)
-    message = mail.html(**context)
-    # Don't use ttls and login in DEBUG_MODE
-    ttls = login = not settings.DEBUG_MODE
-    logger.debug('Sending email...')
-    logger.debug(f'To: {to_addr}\nFrom: {from_addr}\nSubject: {subject}\nMessage: {message}')
-
-    if waffle.switch_is_active(features.ENABLE_MAILHOG):
-        logger.debug('Intercepting email: sending via MailHog')
-        send_to_mailhog(
-            subject=subject,
-            message=message,
-            from_email=from_addr,
-            to_email=to_addr,
-            attachment_name=attachment_name,
-            attachment_content=attachment_content
-        )
-
-    kwargs = dict(
-        from_addr=from_addr,
-        to_addr=to_addr,
-        subject=subject,
-        message=message,
-        ttls=ttls,
-        login=login,
-        username=username,
-        password=password,
-        categories=mail.categories,
-        attachment_name=attachment_name,
-        attachment_content=attachment_content,
-        bcc_addr=bcc_addr,
-        reply_to=reply_to,
-    )
-
-    logger.debug('Preparing to send...')
-    if settings.USE_CELERY and celery:
-        logger.debug('Sending via celery...')
-        return mailer.apply_async(kwargs=kwargs, link=callback)
-    else:
-        logger.debug('Sending without celery')
-        ret = mailer(**kwargs)
-        if callback:
-            callback()
-
-        return ret
-
-
 def get_english_article(word):
     """
     Decide whether to use 'a' or 'an' for a given English word.
@@ -199,50 +77,9 @@ def get_english_article(word):
 
 
 # Predefined Emails
-
-TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
-
-# Emails for first-time login through external identity providers.
-EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = Mail(
-    'external_confirm_create',
-    subject='OSF Account Verification'
-)
-
-FORK_COMPLETED = Mail(
-    'fork_completed',
-    subject='Your fork has completed'
-)
-
-FORK_FAILED = Mail(
-    'fork_failed',
-    subject='Your fork has failed'
-)
-
-EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = Mail(
-    'external_confirm_link',
-    subject='OSF Account Verification'
-)
-EXTERNAL_LOGIN_LINK_SUCCESS = Mail(
-    'external_confirm_success',
-    subject='OSF Account Verification Success'
-)
-
-# Sign up confirmation emails for OSF, native campaigns and branded campaigns
-INITIAL_CONFIRM_EMAIL = Mail(
-    'initial_confirm',
-    subject='OSF Account Verification'
-)
-CONFIRM_EMAIL = Mail(
-    'confirm',
-    subject='Add a new email to your OSF account'
-)
 CONFIRM_EMAIL_ERPC = Mail(
     'confirm_erpc',
     subject='OSF Account Verification, Election Research Preacceptance Competition'
-)
-CONFIRM_EMAIL_AGU_CONFERENCE_2023 = Mail(
-    'confirm_agu_conference_2023',
-    subject='OSF Account Verification, from the American Geophysical Union Conference'
 )
 CONFIRM_EMAIL_AGU_CONFERENCE = Mail(
     'confirm_agu_conference',
@@ -340,15 +177,6 @@ CONTRIBUTOR_ADDED_ACCESS_REQUEST = Mail(
     'contributor_added_access_request',
     subject='Your access request to an OSF project has been approved'
 )
-FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
-FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
-
-FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
-FORGOT_PASSWORD_INSTITUTION = Mail('forgot_password_institution', subject='Set Password')
-PASSWORD_RESET = Mail('password_reset', subject='Your OSF password has been reset')
-PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
-PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
-
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
 REQUEST_DEACTIVATION = Mail('support_request', subject='[via OSF] Deactivation Request')
 
@@ -360,22 +188,6 @@ SPAM_FILES_DETECTED = Mail(
     subject='[auto] Spam files audit'
 )
 
-CONFERENCE_SUBMITTED = Mail(
-    'conference_submitted',
-    subject='Project created on OSF',
-)
-CONFERENCE_INACTIVE = Mail(
-    'conference_inactive',
-    subject='OSF Error: Conference inactive',
-)
-CONFERENCE_FAILED = Mail(
-    'conference_failed',
-    subject='OSF Error: No files attached',
-)
-CONFERENCE_DEPRECATION = Mail(
-    'conference_deprecation',
-    subject='Meeting Service Discontinued',
-)
 
 DIGEST = Mail(
     'digest', subject='OSF Notifications',
@@ -385,11 +197,6 @@ DIGEST = Mail(
 DIGEST_REVIEWS_MODERATORS = Mail(
     'digest_reviews_moderators',
     subject='Recent submissions to ${provider_name}',
-)
-
-TRANSACTIONAL = Mail(
-    'transactional', subject='OSF: ${subject}',
-    categories=['notifications', 'notifications-transactional']
 )
 
 # Retraction related Mail objects

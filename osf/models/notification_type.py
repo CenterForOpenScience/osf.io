@@ -29,6 +29,7 @@ class NotificationType(models.Model):
         ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
         ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
 
+        DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
         DESK_REQUEST_EXPORT = 'desk_request_export'
         DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
         DESK_OSF_SUPPORT_EMAIL = 'desk_osf_support_email'

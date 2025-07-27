@@ -4,6 +4,7 @@
 notification_types:
   #### User Notifications
   - name: user_pending_verification_registered
+    subject: 'Received request to be a contributor'
     __docs__: This email is sent when a user requests access to a node and has confirm their identity,
       `referrer` is sent an email to forward the confirmation link.
     object_content_type_model_name: osfuser
@@ -37,10 +38,12 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_preprint_node_from_osf.html.mako'
   - name: user_external_login_link_success
+    subject: 'OSF Verification Success'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_success.html.mako'
   - name: user_confirm_email
+    subject: 'Add a new email to your OSF account'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/confirm.html.mako'
@@ -73,25 +76,28 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_invite.html.mako'
   - name: user_forward_invite_registered
+    subject: 'Please forward to ${fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/forward_invite.html.mako'
+    template: 'website/templates/emails/forward_invite_registered.html.mako'
   - name: user_forward_invite
+    subject: 'Please forward to ${fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'
   - name: user_initial_confirm_email
-    __docs__: ...
+    subject: 'OSF Account Verification'
+    __docs__: 'Sign up confirmation emails for OSF, native campaigns and branded campaigns'
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/initial_confirm.html.mako'
   - name: user_export_data_request
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/initial_confirm.html.mako'
+    template: 'website/templates/emails/.html.mako'
   - name: user_request_deactivation
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/initial_confirm.html.mako'
+    template: 'website/templates/emails/.html.mako'
   - name: user_storage_cap_exceeded_announcement
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -100,19 +106,17 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/duplicate_accounts_sso_osf4i.html.mako'
-  - name: user_external_confirm_success_lik
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/emails/external_confirm_success.html.mako'
   - name: user_duplicate_accounts_osf4i
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/duplicate_accounts_sso_osf4i.html.mako'
   - name: user_forgot_password
+    subject: 'Reset Password'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password.html.mako'
   - name: user_forgot_password_institution
+    subject: 'Set Password'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password_institution.html.mako'
@@ -133,7 +137,8 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/registration_bulk_upload_failure_duplicates.html.mako'
   - name: user_external_login_email_confirm_link
-    __docs__: ...
+    subject: 'OSF Account Verification'
+    __docs__: 'Emails for first-time login through external identity providers.'
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/external_confirm_link.html.mako'
   - name: user_external_login_confirm_email_create
@@ -253,12 +258,14 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/access_request_submitted.html.mako'
   - name: node_fork_failed
+    subject: 'Your fork has failed'
     __docs__: This email is sent when a fork fails to be created, this could be due to addons or network outages or
       technical errors.
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/fork_failed.html.mako'
   - name: node_fork_completed
-    __docs__: This email is sent when a fork is successfully created,
+    subject: 'Your fork has completed'
+    __docs__: 'This email is sent when a fork is successfully created,'
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/fork_completed.html.mako'
   - name: node_schema_response_initiated

@@ -15,7 +15,7 @@ from website import settings
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 from osf.management.commands import force_archive as fa
-from osf.models import ArchiveJob, Registration
+from osf.models import ArchiveJob, Registration, NotificationType
 from website.archiver import ARCHIVER_INITIATED
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
 
@@ -97,13 +97,16 @@ def main():
         dict_writer.writeheader()
         dict_writer.writerows(broken_registrations)
 
-        mails.send_mail(
-            mail=mails.ARCHIVE_REGISTRATION_STUCK_DESK,
-            to_addr=settings.OSF_SUPPORT_EMAIL,
-            broken_registrations=broken_registrations,
-            attachment_name=filename,
-            attachment_content=output.getvalue(),
-            can_change_preferences=False,
+        NotificationType.objects.get(
+            name=NotificationType.Type.DESK_ARCHIVE_REGISTRATION_STUCK
+        ).emit(
+            destination_address=settings.OSF_SUPPORT_EMAIL,
+            event_context={
+                'broken_registrations': broken_registrations,
+                'attachment_name': filename,
+                'attachement_content': output.getvalue(),
+                'can_change_preferences': False
+            }
         )
 
     logger.info(f'{len(broken_registrations)} broken registrations found')

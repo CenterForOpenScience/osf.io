@@ -3,6 +3,7 @@ import logging
 import requests
 
 import django
+from django.core.mail import send_mail
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 django.setup()
@@ -123,7 +124,7 @@ def report_stuck_dois(dry_run=True):
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))
         if not dry_run:
-            mails.send_mail(
+            send_mail(
                 to_addr=settings.OSF_SUPPORT_EMAIL,
                 mail=mails.CROSSREF_DOIS_PENDING,
                 pending_doi_count=preprints_with_pending_dois.count(),

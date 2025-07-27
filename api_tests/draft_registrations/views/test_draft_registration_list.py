@@ -428,7 +428,6 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert draft.has_permission(user, ADMIN) is True
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
-        # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
         with capture_notifications() as notifications:
             app.post_json_api(
                 f'{url_draft_registrations}?embed=branched_from&embed=initiator',
