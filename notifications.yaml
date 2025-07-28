@@ -131,6 +131,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/registration_bulk_upload_success_all.html.mako'
   - name: user_registration_bulk_upload_failure_all
+    subject: "Registrations Were Not Bulk Uploaded to your Community's Registry"
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/registration_bulk_upload_failure_all.html.mako'
@@ -314,6 +315,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: preprint
     template: 'website/templates/emails/withdrawal_request_declined.html.mako'
+  - name: preprint_contributor_added_default
+    __docs__: ...
+    object_content_type_model_name: preprint
+    template: 'website/templates/emails/contributor_added_preprints.html.mako'
   #### SUPPORT
   - name: crossref_error
     __docs__: ...
@@ -381,3 +386,9 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: desk
     template: 'website/templates/emails/support_request.html.mako'
+### Draft Registration
+  - name: draft_registration_contributor_added_default
+    subject: 'You have a new registration draft.'
+    __docs__: ...
+    object_content_type_model_name: draftregistration
+    template: 'website/templates/emails/contributor_added_draft_registration.html.mako'

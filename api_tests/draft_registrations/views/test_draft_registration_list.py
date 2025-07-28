@@ -435,7 +435,7 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
                 auth=user.auth
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
         assert notifications[0]['kwargs']['user'] == user
 
     def test_create_draft_with_provider(

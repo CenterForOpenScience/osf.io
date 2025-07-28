@@ -476,7 +476,7 @@ def send_claim_email(
     node,
     notify=True,
     throttle=24 * 3600,
-    email_template='default'
+    notification_type='default'
 ):
     """
     Send a claim email to an unregistered contributor or the referrer, depending on the scenario.
@@ -487,7 +487,7 @@ def send_claim_email(
         node (Node): The node where the user claimed their account.
         notify (bool): Whether to notify the invited user about their pending verification.
         throttle (int): Throttle period (in seconds) to prevent repeated emails.
-        email_template (str): The email template identifier.
+        notification_type (str): The notification_type identifier.
     Returns:
         str: The address the notification was sent to.
     Raises:
@@ -502,7 +502,7 @@ def send_claim_email(
     # Option 1: Referrer provided name and email (send to claimer)
     if unclaimed_record.get('email') == claimer_email:
         # Select notification type and logo using match
-        match email_template:
+        match notification_type:
             case 'preprint':
                 if getattr(node.provider, 'is_default', False):
                     notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
@@ -511,7 +511,7 @@ def send_claim_email(
                     notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
                     logo = getattr(node.provider, '_id', None)
             case 'draft_registration':
-                notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+                notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
             case _:
                 notification_type = NotificationType.Type.USER_INVITE_DEFAULT
 
@@ -646,9 +646,9 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
     if notification_type == 'default':
         notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
     elif notification_type == 'preprint':
-        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+        notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
     elif notification_type == 'draft_registration':
-        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
     elif notification_type == 'access':
         notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
     elif notification_type == 'access_request':

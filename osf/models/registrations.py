@@ -21,7 +21,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from . import NotificationType
+from osf.models.notification_type import NotificationType
 from .action import RegistrationAction
 from .archive import ArchiveJob
 from .contributor import DraftRegistrationContributor
@@ -1197,7 +1197,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @property
     def contributor_email_template(self):
         # Override for ContributorMixin
-        return 'draft_registration'
+        return NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     @property
     def institutions_url(self):

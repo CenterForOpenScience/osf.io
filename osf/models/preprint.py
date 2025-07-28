@@ -589,7 +589,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     @property
     def contributor_email_template(self):
-        return 'preprint'
+        return NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     @property
     def file_read_scope(self):

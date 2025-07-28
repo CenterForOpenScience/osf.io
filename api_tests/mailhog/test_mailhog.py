@@ -1,6 +1,5 @@
 import requests
 import pytest
-from django.core.mail import send_mail
 from waffle.testutils import override_switch
 from osf import features
 from website import settings
@@ -14,7 +13,7 @@ from tests.base import (
 )
 from framework import auth
 from unittest import mock
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from tests.base import (
     OsfTestCase,
 )
@@ -24,22 +23,32 @@ from website.util import api_url_for
 @pytest.mark.django_db
 class TestMailHog:
 
+    @mock.patch('website.mails.settings.ENABLE_TEST_EMAIL', True)
     def test_mailhog_received_mail(self):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
             mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
             requests.delete(mailhog_v1)
 
-            send_mail(
-                'test email',
-                'test message',
-                from_email=settings.OSF_CONTACT_EMAIL,
-                recipient_list=['to_addr@mail.com',]
+            NotificationType.objects.get(
+                name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
+            ).emit(
+                user=None,
+                destination_address='to_addr@mail.com',
+                event_context={
+                    'fullname': '<NAME>',
+                    'osf_support_email': '<EMAIL>',
+                    'count': 'US',
+                    'error': 'eooer',
+                }
             )
+
             res = requests.get(mailhog_v2).json()
             assert res['count'] == 1
             assert res['items'][0]['Content']['Headers']['To'][0] == 'to_addr@mail.com'
-            assert res['items'][0]['Content']['Headers']['Subject'][0] == 'A test email to Mailhog'
+            assert res['items'][0]['Content']['Headers']['Subject'][0] == NotificationType.objects.get(
+                name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
+            ).subject
             requests.delete(mailhog_v1)
 
 

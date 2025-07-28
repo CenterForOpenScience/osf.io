@@ -15,7 +15,8 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
-from . import NotificationType, NotificationSubscription
+from osf.models.notification_type import NotificationType
+from osf.models.notification_subscription import NotificationSubscription
 from .base import BaseModel, TypedObjectIDMixin
 from .mixins import ReviewProviderMixin
 from .brand import Brand

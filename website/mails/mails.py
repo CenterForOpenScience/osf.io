@@ -165,10 +165,6 @@ CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = Mail(
     'contributor_added_preprint_node_from_osf',
     subject='You have been added as a contributor to an OSF project.'
 )
-CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = Mail(
-    'contributor_added_draft_registration',
-    subject='You have a new registration draft.'
-)
 MODERATOR_ADDED = lambda provider: Mail(
     'moderator_added',
     subject=f'You have been added as a moderator for {provider.name}'
@@ -378,10 +374,6 @@ REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = Mail(
     subject='Some Registrations Successfully Bulk Uploaded to your Community\'s Registry'
 )
 
-REGISTRATION_BULK_UPLOAD_FAILURE_ALL = Mail(
-    'registration_bulk_upload_failure_all',
-    subject='Registrations Were Not Bulk Uploaded to your Community\'s Registry'
-)
 
 REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = Mail(
     'registration_bulk_upload_failure_duplicates',

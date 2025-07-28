@@ -31,8 +31,7 @@ class Notification(models.Model):
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
 
         recipient_address = destination_address or self.subscription.user.username
-
-        if protocol_type == 'email' and settings.DEV_MODE and settings.ENABLE_TEST_EMAIL:
+        if protocol_type == 'email' and settings.ENABLE_TEST_EMAIL:
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,

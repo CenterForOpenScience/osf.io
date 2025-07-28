@@ -239,7 +239,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
@@ -282,7 +282,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_signal_if_default(self, app, user, url_project_contribs):
@@ -301,7 +301,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):

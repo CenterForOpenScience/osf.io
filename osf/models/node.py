@@ -34,6 +34,7 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
+from osf.models.notification_type import NotificationType
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -937,7 +938,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     @property
     def contributor_email_template(self):
-        return 'default'
+        return NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     @property
     def registrations_all(self):
@@ -1335,7 +1336,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         and send emails to users that they have been added to the project.
         (DraftNodes are hidden until registration).
         """
-        from . import NotificationType
+        from osf.models.notification_type import NotificationType
 
         for user in self.contributors.filter(is_registered=True):
             perm = self.contributor_set.get(user=user).permission

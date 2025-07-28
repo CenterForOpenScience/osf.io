@@ -3,7 +3,7 @@ from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from . import NotificationType
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 
 

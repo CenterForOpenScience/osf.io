@@ -51,7 +51,6 @@ class NotificationType(models.Model):
         USER_FORGOT_PASSWORD = 'user_forgot_password'
         USER_FORGOT_PASSWORD_INSTITUTION = 'user_forgot_password_institution'
         USER_REQUEST_EXPORT = 'user_request_export'
-        USER_CONTRIBUTOR_ADDED_OSF_PREPRINT = 'user_contributor_added_osf_preprint'
         USER_DUPLICATE_ACCOUNTS_OSF4I = 'user_duplicate_accounts_osf4i'
         USER_EXTERNAL_LOGIN_LINK_SUCCESS = 'user_external_login_link_success'
         USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
@@ -63,12 +62,9 @@ class NotificationType(models.Model):
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
         USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
         USER_COMMENT_REPLIES = 'user_comment_replies'
-        USER_COMMENTS = 'user_comments'
         USER_FILE_UPDATED = 'user_file_updated'
-        USER_COMMENT_MENTIONS = 'user_mentions'
         USER_REVIEWS = 'user_reviews'
         USER_PASSWORD_RESET = 'user_password_reset'
-        USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION = 'user_contributor_added_draft_registration'
         USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = 'user_external_login_confirm_email_create'
         USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_email_confirm_link'
         USER_CONFIRM_MERGE = 'user_confirm_merge'
@@ -133,6 +129,7 @@ class NotificationType(models.Model):
         PREPRINT_REQUEST_WITHDRAWAL_APPROVED = 'preprint_request_withdrawal_approved'
         PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
         PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
+        PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
         PREPRINT_PENDING_RETRACTION_ADMIN = 'preprint_pending_retraction_admin'
 
         # Collections Submission notifications
@@ -145,6 +142,8 @@ class NotificationType(models.Model):
         COLLECTION_SUBMISSION_CANCEL = 'collection_submission_cancel'
 
         REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES = 'registration_bulk_upload_failure_duplicates'
+
+        DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
         @property
         def instance(self):
