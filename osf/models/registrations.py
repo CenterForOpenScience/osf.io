@@ -1195,11 +1195,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         ).order_by(self.order_by_contributor_field)
 
     @property
-    def contributor_email_template(self):
-        # Override for ContributorMixin
-        return NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
-
-    @property
     def institutions_url(self):
         # For NodeInstitutionsRelationshipSerializer
         path = f'/draft_registrations/{self._id}/institutions/'
@@ -1317,7 +1312,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 draft,
                 contributor=user,
                 auth=None,
-                notification_type=NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION,
+                notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
                 permissions=initiator_permissions
             )
 

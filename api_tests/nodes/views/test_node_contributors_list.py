@@ -1218,15 +1218,20 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def test_add_contributor_no_email_if_false(
         self, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=false'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
         with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=false',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jason Kelece',
+                            'email': 'jason@kelece.com'
+                        },
+                    }
+                },
+                auth=user.auth
+            )
         assert not notifications
         assert res.status_code == 201
 
@@ -1267,7 +1272,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         res = app.post_json_api(url, payload, auth=user.auth)
         args, kwargs = mock_send.call_args
         assert res.status_code == 201
-        assert 'default' == kwargs['email_template']
+        assert NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT == kwargs['notification_type']
 
     def test_add_contributor_signal_preprint_email_disallowed(
         self, app, user, user_two, url_project_contribs
@@ -1370,7 +1375,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'full_name': 'Kanye West',
+                    'full_name': 'Jason Kelece',
                 },
             }
         }

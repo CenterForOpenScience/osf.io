@@ -21,10 +21,6 @@ from framework.flask import rm_handlers
 from osf.models import RegistrationSchema
 from website import settings
 from website.app import init_app
-from website.notifications.listeners import (subscribe_contributor,
-                                             subscribe_creator)
-from website.project.signals import contributor_added, project_created
-from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
 
 from .json_api_test_app import JSONAPITestApp

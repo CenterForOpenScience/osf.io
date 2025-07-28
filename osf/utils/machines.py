@@ -222,13 +222,20 @@ class NodeRequestMachine(BaseMachine):
                 contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
                 make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
                 visible = False if make_curator else ev.kwargs.get('visible', True)
+                if self.machineable.request_type == NodeRequestTypes.ACCESS:
+                    notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+                elif self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST:
+                    notification_type = NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+                else:
+                    notification_type = None
+
                 try:
                     self.machineable.target.add_contributor(
                         self.machineable.creator,
                         auth=Auth(ev.kwargs['user']),
                         permissions=contributor_permissions,
                         visible=visible,
-                        send_email=self.machineable.request_type,
+                        notification_type=notification_type,
                         make_curator=make_curator,
                     )
                 except IntegrityError as e:

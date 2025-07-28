@@ -1,6 +1,7 @@
 import logging
 
-from osf import apps
+from django.apps import apps
+
 from website.project.signals import contributor_added, project_created
 from framework.auth.signals import user_confirmed
 
@@ -27,12 +28,11 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
 def subscribe_confirmed_user(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     NotificationType = apps.get_model('osf.NotificationType')
-    user_events = [
-        NotificationType.Type.USER_FILE_UPDATED,
-        NotificationType.Type.USER_REVIEWS,
-    ]
-    for user_event in user_events:
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=user_event
-        )
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+    )
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_REVIEWS)
+    )

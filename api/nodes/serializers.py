@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag, CollectionSubmission
+from osf.models import Tag, CollectionSubmission, NotificationType, OSFUser
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -1246,22 +1246,40 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+        email_preference = self.context['request'].GET.get('send_email') or self.context['default_email']
         permissions = self.get_proposed_permissions(validated_data)
 
-        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
+        self.validate_data(
+            node,
+            user_id=id,
+            full_name=full_name,
+            email=email,
+            index=index,
+        )
 
-        if send_email not in self.email_preferences:
-            raise exceptions.ValidationError(detail=f'{send_email} is not a valid email preference.')
+        if email_preference not in self.email_preferences:
+            raise exceptions.ValidationError(detail=f'{email_preference} is not a valid email preference.')
+
+        contributor = OSFUser.load(id)
+        if email or (contributor and contributor.is_registered):
+            notification_type = {
+                'false': False,
+                'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+            }[email_preference]
+        else:
+            notification_type = False
 
         try:
-            contributor_dict = {
-                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
-                'bibliographic': bibliographic, 'index': index,
-            }
-
-            contributor_dict['permissions'] = permissions
-            contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
+            contributor_obj = node.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=id,
+                email=email,
+                full_name=full_name,
+                notification_type=notification_type,
+                bibliographic=bibliographic,
+                index=index,
+                permissions=permissions,
+            )
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:

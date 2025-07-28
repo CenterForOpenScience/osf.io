@@ -142,7 +142,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                send_email='access',
+                notification_type='access',
                 make_curator=False,
             )
 
@@ -168,7 +168,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                send_email='access',
+                notification_type='access',
                 make_curator=False,
             )
 
@@ -194,6 +194,6 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                send_email='access',
+                notification_type='access',
                 make_curator=False,
             )

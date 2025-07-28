@@ -643,18 +643,16 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
     logo = settings.OSF_LOGO
 
     # Use match for notification type/logic
-    if notification_type == 'default':
-        notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-    elif notification_type == 'preprint':
-        notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
-    elif notification_type == 'draft_registration':
-        notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
-    elif notification_type == 'access':
-        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
-    elif notification_type == 'access_request':
-        notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
-    elif notification_type == 'institutional_request':
-        notification_type = NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+    if notification_type == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT:
+        pass
+    elif notification_type == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT:
+        pass
+    elif notification_type == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT:
+        pass
+    elif notification_type == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST:
+        pass
+    elif notification_type == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST:
+        pass
     elif getattr(node, 'has_linked_published_preprints', None):
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
@@ -665,7 +663,6 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
         user=contributor,
         event_context={
             'user': contributor.id,
-            'node': node.title,
             'referrer_name': getattr(getattr(auth, 'user', None), 'fullname', '') if auth else '',
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
             'all_global_subscriptions_none': False,

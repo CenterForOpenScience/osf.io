@@ -331,12 +331,12 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(project.creator)
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, 'default', auth)
+            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth)
         assert len(notifications) == 1
 
         # 2nd call does not send email because throttle period has not expired
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, 'default', auth)
+            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth)
         assert not notifications
 
     def test_notify_contributor_email_sends_after_throttle_expires(self):
@@ -346,13 +346,13 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(project.creator)
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, 'default', auth, throttle=throttle)
+            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
         assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
         time.sleep(1)  # throttle period expires
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, 'default', auth, throttle=throttle)
+            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
         assert len(notifications) == 2
         assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         assert notifications[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT

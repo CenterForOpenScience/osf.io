@@ -588,10 +588,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return self.region
 
     @property
-    def contributor_email_template(self):
-        return NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
-
-    @property
     def file_read_scope(self):
         return oauth_scopes.CoreScopes.PREPRINT_FILE_READ
 

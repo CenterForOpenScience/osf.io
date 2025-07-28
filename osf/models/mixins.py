@@ -27,6 +27,7 @@ from osf.exceptions import (
     BlockedEmailError,
 )
 from osf.models.notification_type import NotificationType
+from osf.models.notification_subscription import NotificationSubscription
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .subject import Subject
@@ -1076,9 +1077,12 @@ class ReviewProviderMixin(GuardianMixin):
         else:
             raise TypeError(f"Unsupported group type: {type(group)}")
 
-        # Add default notification subscription
-        for subscription in self.DEFAULT_SUBSCRIPTIONS:
-            self.add_user_to_subscription(user, f'{self._id}_{subscription}')
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type=NotificationType.objects.get(
+                name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+            )
+        )
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
@@ -1092,14 +1096,10 @@ class ReviewProviderMixin(GuardianMixin):
 
         return _group.user_set.remove(user)
 
-    def add_user_to_subscription(self, user, subscription_id):
-        notification = self.notification_subscriptions.get(_id=subscription_id)
-        user_id = user.id
-        is_subscriber = notification.none.filter(id=user_id).exists() \
-                        or notification.email_digest.filter(id=user_id).exists() \
-                        or notification.email_transactional.filter(id=user_id).exists()
-        if not is_subscriber:
-            notification.add_user_to_subscription(user, 'email_transactional', save=True)
+    def add_user_to_subscription(self, user, subscription):
+        subscription.objects.get_or_create(
+            user=user,
+        )
 
     def remove_user_from_subscription(self, user, subscription_id):
         notification = self.notification_subscriptions.get(_id=subscription_id)
@@ -1308,11 +1308,6 @@ class ContributorMixin(models.Model):
         # 'contributor___order', for example
         raise NotImplementedError()
 
-    @property
-    def contributor_email_template(self):
-        # default contributor email template as a string
-        raise NotImplementedError()
-
     def get_addons(self):
         raise NotImplementedError()
 
@@ -1394,24 +1389,42 @@ class ContributorMixin(models.Model):
             qs = qs.filter(user__is_active=True)
         return qs
 
-    def add_contributor(self, contributor, permissions=None, visible=True,
-                        send_email=None, auth=None, log=True, save=False, make_curator=False):
+    def add_contributor(
+            self,
+            contributor,
+            permissions=None,
+            visible=True,
+            notification_type=None,
+            auth=None,
+            log=True,
+            save=False,
+            make_curator=False
+    ):
         """Add a contributor to the project.
 
         :param User contributor: The contributor to be added
         :param list permissions: Permissions to grant to the contributor. Array of all permissions if node,
          highest permission to grant, if contributor, as a string.
         :param bool visible: Contributor is visible in project dashboard
-        :param str send_email: Email preference for notifying added contributor
+        :param str notification_type: Email preference for notifying added contributor
         :param Auth auth: All the auth information including user, API key
         :param bool log: Add log to self
         :param bool save: Save after adding contributor
         :param bool make_curator indicates whether the user should be an institutional curator
         :returns: Whether contributor was added
         """
-        send_email = send_email or self.contributor_email_template
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
+        if notification_type is None:
+            from osf.models import AbstractNode, Preprint, DraftRegistration
+
+            if isinstance(self, AbstractNode):
+                notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            elif isinstance(self, Preprint):
+                notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+            elif isinstance(self, DraftRegistration):
+                notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+
         if contrib_to_add.is_disabled:
             raise ValidationValueError('Deactivated users cannot be added as contributors.')
 
@@ -1465,7 +1478,7 @@ class ContributorMixin(models.Model):
                     self,
                     contributor=contributor,
                     auth=auth,
-                    notification_type=send_email,
+                    notification_type=notification_type,
                     permissions=permissions
                 )
 
@@ -1513,7 +1526,7 @@ class ContributorMixin(models.Model):
             fullname,
             email,
             auth,
-            send_email=None,
+            notification_type=None,
             visible=True,
             permissions=None,
             existing_user=None
@@ -1528,7 +1541,6 @@ class ContributorMixin(models.Model):
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
         OSFUser = apps.get_model('osf.OSFUser')
-        send_email = send_email or self.contributor_email_template
 
         if email:
             try:
@@ -1568,7 +1580,7 @@ class ContributorMixin(models.Model):
             permissions=permissions,
             auth=auth,
             visible=visible,
-            send_email=send_email,
+            notification_type=notification_type,
             log=True,
             save=False
         )
@@ -1581,13 +1593,11 @@ class ContributorMixin(models.Model):
                                           user_id=None,
                                           full_name=None,
                                           email=None,
-                                          send_email=None,
+                                          notification_type=None,
                                           permissions=None,
                                           bibliographic=True,
                                           index=None):
         OSFUser = apps.get_model('osf.OSFUser')
-        send_email = send_email or self.contributor_email_template
-
         if user_id:
             contributor = OSFUser.load(user_id)
             if not contributor:
@@ -1602,7 +1612,7 @@ class ContributorMixin(models.Model):
                     auth=auth,
                     visible=bibliographic,
                     permissions=permissions,
-                    send_email=send_email,
+                    notification_type=notification_type,
                     save=True
                 )
             else:
@@ -1615,7 +1625,7 @@ class ContributorMixin(models.Model):
                     fullname=full_name,
                     email=contributor.username,
                     auth=auth,
-                    send_email=send_email,
+                    notification_type=notification_type,
                     permissions=permissions,
                     visible=bibliographic,
                     existing_user=contributor,
@@ -1627,14 +1637,20 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor and contributor.is_registered:
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     send_email=send_email, permissions=permissions, save=True)
+                self.add_contributor(
+                    contributor=contributor,
+                    auth=auth,
+                    visible=bibliographic,
+                    notification_type=notification_type,
+                    permissions=permissions,
+                    save=True
+                )
             else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name,
                     email=email,
                     auth=auth,
-                    send_email=send_email,
+                    notification_type=notification_type,
                     permissions=permissions,
                     visible=bibliographic
                 )

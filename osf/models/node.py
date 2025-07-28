@@ -34,7 +34,6 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
-from osf.models.notification_type import NotificationType
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -935,10 +934,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         on the node, or have permission through OSFGroup membership
         """
         return self.get_users_with_perm(READ)
-
-    @property
-    def contributor_email_template(self):
-        return NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     @property
     def registrations_all(self):

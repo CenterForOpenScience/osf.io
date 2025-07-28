@@ -6,8 +6,6 @@ from tests.base import OsfTestCase
 
 from framework.celery_tasks import handlers
 from website import settings
-from website.project.signals import contributor_added
-from website.project.views.contributor import notify_added_contributor
 from website.util.metrics import OsfSourceTags
 from framework.auth import Auth
 
@@ -288,8 +286,6 @@ class TestUserMerging(OsfTestCase):
         assert self.user in self.project_with_unreg_contrib.contributors
 
     def test_merge_doesnt_send_signal(self):
-        #Explictly reconnect signal as it is disconnected by default for test
-        contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
         with capture_notifications() as notifications:
             with override_flag(ENABLE_GV, active=True):

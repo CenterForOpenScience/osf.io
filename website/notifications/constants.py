@@ -1,7 +1,3 @@
-
-# Note: if the subscription starts with 'global_', it will be treated like a default
-# subscription. If no notification type has been assigned, the user subscription
-# will default to 'email_transactional'.
 USER_SUBSCRIPTIONS_AVAILABLE = [
     'user_file_updated',
     'user_reviews'

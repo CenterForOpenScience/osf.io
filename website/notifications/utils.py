@@ -2,7 +2,6 @@ import collections
 
 from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q
 
 from framework.postcommit_tasks.handlers import run_postcommit
 from osf.models import NotificationSubscription, NotificationType
@@ -78,7 +77,13 @@ def remove_contributor_from_subscriptions(node, user):
     # If user still has permissions through being a contributor or group member, or has
     # admin perms on a parent, don't remove their subscription
     if not (node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
-        node_subscriptions = get_all_node_subscriptions(user, node)
+        node_subscriptions = NotificationSubscription.objects.filter(
+            user=user,
+            user__isnull=True,
+            object_id=node.id,
+            content_type=ContentType.objects.get_for_model(node)
+        )
+
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
 
@@ -198,10 +203,9 @@ def get_configured_projects(user):
     :return: list of node objects for projects with no parent
     """
     configured_projects = set()
-    user_subscriptions = get_all_user_subscriptions(user, extra=(
-        ~Q(node__type='osf.collection') &
-        Q(node__is_deleted=False)
-    ))
+    user_subscriptions = NotificationSubscription.objects.filter(
+        user=user
+    )
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
@@ -220,37 +224,18 @@ def get_configured_projects(user):
 
     return sorted(configured_projects, key=lambda n: n.title.lower())
 
-
 def check_project_subscriptions_are_all_none(user, node):
-    node_subscriptions = get_all_node_subscriptions(user, node)
+    node_subscriptions = NotificationSubscription.objects.filter(
+        user=user,
+        user__isnull=True,
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node)
+    )
+
     for s in node_subscriptions:
         if not s.none.filter(id=user.id).exists():
             return False
     return True
-
-
-def get_all_user_subscriptions(user, extra=None):
-    """ Get all Subscription objects that the user is subscribed to"""
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    queryset = NotificationSubscription.objects.filter(
-        Q(none=user.pk) |
-        Q(email_digest=user.pk) |
-        Q(email_transactional=user.pk)
-    ).distinct()
-    return queryset.filter(extra) if extra else queryset
-
-
-def get_all_node_subscriptions(user, node, user_subscriptions=None):
-    """ Get all Subscription objects for a node that the user is subscribed to
-    :param user: OSFUser object
-    :param node: Node object
-    :param user_subscriptions: all Subscription objects that the user is subscribed to
-    :return: list of Subscription objects for a node that the user is subscribed to
-    """
-    if not user_subscriptions:
-        user_subscriptions = get_all_user_subscriptions(user)
-    return user_subscriptions.filter(user__isnull=True, node=node)
-
 
 def format_data(user, nodes):
     """ Format subscriptions data for project settings page
@@ -260,7 +245,6 @@ def format_data(user, nodes):
     """
     items = []
 
-    user_subscriptions = get_all_user_subscriptions(user)
     for node in nodes:
         assert node, f'{node._id} is not a valid Node.'
 
@@ -276,14 +260,19 @@ def format_data(user, nodes):
         # user is contributor on a component of the project/node
 
         if can_read:
-            node_sub_available = ['node_file_updated']
-            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+            subscriptions = NotificationSubscription.objects.filter(
+                user=user,
+                notification_type__name='node_file_updated',
+                user__isnull=True,
+                object_id=node.id,
+                content_type=ContentType.objects.get_for_model(node)
+            )
 
             for subscription in subscriptions:
-                index = node_sub_available.index(getattr(subscription, 'event_name'))
-                children_tree.append(serialize_event(user, subscription=subscription,
-                                                node=node, event_description=node_sub_available.pop(index)))
-            for node_sub in node_sub_available:
+                children_tree.append(
+                    serialize_event(user, subscription=subscription, node=node)
+                )
+            for node_sub in subscriptions:
                 children_tree.append(serialize_event(user, node=node, event_description=node_sub))
             children_tree.sort(key=lambda s: s['event']['title'])
 
@@ -317,7 +306,7 @@ def format_user_subscriptions(user):
             user, subscription,
             event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
         )
-        for subscription in get_all_user_subscriptions(user)
+        for subscription in NotificationSubscription.objects.get(user=user)
         if subscription is not None and getattr(subscription, 'event_name') in user_subs_available
     ]
     subscriptions.extend([serialize_event(user, event_description=sub) for sub in user_subs_available])
@@ -329,7 +318,14 @@ def format_file_subscription(user, node_id, path, provider):
     AbstractNode = apps.get_model('osf.AbstractNode')
     node = AbstractNode.load(node_id)
     wb_path = path.lstrip('/')
-    for subscription in get_all_node_subscriptions(user, node):
+    subscriptions = NotificationSubscription.objects.filter(
+        user=user,
+        user__isnull=True,
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node)
+    )
+
+    for subscription in subscriptions:
         if wb_path in getattr(subscription, 'event_name'):
             return serialize_event(user, subscription, node)
     return serialize_event(user, node=node, event_description='file_updated')
