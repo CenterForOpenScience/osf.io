@@ -200,15 +200,6 @@ FILE_OPERATION_FAILED = Mail(
 UNESCAPE = '<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
 
-ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
-    'archive_size_exceeded_desk',
-    subject=PROBLEM_REGISTERING
-)
-ARCHIVE_SIZE_EXCEEDED_USER = Mail(
-    'archive_size_exceeded_user',
-    subject=PROBLEM_REGISTERING
-)
-
 ARCHIVE_COPY_ERROR_DESK = Mail(
     'archive_copy_error_desk',
     subject=PROBLEM_REGISTERING

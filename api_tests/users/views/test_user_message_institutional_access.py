@@ -221,7 +221,7 @@ class TestUserMessageInstitutionalAccess:
                 auth=institutional_admin.auth,
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
         user_message = UserMessage.objects.get()
@@ -235,7 +235,7 @@ class TestUserMessageInstitutionalAccess:
         with capture_notifications() as notifications:
             res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth)
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
 
@@ -255,4 +255,4 @@ class TestUserMessageInstitutionalAccess:
                 auth=institutional_admin.auth,
             )
         assert res.status_code == 201
-        assert notifications[0]['user'].username == user_with_affiliation.username
+        assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username

@@ -174,7 +174,7 @@ class TestAuthUtils(OsfTestCase):
             user.set_password('killerqueen')
             user.save()
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert notifications[0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -219,12 +219,12 @@ class TestAuthUtils(OsfTestCase):
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert notifications[0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
         with capture_notifications() as notifications:
             self.app.post(url, json=sign_up_data)
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert notifications[0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
 
 class TestAuthObject(OsfTestCase):

@@ -89,10 +89,10 @@ class UserMessage(BaseModel, ObjectIDMixin):
         ).emit(
             user=self.recipient,
             event_context={
-                'sender': self.sender,
-                'recipient': self.recipient,
+                'sender_fullname': self.sender.fullname,
+                'recipient_fullname': self.recipient.fullname,
                 'message_text': self.message_text,
-                'institution': self.institution,
+                'institution_name': self.institution.name,
             },
             email_context={
                 'bcc_addr': [self.sender.username] if self.is_sender_BCCed else None,

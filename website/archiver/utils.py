@@ -31,6 +31,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
     ).emit(
+        user=user,
         event_context={
             'user': user.id,
             'src': src._id,
