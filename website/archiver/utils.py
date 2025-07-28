@@ -45,8 +45,8 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     ).emit(
         user=user,
         event_context={
-            'user': user,
-            'src': src,
+            'user': user.fullname,
+            'src': src.title,
             'can_change_preferences': False,
         }
     )
@@ -111,10 +111,13 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
     ).emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
-            'user': user.id,
+            'user_fullname': user.fullname,
+            'src_title': src.title,
+            'src__id': src._id,
             'src': src._id,
-            'results': results,
+            'results': [str(error) for error in results],
             'url': url,
             'can_change_preferences': False,
         }
@@ -122,11 +125,13 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
     NotificationType.objects.get(
         name=NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
     ).emit(
-        user=user,
+        destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
-            'user': user.id,
+            'user_fullname': user.fullname,
+            'src_title': src.title,
+            'src__id': src._id,
             'src': src._id,
-            'results': results,
+            'results': [str(error) for error in results],
             'can_change_preferences': False,
         }
     )

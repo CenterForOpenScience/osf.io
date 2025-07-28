@@ -78,6 +78,7 @@ class NotificationType(models.Model):
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
         USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
+        USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'
@@ -201,7 +202,7 @@ class NotificationType(models.Model):
 
     def emit(
             self,
-            user,
+            user=None,
             destination_address=None,
             subscribed_object=None,
             message_frequency='instantly',

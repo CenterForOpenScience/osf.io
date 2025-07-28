@@ -102,7 +102,7 @@ def main():
         ).emit(
             destination_address=settings.OSF_SUPPORT_EMAIL,
             event_context={
-                'broken_registrations': broken_registrations,
+                'broken_registrations_count': len(broken_registrations),
                 'attachment_name': filename,
                 'attachement_content': output.getvalue(),
                 'can_change_preferences': False

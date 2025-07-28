@@ -180,9 +180,20 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/file_operation_failed.html.mako'
   - name: user_archive_job_exceeded
+    subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/archive_size_exceeded_user.html.mako'
+  - name: user_archive_job_copy_error
+    subject: 'Problem Registering'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/archive_copy_error_user.html.mako'
+  - name: user_archive_job_uncaught_error
+    subject: 'Problem Registering'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/archive_uncaught_error_user.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
@@ -388,9 +399,10 @@ notification_types:
     object_content_type_model_name: desk
     template: 'website/templates/emails/addons_boa_job_complete.html.mako'
   - name: desk_archive_job_copy_error
+    subject: 'Problem registering'
     __docs__: Archive job failed due to copy error. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'website/templates/emails/new_pending_submissions.html.mako'
+    template: 'website/templates/emails/archive_copy_error_desk.html.mako'
   - name: desk_archive_job_exceeded
     subject: 'Problem registering'
     __docs__: Archive job failed due to size exceeded

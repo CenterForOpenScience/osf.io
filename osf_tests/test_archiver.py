@@ -733,8 +733,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
-        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications[1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
         self.dst.reload()
         assert self.dst.is_deleted
 
@@ -748,8 +748,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
-        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications[1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
 
     def test_handle_archive_fail_size(self):
         with capture_notifications() as notifications:
@@ -761,8 +761,8 @@ class TestArchiverUtils(ArchiverTestCase):
                 {}
             )
         assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
-        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
+        assert notifications[1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)

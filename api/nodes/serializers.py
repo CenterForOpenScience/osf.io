@@ -1266,6 +1266,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
                 'false': False,
                 'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
                 'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
+                'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
             }[email_preference]
         else:
             notification_type = False

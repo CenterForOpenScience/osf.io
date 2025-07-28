@@ -199,16 +199,6 @@ FILE_OPERATION_FAILED = Mail(
 
 UNESCAPE = '<% from osf.utils.sanitize import unescape_entities %> ${unescape_entities(src.title)}'
 PROBLEM_REGISTERING = 'Problem registering ' + UNESCAPE
-
-ARCHIVE_COPY_ERROR_DESK = Mail(
-    'archive_copy_error_desk',
-    subject=PROBLEM_REGISTERING
-)
-ARCHIVE_COPY_ERROR_USER = Mail(
-    'archive_copy_error_user',
-    subject=PROBLEM_REGISTERING
-
-)
 ARCHIVE_FILE_NOT_FOUND_DESK = Mail(
     'archive_file_not_found_desk',
     subject=PROBLEM_REGISTERING
@@ -226,11 +216,6 @@ ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
 ARCHIVE_REGISTRATION_STUCK_DESK = Mail(
     'archive_registration_stuck_desk',
     subject='[auto] Stuck registrations audit'
-)
-
-ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
-    'archive_uncaught_error_user',
-    subject=PROBLEM_REGISTERING
 )
 
 ARCHIVE_SUCCESS = Mail(
