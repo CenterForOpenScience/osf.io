@@ -1,10 +1,8 @@
-from osf.metrics.reports import (
-    MonthlyReport,
-    NotificationSummaryReport,
-)
+from osf.metrics.reports import NotificationSummaryReport
+from osf.metrics.reporters._base import MonthlyReporter
 from osf.models.notification_subscription import NotificationSubscription
 
-class NotificationCountReporter(MonthlyReport):
+class NotificationCountReporter(MonthlyReporter):
     report_name = 'Notification Metrics'
 
     def report(self):
@@ -20,4 +18,4 @@ class NotificationCountReporter(MonthlyReport):
                 created__gt=target_month, created__lt=next_month
             ).values('user').distinct().count(),
         )
-        return [report]
+        return report
