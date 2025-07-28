@@ -1092,7 +1092,7 @@ class ReviewProviderMixin(GuardianMixin):
         if unsubscribe:
             # remove notification subscription
             for subscription in self.DEFAULT_SUBSCRIPTIONS:
-                self.remove_user_from_subscription(user, f'{self._id}_{subscription}')
+                self.remove_user_from_subscription(user, subscription)
 
         return _group.user_set.remove(user)
 
@@ -1101,9 +1101,8 @@ class ReviewProviderMixin(GuardianMixin):
             user=user,
         )
 
-    def remove_user_from_subscription(self, user, subscription_id):
-        notification = self.notification_subscriptions.get(_id=subscription_id)
-        notification.remove_user_from_subscription(user, save=True)
+    def remove_user_from_subscription(self, user, subscription):
+        subscription.remove_user_from_subscription(user, save=True)
 
 
 class TaxonomizableMixin(models.Model):
