@@ -7,7 +7,6 @@ from osf_tests.factories import (
     CollectionProviderFactory,
 )
 from osf.utils import permissions
-from osf_tests.utils import _ensure_subscriptions
 from tests.utils import capture_notifications
 
 
@@ -20,7 +19,6 @@ def url(provider):
 def provider():
     provider = CollectionProviderFactory()
     provider.update_group_permissions()
-    _ensure_subscriptions(provider)
     return provider
 
 

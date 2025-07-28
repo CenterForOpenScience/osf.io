@@ -7,7 +7,7 @@ from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaRespon
 from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
-from osf_tests.utils import get_default_test_schema, _ensure_subscriptions
+from osf_tests.utils import get_default_test_schema
 from tests.utils import capture_notifications
 
 from transitions import MachineError
@@ -812,7 +812,6 @@ class TestModeratedSchemaResponseApprovalFlows():
     def provider(self):
         provider = RegistrationProviderFactory()
         provider.update_group_permissions()
-        _ensure_subscriptions(provider)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
