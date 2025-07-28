@@ -904,7 +904,7 @@ class TestChangePassword:
             user.save()
 
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PASSWORD_CHANGED
+        assert notifications[0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
 
     def test_set_password_no_notify(self, user):
         old_password = 'password'

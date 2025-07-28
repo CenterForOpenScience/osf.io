@@ -859,7 +859,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -869,7 +869,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
         assert notifications[0]['kwargs']['user'] == moderator
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(

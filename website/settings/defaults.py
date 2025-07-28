@@ -457,7 +457,6 @@ class CeleryConfig:
 
     med_pri_modules = {
         'framework.email.tasks',
-        'scripts.send_queued_mails',
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'website.notifications.tasks',
@@ -567,7 +566,6 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
-        'scripts.send_queued_mails',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
@@ -634,11 +632,6 @@ class CeleryConfig:
         'clear_expired_sessions': {
             'task': 'osf.management.commands.clear_expired_sessions',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
-            'kwargs': {'dry_run': False},
-        },
-        'send_queued_mails': {
-            'task': 'scripts.send_queued_mails',
-            'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m.
             'kwargs': {'dry_run': False},
         },
         'new-and-noteworthy': {

@@ -36,7 +36,7 @@ class TestResetPassword:
         with capture_notifications() as notification:
             res = app.get(url)
         assert len(notification) == 1
-        assert notification[0]['type'] == NotificationType.Type.RESET_PASSWORD_CONFIRMATION
+        assert notification[0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
         assert res.status_code == 200
         user_one.reload()
 

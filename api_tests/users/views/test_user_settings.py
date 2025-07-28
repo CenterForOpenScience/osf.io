@@ -60,7 +60,7 @@ class TestUserRequestExport:
         with capture_notifications() as notification:
             res = app.post_json_api(url, payload, auth=user_one.auth)
         assert len(notification) == 1
-        assert notification[0]['type'] == NotificationType.Type.USER_ACCOUNT_EXPORT_FORM
+        assert notification[0]['type'] == NotificationType.Type.USER_REQUEST_EXPORT
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None

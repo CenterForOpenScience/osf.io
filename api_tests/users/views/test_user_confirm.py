@@ -170,7 +170,7 @@ class TestConfirmEmail:
             assert res.status_code == 201
 
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
+        assert notifications[0]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
 
         user.reload()
         assert user.external_identity['ORCID']['0000-0000-0000-0000'] == 'VERIFIED'

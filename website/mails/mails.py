@@ -223,18 +223,6 @@ ARCHIVE_SUCCESS = Mail(
     subject='Registration of ' + UNESCAPE + ' complete'
 )
 
-WELCOME = Mail(
-    'welcome',
-    subject='Welcome to OSF',
-    engagement=True
-)
-
-WELCOME_OSF4I = Mail(
-    'welcome_osf4i',
-    subject='Welcome to OSF',
-    engagement=True
-)
-
 DUPLICATE_ACCOUNTS_OSF4I = Mail(
     'duplicate_accounts_sso_osf4i',
     subject='Duplicate OSF Accounts'

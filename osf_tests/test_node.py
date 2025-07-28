@@ -34,7 +34,7 @@ from osf.models import (
     NodeRelation,
     Registration,
     DraftRegistration,
-    CollectionSubmission
+    CollectionSubmission, NotificationType
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -42,6 +42,7 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from framework.auth.core import Auth
+from tests.utils import capture_notifications
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -2125,23 +2126,25 @@ class TestSetPrivacy:
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert last_logged_before_method_call != node.last_logged
 
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth)
-        assert mock_queue.call_count == 1
+    def test_set_privacy_sends_mail_default(self, node, auth):
+        with capture_notifications() as notifications:
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_sends_mail(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth, meeting_creation=False)
-        assert mock_queue.call_count == 1
+    def test_set_privacy_sends_mail(self, node, auth):
+        with capture_notifications() as notifications:
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth, meeting_creation=False)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_skips_mail_if_meeting(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth, meeting_creation=True)
-        assert bool(mock_queue.called) is False
+    def test_set_privacy_skips_mail_if_meeting(self, node, auth):
+        with capture_notifications() as notifications:
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth, meeting_creation=True)
+        assert not notifications
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)

@@ -51,7 +51,13 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forgot_password.html.mako'
+  - name: user_welcome
+    subject: 'Welcome to OSF'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/welcome.html.mako'
   - name: user_welcome_osf4i
+    subject: 'Welcome to OSF'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/welcome_osf4i.html.mako'

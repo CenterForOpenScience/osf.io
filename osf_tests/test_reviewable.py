@@ -41,7 +41,6 @@ class TestReviewable:
             is_published=False
         )
         assert preprint.machine_state == DefaultStates.INITIAL.value
-
         with capture_notifications() as notifications:
             preprint.run_submit(user)
         assert len(notifications) == 1
