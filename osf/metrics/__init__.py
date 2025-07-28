@@ -21,6 +21,7 @@ from .reports import (
     PreprintSummaryReport,
     StorageAddonUsage,
     UserSummaryReport,
+    NotificationSummaryReport,
 )
 
 DAILY_REPORTS = (
@@ -43,4 +44,5 @@ __all__ = (
     'PreprintDownload',
     'RegistriesModerationMetrics',
     'UserInstitutionProjectCounts',
+    'NotificationSummaryReport',
 )

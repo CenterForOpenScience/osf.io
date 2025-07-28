@@ -142,7 +142,7 @@ USE_CDN_FOR_CLIENT_LIBS = True
 
 USE_EMAIL = True
 FROM_EMAIL = 'openscienceframework-noreply@osf.io'
-
+ENABLE_TEST_EMAIL = False
 # support email
 OSF_SUPPORT_EMAIL = 'support@osf.io'
 # contact email
@@ -179,6 +179,7 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 MAILCHIMP_LIST_MAP = {
     MAILCHIMP_GENERAL_LIST: '123',
 }
+NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
@@ -440,7 +441,6 @@ class CeleryConfig:
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
-        'osf.management.commands.migrate_registration_responses',
         'osf.management.commands.archive_registrations_on_IA'
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
@@ -692,19 +692,12 @@ class CeleryConfig:
             #   'task': 'management.commands.migrate_pagecounter_data',
             #   'schedule': crontab(minute=0, hour=7),  # Daily 2:00 a.m.
             # },
-            # 'migrate_registration_responses': {
-            #   'task': 'management.commands.migrate_registration_responses',
-            #   'schedule': crontab(minute=32, hour=7),  # Daily 2:32 a.m.
             # 'migrate_deleted_date': {
             #   'task': 'management.commands.migrate_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),
             # 'addon_deleted_date': {
             #   'task': 'management.commands.addon_deleted_date',
             #   'schedule': crontab(minute=0, hour=3),  # Daily 11:00 p.m.
-            # },
-            # 'populate_branched_from': {
-            #   'task': 'management.commands.populate_branched_from',
-            #   'schedule': crontab(minute=0, hour=3),
             # },
             'generate_sitemap': {
                 'task': 'scripts.generate_sitemap',

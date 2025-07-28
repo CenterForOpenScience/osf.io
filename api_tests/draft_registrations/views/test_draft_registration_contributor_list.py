@@ -1,5 +1,4 @@
 import pytest
-from unittest import mock
 import random
 
 from framework.auth.core import Auth
@@ -17,6 +16,7 @@ from api_tests.nodes.views.test_node_contributors_list import (
     TestNodeContributorFiltering,
 )
 from api_tests.nodes.views.utils import NodeCRUDTestCase
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
@@ -25,6 +25,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 from tests.base import capture_signals
+from tests.utils import capture_notifications
 from website.project.signals import contributor_added
 
 
@@ -142,7 +143,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True
+            auth=Auth(user)
         )
 
         for i in range(0, 10):
@@ -208,37 +209,37 @@ class TestDraftRegistrationContributorCreateValidation(DraftRegistrationCRUDTest
         return DraftRegistrationContributorsCreateSerializer
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeContributorCreateEmail):
     @pytest.fixture()
     def url_project_contribs(self, project_public):
         # Overrides TestNodeContributorCreateEmail
         return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
-    def test_add_contributor_sends_email(
-            self, app, user, user_two,
-            url_project_contribs, mock_send_grid):
+    def test_add_contributor_sends_email(self, app, user, user_two, url_project_contribs):
         # Overrides TestNodeContributorCreateEmail
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'users',
-                            'id': user_two._id
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                        },
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'type': 'users',
+                                    'id': user_two._id
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
-
-        res = app.post_json_api(url, payload, auth=user.auth)
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
@@ -266,38 +267,42 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_sends_email(
             self, mock_send_grid, app, user, url_project_contribs):
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Brian Dawkins',
+                            'email': 'b@dawk.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_add_unregistered_contributor_signal_if_default(
-            self, mock_send, app, user, url_project_contribs):
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
+    def test_add_unregistered_contributor_signal_if_default(self, app, user, url_project_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jalen Hurts',
+                            'email': 'numberone@eagles.com'
+                        }
+                    }
+                }, auth=user.auth
+            )
         assert res.status_code == 201
-        assert 'draft_registration' == kwargs['email_template']
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_without_email_no_email(

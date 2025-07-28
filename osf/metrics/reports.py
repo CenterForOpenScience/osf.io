@@ -345,3 +345,8 @@ class PrivateSpamMetricsReport(MonthlyReport):
     preprint_oopspam_hammed = metrics.Integer()
     preprint_akismet_flagged = metrics.Integer()
     preprint_akismet_hammed = metrics.Integer()
+
+
+class NotificationSummaryReport(MonthlyReport):
+    notification_subscriptions_count = metrics.Integer()
+    notification_subscriptions_users_count = metrics.Integer()

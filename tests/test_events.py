@@ -12,7 +12,7 @@ from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
 from osf.utils.permissions import WRITE
-from tests.base import OsfTestCase, NotificationTestCase
+from tests.base import OsfTestCase
 
 email_transactional = 'email_transactional'
 email_digest = 'email_digest'
@@ -131,7 +131,7 @@ class TestFileUpdated(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -151,13 +151,13 @@ class TestFileUpdated(OsfTestCase):
         assert mock_notify.called
 
 
-class TestFileAdded(NotificationTestCase):
+class TestFileAdded(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -178,13 +178,13 @@ class TestFileAdded(NotificationTestCase):
         assert mock_notify.called
 
 
-class TestFileRemoved(NotificationTestCase):
+class TestFileRemoved(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -213,13 +213,13 @@ class TestFileRemoved(NotificationTestCase):
         assert mock_notify.called
 
 
-class TestFolderCreated(NotificationTestCase):
+class TestFolderCreated(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = factories.UserFactory()
         self.consolidate_auth = Auth(user=self.user)
         self.project = factories.ProjectFactory()
-        self.project_subscription = factories.NotificationSubscriptionFactory(
+        self.project_subscription = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
@@ -249,7 +249,7 @@ class TestFolderFileRenamed(OsfTestCase):
         self.user_2 = factories.AuthUserFactory()
         self.project = factories.ProjectFactory(creator=self.user_1)
         # subscription
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + 'file_updated',
             owner=self.project,
             event_name='file_updated',
@@ -286,7 +286,7 @@ class TestFolderFileRenamed(OsfTestCase):
         assert self.event.text_message == 'renamed folder "/One/Two/Three" to "/One/Two/Four".'
 
 
-class TestFileMoved(NotificationTestCase):
+class TestFileMoved(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user_1 = factories.AuthUserFactory()
@@ -303,21 +303,21 @@ class TestFileMoved(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -379,7 +379,7 @@ class TestFileMoved(NotificationTestCase):
         assert 1 == mock_store.call_count
 
 
-class TestFileCopied(NotificationTestCase):
+class TestFileCopied(OsfTestCase):
     # Test the copying of files
     def setUp(self):
         super().setUp()
@@ -398,21 +398,21 @@ class TestFileCopied(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id
@@ -460,7 +460,7 @@ class TestFileCopied(NotificationTestCase):
         assert 0 == mock_store.call_count
 
 
-class TestCategorizeUsers(NotificationTestCase):
+class TestCategorizeUsers(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user_1 = factories.AuthUserFactory()
@@ -480,21 +480,21 @@ class TestCategorizeUsers(NotificationTestCase):
         )
         # Subscriptions
         # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
+        self.sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.project._id + '_file_updated',
             owner=self.project,
             event_name='file_updated'
         )
         self.sub.save()
         # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
+        self.private_sub = factories.NotificationSubscriptionLegacyFactory(
             _id=self.private_node._id + '_file_updated',
             owner=self.private_node,
             event_name='file_updated'
         )
         self.private_sub.save()
         # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
+        self.file_sub = factories.NotificationSubscriptionLegacyFactory(
             _id='{pid}_{wbid}_file_updated'.format(
                 pid=self.project._id,
                 wbid=self.event.waterbutler_id

@@ -6,7 +6,7 @@
     <%!
         from website import settings
     %>
-    Hi ${user.given_name or user.fullname},<br>
+    Hi ${user_fullname},<br>
     <br>
     Thank you for storing your research materials on OSF. We have updated the OSF Storage capacity to 5 GB for private content and 50 GB for public content. None of your current files stored on OSF Storage will be affected, but after November 3, 2020 projects exceeding capacity will no longer accept new file uploads.
     <br>

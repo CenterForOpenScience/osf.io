@@ -3,6 +3,7 @@ import datetime
 import functools
 from unittest import mock
 
+from django.apps import apps
 from django.http import HttpRequest
 from django.utils import timezone
 
@@ -251,3 +252,36 @@ def unique(factory):
 def run_celery_tasks():
     yield
     celery_teardown_request()
+
+
+@contextlib.contextmanager
+def capture_notifications():
+    """
+    Context manager to capture NotificationType emits without interfering with ORM calls.
+    Yields a list of captured emits:
+        [{'type': <NotificationType.Type>, 'args': ..., 'kwargs': ...}, ...]
+    """
+    NotificationType = apps.get_model('osf', 'NotificationType')
+    real_get = NotificationType.objects.get  # Save the real .get()
+
+    captured = []
+
+    def side_effect(*args, **kwargs):
+        notifier = real_get(*args, **kwargs)  # Call the real .get()
+        original_emit = notifier.emit
+
+        def wrapped_emit(*emit_args, **emit_kwargs):
+            captured.append({
+                'type': notifier.name,
+                'args': emit_args,
+                'kwargs': emit_kwargs
+            })
+            return original_emit(*emit_args, **emit_kwargs)
+
+        notifier.emit = wrapped_emit
+        return notifier
+
+    with mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect):
+        yield captured
+
+

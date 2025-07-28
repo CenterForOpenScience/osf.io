@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     Thank you for registering for an account on the Open Science Framework.<br>
     <br>

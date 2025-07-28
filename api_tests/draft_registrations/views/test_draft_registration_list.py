@@ -6,7 +6,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraf
 from api.base.settings.defaults import API_BASE
 
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema, NotificationType
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -16,6 +16,7 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
+from tests.utils import capture_notifications
 
 from website import settings
 
@@ -431,19 +432,15 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload, mock_send_grid):
         # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
-        app.post_json_api(
-            f'{url_draft_registrations}?embed=branched_from&embed=initiator',
-            payload,
-            auth=user.auth
-        )
-        assert mock_send_grid.called
-
-        # Python 3.6 does not support mock.call_args.args/kwargs
-        # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
-        # (note, this is compatible with later versions)
-        mock_send_kwargs = mock_send_grid.call_args[1]
-        assert mock_send_kwargs['subject'] == 'You have a new registration draft.'
-        assert mock_send_kwargs['to_addr'] == user.email
+        with capture_notifications() as notifications:
+            app.post_json_api(
+                f'{url_draft_registrations}?embed=branched_from&embed=initiator',
+                payload,
+                auth=user.auth
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
+        assert notifications[0]['kwargs']['user'] == user
 
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider

@@ -1,7 +1,7 @@
 from django.utils import timezone
 
+from osf.models import NotificationType
 from website.notifications import utils
-from website.mails import mails
 from website.reviews import signals as reviews_signals
 from website.settings import OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO, DOMAIN
 
@@ -29,19 +29,19 @@ def reviews_notification(self, creator, template, context, action):
 
 
 @reviews_signals.reviews_email_submit.connect
-def reviews_submit_notification(self, recipients, context, template=None):
+def reviews_submit_notification(self, recipients, context, resource, template=None):
     """
     Handle email notifications for a new submission or a resubmission
     """
     if not template:
-        template = mails.REVIEWS_SUBMISSION_CONFIRMATION
+        template = NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
     # Avoid AppRegistryNotReady error
     from website.notifications.emails import get_user_subscriptions
 
     event_type = utils.find_subscription_type('global_reviews')
 
-    provider = context['reviewable'].provider
+    provider = resource.provider
     if provider._id == 'osf':
         if provider.type == 'osf.preprintprovider':
             context['logo'] = OSF_PREPRINTS_LOGO
@@ -50,32 +50,31 @@ def reviews_submit_notification(self, recipients, context, template=None):
         else:
             raise NotImplementedError()
     else:
-        context['logo'] = context['reviewable'].provider._id
+        context['logo'] = resource.provider._id
 
     for recipient in recipients:
         user_subscriptions = get_user_subscriptions(recipient, event_type)
         context['no_future_emails'] = user_subscriptions['none']
-        context['is_creator'] = recipient == context['reviewable'].creator
-        context['provider_name'] = context['reviewable'].provider.name
-        mails.send_mail(
-            recipient.username,
-            template,
+        context['is_creator'] = recipient == resource.creator
+        context['provider_name'] = resource.provider.name
+        NotificationType.objects.get(
+            name=template
+        ).emit(
             user=recipient,
-            **context
+            event_context=context
         )
 
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
-def reviews_submit_notification_moderators(self, timestamp, context):
+def reviews_submit_notification_moderators(self, timestamp, resource, context, user):
     """
     Handle email notifications to notify moderators of new submissions or resubmission.
     """
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationSubscription
+    from osf.models import NotificationSubscriptionLegacy
     from website.profile.utils import get_profile_image_url
     from website.notifications.emails import store_emails
 
-    resource = context['reviewable']
     provider = resource.provider
 
     # Set submission url
@@ -89,7 +88,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 
     # Set url for profile image of the submitter
-    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    context['profile_image_url'] = get_profile_image_url(user)
 
     # Set message
     revision_id = context.get('revision_id')
@@ -103,7 +102,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
             context['message'] = f'submitted "{resource.title}".'
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription, created = NotificationSubscription.objects.get_or_create(
+    provider_subscription, created = NotificationSubscriptionLegacy.objects.get_or_create(
         _id=f'{provider._id}_new_pending_submissions',
         provider=provider
     )
@@ -127,7 +126,7 @@ def reviews_submit_notification_moderators(self, timestamp, context):
             recipient_ids,
             subscription_type,
             'new_pending_submissions',
-            context['referrer'],
+            user,
             resource,
             timestamp,
             abstract_provider=provider,
@@ -136,17 +135,17 @@ def reviews_submit_notification_moderators(self, timestamp, context):
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
-def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
+def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationSubscription
+    from osf.models import NotificationSubscriptionLegacy
     from website.profile.utils import get_profile_image_url
     from website.notifications.emails import store_emails
+    context['referrer_fullname'] = user.fullname
 
-    resource = context['reviewable']
     provider = resource.provider
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription, created = NotificationSubscription.objects.get_or_create(
+    provider_subscription, created = NotificationSubscriptionLegacy.objects.get_or_create(
         _id=f'{provider._id}_new_pending_withdraw_requests',
         provider=provider
     )
@@ -154,7 +153,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set url for profile image of the submitter
-    context['profile_image_url'] = get_profile_image_url(context['referrer'])
+    context['profile_image_url'] = get_profile_image_url(user)
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
@@ -166,7 +165,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
         email_transactional_ids,
         'email_transactional',
         'new_pending_withdraw_requests',
-        context['referrer'],
+        user,
         resource,
         timestamp,
         abstract_provider=provider,
@@ -179,7 +178,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
         email_digest_ids,
         'email_digest',
         'new_pending_withdraw_requests',
-        context['referrer'],
+        user,
         resource,
         timestamp,
         abstract_provider=provider,
@@ -191,13 +190,13 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context):
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationSubscription
+    from osf.models import NotificationSubscriptionLegacy
     from website.notifications.emails import store_emails
     from website.profile.utils import get_profile_image_url
     from website import settings
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription = NotificationSubscription.load(
+    provider_subscription = NotificationSubscriptionLegacy.load(
         '{}_new_pending_submissions'.format(context['reviewable'].provider._id))
     preprint = context['reviewable']
     preprint_word = preprint.provider.preprint_word

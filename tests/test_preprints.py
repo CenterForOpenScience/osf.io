@@ -570,19 +570,19 @@ class TestPreprintAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
         with pytest.raises(ValidationError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
         with pytest.raises(ValueError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
