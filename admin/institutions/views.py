@@ -1,4 +1,5 @@
 import json
+from dateutil.parser import isoparse
 
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -15,6 +16,9 @@ from admin.base import settings
 from admin.base.forms import ImportFileForm
 from admin.institutions.forms import InstitutionForm, InstitutionalMetricsAdminRegisterForm
 from osf.models import Institution, Node, OSFUser
+from osf.metrics.utils import YearMonth
+from osf.metrics.reporters import AllMonthlyReporters
+from osf.management.commands.monthly_reporters_go import monthly_reporter_do
 
 
 class InstitutionList(PermissionRequiredMixin, ListView):
@@ -129,6 +133,33 @@ class InstitutionExport(PermissionRequiredMixin, View):
         return response
 
 
+class InstitutionMonthlyReporterDo(PermissionRequiredMixin, View):
+    permission_required = 'osf.view_institution'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
+
+        monthly_report_date = request.POST.get('monthly_report_date', None)
+        if monthly_report_date:
+            report_date = isoparse(monthly_report_date).date()
+        else:
+            report_date = None
+
+        monthly_reporter_do(
+            yearmonth=(
+                str(YearMonth.from_date(report_date))
+                if report_date is not None
+                else ''
+            ),
+            reporter_key=request.POST.get('monthly_reporter', ''),
+            report_kwargs={'institution_pk': institution.id}
+        )
+
+        messages.success(request, 'Monthly reporters successfully went.')
+        return redirect('institutions:detail', institution_id=institution.id)
+
+
 class CreateInstitution(PermissionRequiredMixin, CreateView):
     permission_required = 'osf.change_institution'
     raise_exception = True
@@ -140,6 +171,18 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
     def get_context_data(self, *args, **kwargs):
         kwargs['import_form'] = ImportFileForm()
         return super().get_context_data(*args, **kwargs)
+
+    def form_valid(self, form):
+        response = super().form_valid(form)
+
+        # Make a report after Institution is created
+        monthly_reporter_do(
+            yearmonth=str(YearMonth.from_date(self.object.created)),
+            reporter_key=AllMonthlyReporters.INSTITUTIONAL_SUMMARY.name,
+            report_kwargs={'institution_pk': self.object.id}
+        )
+
+        return response
 
 
 class InstitutionNodeList(PermissionRequiredMixin, ListView):
