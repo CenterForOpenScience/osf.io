@@ -175,11 +175,13 @@ class ReviewsMachine(BaseMachine):
                 trigger='accept'
             )
             requester = preprint_request_action.target.creator
+
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['force_withdrawal'] = True
+            requester = self.machineable.creator
 
-        context['requester_fullname'] = self.machineable.creator.fullname
+        context['requester_fullname'] = requester.fullname
         for contributor in self.machineable.contributors.all():
             context['contributor_fullname'] = contributor.fullname
             if context.get('requester_fullname', None):
