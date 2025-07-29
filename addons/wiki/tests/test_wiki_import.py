@@ -516,7 +516,7 @@ class test_utils(OsfTestCase):
         cloned_mock.provider = 'osfstorage'
         cloned_mock.parent = parent
         cloned_mock.copied_from = src
-    
+
         src.clone.return_value = cloned_mock
 
         target_node = MagicMock()
