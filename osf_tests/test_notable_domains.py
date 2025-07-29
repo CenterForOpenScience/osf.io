@@ -188,6 +188,7 @@ class TestNotableDomain:
 
     @pytest.mark.enable_enqueue_task
     @pytest.mark.parametrize('factory', [NodeFactory, RegistrationFactory, PreprintFactory])
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_spam_check(self, app, factory, spam_domain, marked_as_spam_domain, request_context):
         obj = factory()
         obj.is_public = True

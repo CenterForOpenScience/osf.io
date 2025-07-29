@@ -7,7 +7,7 @@ import logging
 import requests
 from django.db.models import QuerySet
 
-from .exceptions import CrossRefRateLimitError
+from .exceptions import CrossRefRateLimitError, CrossRefUnavailableError
 from framework.auth.utils import impute_names
 from website.identifiers.utils import remove_control_characters
 from website.identifiers.clients.base import AbstractIdentifierClient
@@ -266,6 +266,9 @@ class CrossRefClient(AbstractIdentifierClient):
             )
             if response.status_code == 429:
                 raise CrossRefRateLimitError(response.text)
+
+            if response.status_code >= 500:
+                raise CrossRefUnavailableError(response.text)
 
             return {'doi': doi}
 

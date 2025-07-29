@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from api.providers.workflows import Workflows
@@ -61,6 +63,7 @@ def retraction(provider=None):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestUnmoderatedFlows():
 
     @pytest.mark.parametrize(
@@ -194,6 +197,7 @@ class TestUnmoderatedFlows():
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestModeratedFlows():
 
     @pytest.fixture
@@ -530,6 +534,7 @@ class TestModeratedFlows():
         assert sanction_object.approval_stage is ApprovalStates.MODERATOR_REJECTED
 
 @pytest.mark.enable_bookmark_creation
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestEmbargoTerminationFlows(OsfTestCase):
 
     def setUp(self):
@@ -640,6 +645,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestModerationActions:
 
     @pytest.fixture
@@ -754,6 +760,7 @@ class TestModerationActions:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
 class TestNestedFlows():
 
     @pytest.fixture(params=[registration_approval, embargo, retraction])

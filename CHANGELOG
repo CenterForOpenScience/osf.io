@@ -2,6 +2,21 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.12.0 (2025-07-08)
+====================
+
+- Verified Resource Linking project release - BE
+- OSF support for GV session optimization
+- OSF node log for add-ons
+- CI improvements
+- Task routing fixes
+
+
+25.11.1 (2025-07-03)
+====================
+
+- Hotfix to handle crossref's anticipated downtime
+
 25.11.0 (2025-06-30)
 ====================
 
