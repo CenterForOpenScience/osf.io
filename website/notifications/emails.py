@@ -29,7 +29,8 @@ website/notifications/u
         ).emit(
             user=user,
             subscribed_object=node,
-            event_context=context
+            event_context=context,
+            is_digest=True,
         )
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, abstract_provider=None, template=None, **context):

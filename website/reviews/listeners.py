@@ -26,6 +26,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
         ).emit(
             user=recipient,
             event_context=context,
+            is_digest=True,
         )
 
 
@@ -53,4 +54,5 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
         ).emit(
             user=recipient,
             event_context=context,
+            is_digest=True,
         )

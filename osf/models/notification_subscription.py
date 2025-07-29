@@ -1,3 +1,5 @@
+import logging
+
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -28,6 +30,8 @@ class NotificationSubscription(BaseModel):
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.CharField(max_length=255, null=True, blank=True)
     subscribed_object = GenericForeignKey('content_type', 'object_id')
+
+    _is_digest = models.BooleanField(default=False)
 
     def clean(self):
         ct = self.notification_type.object_content_type
@@ -60,6 +64,13 @@ class NotificationSubscription(BaseModel):
             subscribed_object (optional): The object the subscription is related to.
             event_context (dict, optional): Context for rendering the notification template.
         """
+        logging.info(
+            f"Attempting to create Notification:"
+            f"\nto={self.user.username}"
+            f"\ntype={self.notification_type.name}"
+            f"\nmessage_frequency={self.message_frequency}"
+            f"\ncontext={event_context}"
+        )
         if self.message_frequency == 'instantly':
             Notification.objects.create(
                 subscription=self,

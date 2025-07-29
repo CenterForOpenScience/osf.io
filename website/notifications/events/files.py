@@ -240,7 +240,8 @@ class AddonFileMoved(ComplexFileEvent):
             event_context={
                 'profile_image_url': self.profile_image_url,
                 'url': self.url
-            }
+            },
+            is_digest=True,
         )
 
 
@@ -266,5 +267,6 @@ class AddonFileCopied(ComplexFileEvent):
             event_context={
                 'profile_image_url': self.profile_image_url,
                 'url': self.url
-            }
+            },
+            is_digest=True,
         )

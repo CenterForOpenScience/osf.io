@@ -208,6 +208,7 @@ class NotificationType(models.Model):
             message_frequency='instantly',
             event_context=None,
             email_context=None,
+            is_digest=False
     ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
@@ -226,6 +227,7 @@ class NotificationType(models.Model):
             content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
             object_id=subscribed_object.pk if subscribed_object else None,
             defaults={'message_frequency': message_frequency},
+            is_digest=is_digest,
         )
         if subscription.message_frequency == 'instantly':
             Notification.objects.create(
