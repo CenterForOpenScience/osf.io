@@ -635,7 +635,7 @@ def create_waterbutler_log(payload, **kwargs):
         user=user,
         event_context={
             'profile_image_url': user.profile_image_url(),
-            'localized_timestamp': timezone.now(),
+            'localized_timestamp': str(timezone.now()),
             'user_fullname': user.fullname,
             'url': node.absolute_url,
         }
