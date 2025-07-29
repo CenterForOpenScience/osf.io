@@ -6,7 +6,7 @@ from random import randint
 from unittest import mock
 
 from factory import SubFactory
-from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
+from factory.fuzzy import FuzzyDateTime, FuzzyChoice
 from unittest.mock import patch, Mock
 
 import pytz
@@ -20,7 +20,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
-from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
@@ -1063,18 +1062,6 @@ def make_node_lineage():
     node4 = NodeFactory(parent=node3)
 
     return [node1._id, node2._id, node3._id, node4._id]
-
-
-class NotificationDigestFactory(DjangoModelFactory):
-    timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
-    node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
-    user = factory.SubFactory(UserFactory)
-    send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
-    message = fake.text(max_nb_chars=2048)
-    event = fake.text(max_nb_chars=50)
-    class Meta:
-        model = models.NotificationDigest
-
 
 class ConferenceFactory(DjangoModelFactory):
     class Meta:

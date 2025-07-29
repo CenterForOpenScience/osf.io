@@ -99,8 +99,3 @@ class NotificationSubscription(BaseModel):
                 return f'{self.user._id}_global'
             case _:
                 raise NotImplementedError()
-
-    def remove_user_from_subscription(self):
-        """
-        """
-        self.delete()

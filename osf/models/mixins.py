@@ -1110,7 +1110,7 @@ class ReviewProviderMixin(GuardianMixin):
             user=user
         )
         if subscriptions:
-            subscriptions.get().remove_user_from_subscription()
+            subscriptions.get().delete()
 
 
 class TaxonomizableMixin(models.Model):

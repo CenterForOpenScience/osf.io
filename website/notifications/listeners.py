@@ -1,7 +1,9 @@
 import logging
 
 from django.apps import apps
+from django.contrib.contenttypes.models import ContentType
 
+from osf.models import NotificationSubscription, NotificationType
 from website.project.signals import contributor_added, project_created
 from framework.auth.signals import user_confirmed
 
@@ -11,18 +13,36 @@ logger = logging.getLogger(__name__)
 def subscribe_creator(resource):
     if resource.is_collection or resource.is_deleted:
         return None
-    from website.notifications.utils import subscribe_user_to_notifications
-    subscribe_user_to_notifications(resource, resource.creator)
+    user = resource.creator
+    if user.is_registered:
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+        )
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            object_id=resource.id,
+            content_type=ContentType.objects.get_for_model(resource)
+        )
 
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
-    from website.notifications.utils import subscribe_user_to_notifications
     from osf.models import Node
-
     if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
             return None
-        subscribe_user_to_notifications(resource, contributor)
+    if contributor.is_registered:
+        NotificationSubscription.objects.get_or_create(
+            user=contributor,
+            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+        )
+        NotificationSubscription.objects.get_or_create(
+            user=contributor,
+            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            object_id=resource.id,
+            content_type=ContentType.objects.get_for_model(resource)
+        )
 
 @user_confirmed.connect
 def subscribe_confirmed_user(user):

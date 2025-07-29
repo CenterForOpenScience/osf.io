@@ -1,32 +1,6 @@
-USER_SUBSCRIPTIONS_AVAILABLE = [
-    'user_file_updated',
-    'user_reviews'
-]
-
-PROVIDER_SUBSCRIPTIONS_AVAILABLE = {
-    'provider_new_pending_submissions': 'New preprint submissions for moderators to review.'
-}
-
 # Note: the python value None mean inherit from parent
 NOTIFICATION_TYPES = {
     'email_transactional': 'Email when a change occurs',
     'email_digest': 'Daily email digest of all changes to this project',
     'none': 'None'
-}
-
-# Formatted file provider names for notification emails
-PROVIDERS = {
-    'osfstorage': 'OSF Storage',
-    'boa': 'Boa',
-    'box': 'Box',
-    'dataverse': 'Dataverse',
-    'dropbox': 'Dropbox',
-    'figshare': 'figshare',
-    'github': 'GitHub',
-    'gitlab': 'GitLab',
-    'bitbucket': 'Bitbucket',
-    'googledrive': 'Google Drive',
-    'owncloud': 'ownCloud',
-    'onedrive': 'Microsoft OneDrive',
-    's3': 'Amazon S3'
 }

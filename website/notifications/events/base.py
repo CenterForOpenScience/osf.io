@@ -64,7 +64,3 @@ class Event:
         Examples:
             <waterbutler id>_file_updated"""
         raise NotImplementedError
-
-
-class RegistryError(TypeError):
-    pass

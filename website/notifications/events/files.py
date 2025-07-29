@@ -13,7 +13,6 @@ from website.notifications.events.base import (
     register,
     Event,
     event_registry,
-    RegistryError,
 )
 from osf.models import AbstractNode, NodeLog, Preprint, NotificationType
 from addons.base.signals import file_updated as signal
@@ -24,7 +23,7 @@ def file_updated(self, target=None, user=None, event_type=None, payload=None):
     if isinstance(target, Preprint):
         return
     if event_type not in event_registry:
-        raise RegistryError
+        raise NotImplementedError(f' {event_type} not in {event_registry}')
     event = event_registry[event_type](user, target, event_type, payload=payload)
     event.perform()
 

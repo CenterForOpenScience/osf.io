@@ -1,7 +1,5 @@
 from collections import OrderedDict
 
-from unittest import mock
-
 from django.contrib.contenttypes.models import ContentType
 
 from osf.models import NotificationType
@@ -11,7 +9,6 @@ from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
-from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
 from osf.utils.permissions import WRITE
