@@ -61,6 +61,11 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/welcome_osf4i.html.mako'
+  - name: user_institution_deactivation
+    subject: "Your OSF login has changed - here's what you need to know!"
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/institution_deactivation.html.mako'
   - name: user_invite_preprints_osf
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -111,6 +116,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/request_deactivation_complete.html.mako'
   - name: user_storage_cap_exceeded_announcement
+    subject: 'Action Required to avoid disruption to your OSF project'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/storage_cap_exceeded_announcement.html.mako'

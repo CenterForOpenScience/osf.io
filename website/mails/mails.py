@@ -280,16 +280,6 @@ TOU_NOTIF = Mail(
     subject='Updated Terms of Use for COS Websites and Services',
 )
 
-STORAGE_CAP_EXCEEDED_ANNOUNCEMENT = Mail(
-    'storage_cap_exceeded_announcement',
-    subject='Action Required to avoid disruption to your OSF project',
-)
-
-INSTITUTION_DEACTIVATION = Mail(
-    'institution_deactivation',
-    subject='Your OSF login has changed - here\'s what you need to know!'
-)
-
 REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = Mail(
     'registration_bulk_upload_product_owner',
     subject='Registry Could Not Bulk Upload Registrations'
