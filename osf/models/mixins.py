@@ -1102,12 +1102,15 @@ class ReviewProviderMixin(GuardianMixin):
         )
 
     def remove_user_from_subscription(self, user, subscription):
+        notification_type = NotificationType.objects.get(
+            name=subscription,
+        )
         subscriptions = NotificationSubscription.objects.filter(
-            user=user,
-            notification_type=NotificationType.objects.get(name=subscription),
+            notification_type=notification_type,
+            user=user
         )
         if subscriptions:
-            subscriptions.get().remove_user_from_subscription(user)
+            subscriptions.get().remove_user_from_subscription()
 
 
 class TaxonomizableMixin(models.Model):

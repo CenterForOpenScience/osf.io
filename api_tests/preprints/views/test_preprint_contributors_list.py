@@ -1421,7 +1421,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
 
     def test_add_unregistered_contributor_sends_email(
             self, app, user, url_preprint_contribs):
@@ -1440,7 +1440,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
         assert res.status_code == 201
 
     def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
@@ -1460,7 +1460,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
 
     def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
@@ -1541,7 +1541,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_OSF_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
 
     def test_contributor_added_not_sent_if_unpublished(
             self, app, user, preprint_unpublished):

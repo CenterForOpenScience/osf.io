@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from osf.models.notification_type import get_default_frequency_choices, FrequencyChoices
+from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notification import Notification
 
 from .base import BaseModel
@@ -100,12 +100,7 @@ class NotificationSubscription(BaseModel):
             case _:
                 raise NotImplementedError()
 
-    def remove_user_from_subscription(self, user):
+    def remove_user_from_subscription(self):
         """
         """
-        from osf.models.notification_subscription import NotificationSubscription
-        notification, _ = NotificationSubscription.objects.update_or_create(
-            user=user,
-            notification_type=self,
-            defaults={'message_frequency': FrequencyChoices.NONE.value}
-        )
+        self.delete()

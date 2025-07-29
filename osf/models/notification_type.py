@@ -261,11 +261,10 @@ class NotificationType(models.Model):
         """
         """
         from osf.models.notification_subscription import NotificationSubscription
-        notification, _ = NotificationSubscription.objects.update_or_create(
+        notification, _ = NotificationSubscription.objects.filter(
             user=user,
             notification_type=self,
-            defaults={'message_frequency': FrequencyChoices.NONE.value}
-        )
+        ).delete()
 
     def __str__(self) -> str:
         return self.name

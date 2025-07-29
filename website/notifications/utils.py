@@ -85,7 +85,7 @@ def remove_contributor_from_subscriptions(node, user):
         )
 
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(user)
+            subscription.remove_user_from_subscription()
 
 
 @signals.node_deleted.connect

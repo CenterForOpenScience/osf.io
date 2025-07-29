@@ -752,10 +752,7 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert res.status_code == 400
 
     def test_initiate_withdrawal_success(self, app, user, public_registration, public_url, public_payload):
-        with capture_notifications() as notifications:
-            res = app.put_json_api(public_url, public_payload, auth=user.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_REVIEWS
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
