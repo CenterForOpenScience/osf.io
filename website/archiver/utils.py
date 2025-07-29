@@ -28,7 +28,7 @@ def normalize_unicode_filenames(filename):
     ]
 
 
-def send_archiver_size_exceeded_mails(src, user, stat_result, url):
+def send_archiver_size_exceeded_mails(src, user, stat_result, url, draft_registration):
     mails.send_mail(
         to_addr=settings.OSF_SUPPORT_EMAIL,
         mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
@@ -37,6 +37,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
         stat_result=stat_result,
         can_change_preferences=False,
         url=url,
+        draft_registration=draft_registration
     )
     mails.send_mail(
         to_addr=user.username,
@@ -106,11 +107,14 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
 
 
 def handle_archive_fail(reason, src, dst, user, result):
+    from osf.models import DraftRegistration
+
     url = settings.INTERNAL_DOMAIN + src._id
     if reason == ARCHIVER_NETWORK_ERROR:
         send_archiver_copy_error_mails(src, user, result, url)
     elif reason == ARCHIVER_SIZE_EXCEEDED:
-        send_archiver_size_exceeded_mails(src, user, result, url)
+        draft_registration = DraftRegistration.objects.get(registered_node=dst)
+        send_archiver_size_exceeded_mails(src, user, result, url, draft_registration)
     elif reason == ARCHIVER_FILE_NOT_FOUND:
         send_archiver_file_not_found_mails(src, user, result, url)
     elif reason == ARCHIVER_FORCED_FAILURE:  # Forced failure using scripts.force_fail_registration

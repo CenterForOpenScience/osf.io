@@ -1,18 +1,35 @@
 from django.urls import NoReverseMatch, reverse
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.db.models import F, Case, When, IntegerField
 from django.shortcuts import redirect
 from django.views.generic import FormView
 from django.views.generic import DetailView
 
 from admin.base.forms import GuidForm
+from website import settings
+
 from osf.models.registrations import DraftRegistration
 
 
 class DraftRegistrationMixin(PermissionRequiredMixin):
 
     def get_object(self):
-        draft_registration = DraftRegistration.load(self.kwargs['draft_registration_id'])
+        draft_registration = DraftRegistration.objects.filter(
+            _id=self.kwargs['draft_registration_id']
+        ).annotate(
+            cap=Case(
+                When(
+                    custom_storage_usage_limit=None,
+                    then=settings.STORAGE_LIMIT_PRIVATE,
+                ),
+                When(
+                    custom_storage_usage_limit__gt=0,
+                    then=F('custom_storage_usage_limit'),
+                ),
+                output_field=IntegerField()
+            )
+        ).first()
         draft_registration.guid = draft_registration._id
         return draft_registration
 
@@ -52,3 +69,23 @@ class DraftRegistrationView(DraftRegistrationMixin, DetailView):
         return super().get_context_data(**{
             'draft_registration': draft_registration
         }, **kwargs)
+
+
+class DraftRegisrationModifyStorageUsage(DraftRegistrationMixin, DetailView):
+    template_name = 'draft_registrations/detail.html'
+    permission_required = 'osf.change_draftregistration'
+
+    def post(self, request, *args, **kwargs):
+        draft = self.get_object()
+        new_cap = request.POST.get('cap-input')
+
+        draft_cap = draft.custom_storage_usage_limit or settings.STORAGE_LIMIT_PRIVATE
+        if float(new_cap) <= 0:
+            messages.error(request, 'Draft registration should have a positive storage limit')
+            return redirect(self.get_success_url())
+
+        if float(new_cap) != draft_cap:
+            draft.custom_storage_usage_limit = new_cap
+
+        draft.save()
+        return redirect(self.get_success_url())
