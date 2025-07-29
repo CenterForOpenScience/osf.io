@@ -14,7 +14,8 @@ from osf.models import Node
 
 
 @file_updated.connect
-def update_file_guid_referent(self, target, event_type, payload, user=None):
+def update_file_guid_referent(self, target, payload, user=None):
+    event_type = payload['action']
     if event_type not in ('addon_file_moved', 'addon_file_renamed'):
         return  # Nothing to do
 

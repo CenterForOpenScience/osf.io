@@ -611,25 +611,24 @@ def create_waterbutler_log(payload, **kwargs):
     file_signals.file_updated.send(
         target=node,
         user=user,
-        event_type=action,
         payload=payload
     )
 
-    match f'node_{action}':
-        case NotificationType.Type.NODE_FILE_ADDED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_ADDED)
-        case NotificationType.Type.NODE_FILE_REMOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_REMOVED)
-        case NotificationType.Type.NODE_FILE_UPDATED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
-        case NotificationType.Type.NODE_ADDON_FILE_RENAMED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_RENAMED)
-        case NotificationType.Type.NODE_ADDON_FILE_COPIED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_COPIED)
-        case NotificationType.Type.NODE_ADDON_FILE_REMOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_REMOVED)
-        case NotificationType.Type.NODE_ADDON_FILE_MOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.NODE_ADDON_FILE_MOVED)
+    match action:
+        case NotificationType.Type.FILE_ADDED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_ADDED)
+        case NotificationType.Type.FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
+        case NotificationType.Type.FILE_UPDATED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
+        case NotificationType.Type.ADDON_FILE_RENAMED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_RENAMED)
+        case NotificationType.Type.ADDON_FILE_COPIED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_COPIED)
+        case NotificationType.Type.ADDON_FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_REMOVED)
+        case NotificationType.Type.ADDON_FILE_MOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_MOVED)
         case _:
             raise NotImplementedError(f'action {action} not implemented')
 
@@ -647,12 +646,13 @@ def create_waterbutler_log(payload, **kwargs):
 
 
 @file_signals.file_updated.connect
-def addon_delete_file_node(self, target, user, event_type, payload):
+def addon_delete_file_node(self, target, user, payload):
     """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
+    event_type = payload['action']
     if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
         provider = payload['provider']
         path = payload['metadata']['path']

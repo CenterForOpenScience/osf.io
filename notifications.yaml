@@ -243,39 +243,11 @@ notification_types:
     template: 'website/templates/emails/reviews_resubmission_confirmation.html.mako'
 
   #### NODE
-  - name: node_file_updated
+  - name: node_wiki_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/file_updated.html.mako'
   - name: node_files_updated
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_file_added
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_file_removed
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_addon_file_renamed
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_addon_file_copied
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_addon_file_moved
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_addon_file_removed
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/emails/file_updated.html.mako'
-  - name: node_wiki_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/file_updated.html.mako'
@@ -308,10 +280,12 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/project_affiliation_changed.html.mako'
   - name: node_request_access_denied
+    subject: 'Your access request to an OSF project has been declined'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/access_request_rejected.html.mako'
   - name: node_access_request_submitted
+    subject: 'An OSF user has requested access to your ${node.project_or_component}'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/access_request_submitted.html.mako'
@@ -446,3 +420,36 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: draftregistration
     template: 'website/templates/emails/contributor_added_draft_registration.html.mako'
+### Files
+  - name: file_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: file_added
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: file_removed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: addon_file_renamed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: addon_file_copied
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: addon_file_moved
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: addon_file_removed
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
+  - name: folder_created
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'

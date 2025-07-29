@@ -245,16 +245,6 @@ REVIEWS_RESUBMISSION_CONFIRMATION = Mail(
     subject='Confirmation of your submission to ${provider_name}'
 )
 
-ACCESS_REQUEST_SUBMITTED = Mail(
-    'access_request_submitted',
-    subject='An OSF user has requested access to your ${node.project_or_component}'
-)
-
-ACCESS_REQUEST_DENIED = Mail(
-    'access_request_rejected',
-    subject='Your access request to an OSF project has been declined'
-)
-
 CROSSREF_ERROR = Mail(
     'crossref_doi_error',
     subject='There was an error creating a DOI for preprint(s). batch_id: ${batch_id}'

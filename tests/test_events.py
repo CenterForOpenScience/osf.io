@@ -11,7 +11,6 @@ from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
-from website.notifications.events import utils
 from addons.base import signals
 from framework.auth import Auth
 from osf_tests import factories
@@ -57,9 +56,6 @@ class TestListOfFiles(OsfTestCase):
                 }
             ]
         }
-
-    def test_list_of_files(self):
-        assert ['e', 'f', 'c', 'd'] == utils.list_of_files(self.tree)
 
 
 class TestEventExists(OsfTestCase):
@@ -112,21 +108,6 @@ class TestEventExists(OsfTestCase):
         assert isinstance(event, AddonFileRenamed)
 
 
-class TestSignalEvent(OsfTestCase):
-    def setUp(self):
-        super().setUp()
-        self.user = factories.UserFactory()
-        self.auth = Auth(user=self.user)
-        self.node = factories.ProjectFactory(creator=self.user)
-
-    @mock.patch('website.notifications.events.files.FileAdded.perform')
-    def test_event_signal(self, mock_perform):
-        signals.file_updated.send(
-            user=self.user, target=self.node, event_type='file_added', payload=file_payload
-        )
-        assert mock_perform.called
-
-
 class TestFileUpdated(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -138,7 +119,7 @@ class TestFileUpdated(OsfTestCase):
         self.sub = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.sub.save()
         self.event = event_registry['file_updated'](self.user_2, self.project, 'file_updated', payload=file_payload)
@@ -148,11 +129,11 @@ class TestFileUpdated(OsfTestCase):
         assert f'updated file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
         assert f'updated file "{materialized.lstrip("/")}".' == self.event.text_message
 
-    @mock.patch('website.notifications.emails.notify')
-    def test_file_updated(self, mock_notify):
-        self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert mock_notify.called
+    def test_file_updated(self):
+        with capture_notifications() as notifications:
+            self.event.perform()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.FILE_UPDATED
 
 
 class TestFileAdded(OsfTestCase):
@@ -164,7 +145,7 @@ class TestFileAdded(OsfTestCase):
         self.project_subscription = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
@@ -175,11 +156,11 @@ class TestFileAdded(OsfTestCase):
         assert f'added file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
         assert f'added file "{materialized.lstrip("/")}".' == self.event.text_message
 
-    @mock.patch('website.notifications.emails.notify')
-    def test_file_added(self, mock_notify):
-        self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert mock_notify.called
+    def test_file_added(self):
+        with capture_notifications() as notification:
+            self.event.perform()
+        assert len(notification) == 1
+        assert notification[0]['type'] == NotificationType.Type.FILE_ADDED
 
 
 class TestFileRemoved(OsfTestCase):
@@ -191,7 +172,7 @@ class TestFileRemoved(OsfTestCase):
         self.project_subscription = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_REMOVED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
         )
         self.project_subscription.object_id = self.project.id
         self.project_subscription.content_type = ContentType.objects.get_for_model(self.project)
@@ -202,21 +183,21 @@ class TestFileRemoved(OsfTestCase):
         )
 
     def test_info_formed_correct_file(self):
-        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
+        assert NotificationType.Type.FILE_UPDATED == self.event.event_type
         assert f'removed file "<b>{materialized.lstrip("/")}</b>".' == self.event.html_message
         assert f'removed file "{materialized.lstrip("/")}".' == self.event.text_message
 
     def test_info_formed_correct_folder(self):
-        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
+        assert NotificationType.Type.FILE_UPDATED == self.event.event_type
         self.event.payload['metadata']['materialized'] += '/'
         assert f'removed folder "<b>{materialized.lstrip("/")}/</b>".' == self.event.html_message
         assert f'removed folder "{materialized.lstrip("/")}/".' == self.event.text_message
 
-    @mock.patch('website.notifications.emails.notify')
-    def test_file_removed(self, mock_notify):
-        self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, timezone.now())
-        assert mock_notify.called
+    def test_file_removed(self):
+        with capture_notifications() as notifications:
+            self.event.perform()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.FILE_REMOVED
 
 
 class TestFolderCreated(OsfTestCase):
@@ -227,7 +208,7 @@ class TestFolderCreated(OsfTestCase):
         self.project = factories.ProjectFactory()
         self.project_subscription = factories.NotificationSubscriptionFactory(
             user=self.user,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED),
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
@@ -236,14 +217,15 @@ class TestFolderCreated(OsfTestCase):
         )
 
     def test_info_formed_correct(self):
-        assert NotificationType.Type.NODE_FILE_UPDATED == self.event.event_type
+        assert NotificationType.Type.FILE_UPDATED == self.event.event_type
         assert 'created folder "<b>Three/</b>".' == self.event.html_message
         assert 'created folder "Three/".' == self.event.text_message
 
-    @mock.patch('website.notifications.emails.notify')
-    def test_folder_added(self, mock_notify):
-        self.event.perform()
-        assert mock_notify.called
+    def test_folder_added(self):
+        with capture_notifications() as notifications:
+            self.event.perform()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.FOLDER_CREATED
 
 
 class TestFolderFileRenamed(OsfTestCase):
@@ -311,14 +293,14 @@ class TestFileMoved(OsfTestCase):
         self.sub = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.sub.save()
         # for private node
         self.private_sub = factories.NotificationSubscriptionFactory(
             object_id=self.private_node.id,
             content_type=ContentType.objects.get_for_model(self.private_node),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.private_sub.save()
         # for file subscription
@@ -338,51 +320,53 @@ class TestFileMoved(OsfTestCase):
     def test_user_performing_action_no_email(self):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
-        # self.sub.email_digest.add(self.user_2)
-        self.sub.save()
-        with capture_notifications() as notifications:
-            self.event.perform()
-        assert not notifications
-
-    def test_perform_store_called_once(self):
-        # self.sub.email_transactional.add(self.user_1)
+        self.sub.user = self.user_2
         self.sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_ADDON_FILE_MOVED
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
+        assert notifications[0]['kwargs']['user'] == self.user_2
+
+    def test_perform_store_called_once(self):
+        self.sub.user = self.user_1
+        self.sub.save()
+        with capture_notifications() as notifications:
+            self.event.perform()
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
     def test_perform_store_one_of_each(self):
         # Move Event: Tests that store_emails is called 3 times, one in
         # each category
-        # self.sub.email_transactional.add(self.user_1)
+        self.sub.user = self.user_1
+        self.sub.save()
         self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
-        # self.sub.email_digest.add(self.user_3)
+        self.sub.user = self.user_3
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=WRITE, auth=self.auth)
         self.project.save()
-        # self.file_sub.email_digest.add(self.user_4)
+        self.sub.user = self.user_4
+        self.sub.save()
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 3
-        assert notifications[0]['type'] == NotificationType.Type.NODE_FILE_UPDATED
-        assert notifications[1]['type'] == NotificationType.Type.NODE_FILE_UPDATED
-        assert notifications[2]['type'] == NotificationType.Type.NODE_FILE_UPDATED
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
     def test_remove_user_sent_once(self):
         # Move Event: Tests removed user is removed once. Regression
         self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
-        # self.file_sub.email_digest.add(self.user_3)
+        self.file_sub.user = self.user_3
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_ADDON_FILE_MOVED
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
 
 class TestFileCopied(OsfTestCase):
@@ -407,14 +391,14 @@ class TestFileCopied(OsfTestCase):
         self.sub = factories.NotificationSubscriptionFactory(
             object_id=self.project.id,
             content_type=ContentType.objects.get_for_model(self.project),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.sub.save()
         # for private node
         self.private_sub = factories.NotificationSubscriptionFactory(
             object_id=self.private_node.id,
             content_type=ContentType.objects.get_for_model(self.private_node),
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
         )
         self.private_sub.save()
         # for file subscription
@@ -436,33 +420,34 @@ class TestFileCopied(OsfTestCase):
                       ' Storage in Consolidate.') == self.event.text_message
 
     def test_copied_one_of_each(self):
-        # Copy Event: Tests that store_emails is called 2 times, two with
+        # Copy Event: Tests that emit is called 2 times, two with
         # permissions, one without
-        # self.sub.email_transactional.add(self.user_1)
+        self.sub.user = self.user_1
+        self.sub.save()
         self.project.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.project.save()
         self.private_node.add_contributor(self.user_3, permissions=WRITE, auth=self.auth)
         self.private_node.save()
-        # self.sub.email_digest.add(self.user_3)
+        self.sub.user = self.user_3
         self.sub.save()
         self.project.add_contributor(self.user_4, permissions=WRITE, auth=self.auth)
         self.project.save()
-        # self.file_sub.email_digest.add(self.user_4)
+        self.file_sub.user = self.user_4
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.NODE_FILE_UPDATED
-        assert notifications[1]['type'] == NotificationType.Type.NODE_FILE_UPDATED
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
 
     def test_user_performing_action_no_email(self):
         # Move Event: Makes sure user who performed the action is not
         # included in the notifications
-        # self.sub.email_digest.add(self.user_2)
+        self.sub.user = self.user_2
         self.sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert not notifications
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
 
 
 class TestSubscriptionManipulations(OsfTestCase):
@@ -494,33 +479,6 @@ class TestSubscriptionManipulations(OsfTestCase):
                           'email_digest': ['j1234', 'a1234', 'c1234', 'b1234']}
         self.dup_1_3 = {email_transactional: ['e1234', 'f1234'], 'none': ['h1234', 'g1234'],
                         'email_digest': ['a1234', 'c1234']}
-
-    def test_subscription_user_difference(self):
-        result = utils.subscriptions_users_difference(self.emails_1, self.emails_3)
-        assert self.diff_1_3 == result
-
-    def test_subscription_user_union(self):
-        result = utils.subscriptions_users_union(self.emails_1, self.emails_2)
-        assert set(self.union_1_2['email_transactional']) == set(result['email_transactional'])
-        assert set(self.union_1_2['none']) == set(result['none'])
-        assert set(self.union_1_2['email_digest']) == set(result['email_digest'])
-
-    def test_remove_duplicates(self):
-        result = utils.subscriptions_users_remove_duplicates(
-            self.emails_1, self.emails_4, remove_same=False
-        )
-        assert set(self.dup_1_3['email_transactional']) == set(result['email_transactional'])
-        assert set(self.dup_1_3['none']) == set(result['none'])
-        assert set(self.dup_1_3['email_digest']) == set(result['email_digest'])
-
-    def test_remove_duplicates_true(self):
-        result = utils.subscriptions_users_remove_duplicates(
-            self.emails_1, self.emails_1, remove_same=True
-        )
-
-        assert set(result['none']) == {'h1234', 'g1234', 'i1234'}
-        assert result['email_digest'] == []
-        assert result['email_transactional'] == []
 
 
 wb_path = '5581cb50a24f710b0f4623f9'

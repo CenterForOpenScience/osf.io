@@ -41,7 +41,7 @@ def find_subscription_type(subscription):
     """
     subs_available = constants.USER_SUBSCRIPTIONS_AVAILABLE
     subs_available.extend(list({
-        'node_file_updated': 'Files updated'
+        'file_updated': 'Files updated'
     }.keys()))
     for available in subs_available:
         if available in subscription:
@@ -262,7 +262,7 @@ def format_data(user, nodes):
         if can_read:
             subscriptions = NotificationSubscription.objects.filter(
                 user=user,
-                notification_type__name='node_file_updated',
+                notification_type__name='file_updated',
                 user__isnull=True,
                 object_id=node.id,
                 content_type=ContentType.objects.get_for_model(node)
@@ -331,7 +331,7 @@ def format_file_subscription(user, node_id, path, provider):
     return serialize_event(user, node=node, event_description='file_updated')
 
 
-all_subs = ['node_file_updated']
+all_subs = ['file_updated']
 all_subs += constants.USER_SUBSCRIPTIONS_AVAILABLE
 
 def serialize_event(user, subscription=None, node=None, event_description=None):
@@ -429,7 +429,7 @@ def subscribe_user_to_notifications(node, user):
         )
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED,
+            notification_type__name=NotificationType.Type.FILE_UPDATED,
             object_id=node.id,
             content_type=ContentType.objects.get_for_model(node)
         )

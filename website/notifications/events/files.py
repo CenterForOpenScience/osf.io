@@ -64,7 +64,7 @@ class FileEvent(Event):
     @property
     def event_type(self):
         """Most basic event type."""
-        return 'node_file_updated'
+        return 'file_updated'
 
     @property
     def waterbutler_id(self):
@@ -234,7 +234,7 @@ class AddonFileMoved(ComplexFileEvent):
             return
 
         NotificationType.objects.get(
-            name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
+            name=NotificationType.Type.ADDON_FILE_MOVED,
         ).emit(
             user=self.user,
             event_context={
@@ -260,7 +260,7 @@ class AddonFileCopied(ComplexFileEvent):
             return
 
         NotificationType.objects.get(
-            name=NotificationType.Type.NODE_ADDON_FILE_MOVED,
+            name=NotificationType.Type.ADDON_FILE_MOVED,
         ).emit(
             user=self.user,
             event_context={
