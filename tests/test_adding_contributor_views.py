@@ -3,7 +3,6 @@ from unittest import mock
 
 import pytest
 from django.core.exceptions import ValidationError
-from pytest import approx
 from rest_framework import status as http_status
 
 from framework import auth
@@ -28,6 +27,7 @@ from tests.base import (
 )
 from tests.utils import capture_notifications
 from website.profile.utils import add_contributor_json, serialize_unregistered
+from website import settings
 from website.project.views.contributor import (
     deserialize_contributors,
     notify_added_contributor,
@@ -189,10 +189,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as noitification:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(noitification) == 3
+        assert len(noitification) == 1
         assert noitification[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert noitification[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert noitification[2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -218,10 +216,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications) == 3
+        assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications[2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
@@ -250,9 +246,8 @@ class TestAddingContributorViews(OsfTestCase):
             self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
-        assert len(notifications) == 2
+        assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')
@@ -288,8 +283,6 @@ class TestAddingContributorViews(OsfTestCase):
             project.save()
         assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        contributor.refresh_from_db()
-        assert contributor.contributor_added_email_records[project._id]['last_sent'] == approx(int(time.time()), rel=1)
 
     def test_contributor_added_email_sent_to_unreg_user(self):
         unreg_user = UnregUserFactory()
@@ -345,17 +338,17 @@ class TestAddingContributorViews(OsfTestCase):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
-        with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        with mock.patch.object(settings, 'CONTRIBUTOR_ADDED_EMAIL_THROTTLE', 1):
+            with capture_notifications() as notifications:
+                notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
+            assert len(notifications) == 1
+            assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-        time.sleep(1)  # throttle period expires
-        with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications[1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            time.sleep(settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)  # throttle period expires
+            with capture_notifications() as notifications:
+                notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
+            assert len(notifications) == 1
+            assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_to_fork_sends_email(self):
         contributor = UserFactory()

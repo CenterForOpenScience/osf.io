@@ -226,20 +226,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   ...
     # }
 
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-
-    # Tracks last email sent where user was added to an OSF Group
-    member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-    # Tracks last email sent where an OSF Group was connected to a node
-    group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
 

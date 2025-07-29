@@ -138,7 +138,6 @@ class TestUserMerging(OsfTestCase):
             'username',
             'verification_key',
             'verification_key_v2',
-            'contributor_added_email_records',
             'requested_deactivation',
         ]
 

@@ -32,7 +32,6 @@ class Event:
 
     def perform(self):
         """Call emails.notify to notify users of an action"""
-        print(self.action)
         NotificationType.objects.get(
             name=self.action
         ).emit(
