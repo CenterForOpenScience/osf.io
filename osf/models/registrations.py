@@ -653,7 +653,10 @@ class Registration(AbstractNode):
                     f'User {user} does not have moderator privileges on Provider {self.provider}')
 
         retraction = self._initiate_retraction(
-            user, justification, moderator_initiated=moderator_initiated)
+            user,
+            justification,
+            moderator_initiated=moderator_initiated
+        )
         self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,

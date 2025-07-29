@@ -5,7 +5,7 @@ import random
 from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
-from api.nodes.serializers import NodeContributorsCreateSerializer
+from api.nodes.serializers import ResourceContributorsCreateSerializer
 from framework.auth.core import Auth
 from osf.models import PreprintLog, NotificationType
 from osf_tests.factories import (
@@ -1294,19 +1294,19 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
     def validate_data(self):
-        return NodeContributorsCreateSerializer.validate_data
+        return ResourceContributorsCreateSerializer.validate_data
 
     def test_add_contributor_validation(self, preprint_published, validate_data):
 
         #   test_add_contributor_validation_user_id
         validate_data(
-            NodeContributorsCreateSerializer(),
+            ResourceContributorsCreateSerializer(),
             preprint_published,
             user_id='abcde')
 
     #   test_add_contributor_validation_user_id_fullname
         validate_data(
-            NodeContributorsCreateSerializer(),
+            ResourceContributorsCreateSerializer(),
             preprint_published,
             user_id='abcde',
             full_name='Kanye')
@@ -1314,7 +1314,7 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
     #   test_add_contributor_validation_user_id_email
         with pytest.raises(exceptions.ValidationError):
             validate_data(
-                NodeContributorsCreateSerializer(),
+                ResourceContributorsCreateSerializer(),
                 preprint_published,
                 user_id='abcde',
                 email='kanye@west.com')
@@ -1322,7 +1322,7 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
     #   test_add_contributor_validation_user_id_fullname_email
         with pytest.raises(exceptions.ValidationError):
             validate_data(
-                NodeContributorsCreateSerializer(),
+                ResourceContributorsCreateSerializer(),
                 preprint_published,
                 user_id='abcde',
                 full_name='Kanye',
@@ -1330,20 +1330,20 @@ class TestPreprintContributorCreateValidation(NodeCRUDTestCase):
 
     #   test_add_contributor_validation_fullname
         validate_data(
-            NodeContributorsCreateSerializer(),
+            ResourceContributorsCreateSerializer(),
             preprint_published,
             full_name='Kanye')
 
     #   test_add_contributor_validation_email
         with pytest.raises(exceptions.ValidationError):
             validate_data(
-                NodeContributorsCreateSerializer(),
+                ResourceContributorsCreateSerializer(),
                 preprint_published,
                 email='kanye@west.com')
 
     #   test_add_contributor_validation_fullname_email
         validate_data(
-            NodeContributorsCreateSerializer(),
+            ResourceContributorsCreateSerializer(),
             preprint_published,
             full_name='Kanye',
             email='kanye@west.com')
@@ -1421,7 +1421,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_sends_email(
             self, app, user, url_preprint_contribs):
@@ -1440,7 +1440,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
 
     def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
@@ -1460,7 +1460,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
@@ -1541,22 +1541,23 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT
+        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
-    def test_contributor_added_not_sent_if_unpublished(
-            self, app, user, preprint_unpublished):
-        url = f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
+    def test_contributor_added_not_sent_if_unpublished(self, app, user, preprint_unpublished):
         with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            res = app.post_json_api(
+                f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jalen Hurt',
+                            'email': 'one@eagles.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
         assert not notifications
         assert res.status_code == 201
 

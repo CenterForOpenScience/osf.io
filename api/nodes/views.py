@@ -110,7 +110,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    NodeContributorsCreateSerializer,
+    ResourceContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
@@ -442,7 +442,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             return NodeContributorDetailSerializer
         elif self.request.method == 'POST':
-            return NodeContributorsCreateSerializer
+            return ResourceContributorsCreateSerializer
         else:
             return NodeContributorsSerializer
 

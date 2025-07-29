@@ -1428,7 +1428,10 @@ class ContributorMixin(models.Model):
             if isinstance(self, AbstractNode):
                 notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
             elif isinstance(self, Preprint):
-                notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+                if self.is_published:
+                    notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+                else:
+                    notification_type = False
             elif isinstance(self, DraftRegistration):
                 notification_type = NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
