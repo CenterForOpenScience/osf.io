@@ -38,7 +38,7 @@ from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
-from website.profile.views import update_osf_help_mails_subscription, update_mailchimp_subscription
+from website import settings, mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST, CONFIRM_REGISTRATIONS_BY_EMAIL
 from website.util import api_v2_url
 
@@ -561,10 +561,24 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
 
     def update_email_preferences(self, instance, attr, value):
         if self.MAP_MAIL[attr] == OSF_HELP_LIST:
-            update_osf_help_mails_subscription(user=instance, subscribe=value)
+            instance.osf_mailing_lists[settings.OSF_HELP_LIST] = value
+        elif self.MAP_MAIL[attr] == MAILCHIMP_GENERAL_LIST:
+            if value:
+                mailchimp_utils.subscribe_mailchimp(
+                    self.MAP_MAIL[attr],
+                    instance._id,
+                )
+            else:
+                mailchimp_utils.unsubscribe_mailchimp(
+                    self.MAP_MAIL[attr],
+                    instance._id,
+                    username=instance.username,
+                )
         else:
-            update_mailchimp_subscription(instance, self.MAP_MAIL[attr], value)
+            raise exceptions.ValidationError(detail='Invalid email preference.')
+
         instance.save()
+        return instance
 
     def update_two_factor(self, instance, value, two_factor_addon):
         if value:
@@ -599,6 +613,7 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         Overriding to_representation allows using different serializers for the request and response.
         """
         context = self.context
+
         return UserSettingsSerializer(instance=instance, context=context).data
 
     def update(self, instance, validated_data):

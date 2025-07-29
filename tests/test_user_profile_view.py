@@ -1,103 +1,30 @@
 #!/usr/bin/env python3
 """Views tests for the OSF."""
-from unittest.mock import MagicMock, ANY
-from urllib import parse
-
-import datetime as dt
-import time
-import unittest
 from hashlib import md5
-from http.cookies import SimpleCookie
 from unittest import mock
-from urllib.parse import quote_plus
-
 import pytest
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from flask import request, g
-from lxml import html
-from pytest import approx
 from rest_framework import status as http_status
 
 from addons.github.tests.factories import GitHubAccountFactory
-from addons.osfstorage import settings as osfstorage_settings
-from addons.wiki.models import WikiPage
-from framework import auth
-from framework.auth import Auth, authenticate, cas, core
-from framework.auth.campaigns import (
-    get_campaigns,
-    is_institution_login,
-    is_native_login,
-    is_proxy_login,
-    campaign_url_for
-)
-from framework.auth.exceptions import InvalidTokenError
-from framework.auth.utils import impute_names_model, ensure_external_identity_uniqueness
-from framework.auth.views import login_and_register_handler
 from framework.celery_tasks import handlers
-from framework.exceptions import HTTPError, TemplateHTTPError
-from framework.flask import redirect
-from framework.transactions.handlers import no_auto_transaction
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (
-    Comment,
-    AbstractNode,
-    OSFUser,
-    Tag,
-    SpamStatus,
-    NodeRelation,
     NotableDomain
 )
-from osf.utils import permissions
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
     ApiOAuth2PersonalTokenFactory,
     AuthUserFactory,
-    CollectionFactory,
-    CommentFactory,
-    NodeFactory,
-    PreprintFactory,
-    PreprintProviderFactory,
-    PrivateLinkFactory,
-    ProjectFactory,
-    ProjectWithAddonFactory,
-    RegistrationProviderFactory,
-    UserFactory,
-    UnconfirmedUserFactory,
-    UnregUserFactory,
     RegionFactory,
-    DraftRegistrationFactory,
 )
 from tests.base import (
-    assert_is_redirect,
-    capture_signals,
     fake,
-    get_default_metaschema,
     OsfTestCase,
-    assert_datetime_equal,
-    test_app
 )
-from tests.test_cas_authentication import generate_external_user_with_resp
-from tests.utils import run_celery_tasks
-from website import mailchimp_utils, mails, settings, language
-from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import update_osf_help_mails_subscription
-from website.project.decorators import check_can_access
-from website.project.model import has_anonymous_link
-from website.project.signals import contributor_added
-from website.project.views.contributor import (
-    deserialize_contributors,
-    notify_added_contributor,
-    send_claim_email,
-    send_claim_registered_email,
-)
-from website.project.views.node import _should_show_wiki_widget, abbrev_authors
+from website import mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST
 from website.util import api_url_for, web_url_for
-from website.util import rubeus
-from website.util.metrics import OsfSourceTags, OsfClaimedTags, provider_source_tag, provider_claimed_tag
-from conftest import start_mock_send_grid
 
 
 @pytest.mark.enable_enqueue_task
