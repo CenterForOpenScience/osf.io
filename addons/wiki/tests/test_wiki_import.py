@@ -128,7 +128,7 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_update.assert_called_with(is_wiki_import=False)
 
 @pytest.mark.enable_bookmark_creation
-class TestWikiPageNodeManager(OsfTestCase):
+class TestWikiPageNodeManager2(OsfTestCase):
     def setUp(self):
         self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
         self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
@@ -457,7 +457,7 @@ class test_utils(OsfTestCase):
         assert cloned.copied_from == src
         version.clone.assert_called_once()
         new_version.save.assert_called_once()
-        
+
     #名前変更あり
     def test_copy_file_with_name_change(self):
         version = MagicMock()
