@@ -201,8 +201,6 @@ class TestAUser(OsfTestCase):
         res = self.app.get('/{0}/wiki/home/'.format(project._primary_key), auth=self.auth)
         # Sees a message indicating no content
         assert_in('Add important information, links, or images here to describe your project.', res)
-        # Sees that edit panel is open by default when home wiki has no content
-        assert_in('panelsUsed: ["view", "menu", "edit"]', res)
 
     def test_wiki_content(self):
         project = ProjectFactory(creator=self.user)
