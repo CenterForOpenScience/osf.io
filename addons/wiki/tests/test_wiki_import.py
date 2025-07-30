@@ -19,6 +19,7 @@ from addons.wiki.views import (
 from osf.utils.fields import NonNaiveDateTimeField
 from framework.exceptions import HTTPError
 from osf.models.files import BaseFileNode
+from osf.models import BaseFileNode
 from addons.wiki.models import WikiImportTask, WikiPage, WikiVersion, render_content
 from framework.auth import Auth
 from django.utils import timezone
@@ -203,6 +204,7 @@ class test_utils(OsfTestCase):
         super(test_utils, self).setUp()
         self.user = AuthUserFactory()
         self.project1 = ProjectFactory(is_public=True, creator=self.user)
+        self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
         self.consolidate_auth = Auth(user=self.project1.creator)
         self.wiki_import_dir = TestFolderWiki.objects.create(name='wiki import dir', target=self.project1)
         self.pagefolder1 = TestFolderWiki.objects.create(name='page1', target=self.project1, parent=self.wiki_import_dir)
@@ -591,6 +593,8 @@ class test_utils(OsfTestCase):
 class test_views(OsfTestCase):
     def setUp(self):
         super(test_views, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(is_public=True, creator=self.user)
         self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
         # root
         # └── rootimportfoldera
@@ -610,8 +614,6 @@ class test_views(OsfTestCase):
         self.import_page_folder_c = TestFolderWiki.objects.create(name='importpagec', target=self.project, parent=self.root_import_folder_a)
         self.import_page_md_file_c = TestFileWiki.objects.create(name='importpagec.md', target=self.project, parent=self.import_page_folder_c)
 
-        self.user = AuthUserFactory()
-        self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
         self.auth = Auth(user=self.project.creator)
         self.node = ProjectFactory()
