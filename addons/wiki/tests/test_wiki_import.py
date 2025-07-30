@@ -69,21 +69,18 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
 class TestWikiPageNodeManager(OsfTestCase):
 
     def setUp(self):
-        self.page_name = WikiPage.CharField(max_length=200, validators=['test', ])
-        self.user = WikiPage.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
-        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
-        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
-        self.sort_order = WikiPage.IntegerField(blank=True, null=True)
-        self.deleted = WikiPage.NonNaiveDateTimeField(blank=True, null=True, db_index=True)
-        self.content = WikiVersion.TextField(default='', blank=True)
-        self.consolidate_auth = Auth(user=self.project.creator)
         self.project = ProjectFactory()
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.page_name = 'test'
+        self.user = self.project.creator
+        self.node = self.project
+        self.parent = NodeFactory()
 
     def test_create_for_node_true(self,mocker):
         wiki_page = WikiPage.objects.create(
             node=self.node,
             page_name=self.page_name,
-            user=self.page_name,
+            user=self.user,
             parent=self.parent,
             is_wiki_import=True
         )
@@ -107,7 +104,7 @@ class TestWikiPageNodeManager(OsfTestCase):
         wiki_page = WikiPage.objects.create(
             node=self.node,
             page_name=self.page_name,
-            user=self.page_name,
+            user=self.user,
             parent=self.parent,
             is_wiki_import=False
         )
@@ -130,8 +127,9 @@ class TestWikiPageNodeManager(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestWikiPageNodeManager2(OsfTestCase):
     def setUp(self):
-        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
-        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.project = ProjectFactory()
+        self.node = self.project
+        self.parent = NodeFactory()
 
     def test_get_for_child_nodes(self, mocker):
         mock_child_node = mocker.patch('WikiPage.filter',return_value=None)
@@ -167,15 +165,12 @@ class TestWikiPageNodeManager2(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestWikiPage(OsfTestCase):
     def setUp(self):
-        self.objects = WikiPageNodeManager()
-
-        self.page_name = WikiPage.CharField(max_length=200, validators=['test', ])
-        self.user = WikiPage.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPage.CASCADE)
-        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPage.CASCADE, related_name='wikis')
-        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPage.CASCADE)
-        self.sort_order = WikiPage.IntegerField(blank=True, null=True)
-        self.deleted = NonNaiveDateTimeField(blank=True, null=True, db_index=True)
-        self.content = WikiVersion.TextField(default='', blank=True)
+        self.project = ProjectFactory()
+        self.page_name = 'test'
+        self.user = AuthUserFactory()
+        self.node = self.project
+        self.parent = NodeFactory()
+        self.content = 'test content'
 
     def test_update_false(self, mocker):
         mock_save = mocker.patch('WikiVersion.save')
