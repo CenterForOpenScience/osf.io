@@ -69,12 +69,12 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
 class TestWikiPageNodeManager(OsfTestCase):
 
     def setUp(self):
-        self.page_name = WikiPageNodeManager.CharField(max_length=200, validators=['test', ])
-        self.user = WikiPageNodeManager.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
-        self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
-        self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
-        self.sort_order = WikiPageNodeManager.IntegerField(blank=True, null=True)
-        self.deleted = WikiPageNodeManager.NonNaiveDateTimeField(blank=True, null=True, db_index=True)
+        self.page_name = WikiPage.CharField(max_length=200, validators=['test', ])
+        self.user = WikiPage.ForeignKey('osf.OSFUser', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
+        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.sort_order = WikiPage.IntegerField(blank=True, null=True)
+        self.deleted = WikiPage.NonNaiveDateTimeField(blank=True, null=True, db_index=True)
         self.content = WikiVersion.TextField(default='', blank=True)
         self.consolidate_auth = Auth(user=self.project.creator)
         self.project = ProjectFactory()
@@ -130,8 +130,8 @@ class TestWikiPageNodeManager(OsfTestCase):
 @pytest.mark.enable_bookmark_creation
 class TestWikiPageNodeManager2(OsfTestCase):
     def setUp(self):
-        self.node = WikiPageNodeManager.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
-        self.parent = WikiPageNodeManager.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
+        self.node = WikiPage.ForeignKey('osf.AbstractNode', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE, related_name='wikis')
+        self.parent = WikiPage.ForeignKey('self', null=True, blank=True, on_delete=WikiPageNodeManager.CASCADE)
 
     def test_get_for_child_nodes(self, mocker):
         mock_child_node = mocker.patch('WikiPage.filter',return_value=None)
@@ -596,6 +596,25 @@ class test_utils(OsfTestCase):
 class test_views(OsfTestCase):
     def setUp(self):
         super(test_views, self).setUp()
+        self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
+        # root
+        # └── rootimportfoldera
+        #     ├── importpagea
+        #     │   └── importpagea.md
+        #     ├── importpageb
+        #     │   ├── importpageb.md
+        #     │   └── pdffile.pdf
+        #     └── importpagec
+        #         └── importpagec.md
+        self.root_import_folder_a = TestFolderWiki.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
+        self.import_page_folder_a = TestFolderWiki.objects.create(name='importpagea', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_a = TestFileWiki.objects.create(name='importpagea.md', target=self.project, parent=self.import_page_folder_a)
+        self.import_page_folder_b = TestFolderWiki.objects.create(name='importpageb', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_b = TestFileWiki.objects.create(name='importpageb.md', target=self.project, parent=self.import_page_folder_b)
+        self.import_page_pdf_file = TestFileWiki.objects.create(name='pdffile.pdf', target=self.project, parent=self.import_page_folder_b)
+        self.import_page_folder_c = TestFolderWiki.objects.create(name='importpagec', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_md_file_c = TestFileWiki.objects.create(name='importpagec.md', target=self.project, parent=self.import_page_folder_c)
+
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.consolidate_auth = Auth(user=self.project.creator)
@@ -646,25 +665,6 @@ class test_views(OsfTestCase):
 
         self.rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
         self.rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
-
-        self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
-        # root
-        # └── rootimportfoldera
-        #     ├── importpagea
-        #     │   └── importpagea.md
-        #     ├── importpageb
-        #     │   ├── importpageb.md
-        #     │   └── pdffile.pdf
-        #     └── importpagec
-        #         └── importpagec.md
-        self.root_import_folder_a = TestFolderWiki.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
-        self.import_page_folder_a = TestFolderWiki.objects.create(name='importpagea', target=self.project, parent=self.root_import_folder_a)
-        self.import_page_md_file_a = TestFileWiki.objects.create(name='importpagea.md', target=self.project, parent=self.import_page_folder_a)
-        self.import_page_folder_b = TestFolderWiki.objects.create(name='importpageb', target=self.project, parent=self.root_import_folder_a)
-        self.import_page_md_file_b = TestFileWiki.objects.create(name='importpageb.md', target=self.project, parent=self.import_page_folder_b)
-        self.import_page_pdf_file = TestFileWiki.objects.create(name='pdffile.pdf', target=self.project, parent=self.import_page_folder_b)
-        self.import_page_folder_c = TestFolderWiki.objects.create(name='importpagec', target=self.project, parent=self.root_import_folder_a)
-        self.import_page_md_file_c = TestFileWiki.objects.create(name='importpagec.md', target=self.project, parent=self.import_page_folder_c)
 
         # existing wiki page in project1
         self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
