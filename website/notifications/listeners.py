@@ -6,6 +6,8 @@ from django.contrib.contenttypes.models import ContentType
 from osf.models import NotificationSubscription, NotificationType
 from website.project.signals import contributor_added, project_created
 from framework.auth.signals import user_confirmed
+from website.project.signals import privacy_set_public
+from website import settings
 
 logger = logging.getLogger(__name__)
 
@@ -55,4 +57,24 @@ def subscribe_confirmed_user(user):
     NotificationSubscription.objects.get_or_create(
         user=user,
         notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_REVIEWS)
+    )
+
+
+@privacy_set_public.connect
+def queue_first_public_project_email(user, node):
+    """Queue and email after user has made their first
+    non-OSF4M project public.
+    """
+    NotificationType.objects.get(
+        name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,
+    ).emit(
+        user=user,
+        event_context={
+            'node': node,
+            'user': user,
+            'nid': node._id,
+            'fullname': user.fullname,
+            'project_title': node.title,
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+        }
     )

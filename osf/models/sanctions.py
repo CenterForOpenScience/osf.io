@@ -345,8 +345,6 @@ class TokenApprovableSanction(Sanction):
 
 
 class EmailApprovableSanction(TokenApprovableSanction):
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
 
     VIEW_URL_TEMPLATE = ''
     APPROVE_URL_TEMPLATE = ''
@@ -374,12 +372,6 @@ class EmailApprovableSanction(TokenApprovableSanction):
         if context:
             return template.format(**context)
         return ''
-
-    def _get_authoriser_notification_type(self):
-        return None
-
-    def _get_non_authoriser_notification_type(self):
-        return None
 
     def _view_url(self, user_id, node):
         return self._format_or_empty(self.VIEW_URL_TEMPLATE,
@@ -414,22 +406,20 @@ class EmailApprovableSanction(TokenApprovableSanction):
         return {}
 
     def _notify_authorizer(self, authorizer, node):
-        if notification_type := self._get_authoriser_notification_type():
-            notification_type.emit(
+        return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+            user=authorizer,
+            event_context=self._email_template_context(
                 authorizer,
-                event_context=self._email_template_context(
-                    authorizer,
-                    node,
-                    is_authorizer=True
-                )
+                node,
+                is_authorizer=True
             )
+        )
 
     def _notify_non_authorizer(self, user, node):
-        if notification_type := self._get_authoriser_notification_type():
-            notification_type.emit(
-                user,
-                event_context=self._email_template_context(user, node)
-            )
+        return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+            user=user,
+            event_context=self._email_template_context(user, node)
+        )
 
     def ask(self, group):
         """
@@ -478,8 +468,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_embargo_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_embargo_non_admin'
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -512,12 +502,6 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     @property
     def pending_registration(self):
         return not self.for_existing_registration and self.is_pending_approval
-
-    def _get_authoriser_notification_type(self):
-        return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-
-    def _get_non_authoriser_notification_type(self):
-        return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
 
     def _get_registration(self):
         return self.registrations.first()
@@ -785,11 +769,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
-
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_pending_registration_admin'
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = 'node_pending_registration_non_admin'
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -808,12 +789,6 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         ).annotate(
             guid=models.F('_id')
         ).order_by('-initiation_date')
-
-    def _get_authoriser_notification_type(self):
-        return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE)
-
-    def _get_non_authoriser_notification_type(self):
-        return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE)
 
     def _get_registration(self):
         return self.registrations.first()
@@ -961,8 +936,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'

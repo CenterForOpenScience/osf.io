@@ -206,6 +206,11 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/archive_uncaught_error_user.html.mako'
+  - name: user_new_public_project
+    subject: 'Problem Registering'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/emails/archive_uncaught_error_user.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
@@ -271,6 +276,14 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/pending_embargo_non_admin.html.mako'
+  - name: node_pending_embargo_termination_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_embargo_termination_admin.html.mako'
+  - name: node_pending_embargo_termination_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_embargo_termination_non_admin.html.mako'
   - name: node_affiliation_changed
     __docs__: ...
     object_content_type_model_name: abstractnode
