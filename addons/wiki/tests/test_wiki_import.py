@@ -204,6 +204,7 @@ class test_utils(OsfTestCase):
         super(test_utils, self).setUp()
         self.user = AuthUserFactory()
         self.project1 = ProjectFactory(is_public=True, creator=self.user)
+        self.project = ProjectFactory(is_public=True, creator=self.user)
         self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
         self.consolidate_auth = Auth(user=self.project1.creator)
         self.wiki_import_dir = TestFolderWiki.objects.create(name='wiki import dir', target=self.project1)
@@ -216,7 +217,6 @@ class test_utils(OsfTestCase):
         self.pagefolder3 = TestFolderWiki.objects.create(name='page3', target=self.project1, parent=self.pagefolder2)
         self.pagefile3 = TestFileWiki.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
-        self.project = ProjectFactory(is_public=True, creator=self.user)
 
         self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
         self.import_page_folder1 = TestFileWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
