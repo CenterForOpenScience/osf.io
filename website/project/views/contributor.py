@@ -588,11 +588,11 @@ def check_email_throttle(
     if create:
         return False  # No subscription means no previous notifications, so no throttling
     # Check the most recent Notification for this subscription
-    last_notification = Notification.objects.filter(subscription=subscription).last()
+    last_notification = Notification.objects.filter(subscription=subscription).order_by('created').last()
+
     if last_notification:
         cutoff_time = timezone.now() - timedelta(seconds=throttle)
-        if last_notification.sent:
-            return last_notification.sent > cutoff_time
+        return last_notification.created > cutoff_time
 
     return False  # No previous sent notification, not throttled
 
@@ -614,26 +614,12 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
     if not notification_type:
         return
 
-    notification_type = notification_type or NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
     logo = settings.OSF_LOGO
-
-    if notification_type == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT:
-        pass
-    elif notification_type == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT:
-        pass
-    elif notification_type == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT:
-        pass
-    elif notification_type == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST:
-        pass
-    elif notification_type == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST:
-        pass
-    elif getattr(node, 'has_linked_published_preprints', None):
+    if getattr(node, 'has_linked_published_preprints', None):
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
-    else:
-        raise NotImplementedError(f'notification_type: {notification_type} not implemented.')
 
-    if check_email_throttle(contributor, notification_type):
+    if check_email_throttle(contributor, notification_type, throttle=kwargs.get('throttle')):
         return
 
     NotificationType.objects.get(name=notification_type).emit(

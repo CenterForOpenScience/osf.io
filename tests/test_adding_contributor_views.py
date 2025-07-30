@@ -324,12 +324,22 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         auth = Auth(project.creator)
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth)
+            notify_added_contributor(
+                project,
+                contributor,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                auth=auth
+            )
         assert len(notifications) == 1
 
         # 2nd call does not send email because throttle period has not expired
         with capture_notifications() as notifications:
-            notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth)
+            notify_added_contributor(
+                project,
+                contributor,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                auth=auth
+            )
         assert not notifications
 
     def test_notify_contributor_email_sends_after_throttle_expires(self):
@@ -338,17 +348,27 @@ class TestAddingContributorViews(OsfTestCase):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
-        with mock.patch.object(settings, 'CONTRIBUTOR_ADDED_EMAIL_THROTTLE', 1):
-            with capture_notifications() as notifications:
-                notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
-            assert len(notifications) == 1
-            assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        with capture_notifications() as notifications:
+            notify_added_contributor(
+                project,
+                contributor,
+                NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                auth,
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-            time.sleep(settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)  # throttle period expires
-            with capture_notifications() as notifications:
-                notify_added_contributor(project, contributor, NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, auth, throttle=throttle)
-            assert len(notifications) == 1
-            assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        time.sleep(2)  # throttle period expires
+        with capture_notifications() as notifications:
+            notify_added_contributor(
+                project,
+                contributor,
+                NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                auth,
+                throttle=1
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_to_fork_sends_email(self):
         contributor = UserFactory()
