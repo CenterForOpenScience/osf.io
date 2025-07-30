@@ -1,5 +1,4 @@
 import pytest
-from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api.users.views import ClaimUser
@@ -217,8 +216,16 @@ class TestClaimUser:
         assert res.status_code == 403
 
     def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project):
-        unreg_user.unclaimed_records[project._id]['last_sent'] = timezone.now()
-        unreg_user.save()
+        with capture_notifications() as notifications:
+            app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(id=project._id),
+                auth=claimer.auth,
+                expect_errors=True
+            )
+        assert len(notifications) == 2
+        assert notifications[0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+        assert notifications[1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         with capture_notifications() as notifications:
             res = app.post_json_api(
                 url.format(unreg_user._id),
