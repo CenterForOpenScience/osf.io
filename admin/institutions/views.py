@@ -142,21 +142,23 @@ class InstitutionMonthlyReporterDo(PermissionRequiredMixin, View):
 
         monthly_report_date = request.POST.get('monthly_report_date', None)
         if monthly_report_date:
-            report_date = isoparse(monthly_report_date).date()
-        else:
-            report_date = None
+            try:
+                report_date = isoparse(monthly_report_date).date()
+            except ValueError as exc:
+                messages.error(request, str(exc))
+                return redirect('institutions:detail', institution_id=institution.id)
 
-        monthly_reporter_do(
-            yearmonth=(
-                str(YearMonth.from_date(report_date))
-                if report_date is not None
-                else ''
-            ),
-            reporter_key=request.POST.get('monthly_reporter', ''),
-            report_kwargs={'institution_pk': institution.id}
-        )
+        if not report_date:
+            messages.error(request, 'Report date cannot be none.')
+            return redirect('institutions:detail', institution_id=institution.id)
 
-        messages.success(request, 'Monthly reporters successfully went.')
+        monthly_reporter_do.apply_async(kwargs={
+            'yearmonth': str(YearMonth.from_date(report_date)),
+            'reporter_key': request.POST.get('monthly_reporter', None),
+            'report_kwargs': {'institution_pk': institution.id},
+        })
+
+        messages.success(request, 'Monthly reporter successfully went.')
         return redirect('institutions:detail', institution_id=institution.id)
 
 
@@ -176,11 +178,11 @@ class CreateInstitution(PermissionRequiredMixin, CreateView):
         response = super().form_valid(form)
 
         # Make a report after Institution is created
-        monthly_reporter_do(
-            yearmonth=str(YearMonth.from_date(self.object.created)),
-            reporter_key=AllMonthlyReporters.INSTITUTIONAL_SUMMARY.name,
-            report_kwargs={'institution_pk': self.object.id}
-        )
+        monthly_reporter_do.apply_async(kwargs={
+            'yearmonth': str(YearMonth.from_date(self.object.created)),
+            'reporter_key': AllMonthlyReporters.INSTITUTIONAL_SUMMARY.name,
+            'report_kwargs': {'institution_pk': self.object.id},
+        })
 
         return response
 

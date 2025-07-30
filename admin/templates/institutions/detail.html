@@ -9,6 +9,11 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <div class="row">
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>Export institution metadata</a>
