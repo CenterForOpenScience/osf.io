@@ -844,6 +844,8 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
             notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+        else:
+            raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={})
     elif merge_target:
         # Merge account confirmation
         notification_type = NotificationType.Type.USER_CONFIRM_MERGE
@@ -857,7 +859,6 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         # Account creation confirmation: from OSF
         notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    print(notification_type)
     NotificationType.objects.get(name=notification_type).emit(
         user=user,
         event_context={

@@ -67,6 +67,13 @@ class NotificationType(models.Model):
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
 
+        USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
+        USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
+        USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE = 'user_campaign_confirm_email_agu_conference'
+        USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023 = 'user_campaign_confirm_email_agu_conference_2023'
+        USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
+        USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
+
         # Node notifications
         NODE_COMMENT = 'node_comments'
         NODE_FILES_UPDATED = 'node_files_updated'

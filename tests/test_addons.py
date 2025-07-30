@@ -1558,6 +1558,7 @@ class TestAddonFileViews(OsfTestCase):
         )
         subfolder.save()
         payload = {
+            'action': 'file_removed',
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/',
