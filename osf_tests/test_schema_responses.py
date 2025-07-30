@@ -254,10 +254,13 @@ class TestCreateSchemaResponse():
 
         with capture_notifications() as notifications:
             schema_response.SchemaResponse.create_from_previous_response(
-                previous_response=initial_response, initiator=admin_user
+                previous_response=initial_response,
+                initiator=admin_user
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == len(notification_recipients)
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED
+                   for notification in notifications)
+        assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications)
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -580,8 +583,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == 3
+        assert any(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED for notification in notifications)
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -681,8 +684,8 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert not notifications  # Should only send email on final approval
         with capture_notifications() as notifications:
             revised_response.approve(user=alternate_user)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == 3
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications)
 
     def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -749,8 +752,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.reject(user=admin_user)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == 3
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+                   for notification in notifications)
 
     def test_no_reject_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -909,8 +913,9 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.accept(user=moderator)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == 3
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED
+                   for notification in notifications)
 
     def test_no_moderator_accept_notification_on_initial_response(
             self, initial_response, moderator):
@@ -949,8 +954,9 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.reject(user=moderator)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications) == 3
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+                   for notification in notifications)
 
     def test_no_moderator_reject_notification_on_initial_response(
             self, initial_response, moderator):

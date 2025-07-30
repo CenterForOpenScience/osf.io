@@ -26,8 +26,8 @@ def test_throttled_autoban():
             proj.flag_spam()
             proj.save()
             projects.append(proj)
-    assert len(notifications) == 7
-    assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
+    assert len(notifications) == 1
+    assert notifications[0]['type'] == NotificationType.Type.USER_SPAM_BANNED
     user.reload()
     assert user.is_disabled
     for project in projects:
