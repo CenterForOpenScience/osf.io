@@ -70,11 +70,9 @@ def queue_first_public_project_email(user, node):
     ).emit(
         user=user,
         event_context={
-            'node': node,
-            'user': user,
             'nid': node._id,
             'fullname': user.fullname,
             'project_title': node.title,
-            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+            'osf_url': settings.DOMAIN,
         }
     )

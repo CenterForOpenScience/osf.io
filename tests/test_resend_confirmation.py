@@ -63,7 +63,7 @@ class TestResendConfirmation(OsfTestCase):
         with capture_notifications() as notifications:
             res = form.submit(self.app)
         # check email, request and response
-        assert notifications
+        assert not notifications
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)

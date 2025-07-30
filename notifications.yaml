@@ -34,6 +34,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_draft_registration.html.mako'
   - name: user_contributor_added_osf_preprint
+    subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/contributor_added_preprint_node_from_osf.html.mako'
@@ -67,6 +68,7 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/institution_deactivation.html.mako'
   - name: user_invite_preprints_osf
+    subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints_osf.html.mako'
@@ -74,11 +76,13 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_preprints.html.mako'
-  - name: invite_draft_registration
+  - name: user_invite_draft_registration
+    subject: 'You have a new registration draft'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_draft_registration.html.mako'
   - name: user_invite_default
+    subject: 'You have been added as a contributor to an OSF project.'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/invite_default.html.mako'
@@ -257,6 +261,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/node_request_institutional_access_request.html.mako'
   - name: node_contributor_added_default
+    subject: 'You have been added as a contributor to an OSF project.'
     __docs__: This email notifies the user that they have been added as a contributor to a node.
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/contributor_added_default.html.mako'
