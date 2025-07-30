@@ -996,9 +996,9 @@ class TestPreprintSpam:
                 preprint3.reload()
                 assert preprint3.is_public is True
 
-    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_mailchimp, preprint, user):
         preprint.is_public = False
         preprint.save()

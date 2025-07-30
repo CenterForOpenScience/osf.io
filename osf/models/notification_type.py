@@ -89,6 +89,7 @@ class NotificationType(models.Model):
         NODE_PENDING_EMBARGO_ADMIN = 'node_pending_embargo_admin'
         NODE_PENDING_EMBARGO_NON_ADMIN = 'node_pending_embargo_non_admin'
         NODE_PENDING_RETRACTION_NON_ADMIN = 'node_pending_retraction_non_admin'
+        NODE_PENDING_RETRACTION_ADMIN = 'node_pending_retraction_admin'
         NODE_PENDING_REGISTRATION_NON_ADMIN = 'node_pending_registration_non_admin'
         NODE_PENDING_REGISTRATION_ADMIN = 'node_pending_registration_admin'
         NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN = 'node_pending_embargo_termination_non_admin'

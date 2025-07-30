@@ -133,10 +133,6 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
     subject='Withdrawal pending for one of your registrations.'
 )
-PENDING_RETRACTION_NON_ADMIN = Mail(
-    'pending_retraction_non_admin',
-    subject='Withdrawal pending for one of your projects.'
-)
 # Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',

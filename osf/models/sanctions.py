@@ -405,22 +405,6 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _email_template_context(self, user, node, is_authorizer=False):
         return {}
 
-    def _notify_authorizer(self, authorizer, node):
-        return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
-            user=authorizer,
-            event_context=self._email_template_context(
-                authorizer,
-                node,
-                is_authorizer=True
-            )
-        )
-
-    def _notify_non_authorizer(self, user, node):
-        return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
-            user=user,
-            event_context=self._email_template_context(user, node)
-        )
-
     def ask(self, group):
         """
         :param list group: List of (user, node) tuples containing contributors to notify about the
@@ -430,9 +414,19 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return
         for contrib, node in group:
             if contrib._id in self.approval_state:
-                self._notify_authorizer(contrib, node)
+                return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+                    user=contrib,
+                    event_context=self._email_template_context(
+                        contrib,
+                        node,
+                        is_authorizer=True
+                    )
+                )
             else:
-                self._notify_non_authorizer(contrib, node)
+                return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+                    user=contrib,
+                    event_context=self._email_template_context(contrib, node)
+                )
 
     def add_authorizer(self, user, node, **kwargs):
         super().add_authorizer(user, node, **kwargs)
@@ -650,8 +644,8 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'

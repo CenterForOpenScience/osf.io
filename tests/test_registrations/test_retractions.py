@@ -805,7 +805,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
                 auth=self.user.auth,
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -897,7 +897,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
                 auth=self.user.auth,
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications[0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
