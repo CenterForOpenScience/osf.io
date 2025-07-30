@@ -220,10 +220,6 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/emails/contributor_added_preprints.html.mako'
-  - name: provider_reviews_submission_confirmation
-    __docs__: ...
-    object_content_type_model_name: abstractprovider
-    template: 'website/templates/emails/reviews_submission_confirmation.html.mako'
   - name: provider_confirm_email_moderation
     subject: 'OSF Account Verification, {provider.name}'
     __docs__: ...
@@ -318,10 +314,11 @@ notification_types:
     template: 'website/templates/emails/updates_rejected.html.mako'
 
   #### PREPRINT
-  - name: pending_retraction_admin
+  - name: preprint_contributor_added_preprint_node_from_osf
+    subject: 'You have been added as a contributor to an OSF project.'
     __docs__: ...
     object_content_type_model_name: preprint
-    template: 'website/templates/emails/pending_retraction_admin.html.mako'
+    template: 'website/templates/emails/contributor_added_preprint_node_from_osf.html.mako'
   - name: preprint_request_withdrawal_approved
     __docs__: ...
     object_content_type_model_name: preprint

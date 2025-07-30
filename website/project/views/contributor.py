@@ -619,7 +619,8 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
 
-    if check_email_throttle(contributor, notification_type, throttle=kwargs.get('throttle')):
+    throttle = kwargs.get('throttle', settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)
+    if check_email_throttle(contributor, notification_type, throttle=throttle):
         return
 
     NotificationType.objects.get(name=notification_type).emit(
