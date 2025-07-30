@@ -201,7 +201,7 @@ class TestCreateInstitution(AdminTestCase):
         res = self.view.get(self.request)
         assert res.status_code == 200
 
-    @mock.patch('admin.institutions.views.monthly_reporter_do')
+    @mock.patch('admin.institutions.views.monthly_reporter_do.apply_async')
     def test_monthly_reporter_called_on_create(self, mock_monthly_reporter_do):
         data = {
             '_id': 'wqhx1',
@@ -225,7 +225,7 @@ class TestCreateInstitution(AdminTestCase):
 
         mock_monthly_reporter_do.assert_called_once()
         _, kwargs = mock_monthly_reporter_do.call_args
-        assert kwargs['report_kwargs']['institution_pk'] == view.object.id
+        assert kwargs['kwargs']['report_kwargs']['institution_pk'] == view.object.id
 
 
 class TestAffiliatedNodeList(AdminTestCase):
