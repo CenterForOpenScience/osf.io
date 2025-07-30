@@ -2,20 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
-from osf.models.notification import Notification
 from enum import Enum
-
-
-class FrequencyChoices(Enum):
-    NONE = 'none'
-    INSTANTLY = 'instantly'
-    DAILY = 'daily'
-    WEEKLY = 'weekly'
-    MONTHLY = 'monthly'
-
-    @classmethod
-    def choices(cls):
-        return [(key.value, key.name.capitalize()) for key in cls]
 
 def get_default_frequency_choices():
     DEFAULT_FREQUENCY_CHOICES = ['none', 'instantly', 'daily', 'weekly', 'monthly']
@@ -225,18 +212,17 @@ class NotificationType(models.Model):
         subscription, created = NotificationSubscription.objects.get_or_create(
             notification_type=self,
             user=user,
-            content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
-            object_id=subscribed_object.pk if subscribed_object else None,
-            defaults={'message_frequency': message_frequency},
+            defaults={
+                'object_id': subscribed_object.pk if subscribed_object else None,
+                'message_frequency': message_frequency,
+                'content_type': ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+            },
         )
-        if subscription.message_frequency == 'instantly':
-            Notification.objects.create(
-                subscription=subscription,
-                event_context=event_context
-            ).send(
-                destination_address=destination_address,
-                email_context=email_context
-            )
+        subscription.emit(
+            destination_address=destination_address,
+            event_context=event_context,
+            email_context=email_context,
+        )
 
     def add_user_to_subscription(self, user, *args, **kwargs):
         """

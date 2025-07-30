@@ -210,14 +210,20 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 
 @unreg_contributor_added.connect
-def finalize_invitation(node, contributor, auth, email_template='default'):
+def finalize_invitation(node, contributor, auth, notification_type='default'):
     try:
         record = contributor.get_unclaimed_record(node._primary_key)
     except ValueError:
         pass
     else:
         if record['email']:
-            send_claim_email(record['email'], contributor, node, notify=True, email_template=email_template)
+            send_claim_email(
+                record['email'],
+                contributor,
+                node,
+                notify=True,
+                notification_type=notification_type
+            )
 
 
 @must_be_valid_project
@@ -404,8 +410,11 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     unclaimed_record = unclaimed_user.get_unclaimed_record(node._primary_key)
 
     # check throttle
-    timestamp = unclaimed_record.get('last_sent')
-    if not throttle_period_expired(timestamp, throttle):
+    if check_email_throttle(
+            contributor=claimer,
+            notification_type=NotificationType.Type.USER_FORWARD_INVITE_REGISTERED,
+            throttle=throttle
+    ):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
             message_long='User account can only be claimed with an existing user once every 24 hours'
         ))
@@ -552,13 +561,16 @@ def send_claim_email(
     )
 
 
-def check_email_throttle(node, contributor, notification_type):
+def check_email_throttle(
+        contributor,
+        notification_type,
+        throttle=settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+):
     """
     Check whether a 'contributor added' notification was sent recently
     (within the throttle period) for the given node and contributor.
 
     Args:
-        node (AbstractNode): The node to check.
         contributor (OSFUser): The contributor being notified.
         notification_type (str, optional): What type of notification to check for.
 
@@ -566,25 +578,21 @@ def check_email_throttle(node, contributor, notification_type):
         bool: True if throttled (email was sent recently), False otherwise.
     """
     from osf.models import Notification, NotificationSubscription
-    from website import settings
 
     from datetime import timedelta
     # Check for an active subscription for this contributor and this node
     subscription, create = NotificationSubscription.objects.get_or_create(
         user=contributor,
-        notification_type__name=notification_type,
+        notification_type=NotificationType.objects.get(name=notification_type),
     )
     if create:
         return False  # No subscription means no previous notifications, so no throttling
     # Check the most recent Notification for this subscription
-    last_notification = Notification.objects.filter(
-        subscription=subscription,
-        sent__isnull=False
-    ).order_by('-sent').first()
-
-    if last_notification and last_notification.sent:
-        cutoff_time = timezone.now() - timedelta(seconds=settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)
-        return last_notification.sent > cutoff_time
+    last_notification = Notification.objects.filter(subscription=subscription).last()
+    if last_notification:
+        cutoff_time = timezone.now() - timedelta(seconds=throttle)
+        if last_notification.sent:
+            return last_notification.sent > cutoff_time
 
     return False  # No previous sent notification, not throttled
 
@@ -625,7 +633,7 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
     else:
         raise NotImplementedError(f'notification_type: {notification_type} not implemented.')
 
-    if check_email_throttle(node, contributor, notification_type):
+    if check_email_throttle(contributor, notification_type):
         return
 
     NotificationType.objects.get(name=notification_type).emit(

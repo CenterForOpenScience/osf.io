@@ -350,18 +350,13 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    @mock.patch('website.notifications.events.files.FileAdded.perform')
-    def test_add_log(self, mock_perform):
-        path = 'pizza'
+    def test_add_log(self):
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'nid': self.node._id, 'path': path})
+        payload = self.build_payload(metadata={'nid': self.node._id, 'path': 'pizza'})
         nlogs = self.node.logs.count()
         self.app.put(url, json=payload)
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
-        # # Mocking form_message and perform so that the payload need not be exact.
-        # assert mock_form_message.called, "form_message not called"
-        assert mock_perform.called, 'perform not called'
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -1542,13 +1537,14 @@ class TestAddonFileViews(OsfTestCase):
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()
         payload = {
+            'action': 'file_removed',
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/Test',
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, payload=payload)
         assert not GithubFileNode.load(file_node._id)
         assert TrashedFileNode.load(file_node._id)
 
@@ -1568,7 +1564,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, payload=payload)
         assert not GithubFileNode.load(subfolder._id)
         assert TrashedFileNode.load(file_node._id)
 

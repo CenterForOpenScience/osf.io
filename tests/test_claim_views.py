@@ -228,13 +228,17 @@ class TestClaimViews(OsfTestCase):
                 unclaimed_user=self.user,
                 node=self.project,
             )
-            # second call raises error because it was called before throttle period
+            assert len(notifications) == 2
+            assert notifications[0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+            assert notifications[1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        # second call raises error because it was called before throttle period
+        with capture_notifications() as notifications:
             with pytest.raises(HTTPError):
-                send_claim_registered_email(
-                    claimer=reg_user,
-                    unclaimed_user=self.user,
-                    node=self.project,
-                )
+                    send_claim_registered_email(
+                        claimer=reg_user,
+                        unclaimed_user=self.user,
+                        node=self.project,
+                    )
         assert not notifications
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')

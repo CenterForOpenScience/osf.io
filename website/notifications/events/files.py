@@ -20,20 +20,24 @@ from addons.base.signals import file_updated as signal
 
 @signal.connect
 def file_updated(self, target=None, user=None, payload=None):
+    if isinstance(target, Preprint):
+        return
     notification_type = {
         'rename': NotificationType.Type.ADDON_FILE_RENAMED,
         'copy': NotificationType.Type.ADDON_FILE_COPIED,
         'create': NotificationType.Type.FILE_UPDATED,
         'move': NotificationType.Type.ADDON_FILE_MOVED,
         'delete': NotificationType.Type.FILE_REMOVED,
+        'update': NotificationType.Type.FILE_UPDATED,
     }[payload.get('action')]
-    if isinstance(target, Preprint):
-        return
-
     if notification_type not in event_registry:
         raise NotImplementedError(f' {notification_type} not in {event_registry}')
-    event = event_registry[notification_type](user, target, notification_type, payload=payload)
-    event.perform()
+    event_registry[notification_type](
+        user,
+        target,
+        notification_type,
+        payload=payload
+    ).perform()
 
 
 class FileEvent(Event):

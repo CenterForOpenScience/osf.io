@@ -24,7 +24,6 @@ class NotificationSubscription(BaseModel):
         max_length=500,
         null=True
     )
-
     content_type = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.CASCADE)
     object_id = models.CharField(max_length=255, null=True, blank=True)
     subscribed_object = GenericForeignKey('content_type', 'object_id')
@@ -52,19 +51,29 @@ class NotificationSubscription(BaseModel):
         verbose_name = 'Notification Subscription'
         verbose_name_plural = 'Notification Subscriptions'
 
-    def emit(self, event_context=None):
+    def emit(
+            self,
+            event_context=None,
+            destination_address=None,
+            email_context=None,
+    ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
         Args:
-            user (OSFUser): The recipient of the notification.
-            subscribed_object (optional): The object the subscription is related to.
-            event_context (dict, optional): Context for rendering the notification template.
+            event_context (OSFUser): The info for context for the template
+            destination_address (optional): overides the user's email address for the notification. Good for sending
+            to a test address or OSF desk support'
+            email_context (dict, optional): Context for sending the email bcc, reply_to header etc
         """
         if self.message_frequency == 'instantly':
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 subscription=self,
                 event_context=event_context
-            ).send()
+            )
+            notification.send(
+                destination_address=destination_address,
+                email_context=email_context,
+            )
         else:
             Notification.objects.create(
                 subscription=self,
