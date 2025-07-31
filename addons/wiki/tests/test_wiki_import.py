@@ -88,7 +88,7 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_create.return_value = wiki_page
         mock_update.return_value = None
 
-        self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
+        self.home_child_wiki = WikiPage.objects.create_for_node(
             self.project,
             'home child',
             'home child content',
@@ -114,7 +114,7 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_create.return_value = wiki_page
         mock_update.return_value = None
 
-        self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
+        self.home_child_wiki = WikiPage.objects.create_for_node(
             self.project,
             'home child',
             'home child content',
@@ -142,7 +142,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         mock_wiki_page_filter.assert_called_once()
 
     def test_get_for_child_nodes_none(self):
-        child_node = WikiPageNodeManager.objects.get_for_child_nodes(self,self.node,None)
+        child_node = WikiPage.objects.get_for_child_nodes(self,self.node,None)
 
         # 戻り値がNoneか
         self.assert_is_not_none(child_node)
@@ -162,7 +162,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         mock_annotate.assert_called_once()
 
     def test_create(self):
-        create_node = WikiPageNodeManager.objects.create(self,False,{'status': 'unmodified', 'path': '/importpagec/importpaged'})
+        create_node = WikiPage.objects.create(self,False,{'status': 'unmodified', 'path': '/importpagec/importpaged'})
 
         self.assertIsNotNone(create_node)
 
