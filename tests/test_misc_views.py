@@ -361,7 +361,6 @@ class TestPublicViews(OsfTestCase):
         assert res.status_code == 200
 
 
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestExternalAuthViews(OsfTestCase):
 
     def setUp(self):

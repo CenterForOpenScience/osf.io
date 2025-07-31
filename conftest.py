@@ -35,7 +35,6 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.app',
     'website.archiver.tasks',
-    'website.mails',
     'website.notifications.listeners',
     'website.search.elastic_search',
     'website.search_migration.migrate',
@@ -66,7 +65,6 @@ def override_settings():
     website_settings.SHARE_ENABLED = False
     # Set this here instead of in SILENT_LOGGERS, in case developers
     # call setLevel in local.py
-    logging.getLogger('website.mails.mails').setLevel(logging.CRITICAL)
 
 
 @pytest.fixture()

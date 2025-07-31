@@ -218,7 +218,7 @@ notification_types:
   - name: user_confirm_email_agu_conference
     subject: 'OSF Account Verification, from the American Geophysical Union Conference'
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/confirm_agu_conference.html.mako'
+    template: 'website/templates/emails/confirm_erpc.html.mako'
   - name: user_confirm_email_registries_osf
     subject: 'OSF Account Verification, OSF Registries'
     object_content_type_model_name: osfuser

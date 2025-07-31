@@ -1983,7 +1983,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super().setUp()

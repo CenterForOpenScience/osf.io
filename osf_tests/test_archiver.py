@@ -720,7 +720,6 @@ class TestArchiverTasks(ArchiverTestCase):
                     assert child_reg._id in question['extra'][0]['viewUrl']
 
 
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverUtils(ArchiverTestCase):
 
     def test_handle_archive_fail(self):
@@ -849,7 +848,6 @@ class TestArchiverUtils(ArchiverTestCase):
             archiver_utils.get_file_map(node)
             assert mock_get_file_tree.call_count == call_count
 
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverListeners(ArchiverTestCase):
 
     @mock.patch('website.archiver.tasks.archive')
@@ -1082,7 +1080,6 @@ class TestArchiverScripts(ArchiverTestCase):
             assert pk not in failed
 
 
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverBehavior(OsfTestCase):
 
     @mock.patch('osf.models.AbstractNode.update_search')

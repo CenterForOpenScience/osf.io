@@ -12,7 +12,6 @@ from tests.base import (
     fake
 )
 from framework import auth
-from unittest import mock
 from osf.models import OSFUser, NotificationType
 from tests.base import (
     OsfTestCase,
@@ -23,7 +22,6 @@ from website.util import api_url_for
 @pytest.mark.django_db
 class TestMailHog:
 
-    @mock.patch('website.mails.settings.ENABLE_TEST_EMAIL', True)
     def test_mailhog_received_mail(self):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
@@ -33,7 +31,6 @@ class TestMailHog:
             NotificationType.objects.get(
                 name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
             ).emit(
-                user=None,
                 destination_address='to_addr@mail.com',
                 event_context={
                     'fullname': '<NAME>',
@@ -53,8 +50,6 @@ class TestMailHog:
 
 
 @pytest.mark.django_db
-@mock.patch('website.mails.settings.ENABLE_TEST_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthMailhog(OsfTestCase):
 
     def setUp(self):

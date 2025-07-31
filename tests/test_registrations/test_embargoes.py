@@ -1060,7 +1060,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1156,8 +1155,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         for contributor in self.registration.contributors:
             if Contributor.objects.get(user_id=contributor.id, node_id=self.registration.id).permission == permissions.ADMIN:
                 admin_contributors.append(contributor)
-        for admin in admin_contributors:
-            assert any([each['kwargs']['user'] == admin for each in notifications])
+
+        assert all([each['kwargs']['user'] in admin_contributors for each in notifications])
 
     @mock.patch('osf.models.sanctions.EmailApprovableSanction.ask')
     def test_make_child_embargoed_registration_public_asks_all_admins_in_tree(self, mock_ask):

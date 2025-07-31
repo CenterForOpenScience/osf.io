@@ -28,7 +28,6 @@ SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
 @pytest.mark.enable_implicit_clean
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestUserMerging(OsfTestCase):
     def setUp(self):
         super().setUp()

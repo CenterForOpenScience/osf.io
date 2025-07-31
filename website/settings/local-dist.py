@@ -144,9 +144,6 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 CHRONOS_USE_FAKE_FILE = True
 CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
 
-# Show sent emails in console
-logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
-
 SHARE_ENABLED = False
 DATACITE_ENABLED = False
 

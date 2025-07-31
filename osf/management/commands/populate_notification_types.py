@@ -21,7 +21,7 @@ def populate_notification_types(*args, **kwargs):
     with open(settings.NOTIFICATION_TYPES_YAML) as stream:
         notification_types = yaml.safe_load(stream)
     for notification_type in notification_types['notification_types']:
-        notification_type.pop('__docs__')
+        notification_type.pop('__docs__', None)
         object_content_type_model_name = notification_type.pop('object_content_type_model_name')
 
         if object_content_type_model_name == 'desk':

@@ -752,7 +752,6 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -805,7 +804,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
                 auth=self.user.auth,
             )
         assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
+        assert notifications[0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
