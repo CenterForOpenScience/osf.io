@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock, PropertyMock
 
+from waffle.testutils import override_flag
 from osf.external.gravy_valet import translations as gv_translations
 from osf.external.gravy_valet import request_helpers as gv_requests
 from osf_tests.factories import ProjectFactory, UserFactory
@@ -353,6 +354,120 @@ class TestGVSessionOptimization:
             node.get_addon('osfstorage', auth=Auth(user=user))
 
             mock_get_addon_from_gv.assert_not_called()
+
+    @patch('osf.models.mixins.get_request_and_user_id')
+    @patch('osf.models.node.AbstractNode._get_addon_from_gv')
+    def test_get_addon_uses_auth_user_id_when_request_user_id_is_none(
+        self, mock_get_addon_from_gv, mock_get_request_user,
+        node, user
+    ):
+        with override_flag(features.ENABLE_GV, active=True):
+            mock_request = MagicMock()
+            mock_get_request_user.return_value = (mock_request, None)
+
+            auth = Auth(user=user)
+
+            mock_addon = MagicMock()
+            mock_addon.short_name = 'github'
+            mock_get_addon_from_gv.return_value = mock_addon
+
+            result = node.get_addon('github', auth=auth)
+
+            mock_get_addon_from_gv.assert_called_once_with(
+                gv_pk='github',
+                requesting_user_id=user._id,
+                auth=auth
+            )
+            assert result == mock_addon
+
+    @patch('osf.models.mixins.get_request_and_user_id')
+    @patch('osf.models.node.AbstractNode._get_addon_from_gv')
+    def test_get_addon_uses_request_user_id_when_available(
+        self, mock_get_addon_from_gv, mock_get_request_user,
+        node, user
+    ):
+        with override_flag(features.ENABLE_GV, active=True):
+            mock_request = MagicMock()
+            request_user_id = 'request_user_123'
+            mock_get_request_user.return_value = (mock_request, request_user_id)
+
+            auth = Auth(user=user)
+
+            mock_addon = MagicMock()
+            mock_addon.short_name = 'github'
+            mock_get_addon_from_gv.return_value = mock_addon
+
+            result = node.get_addon('github', auth=auth)
+
+            mock_get_addon_from_gv.assert_called_once_with(
+                gv_pk='github',
+                requesting_user_id=request_user_id,
+                auth=auth
+            )
+            assert result == mock_addon
+
+    @patch('osf.models.mixins.get_request_and_user_id')
+    @patch('osf.models.node.AbstractNode._get_addon_from_gv')
+    def test_get_addon_handles_none_auth_gracefully(
+        self, mock_get_addon_from_gv, mock_get_request_user,
+        node, user
+    ):
+        with override_flag(features.ENABLE_GV, active=True):
+            mock_request = MagicMock()
+            mock_get_request_user.return_value = (mock_request, None)
+
+            mock_addon = MagicMock()
+            mock_addon.short_name = 'github'
+            mock_get_addon_from_gv.return_value = mock_addon
+
+            result = node.get_addon('github', auth=None)
+
+            mock_get_addon_from_gv.assert_called_once_with(
+                gv_pk='github',
+                requesting_user_id=None,
+                auth=None
+            )
+            assert result == mock_addon
+
+    @patch('osf.models.mixins.get_request_and_user_id')
+    def test_get_addon_skips_gv_for_osf_hosted_addons_with_auth(
+        self, mock_get_request_user, node, user
+    ):
+        with override_flag(features.ENABLE_GV, active=True):
+            mock_request = MagicMock()
+            mock_get_request_user.return_value = (mock_request, None)
+
+            auth = Auth(user=user)
+
+            node.get_addon('osfstorage', auth=auth)
+
+            mock_get_request_user.assert_not_called()
+
+    @patch('osf.models.mixins.get_request_and_user_id')
+    @patch('osf.models.node.AbstractNode._get_addon_from_gv')
+    def test_get_addon_with_auth_user_none_falls_back_to_request_user_id(
+        self, mock_get_addon_from_gv, mock_get_request_user,
+        node, user
+    ):
+        with override_flag(features.ENABLE_GV, active=True):
+            mock_request = MagicMock()
+            request_user_id = 'request_user_123'
+            mock_get_request_user.return_value = (mock_request, request_user_id)
+
+            auth = Auth(user=None)
+
+            mock_addon = MagicMock()
+            mock_addon.short_name = 'github'
+            mock_get_addon_from_gv.return_value = mock_addon
+
+            result = node.get_addon('github', auth=auth)
+
+            mock_get_addon_from_gv.assert_called_once_with(
+                gv_pk='github',
+                requesting_user_id=request_user_id,
+                auth=auth
+            )
+            assert result == mock_addon
 
 
 @pytest.mark.django_db
