@@ -440,7 +440,6 @@ class TestGVSessionOptimization:
             auth = Auth(user=user)
 
             node.get_addon('osfstorage', auth=auth)
-
             mock_get_request_user.assert_not_called()
 
     @patch('osf.models.mixins.get_request_and_user_id')
