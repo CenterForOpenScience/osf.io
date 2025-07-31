@@ -422,7 +422,9 @@ class test_utils(OsfTestCase):
         assert cloned.copied_from == src
 
     #ファイルコピー（異なるリージョン）
-    def test_copy_file_different_region(self,mocker):
+    @mock.patch('website.util.timestamp.get_file_info')
+    @mock.patch('website.util.timestamp.add_token')
+    def test_copy_file_different_region(self, mock_add_token, mock_get_file_info):
         # モック前提
         latest_version = MagicMock()
         latest_version.get_basefilenode_version.return_value = MagicMock()
@@ -434,8 +436,7 @@ class test_utils(OsfTestCase):
         self.consolidate_auth.user.get_or_create_cookie.return_value.decode.return_value = 'dummy-cookie'
 
         # timestamp モック
-        mocker.patch('website.util.timestamp.get_file_info', return_value={'info': 'data'})
-        mocker.patch('website.util.timestamp.add_token')
+        mock_get_file_info.return_value = {'info': 'data'}
 
         # 元のバージョン（regionA）
         version = MagicMock()
