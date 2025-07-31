@@ -43,8 +43,6 @@ from osf.management.commands.import_EGAP import get_creator_auth_header
 from website import settings as website_settings
 from celery.exceptions import CeleryError
 
-pytestmark = pytest.mark.django_db
-
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''\"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''\"'
 
