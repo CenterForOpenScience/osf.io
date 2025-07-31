@@ -29,8 +29,7 @@ class TestBoaErrorHandling(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.error_message = 'fake-error-message'
-        self.user_username = 'fake-user-username'
-        self.user_fullname = 'fake-user-fullname'
+        self.user = AuthUserFactory()
         self.project_url = 'http://localhost:5000/1a2b3'
         self.query_file_name = 'fake_boa_script.boa'
         self.file_size = 255
@@ -57,7 +56,7 @@ class TestBoaErrorHandling(OsfTestCase):
                 return_value = handle_boa_error(
                     self.error_message,
                     BoaErrorCode.UNKNOWN,
-                    self.user_username,
+                    self.user,
                     self.project_url,
                     self.file_full_path,
                     self.query_file_name,
@@ -88,21 +87,30 @@ class TestSubmitToBoa(OsfTestCase):
         self.query_download_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/1a2b3c4d'
         self.output_upload_url = f'http://localhost:7777/v1/resources/{self.project_guid}/providers/osfstorage/?kind=file'
 
+    def tearDown(self):
+        super().tearDown()
+
     def test_submit_to_boa_async_called(self):
-        return_value = submit_to_boa(
-            self.host,
-            self.username,
-            self.password,
-            self.user_guid,
-            self.project_guid,
-            self.query_dataset,
-            self.query_file_name,
-            self.file_size,
-            self.file_full_path,
-            self.query_download_url,
-            self.output_upload_url
-        )
-        assert return_value == BoaErrorCode.NO_ERROR
+        with mock.patch(
+                'addons.boa.tasks.submit_to_boa_async',
+                new_callable=AsyncMock,
+                return_value=BoaErrorCode.NO_ERROR
+        ) as mock_submit_to_boa_async:
+            return_value = submit_to_boa(
+                self.host,
+                self.username,
+                self.password,
+                self.user_guid,
+                self.project_guid,
+                self.query_dataset,
+                self.query_file_name,
+                self.file_size,
+                self.file_full_path,
+                self.query_download_url,
+                self.output_upload_url
+            )
+            assert return_value == BoaErrorCode.NO_ERROR
+            mock_submit_to_boa_async.assert_called()
 
 
 @pytest.mark.django_db
@@ -150,7 +158,7 @@ class TestSubmitToBoaAsync(OsfTestCase):
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None) as mock_async_sleep, \
                 mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             with capture_notifications() as notifications:
-                return_value = submit_to_boa(
+                return_value = await submit_to_boa(
                     self.host,
                     self.username,
                     self.password,
