@@ -12,8 +12,6 @@ import pytest
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
-from website import mails
-
 from website.archiver import (
     ARCHIVER_INITIATED,
 )

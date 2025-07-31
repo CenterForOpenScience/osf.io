@@ -27,7 +27,6 @@ from framework.sessions import get_session
 from osf.models import OSFUser, NotificationType
 from osf.utils import permissions
 from tests.utils import capture_notifications
-from website import mails
 from website import settings
 from website.project.decorators import (
     must_have_permission,

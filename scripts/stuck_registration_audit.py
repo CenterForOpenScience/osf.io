@@ -9,15 +9,13 @@ setup_django()
 
 from django.utils import timezone
 
-from website import mails
 from website import settings
 
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 from osf.management.commands import force_archive as fa
-from osf.models import ArchiveJob, Registration, NotificationType
-from website.archiver import ARCHIVER_INITIATED
-from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ADDONS_REQUESTED
+from osf.models import Registration, NotificationType
+from website.settings import ADDONS_REQUESTED
 
 from scripts import utils as scripts_utils
 

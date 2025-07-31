@@ -38,7 +38,7 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
-from website import mails, settings
+from website import settings
 from website.util import api_url_for, web_url_for
 
 pytestmark = pytest.mark.django_db

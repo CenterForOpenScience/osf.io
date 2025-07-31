@@ -21,7 +21,6 @@ from tqdm import tqdm
 from framework.celery_tasks import app as celery_app
 from osf.models import TrashedFile, Node
 
-from website import mails
 from website.app import init_app
 from website.settings.defaults import GBs
 
