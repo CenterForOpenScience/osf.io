@@ -26,14 +26,13 @@ from django.utils import timezone
 from addons.wiki import views
 import time
 import mock
-import pytest
 import pytz
 import datetime
 import re
 import unicodedata
 import uuid
 from unittest.mock import Mock, MagicMock
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from addons.wiki.tests.test_utils import MockWbResponse, MockResponse
 from osf.models import BaseFileNode, File, Folder
 from tests.base import OsfTestCase
@@ -77,7 +76,9 @@ class TestWikiPageNodeManager(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
 
-    def test_create_for_node_true(self,mocker):
+    @mock.patch('addons.wiki.models.WikiPage.create')
+    @mock.patch('addons.wiki.models.WikiPage.update')
+    def test_create_for_node_true(self, mock_update, mock_create):
         wiki_page = WikiPage.objects.create(
             node=self.node,
             page_name=self.page_name,
@@ -86,8 +87,8 @@ class TestWikiPageNodeManager(OsfTestCase):
             is_wiki_import=True
         )
 
-        mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
-        mock_update = mocker.patch('WikiPage.update', return_value=None)
+        mock_create.return_value = wiki_page
+        mock_update.return_value = None
 
         self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
             self.project,
@@ -98,10 +99,12 @@ class TestWikiPageNodeManager(OsfTestCase):
             is_wiki_import=False)
 
         # True?
-        mock_create.assert_called_with(is_wiki_import=True)
+        mock_wiki_page.assert_called_with(is_wiki_import=True)
         mock_update.assert_called_with(is_wiki_import=True)
 
-    def test_create_for_node_false(self,mocker):
+    @mock.patch('addons.wiki.models.WikiPage.create')
+    @mock.patch('addons.wiki.models.WikiPage.update')
+    def test_create_for_node_false(self, mock_update, mock_create):
         wiki_page = WikiPage.objects.create(
             node=self.node,
             page_name=self.page_name,
@@ -110,8 +113,8 @@ class TestWikiPageNodeManager(OsfTestCase):
             is_wiki_import=False
         )
 
-        mock_create = mocker.patch('WikiPage.create',return_value=wiki_page)
-        mock_update = mocker.patch('WikiPage.update', return_value=None)
+        mock_create.return_value = wiki_page
+        mock_update.return_value = None
 
         self.home_child_wiki = WikiPageNodeManager.objects.create_for_node(
             self.project,
@@ -132,13 +135,14 @@ class TestWikiPageNodeManager2(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
 
-    def test_get_for_child_nodes(self, mocker):
-        mock_child_node = mocker.patch('WikiPage.filter',return_value=None)
+    @mock.patch('addons.wiki.models.WikiPage.filter')
+    def test_get_for_child_nodes(self, mock_wiki_page_filter):
+        mock_wiki_page_filter.return_value = None
 
         child_node = WikiPage.objects.filter(parent=self.parent, deleted__isnull=True, node=self.node)
 
         # モックが1回呼ばれたか
-        mock_child_node.assert_called_once()
+        mock_wiki_page_filter.assert_called_once()
 
     def test_get_for_child_nodes_none(self):
         child_node = WikiPageNodeManager.objects.get_for_child_nodes(self,self.node,None)
@@ -146,19 +150,21 @@ class TestWikiPageNodeManager2(OsfTestCase):
         # 戻り値がNoneか
         self.assert_is_not_none(child_node)
 
-    def test_get_wiki_pages_latest(self, mocker):
-        mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
+    @mock.patch('addons.wiki.models.WikiVersion.objects.annotate')
+    def test_get_wiki_pages_latest(self, mock_annotate):
+        mock_annotate.return_value = None
 
         # モックが1回呼ばれたか
         mock_annotate.assert_called_once()
 
-    def test_get_wiki_child_pages_latest(self, mocker):
-        mock_annotate = mocker.patch('WikiVersion.objects.annotate', return_value=None)
+    @mock.patch('addons.wiki.models.WikiVersion.objects.annotate')
+    def test_get_wiki_child_pages_latest(self, mock_annotate):
+        mock_annotate.return_value = None
 
         # モックが1回呼ばれたか
         mock_annotate.assert_called_once()
 
-    def test_create(self, mocker):
+    def test_create(self):
         create_node = WikiPageNodeManager.objects.create(self,False,{'status': 'unmodified', 'path': '/importpagec/importpaged'})
 
         self.assertIsNotNone(create_node)
@@ -173,9 +179,8 @@ class TestWikiPage(OsfTestCase):
         self.parent = NodeFactory()
         self.content = 'test content'
 
-    def test_update_false(self, mocker):
-        mock_save = mocker.patch('WikiVersion.save')
-
+    @mock.patch('addons.wiki.models.WikiVersion.save')
+    def test_update_false(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
             self.user,
@@ -184,11 +189,10 @@ class TestWikiPage(OsfTestCase):
         )
 
         # False
-        mock_save.assert_called_with(is_wiki_import=False)
+        mock_wiki_version_save.assert_called_with(is_wiki_import=False)
 
-    def test_update_true(self, mocker):
-        mock_save = mocker.patch('WikiVersion.save')
-
+    @mock.patch('addons.wiki.models.WikiVersion.save')
+    def test_update_true(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
             self.user,
@@ -197,7 +201,7 @@ class TestWikiPage(OsfTestCase):
         )
 
         # True
-        mock_save.assert_called_with(is_wiki_import=True)
+        mock_wiki_version_save.assert_called_with(is_wiki_import=True)
 
 class test_utils(OsfTestCase):
     def setUp(self):
@@ -795,7 +799,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    def test_project_wiki_delete_404Err(self, mock_get_for_node, mock_get_sharejs_uuid):
+    def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
         mock_get_for_node.return_value = None
         mock_get_sharejs_uuid.return_value = None
 
@@ -807,7 +811,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    def test_project_wiki_delete_404Err(self, mock_get_for_node, mock_get_sharejs_uuid):
+    def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
         mock_get_for_node.return_value = None
         mock_get_sharejs_uuid.return_value = None
 
@@ -819,7 +823,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_child_nodes')
-    def test_project_wiki_delete(self, mock_get_sharejs_uuid, mock_get_for_child_nodes):
+    def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
         page = self.elephant_wiki
 
         url = self.project.api_url_for(
@@ -868,7 +872,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
-    def test_wiki_validate_name(self, mock_get_for_node, mock_create_for_node):
+    def test_wiki_validate_name(self, mock_create_for_node, mock_get_for_node):
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
@@ -891,7 +895,7 @@ class test_views(OsfTestCase):
 
     @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
-    def test_wiki_validate_name_404err(self, mock_get_for_node, mock_create_for_node):
+    def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
@@ -923,7 +927,7 @@ class test_views(OsfTestCase):
         self.assertEqual(data, expected)
 
     @mock.patch('addons.wiki.views._format_child_wiki_pages')
-    def test_format_project_wiki_pages(self,mock_format_child_wiki_pages):
+    def test_format_project_wiki_pages(self, mock_format_child_wiki_pages):
         mock_format_child_wiki_pages.return_value = [
             {
                 'name': 'Children',
@@ -944,7 +948,7 @@ class test_views(OsfTestCase):
         self.asserEqual(project_format['kind'], 'folder')
 
     @mock.patch('addons.wiki.views._get_wiki_child_pages_latest')
-    def test_format_child_wiki_pages(self,mock_get_wiki_child_pages_latest):
+    def test_format_child_wiki_pages(self, mock_get_wiki_child_pages_latest):
         mock_get_wiki_child_pages_latest.return_value = None
 
         self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
@@ -2201,29 +2205,33 @@ class test_views(OsfTestCase):
         ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
         mock_info.assert_called_once()
 
-    def project_get_task_result_not_ready(self,mocker):
+    @mock.patch('addons.wiki.views.AsyncResult')
+    def project_get_task_result_not_ready(self, mock_async_result):
         mock_res = MagicMock()
         mock_res.ready.return_value = False
-        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
+        mock_async_result.return_value = mock_res
         node = MagicMock()
         result = views.project_get_task_result('task_id',node)
         self.assertIsNone(result)
 
-    def project_get_task_result_not_ready(self,mocker):
+    @mock.patch('addons.wiki.views.AsyncResult')
+    def project_get_task_result_not_ready(self, mock_async_result):
         mock_res = MagicMock()
-        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
+        mock_async_result.return_value = mock_res
         mock_res.ready.return_value = True
         mock_res.get.return_value = 'expected_result'
         node = MagicMock()
         result = views.project_get_task_result('task_id',node)
         self.assertEqual(result,'expected_result')
 
-    def project_get_task_result_not_ready(self,mocker):
+    @mock.patch('addons.wiki.views.AsyncResult')
+    @mock.patch('addons.wiki.views._extract_err_msg')
+    def project_get_task_result_not_ready(self,mock_err_msg, mock_async_result):
         mock_res = MagicMock()
         mock_res.ready.return_value = True
         mock_res.get.side_effect = Exception('exception')
-        mocker.patch('addons.wiki.views.AsyncResult', return_value=mock_res)
-        mocker.patch('addons.wiki.views._extract_err_msg', return_value='error500')
+        mock_async_result.return_value = mock_res
+        mock_err_msg.return_value = 'error500'
         node = MagicMock()
         with self.assertRaises(HTTPError) as context:
             views.project_get_task_result('task_id',node)
