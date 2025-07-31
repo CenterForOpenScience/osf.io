@@ -638,12 +638,9 @@ class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIV
         if yearmonth is None:
             return None
 
-        return InstitutionMonthlySummaryReport.search().filter(
+        return base_search.filter(
             'term',
             report_yearmonth=str(yearmonth),
-        ).filter(
-            'term',
-            institution_id=self.get_institution()._id,
         )
 
 

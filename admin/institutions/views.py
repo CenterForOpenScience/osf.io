@@ -138,22 +138,25 @@ class InstitutionMonthlyReporterDo(PermissionRequiredMixin, View):
     raise_exception = True
 
     def post(self, request, *args, **kwargs):
-        institution = Institution.objects.get_all_institutions().get(id=self.kwargs['institution_id'])
+        institution_id = self.kwargs.get('institution_id')
+        try:
+            institution = Institution.objects.get_all_institutions().get(id=institution_id)
+        except Institution.DoesNotExist:
+            raise Http404(f"Institution with id {institution_id} is not found or deactivated.")
 
         monthly_report_date = request.POST.get('monthly_report_date', None)
         if monthly_report_date:
             try:
-                report_date = isoparse(monthly_report_date).date()
+                monthly_report_date = isoparse(monthly_report_date).date()
             except ValueError as exc:
                 messages.error(request, str(exc))
                 return redirect('institutions:detail', institution_id=institution.id)
-
-        if not report_date:
+        else:
             messages.error(request, 'Report date cannot be none.')
             return redirect('institutions:detail', institution_id=institution.id)
 
         monthly_reporter_do.apply_async(kwargs={
-            'yearmonth': str(YearMonth.from_date(report_date)),
+            'yearmonth': str(YearMonth.from_date(monthly_report_date)),
             'reporter_key': request.POST.get('monthly_reporter', None),
             'report_kwargs': {'institution_pk': institution.id},
         })
