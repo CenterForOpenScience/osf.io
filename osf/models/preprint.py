@@ -1052,6 +1052,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         ).emit(
+            subscribed_object=self.provider,
             user=recipient,
             event_context=context,
         )

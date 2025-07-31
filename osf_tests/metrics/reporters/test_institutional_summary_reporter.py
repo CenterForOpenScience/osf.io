@@ -12,12 +12,14 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from ._testutils import list_monthly_reports
+from osf.management.commands.populate_notification_types import populate_notification_types
 
 
 class TestInstiSummaryMonthlyReporter(TestCase):
 
     @classmethod
     def setUpTestData(cls):
+        populate_notification_types()
         cls._yearmonth = YearMonth(2018, 2)  # February 2018
         cls._institution = InstitutionFactory()
         cls._now = datetime.datetime(2018, 2, 4, tzinfo=datetime.UTC)

@@ -2140,12 +2140,6 @@ class TestSetPrivacy:
         assert len(notifications) == 1
         assert notifications[0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
 
-    def test_set_privacy_skips_mail_if_meeting(self, node, auth):
-        with capture_notifications() as notifications:
-            node.set_privacy('private', auth=auth)
-            node.set_privacy('public', auth=auth, meeting_creation=True)
-        assert not notifications
-
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)
         registration.embargo_registration(
