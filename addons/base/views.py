@@ -1012,8 +1012,8 @@ def persistent_file_download(auth, **kwargs):
                 'message_long': 'The requested file could not be found.'
             })
 
-        referent = guid.referent
-        if type(referent) is Preprint:
+        file = guid.referent
+        if type(file) is Preprint:
             referent, _ = Guid.load_referent(id_or_guid)
             file = referent.primary_file
 
