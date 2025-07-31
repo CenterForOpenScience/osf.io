@@ -47,9 +47,10 @@ SEARCH_ENGINE = 'elastic'
 USE_CELERY = False
 
 # Email
-MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+MAIL_SERVER = 'localhost'  # For local testing
+MAIL_PORT = 1025  # For local testing
 
 MAILHOG_HOST = 'localhost'
 MAILHOG_PORT = 1025
