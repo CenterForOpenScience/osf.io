@@ -61,6 +61,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         to_addr (str): The recipient's email address.
         notification_type (str): The subject of the notification.
         context (dict): The email content context.
+        email_context (dict): The email context for sending, such as header changes for BCC or reply-to
     """
     if not settings.SENDGRID_API_KEY:
         raise NotImplementedError('SENDGRID_API_KEY is required for sendgrid notifications.')

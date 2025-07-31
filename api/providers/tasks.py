@@ -705,7 +705,7 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
     NotificationType.objects.get(
         name=NotificationType.Type.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
     ).emit(
-        user=object('mockuser', (), {'username': email}),
+        destination_address=email,
         event_context={
             'user': user_info,
             'provider_name': provider_name,

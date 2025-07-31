@@ -22,13 +22,6 @@ from website.reviews.signals import reviews_email_submit_moderators_notification
 from website.settings import DOMAIN
 
 
-EMAIL_TEMPLATES_PER_EVENT = {
-    'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED,
-    'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED,
-    'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED,
-    'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED,
-}
-
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
 
@@ -483,10 +476,15 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(),
                 context=email_context,
-                user=self.initiator
+                resource=self.parent
             )
 
-        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
+        template = {
+            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED,
+            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED,
+            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED,
+            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED,
+        }.get(event)
         if not template:
             return
 

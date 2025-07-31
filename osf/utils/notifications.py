@@ -9,11 +9,13 @@ def get_email_template_context(resource):
     is_preprint = resource.provider.type == 'osf.preprintprovider'
     url_segment = 'preprints' if is_preprint else 'registries'
     document_type = resource.provider.preprint_word if is_preprint else 'registration'
+    from website.profile.utils import get_profile_image_url
 
     base_context = {
         'domain': DOMAIN,
         'reviewable_title': resource.title,
         'reviewable_absolute_url': resource.absolute_url,
+        'profile_image_url': get_profile_image_url(resource.creator),
         'reviewable_provider_name': resource.provider.name,
         'workflow': resource.provider.reviews_workflow,
         'provider_url': resource.provider.domain or f'{DOMAIN}{url_segment}/{resource.provider._id}',
@@ -48,7 +50,6 @@ def notify_submit(resource, user, *args, **kwargs):
         timestamp=timezone.now(),
         context=context,
         resource=resource,
-        user=user,
     )
 
 
@@ -67,7 +68,6 @@ def notify_resubmit(resource, user, *args, **kwargs):
         timestamp=timezone.now(),
         context=context,
         resource=resource,
-        user=user
     )
 
 

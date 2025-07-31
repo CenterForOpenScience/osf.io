@@ -1209,11 +1209,13 @@ def test_archiver_uncaught_error_mail_renders():
     src = factories.ProjectFactory()
     user = src.creator
     job = factories.ArchiveJobFactory()
-    mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
-    assert mail.html(
+    notification_type = NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance
+    assert notification_type.emit(
         user=user,
-        src=src,
-        results=job.target_addons.all(),
-        url=settings.INTERNAL_DOMAIN + src._id,
-        can_change_preferences=False,
+        event_context=dict(
+            src=str(src),
+            results=list(job.target_addons.all()),
+            url=settings.INTERNAL_DOMAIN + src._id,
+            can_change_preferences=False,
+        )
     )
