@@ -74,8 +74,8 @@ class TestWikiPageNodeManager(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
 
-    @mock.patch('addons.wiki.models.WikiPage.create')
-    @mock.patch('addons.wiki.models.WikiPage.update')
+    @mock.patch('addons.wiki.models.WikiPage.objects.create')
+    @mock.patch('addons.wiki.models.WikiPage.objects.update')
     def test_create_for_node_true(self, mock_update, mock_create):
         wiki_page = WikiPage.objects.create(
             node=self.node,
@@ -100,8 +100,8 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_wiki_page.assert_called_with(is_wiki_import=True)
         mock_update.assert_called_with(is_wiki_import=True)
 
-    @mock.patch('addons.wiki.models.WikiPage.create')
-    @mock.patch('addons.wiki.models.WikiPage.update')
+    @mock.patch('addons.wiki.models.WikiPage.object.create')
+    @mock.patch('addons.wiki.models.WikiPage.object.update')
     def test_create_for_node_false(self, mock_update, mock_create):
         wiki_page = WikiPage.objects.create(
             node=self.node,
@@ -132,7 +132,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
 
-    @mock.patch('addons.wiki.models.WikiPage.filter')
+    @mock.patch('addons.wiki.models.WikiPage.object.filter')
     def test_get_for_child_nodes(self, mock_wiki_page_filter):
         mock_wiki_page_filter.return_value = None
 
@@ -175,7 +175,7 @@ class TestWikiPage(OsfTestCase):
         self.parent = NodeFactory()
         self.content = 'test content'
 
-    @mock.patch('addons.wiki.models.WikiVersion.save')
+    @mock.patch('addons.wiki.models.WikiVersion.objects.save')
     def test_update_false(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
@@ -187,7 +187,7 @@ class TestWikiPage(OsfTestCase):
         # False
         mock_wiki_version_save.assert_called_with(is_wiki_import=False)
 
-    @mock.patch('addons.wiki.models.WikiVersion.save')
+    @mock.patch('addons.wiki.models.WikiVersion.objects.save')
     def test_update_true(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
@@ -761,14 +761,14 @@ class test_views(OsfTestCase):
                 '_id': 'mno'
             }
         ]
-    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
+    @mock.patch('osf.models.BaseFileNode.objects.filter')
     def test_get_wiki_version_none(self, mock_filter):
         mock_filter.return_value = None
 
         versions = _get_wiki_versions(None, 'test', anonymous=False)
         self.assertEqual(len(versions),0)
 
-    @mock.patch('addons.wiki.views.BaseFileNode.objects.get_for_node')
+    @mock.patch('osf.models.BaseFileNode.objects.get_for_node')
     def test_get_wiki_version(self, mock_node):
         mock_node.return_value = [
             {
@@ -779,7 +779,7 @@ class test_views(OsfTestCase):
         versions = _get_wiki_versions(None, 'test', anonymous=False)
         self.assertGreaterEqual(len(versions),1)
 
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_wiki_child_pages_latest')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_wiki_child_pages_latest')
     def test_get_wiki_child_pages_latest(self, get_wiki_child_pages_latest):
 
         name = 'page by id'
@@ -794,7 +794,7 @@ class test_views(OsfTestCase):
         urls = _get_wiki_api_urls(self.project, self.wname)
         self.assert_equal(urls['sort'], self.project.api_url_for('project_update_wiki_page_sort'))
 
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
         mock_get_for_node.return_value = None
@@ -806,7 +806,7 @@ class test_views(OsfTestCase):
         res = self.app.get(delete_url)
         self.assert_equal(res.status_code, 404)
 
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
         mock_get_for_node.return_value = None
@@ -819,7 +819,7 @@ class test_views(OsfTestCase):
         self.assert_equal(res.status_code, 404)
 
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_child_nodes')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
         page = self.elephant_wiki
 
@@ -867,8 +867,8 @@ class test_views(OsfTestCase):
         res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         self.assertEqual(res.status_code, 200)
 
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
-    @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name(self, mock_create_for_node, mock_get_for_node):
         mock_get_for_node.return_value = [
             {
@@ -890,8 +890,8 @@ class test_views(OsfTestCase):
         # モックが呼ばれたか
         mock_create_for_node.assert_called()
 
-    @mock.patch('addons.wiki.views.WikiPage.objects.get_for_node')
-    @mock.patch('addons.wiki.views.WikiPage.objects.create_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
         mock_get_for_node.return_value = [
             {
@@ -2284,7 +2284,7 @@ class test_views(OsfTestCase):
         self.assertEqual(folder_path, 'osfstorage/xxyyzz/')
 
     @mock.patch('website.util.waterbutler.create_folder')
-    @mock.patch('addons.wiki.views.BaseFileNode')
+    @mock.patch('osf.models.BaseFileNode')
     def test_create_wiki_folder_success(self, mock_base_file_node, mock_create_folder):
         mock_response = {
             'data': {
@@ -2364,7 +2364,7 @@ class test_views(OsfTestCase):
         self.assertIsNone(result)
 
     @mock.patch('addons.wiki.utils.copy_files_with_timestamp')
-    @mock.patch('addons.wiki.views.BaseFileNode')
+    @mock.patch('osf.models.BaseFileNode')
     def test_wiki_copy_import_directory(self, mock_base_file_node, mock_clone):
         mock_base_file_node_instance = mock.Mock()
         mock_base_file_node_instance._id = 'ddeeff'
