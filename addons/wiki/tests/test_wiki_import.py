@@ -63,7 +63,7 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
     message_short='Invalid request',
     message_long='The requested version of this wiki page does not exist.'
 ))
-@pytest.mark.enable_bookmark_creation
+
 class TestWikiPageNodeManager(OsfTestCase):
 
     def setUp(self):
@@ -126,7 +126,6 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_create.assert_called_with(is_wiki_import=False)
         mock_update.assert_called_with(is_wiki_import=False)
 
-@pytest.mark.enable_bookmark_creation
 class TestWikiPageNodeManager2(OsfTestCase):
     def setUp(self):
         self.project = ProjectFactory()
@@ -167,7 +166,6 @@ class TestWikiPageNodeManager2(OsfTestCase):
 
         self.assertIsNotNone(create_node)
 
-@pytest.mark.enable_bookmark_creation
 class TestWikiPage(OsfTestCase):
     def setUp(self):
         self.project = ProjectFactory()
@@ -2549,7 +2547,7 @@ class test_views(OsfTestCase):
         kwargs = {'node': node}
 
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
-            with pytest.raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
+            with self.assertRaises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
 
     # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
@@ -2559,7 +2557,7 @@ class test_views(OsfTestCase):
         kwargs = {'node': node}
 
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
-            with pytest.raises(Exception) as excinfo:
+            with self.assertRaises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
 
@@ -2581,7 +2579,7 @@ class test_views(OsfTestCase):
         kwargs = {'node': node}
 
         with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
-            with pytest.raises(Exception) as excinfo:
+            with self.assertRaises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
 
@@ -2594,5 +2592,5 @@ class test_views(OsfTestCase):
         kwargs = {'node': node}
 
         with self.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
-            with pytest.raises(self.WIKI_INVALID_VERSION_ERROR):
+            with self.assertRaises(self.WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
