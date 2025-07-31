@@ -44,7 +44,7 @@ from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewStates
 from tests.base import assert_datetime_equal, OsfTestCase
 from tests.utils import assert_preprint_logs, capture_notifications
-from website import settings, mails
+from website import settings
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from website.preprints.tasks import (

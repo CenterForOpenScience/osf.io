@@ -85,19 +85,19 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
 
     personalization.add_to(To(to_addr))
 
-    if cc_addr := email_context.get('cc_addr'):
+    if cc_addr := email_context.get('cc_addr', None):
         if isinstance(cc_addr, str):
             cc_addr = [cc_addr]
         for email in cc_addr:
             personalization.add_cc(Cc(email))
 
-    if bcc_addr := email_context.get('cc_addr'):
+    if bcc_addr := email_context.get('bcc_addr', None):
         if isinstance(bcc_addr, str):
             bcc_addr = [bcc_addr]
         for email in bcc_addr:
             personalization.add_bcc(Bcc(email))
 
-    if reply_to := email_context.get('reply_to'):
+    if reply_to := email_context.get('reply_to', None):
         message.reply_to = ReplyTo(reply_to)
 
     message.add_personalization(personalization)

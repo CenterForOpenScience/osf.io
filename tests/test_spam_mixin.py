@@ -12,7 +12,7 @@ from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
 from osf.models import NotableDomain, SpamStatus, NotificationType
 from tests.utils import capture_notifications
-from website import settings, mails
+from website import settings
 
 
 @pytest.mark.django_db
