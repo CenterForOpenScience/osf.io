@@ -1237,44 +1237,35 @@ class ResourceContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {resource._id}')
 
     def create(self, validated_data):
-        id = validated_data.get('_id')
-        email = validated_data.get('user', {}).get('email', None)
-        index = None
-        if '_order' in validated_data:
-            index = validated_data.pop('_order')
+        user_id = validated_data.get('_id')
+        email = validated_data.get('user', {}).get('email')
+        index = validated_data.pop('_order', None)
         resource = self.context['resource']
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        email_preference = self.context['request'].GET.get('send_email') or self.context['default_email']
+        email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         permissions = self.get_proposed_permissions(validated_data)
 
-        self.validate_data(
-            resource,
-            user_id=id,
-            full_name=full_name,
-            email=email,
-            index=index,
-        )
-        if email_preference not in self.email_preferences:
-            raise exceptions.ValidationError(detail=f'{email_preference} is not a valid email preference.')
+        self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index)
 
-        contributor = OSFUser.load(id)
-        if email or (contributor and contributor.is_registered):
-            is_published = getattr(resource, 'is_published', False)
-            notification_type = {
-                'false': False,
-                'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
-                'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
-                'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
-            }[email_preference]
-        else:
-            notification_type = False
+        if email_pref not in self.email_preferences:
+            raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
+
+        is_published = getattr(resource, 'is_published', False)
+        notification_type = {
+            'false': False,
+            'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+            'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
+            'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
+        }.get(email_pref, False)
+        contributor = OSFUser.load(user_id)
+        notification_type = notification_type if email or (contributor and contributor.is_registered) else False,
 
         try:
-            contributor_obj = resource.add_contributor_registered_or_not(
+            return resource.add_contributor_registered_or_not(
                 auth=auth,
-                user_id=id,
+                user_id=user_id,
                 email=email,
                 full_name=full_name,
                 notification_type=notification_type,
@@ -1286,7 +1277,6 @@ class ResourceContributorsCreateSerializer(NodeContributorsSerializer):
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
-        return contributor_obj
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
