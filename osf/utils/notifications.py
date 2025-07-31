@@ -42,12 +42,13 @@ def notify_submit(resource, user, *args, **kwargs):
         context=context,
         recipients=recipients,
         resource=resource,
+        notification_type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(
         timestamp=timezone.now(),
         context=context,
         resource=resource,
-        user=user
+        user=user,
     )
 
 
@@ -59,7 +60,7 @@ def notify_resubmit(resource, user, *args, **kwargs):
     reviews_signals.reviews_email_submit.send(
         recipients=recipients,
         context=context,
-        template=NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
+        notification_type=NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
         resource=resource,
     )
     reviews_signals.reviews_email_submit_moderators_notifications.send(

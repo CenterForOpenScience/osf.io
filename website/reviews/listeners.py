@@ -1,4 +1,5 @@
-from website.settings import DOMAIN
+from osf.models import NotificationType
+from website.settings import DOMAIN, OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO
 from website.reviews import signals as reviews_signals
 
 
@@ -53,4 +54,31 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
         ).emit(
             user=recipient,
             event_context=context,
+        )
+
+
+@reviews_signals.reviews_email_submit.connect
+def reviews_submit_notification(self, recipients, context, resource, notification_type=None):
+    """
+    Handle email notifications for a new submission or a resubmission
+    """
+    provider = resource.provider
+    if provider._id == 'osf':
+        if provider.type == 'osf.preprintprovider':
+            context['logo'] = OSF_PREPRINTS_LOGO
+        elif provider.type == 'osf.registrationprovider':
+            context['logo'] = OSF_REGISTRIES_LOGO
+        else:
+            raise NotImplementedError()
+    else:
+        context['logo'] = resource.provider._id
+
+    for recipient in recipients:
+        context['is_creator'] = recipient == resource.creator
+        context['provider_name'] = resource.provider.name
+        NotificationType.objects.get(
+            name=notification_type
+        ).emit(
+            user=recipient,
+            event_context=context
         )

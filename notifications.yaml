@@ -305,6 +305,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/pending_registration_admin.html.mako'
+  - name: node_pending_registration_non_admin
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/pending_registration_non_admin.html.mako'
   - name: node_pending_retraction_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
