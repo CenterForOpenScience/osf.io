@@ -1006,14 +1006,17 @@ def persistent_file_download(auth, **kwargs):
     file = BaseFileNode.active.filter(_id=id_or_guid).first()
     if not file:
         guid = Guid.load(id_or_guid)
-        if guid:
-            referent = guid.referent
-            file = referent.primary_file if type(referent) is Preprint else referent
-        else:
+        if not guid:
             raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
                 'message_short': 'File Not Found',
                 'message_long': 'The requested file could not be found.'
             })
+
+        referent = guid.referent
+        if type(referent) is Preprint:
+            referent, _ = Guid.load_referent(id_or_guid)
+            file = referent.primary_file
+
     if not file.is_file:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_long': 'Downloading folders is not permitted.'
