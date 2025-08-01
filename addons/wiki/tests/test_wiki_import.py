@@ -100,8 +100,8 @@ class TestWikiPageNodeManager(OsfTestCase):
         mock_wiki_page.assert_called_with(is_wiki_import=True)
         mock_update.assert_called_with(is_wiki_import=True)
 
-    @mock.patch('addons.wiki.models.WikiPage.object.create')
-    @mock.patch('addons.wiki.models.WikiPage.object.update')
+    @mock.patch('addons.wiki.models.WikiPage.objects.create')
+    @mock.patch('addons.wiki.models.WikiPage.objects.update')
     def test_create_for_node_false(self, mock_update, mock_create):
         wiki_page = WikiPage.objects.create(
             node=self.node,
@@ -132,7 +132,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
 
-    @mock.patch('addons.wiki.models.WikiPage.object.filter')
+    @mock.patch('addons.wiki.models.WikiPage.objects.filter')
     def test_get_for_child_nodes(self, mock_wiki_page_filter):
         mock_wiki_page_filter.return_value = None
 
@@ -175,7 +175,7 @@ class TestWikiPage(OsfTestCase):
         self.parent = NodeFactory()
         self.content = 'test content'
 
-    @mock.patch('addons.wiki.models.WikiVersion.objects.save')
+    @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
@@ -187,7 +187,7 @@ class TestWikiPage(OsfTestCase):
         # False
         mock_wiki_version_save.assert_called_with(is_wiki_import=False)
 
-    @mock.patch('addons.wiki.models.WikiVersion.objects.save')
+    @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_true(self, mock_wiki_version_save):
         wiki_page = WikiPage.objects.update(
             self,
@@ -220,7 +220,7 @@ class test_utils(OsfTestCase):
         self.pagefile3 = TestFileWiki.objects.create(name='page3.md', target=self.project1, parent=self.pagefolder3)
         self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
 
-        self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', node=self.project1, target=self.project, parent=self.root)
+        self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
         self.import_page_folder1 = TestFileWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
         self.import_page_folder2 = TestFileWiki.objects.create(name='importpage2', target=self.project, parent=self.root_import_folder1)
         self.import_page_md_file1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
