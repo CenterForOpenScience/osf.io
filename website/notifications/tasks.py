@@ -71,7 +71,7 @@ def _send_global_and_node_emails(message_freq):
             'can_change_preferences': False
         }
 
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_DIGEST.value)
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_DIGEST)
         notification_type.emit(user=user, event_context=event_context, is_digest=True)
 
         for notification in notifications_qs:
@@ -138,7 +138,7 @@ def _send_reviews_moderator_emails(message_freq):
             'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
         }
 
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value)
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.DIGEST_REVIEWS_MODERATORS)
         notification_type.emit(user=user, event_context=event_context, is_digest=True)
 
         for notification in notifications_qs:
@@ -179,8 +179,8 @@ def get_moderators_emails(message_freq: str):
         cursor.execute(sql,
             [
                 message_freq,
-                str(NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value),
-                str(NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value)
+                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -218,8 +218,8 @@ def get_users_emails(message_freq):
         cursor.execute(sql,
             [
                 message_freq,
-                str(NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value),
-                str(NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value)
+                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
