@@ -9,6 +9,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
+from website import settings
 from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
@@ -92,7 +93,7 @@ class TestUserChangePassword:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        user.set_password('password1')
+        user.set_password('password1', notify=False)
         user.auth = (user.username, 'password1')
         user.save()
         return user
@@ -128,7 +129,8 @@ class TestUserChangePassword:
         assert res.status_code == 403
 
         # Logged in
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with mock.patch.object(settings, 'USE_EMAIL', False):
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
         user_one.reload()
         assert user_one.check_password('password2')
@@ -267,7 +269,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throttle(self, app, url, user_one):
+    def test_throttle(self, app, url, user_one, csrf_token):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         app.get(url)
@@ -282,8 +284,18 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload, expect_errors=True)
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(
+            url,
+            payload,
+            headers={'X-CSRFToken': csrf_token},
+            expect_errors=True
+        )
+        res = app.post_json_api(
+            url,
+            payload,
+            headers={'X-CSRFToken': csrf_token},
+            expect_errors=True
+        )
         assert res.status_code == 429
 
         res = app.get(url, expect_errors=True)
