@@ -140,6 +140,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     CONFIRM_HAM = 'confirm_ham'
     FLAG_SPAM = 'flag_spam'
     CONFIRM_SPAM = 'confirm_spam'
+    MIGRATED_QUICK_FILES = 'migrated_quickfiles'
 
     RESOURCE_ADDED = 'resource_identifier_added'
     RESOURCE_UPDATED = 'resource_identifier_udpated'
