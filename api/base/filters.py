@@ -605,6 +605,9 @@ class PreprintFilterMixin(ListFilterMixin):
         if field_name == 'subjects':
             self.postprocess_subject_query_param(operation)
 
+        if field_name == 'tags':
+            super().postprocess_query_param(key, field_name, operation)
+
     def preprints_queryset(self, base_queryset, auth_user, allow_contribs=True, public_only=False, latest_only=False):
         preprints = Preprint.objects.can_view(
             base_queryset=base_queryset,

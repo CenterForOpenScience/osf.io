@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from website.settings import MAILCHIMP_GENERAL_LIST, OSF_HELP_LIST
+from website.settings import OSF_HELP_LIST
 
 
 @pytest.fixture()
@@ -200,14 +200,15 @@ class TestUserSettingsUpdateMailingList:
             }
         }
 
-    @mock.patch('api.users.serializers.update_mailchimp_subscription')
-    def test_authorized_patch_200(self, mailchimp_mock, app, user_one, payload, url):
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_authorized_patch_200(self, mock_mailchimp_client, app, user_one, payload, url):
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200
 
         user_one.refresh_from_db()
+        assert res.json['data']['attributes']['subscribe_osf_help_email'] is False
         assert user_one.osf_mailing_lists[OSF_HELP_LIST] is False
-        mailchimp_mock.assert_called_with(user_one, MAILCHIMP_GENERAL_LIST, True)
+        mock_mailchimp_client.assert_called_with()
 
     def test_bad_payload_patch_400(self, app, user_one, bad_payload, url):
         res = app.patch_json_api(url, bad_payload, auth=user_one.auth, expect_errors=True)
@@ -227,6 +228,7 @@ class TestUserSettingsUpdateMailingList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUpdateRequestedDeactivation:
 
     @pytest.fixture()
@@ -241,8 +243,7 @@ class TestUpdateRequestedDeactivation:
             }
         }
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_patch_requested_deactivation(self, mock_mail, app, user_one, user_two, url, payload):
+    def test_patch_requested_deactivation(self, app, user_one, user_two, url, payload):
         # Logged out
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -271,18 +272,16 @@ class TestUpdateRequestedDeactivation:
         user_one.reload()
         assert user_one.requested_deactivation is False
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_patch_invalid_type(self, mock_mail, app, user_one, url, payload):
+    def test_patch_invalid_type(self, mock_send_grid, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
         res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
+    def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.patch_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 200

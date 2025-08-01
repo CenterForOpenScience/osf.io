@@ -118,7 +118,7 @@ class ArchiverTask(celery.Task):
         dst.save()
 
         sentry.log_message(
-            'An error occured while archiving node',
+            f'An error occured while archiving node: {src._id} and registration: {dst._id}',
             extra_data={
                 'source node guid': src._id,
                 'registration node guid': dst._id,
@@ -325,9 +325,9 @@ def archive(job_pk):
     )
 
 
-@celery_app.task(base=ArchiverTask, ignore_result=False)
+@celery_app.task(bind=True, base=ArchiverTask, ignore_result=False, max_retries=1, default_retry_delay=60 * 5, acks_late=True)
 @logged('archive_success')
-def archive_success(dst_pk, job_pk):
+def archive_success(self, dst_pk, job_pk):
     """Archiver's final callback. For the time being the use case for this task
     is to rewrite references to files selected in a registration schema (the Prereg
     Challenge being the first to expose this feature). The created references point
@@ -352,7 +352,17 @@ def archive_success(dst_pk, job_pk):
 
     # Update file references in the Registration's responses to point to the archived
     # file on the Registration instead of the "live" version on the backing project
-    utils.migrate_file_metadata(dst)
+    try:
+        utils.migrate_file_metadata(dst)
+    except ArchivedFileNotFound as err:
+        sentry.log_message(
+            f'Some files were not found while archiving the node {dst_pk}',
+            extra_data={
+                'missing_files': err.missing_files,
+            },
+        )
+        self.retry(exc=err)
+
     job = ArchiveJob.load(job_pk)
     if not job.sent:
         job.sent = True

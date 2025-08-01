@@ -607,3 +607,11 @@ services:
     stdin_open: true
     volumes:
       - /srv
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: mailhog
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    restart: unless-stopped

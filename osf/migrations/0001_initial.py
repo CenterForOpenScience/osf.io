@@ -116,7 +116,7 @@ class Migration(migrations.Migration):
                 ('category', models.CharField(blank=True, choices=[('analysis', 'Analysis'), ('communication', 'Communication'), ('data', 'Data'), ('hypothesis', 'Hypothesis'), ('instrumentation', 'Instrumentation'), ('methods and measures', 'Methods and Measures'), ('procedure', 'Procedure'), ('project', 'Project'), ('software', 'Software'), ('other', 'Other'), ('', 'Uncategorized')], default='', max_length=255)),
                 ('registration_responses', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
                 ('registration_responses_migrated', models.NullBooleanField(db_index=True, default=True)),
-                ('type', models.CharField(choices=[('osf.node', 'node'), ('osf.draftnode', 'draft node'), ('osf.registration', 'registration'), ('osf.quickfilesnode', 'quick files node')], db_index=True, max_length=255)),
+                ('type', models.CharField(choices=[('osf.node', 'node'), ('osf.draftnode', 'draft node'), ('osf.registration', 'registration')], db_index=True, max_length=255)),
                 ('child_node_subscriptions', osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONField(blank=True, default=dict, encoder=osf.utils.datetime_aware_jsonfield.DateTimeAwareJSONEncoder)),
                 ('deleted_date', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
                 ('deleted', osf.utils.fields.NonNaiveDateTimeField(blank=True, null=True)),
@@ -2224,16 +2224,6 @@ class Migration(migrations.Migration):
                 'indexes': [],
             },
             bases=('osf.abstractprovider',),
-        ),
-        migrations.CreateModel(
-            name='QuickFilesNode',
-            fields=[
-            ],
-            options={
-                'proxy': True,
-                'indexes': [],
-            },
-            bases=('osf.abstractnode',),
         ),
         migrations.CreateModel(
             name='Registration',

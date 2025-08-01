@@ -171,7 +171,12 @@ def _send_with_sendgrid(
     # Personalization to handle To, CC, and BCC sendgrid client concept
     personalization = Personalization()
 
-    personalization.add_to(To(to_addr))
+    to = To(to_addr)
+    if to.email is None:
+        sentry.log_message(f"Receiver email is not valid: {to_addr}. {subject} email won't be sent.")
+        return False
+
+    personalization.add_to(to)
 
     if cc_addr:
         if isinstance(cc_addr, str):
@@ -191,7 +196,8 @@ def _send_with_sendgrid(
     mail.add_personalization(personalization)
 
     if categories:
-        mail.add_category([Category(x) for x in categories])
+        for category in categories:
+            mail.add_category(Category(category))
 
     if attachment_name and attachment_content:
         attachment = Attachment(

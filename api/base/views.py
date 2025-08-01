@@ -481,7 +481,7 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         return self.default_ordering
 
     # overrides GenericAPIView
-    def get_queryset(self):
+    def get_queryset(self, *args, **kwargs):
         """
         Returns non-deleted children of the current resource that the user has permission to view -
         Children could be public, viewable through a view-only link (if provided), or the user
@@ -494,8 +494,8 @@ class BaseChildrenList(JSONAPIBaseView, NodesFilterMixin):
         if self.request.query_params.get('sort', None) == '_order':
             # Order by the order of the node_relations
             order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(node_pks)])
-            return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link).order_by(order)
-        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link)
+            return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link, *args, **kwargs).order_by(order)
+        return self.get_queryset_from_request().filter(pk__in=node_pks).can_view(auth.user, auth.private_link, *args, **kwargs)
 
 
 class BaseContributorDetail(JSONAPIBaseView, generics.RetrieveAPIView):

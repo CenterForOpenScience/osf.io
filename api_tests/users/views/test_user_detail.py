@@ -935,7 +935,8 @@ class TestUserUpdate:
             'impactStory': 'why not',
             'orcid': 'ork-id',
             'researchGate': 'Why are there so many of these',
-            'researcherId': 'ok-lastone'
+            'researcherId': 'ok-lastone',
+            'academiaInstitution': 'Center for Open Science'
         }
 
         fake_fields = {
@@ -1354,30 +1355,47 @@ class UserProfileMixin:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'End date must be greater than or equal to the start date.'
 
-    def test_user_put_profile_date_validate_end_month_dependency(self, app, user_one, user_one_url, end_month_dependency_payload):
-        # No endMonth with endYear
-        res = app.put_json_api(user_one_url, end_month_dependency_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'endYear' is a dependency of 'endMonth'"
+    def test_user_put_profile_date_validate_end_month_dependency_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
+        # End dates, but no start dates
+        start_dates_no_end_dates_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        start_dates_no_end_dates_payload['data']['attributes'][request_key][0]['endMonth'] = 3
 
-    def test_user_put_profile_date_validate_start_month_dependency(self, app, user_one, user_one_url, start_month_dependency_payload):
-        # No endMonth with endYear
-        res = app.put_json_api(user_one_url, start_month_dependency_payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'startYear' is a dependency of 'startMonth'"
-
-    def test_user_put_profile_date_validate_start_date_no_end_date_not_ongoing(self, app, user_one, user_attr, user_one_url, start_dates_no_end_dates_payload, request_key):
-        # End date is greater then start date
         res = app.put_json_api(user_one_url, start_dates_no_end_dates_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
         assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == "'endYear' is a dependency of 'endMonth'"
 
-    def test_user_put_profile_date_validate_end_date_no_start_date(self, app, user_one, user_attr, user_one_url, end_dates_no_start_dates_payload, request_key):
-        # End dates, but no start dates
-        res = app.put_json_api(user_one_url, end_dates_no_start_dates_payload, auth=user_one.auth, expect_errors=True)
+    def test_false_ongoing_without_start_date_should_fail(self, app, request_payload, user_one_url, user_one, request_key, user_attr):
+        request_payload['data']['attributes'][request_key][0].pop('startYear')
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         user_one.reload()
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == "'startYear' is a dependency of 'endYear'"
+        assert res.json['errors'][0]['detail'] == "'startYear' is a required property"
+        assert not getattr(user_one, user_attr)
+
+    def test_false_ongoing_without_end_date_should_fail(self, app, request_payload, user_one_url, user_one, request_key, user_attr):
+        request_payload['data']['attributes'][request_key][0].pop('endYear')
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.json['errors'][0]['detail'] == "'endYear' is a required property"
+        assert not getattr(user_one, user_attr)
+
+    def test_true_ongoing_without_start_date_should_fail(self, app, request_payload, user_one_url, user_one, request_key, user_attr):
+        request_payload['data']['attributes'][request_key][0].pop('startYear')
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.json['errors'][0]['detail'] == "'startYear' is a required property"
+        assert not getattr(user_one, user_attr)
+
+    def test_true_ongoing_without_end_date_should_succeed(self, app, request_payload, user_one_url, user_one, request_key, user_attr):
+        request_payload['data']['attributes'][request_key][0]['ongoing'] = True
+        request_payload['data']['attributes'][request_key][0].pop('endYear')
+        # to avoid dependency error
+        request_payload['data']['attributes'][request_key][0].pop('endMonth')
+
+        res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
+        user_one.reload()
+        assert res.status_code == 200
+        assert getattr(user_one, user_attr)[0]['startYear'] == request_payload['data']['attributes'][request_key][0]['startYear']
 
 
 @pytest.mark.django_db
