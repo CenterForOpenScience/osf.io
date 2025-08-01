@@ -94,11 +94,11 @@ class TestWikiPageNodeManager(OsfTestCase):
             'home child content',
             self.consolidate_auth,
             parent=None,
-            is_wiki_import=False)
+            is_wiki_import=True)
 
         # True?
-        mock_wiki_page.assert_called_with(is_wiki_import=True)
-        mock_update.assert_called_with(is_wiki_import=True)
+        mock_create.assert_called_with(is_wiki_import=True, node=self.project, page_name='home child', parent=None, user=self.user)
+        mock_update.assert_called_with(is_wiki_import=True, user=self.user, content='home child content')
 
     @mock.patch('addons.wiki.models.WikiPage.objects.create')
     @mock.patch('addons.wiki.models.WikiPage.objects.update')
@@ -123,8 +123,8 @@ class TestWikiPageNodeManager(OsfTestCase):
             is_wiki_import=False)
 
         # False
-        mock_create.assert_called_with(is_wiki_import=False)
-        mock_update.assert_called_with(is_wiki_import=False)
+        mock_create.assert_called_with(is_wiki_import=False, node=self.project, page_name='home child', parent=None, user=self.user)
+        mock_update.assert_called_with(is_wiki_import=False, user=self.user, content='home child content')
 
 class TestWikiPageNodeManager2(OsfTestCase):
     def setUp(self):
@@ -142,7 +142,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         mock_wiki_page_filter.assert_called_once()
 
     def test_get_for_child_nodes_none(self):
-        child_node = WikiPage.objects.get_for_child_nodes(self,self.node,None)
+        child_node = WikiPage.objects.get_for_child_nodes(node=self.node, parent=None)
 
         # 戻り値がNoneか
         self.assert_is_not_none(child_node)
@@ -162,9 +162,9 @@ class TestWikiPageNodeManager2(OsfTestCase):
         mock_annotate.assert_called_once()
 
     def test_create(self):
-        create_node = WikiPage.objects.create(self,False,{'status': 'unmodified', 'path': '/importpagec/importpaged'})
+        new_node = WikiPage.objects.create(is_wiki_import=False, status='unmodified', path='/importpagec/importpaged')
 
-        self.assertIsNotNone(create_node)
+        self.assertIsNotNone(new_node)
 
 class TestWikiPage(OsfTestCase):
     def setUp(self):
@@ -174,14 +174,20 @@ class TestWikiPage(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
         self.content = 'test content'
+        self.wiki_page = WikiPage.create(
+            node=self.node,
+            page_name=self.page_name,
+            user=self.user,
+            parent=self.parent,
+            is_wiki_import=False
+        )
 
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
-        wiki_page = WikiPage.objects.update(
-            self,
+        self.wiki_page.update(
             self.user,
             self.content,
-            False
+            is_wiki_import=False
         )
 
         # False
@@ -189,11 +195,10 @@ class TestWikiPage(OsfTestCase):
 
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_true(self, mock_wiki_version_save):
-        wiki_page = WikiPage.objects.update(
-            self,
+        self.wiki_page.update(
             self.user,
             self.content,
-            True
+            is_wiki_import=True
         )
 
         # True
@@ -422,6 +427,13 @@ class test_utils(OsfTestCase):
     @mock.patch('website.util.timestamp.add_token')
     def test_copy_file_different_region(self, mock_add_token, mock_get_file_info):
         # モック前提
+        cloned_mock = MagicMock()
+        cloned_mock.name = 'file.txt'
+        cloned_mock.copied_from = src
+        cloned_mock.versions.first.return_value = version
+        cloned_mock.records.all.return_value = [MagicMock()]
+        cloned_mock.provider = 'osfstorage'
+
         latest_version = MagicMock()
         latest_version.get_basefilenode_version.return_value = MagicMock()
         latest_version.get_basefilenode_version.return_value.save = MagicMock()
@@ -454,13 +466,6 @@ class test_utils(OsfTestCase):
         src.versions.all.return_value = [version]
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
-
-        cloned_mock = MagicMock()
-        cloned_mock.name = 'file.txt'
-        cloned_mock.copied_from = src
-        cloned_mock.versions.first.return_value = version
-        cloned_mock.records.all.return_value = [MagicMock()]
-        cloned_mock.provider = 'osfstorage'
 
         src.clone.return_value = cloned_mock
 
@@ -641,8 +646,8 @@ class test_views(OsfTestCase):
         self.home_wiki = WikiPage.objects.create_for_node(self.project, 'home', 'Version 1', Auth(self.user))
         self.home_wiki.update(self.user, 'Version 2')
         self.funpage_wiki = WikiPage.objects.create_for_node(self.project, 'funpage', 'Version 1', Auth(self.user))
-        self.rootdir = WikiPage.objects.create(name='rootpage', target=self.project)
-        self.copy_to_dir = WikiPage.objects.create(name='copytodir', target=self.project, parent=self.rootdir)
+        self.rootdir = TestFolderWiki.objects.create(name='rootpage', target=self.project)
+        self.copy_to_dir = TestFolderWiki.objects.create(name='copytodir', target=self.project, parent=self.rootdir)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         self.guid1 = self.wiki_page1.guids.first()._id
