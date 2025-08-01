@@ -162,7 +162,7 @@ class TestWikiPageNodeManager2(OsfTestCase):
         mock_annotate.assert_called_once()
 
     def test_create(self):
-        new_node = WikiPage.objects.create(is_wiki_import=False, status='unmodified', path='/importpagec/importpaged')
+        new_node = WikiPage.objects.create_for_node(is_wiki_import=False, status='unmodified', path='/importpagec/importpaged')
 
         self.assertIsNotNone(new_node)
 
@@ -391,7 +391,8 @@ class test_utils(OsfTestCase):
         src.clone.assert_called_once()
         cloned.save.assert_called_once()
 
-    def test_copy_file_same_region(self):
+    @mock.patch('website.util.timestamp.get_file_info')
+    def test_copy_file_same_region(self, mock_get_file_info):
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
@@ -411,8 +412,14 @@ class test_utils(OsfTestCase):
         cloned_mock.versions.first.return_value = version
         cloned_mock.records.all.return_value = [MagicMock()]
         cloned_mock.provider = 'osfstorage'
-
+        cloned_mock.generate_waterbutler_url.return_value = 'http://dummy-url.com'
+    
         src.clone.return_value = cloned_mock
+
+        self.consolidate_auth = MagicMock()
+        self.consolidate_auth.user.get_or_create_cookie.return_value.decode.return_value = 'dummy-cookie'
+
+        mock_get_file_info.return_value = {'info': 'dummy'}
 
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
@@ -480,7 +487,8 @@ class test_utils(OsfTestCase):
         new_version.save.assert_called_once()
 
     #名前変更あり
-    def test_copy_file_with_name_change(self):
+    @mock.patch('website.util.timestamp.get_file_info')
+    def test_copy_file_with_name_change(self, mock_get_file_info):
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
@@ -500,8 +508,14 @@ class test_utils(OsfTestCase):
         cloned_mock.records.all.return_value = [MagicMock()]
         cloned_mock.provider = 'osfstorage'
         cloned_mock.copied_from = src
+        cloned_mock.generate_waterbutler_url.return_value = 'http://dummy-url.com'
 
         src.clone.return_value = cloned_mock
+
+        mock_get_file_info.return_value = {'info': 'dummy'}
+
+        self.consolidate_auth = MagicMock()
+        self.consolidate_auth.user.get_or_create_cookie.return_value.decode.return_value = 'dummy-cookie'
 
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
@@ -512,8 +526,8 @@ class test_utils(OsfTestCase):
         assert cloned.copied_from == src
 
     #親フォルダ指定あり
-    def test_copy_file_with_parent(self):
-
+    @mock.patch('website.util.timestamp.get_file_info')
+    def test_copy_file_with_parent(self, mock_get_file_info):
         version = MagicMock()
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
@@ -537,8 +551,14 @@ class test_utils(OsfTestCase):
         cloned_mock.provider = 'osfstorage'
         cloned_mock.parent = parent
         cloned_mock.copied_from = src
+        cloned_mock.generate_waterbutler_url.return_value = 'http://dummy-url.com'
 
         src.clone.return_value = cloned_mock
+
+        mock_get_file_info.return_value = {'info': 'dummy'}
+
+        self.consolidate_auth = MagicMock()
+        self.consolidate_auth.user.get_or_create_cookie.return_value.decode.return_value = 'dummy-cookie'
 
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
