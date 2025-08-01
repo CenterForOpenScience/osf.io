@@ -413,7 +413,7 @@ class test_utils(OsfTestCase):
         cloned_mock.records.all.return_value = [MagicMock()]
         cloned_mock.provider = 'osfstorage'
         cloned_mock.generate_waterbutler_url.return_value = 'http://dummy-url.com'
-    
+
         src.clone.return_value = cloned_mock
 
         self.consolidate_auth = MagicMock()
@@ -600,7 +600,9 @@ class test_utils(OsfTestCase):
         assert cloned.copied_from == src
 
     #フォルダの再帰コピー
-    def test_copy_folder_recursive(self):
+    @mock.patch('website.util.timestamp.get_file_info')
+    def test_copy_folder_recursive(self, mock_get_file_info):
+        mock_get_file_info.return_value = {'info': 'dummy'}
 
         version = MagicMock()
         version.region = 'regionA'
@@ -624,7 +626,9 @@ class test_utils(OsfTestCase):
         src.name = 'folder'
         src.clone.return_value = MagicMock()
         src.clone.return_value.children = []
+        src.clone.return_value.is_file = False
         src.children = [child_file]
+        src.is_file = False
 
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
@@ -670,6 +674,9 @@ class test_views(OsfTestCase):
         self.copy_to_dir = TestFolderWiki.objects.create(name='copytodir', target=self.project, parent=self.rootdir)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
+        # existing wiki page in project1
+        self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
+        self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb', 'wiki pageb content', self.consolidate_auth)
         self.guid1 = self.wiki_page1.guids.first()._id
         self.guid2 = self.wiki_page2.guids.first()._id
         self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wiki child page1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
@@ -707,10 +714,6 @@ class test_views(OsfTestCase):
 
         self.rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
         self.rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
-
-        # existing wiki page in project1
-        self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
-        self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb', 'wiki pageb content', self.consolidate_auth)
 
         # importpagex
         self.root_import_folder_x = TestFolderWiki.objects.create(name='rootimportfolderx', target=self.project, parent=self.root)
