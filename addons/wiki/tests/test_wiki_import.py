@@ -42,6 +42,8 @@ from rest_framework import status as http_status
 from osf.management.commands.import_EGAP import get_creator_auth_header
 from website import settings as website_settings
 from celery.exceptions import CeleryError
+import logging
+logger = logging.getLogger(__name__)
 
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''\"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''\"'
@@ -174,7 +176,7 @@ class TestWikiPage(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
         self.content = 'test content'
-        self.wiki_page = WikiPage.create(
+        self.wiki_page = WikiPage.create_for_node(
             node=self.node,
             page_name=self.page_name,
             user=self.user,
@@ -436,7 +438,6 @@ class test_utils(OsfTestCase):
         # モック前提
         cloned_mock = MagicMock()
         cloned_mock.name = 'file.txt'
-        cloned_mock.copied_from = src
         cloned_mock.versions.first.return_value = version
         cloned_mock.records.all.return_value = [MagicMock()]
         cloned_mock.provider = 'osfstorage'
@@ -473,6 +474,7 @@ class test_utils(OsfTestCase):
         src.versions.all.return_value = [version]
         src.records.get.return_value.metadata = {'key': 'value'}
         src.children = []
+        cloned_mock.copied_from = src
 
         src.clone.return_value = cloned_mock
 
@@ -608,27 +610,41 @@ class test_utils(OsfTestCase):
         version.region = 'regionA'
         version.get_basefilenode_version.return_value = MagicMock()
 
+        # child_file クローンモック
+        child_file_cloned = MagicMock()
+        child_file_cloned.name = 'child.txt'
+        child_file_cloned.copied_from = 'child_file'
+        child_file_cloned.versions.first.return_value = version
+        child_file_cloned.records.all.return_value = [MagicMock()]
+        child_file_cloned.provider = 'osfstorage'
+        child_file_cloned.generate_waterbutler_url.return_value = 'http://dummy-url.com'
+        child_file_cloned.is_file = True
+        child_file_cloned.children = []
+
+        # child_file 本体
         child_file = MagicMock()
         child_file.is_file = True
         child_file.name = 'child.txt'
         child_file.versions.exists.return_value = True
         child_file.versions.select_related.return_value.order_by.return_value.first.return_value = version
         child_file.versions.all.return_value = [version]
-        child_file.clone.return_value = MagicMock()
-        child_file.clone.return_value.versions.first.return_value = version
-        child_file.clone.return_value.records.all.return_value = [MagicMock()]
+        child_file.clone.return_value = child_file_cloned
         child_file.records.get.return_value.metadata = {'key': 'value'}
-        child_file.clone.return_value.provider = 'osfstorage'
         child_file.children = []
 
+        # src クローンモック
+        folder_cloned = MagicMock()
+        folder_cloned.name = 'folder'
+        folder_cloned.copied_from = 'src'
+        folder_cloned.children = [child_file_cloned]
+        folder_cloned.is_file = False
+
+        # src 本体
         src = MagicMock()
         src.is_file = False
         src.name = 'folder'
-        src.clone.return_value = MagicMock()
-        src.clone.return_value.children = []
-        src.clone.return_value.is_file = False
+        src.clone.return_value = folder_cloned
         src.children = [child_file]
-        src.is_file = False
 
         target_node = MagicMock()
         target_node.osfstorage_region = 'regionA'
@@ -654,7 +670,7 @@ class test_views(OsfTestCase):
         #     └── importpagec
         #         └── importpagec.md
         self.root_import_folder_a = TestFolderWiki.objects.create(name='rootimportfoldera', target=self.project, parent=self.root)
-        self.import_page_folder_a = TestFolderWiki.objects.create(name='importpagea', target=self.project, parent=self.root_import_folder_a)
+        self.import_page_folder_a = TestFolderWiki.objects.create(name='importpageafol', target=self.project, parent=self.root_import_folder_a)
         self.import_page_md_file_a = TestFileWiki.objects.create(name='importpagea.md', target=self.project, parent=self.import_page_folder_a)
         self.import_page_folder_b = TestFolderWiki.objects.create(name='importpageb', target=self.project, parent=self.root_import_folder_a)
         self.import_page_md_file_b = TestFileWiki.objects.create(name='importpageb.md', target=self.project, parent=self.import_page_folder_b)
@@ -675,8 +691,9 @@ class test_views(OsfTestCase):
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
         self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         # existing wiki page in project1
-        self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea', 'wiki pagea content', self.consolidate_auth)
-        self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb', 'wiki pageb content', self.consolidate_auth)
+        self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea1', 'wiki pagea content', self.consolidate_auth)
+        self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb2', 'wiki pageb content', self.consolidate_auth)
+        self.guid = self.project.guids.first()._id
         self.guid1 = self.wiki_page1.guids.first()._id
         self.guid2 = self.wiki_page2.guids.first()._id
         self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wiki child page1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
@@ -829,7 +846,7 @@ class test_views(OsfTestCase):
         mock_get_sharejs_uuid.return_value = None
 
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
-        self.app.delete(delete_url, auth=self.user.auth)
+        self.app.delete(delete_url, auth=self.auth, expect_errors=True)
         #res = self.app.get(delete_url, expect_errors=True)
         res = self.app.get(delete_url)
         self.assert_equal(res.status_code, 404)
@@ -841,7 +858,7 @@ class test_views(OsfTestCase):
         mock_get_sharejs_uuid.return_value = None
 
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
-        self.app.delete(delete_url, auth=self.user.auth)
+        self.app.delete(delete_url, auth=self.auth)
         #res = self.app.get(delete_url, expect_errors=True)
         res = self.app.get(delete_url, expect_errors=True)
         self.assert_equal(res.status_code, 404)
@@ -875,7 +892,7 @@ class test_views(OsfTestCase):
             )
         self.project.reload()
         page.reload()
-        self.asserEqual(page.deleted, mock_now)
+        self.assertEqual(page.deleted, mock_now)
 
     def test_get_import_folder_include_invalid_folder(self):
         root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
@@ -892,7 +909,7 @@ class test_views(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.auth).follow()
         self.assertEqual(res.status_code, 200)
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
@@ -913,7 +930,7 @@ class test_views(OsfTestCase):
         mock_create_for_node.return_value = None
 
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='home', node=None)
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.auth)
 
         # モックが呼ばれたか
         mock_create_for_node.assert_called()
@@ -936,7 +953,7 @@ class test_views(OsfTestCase):
         mock_create_for_node.return_value = None
 
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
 
         self.asserEqual(res.status_code, 404)
 
@@ -1038,7 +1055,7 @@ class test_views(OsfTestCase):
         self.assertCountEqual(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
 
     def test_validate_import_folder_invalid(self):
-        folder = BaseFileNode.objects.get(name='importpagex')
+        folder = BaseFileNode.objects.get(name='importpagex', target=self.project).first()
         parent_path = ''
         result = views._validate_import_folder(self.project, folder, parent_path)
         for info in result:
@@ -1092,7 +1109,7 @@ class test_views(OsfTestCase):
         mock_check_file_object_in_node.return_value = True
         dir_id = self.root_import_folder1._id
         url = self.project.api_url_for('project_wiki_import', dir_id=dir_id)
-        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.user.auth)
+        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.auth)
         response_json = res.json
         task_id = response_json['taskId']
         uuid_obj = uuid.UUID(task_id)
@@ -2434,7 +2451,7 @@ class test_views(OsfTestCase):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
-        res = self.app.post(url, auth=self.user.auth)
+        res = self.app.post(url, auth=self.auth)
         task_completed = WikiImportTask.objects.get(task_id='task-id-11')
         task_running = WikiImportTask.objects.get(task_id='task-id-2222')
         self.assertEqual(task_completed.status, 'Completed')
@@ -2445,7 +2462,7 @@ class test_views(OsfTestCase):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-5555', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 11, 00, tzinfo=pytz.utc), creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-6666', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 9, 00, tzinfo=pytz.utc), creator=self.user)
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.auth)
         json_string = res._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
         self.assertEqual(result, {'aborted': True})
@@ -2476,7 +2493,7 @@ class test_views(OsfTestCase):
 
     def test_project_update_wiki_page_sort(self):
         url = self.project.api_url_for('project_update_wiki_page_sort')
-        res = self.app.post_json(url, { 'sortedData': [{'name': 'wiki page1', 'id': self.guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki page2', 'id': self.guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page1', 'id': self.child_guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki child page2', 'id': self.child_guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page3', 'id': self.child_guid3, 'sortOrder': 1, 'children': [], 'fold': False}], 'fold': False}], 'fold': False}]}, auth=self.user.auth)
+        res = self.app.post_json(url, { 'sortedData': [{'name': 'wiki page1', 'id': self.guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki page2', 'id': self.guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page1', 'id': self.child_guid1, 'sortOrder': 1, 'children': [], 'fold': False}, {'name': 'wiki child page2', 'id': self.child_guid2, 'sortOrder': 2, 'children': [{'name': 'wiki child page3', 'id': self.child_guid3, 'sortOrder': 1, 'children': [], 'fold': False}], 'fold': False}], 'fold': False}]}, auth=self.auth)
         result_wiki_page1 = WikiPage.objects.filter(page_name='wiki page1').values('parent_id', 'sort_order').first()
         result_wiki_page2 = WikiPage.objects.filter(page_name='wiki page2').values('parent_id', 'sort_order').first()
         result_wiki_child_page1 = WikiPage.objects.filter(page_name='wiki child page1').values('parent_id', 'sort_order').first()
@@ -2521,6 +2538,7 @@ class test_views(OsfTestCase):
         return page
 
     # テスト用のWikiバージョンを作成
+    @staticmethod
     def create_wiki_version():
         version = MagicMock()
         version.identifier = 'v1'
@@ -2530,6 +2548,7 @@ class test_views(OsfTestCase):
         return version
 
     # 外部依存をまとめてモックする関数
+    @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         return patch.multiple('my_module',
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
@@ -2562,7 +2581,7 @@ class test_views(OsfTestCase):
         version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=page, wiki_version=version):
+        with test_views.mock_dependencies(wiki_page=page, wiki_version=version):
             result = views.project_wiki_view(auth, 'Home', **kwargs)
             # 編集権限があるため、can_edit_wiki_body は True
             assert result['user']['can_edit_wiki_body'] is True
@@ -2574,7 +2593,7 @@ class test_views(OsfTestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
+        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
             with self.assertRaises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
 
@@ -2584,7 +2603,7 @@ class test_views(OsfTestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with self.assertRaises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
@@ -2595,7 +2614,7 @@ class test_views(OsfTestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             result = views.project_wiki_view(auth, 'NotHome', **kwargs)
             # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
             assert '/web/wiki' in result.headers['Location']
@@ -2606,7 +2625,7 @@ class test_views(OsfTestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with self.assertRaises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
@@ -2619,6 +2638,6 @@ class test_views(OsfTestCase):
         version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with self.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
+        with test_views.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
             with self.assertRaises(self.WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
