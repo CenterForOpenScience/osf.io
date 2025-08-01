@@ -137,4 +137,21 @@ def send_to_mailhog(subject, message, from_email, to_email, attachment_name=None
     if attachment_name and attachment_content:
         email.attach(attachment_name, attachment_content)
 
-    email.send()
+    try:
+        email.send()
+    except ConnectionRefusedError:
+        logging.debug('Mailhog is not running. Please start it to send emails.')
+    return
+
+
+def render_notification(template, context):
+    """Render a notification template with the given context.
+
+    Args:
+        template (str): The template string to render.
+        context (dict): The context to use for rendering the template.
+
+    Returns:
+        str: The rendered template.
+    """
+    return template.format(**context) if template else ''

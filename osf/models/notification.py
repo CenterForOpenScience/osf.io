@@ -69,6 +69,14 @@ class Notification(models.Model):
         # self.seen = timezone.now()
         # self.save(update_fields=['seen'])
 
+    def render(self) -> str:
+        """Render the notification message using the event context."""
+        template = self.subscription.notification_type.template
+        if not template:
+            raise ValueError('Notification type must have a template to render the notification.')
+        notification = email.render_notification(template, self.event_context)
+        return notification
+
     def __str__(self) -> str:
         return f'Notification for {self.subscription.user} [{self.subscription.notification_type.name}]'
 

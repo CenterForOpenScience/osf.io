@@ -9,6 +9,14 @@ notification_types:
       `referrer` is sent an email to forward the confirmation link.
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_registered.html.mako'
+  - name: user_digest
+    subject: 'Digest email'
+    __docs__: Digest email
+    template: 'website/templates/emails/digest.html.mako'
+  - name: digest_reviews_moderators
+    subject: 'Digest email'
+    __docs__: Digest email
+    template: 'website/templates/emails/digest_reviews_moderators.html.mako'
   - name: user_pending_verification
     __docs__: ...
     object_content_type_model_name: osfuser

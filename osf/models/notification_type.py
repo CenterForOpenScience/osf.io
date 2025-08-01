@@ -82,6 +82,8 @@ class NotificationType(models.Model):
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
         USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
+        USER_DIGEST = 'user_digest'
+        DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'
@@ -227,7 +229,7 @@ class NotificationType(models.Model):
             content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
             object_id=subscribed_object.pk if subscribed_object else None,
             defaults={'message_frequency': message_frequency},
-            is_digest=is_digest,
+            _is_digest=is_digest,
         )
         if subscription.message_frequency == 'instantly':
             Notification.objects.create(
