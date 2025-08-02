@@ -808,9 +808,6 @@ class test_views(OsfTestCase):
                 '_id': 'mno'
             }
         ]
-        # Cookie をセット（環境によって必要）
-        cookie = self.user.get_or_create_cookie()
-        self.app.set_cookie(token=cookie.decode())
 
     @mock.patch('osf.models.BaseFileNode.objects.filter')
     def test_get_wiki_version_none(self, mock_filter):
