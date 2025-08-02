@@ -44,6 +44,7 @@ from website import settings as website_settings
 from celery.exceptions import CeleryError
 import logging
 logger = logging.getLogger(__name__)
+from addons.wiki.utils import to_mongo_key
 
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''\"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''\"'
@@ -658,6 +659,7 @@ class test_views(OsfTestCase):
     def setUp(self):
         super(test_views, self).setUp()
         self.user = AuthUserFactory()
+        self.auth = Auth(user=self.user)
         self.project = ProjectFactory(is_public=True, creator=self.user)
         self.root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
         # root
@@ -679,7 +681,7 @@ class test_views(OsfTestCase):
         self.import_page_md_file_c = TestFileWiki.objects.create(name='importpagec.md', target=self.project, parent=self.import_page_folder_c)
 
         self.consolidate_auth = Auth(user=self.project.creator)
-        self.auth = Auth(user=self.project.creator)
+        # self.auth = Auth(user=self.project.creator)
         self.node = ProjectFactory()
         self.wname = 'New page'
         self.osf_cookie = self.user.get_or_create_cookie().decode()
@@ -806,6 +808,10 @@ class test_views(OsfTestCase):
                 '_id': 'mno'
             }
         ]
+        # Cookie をセット（環境によって必要）
+        cookie = self.user.get_or_create_cookie()
+        self.app.set_cookie(token=cookie.decode())
+
     @mock.patch('osf.models.BaseFileNode.objects.filter')
     def test_get_wiki_version_none(self, mock_filter):
         mock_filter.return_value = None
@@ -955,7 +961,7 @@ class test_views(OsfTestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
-        self.asserEqual(res.status_code, 404)
+        self.assertEqual(res.status_code, 404)
 
     def test_format_home_wiki_page_no_content(self):
         data = views.format_home_wiki_page(self.project)
@@ -987,7 +993,7 @@ class test_views(OsfTestCase):
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
         project_format = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
 
-        self.asserEqual(project_format['kind'], 'folder')
+        self.assertEqual(project_format['kind'], 'folder')
 
     @mock.patch('addons.wiki.views._get_wiki_child_pages_latest')
     def test_format_child_wiki_pages(self, mock_get_wiki_child_pages_latest):
@@ -1033,7 +1039,7 @@ class test_views(OsfTestCase):
             }
         ]
         data = views.format_component_wiki_pages(node=self.project, auth=self.consolidate_auth)
-        self.asserEqual(data, expected)
+        self.assertEqual(data, expected)
 
     @mock.patch('addons.wiki.utils.check_file_object_in_node')
     def test_project_wiki_validate_for_import(self, mock_check_file_object_in_node):
@@ -2593,7 +2599,7 @@ class test_views(OsfTestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('my_module.to_mongo_key', return_value='not_home'):
+        with test_views.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('ddons.wiki.utils.to_mongo_key', return_value='not_home'):
             with self.assertRaises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
 
