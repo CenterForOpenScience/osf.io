@@ -225,6 +225,9 @@ def get_auth(auth, **kwargs):
     resource = _get_authenticated_resource(waterbutler_data['nid'])
 
     action = waterbutler_data['action']
+    cookie = waterbutler_data['cookie']
+    if not auth.user:
+        auth.user = OSFUser.from_cookie(cookie)
     _check_resource_permissions(resource, auth, action)
 
     provider_name = waterbutler_data['provider']

@@ -17,7 +17,8 @@
         "twofactor",
         "wiki",
         "googledrive",
-        "bitbucket"
+        "bitbucket",
+        "azureblobstorage"
     ],
     "addons_default": [
         "osfstorage"
