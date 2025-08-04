@@ -10,6 +10,7 @@ import datetime
 import re
 import unicodedata
 import uuid
+from nose.tools import *  # noqa (PEP8 asserts)
 
 from osf.models.files import BaseFileNode, File, Folder
 from addons.wiki.models import (
