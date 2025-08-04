@@ -334,7 +334,7 @@ class InstitutionAuthentication(BaseAuthentication):
 
             # Send confirmation email for all three: created, confirmed and claimed
             NotificationType.objects.get(
-                name=NotificationType.Type.USER_WELCOME_OSF4I.value,
+                name=NotificationType.Type.USER_WELCOME_OSF4I,
             ).emit(
                 user=user,
                 message_frequency='instantly',

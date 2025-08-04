@@ -62,8 +62,6 @@ def send_email(
 
     :return: True if successful
     """
-    if not settings.USE_EMAIL:
-        return
     if settings.SENDGRID_API_KEY:
         return _send_with_sendgrid(
             from_addr=from_addr,

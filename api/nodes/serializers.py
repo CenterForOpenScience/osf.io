@@ -1273,7 +1273,7 @@ class ResourceContributorsCreateSerializer(NodeContributorsSerializer):
             'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
         }.get(email_pref, False)
         contributor = OSFUser.load(user_id)
-        notification_type = notification_type if email or (contributor and contributor.is_registered) else False,
+        notification_type = notification_type if email or (contributor and contributor.is_registered) else False
 
         try:
             return resource.add_contributor_registered_or_not(

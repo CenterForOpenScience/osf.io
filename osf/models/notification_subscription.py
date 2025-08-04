@@ -71,10 +71,12 @@ class NotificationSubscription(BaseModel):
         """
         logging.info(
             f"Attempting to create Notification:"
-            f"\nto={self.user.username}"
+            f"\nto={getattr(self.user, 'username', destination_address)}"
             f"\ntype={self.notification_type.name}"
             f"\nmessage_frequency={self.message_frequency}"
             f"\ncontext={event_context}"
+            f"\nemail={email_context}"
+
         )
         if self.message_frequency == 'instantly':
             notification = Notification.objects.create(

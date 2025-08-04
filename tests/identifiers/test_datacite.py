@@ -29,7 +29,6 @@ def _assert_unordered_list_of_dicts_equal(actual_list_of_dicts, expected_list_of
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-@mock.patch('website.mails.settings.USE_EMAIL', False)
 class TestDataCiteClient:
 
     @pytest.fixture()

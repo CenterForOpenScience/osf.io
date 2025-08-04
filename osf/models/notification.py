@@ -31,8 +31,17 @@ class Notification(models.Model):
         """
         if not protocol_type == 'email':
             raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
-
         recipient_address = destination_address or self.subscription.user.username
+
+        logging.info(
+            f"Attempting to send Notification:"
+            f"\nto={getattr(self.subscription.user, 'username', destination_address)}"
+            f"\nat={destination_address}"
+            f"\ntype={self.subscription.notification_type}"
+            f"\ncontext={self.event_context}"
+            f"\nemail={email_context}"
+        )
+
         if protocol_type == 'email' and waffle.switch_is_active(features.ENABLE_MAILHOG):
             email.send_email_over_smtp(
                 recipient_address,
