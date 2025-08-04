@@ -61,7 +61,10 @@ class TestNotificationSubscriptionMigration:
         legacy.email_transactional.add(users['transactional'])
         return legacy
 
-    def test_migrate_provider_subscription(self, user, provider, provider2):
+    def test_migrate_provider_subscription(self, user, users, provider, provider2):
+        self.create_legacy_sub('new_pending_submissions', users, provider=provider)
+        self.create_legacy_sub('new_pending_submissions', users, provider=provider2)
+        self.create_legacy_sub('new_pending_submissions', users, provider=RegistrationProvider.get_default())
         NotificationSubscriptionLegacy.objects.get(
             event_name='new_pending_submissions',
             provider=provider
@@ -76,25 +79,27 @@ class TestNotificationSubscriptionMigration:
         )
         migrate_legacy_notification_subscriptions()
 
-        subs = NotificationSubscription.objects.filter(notification_type__name='new_pending_submissions')
+        subs = NotificationSubscription.objects.filter(
+            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        )
         assert subs.count() == 3
         assert subs.get(
-            notification_type__name='new_pending_submissions',
+            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
             object_id=provider.id,
             content_type=ContentType.objects.get_for_model(provider.__class__)
         )
         assert subs.get(
-            notification_type__name='new_pending_submissions',
+            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
             object_id=provider2.id,
             content_type=ContentType.objects.get_for_model(provider2.__class__)
         )
 
     def test_migrate_node_subscription(self, users, user, node):
-        self.create_legacy_sub('wiki_updated', users, user=user, node=node)
+        self.create_legacy_sub('file_updated', users, user=user, node=node)
 
         migrate_legacy_notification_subscriptions()
 
-        nt = NotificationType.objects.get(name='wiki_updated')
+        nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         assert nt.object_content_type == ContentType.objects.get_for_model(Node)
 
         subs = NotificationSubscription.objects.filter(notification_type=nt)
@@ -103,12 +108,11 @@ class TestNotificationSubscriptionMigration:
         for sub in subs:
             assert sub.subscribed_object == node
 
-    def test_multiple_subscriptions_different_types(self, users, user, provider, node):
+    def test_multiple_subscriptions_no_old_types(self, users, user, provider, node):
         assert not NotificationSubscription.objects.filter(user=user)
-        self.create_legacy_sub('wiki_updated', users, user=user, node=node)
+        self.create_legacy_sub('comments', users, user=user, node=node)
         migrate_legacy_notification_subscriptions()
-        assert NotificationSubscription.objects.get(user=user).notification_type.name == 'wiki_updated'
-        assert NotificationSubscription.objects.get(notification_type__name='wiki_updated', user=user)
+        assert not NotificationSubscription.objects.filter(user=user)
 
     def test_idempotent_migration(self, users, user, node, provider):
         self.create_legacy_sub('file_updated', users, user=user, node=node)
@@ -118,7 +122,7 @@ class TestNotificationSubscriptionMigration:
             user=user,
             object_id=node.id,
             content_type=ContentType.objects.get_for_model(node.__class__),
-            notification_type__name='file_updated'
+            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED
         )
 
     def test_errors_invalid_subscription(self, users):

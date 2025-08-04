@@ -13,6 +13,11 @@ FREQ_MAP = {
     'email_digest': 'weekly',
     'email_transactional': 'instantly',
 }
+EVENT_NAME_TO_NOTIFICATION_TYPE = {
+    'new_pending_submissions': NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
+    'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
+    'comments': None,
+}
 
 def migrate_legacy_notification_subscriptions(*args, **kwargs):
     """
@@ -35,22 +40,16 @@ def migrate_legacy_notification_subscriptions(*args, **kwargs):
         else:
             raise NotImplementedError(f'Invalid Notification id {event_name}')
         content_type = ContentType.objects.get_for_model(subscribed_object.__class__)
-        subscription, _ = NotificationSubscription.objects.update_or_create(
-            notification_type=NotificationType.objects.get(name=event_name),
-            user=legacy.user,
-            content_type=content_type,
-            object_id=subscribed_object.id,
-            defaults={
-                'user': legacy.user,
-                'message_frequency': (
-                    ('weekly' if legacy.email_digest.exists() else 'none'),
-                    'instantly' if legacy.email_transactional.exists() else 'none'
-                ),
-                'content_type': content_type,
-                'object_id': subscribed_object.id,
-            }
-        )
-        logger.info(f'Created NotificationType "{event_name}" with content_type {content_type}')
+
+        if notification_name := EVENT_NAME_TO_NOTIFICATION_TYPE[event_name]:
+            subscription, _ = NotificationSubscription.objects.get_or_create(
+                notification_type=NotificationType.objects.get(name=notification_name),
+                user=legacy.user,
+                content_type=content_type,
+                object_id=subscribed_object.id,
+                message_frequency=('weekly' if legacy.email_digest.exists() else 'none'),
+            )
+            logger.info(f'Created NotificationType "{event_name}" with content_type {content_type} with {subscription}')
 
 class Command(BaseCommand):
     help = 'Migrate legacy NotificationSubscriptionLegacy objects to new Notification app models.'

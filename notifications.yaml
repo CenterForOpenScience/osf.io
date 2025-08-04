@@ -298,6 +298,10 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/file_updated.html.mako'
+  - name: node_file_updated
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/emails/file_updated.html.mako'
   - name: node_institutional_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode

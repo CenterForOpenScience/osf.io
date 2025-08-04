@@ -78,7 +78,7 @@ class NotificationType(models.Model):
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
 
         # Node notifications
-        NODE_COMMENT = 'node_comments'
+        NODE_FILE_UPDATED = 'node_file_updated'
         NODE_FILES_UPDATED = 'node_files_updated'
         NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
         NODE_REQUEST_ACCESS_SUBMITTED = 'node_access_request_submitted'
