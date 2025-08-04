@@ -39,37 +39,35 @@ def get_list_name_from_id(list_id):
 @queued_task
 @app.task
 @transaction.atomic
+def subscribe_mailchimp_async(list_name, user_id):
+    return subscribe_mailchimp(list_name=list_name, user_id=user_id)
+
 def subscribe_mailchimp(list_name, user_id):
     user = OSFUser.load(user_id)
-    user_hash = hashlib.md5(user.username.lower().encode()).hexdigest()
-    m = get_mailchimp_api()
-    list_id = get_list_id_from_name(list_name=list_name)
+    if not user:
+        raise OSFError('User not found.')
 
     if user.mailchimp_mailing_lists is None:
         user.mailchimp_mailing_lists = {}
 
-    try:
-        m.lists.members.create_or_update(
-            list_id=list_id,
-            subscriber_hash=user_hash,
-            data={
-                'status': 'subscribed',
-                'status_if_new': 'subscribed',
-                'email_address': user.username,
-                'merge_fields': {
-                    'FNAME': user.given_name,
-                    'LNAME': user.family_name
-                }
+    get_mailchimp_api().lists.members.create_or_update(
+        list_id=get_list_id_from_name(list_name=list_name),
+        subscriber_hash=hashlib.md5(
+            user.username.lower().encode()
+        ).hexdigest(),
+        data={
+            'status': 'subscribed',
+            'status_if_new': 'subscribed',
+            'email_address': user.username,
+            'merge_fields': {
+                'FNAME': user.given_name,
+                'LNAME': user.family_name
             }
-        )
-    except MailChimpError as error:
-        sentry.log_exception(error)
-        sentry.log_message(error)
-        user.mailchimp_mailing_lists[list_name] = False
-    else:
-        user.mailchimp_mailing_lists[list_name] = True
-    finally:
-        user.save()
+        }
+    )
+
+    user.mailchimp_mailing_lists[list_name] = True
+    user.save()
 
 
 def unsubscribe_mailchimp(list_name, user_id, username=None):
@@ -120,4 +118,4 @@ def unsubscribe_mailchimp_async(list_name, user_id, username=None):
 def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
-        subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
+        subscribe_mailchimp_async(settings.MAILCHIMP_GENERAL_LIST, user._id)

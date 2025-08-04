@@ -411,7 +411,12 @@ def make_url_map(app):
             website_views.dashboard,
             notemplate
         ),
-
+        Rule(
+            '/metadata/<guid>/',
+            'get',
+            website_views.metadata_download,
+            notemplate
+        ),
         Rule(
             '/myprojects/',
             'get',

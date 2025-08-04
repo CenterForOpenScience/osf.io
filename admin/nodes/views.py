@@ -14,7 +14,6 @@ from django.views.generic import (
     View,
     FormView,
     ListView,
-    TemplateView,
 )
 from django.shortcuts import redirect, reverse, get_object_or_404
 from django.urls import reverse_lazy
@@ -101,10 +100,16 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
+        children = node.get_nodes(is_node_link=False)
+        # Annotate guid because django templates prohibit accessing attributes that start with underscores
+        children = AbstractNode.objects.filter(
+            id__in=[child.id for child in children]
+        ).prefetch_related('guids').annotate(guid=F('guids___id'))
         context.update({
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
+            'children': children,
         })
 
         return context
@@ -190,10 +195,9 @@ class NodeRemoveContributorView(NodeMixin, View):
         ).save()
 
 
-class NodeDeleteView(NodeMixin, TemplateView):
+class NodeDeleteView(NodeMixin, View):
     """ Allows authorized users to mark nodes as deleted.
     """
-    template_name = 'nodes/remove_node.html'
     permission_required = ('osf.view_node', 'osf.delete_node')
     raise_exception = True
 
@@ -758,7 +762,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = set(force_archive_params.getlist('addons', []))
+        addons = set(registration.registered_from.get_addon_names())
         addons.update(DEFAULT_PERMISSIBLE_ADDONS)
 
         try:
@@ -777,8 +781,8 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                     registration,
                     permissible_addons=addons,
                     allow_unconfigured=allow_unconfigured,
-                    skip_collision=skip_collision,
-                    delete_collision=delete_collision,
+                    skip_collisions=skip_collision,
+                    delete_collisions=delete_collision,
                 )
                 messages.success(request, 'Registration archive process has finished.')
             except Exception as exc:
@@ -796,4 +800,13 @@ class NodeResyncDataCiteView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         registration = self.get_object()
         registration.request_identifier_update('doi', create=True)
+        return redirect(self.get_success_url())
+
+
+class NodeRevertToDraft(NodeMixin, View):
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        registration = self.get_object()
+        registration.to_draft()
         return redirect(self.get_success_url())

@@ -9,9 +9,7 @@ from rest_framework import status as http_status
 from addons.github.tests.factories import GitHubAccountFactory
 from framework.celery_tasks import handlers
 from osf.external.spam import tasks as spam_tasks
-from osf.models import (
-    NotableDomain, NotificationType
-)
+from osf.models import NotableDomain, NotificationType
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,

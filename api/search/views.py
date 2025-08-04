@@ -656,6 +656,7 @@ class SearchCollections(BaseSearchView):
     doc_type = 'collectionSubmission'
     view_category = 'search'
     view_name = 'search-collected-metadata'
+    required_write_scopes = [CoreScopes.ADVANCED_SEARCH]
 
     @property
     def search_fields(self):

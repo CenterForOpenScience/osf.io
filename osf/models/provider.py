@@ -313,6 +313,7 @@ class RegistrationProvider(AbstractProvider):
     bulk_upload_auto_approval = models.BooleanField(null=True, blank=True, default=False)
     allow_updates = models.BooleanField(null=True, blank=True, default=False)
     allow_bulk_uploads = models.BooleanField(null=True, blank=True, default=False)
+    registration_word = models.CharField(max_length=50, default='registration')
 
     def __init__(self, *args, **kwargs):
         self._meta.get_field('share_publish_type').default = 'Registration'
@@ -358,6 +359,12 @@ class RegistrationProvider(AbstractProvider):
     def validate_schema(self, schema):
         if not self.schemas.filter(id=schema.id).exists():
             raise ValidationError('Invalid schema for provider.')
+
+    def is_moderator(self, user):
+        """Return True if the user is a moderator for this provider"""
+        if user and user.is_authenticated:
+            return user.has_perm('osf.view_submissions', self)
+        return False
 
 
 class PreprintProvider(AbstractProvider):

@@ -16,17 +16,6 @@
             </div>
         </div>
         <div>
-            <h4>Permissible Addons (Optional):</h4>
-            <div>
-                <div>
-                    {% for addon_name in node.get_addon_names %}
-                    <input class="form-check-input" type="checkbox" name="addons" id="permissibleAddon" value="{{ addon_name }}">
-                    <label class="form-check-label" for="permissibleAddon">{{ addon_name }}</label>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        <div>
             <h4>Other:</h4>
             <div>
                 <div class="form-check">

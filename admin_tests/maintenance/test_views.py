@@ -89,7 +89,7 @@ class TestDeleteMaintenance:
         return view
 
     def test_delete(self, view, req):
-        res = view.delete(req)
+        res = view.post(req)
         assert res.url == '/maintenance/'
         assert res.status_code == 302
         assert MaintenanceState.objects.all().count() == 0
