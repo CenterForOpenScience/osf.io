@@ -150,11 +150,11 @@ class TestWikiPageNodeManager(OsfTestCase, unittest.TestCase):
             parent=None,
         )
 
-        assert_not_none(new_node)
+        assert_is_not_none(new_node)
 
 class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def setUp(self):
-        super(TestWikiPagTestWikiPageNodeManagerChildNodeeNodeManager, self).setUp()
+        super(TestWikiPageNodeManagerChildNode, self).setUp()
         self.project = ProjectFactory()
         self.node = self.project
         self.user = self.project.creator
@@ -255,7 +255,6 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
         self.wiki_page.update(
-            self,
             self.user,
             self.content,
             is_wiki_import=False
@@ -267,7 +266,6 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_true(self, mock_wiki_version_save):
         self.wiki_page.update(
-            self,
             self.user,
             self.content,
             is_wiki_import=True
@@ -394,7 +392,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
 
     def test_non_existing_wiki(self):
         result = get_wiki_fullpath(self.project, 'non existing wiki name')
-        assert_Equal(result, '')
+        (result, '')
 
     def test_no_matching_wiki(self):
         base_name = 'test'
@@ -1141,7 +1139,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         parent_path = ''
         result = views._validate_import_folder(self.project, folder, parent_path)
         for info in result:
-            assert_qual(info['path'], '/importpagex')
+            assert_equal(info['path'], '/importpagex')
             assert_equal(info['original_name'], 'importpagex')
             assert_equal(info['name'], 'importpagex')
             assert_equal(info['status'], 'invalid')
