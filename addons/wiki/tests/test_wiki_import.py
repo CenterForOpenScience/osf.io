@@ -1,51 +1,78 @@
-from addons.wiki.models import WikiVersion,WikiPageNodeManager, WikiPage
-from framework.auth.core import Auth
-from osf_tests.factories import (
-    UserFactory, NodeFactory, ProjectFactory,
-    AuthUserFactory, RegistrationFactory
-)
+import mock
+import pytest
+import unittest
+from unittest.mock import MagicMock
 import json
 from freezegun import freeze_time
-from addons.osfstorage.models import OsfStorageFolder, OsfStorageFile
-from addons.wiki.utils import (
-    get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version, serialize_wiki_settings, serialize_wiki_widget,
-    check_file_object_in_node, get_numbered_name_for_existing_wiki, get_import_wiki_name_list,
-    get_wiki_fullpath, _get_wiki_parent, _get_all_child_file_ids, get_node_file_mapping, copy_files_with_timestamp
-)
-from addons.wiki.views import (
-    _get_wiki_versions,_get_wiki_child_pages_latest,_get_wiki_api_urls,project_wiki_delete
-)
-from osf.utils.fields import NonNaiveDateTimeField
-from framework.exceptions import HTTPError
-from osf.models.files import BaseFileNode
-from osf.models import BaseFileNode
-from addons.wiki.models import WikiImportTask, WikiPage, WikiVersion, render_content
-from framework.auth import Auth
-from django.utils import timezone
-from addons.wiki import views
 import time
-import mock
 import pytz
 import datetime
 import re
 import unicodedata
 import uuid
-import unittest
-from unittest.mock import MagicMock
-from unittest.mock import patch
+
+from osf.models.files import BaseFileNode, File, Folder
+from addons.wiki.models import (
+    WikiPageNodeManager,
+    WikiPage,
+    WikiVersion,
+    WikiImportTask, 
+    render_content
+)
+from addons.osfstorage.models import OsfStorageFolder, OsfStorageFile
+
+from osf_tests.factories import (
+    UserFactory,
+    NodeFactory,
+    ProjectFactory,
+    AuthUserFactory,
+    RegistrationFactory
+)
+
+from addons.wiki.utils import (
+    check_file_object_in_node,
+    copy_files_with_timestamp,
+    delete_share_doc,
+    format_wiki_version,
+    generate_private_uuid,
+    get_import_wiki_name_list,
+    get_node_file_mapping,
+    get_numbered_name_for_existing_wiki,
+    get_sharejs_uuid,
+    get_wiki_fullpath,
+    migrate_uuid,
+    serialize_wiki_settings,
+    serialize_wiki_widget,
+    share_db,
+    to_mongo_key
+    _get_all_child_file_ids,
+    _get_wiki_parent,
+)
 from addons.wiki.tests.test_utils import MockWbResponse, MockResponse
-from osf.models import BaseFileNode, File, Folder
+from osf.utils.fields import NonNaiveDateTimeField
+from django.utils import timezone
+from framework.auth import Auth
+
+from addons.wiki.views import (
+    project_wiki_delete,
+    _get_wiki_api_urls,
+    _get_wiki_child_pages_latest,
+    _get_wiki_versions
+)
+from addons.wiki import views
+
 from tests.base import OsfTestCase
 
+from framework.exceptions import HTTPError
 from addons.wiki.exceptions import ImportTaskAbortedError
+from celery.exceptions import CeleryError
+
 from rest_framework import status as http_status
 from osf.management.commands.import_EGAP import get_creator_auth_header
 from website import settings as website_settings
-from celery.exceptions import CeleryError
+
 import logging
 logger = logging.getLogger(__name__)
-from addons.wiki.utils import to_mongo_key
 
 SPECIAL_CHARACTERS_ALL = u'`~!@#$%^*()-=_+ []{}\|/?.df,;:''\"'
 SPECIAL_CHARACTERS_ALLOWED = u'`~!@#$%^*()-=_+ []{}\|?.df,;:''\"'
@@ -70,6 +97,7 @@ WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=di
 
 class TestWikiPageNodeManager(OsfTestCase, unittest.TestCase):
     def setUp(self):
+        super(TestWikiPageNodeManager, self).setUp()
         self.project = ProjectFactory()
         self.consolidate_auth = Auth(user=self.project.creator)
         self.page_name = 'test'
@@ -125,6 +153,7 @@ class TestWikiPageNodeManager(OsfTestCase, unittest.TestCase):
 
 class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def setUp(self):
+        super(TestWikiPagTestWikiPageNodeManagerChildNodeeNodeManager, self).setUp()
         self.project = ProjectFactory()
         self.node = self.project
         self.user = self.project.creator
@@ -196,7 +225,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
 
         assert_equal('updated_two', wiki_page.content)
 
-    def test_get_wiki_child_pages_latest(self, mock_annotate):
+    def test_get_wiki_child_pages_latest(self):
         self.child1.content = 'updated_one'
         self.child1.save()
         self.child_a.content = 'updated_two'
@@ -208,6 +237,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
 
 class TestWikiPage(OsfTestCase, unittest.TestCase):
     def setUp(self):
+        super(TestWikiPage, self).setUp()
         self.project = ProjectFactory()
         self.page_name = 'test'
         self.user = AuthUserFactory()
@@ -2602,7 +2632,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         # TODO: ちゃんとfixtureをつくる
-        return patch.multiple('my_module',
+        return mock.patch.multiple('my_module',
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
             WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
             WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
@@ -2645,7 +2675,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None),patch('ddons.wiki.utils.to_mongo_key', return_value='not_home'):
+        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None), mock.patch('ddons.wiki.utils.to_mongo_key', return_value='not_home'):
             with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
 
