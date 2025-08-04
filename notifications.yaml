@@ -12,10 +12,12 @@ notification_types:
   - name: user_digest
     subject: 'Digest email'
     __docs__: Digest email
+    object_content_type_model_name: osfuser
     template: 'website/templates/emails/digest.html.mako'
   - name: digest_reviews_moderators
     subject: 'Digest email'
     __docs__: Digest email
+    object_content_type_model_name: osfuser
     template: 'website/templates/emails/digest_reviews_moderators.html.mako'
   - name: user_pending_verification
     __docs__: ...
