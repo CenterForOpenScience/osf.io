@@ -104,6 +104,7 @@
     "prereg_links_updated": "${user} has updated their preregistration data links",
     "why_no_prereg_updated": "${user} has updated their preregistration data availability statement",
     "prereg_links_info_updated": "${user} has updated their preregistration links to ${value}",
+    "migrated_quickfiles": "${user} had their QuickFiles migrated into ${node}",
 	"resource_identifier_added": "${user} has added a Resource with DOI ${new_identifier} to Registration ${node}",
 	"resource_identifier_removed": "${user} has removed a Resource with DOI ${obsolete_identifier} to Registration ${node}",
 	"resource_identifier_updated": "${user} has updated a Resource DOI on Registration ${node} from ${obsolete_identifier} to ${new_identifier}"

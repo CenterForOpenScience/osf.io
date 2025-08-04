@@ -2,11 +2,11 @@
 """Views tests for the OSF."""
 from hashlib import md5
 from unittest import mock
-
 import pytest
 from rest_framework import status as http_status
 
 from addons.github.tests.factories import GitHubAccountFactory
+from conftest import start_mock_send_grid
 from framework.celery_tasks import handlers
 from osf.external.spam import tasks as spam_tasks
 from osf.models import (

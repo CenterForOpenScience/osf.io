@@ -92,6 +92,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
+        'title',
         'date_created',
         'date_modified',
         'date_published',
@@ -101,6 +102,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         'subjects',
         'reviews_state',
         'node_is_public',
+        'tags',
     ])
     available_metrics = frozenset([
         'downloads',

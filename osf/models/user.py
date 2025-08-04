@@ -1037,7 +1037,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if 'username' in dirty_fields:
             for list_name, subscription in self.mailchimp_mailing_lists.items():
                 if subscription:
-                    mailchimp_utils.subscribe_mailchimp(list_name, self._id)
+                    mailchimp_utils.subscribe_mailchimp_async(list_name, self._id)
         return ret
 
     # Legacy methods

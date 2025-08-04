@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('osf', '0030_abstractnode__manual_guid'),
+        ('osf', '0031_abstractprovider_registration_word'),
     ]
 
     operations = [
