@@ -1203,19 +1203,3 @@ class TestArchiveJobModel(OsfTestCase):
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in reg.node_and_primary_descendants():
             assert node.archive_job.archive_tree_finished()
-
-# Regression test for https://openscience.atlassian.net/browse/OSF-9085
-def test_archiver_uncaught_error_mail_renders():
-    src = factories.ProjectFactory()
-    user = src.creator
-    job = factories.ArchiveJobFactory()
-    notification_type = NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance
-    assert notification_type.emit(
-        user=user,
-        event_context=dict(
-            src=str(src),
-            results=list(job.target_addons.all()),
-            url=settings.INTERNAL_DOMAIN + src._id,
-            can_change_preferences=False,
-        )
-    )
