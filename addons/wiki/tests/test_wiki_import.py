@@ -76,7 +76,6 @@ class TestWikiPageNodeManager(OsfTestCase, unittest.TestCase):
         self.page_name = 'test'
         self.user = self.project.creator
         self.node = self.project
-        self.parent = NodeFactory()
 
     @mock.patch('addons.wiki.models.WikiPage.objects.create')
     def test_create_for_node_true(self, mock_create):
@@ -114,62 +113,98 @@ class TestWikiPageNodeManager(OsfTestCase, unittest.TestCase):
         mock_create.assert_called_with(is_wiki_import=False, node=self.project, page_name='home child', parent=None, user=self.user)
         wiki_page.update.assert_called_with(self.user, 'home child content', is_wiki_import=False)
 
-class TestWikiPageNodeManager2(OsfTestCase, unittest.TestCase):
-    def setUp(self):
-        self.project = ProjectFactory()
-        self.node = self.project
-        self.parent = WikiPage.objects.get(node=self.node)
-        self.user = self.project.creator
-
-    @mock.patch('addons.wiki.models.WikiPage.objects.filter')
-    def test_get_for_child_nodes(self, mock_wiki_page_filter):
-        mock_wiki_page_filter.return_value = None
-
-        child_node = WikiPage.objects.filter(parent=self.parent, deleted__isnull=True, node=self.node)
-
-        # モックが1回呼ばれたか
-        mock_wiki_page_filter.assert_called_once()
-
-    def test_get_for_child_nodes_none(self):
-        child_node = WikiPage.objects.get_for_child_nodes(node=self.node, parent=None)
-
-        # 戻り値がNoneか
-        assert_is_not_none(child_node)
-
-    @mock.patch('addons.wiki.models.WikiVersion.objects.annotate')
-    def test_get_wiki_pages_latest(self, mock_annotate):
-        # テストになってない あとで直す ####
-        return
-
-        mock_annotate.return_value = None
-
-        WikiPage.objects.get_wiki_pages_latest(self.project)
-
-        # モックが1回呼ばれたか
-        mock_annotate.assert_called_once()
-
-    @mock.patch('addons.wiki.models.WikiVersion.objects.annotate')
-    def test_get_wiki_child_pages_latest(self, mock_annotate):
-        # テストになってない あとで直す ####
-        return
-
-        mock_annotate.return_value = None
-
-        WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent)
-
-        # モックが1回呼ばれたか
-        mock_annotate.assert_called_once()
-
     def test_create(self):
         new_node = WikiPage.objects.create(
             is_wiki_import=False,
             node=self.node,
             page_name='test',
             user=self.user,
-            parent=self.parent,
+            parent=None,
         )
 
         assert_is_not_none(new_node)
+
+class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
+    def setUp(self):
+        self.project = ProjectFactory()
+        self.node = self.project
+        self.parent = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='parent',
+            user=self.user,
+            parent=None,
+        )
+        self.parent1 = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='parent1',
+            user=self.user,
+            parent=None,
+        )
+        self.child1 = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='child1',
+            user=self.user,
+            parent=self.parent1,
+        )
+        self.child2 = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='child2',
+            user=self.user,
+            parent=self.parent1,
+        )
+        self.parent_a = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='parent_a',
+            user=self.user,
+            parent=None,
+        )
+        self.child_a = WikiPage.objects.create(
+            is_wiki_import=False,
+            node=self.node,
+            page_name='child_a',
+            user=self.user,
+            parent=self.parent_a,
+        )
+        self.user = self.project.creator
+
+    def test_get_for_child_nodes(self):
+        child_nodes_count = WikiPage.objects.get_for_child_nodes(this.node, parent=self.parent).count()
+        child_nodes1_count = WikiPage.objects.get_for_child_nodes(this.node, parent=self.parent1).count()
+        chile_nodes_a_count = WikiPage.objects.get_for_child_nodes(this.node, parent=self.parent_a).count()
+
+        assert_equal(0, child_nodes_count)
+        assert_equal(2, child_nodes1_count)
+        assert_equal(1, child_nodes_a_count)
+
+    def test_get_for_child_nodes_none(self):
+        child_node = WikiPage.objects.get_for_child_nodes(node=self.node, parent=None)
+
+        assert_is_not_none(child_node)
+
+    def test_get_wiki_pages_latest(self, mock_annotate):
+        self.child1.content = 'updated_one'
+        self.child1.save()
+        self.child_a.content = 'updated_two'
+        self.child_a.save()
+
+        wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project)
+
+        assert_equal('updated_two', wiki_page.content)
+
+    def test_get_wiki_child_pages_latest(self, mock_annotate):
+        self.child1.content = 'updated_one'
+        self.child1.save()
+        self.child_a.content = 'updated_two'
+        self.child_a.save()
+
+        WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1)
+
+        assert_equal('updated_one', wiki_page.content)
 
 class TestWikiPage(OsfTestCase, unittest.TestCase):
     def setUp(self):
