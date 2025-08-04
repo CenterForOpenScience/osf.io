@@ -224,6 +224,7 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
         self.wiki_page.update(
+            self,
             self.user,
             self.content,
             is_wiki_import=False
@@ -235,6 +236,7 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_true(self, mock_wiki_version_save):
         self.wiki_page.update(
+            self,
             self.user,
             self.content,
             is_wiki_import=True
@@ -384,7 +386,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
 
     def test_correct_directory_id(self):
         dir_id = self.root_import_folder1._id
-        result = check_file_object_in_node(dir_id, self.project1)
+        result = check_file_object_in_node(dir_id, self.project)
         assert_true(result)
 
     def test_invalid_directory_id(self):
@@ -2564,7 +2566,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(parent_wiki_id_list, [None, None, 'gwd9u', 'gwd9u', 'x38vh'])
 
     def test_bulk_update_wiki_sort(self):
-        sort_id_list = [self.guid1, self.guid2, self.child_guid2, self.child_guid3, self.child_guid1]
+        sort_id_list = [self.guid, self.guid2, self.child_guid2, self.child_guid3, self.child_guid1]
         sort_num_list = [1, 2, 1, 1, 3]
         parent_wiki_id_list = [None, None, self.guid2, self.child_guid2, None]
         views._bulk_update_wiki_sort(self.project, sort_id_list, sort_num_list, parent_wiki_id_list)
