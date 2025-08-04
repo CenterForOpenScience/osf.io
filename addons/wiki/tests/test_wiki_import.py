@@ -127,6 +127,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def setUp(self):
         self.project = ProjectFactory()
         self.node = self.project
+        self.user = self.project.creator
         self.parent = WikiPage.objects.create(
             is_wiki_import=False,
             node=self.node,
