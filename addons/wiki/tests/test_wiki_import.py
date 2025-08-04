@@ -205,7 +205,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def test_get_for_child_nodes(self):
         child_nodes_count = WikiPage.objects.get_for_child_nodes(self.node, parent=self.parent).count()
         child_nodes1_count = WikiPage.objects.get_for_child_nodes(self.node, parent=self.parent1).count()
-        chile_nodes_a_count = WikiPage.objects.get_for_child_nodes(self.node, parent=self.parent_a).count()
+        child_nodes_a_count = WikiPage.objects.get_for_child_nodes(self.node, parent=self.parent_a).count()
 
         assert_equal(0, child_nodes_count)
         assert_equal(2, child_nodes1_count)
@@ -214,9 +214,9 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def test_get_for_child_nodes_none(self):
         child_node = WikiPage.objects.get_for_child_nodes(node=self.node, parent=None)
 
-        assert_none(child_node)
+        assert_is_none(child_node)
 
-    def test_get_wiki_pages_latest(self, mock_annotate):
+    def test_get_wiki_pages_latest(self):
         self.child1.content = 'updated_one'
         self.child1.save()
         self.child_a.content = 'updated_two'
@@ -232,7 +232,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
         self.child_a.content = 'updated_two'
         self.child_a.save()
 
-        WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1)
+        wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1)
 
         assert_equal('updated_one', wiki_page.content)
 
