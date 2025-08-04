@@ -1,15 +1,20 @@
 from django.contrib import admin, messages
-from django.urls import re_path
+from django.urls import re_path, reverse, path
 from django.template.response import TemplateResponse
 from django_extensions.admin import ForeignKeyAutocompleteAdmin
 from django.contrib.auth.models import Group
 from django.db.models import Q, Count
-from django.http import HttpResponseRedirect
-from django.urls import reverse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.utils.html import format_html
+from django.shortcuts import get_object_or_404
+from django import forms
+from django.contrib.postgres.forms import SimpleArrayField
+from django.contrib.admin import SimpleListFilter
 import waffle
 
 from osf.external.spam.tasks import reclassify_domain_references
-from osf.models import OSFUser, Node, NotableDomain, NodeLicense
+from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription
+from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
 
@@ -153,10 +158,206 @@ class _ManygroupWaffleFlagAdmin(waffle.admin.FlagAdmin):
     raw_id_fields = (*waffle.admin.FlagAdmin.raw_id_fields, 'groups')
 
 
+class NotificationTypeAdminForm(forms.ModelForm):
+    default_intervals = forms.MultipleChoiceField(
+        choices=[(c, c) for c in get_default_frequency_choices()],
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label='Default Intervals'
+    )
+
+    custom_intervals = SimpleArrayField(
+        base_field=forms.CharField(),
+        required=False,
+        widget=forms.Textarea(attrs={'rows': 2}),
+        label='Custom Intervals (comma-separated)'
+    )
+
+    class Meta:
+        model = NotificationType
+        exclude = ['notification_interval_choices']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Pre-fill existing values
+        if self.instance and self.instance.notification_interval_choices:
+            defaults = get_default_frequency_choices()
+            existing = self.instance.notification_interval_choices
+            self.fields['default_intervals'].initial = [v for v in existing if v in defaults]
+            self.fields['custom_intervals'].initial = [v for v in existing if v not in defaults]
+
+    def save(self, commit=True):
+        # Assign combined intervals
+        default_intervals = self.cleaned_data.get('default_intervals') or []
+        custom_intervals = self.cleaned_data.get('custom_intervals') or []
+        combined = list(default_intervals + custom_intervals)
+
+        self.instance.notification_interval_choices = combined
+
+        return super().save(commit=commit)
+
+
+class NotificationIntervalFilter(SimpleListFilter):
+    title = 'Notification Interval'
+    parameter_name = 'notification_interval'
+
+    def lookups(self, request, model_admin):
+        default_choices = [(choice, choice) for choice in get_default_frequency_choices()]
+        custom_choices_list = [
+            (choice, choice)
+            for choice_list in NotificationType.objects.values_list('notification_interval_choices', flat=True).distinct()
+            for choice in choice_list
+            if choice not in get_default_frequency_choices()
+        ]
+        return default_choices + list(set(custom_choices_list))
+
+    def queryset(self, request, queryset):
+        if self.value():
+            return queryset.filter(notification_interval_choices__contains=[self.value()])
+        return queryset
+
+class NotificationTypeAdmin(admin.ModelAdmin):
+    form = NotificationTypeAdminForm
+    list_display = ('name', 'object_content_type', 'notification_interval_choices', 'preview_button')
+    list_filter = (NotificationIntervalFilter,)
+    search_fields = ('name',)
+
+    def preview_button(self, obj):
+        return format_html(
+            '<a class="button" target="_blank" href="{}">Preview</a>',
+            f'{obj.id}/preview/'
+        )
+
+    def get_urls(self):
+        custom_urls = [
+            path(
+                '<int:pk>/preview/',
+                self.admin_site.admin_view(self._preview_notification_template_view),
+                name='notificationtype_preview',
+            ),
+        ]
+        return custom_urls + super().get_urls()
+
+    def _preview_notification_template_view(self, request, pk):
+        obj = get_object_or_404(NotificationType, pk=pk)
+        return HttpResponse('''
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Template Preview</title>
+                <style>
+                    html {
+                        padding: 40px;
+                    }
+                    body {
+                        font-family: sans-serif;
+                        padding: 20px;
+                        background-color: #f5f5f5;
+                    }
+                    h1, h2 {
+                        color: #333;
+                    }
+                    .code-box {
+                    justify-content: center;
+                    background-color: #1e1e1e;
+                    color: #dcdcdc;
+                    border: 1px solid #444;
+                    padding: 15px;
+                    overflow: auto;
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                    max-height: 80vh;
+                    font-family: monospace;
+                    border-radius: 8px;
+                    resize: both;
+                }
+                </style>
+            </head>''' + f'''
+            <body>
+                <div class="container">
+                    <div class="content">
+                        <h1>Template Preview for {obj.name}</h1>
+                        <p><strong>Object Content Type:</strong> {obj.object_content_type}</p>
+                        <p><strong>Notification Intervals:</strong> {', '.join(obj.notification_interval_choices)}</p>
+                        <h2>Subject:</h2>
+                        <p>{obj.subject}</p>
+
+                        <h2>Template:</h2>
+                        <div class="code-box">{obj.template}</div>
+                    </div>
+                </div>
+            </body>
+            </html>''', content_type='text/html')
+
+
+class NotificationSubscriptionForm(forms.ModelForm):
+    class Meta:
+        model = NotificationSubscription
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        notification_type_id = (
+            self.data.get('notification_type') or
+            getattr(self.instance.notification_type, 'id', None)
+        )
+
+        if notification_type_id:
+            try:
+                nt = NotificationType.objects.get(pk=notification_type_id)
+                choices = [(x, x) for x in nt.notification_interval_choices]
+            except NotificationType.DoesNotExist:
+                choices = []
+        else:
+            choices = []
+
+        self.fields['message_frequency'] = forms.ChoiceField(
+            choices=choices,
+            required=False
+        )
+
+class NotificationSubscriptionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'notification_type', 'message_frequency', 'subscribed_object', 'preview_button')
+    form = NotificationSubscriptionForm
+
+    class Media:
+        js = ['admin/notification_subscription.js']
+
+    def preview_button(self, obj):
+        url = reverse(
+            'admin:notificationtype_preview',
+            args=[obj.notification_type.id]
+        )
+        return format_html(
+            '<a class="button" target="_blank" href="{}">Preview</a>',
+            url
+        )
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                'get-intervals/<int:pk>/',
+                self.admin_site.admin_view(self.get_intervals),
+                name='get_notification_intervals'
+            ),
+        ]
+        return custom_urls + urls
+
+    def get_intervals(self, request, pk):
+        try:
+            nt = NotificationType.objects.get(pk=pk)
+            return JsonResponse({'intervals': nt.notification_interval_choices})
+        except NotificationType.DoesNotExist:
+            return JsonResponse({'intervals': []})
+
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
 admin.site.register(NotableDomain, NotableDomainAdmin)
 admin.site.register(NodeLicense, LicenseAdmin)
+admin.site.register(NotificationType, NotificationTypeAdmin)
+admin.site.register(NotificationSubscription, NotificationSubscriptionAdmin)
 
 # waffle admins, with Flag admin override
 admin.site.register(waffle.models.Flag, _ManygroupWaffleFlagAdmin)
