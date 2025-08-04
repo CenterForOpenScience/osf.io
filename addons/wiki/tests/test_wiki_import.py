@@ -16,7 +16,7 @@ from addons.wiki.models import (
     WikiPageNodeManager,
     WikiPage,
     WikiVersion,
-    WikiImportTask, 
+    WikiImportTask,
     render_content
 )
 from addons.osfstorage.models import OsfStorageFolder, OsfStorageFile
