@@ -165,11 +165,7 @@ class TestWikiPage(OsfTestCase):
         self.node = self.project
         self.parent = NodeFactory()
         self.content = 'test content'
-<<<<<<< HEAD
-        self.wiki_page = WikiPage.create_for_node(
-=======
         self.wiki_page = WikiPage.objects.create(
->>>>>>> c1c475903c (fix: tests)
             node=self.node,
             page_name=self.page_name,
             user=self.user,
@@ -466,7 +462,6 @@ class test_utils(OsfTestCase):
         new_version.save = MagicMock()
         version.clone.return_value = new_version
 
-<<<<<<< HEAD
         src = MagicMock()
         src.is_file = True
         src.name = 'file.txt'
@@ -477,8 +472,6 @@ class test_utils(OsfTestCase):
         src.children = []
         cloned_mock.copied_from = src
 
-=======
->>>>>>> c1c475903c (fix: tests)
         src.clone.return_value = cloned_mock
 
         target_node = MagicMock()
@@ -917,13 +910,8 @@ class test_views(OsfTestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-<<<<<<< HEAD
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.auth).follow()
-        self.assertEqual(res.status_code, 200)
-=======
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
+        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user).follow()
         assert_equal(res.status_code, 200)
->>>>>>> c1c475903c (fix: tests)
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
