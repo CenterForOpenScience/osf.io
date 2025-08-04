@@ -116,3 +116,15 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     except Exception as exc:
         logging.error(f'Failed to send email notification to {to_addr}: {exc}')
         raise exc
+
+def render_notification(template, context):
+    """Render a notification template with the given context.
+
+    Args:
+        template (str): The template string to render.
+        context (dict): The context to use for rendering the template.
+
+    Returns:
+        str: The rendered template.
+    """
+    return template.format(**context) if template else ''

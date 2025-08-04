@@ -1,6 +1,4 @@
-from django.contrib.contenttypes.models import ContentType
 
-from osf.models import NotificationType
 from website.settings import DOMAIN, OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO
 from website.reviews import signals as reviews_signals
 
@@ -26,6 +24,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
         ).emit(
             user=recipient,
             event_context=context,
+            is_digest=True,
         )
 
 @reviews_signals.reviews_email_withdrawal_requests.connect
@@ -49,6 +48,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
         ).emit(
             user=recipient,
             event_context=context,
+            is_digest=True,
         )
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
@@ -82,6 +82,9 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         else:
             context['message'] = f'submitted "{resource.title}".'
 
+    from django.contrib.contenttypes.models import ContentType
+    from osf.models import NotificationType
+
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription, created = NotificationSubscription.objects.get_or_create(
         notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
@@ -102,6 +105,8 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
     """
     Handle email notifications for a new submission or a resubmission
     """
+    from osf.models import NotificationType
+
     provider = resource.provider
     if provider._id == 'osf':
         if provider.type == 'osf.preprintprovider':

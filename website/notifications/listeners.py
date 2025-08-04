@@ -1,9 +1,7 @@
 import logging
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 
-from osf.models import NotificationSubscription, NotificationType
 from website.project.signals import contributor_added, project_created
 from framework.auth.signals import user_confirmed
 from website.project.signals import privacy_set_public
@@ -14,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 @project_created.connect
 def subscribe_creator(resource):
+    from osf.models import NotificationSubscription, NotificationType
+
+    from django.contrib.contenttypes.models import ContentType
+
     if resource.is_collection or resource.is_deleted:
         return None
     user = resource.creator
@@ -31,6 +33,9 @@ def subscribe_creator(resource):
 
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
+    from django.contrib.contenttypes.models import ContentType
+    from osf.models import NotificationSubscription, NotificationType
+
     from osf.models import Node
     if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
@@ -51,21 +56,23 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
 def subscribe_confirmed_user(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     NotificationType = apps.get_model('osf.NotificationType')
-    NotificationSubscription.objects.get_or_create(
-        user=user,
-        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
-    )
-    NotificationSubscription.objects.get_or_create(
-        user=user,
-        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_REVIEWS)
-    )
-
+    user_events = [
+        NotificationType.Type.USER_FILE_UPDATED,
+        NotificationType.Type.USER_REVIEWS,
+    ]
+    for user_event in user_events:
+        NotificationSubscription.objects.get_or_create(
+            user=user,
+            notification_type__name=user_event
+        )
 
 @privacy_set_public.connect
 def queue_first_public_project_email(user, node):
     """Queue and email after user has made their first
     non-OSF4M project public.
     """
+    from osf.models import NotificationType
+
     NotificationType.objects.get(
         name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,
     ).emit(
@@ -83,8 +90,10 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
     """
     Handle email notifications to notify moderators of new submissions or resubmission.
     """
+
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationType
+    from osf.models import NotificationSubscription, NotificationType
+    from django.contrib.contenttypes.models import ContentType
     from website.settings import DOMAIN
 
     provider = resource.provider
@@ -126,6 +135,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     from website.settings import DOMAIN
+    from osf.models import NotificationType
 
     provider = resource.provider
     # Set message

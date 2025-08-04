@@ -131,6 +131,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 'submitter': self.creator.id,
                 'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True))
             },
+            is_digest=True,
         )
 
     def _validate_accept(self, event_data):

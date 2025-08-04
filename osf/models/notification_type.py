@@ -74,6 +74,8 @@ class NotificationType(models.Model):
         USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023 = 'user_campaign_confirm_email_agu_conference_2023'
         USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
         USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
+        USER_DIGEST = 'user_digest'
+        DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
 
         # Node notifications
         NODE_COMMENT = 'node_comments'
@@ -206,6 +208,7 @@ class NotificationType(models.Model):
             message_frequency='instantly',
             event_context=None,
             email_context=None,
+            is_digest=False
     ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
@@ -221,11 +224,10 @@ class NotificationType(models.Model):
         subscription, created = NotificationSubscription.objects.get_or_create(
             notification_type=self,
             user=user,
-            defaults={
-                'object_id': subscribed_object.pk if subscribed_object else None,
-                'message_frequency': message_frequency,
-                'content_type': ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
-            },
+            content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+            object_id=subscribed_object.pk if subscribed_object else None,
+            defaults={'message_frequency': message_frequency},
+            _is_digest=is_digest,
         )
         subscription.emit(
             destination_address=destination_address,
