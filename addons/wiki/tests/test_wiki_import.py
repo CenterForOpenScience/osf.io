@@ -44,9 +44,9 @@ from addons.wiki.utils import (
     serialize_wiki_settings,
     serialize_wiki_widget,
     share_db,
-    to_mongo_key
+    to_mongo_key,
     _get_all_child_file_ids,
-    _get_wiki_parent,
+    _get_wiki_parent
 )
 from addons.wiki.tests.test_utils import MockWbResponse, MockResponse
 from osf.utils.fields import NonNaiveDateTimeField
