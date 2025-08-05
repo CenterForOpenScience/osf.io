@@ -222,7 +222,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
         self.child_a.content = 'updated_two'
         self.child_a.save()
 
-        wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project)
+        wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project).first()
 
         assert_equal('updated_two', wiki_page.content)
 
@@ -232,7 +232,7 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
         self.child_a.content = 'updated_two'
         self.child_a.save()
 
-        wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1)
+        wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1).first()
 
         assert_equal('updated_one', wiki_page.content)
 
@@ -261,7 +261,7 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
         )
 
         # False
-        mock_wiki_version_save.assert_called_with(self.user, self.content, is_wiki_import=False)
+        mock_wiki_version_save.assert_called_with(is_wiki_import=False)
 
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_true(self, mock_wiki_version_save):
@@ -272,7 +272,7 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
         )
 
         # True
-        mock_wiki_version_save.assert_called_with(self.user, self.content, is_wiki_import=True)
+        mock_wiki_version_save.assert_called_with(is_wiki_import=True)
 
 class TestWikiUtils(OsfTestCase, unittest.TestCase):
     def setUp(self):
@@ -807,6 +807,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             f'{self.import_page_folder1.name}^{self.import_attachment2_txt.name}': self.import_attachment2_txt._id,
             f'{self.import_page_folder2.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id
         }
+        self.import_wiki_name1 = 'importpage1'
+        self.import_wiki_name2 = 'importpage2'
+        self.import_wiki_name_uni = 'importpageが'
+        self.import_wiki_name_uni_nfc = unicodedata.normalize('NFC', self.import_wiki_name_uni)
+        self.import_wiki_name_uni_nfd = unicodedata.normalize('NFD', self.import_wiki_name_uni)
+        self.import_wiki_name_list = ['importpage1', 'importpage2', 'importpageが']
 
         self.rep_link = r'(?<!\\|\!)\[(?P<title>.+?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
         self.rep_image = r'(?<!\\)!\[(?P<title>.*?(?<!\\)(?:\\\\)*)\]\((?P<path>.+?)(?<!\\)\)'
@@ -1695,98 +1701,98 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ \"tooltip1\")'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_wiki_page_without_tooptip(self):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = f'Wiki content with [wiki page1](../wiki%20page1/)'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_attachment_file(self):
         wiki_content_link_attachment = 'Wiki content with [attachment1.doc](attachment1.doc)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link_attachment))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = f'Wiki content with [attachment1.doc]({website_settings.DOMAIN}{self.guid}/files/osfstorage/{self.import_attachment1_doc._id})'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_attachment, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_attachment, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_has_slash(self):
         wiki_content_link_has_slash = 'Wiki content with [wiki/page](wiki/page)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link_has_slash))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = wiki_content_link_has_slash
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_slash, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_has_slash, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_has_sharp_and_is_wiki_with_tooltip(self):
         wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor \"tooltip text\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor \"tooltip text\")'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_has_sharp_and_is_wiki_without_tooltip(self):
         wiki_content_link = 'Wiki content with [importpage1#anchor](importpage1#anchor)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = 'Wiki content with [importpage1#anchor](../importpage1/#anchor)'
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_is_url(self):
         wiki_content_link_is_url = 'Wiki content with [example](https://example.com)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link_is_url))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = wiki_content_link_is_url
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_is_url, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link_is_url, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_no_link(self):
         wiki_content = 'Wiki content'
         link_matches = list(re.finditer(self.rep_link, wiki_content))
         info = self.wiki_info
-        import_wiki_name_list = ['importpage1', 'importpage2']
         expected_content = wiki_content
-        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content, info, self.node_file_mapping, import_wiki_name_list, self.root_import_folder1._id)
+        result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
     def test_check_wiki_name_exist_existing_wiki(self):
-        wiki_name = 'wiki%20page1'
-        import_wiki_name_list = ['importpage1', 'importpage2']
-        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
-        assert_true(result_content)
+        exist_wiki_name1 = 'exist1'
+        exist_wiki_name2 = 'exist2'
+        exist_wiki_name_uni = 'existが'
+        exist_wiki_name_uni_nfc = unicodedata.normalize('NFC', exist_wiki_name_uni)
+        exist_wiki_name_uni_nfd = unicodedata.normalize('NFD', exist_wiki_name_uni)
+        WikiPage.objects.create_for_node(self.project, exist_wiki_name1, 'wiki page exist1 content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, exist_wiki_name2, 'wiki page exist2 content', self.consolidate_auth)
+        WikiPage.objects.create_for_node(self.project, exist_wiki_name_uni, 'wiki page exist3 content', self.consolidate_auth)
 
-    def test_check_wiki_name_exist_import_directory(self):
-        wiki_name = 'importpage1'
-        import_wiki_name_list = ['importpage1', 'importpage2']
-        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
-        assert_true(result_content)
+        import_wiki_name1 = 'importpage1'
+        import_wiki_name2 = 'importpage2'
+        import_wiki_name_uni = 'importpageが'
+        import_wiki_name_uni_nfc = unicodedata.normalize('NFC', self.import_wiki_name_uni)
+        import_wiki_name_uni_nfd = unicodedata.normalize('NFD', self.import_wiki_name_uni)
+        import_wiki_name_list = [import_wiki_name1, import_wiki_name2, import_wiki_name_uni]
 
-    def test_check_wiki_name_exist_not_existing(self):
-        wiki_name = 'not%20existing%20wiki'
-        import_wiki_name_list = ['importpage1', 'importpage2']
-        result_content = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
-        assert_false(result_content)
+        dobuled_names = [exist_wiki_name1, exist_wiki_name2, exist_wiki_name_uni,
+            exist_wiki_name_uni_nfc, exist_wiki_name_uni_nfd,
+            import_wiki_name1, import_wiki_name2, import_wiki_name_uni,
+            import_wiki_name_uni_nfc, import_wiki_name_uni_nfd]
+        new_names = ['new_page1', 'new_page2', 'new_pageが']
 
-    def test_check_wiki_name_exist_existing_wiki_nfd(self):
-        wiki_name = 'wiki%20page1'
-        wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
-        import_wiki_name_list = ['importpage1', 'importpage2']
-        result_content = views._check_wiki_name_exist(self.project, wiki_name_nfd, self.node_file_mapping, import_wiki_name_list)
-        assert_true(result_content)
+        # dubled names
+        for wiki_name in dobuled_names
+          result = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
+          assert_true(result)
+
+        # new names
+        for wiki_name in new_names
+          result = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
+          assert_false(result)
 
     def test_replace_file_name_image_with_tooltip(self):
         wiki_name = self.import_page_folder1.name
@@ -1975,21 +1981,18 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_check_attachment_file_name_exist_has_hat(self):
         wiki_name = 'importpage1'
         file_name = 'importpage2^attachment3.xlsx'
-        import_wiki_name_list = ['importpage1', 'importpage2']
         result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
         assert_equal(result_id, self.import_attachment3_xlsx._id)
 
     def test_check_attachment_file_name_exist_has_not_hat(self):
         wiki_name = 'importpage1'
         file_name = 'attachment1.doc'
-        import_wiki_name_list = ['importpage1', 'importpage2']
         result_id = views._check_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
         assert_equal(result_id, self.import_attachment1_doc._id)
 
     def test_process_attachment_file_name_exist(self):
         wiki_name = 'importpage1'
         file_name = 'attachment1.doc'
-        import_wiki_name_list = ['importpage1', 'importpage2']
         result_id = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
         assert_equal(result_id, self.import_attachment1_doc._id)
 
@@ -1998,14 +2001,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         file_name = 'attachment1.doc'
         wiki_name_nfd = unicodedata.normalize('NFD', wiki_name)
         file_name_nfd = unicodedata.normalize('NFD', file_name)
-        import_wiki_name_list = ['importpage1', 'importpage2']
         result_id = views._process_attachment_file_name_exist(wiki_name_nfd, file_name_nfd, self.root_import_folder1._id, self.node_file_mapping)
         assert_equal(result_id, self.import_attachment1_doc._id)
 
     def test_process_attachment_file_name_exist_not_exist(self):
         wiki_name = 'importpage1'
         file_name = 'not_existing_file.doc'
-        import_wiki_name_list = ['importpage1', 'importpage2']
         result_content = views._process_attachment_file_name_exist(wiki_name, file_name, self.root_import_folder1._id, self.node_file_mapping)
         assert_is_none(result_content)
 
