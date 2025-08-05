@@ -217,20 +217,16 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
         assert_is_none(child_node)
 
     def test_get_wiki_pages_latest(self):
-        self.child1.content = 'updated_one'
-        self.child1.save()
-        self.child_a.content = 'updated_two'
-        self.child_a.save()
+        self.child1.update(self.user, 'updated_one')
+        self.child_a.update(self.user, 'updated_two')
 
         wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project).first()
 
         assert_equal('updated_two', wiki_page.content)
 
     def test_get_wiki_child_pages_latest(self):
-        self.child1.content = 'updated_one'
-        self.child1.save()
-        self.child_a.content = 'updated_two'
-        self.child_a.save()
+        self.child1.update(self.user, 'updated_one')
+        self.child_a.update(self.user, 'updated_two')
 
         wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1).first()
 
