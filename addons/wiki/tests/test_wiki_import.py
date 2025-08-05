@@ -255,6 +255,7 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
         self.wiki_page.update(
+            self,
             self.user,
             self.content,
             is_wiki_import=False
@@ -910,15 +911,33 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         versions = _get_wiki_versions(None, 'test', anonymous=False)
         assert_greater_equal(len(versions),1)
 
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_wiki_child_pages_latest')
-    def test_get_wiki_child_pages_latest(self, get_wiki_child_pages_latest):
+    @mock.patch('addons.wiki.models.WikiPage.objects')
+    def test_get_wiki_child_pages_latest(self, mock_objects):
 
         name = 'page by id'
         page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
 
-        get_wiki_child_pages_latest.return_value = page
+        # モックされた WikiPage と Version を用意
+        page_mock = mock.MagicMock()
+        wiki_page_mock = mock.MagicMock()
+        wiki_page_mock.page_name = 'ChildPage'
+        wiki_page_mock._primary_key = 'abc123'
+        wiki_page_mock.id = 'pageid123'
+        wiki_page_mock.sort_order = 1
+        page_mock.wiki_page = wiki_page_mock
 
-        rtnPages = _get_wiki_child_pages_latest(None, 'test')
+        # order_by にチェーンできるようモックチェーンを設定
+        mock_qs = mock.MagicMock()
+        mock_qs.order_by.return_value = [page_mock]
+        mock_objects.get_wiki_child_pages_latest.return_value = mock_qs
+
+        # node モック（URL用）
+        node = mock.MagicMock()
+        node.web_url_for.return_value = '/mocked/url'
+
+        # 実行
+        rtnPages = _get_wiki_child_pages_latest(node, 'ParentPage')
+
         assert_greater_equal(len(rtnPages),1)
 
     def test_get_wiki_api_urls(self):
