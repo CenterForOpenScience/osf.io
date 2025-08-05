@@ -286,20 +286,18 @@ def get_file_obj_from_log(log, reg):
         return BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
     except KeyError:
         path = log.params.get('path', '').split('/')
-        if log.action == 'osf_storage_file_removed':
+        if log.action in ['addon_file_moved', 'addon_file_renamed']:
+            try:
+                return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
+            except (KeyError, BaseFileNode.DoesNotExist):
+                return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
+        elif log.action == 'osf_storage_file_removed':
             candidates = BaseFileNode.objects.filter(
                 target_object_id=reg.registered_from.id,
                 target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
                 name=path[-1] or path[-2],
                 deleted_on__lte=log.date
             ).order_by('-deleted_on')
-            if candidates.exists():
-                return candidates.first()
-        elif log.action in ['addon_file_moved', 'addon_file_renamed']:
-            try:
-                return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
-            except (KeyError, BaseFileNode.DoesNotExist):
-                return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
         else:
             # Generic fallback
             candidates = BaseFileNode.objects.filter(
@@ -308,10 +306,11 @@ def get_file_obj_from_log(log, reg):
                 name=path[-1] or path[-2],
                 created__lte=log.date
             ).order_by('-created')
-            if candidates.exists():
-                return candidates.first()
 
-        raise BaseFileNode.DoesNotExist(f"No file found for name={path[-1] or path[-2]} before {log.date}")
+        if candidates.exists():
+            return candidates.first()
+
+        raise BaseFileNode.DoesNotExist(f"No file found for name '{path[-1] or path[-2]}' before {log.date}")
 
 
 def handle_file_operation(file_tree, reg, file_obj, log, obj_cache):
