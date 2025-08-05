@@ -22,29 +22,45 @@ from osf.utils.permissions import ADMIN
 from website import settings
 
 
-@celery_app.task(name='website.notifications.tasks.send_users_email', max_retries=0)
-def send_users_email():
+@celery_app.task(name='website.notifications.tasks.send_users_digest_email', max_retries=0)
+def send_users_digest_email():
     """Send pending emails.
     """
     today = datetime.today().date()
 
     # Run for yesterday
-    _send_global_and_node_emails('daily')
-    _send_reviews_moderator_emails('daily')
+    _send_user_digest('daily')
 
     # Run only on Mondays
     if today.weekday() == 0:  # Monday is 0
-        _send_global_and_node_emails('weekly')
-        _send_reviews_moderator_emails('weekly')
+        _send_user_digest('weekly')
 
     # Run only on the last day of the month
     last_day = monthrange(today.year, today.month)[1]
     if today.day == last_day:
-        _send_global_and_node_emails('monthly')
-        _send_reviews_moderator_emails('monthly')
+        _send_user_digest('monthly')
 
 
-def _send_global_and_node_emails(message_freq):
+@celery_app.task(name='website.notifications.tasks.send_moderators_digest_email', max_retries=0)
+def send_moderators_digest_email():
+    """Send pending emails.
+    """
+    today = datetime.today().date()
+
+    # Run for yesterday
+    _send_moderator_digest('daily')
+
+    # Run only on Mondays
+    if today.weekday() == 0:  # Monday is 0
+        _send_moderator_digest('weekly')
+
+    # Run only on the last day of the month
+    last_day = monthrange(today.year, today.month)[1]
+    if today.day == last_day:
+        _send_moderator_digest('monthly')
+
+
+def _send_user_digest(message_freq):
     """
     Called by `send_users_email`. Send all global and node-related notification emails.
     """
@@ -77,7 +93,7 @@ def _send_global_and_node_emails(message_freq):
         for notification in notifications_qs:
             notification.mark_sent()
 
-def _send_reviews_moderator_emails(message_freq):
+def _send_moderator_digest(message_freq):
     """
     Called by `send_users_email`. Send all reviews triggered emails.
     """

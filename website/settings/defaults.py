@@ -565,6 +565,8 @@ class CeleryConfig:
         'scripts.approve_registrations',
         'scripts.approve_embargo_terminations',
         'scripts.triggered_mails',
+        'scripts.website.notifications.tasks.send_moderators_digest_email',
+        'scripts.website.notifications.tasks.send_users_digest_email',
         'scripts.generate_sitemap',
         'scripts.premigrate_created_modified',
         'scripts.add_missing_identifiers_to_preprints',
@@ -625,6 +627,16 @@ class CeleryConfig:
         },
         'triggered_mails': {
             'task': 'scripts.triggered_mails',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_moderators_digest_email': {
+            'task': 'website.notifications.tasks.send_moderators_digest_email',
+            'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'send_users_digest_email': {
+            'task': 'website.notifications.tasks.send_users_digest_email',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },

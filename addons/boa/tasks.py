@@ -201,6 +201,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     )
     return BoaErrorCode.NO_ERROR
 
+
 def handle_boa_error(message, code, username, fullname, project_url, query_file_full_path,
                      query_file_name=None, file_size=None, output_file_name=None, job_id=None):
     """Handle Boa and WB API errors and send emails.
