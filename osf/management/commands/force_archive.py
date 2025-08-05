@@ -36,7 +36,7 @@ from django.utils import timezone
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from framework import sentry
 from framework.exceptions import HTTPError
-from osf.models import Node, NodeLog, Registration, BaseFileNode
+from osf.models import AbstractNode, Node, NodeLog, Registration, BaseFileNode
 from osf.models.files import TrashedFileNode
 from osf.exceptions import RegistrationStuckRecoverableException, RegistrationStuckBrokenException
 from api.base.utils import waterbutler_api_url_for
@@ -285,17 +285,16 @@ def get_file_obj_from_log(log, reg):
     try:
         return BaseFileNode.objects.get(_id=log.params['urls']['view'].split('/')[4])
     except KeyError:
-        if log.action == 'osf_storage_folder_created':
-            return OsfStorageFolder.objects.get(
+        path = log.params.get('path', '').split('/')
+        if log.action == 'osf_storage_file_removed':
+            candidates = BaseFileNode.objects.filter(
                 target_object_id=reg.registered_from.id,
-                name=log.params['path'].split('/')[-2]
-            )
-        elif log.action == 'osf_storage_file_removed':
-            path = log.params['path'].split('/')
-            return TrashedFileNode.objects.get(
-                target_object_id=reg.registered_from.id,
-                name=path[-1] or path[-2]  # file name or folder name
-            )
+                target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
+                name=path[-1] or path[-2],
+                deleted_on__lte=log.date
+            ).order_by('-deleted_on')
+            if candidates.exists():
+                return candidates.first()
         elif log.action in ['addon_file_moved', 'addon_file_renamed']:
             try:
                 return BaseFileNode.objects.get(_id=log.params['source']['path'].rstrip('/').split('/')[-1])
@@ -303,15 +302,16 @@ def get_file_obj_from_log(log, reg):
                 return BaseFileNode.objects.get(_id=log.params['destination']['path'].rstrip('/').split('/')[-1])
         else:
             # Generic fallback
-            path = log.params.get('path', '').split('/')
-            if len(path) >= 2:
-                name = path[-1] or path[-2]  # file name or folder name
-                return BaseFileNode.objects.get(
-                    target_object_id=reg.registered_from.id,
-                    name=name
-                )
+            candidates = BaseFileNode.objects.filter(
+                target_object_id=reg.registered_from.id,
+                target_content_type_id=ContentType.objects.get_for_model(AbstractNode).id,
+                name=path[-1] or path[-2],
+                created__lte=log.date
+            ).order_by('-created')
+            if candidates.exists():
+                return candidates.first()
 
-        raise ValueError(f'Cannot determine file obj for log {log._id} [Registration id {reg._id}]: {log.action}')
+        raise BaseFileNode.DoesNotExist(f"No file found for name={path[-1] or path[-2]} before {log.date}")
 
 
 def handle_file_operation(file_tree, reg, file_obj, log, obj_cache):
