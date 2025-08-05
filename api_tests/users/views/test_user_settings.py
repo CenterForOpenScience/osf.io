@@ -211,8 +211,7 @@ class TestResetPassword:
             assert res.status_code == 200
             assert not mock_send_mail.called
 
-    def test_post(self, app, url, user_one, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+    def test_post(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
@@ -227,7 +226,7 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        res = app.post_json_api(url, payload)
         user_one.reload()
         assert res.status_code == 200
         assert user_one.check_password('password2')
