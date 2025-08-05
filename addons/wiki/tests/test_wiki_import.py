@@ -1761,7 +1761,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
-    def test_check_wiki_name_exist_existing_wiki(self):
+    def test_check_wiki_name_exist(self):
         exist_wiki_name1 = 'exist1'
         exist_wiki_name2 = 'exist2'
         exist_wiki_name_uni = 'existが'
@@ -1785,12 +1785,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         new_names = ['new_page1', 'new_page2', 'new_pageが']
 
         # dubled names
-        for wiki_name in dobuled_names
+        for wiki_name in dobuled_names:
           result = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
           assert_true(result)
 
         # new names
-        for wiki_name in new_names
+        for wiki_name in new_names:
           result = views._check_wiki_name_exist(self.project, wiki_name, self.node_file_mapping, import_wiki_name_list)
           assert_false(result)
 
