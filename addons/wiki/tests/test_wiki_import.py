@@ -255,7 +255,6 @@ class TestWikiPage(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiVersion.save')
     def test_update_false(self, mock_wiki_version_save):
         self.wiki_page.update(
-            self,
             self.user,
             self.content,
             is_wiki_import=False
@@ -2682,7 +2681,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=page, wiki_version=version):
+        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version):
             result = views.project_wiki_view(auth, 'Home', **kwargs)
             # 編集権限があるため、can_edit_wiki_body は True
             assert result['user']['can_edit_wiki_body'] is True
@@ -2694,7 +2693,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None), mock.patch('ddons.wiki.utils.to_mongo_key', return_value='not_home'):
+        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None), mock.patch('ddons.wiki.utils.to_mongo_key', return_value='not_home'):
             with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
 
@@ -2704,7 +2703,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with assert_raises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
@@ -2715,7 +2714,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             result = views.project_wiki_view(auth, 'NotHome', **kwargs)
             # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
             assert '/web/wiki' in result.headers['Location']
@@ -2726,7 +2725,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
+        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
             with assert_raises(Exception) as excinfo:
                 views.project_wiki_view(auth, 'NotHome', **kwargs)
             assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
@@ -2739,6 +2738,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
+        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
             with assert_raises(self.WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
