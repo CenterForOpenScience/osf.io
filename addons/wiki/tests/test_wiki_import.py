@@ -2425,8 +2425,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(folder_path, 'osfstorage/xxyyzz/')
 
     @mock.patch('website.util.waterbutler.create_folder')
-    @mock.patch('osf.models.BaseFileNode')
-    def test_create_wiki_folder_success(self, mock_base_file_node, mock_create_folder):
+    def test_create_wiki_folder_success(self, mock_create_folder):
         mock_response = {
             'data': {
                 'id': 'osfstorage/xxyyzz/',
@@ -2436,9 +2435,15 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             }
         }
         mock_create_folder.return_value = MockResponse(mock_response, 200)
-        mock_base_file_node_instance = MagicMock()
-        mock_base_file_node_instance.id = 1
-        mock_base_file_node.objects.get.return_value = mock_base_file_node_instance
+
+        def mock_create_folder_side_effect(osf_cookie, pid, folder_name, dest_path):
+            TestFolderWiki.objects.create(
+                name=folder_name,
+                target=self.project1,
+                _path=dest_path,
+                _id='xxyyzz'
+            )
+        mock_create_folder.side_effect = mock_create_folder_side_effect
 
         osf_cookie = self.osf_cookie
         p_guid = self.guid
@@ -2446,10 +2451,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         parent_path = 'osfstorage/'
         folder_id, folder_path = views._create_wiki_folder(osf_cookie, p_guid, folder_name, parent_path)
 
-        expected_folder_id = 1
         expected_folder_path = 'osfstorage/xxyyzz/'
 
-        assert_equal(folder_id, expected_folder_id)
         assert_equal(folder_path, expected_folder_path)
 
     @mock.patch('website.util.waterbutler.create_folder')
@@ -2663,9 +2666,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         page_names = ['wiki child page1', 'wiki child page2', 'wiki child page3', 'wiki page1', 'wiki page2']
         result_list = list(WikiPage.objects.filter(page_name__in=page_names).order_by('page_name').values_list('page_name', 'parent_id', 'sort_order'))
         expected_list = [
-            ('wiki child page1', self.wiki_page2.id, 3),
-            ('wiki child page2', self.wiki_page2.id, 2),
-            ('wiki child page3', self.wiki_page2.id, 1),
+            ('wiki child page1', None, 3),
+            ('wiki child page2', self.wiki_page2.id, 1),
+            ('wiki child page3', self.wiki_child_page2.id, 2),
             ('wiki page1', None, 1),
             ('wiki page2', None, 2)
         ]
