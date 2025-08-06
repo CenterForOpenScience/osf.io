@@ -8,6 +8,7 @@ from .action import (
     ReviewAction,
     SchemaResponseAction,
 )
+from .email_task import EmailTask
 from .admin_log_entry import AdminLogEntry
 from .admin_profile import AdminProfile
 from .analytics import UserActivityCounter, PageCounter

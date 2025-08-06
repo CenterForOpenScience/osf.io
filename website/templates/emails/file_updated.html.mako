@@ -4,7 +4,7 @@
         <td style="line-height: 17px;border-collapse: collapse;">
             <span class="timestamp" style="color: grey;">At ${localized_timestamp}: </span>
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
-                <span class="person" style="font-weight: bold;">${user.fullname} </span>
+                <span class="person" style="font-weight: bold;">${user_fullname} </span>
                 ${message}
             </span>
         </td>

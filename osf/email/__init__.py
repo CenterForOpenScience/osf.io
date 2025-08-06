@@ -1,6 +1,7 @@
 import logging
 
 import waffle
+from django.template import Template, Context
 from sendgrid import SendGridAPIClient, Personalization, To, Cc, Category, ReplyTo, Bcc
 from sendgrid.helpers.mail import Mail
 
@@ -118,13 +119,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         raise exc
 
 def render_notification(template, context):
-    """Render a notification template with the given context.
-
-    Args:
-        template (str): The template string to render.
-        context (dict): The context to use for rendering the template.
-
-    Returns:
-        str: The rendered template.
-    """
-    return template.format(**context) if template else ''
+    if not template:
+        return ''
+    t = Template(template)
+    return t.render(Context(context))

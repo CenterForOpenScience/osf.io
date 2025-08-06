@@ -1,7 +1,6 @@
 import logging
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import run_postcommit
@@ -159,6 +158,7 @@ def remove_contributor_from_subscriptions(node, user):
         admin on any of node's parent projects.
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    from django.contrib.contenttypes.models import ContentType
 
     Preprint = apps.get_model('osf.Preprint')
     DraftRegistration = apps.get_model('osf.DraftRegistration')
@@ -193,6 +193,7 @@ def remove_supplemental_node(node):
 @run_postcommit(once_per_request=False, celery=True)
 @app.task(max_retries=5, default_retry_delay=60)
 def remove_subscription_task(node_id):
+    from django.contrib.contenttypes.models import ContentType
     AbstractNode = apps.get_model('osf.AbstractNode')
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     node = AbstractNode.load(node_id)
