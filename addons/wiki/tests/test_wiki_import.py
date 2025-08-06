@@ -223,16 +223,16 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
 
         wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project).first()
 
-        assert_equal('updated_two', wiki_page.content)
+        assert_equal('updated_parent_one', wiki_page.content)
 
     def test_get_wiki_child_pages_latest(self):
-        self.parent1.update(self.user, 'updated_parent_one')
         self.child1.update(self.user, 'updated_one')
         self.child_a.update(self.user, 'updated_two')
+        self.parent1.update(self.user, 'updated_parent_one')
 
         wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1).first()
 
-        assert_equal('updated_parent_one', wiki_page.content)
+        assert_equal('updated_one', wiki_page.content)
 
 class TestWikiPage(OsfTestCase, unittest.TestCase):
     def setUp(self):
@@ -766,7 +766,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.rootdir = TestFolderWiki.objects.create(name='rootpage', target=self.project)
         self.copy_to_dir = TestFolderWiki.objects.create(name='copytodir', target=self.project, parent=self.rootdir)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
-        self.elephant_wiki = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         # existing wiki page in project1
         self.wiki_page1 = WikiPage.objects.create_for_node(self.project, 'importpagea1', 'wiki pagea content', self.consolidate_auth)
         self.wiki_page2 = WikiPage.objects.create_for_node(self.project, 'importpageb2', 'wiki pageb content', self.consolidate_auth)
@@ -969,8 +968,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
+<<<<<<< HEAD
         page = self.elephant_wiki
         self.app.set_user(self.consolidate_auth.user)
+=======
+        page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
+>>>>>>> 27c756c2f9 (fix: test)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
