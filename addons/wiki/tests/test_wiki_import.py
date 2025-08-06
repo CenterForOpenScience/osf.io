@@ -2636,14 +2636,14 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             },
             auth=self.auth
         )
-        page_names = ['wiki child page1', 'wiki child page2', 'wiki child page3', 'wiki page1', 'wiki page2']
+        page_names = ['importpagea1', 'importpageb2', 'wiki child page1', 'wiki child page2', 'wiki child page3']
         result_list = list(WikiPage.objects.filter(page_name__in=page_names).order_by('page_name').values_list('page_name', 'parent_id', 'sort_order'))
         expected_list = [
+            ('wiki page1', None, 1),
+            ('wiki page2', None, 2),
             ('wiki child page1', self.wiki_page2.id, 1),
             ('wiki child page2', self.wiki_page2.id, 2),
-            ('wiki child page3', self.wiki_child_page2.id, 1),
-            ('wiki page1', None, 1),
-            ('wiki page2', None, 2)
+            ('wiki child page3', self.wiki_child_page2.id, 1)
         ]
         assert_equal(expected_list, result_list)
 
@@ -2663,14 +2663,14 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         parent_wiki_id_list = [None, None, self.guid2, self.child_guid2, None]
         views._bulk_update_wiki_sort(self.project, sort_id_list, sort_num_list, parent_wiki_id_list)
 
-        page_names = ['wiki child page1', 'wiki child page2', 'wiki child page3', 'wiki page1', 'wiki page2']
+        page_names = ['importpagea1', 'importpageb2', 'wiki child page1', 'wiki child page2', 'wiki child page3']
         result_list = list(WikiPage.objects.filter(page_name__in=page_names).order_by('page_name').values_list('page_name', 'parent_id', 'sort_order'))
         expected_list = [
+            ('wiki page1', None, 1),
+            ('wiki page2', None, 2),
             ('wiki child page1', None, 3),
             ('wiki child page2', self.wiki_page2.id, 1),
-            ('wiki child page3', self.wiki_child_page2.id, 2),
-            ('wiki page1', None, 1),
-            ('wiki page2', None, 2)
+            ('wiki child page3', self.wiki_child_page2.id, 2)
         ]
         assert_equal(expected_list, result_list)
 
