@@ -1058,8 +1058,20 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         assert_equal(res.status_code, 404)
 
-    def test_format_home_wiki_page_no_content(self):
-        data = views.format_home_wiki_page(self.project)
+    def test_format_home_wiki_page(self):
+        result = views.format_home_wiki_page(self.project)
+        expected = {
+            'page': {
+                'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
+                'name': 'Home',
+                'id': self.home_wiki._primary_key,
+            }
+        }
+        assert_equal(expected, result)
+
+    def test_format_home_wiki_page_no_page(self):
+        self.home_wiki.delete()
+        result = views.format_home_wiki_page(self.project)
         expected = {
             'page': {
                 'url': self.project.web_url_for('project_wiki_home'),
@@ -1067,7 +1079,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'id': 'None',
             }
         }
-        assert_equal(data, expected)
+        assert_equal(expected, result)
 
     @mock.patch('addons.wiki.views._format_child_wiki_pages')
     def test_format_project_wiki_pages(self, mock_format_child_wiki_pages):
@@ -2698,7 +2710,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         # TODO: ちゃんとfixtureをつくる
-        return mock.patch.multiple('TestWikiViews',
+        return mock.patch.multiple(TestWikiViews,
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
             WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
             WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
