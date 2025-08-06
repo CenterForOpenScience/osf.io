@@ -2443,6 +2443,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 _path=dest_path,
                 _id='xxyyzz'
             )
+            return MockResponse(mock_response, 200)
         mock_create_folder.side_effect = mock_create_folder_side_effect
 
         osf_cookie = self.osf_cookie
@@ -2697,7 +2698,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         # TODO: ちゃんとfixtureをつくる
-        return mock.patch.multiple('my_module',
+        return mock.patch.multiple('TestWikiViews',
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
             WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
             WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
