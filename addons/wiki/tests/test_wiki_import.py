@@ -948,6 +948,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_get_sharejs_uuid.return_value = None
 
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        self.app.set_user(self.consolidate_auth.user)
         self.app.delete(delete_url, auth=self.consolidate_auth, expect_errors=True)
         #res = self.app.get(delete_url, expect_errors=True)
         res = self.app.get(delete_url)
@@ -969,6 +970,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
         page = self.elephant_wiki
+        self.app.set_user(self.consolidate_auth.user)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
@@ -989,8 +991,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
-                url,
-                auth=self.consolidate_auth
+                url
             )
         self.project.reload()
         page.reload()
@@ -1011,6 +1012,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_project_wiki_edit_post(self):
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
+        self.app.set_user(self.project.creator)
         res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.consolidate_auth).follow()
         assert_equal(res.status_code, 200)
 
@@ -1031,8 +1033,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
+        self.app.set_user(self.user)
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='home', node=None)
-        res = self.app.get(url, auth=self.consolidate_auth)
+        res = self.app.get(url, auth=self.auth)
 
         # モックが呼ばれたか
         mock_create_for_node.assert_called()
@@ -1054,8 +1057,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
+        self.app.set_user(self.user)
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
-        res = self.app.get(url, auth=self.consolidate_auth, expect_errors=True)
+        res = self.app.get(url, auth=self.auth, expect_errors=True)
 
         assert_equal(res.status_code, 404)
 
@@ -1210,6 +1214,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_project_wiki_import(self, mock_check_file_object_in_node, mock_project_wiki_import_process):
         mock_check_file_object_in_node.return_value = True
         dir_id = self.root_import_folder1._id
+        self.app.set_user(self.user)
         url = self.project.api_url_for('project_wiki_import', dir_id=dir_id)
         res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.consolidate_auth)
         response_json = res.json
@@ -2548,7 +2553,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
         url = self.project.api_url_for('project_clean_celery_tasks')
-        res = self.app.post(url, auth=self.consolidate_auth)
+        self.app.set_user(self.user)
+        res = self.app.post(url, auth=self.auth)
         task_completed = WikiImportTask.objects.get(task_id='task-id-11')
         task_running = WikiImportTask.objects.get(task_id='task-id-2222')
         assert_equal(task_completed.status, 'Completed')
@@ -2559,6 +2565,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-5555', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 11, 00, tzinfo=pytz.utc), creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-6666', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 9, 00, tzinfo=pytz.utc), creator=self.user)
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
+        self.app.set_user(self.user)
         res = self.app.get(url, auth=self.auth)
         json_string = res._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
