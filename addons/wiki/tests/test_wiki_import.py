@@ -762,7 +762,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.osf_cookie = self.user.get_or_create_cookie().decode()
         self.home_wiki = WikiPage.objects.create_for_node(self.project, 'home', 'Version 1', Auth(self.user))
         self.home_wiki.update(self.user, 'Version 2')
-        self.funpage_wiki = WikiPage.objects.create_for_node(self.project, 'funpage', 'Version 1', Auth(self.user))
         self.rootdir = TestFolderWiki.objects.create(name='rootpage', target=self.project)
         self.copy_to_dir = TestFolderWiki.objects.create(name='copytodir', target=self.project, parent=self.rootdir)
         self.component = NodeFactory(creator=self.user, parent=self.project, is_public=True)
@@ -968,12 +967,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
-<<<<<<< HEAD
-        page = self.elephant_wiki
-        self.app.set_user(self.consolidate_auth.user)
-=======
         page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
->>>>>>> 27c756c2f9 (fix: test)
+        self.app.set_user(self.consolidate_auth.user)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
