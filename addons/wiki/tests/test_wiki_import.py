@@ -2626,7 +2626,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             ('wiki page1', None, 1),
             ('wiki page2', None, 2)
         ]
-        assert_equal(expected_list)
+        assert_equal(expected_list, result_list)
 
     # テスト用のWikiページを作成
     def create_wiki_page(has_parent=True):
