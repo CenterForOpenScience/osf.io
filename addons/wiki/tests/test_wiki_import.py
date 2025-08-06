@@ -2596,14 +2596,14 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             {
                 'sortedData': [
                     {
-                        'name': 'wiki page1',
+                        'name': 'importpagea1',
                         'id': self.guid1,
                         'sortOrder': 1,
                         'children': [],
                         'fold': False
                     },
                     {
-                        'name': 'wiki page2',
+                        'name': 'importpageb2',
                         'id': self.guid2,
                         'sortOrder': 2,
                         'children': [
