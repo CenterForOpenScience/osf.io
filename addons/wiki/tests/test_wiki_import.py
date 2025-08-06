@@ -219,18 +219,20 @@ class TestWikiPageNodeManagerChildNode(OsfTestCase, unittest.TestCase):
     def test_get_wiki_pages_latest(self):
         self.child1.update(self.user, 'updated_one')
         self.child_a.update(self.user, 'updated_two')
+        self.parent1.update(self.user, 'updated_parent_one')
 
         wiki_page = WikiPage.objects.get_wiki_pages_latest(self.project).first()
 
         assert_equal('updated_two', wiki_page.content)
 
     def test_get_wiki_child_pages_latest(self):
+        self.parent1.update(self.user, 'updated_parent_one')
         self.child1.update(self.user, 'updated_one')
         self.child_a.update(self.user, 'updated_two')
 
         wiki_page = WikiPage.objects.get_wiki_child_pages_latest(self.project, self.parent1).first()
 
-        assert_equal('updated_one', wiki_page.content)
+        assert_equal('updated_parent_one', wiki_page.content)
 
 class TestWikiPage(OsfTestCase, unittest.TestCase):
     def setUp(self):
@@ -2610,18 +2612,21 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(parent_wiki_id_list, [None, None, 'gwd9u', 'gwd9u', 'x38vh'])
 
     def test_bulk_update_wiki_sort(self):
-        sort_id_list = [self.guid, self.guid2, self.child_guid2, self.child_guid3, self.child_guid1]
-        sort_num_list = [1, 2, 1, 1, 3]
+        sort_id_list = [self.guid1, self.guid2, self.child_guid2, self.child_guid3, self.child_guid1]
+        sort_num_list = [1, 2, 1, 2, 3]
         parent_wiki_id_list = [None, None, self.guid2, self.child_guid2, None]
         views._bulk_update_wiki_sort(self.project, sort_id_list, sort_num_list, parent_wiki_id_list)
-        result_wiki_page1 = WikiPage.objects.filter(page_name='wiki page1').values('parent_id', 'sort_order').first()
-        result_wiki_page2 = WikiPage.objects.filter(page_name='wiki page2').values('parent_id', 'sort_order').first()
-        result_wiki_child_page1 = WikiPage.objects.filter(page_name='wiki child page1').values('parent_id', 'sort_order').first()
-        result_wiki_child_page2 = WikiPage.objects.filter(page_name='wiki child page2').values('parent_id', 'sort_order').first()
-        result_wiki_child_page3 = WikiPage.objects.filter(page_name='wiki child page3').values('parent_id', 'sort_order').first()
-        wiki_page2_id = self.wiki_page2.id
-        wiki_child_page2_id = self.wiki_child_page2.id
-        assert_equal(result_wiki_page1, {'parent_id': None, 'sort_order': 1})
+
+        page_names = ['wiki child page1', 'wiki child page2', 'wiki child page3', 'wiki page1', 'wiki page2']
+        result_list = WikiPage.objects.filter(page_name__in=page_names).order_by('page_name').values_list('page_name', 'parent_id', 'sort_order')
+        expected_list = [
+            ('wiki child page1', self.wiki_page2.id, 1),
+            ('wiki child page2', self.wiki_page2.id, 2),
+            ('wiki child page3', None, 3),
+            ('wiki page1', None, 1),
+            ('wiki page2', None, 2)
+        ]
+        assert_equal(expected_list)
 
     # テスト用のWikiページを作成
     def create_wiki_page(has_parent=True):
