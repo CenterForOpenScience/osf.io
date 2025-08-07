@@ -980,7 +980,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
         page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
-        
+
         url = self.project.api_url_for(
             'project_wiki_delete',
             wname='Elephants'
@@ -2729,7 +2729,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         WikiImportTask.objects.create(
             node=self.project,
             task_id='task-id-bbbb',
-            status=WikiImportTask.STATUS_RUNNING, 
+            status=WikiImportTask.STATUS_RUNNING,
             creator=self.user
         )
         with assert_raises(HTTPError) as cm:
