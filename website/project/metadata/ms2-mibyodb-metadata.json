@@ -11,7 +11,7 @@
         {
           "qid": "title-of-dataset",
           "nav": "データセットの名称",
-          "title": "データセットの名称（日本語）|Title of Dataset (Japanese)",
+          "title": "データセットの名称（日本語） [必須]|Title of Dataset (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -33,7 +33,7 @@
         {
           "qid": "project-name",
           "nav": "MSプロジェクト名",
-          "title": "MSプロジェクト名|MS Project name",
+          "title": "MSプロジェクト名 [必須]|MS Project name [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "required": true,
@@ -70,7 +70,7 @@
         {
           "qid": "date-registered-in-metadata",
           "nav": "メタデータ登録日・メタデータ更新日",
-          "title": "メタデータ登録日|Date (Registered) in Metadata",
+          "title": "メタデータ登録日 [必須]|Date (Registered) in Metadata [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -81,7 +81,7 @@
         {
           "qid": "date-updated-in-metadata",
           "nav": "メタデータ登録日・メタデータ更新日",
-          "title": "メタデータ更新日|Date (Updated) in Metadata",
+          "title": "メタデータ更新日 [必須]|Date (Updated) in Metadata [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -92,7 +92,7 @@
         {
           "qid": "purpose-of-experiment",
           "nav": "データの説明",
-          "title": "実験（もしくは解析結果・解析ツールなど）の目的（日本語）|Purpose of experiment (Purpose of Analytical results or Analytical tools) (Japanese)",
+          "title": "実験（もしくは解析結果・解析ツールなど）の目的（日本語） [必須]|Purpose of experiment (Purpose of Analytical results or Analytical tools) (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "space_normalization": true,
@@ -110,7 +110,7 @@
         {
           "qid": "description-of-experimental-condition",
           "nav": "データの説明",
-          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明（日本語）|Description of experimental condition (Description of  Analytical results or Analytical tools) (Japanese)",
+          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明（日本語） [必須]|Description of experimental condition (Description of  Analytical results or Analytical tools) (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "space_normalization": true,
@@ -128,7 +128,7 @@
         {
           "qid": "keywords",
           "nav": "データの説明",
-          "title": "キーワード|Keywords",
+          "title": "キーワード [必須]*|Keywords [Required]*",
           "required": true,
           "type": "array",
           "properties": [
@@ -149,7 +149,7 @@
         {
           "qid": "dataset-research-field",
           "nav": "データセットの分野",
-          "title": "データセットの分野|Dataset Research field",
+          "title": "データセットの分野 [必須]|Dataset Research field [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -204,7 +204,7 @@
         {
           "qid": "Analysis-type",
           "nav": "解析対象データ",
-          "title": "解析対象データ|Analysis type",
+          "title": "解析対象データ [必須]|Analysis type [Required]",
           "type": "choose",
           "format": "multiselect",
           "required": true,
@@ -254,7 +254,7 @@
         {
           "qid": "the-presence-of-metadata-files-created-for-a-specific-modality-in-other-databases",
           "nav": "データの説明",
-          "title": "他のデータベースで特定のモダリティ用に作成したメタデータファイルの有無|The presence of metadata files created for a specific modality in other databases",
+          "title": "他のデータベースで特定のモダリティ用に作成したメタデータファイルの有無 [必須]|The presence of metadata files created for a specific modality in other databases [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -288,7 +288,7 @@
         {
           "qid": "necessity-of-contact-and-permission",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "連絡・許諾の要不要|Necessity of Contact and Permission",
+          "title": "連絡・許諾の要不要 [必須]|Necessity of Contact and Permission [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -311,7 +311,7 @@
         {
           "qid": "necessity-of-including-in-acknowledgments",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "謝辞に記載の要不要|Necessity of including in Acknowledgments",
+          "title": "謝辞に記載の要不要 [必須]|Necessity of including in Acknowledgments [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -330,7 +330,7 @@
         {
           "qid": "names-to-be-included-in-the-acknowledgments",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文（日本語）|Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (Japanese)",
+          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文（日本語） [必須]|Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -339,7 +339,7 @@
         {
           "qid": "names-to-be-included-in-the-acknowledgments-en",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (English)",
+          "title": "Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (English) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -366,7 +366,7 @@
         {
           "qid": "data-policy-license",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "ライセンス|License",
+          "title": "ライセンス [必須]|License [Required]",
           "required": true,
           "type": "choose",
           "format": "singleselect-pulldown",
@@ -468,7 +468,7 @@
         {
           "qid": "data-policy-free",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "有償・無償 |Pay or Free ",
+          "title": "有償・無償 [必須]|Pay or Free [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -486,7 +486,7 @@
         {
           "qid": "availability-of-commercial-use",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "商用利用の可否  |Availability of commercial use  ",
+          "title": "商用利用の可否 [必須]|Availability of commercial use [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -504,7 +504,7 @@
         {
           "qid": "access-rights",
           "nav": "データの提供・公開",
-          "title": "アクセス権|Access rights",
+          "title": "アクセス権 [必須]|Access rights [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -540,7 +540,7 @@
         {
           "qid": "repository-information",
           "nav": "リポジトリ",
-          "title": "リポジトリ情報 |Repository information ",
+          "title": "リポジトリ情報 [必須]|Repository information [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -623,7 +623,7 @@
         {
           "qid": "data-creator",
           "nav": "データ作成者",
-          "title": "データ作成者|Name of data creator",
+          "title": "データ作成者 [必須]*|Name of data creator [Required]*",
           "required": true,
           "type": "array",
           "properties": [
@@ -667,7 +667,7 @@
         {
           "qid": "data-manager",
           "nav": "データ管理者",
-          "title": "データ管理者|Name of data manager",
+          "title": "データ管理者 [必須]*|Name of data manager [Required]*",
           "required": true,
           "type": "array",
           "properties": [
@@ -711,7 +711,7 @@
         {
           "qid": "target-type-of-acquired-data",
           "nav": "取得データの対象種別",
-          "title": "取得データの対象種別（日本語）|Target type of acquired data (Japanese)",
+          "title": "取得データの対象種別（日本語） [必須]|Target type of acquired data (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -729,7 +729,7 @@
         {
           "qid": "ethics-review-committee-approval",
           "nav": "倫理審査委員会承認 ",
-          "title": "倫理審査委員会承認（日本語）|Ethics Review Committee Approval (Japanese)",
+          "title": "倫理審査委員会承認（日本語） [必須]|Ethics Review Committee Approval (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -749,7 +749,7 @@
         {
           "qid": "informed-consent",
           "nav": "インフォームドコンセント",
-          "title": "（ヒト）インフォームドコンセント（IC） 有・無・不要 |(Human) Informed Consent (IC) Yes, No, or Unnecessary",
+          "title": "（ヒト）インフォームドコンセント（IC） 有・無・不要 [必須]|(Human) Informed Consent (IC) Yes, No, or Unnecessary [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -873,7 +873,7 @@
         {
           "qid": "conflict-of-interest-Yes-or-No",
           "nav": "利益相反の有無",
-          "title": "利益相反の有無|Conflict of interest Yes or No ",
+          "title": "利益相反の有無 [必須]|Conflict of interest Yes or No [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
