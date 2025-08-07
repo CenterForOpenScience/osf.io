@@ -69,6 +69,17 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name='EmailTask',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('task_id', models.CharField(max_length=255, unique=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('status', models.CharField(choices=[('PENDING', 'Pending'), ('STARTED', 'Started'), ('SUCCESS', 'Success'), ('FAILURE', 'Failure'), ('RETRY', 'Retry')], default='PENDING', max_length=20)),
+                ('error_message', models.TextField(blank=True)),
+            ],
+        ),
+        migrations.CreateModel(
             name='Notification',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
