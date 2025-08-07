@@ -128,6 +128,22 @@ class IsContributorOrGroupMember(permissions.BasePermission):
             return obj.has_permission(auth.user, osf_permissions.WRITE)
 
 
+class AdminOrWriteContributor(permissions.BasePermission):
+    acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
+
+    def has_object_permission(self, request, view, obj):
+        if isinstance(obj, dict) and 'self' in obj:
+            obj = obj['self']
+
+        assert_resource_type(obj, self.acceptable_models)
+        auth = get_user_auth(request)
+
+        if request.method in permissions.SAFE_METHODS:
+            return obj.is_public or obj.can_view(auth)
+
+        return obj.has_permission(auth.user, osf_permissions.ADMIN) or obj.has_permission(auth.user, osf_permissions.WRITE)
+
+
 class AdminOrPublic(permissions.BasePermission):
 
     acceptable_models = (AbstractNode, OSFUser, Institution, BaseAddonSettings, DraftRegistration)
@@ -142,6 +158,7 @@ class AdminOrPublic(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
+
             return obj.has_permission(auth.user, osf_permissions.ADMIN)
 
 class AdminContributorOrPublic(permissions.BasePermission):
