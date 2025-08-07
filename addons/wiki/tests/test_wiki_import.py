@@ -1081,37 +1081,72 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(expected, result)
 
     def test_format_home_wiki_page_no_page(self):
-        self.home_wiki.delete(auth=self.user.auth)
-        result = views.format_home_wiki_page(self.project)
+        project = ProjectFactory()
+        result = views.format_home_wiki_page(project)
         expected = {
             'page': {
-                'url': self.project.web_url_for('project_wiki_home'),
+                'url': project.web_url_for('project_wiki_home'),
                 'name': 'Home',
                 'id': 'None',
             }
         }
         assert_equal(expected, result)
 
-    @mock.patch('addons.wiki.views._format_child_wiki_pages')
-    def test_format_project_wiki_pages(self, mock_format_child_wiki_pages):
-        mock_format_child_wiki_pages.return_value = [
+    def test_format_project_wiki_pages(self):
+        result = views.format_project_wiki_pages(node=self.project, auth=self.auth)
+        expected = [
             {
-                'name': 'Children',
-                'path': '/Children',
-                'original_name': 'Children',
-                'wiki_name': 'Children',
-                'status': 'valid',
-                'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'ChildrenContent'
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': self.home_wiki._primary_key,
+                }
+            },
+            {
+                'page': {
+                    'url': self.wiki_page1.url,
+                    'name': self.wiki_page1.name,
+                    'id': self.wiki_page1.wiki_id,
+                    'sort_order': self.wiki_page1.sort_order
+                }
+            },
+            {
+                'page': {
+                    'url': self.wiki_page2.url,
+                    'name': self.wiki_page2.name,
+                    'id': self.wiki_page2.wiki_id,
+                    'sort_order': self.wiki_page1.sort_order
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.wiki_child_page1.url,
+                            'name': self.wiki_child_page1.name,
+                            'id': self.wiki_child_page1.wiki_id,
+                            'sort_order': self.wiki_child_page1.sort_order
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.wiki_child_page2.url,
+                            'name': self.wiki_child_page2.name,
+                            'id': self.wiki_child_page2.wiki_id,
+                            'sort_order': self.wiki_child_page2.sort_order
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.wiki_child_page3.url,
+                            'name': self.wiki_child_page3.name,
+                            'id': self.wiki_child_page3.wiki_id,
+                            'sort_order': self.wiki_child_page3.sort_order
+                        }
+                    },
+                ],
+                'kind': 'folder'
             }
         ]
-        self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
-        self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
-        self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
-        project_format = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
-
-        assert_equal(project_format['kind'], 'folder')
+        assert_equal(expected, result)
 
     @mock.patch('addons.wiki.views._get_wiki_child_pages_latest')
     def test_format_child_wiki_pages(self, mock_get_wiki_child_pages_latest):
