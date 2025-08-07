@@ -906,34 +906,44 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         versions = _get_wiki_versions(None, 'test', anonymous=False)
         assert_greater_equal(len(versions),1)
 
-    @mock.patch('addons.wiki.models.WikiPage.objects')
-    def test_get_wiki_child_pages_latest(self, mock_objects):
-
-        name = 'page by id'
-        page = WikiPage.objects.create_for_node(self.project, name, 'some content', Auth(self.project.creator))
-
-        # モックされた WikiPage と Version を用意
-        page_mock = mock.MagicMock()
-        wiki_page_mock = mock.MagicMock()
-        wiki_page_mock.page_name = 'ChildPage'
-        wiki_page_mock._primary_key = 'abc123'
-        wiki_page_mock.id = 'pageid123'
-        wiki_page_mock.sort_order = 1
-        page_mock.wiki_page = wiki_page_mock
-
-        # order_by にチェーンできるようモックチェーンを設定
-        mock_qs = mock.MagicMock()
-        mock_qs.order_by.return_value = [page_mock]
-        mock_objects.get_wiki_child_pages_latest.return_value = mock_qs
-
-        # node モック（URL用）
-        node = mock.MagicMock()
-        node.web_url_for.return_value = '/mocked/url'
-
-        # 実行
-        rtnPages = _get_wiki_child_pages_latest(node, 'ParentPage')
-
-        assert_greater_equal(len(rtnPages),1)
+    def test_get_wiki_child_pages_latest(self):
+        expected = [
+            {
+                'name': 'wiki child page1',
+                'url': self.node.web_url_for('project_wiki_view', wname='wiki child page1', _guid=True),
+                'wiki_id': self.wiki_child_page1._primary_key,
+                'id': self.wiki_child_page1.id,
+                'wiki_content': {
+                    'wiki_content': 'wiki child page1 content',
+                    'rendered_before_update': True
+                }
+                'sort_order': self.wiki_child_page1.sort_order
+            },
+            {
+                'name': 'wiki child page2',
+                'url': self.node.web_url_for('project_wiki_view', wname='wiki child page2', _guid=True),
+                'wiki_id': self.wiki_child_page2._primary_key,
+                'id': self.wiki_child_page2.id,
+                'wiki_content': {
+                    'wiki_content': 'wiki child page2 content',
+                    'rendered_before_update': True
+                }
+                'sort_order': self.wiki_child_page2.sort_order
+            },
+            {
+                'name': 'wiki child page3',
+                'url': self.node.web_url_for('project_wiki_view', wname='wiki child page3', _guid=True),
+                'wiki_id': self.wiki_child_page3._primary_key,
+                'id': self.wiki_child_page3.id,
+                'wiki_content': {
+                    'wiki_content': 'wiki child page3 content',
+                    'rendered_before_update': True
+                }
+                'sort_order': self.wiki_child_page3.sort_order
+            },
+        ]
+        result = _get_wiki_child_pages_latest(node, 'ParentPage')
+        assert_equal(expected, result)
 
     def test_get_wiki_api_urls(self):
         urls = _get_wiki_api_urls(self.project, self.wname)
