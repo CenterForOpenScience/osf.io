@@ -916,7 +916,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'wiki_content': {
                     'wiki_content': 'wiki child page1 content',
                     'rendered_before_update': True
-                }
+                },
                 'sort_order': 1
             },
             {
@@ -927,7 +927,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'wiki_content': {
                     'wiki_content': 'wiki child page2 content',
                     'rendered_before_update': True
-                }
+                },
                 'sort_order': 2
             },
             {
@@ -938,7 +938,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'wiki_content': {
                     'wiki_content': 'wiki child page3 content',
                     'rendered_before_update': True
-                }
+                },
                 'sort_order': 3
             },
         ]
