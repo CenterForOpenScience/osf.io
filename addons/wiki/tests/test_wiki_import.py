@@ -321,27 +321,17 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         }
 
 
-    @mock.patch('addons.wiki.views.BaseFileNode.objects.filter')
-    def test_get_node_file_mapping(self, mock_filter):
-        mock_filter.return_value.values_list.return_value = [
-            (self.pagefile1._id, 'page1.md', 'page1'),
-            (self.attachment1._id, 'attachment1.pdf', 'page1'),
-            (self.pagefile2._id, 'page2.md', 'page2'),
-            (self.attachment2._id, 'attachment2.docx', 'page2'),
-            (self.pagefile3._id, 'page3.md', 'page3'),
-            (self.attachment3._id, 'attachment3.xlsx', 'page3'),
-        ]
-        file_mapping = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
-        expected_mapping = {
-            'page1^page1.md': self.pagefile1._id,
-            'page1^attachment1.pdf': self.attachment1._id,
-            'page2^page2.md': self.pagefile2._id,
-            'page2^attachment2.docx': self.attachment2._id,
-            'page3^page3.md': self.pagefile3._id,
-            'page3^attachment3.xlsx': self.attachment3._id,
+    def test_get_node_file_mapping(self):
+        result = get_node_file_mapping(self.project1, self.wiki_import_dir._id)        
+        expect = {
+            f'{self.pagefile1.parent.name}^{self.pagefile1.name}': self.pagefile1._id,
+            f'{self.attachment1.parent.name}^{self.attachment1.name}': self.attachment1._id,
+            f'{self.pagefile2.parent.name}^{self.pagefile2.name}': self.pagefile2._id,
+            f'{self.attachment2.parent.name}^{self.attachment2.name}': self.attachment2._id,
+            f'{self.pagefile3.parent.name}^{self.pagefile3.name}': self.pagefile3._id,
+            f'{self.attachment3.parent.name}^{self.attachment3.name}': self.attachment3._id,
         }
-
-        assert_equal(file_mapping, expected_mapping)
+        assert_equal(expect, result)
 
     def test_get_import_wiki_name_list(self):
         wiki_info = [
