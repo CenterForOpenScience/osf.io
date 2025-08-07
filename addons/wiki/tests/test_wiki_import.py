@@ -917,7 +917,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'wiki_content': 'wiki child page1 content',
                     'rendered_before_update': True
                 }
-                'sort_order': self.wiki_child_page1.sort_order
+                'sort_order': 1
             },
             {
                 'name': 'wiki child page2',
@@ -928,7 +928,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'wiki_content': 'wiki child page2 content',
                     'rendered_before_update': True
                 }
-                'sort_order': self.wiki_child_page2.sort_order
+                'sort_order': 2
             },
             {
                 'name': 'wiki child page3',
@@ -939,7 +939,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'wiki_content': 'wiki child page3 content',
                     'rendered_before_update': True
                 }
-                'sort_order': self.wiki_child_page3.sort_order
+                'sort_order': 3
             },
         ]
         result = _get_wiki_child_pages_latest(node, self.wiki_page2)
