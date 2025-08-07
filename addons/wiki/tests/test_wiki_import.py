@@ -942,7 +942,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'sort_order': self.wiki_child_page3.sort_order
             },
         ]
-        result = _get_wiki_child_pages_latest(node, 'ParentPage')
+        result = _get_wiki_child_pages_latest(node, self.wiki_page2)
         assert_equal(expected, result)
 
     def test_get_wiki_api_urls(self):
