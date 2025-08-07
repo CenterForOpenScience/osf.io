@@ -942,7 +942,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'sort_order': 3
             },
         ]
-        result = _get_wiki_child_pages_latest(node, self.wiki_page2)
+        result = _get_wiki_child_pages_latest(self.node, self.wiki_page2)
         assert_equal(expected, result)
 
     def test_get_wiki_api_urls(self):
@@ -1072,7 +1072,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         result = views.format_home_wiki_page(self.project)
         expected = {
             'page': {
-                'url': node.web_url_for('project_wiki_view', wname='home', _guid=True),
+                'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
                 'name': 'Home',
                 'id': self.home_wiki._primary_key,
             }
@@ -1080,7 +1080,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(expected, result)
 
     def test_format_home_wiki_page_no_page(self):
-        self.home_wiki.delete()
+        self.home_wiki.delete(auth=self.user.auth)
         result = views.format_home_wiki_page(self.project)
         expected = {
             'page': {
