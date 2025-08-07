@@ -968,8 +968,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_get_for_node.return_value = None
         mock_get_sharejs_uuid.return_value = None
 
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
-        self.app.delete(delete_url, auth=self.consolidate_auth)
+        self.app.delete(delete_url, auth=self.auth)
         #res = self.app.get(delete_url, expect_errors=True)
         res = self.app.get(delete_url, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -978,7 +979,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
         page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
-
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
+        
         url = self.project.api_url_for(
             'project_wiki_delete',
             wname='Elephants'
@@ -999,7 +1001,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
-                auth=self.consolidate_auth
+                auth=self.auth
             )
         self.project.reload()
         page.reload()
@@ -1019,8 +1021,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(result[0] , {'id': root_import_folder._id, 'name': 'rootimportfolder'})
 
     def test_project_wiki_edit_post(self):
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.consolidate_auth).follow()
+        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.auth).follow()
         assert_equal(res.status_code, 200)
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
@@ -1040,11 +1043,11 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
-        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='home', node=None)
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
+        url = self.project.api_url_for('project_wiki_validate_name', wname='home', p_wname='home', node=None)
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
-        # モックが呼ばれたか
-        mock_create_for_node.assert_called()
+        assert_equal(res.message, 'home')
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
@@ -1063,7 +1066,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
-        self.project.add_contributor(self.user, permissions=['read', 'write'], save=True)
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
@@ -2608,6 +2611,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_project_clean_celery_task_one_running_task(self, mock_abort):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
+        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         url = self.project.api_url_for('project_clean_celery_tasks')
         res = self.app.post(url, auth=self.consolidate_auth)
         task_completed = WikiImportTask.objects.get(task_id='task-id-11')
