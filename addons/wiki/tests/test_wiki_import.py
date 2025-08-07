@@ -1221,19 +1221,19 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.child_wiki_page.page_name,
                             'id': self.child_wiki_page.wiki_id,
                             'sort_order': self.child_wiki_page.sort_order
-                        }
+                            }
+                        'children': [
+                            {
+                                'page': {
+                                    'url': self.grandchild_wiki_page.url,
+                                    'name': self.grandchild_wiki_page.page_name,
+                                    'id': self.grandchild_wiki_page.wiki_id,
+                                    'sort_order': self.grandchild_wiki_page.sort_order
+                                }
+                            },
+                        ],
+                        'kind': 'folder'
                     },
-                    'children': [
-                    {
-                        'page': {
-                            'url': self.grandchild_wiki_page.url,
-                            'name': self.grandchild_wiki_page.page_name,
-                            'id': self.grandchild_wiki_page.wiki_id,
-                            'sort_order': self.grandchild_wiki_page.sort_order
-                        }
-                    },
-                    ],
-                    'kind': 'folder'
                 ],
                 'kind': 'folder'
             },
