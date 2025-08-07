@@ -322,7 +322,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
 
 
     def test_get_node_file_mapping(self):
-        result = get_node_file_mapping(self.project1, self.wiki_import_dir._id)        
+        result = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
         expect = {
             f'{self.pagefile1.parent.name}^{self.pagefile1.name}': self.pagefile1._id,
             f'{self.attachment1.parent.name}^{self.attachment1.name}': self.attachment1._id,
