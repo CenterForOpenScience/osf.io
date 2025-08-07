@@ -1108,7 +1108,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             {
                 'page': {
                     'url': self.wiki_page1.url,
-                    'name': self.wiki_page1.name,
+                    'name': self.wiki_page1.page_name,
                     'id': self.wiki_page1.wiki_id,
                     'sort_order': self.wiki_page1.sort_order
                 }
@@ -1116,7 +1116,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             {
                 'page': {
                     'url': self.wiki_page2.url,
-                    'name': self.wiki_page2.name,
+                    'name': self.wiki_page2.page_name,
                     'id': self.wiki_page2.wiki_id,
                     'sort_order': self.wiki_page1.sort_order
                 },
@@ -1124,7 +1124,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     {
                         'page': {
                             'url': self.wiki_child_page1.url,
-                            'name': self.wiki_child_page1.name,
+                            'name': self.wiki_child_page1.page_name,
                             'id': self.wiki_child_page1.wiki_id,
                             'sort_order': self.wiki_child_page1.sort_order
                         }
@@ -1132,7 +1132,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     {
                         'page': {
                             'url': self.wiki_child_page2.url,
-                            'name': self.wiki_child_page2.name,
+                            'name': self.wiki_child_page2.page_name,
                             'id': self.wiki_child_page2.wiki_id,
                             'sort_order': self.wiki_child_page2.sort_order
                         }
@@ -1140,7 +1140,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     {
                         'page': {
                             'url': self.wiki_child_page3.url,
-                            'name': self.wiki_child_page3.name,
+                            'name': self.wiki_child_page3.page_name,
                             'id': self.wiki_child_page3.wiki_id,
                             'sort_order': self.wiki_child_page3.sort_order
                         }
@@ -1151,16 +1151,94 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         assert_equal(expected, result)
 
-    @mock.patch('addons.wiki.views._get_wiki_child_pages_latest')
     def test_format_child_wiki_pages(self, mock_get_wiki_child_pages_latest):
-        mock_get_wiki_child_pages_latest.return_value = None
-
         self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
         self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
-        project_format = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
-
-        assert_not_equal(project_format[1]['children'][0]['kind'], 'folder')
+        result = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        expect = [
+            {
+                'page': {
+                    'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
+                    'name': 'Home',
+                    'id': self.home_wiki._primary_key,
+                }
+            },
+            {
+                'page': {
+                    'url': self.wiki_page1.url,
+                    'name': self.wiki_page1.page_name,
+                    'id': self.wiki_page1.wiki_id,
+                    'sort_order': self.wiki_page1.sort_order
+                }
+            },
+            {
+                'page': {
+                    'url': self.wiki_page2.url,
+                    'name': self.wiki_page2.page_name,
+                    'id': self.wiki_page2.wiki_id,
+                    'sort_order': self.wiki_page1.sort_order
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.wiki_child_page1.url,
+                            'name': self.wiki_child_page1.page_name,
+                            'id': self.wiki_child_page1.wiki_id,
+                            'sort_order': self.wiki_child_page1.sort_order
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.wiki_child_page2.url,
+                            'name': self.wiki_child_page2.page_name,
+                            'id': self.wiki_child_page2.wiki_id,
+                            'sort_order': self.wiki_child_page2.sort_order
+                        }
+                    },
+                    {
+                        'page': {
+                            'url': self.wiki_child_page3.url,
+                            'name': self.wiki_child_page3.page_name,
+                            'id': self.wiki_child_page3.wiki_id,
+                            'sort_order': self.wiki_child_page3.sort_order
+                        }
+                    },
+                ],
+                'kind': 'folder'
+            },
+            {
+                'page': {
+                    'url': self.parent_wiki_page.url,
+                    'name': self.parent_wiki_page.page_name,
+                    'id': self.parent_wiki_page.wiki_id,
+                    'sort_order': self.parent_wiki_page.sort_order
+                },
+                'children': [
+                    {
+                        'page': {
+                            'url': self.child_wiki_page.url,
+                            'name': self.child_wiki_page.page_name,
+                            'id': self.child_wiki_page.wiki_id,
+                            'sort_order': self.child_wiki_page.sort_order
+                        }
+                    },
+                    'children': [
+                    {
+                        'page': {
+                            'url': self.grandchild_wiki_page.url,
+                            'name': self.grandchild_wiki_page.page_name,
+                            'id': self.grandchild_wiki_page.wiki_id,
+                            'sort_order': self.grandchild_wiki_page.sort_order
+                        }
+                    },
+                    ],
+                    'kind': 'folder'
+                ],
+                'kind': 'folder'
+            },
+        ]
+        assert_equal(expected, result)
 
     def test_serialize_component_wiki(self):
         home_page = WikiPage.objects.create_for_node(self.component, 'home', 'content here', self.consolidate_auth)
@@ -2642,8 +2720,18 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(result, {'aborted': True})
 
     def test_check_running_task_two(self):
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-aaaa', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-bbbb', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
+        WikiImportTask.objects.create(
+            node=self.project,
+            task_id='task-id-aaaa',
+            status=WikiImportTask.STATUS_RUNNING,
+            creator=self.user
+        )
+        WikiImportTask.objects.create(
+            node=self.project,
+            task_id='task-id-bbbb',
+            status=WikiImportTask.STATUS_RUNNING, 
+            creator=self.user
+        )
         with assert_raises(HTTPError) as cm:
             views.check_running_task('task-id-aaaa', self.project)
         # HTTPErrorの中身がWIKI_IMPORT_TASK_ALREADY_EXISTSのメッセージを持つか確認
@@ -2654,7 +2742,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     @freeze_time('2024-05-01 12:00:00')
     def test_change_task_status(self):
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-cccc', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
+        WikiImportTask.objects.create(
+            node=self.project,
+            task_id='task-id-cccc',
+            status=WikiImportTask.STATUS_COMPLETED,
+            creator=self.user
+        )
         views.change_task_status('task-id-cccc', WikiImportTask.STATUS_COMPLETED, True)
         task_running = WikiImportTask.objects.get(task_id='task-id-cccc')
         assert_equal(task_running.status, 'Completed')
@@ -2667,7 +2760,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_project_update_wiki_page_sort(self):
         url = self.project.api_url_for('project_update_wiki_page_sort')
-        res = self.app.post_json(url,
+        respose = self.app.post_json(url,
             {
                 'sortedData': [
                     {
@@ -2721,7 +2814,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             ('wiki child page3', self.wiki_child_page2.id, 1)
         ]
         assert_equal(expected_list, result_list)
-
 
     def test_sorted_data_nest(self):
         # TODO: 本質的に不要 削除する
