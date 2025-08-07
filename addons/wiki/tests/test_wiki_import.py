@@ -942,7 +942,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'sort_order': 3
             },
         ]
-        result = _get_wiki_child_pages_latest(self.node, self.wiki_page2)
+        result = _get_wiki_child_pages_latest(self.project, self.wiki_page2)
         assert_equal(expected, result)
 
     def test_get_wiki_api_urls(self):
@@ -2617,11 +2617,23 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_abort.assert_called()
 
     def test_get_abort_wiki_import_result_already_aborted(self):
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-5555', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 11, 00, tzinfo=pytz.utc), creator=self.user)
-        WikiImportTask.objects.create(node=self.project, task_id='task-id-6666', status=WikiImportTask.STATUS_STOPPED, process_end=datetime.datetime(2024, 5, 1, 9, 00, tzinfo=pytz.utc), creator=self.user)
+        WikiImportTask.objects.create(
+            node=self.project,
+            task_id='task-id-5555',
+            status=WikiImportTask.STATUS_STOPPED,
+            process_end=datetime.datetime(2024, 5, 1, 11, 00, tzinfo=pytz.utc),
+            creator=self.user
+        )
+        WikiImportTask.objects.create(
+            node=self.project,
+            task_id='task-id-6666',
+            status=WikiImportTask.STATUS_STOPPED,
+            process_end=datetime.datetime(2024, 5, 1, 9, 00, tzinfo=pytz.utc),
+            creator=self.user
+        )
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
-        res = self.app.get(url, auth=self.consolidate_auth)
-        json_string = res._app_iter[0].decode('utf-8')
+        respose = self.app.get(url, auth=self.consolidate_auth)
+        json_string = response._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
         assert_equal(result, {'aborted': True})
 
