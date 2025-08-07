@@ -2309,7 +2309,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         dir_id = self.root_import_folder1._id
         node=self.node
         replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
-        assert_equal(wiki_info, None)
+        assert_equal(replaced_wiki_info, None)
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_wiki_content_replace_missing_content(self,mock_task):
