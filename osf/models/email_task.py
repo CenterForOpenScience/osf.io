@@ -3,6 +3,8 @@ from django.db import models
 class EmailTask(models.Model):
     TASK_STATUS = (
         ('PENDING', 'Pending'),
+        ('NO_USER_FOUND', 'No User Found'),
+        ('USER_DISABLED', 'User Disabled'),
         ('STARTED', 'Started'),
         ('SUCCESS', 'Success'),
         ('FAILURE', 'Failure'),
