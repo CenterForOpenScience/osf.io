@@ -1063,6 +1063,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
+        self.project.add_contributor(self.user, permissions=['read', 'write'], save=True)
         url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
