@@ -5,7 +5,6 @@ from django.apps import apps
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import run_postcommit
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
-from framework.auth.signals import user_confirmed
 from website.project.signals import privacy_set_public
 from website import settings
 from website.reviews import signals as reviews_signals
@@ -58,15 +57,6 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
             _is_digest=True,
         )
 
-@user_confirmed.connect
-def subscribe_confirmed_user(user):
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    NotificationType = apps.get_model('osf.NotificationType')
-    NotificationSubscription.objects.get_or_create(
-        user=user,
-        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
-    )
-
 @privacy_set_public.connect
 def queue_first_public_project_email(user, node):
     """Queue and email after user has made their first
@@ -77,6 +67,7 @@ def queue_first_public_project_email(user, node):
     NotificationType.objects.get(
         name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,
     ).emit(
+        subscribed_object=user,
         user=user,
         event_context={
             'nid': node._id,
@@ -143,6 +134,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     NotificationType.objects.get(
         name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
     ).emit(
+        subscribed_object=provider,
         user=user,
         event_context=context
     )

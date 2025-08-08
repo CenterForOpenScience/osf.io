@@ -1061,6 +1061,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             NotificationType.objects.get(
                 name=NotificationType.Type.USER_PASSWORD_RESET
             ).emit(
+                subscribed_object=self,
                 user=self,
                 message_frequency='instantly',
                 event_context={

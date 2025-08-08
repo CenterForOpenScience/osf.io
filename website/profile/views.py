@@ -190,6 +190,7 @@ def update_user(auth):
             NotificationType.objects.get(
                 name=NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED
             ).emit(
+                subscribed_object=user,
                 user=user,
                 event_context={
                     'new_address': username,

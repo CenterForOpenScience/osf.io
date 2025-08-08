@@ -453,6 +453,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
     NotificationType.objects.get(
         name=NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
     ).emit(
+        subscribed_object=claimer,
         user=claimer,
         event_context={
             'claim_url': claim_url,
@@ -534,6 +535,7 @@ def send_claim_email(
             NotificationType.objects.get(
                 name=NotificationType.Type.USER_PENDING_VERIFICATION
             ).emit(
+                subscribed_object=unclaimed_user,
                 user=unclaimed_user,
                 event_context={
                     'user': unclaimed_user.id,

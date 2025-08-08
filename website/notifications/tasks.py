@@ -6,7 +6,6 @@ from django.db import connection
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
-from celery import shared_task
 from celery.utils.log import get_task_logger
 from osf.models import OSFUser, Notification, NotificationType, EmailTask, AbstractProvider, RegistrationProvider, \
     CollectionProvider
@@ -17,7 +16,7 @@ from website import settings
 
 logger = get_task_logger(__name__)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@celery_app.task
 def send_user_email_task(self, user_id, notification_ids, message_freq):
     try:
         user = OSFUser.objects.get(
@@ -79,7 +78,7 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
         logger.exception('Retrying send_user_email_task due to exception')
         raise self.retry(exc=e)
 
-@shared_task(bind=True, max_retries=3, default_retry_delay=60)
+@celery_app.task
 def send_moderator_email_task(self, user_id, provider_id, notification_ids, message_freq):
     try:
         user = OSFUser.objects.get(

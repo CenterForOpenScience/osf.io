@@ -372,6 +372,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 name=NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I,
             ).emit(
                 user=user,
+                subscribed_object=user,
                 event_context={
                     'user_fullname': user.fullname,
                     'user_username': user.username,

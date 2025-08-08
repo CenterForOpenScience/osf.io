@@ -610,34 +610,37 @@ def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, payload=payload)
 
-    with transaction.atomic():
-        match action:
-            case NotificationType.Type.FILE_ADDED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_ADDED)
-            case NotificationType.Type.FILE_REMOVED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
-            case NotificationType.Type.FILE_UPDATED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
-            case NotificationType.Type.ADDON_FILE_RENAMED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_RENAMED)
-            case NotificationType.Type.ADDON_FILE_COPIED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_COPIED)
-            case NotificationType.Type.ADDON_FILE_REMOVED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_REMOVED)
-            case NotificationType.Type.ADDON_FILE_MOVED:
-                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_MOVED)
-            case _:
-                raise NotImplementedError(f'action {action} not implemented')
 
-        notification.emit(
-            user=user,
-            event_context={
-                'profile_image_url': user.profile_image_url(),
-                'localized_timestamp': str(timezone.now()),
-                'user_fullname': user.fullname,
-                'url': node.absolute_url,
-            }
-        )
+@file_signals.file_updated.connect
+def emit_notification(self, target, user, payload, *args, **kwargs):
+    action = payload['action']
+    match action:
+        case NotificationType.Type.FILE_ADDED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_ADDED)
+        case NotificationType.Type.FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
+        case NotificationType.Type.FILE_UPDATED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
+        case NotificationType.Type.ADDON_FILE_RENAMED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_RENAMED)
+        case NotificationType.Type.ADDON_FILE_COPIED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_COPIED)
+        case NotificationType.Type.ADDON_FILE_REMOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_REMOVED)
+        case NotificationType.Type.ADDON_FILE_MOVED:
+            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_MOVED)
+        case _:
+            raise NotImplementedError(f'action {action} not implemented')
+
+    notification.emit(
+        user=user,
+        event_context={
+            'profile_image_url': user.profile_image_url(),
+            'localized_timestamp': str(timezone.now()),
+            'user_fullname': user.fullname,
+            'url': target.absolute_url,
+        }
+    )
 
     return {'status': 'success'}
 

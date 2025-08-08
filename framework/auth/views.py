@@ -861,6 +861,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
 
     NotificationType.objects.get(name=notification_type).emit(
         user=user,
+        subscribed_object=user,
         event_context={
             'user_fullname': user.fullname,
             'confirmation_url': confirmation_url,
