@@ -6,6 +6,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notification import Notification
+from api.base import settings
 
 from .base import BaseModel
 
@@ -70,15 +71,16 @@ class NotificationSubscription(BaseModel):
             to a test address or OSF desk support'
             email_context (dict, optional): Context for sending the email bcc, reply_to header etc
         """
-        logging.info(
-            f"Attempting to create Notification:"
-            f"\nto={getattr(self.user, 'username', destination_address)}"
-            f"\ntype={self.notification_type.name}"
-            f"\nmessage_frequency={self.message_frequency}"
-            f"\ncontext={event_context}"
-            f"\nemail={email_context}"
+        if not settings.CI_ENV:
+            logging.info(
+                f"Attempting to create Notification:"
+                f"\nto={getattr(self.user, 'username', destination_address)}"
+                f"\ntype={self.notification_type.name}"
+                f"\nmessage_frequency={self.message_frequency}"
+                f"\nevent_context={event_context}"
+                f"\nemail_context={email_context}"
 
-        )
+            )
         if self.message_frequency == 'instantly':
             notification = Notification.objects.create(
                 subscription=self,

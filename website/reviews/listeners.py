@@ -6,23 +6,17 @@ from website.reviews import signals as reviews_signals
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     context['referrer_fullname'] = user.fullname
     provider = resource.provider
-    from django.contrib.contenttypes.models import ContentType
-    from osf.models import NotificationSubscription, NotificationType
-
-    provider_subscription, _ = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED,
-        object_id=provider.id,
-        content_type=ContentType.objects.get_for_model(provider.__class__),
-    )
+    from osf.models import NotificationType
 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
-    for recipient in provider_subscription.subscribed_object.get_group('moderator').user_set.all():
+    for recipient in provider.get_group('moderator').user_set.all():
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         ).emit(
             user=recipient,
+            subscribed_object=provider,
             event_context=context,
             is_digest=True,
         )
@@ -30,24 +24,19 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
     preprint = context['reviewable']
-    preprint_word = preprint.provider.preprint_word
-    from django.contrib.contenttypes.models import ContentType
-    from osf.models import NotificationSubscription, NotificationType
+    from osf.models import NotificationType
 
-    provider_subscription, _ = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-        object_id=preprint.provider.id,
-        content_type=ContentType.objects.get_for_model(preprint.provider.__class__),
-    )
+    preprint_word = preprint.provider.preprint_word
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
 
-    for recipient in provider_subscription.subscribed_object.get_group('moderator').user_set.all():
+    for recipient in preprint.provider.subscribed_object.get_group('moderator').user_set.all():
         NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+            name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         ).emit(
             user=recipient,
             event_context=context,
+            subscribed_object=preprint.provider,
             is_digest=True,
         )
 
@@ -57,7 +46,6 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     Handle email notifications to notify moderators of new submissions or resubmission.
     """
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationSubscription
 
     provider = resource.provider
 
@@ -82,21 +70,16 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         else:
             context['message'] = f'submitted "{resource.title}".'
 
-    from django.contrib.contenttypes.models import ContentType
     from osf.models import NotificationType
 
-    # Get NotificationSubscription instance, which contains reference to all subscribers
-    provider_subscription, created = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-        object_id=provider.id,
-        content_type=ContentType.objects.get_for_model(provider.__class__),
-    )
-    for recipient in provider_subscription.subscribed_object.get_group('moderator').user_set.all():
+    for recipient in resource.provider.get_group('moderator').user_set.all():
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         ).emit(
             user=recipient,
+            subscribed_object=provider,
             event_context=context,
+            is_digest=True,
         )
 
 
@@ -125,5 +108,7 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
             name=notification_type
         ).emit(
             user=recipient,
-            event_context=context
+            subscribed_object=provider,
+            event_context=context,
+            is_digest=True,
         )

@@ -1,10 +1,9 @@
 import yaml
 from django.apps import apps
+
 from website import settings
 
 import logging
-from django.contrib.contenttypes.models import ContentType
-from osf.models.notification_type import NotificationType
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -17,6 +16,8 @@ FREQ_MAP = {
 }
 
 def populate_notification_types(*args, **kwargs):
+    from django.contrib.contenttypes.models import ContentType
+    from osf.models.notification_type import NotificationType
 
     with open(settings.NOTIFICATION_TYPES_YAML) as stream:
         notification_types = yaml.safe_load(stream)
@@ -41,6 +42,9 @@ def populate_notification_types(*args, **kwargs):
         elif object_content_type_model_name == 'osfuser':
             OSFUser = apps.get_model('osf', 'OSFUser')
             content_type = ContentType.objects.get_for_model(OSFUser)
+        elif object_content_type_model_name == 'draftregistration':
+            DraftRegistration = apps.get_model('osf', 'DraftRegistration')
+            content_type = ContentType.objects.get_for_model(DraftRegistration)
         else:
             try:
                 content_type = ContentType.objects.get(

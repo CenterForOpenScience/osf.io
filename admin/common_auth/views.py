@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
@@ -8,6 +9,7 @@ from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
+from osf.models.notification_subscription import NotificationSubscription
 
 from osf.models.user import OSFUser
 from osf.models import AdminProfile, AbstractProvider
@@ -77,7 +79,20 @@ class RegisterUser(PermissionRequiredMixin, FormView):
             if group_type == 'reviews':
                 provider_id = split[2]
                 provider = AbstractProvider.objects.get(id=provider_id)
-                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
+
+                data = {}
+                if subscribed_object := provider:
+                    data = {
+                        'object_id': subscribed_object.id,
+                        'content_type_id': ContentType.objects.get_for_model(subscribed_object).id,
+                    }
+
+                notification, created = NotificationSubscription.objects.get_or_create(
+                    user=osf_user,
+                    notification_type=self,
+                    **data,
+                )
+                return notification
 
         osf_user.save()
 

@@ -24,13 +24,15 @@ def subscribe_creator(resource):
     if user.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
+            _is_digest=True,
         )
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
             object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource)
+            content_type=ContentType.objects.get_for_model(resource),
+            _is_digest=True,
         )
 
 @contributor_added.connect
@@ -45,28 +47,25 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     if contributor.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
+            _is_digest=True,
         )
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
             object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource)
+            content_type=ContentType.objects.get_for_model(resource),
+            _is_digest=True,
         )
 
 @user_confirmed.connect
 def subscribe_confirmed_user(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     NotificationType = apps.get_model('osf.NotificationType')
-    user_events = [
-        NotificationType.Type.USER_FILE_UPDATED,
-        NotificationType.Type.USER_REVIEWS,
-    ]
-    for user_event in user_events:
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type__name=user_event
-        )
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+    )
 
 @privacy_set_public.connect
 def queue_first_public_project_email(user, node):
@@ -94,8 +93,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
     """
 
     # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationSubscription, NotificationType
-    from django.contrib.contenttypes.models import ContentType
+    from osf.models import NotificationType
     from website.settings import DOMAIN
 
     provider = resource.provider
@@ -120,17 +118,15 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
             context['message'] = f'resubmitted "{resource.title}".'
         else:
             context['message'] = f'submitted "{resource.title}".'
-    provider_subscription, created = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-        object_id=provider.id,
-        content_type=ContentType.objects.get_for_model(provider.__class__),
-    )
-    for recipient in provider_subscription.subscribed_object.get_group('moderator').user_set.all():
+
+    for recipient in resource.provider.get_group('moderator').user_set.all():
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         ).emit(
             user=recipient,
-            event_context=context
+            subscribed_object=provider,
+            event_context=context,
+            is_digest=True,
         )
 
 # Handle email notifications to notify moderators of new submissions.

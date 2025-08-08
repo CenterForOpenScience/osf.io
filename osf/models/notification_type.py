@@ -115,7 +115,6 @@ class NotificationType(models.Model):
         PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
         PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
         PROVIDER_REVIEWS_MODERATOR_SUBMISSION_CONFIRMATION = 'provider_reviews_moderator_submission_confirmation'
-        PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED = 'preprint_request_withdrawal_requested'
         PROVIDER_REVIEWS_REJECT_CONFIRMATION = 'provider_reviews_reject_confirmation'
         PROVIDER_REVIEWS_ACCEPT_CONFIRMATION = 'provider_reviews_accept_confirmation'
         PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION = 'provider_reviews_resubmission_confirmation'
@@ -234,27 +233,6 @@ class NotificationType(models.Model):
             event_context=event_context,
             email_context=email_context,
         )
-
-    def add_user_to_subscription(self, user, *args, **kwargs):
-        """
-        """
-        from osf.models.notification_subscription import NotificationSubscription
-
-        provider = kwargs.pop('provider', None)
-        node = kwargs.pop('node', None)
-        data = {}
-        if subscribed_object := provider or node:
-            data = {
-                'object_id': subscribed_object.id,
-                'content_type_id': ContentType.objects.get_for_model(subscribed_object).id,
-            }
-
-        notification, created = NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=self,
-            **data,
-        )
-        return notification
 
     def remove_user_from_subscription(self, user):
         """
