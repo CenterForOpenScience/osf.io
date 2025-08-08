@@ -946,12 +946,13 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
+        self.user.is_registered = True
+        self.user.save()
         mock_get_for_node.return_value = None
         mock_get_sharejs_uuid.return_value = None
 
         delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
-        self.user.is_registered = True
-        self.user.save()
+
         self.app.set_user(self.consolidate_auth.user)
         self.app.delete(delete_url, auth=self.consolidate_auth, expect_errors=True)
         #res = self.app.get(delete_url, expect_errors=True)
@@ -1029,6 +1030,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name(self, mock_create_for_node, mock_get_for_node):
+        self.user.is_registered = True
+        self.user.save()
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
@@ -1042,11 +1045,10 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             }
         ]
         mock_create_for_node.return_value = None
-
-        self.user.is_registered = True
-        self.user.save()
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
-        url = self.project.api_url_for('project_wiki_validate_name', wname='home', p_wname='home', node=None)
+        url = self.project.api_url_for(
+            'project_wiki_validate_name',
+            wname='home',
+            p_wname='home')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
         assert_equal(res.message, 'home')
@@ -1054,6 +1056,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
+        self.user.is_registered = True
+        self.user.save()
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
@@ -1068,10 +1072,10 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         mock_create_for_node.return_value = None
 
-        self.user.is_registered = True
-        self.user.save()
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
-        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock', p_wname='test', node=None)
+        url = self.project.api_url_for(
+            'project_wiki_validate_name',
+            wname='Capslock',
+            p_wname='test')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
 
         assert_equal(res.status_code, 404)
