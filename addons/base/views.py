@@ -583,6 +583,7 @@ def create_waterbutler_log(payload, **kwargs):
 
                 NotificationType.objects.get(name=notification_type).emit(
                     user=user,
+                    subscribed_object=node,
                     event_context={
                         'action': payload['action'],
                         'source_node': source_node,
@@ -609,31 +610,27 @@ def create_waterbutler_log(payload, **kwargs):
 
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, payload=payload)
+    return {'status': 'success'}
 
 
 @file_signals.file_updated.connect
 def emit_notification(self, target, user, payload, *args, **kwargs):
-    action = payload['action']
-    match action:
-        case NotificationType.Type.FILE_ADDED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_ADDED)
-        case NotificationType.Type.FILE_REMOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
-        case NotificationType.Type.FILE_UPDATED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
-        case NotificationType.Type.ADDON_FILE_RENAMED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_RENAMED)
-        case NotificationType.Type.ADDON_FILE_COPIED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_COPIED)
-        case NotificationType.Type.ADDON_FILE_REMOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_REMOVED)
-        case NotificationType.Type.ADDON_FILE_MOVED:
-            notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_MOVED)
-        case _:
-            raise NotImplementedError(f'action {action} not implemented')
-
-    notification.emit(
+    notification_types = {
+        'rename': NotificationType.Type.ADDON_FILE_RENAMED,
+        'copy': NotificationType.Type.ADDON_FILE_COPIED,
+        'create': NotificationType.Type.FILE_UPDATED,
+        'move': NotificationType.Type.ADDON_FILE_MOVED,
+        'delete': NotificationType.Type.FILE_REMOVED,
+        'update': NotificationType.Type.FILE_UPDATED,
+    }
+    notification_type = notification_types[payload.get('action')]
+    if notification_type not in notification_types.values():
+        raise NotImplementedError(f'Notification type {notification_type} is not supported')
+    NotificationType.objects.get(
+        name=notification_type,
+    ).emit(
         user=user,
+        subscribed_object=target,
         event_context={
             'profile_image_url': user.profile_image_url(),
             'localized_timestamp': str(timezone.now()),
@@ -641,9 +638,6 @@ def emit_notification(self, target, user, payload, *args, **kwargs):
             'url': target.absolute_url,
         }
     )
-
-    return {'status': 'success'}
-
 
 @file_signals.file_updated.connect
 def addon_delete_file_node(self, target, user, payload):
