@@ -909,7 +909,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'id': self.wiki_child_page1.id,
                 'wiki_content': {
                     'wiki_content': 'wiki child page1 content',
-                    'rendered_before_update': True
+                    'rendered_before_update': False
                 },
                 'sort_order': self.wiki_child_page1.sort_order
             },
@@ -920,7 +920,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'id': self.wiki_child_page2.id,
                 'wiki_content': {
                     'wiki_content': 'wiki child page2 content',
-                    'rendered_before_update': True
+                    'rendered_before_update': False
                 },
                 'sort_order': self.wiki_child_page2.sort_order
             },
@@ -931,7 +931,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'id': self.wiki_child_page3.id,
                 'wiki_content': {
                     'wiki_content': 'wiki child page3 content',
-                    'rendered_before_update': True
+                    'rendered_before_update': False
                 },
                 'sort_order': self.wiki_child_page3.sort_order
             },
@@ -1117,7 +1117,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'page': {
                     'url': self.wiki_page1.url,
                     'name': self.wiki_page1.page_name,
-                    'id': self.wiki_page1.id,
+                    'id': self.wiki_page1._id,
                     'sort_order': self.wiki_page1.sort_order
                 }
             },
@@ -1125,7 +1125,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'page': {
                     'url': self.wiki_page2.url,
                     'name': self.wiki_page2.page_name,
-                    'id': self.wiki_page2.id,
+                    'id': self.wiki_page2._id,
                     'sort_order': self.wiki_page1.sort_order
                 },
                 'children': [
@@ -1133,7 +1133,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page1.url,
                             'name': self.wiki_child_page1.page_name,
-                            'id': self.wiki_child_page1.id,
+                            'id': self.wiki_child_page1._id,
                             'sort_order': self.wiki_child_page1.sort_order
                         }
                     },
@@ -1141,7 +1141,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page2.url,
                             'name': self.wiki_child_page2.page_name,
-                            'id': self.wiki_child_page2.id,
+                            'id': self.wiki_child_page2._id,
                             'sort_order': self.wiki_child_page2.sort_order
                         }
                     },
@@ -1149,7 +1149,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page3.url,
                             'name': self.wiki_child_page3.page_name,
-                            'id': self.wiki_child_page3.id,
+                            'id': self.wiki_child_page3._id,
                             'sort_order': self.wiki_child_page3.sort_order
                         }
                     },
@@ -1184,7 +1184,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'page': {
                     'url': self.wiki_page2.url,
                     'name': self.wiki_page2.page_name,
-                    'id': self.wiki_page2.id,
+                    'id': self.wiki_page2._id,
                     'sort_order': self.wiki_page1.sort_order
                 },
                 'children': [
@@ -1192,7 +1192,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page1.url,
                             'name': self.wiki_child_page1.page_name,
-                            'id': self.wiki_child_page1.id,
+                            'id': self.wiki_child_page1._id,
                             'sort_order': self.wiki_child_page1.sort_order
                         }
                     },
@@ -1200,7 +1200,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page2.url,
                             'name': self.wiki_child_page2.page_name,
-                            'id': self.wiki_child_page2.id,
+                            'id': self.wiki_child_page2._id,
                             'sort_order': self.wiki_child_page2.sort_order
                         }
                     },
@@ -1208,7 +1208,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.wiki_child_page3.url,
                             'name': self.wiki_child_page3.page_name,
-                            'id': self.wiki_child_page3.id,
+                            'id': self.wiki_child_page3._id,
                             'sort_order': self.wiki_child_page3.sort_order
                         }
                     },
@@ -1219,7 +1219,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'page': {
                     'url': self.parent_wiki_page.url,
                     'name': self.parent_wiki_page.page_name,
-                    'id': self.parent_wiki_page.id,
+                    'id': self.parent_wiki_page._id,
                     'sort_order': self.parent_wiki_page.sort_order
                 },
                 'children': [
@@ -1227,7 +1227,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                         'page': {
                             'url': self.child_wiki_page.url,
                             'name': self.child_wiki_page.page_name,
-                            'id': self.child_wiki_page.id,
+                            'id': self.child_wiki_page._id,
                             'sort_order': self.child_wiki_page.sort_order
                             },
                         'children': [
@@ -1235,7 +1235,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                                 'page': {
                                     'url': self.grandchild_wiki_page.url,
                                     'name': self.grandchild_wiki_page.page_name,
-                                    'id': self.grandchild_wiki_page.id,
+                                    'id': self.grandchild_wiki_page._id,
                                     'sort_order': self.grandchild_wiki_page.sort_order
                                 }
                             },
