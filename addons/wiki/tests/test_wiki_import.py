@@ -948,6 +948,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
         self.user.is_registered = True
         self.user.save()
+
+        # 上記のユーザに対してプロジェクトを作り直す
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.project.add_addon('wiki')
+        self.project.save()
+
         mock_get_for_node.return_value = None
         mock_get_sharejs_uuid.return_value = None
 
@@ -959,26 +965,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         res = self.app.get(delete_url)
         assert_equal(res.status_code, 404)
 
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
-    @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
-        mock_get_for_node.return_value = None
-        mock_get_sharejs_uuid.return_value = None
-
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
-        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
-        self.app.delete(delete_url, auth=self.auth)
-        #res = self.app.get(delete_url, expect_errors=True)
-        res = self.app.get(delete_url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
     def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
-        page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
         self.user.is_registered = True
         self.user.save()
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
+        page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
@@ -1058,6 +1050,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
         self.user.is_registered = True
         self.user.save()
+
+        # 上記のユーザに対してプロジェクトを作り直す
+        self.project = ProjectFactory(is_public=True, creator=self.user)
+        self.project.add_addon('wiki')
+        self.project.save()
+
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
