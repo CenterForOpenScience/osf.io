@@ -1117,7 +1117,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'name': self.wiki_page1.page_name,
                     'id': self.wiki_page1._id,
                     'sort_order': self.wiki_page1.sort_order
-                }
+                },
+                'children': []
             },
             {
                 'page': {
@@ -1133,7 +1134,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page1.page_name,
                             'id': self.wiki_child_page1._id,
                             'sort_order': self.wiki_child_page1.sort_order
-                        }
+                        },
+                        'children': []
                     },
                     {
                         'page': {
@@ -1141,7 +1143,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page2.page_name,
                             'id': self.wiki_child_page2._id,
                             'sort_order': self.wiki_child_page2.sort_order
-                        }
+                        },
+                        'children': []
                     },
                     {
                         'page': {
@@ -1149,7 +1152,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page3.page_name,
                             'id': self.wiki_child_page3._id,
                             'sort_order': self.wiki_child_page3.sort_order
-                        }
+                        },
+                        'children': []
                     },
                 ],
                 'kind': 'folder'
@@ -1162,7 +1166,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
         result = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
-        expect = [
+        expected = [
             {
                 'page': {
                     'url': self.project.web_url_for('project_wiki_view', wname='home', _guid=True),
@@ -1176,7 +1180,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'name': self.wiki_page1.page_name,
                     'id': self.wiki_page1.id,
                     'sort_order': self.wiki_page1.sort_order
-                }
+                },
+                'children': []
             },
             {
                 'page': {
