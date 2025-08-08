@@ -49,7 +49,8 @@ class NotificationSubscription(BaseModel):
             raise ValidationError(f'{self.message_frequency!r} is not allowed for {self.notification_type.name!r}.')
 
     def __str__(self) -> str:
-        return f'<{self.user} via {self.subscribed_object} subscribes to {self.notification_type.name} ({self.message_frequency})>'
+        return (f'<{self.user} via {self.subscribed_object} subscribes to '
+                f'{getattr(self.notification_type, 'name', 'MISSING')} ({self.message_frequency})>')
 
     class Meta:
         verbose_name = 'Notification Subscription'

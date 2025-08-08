@@ -325,13 +325,17 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
         js = ['admin/notification_subscription.js']
 
     def preview_button(self, obj):
-        url = reverse(
-            'admin:notificationtype_preview',
-            args=[obj.notification_type.id]
-        )
+        if obj.notification_type:
+            url = reverse(
+                'admin:notificationtype_preview',
+                args=[obj.notification_type.id]
+            )
+            return format_html(
+                '<a class="button" target="_blank" href="{}">Preview</a>',
+                url
+            )
         return format_html(
-            '<a class="button" target="_blank" href="{}">Preview</a>',
-            url
+            '<a class="button">Missing Notification Type!</a>',
         )
 
     def get_urls(self):
