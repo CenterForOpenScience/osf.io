@@ -10,7 +10,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     from osf.models import NotificationSubscription, NotificationType
 
     provider_subscription, _ = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.PROVIDER_REVIEWS_WITHDRAWAL_REQUESTED),
         object_id=provider.id,
         content_type=ContentType.objects.get_for_model(provider.__class__),
     )
@@ -35,7 +35,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     from osf.models import NotificationSubscription, NotificationType
 
     provider_subscription, _ = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS),
         object_id=preprint.provider.id,
         content_type=ContentType.objects.get_for_model(preprint.provider.__class__),
     )
@@ -87,7 +87,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
 
     # Get NotificationSubscription instance, which contains reference to all subscribers
     provider_subscription, created = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS),
         object_id=provider.id,
         content_type=ContentType.objects.get_for_model(provider.__class__),
     )

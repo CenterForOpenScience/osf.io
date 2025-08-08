@@ -24,11 +24,11 @@ def subscribe_creator(resource):
     if user.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
         )
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
             object_id=resource.id,
             content_type=ContentType.objects.get_for_model(resource)
         )
@@ -45,11 +45,11 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     if contributor.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type__name=NotificationType.Type.USER_FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
         )
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type__name=NotificationType.Type.FILE_UPDATED,
+            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
             object_id=resource.id,
             content_type=ContentType.objects.get_for_model(resource)
         )
@@ -58,15 +58,10 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
 def subscribe_confirmed_user(user):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     NotificationType = apps.get_model('osf.NotificationType')
-    user_events = [
-        NotificationType.Type.USER_FILE_UPDATED,
-        NotificationType.Type.USER_REVIEWS,
-    ]
-    for user_event in user_events:
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type__name=user_event
-        )
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+    )
 
 @privacy_set_public.connect
 def queue_first_public_project_email(user, node):
@@ -121,7 +116,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
         else:
             context['message'] = f'submitted "{resource.title}".'
     provider_subscription, created = NotificationSubscription.objects.get_or_create(
-        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
+        notification_type=NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS),
         object_id=provider.id,
         content_type=ContentType.objects.get_for_model(provider.__class__),
     )

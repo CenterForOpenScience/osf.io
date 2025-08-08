@@ -2,7 +2,6 @@ import json
 import requests
 
 from django.apps import apps
-from django.contrib.contenttypes.models import ContentType
 from django.contrib.postgres import fields
 from django.core.exceptions import ValidationError
 from django.db import connection
@@ -16,7 +15,6 @@ from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
 from osf.models.notification_type import NotificationType
-from osf.models.notification_subscription import NotificationSubscription
 from .base import BaseModel, TypedObjectIDMixin
 from .mixins import ReviewProviderMixin
 from .brand import Brand
@@ -471,19 +469,6 @@ def rules_to_subjects(rules):
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
-
-
-@receiver(post_save, sender=CollectionProvider)
-@receiver(post_save, sender=PreprintProvider)
-@receiver(post_save, sender=RegistrationProvider)
-def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
-    if created:
-        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
-            NotificationSubscription.objects.get_or_create(
-                notification_type__name=subscription,
-                object_id=instance.id,
-                content_type=ContentType.objects.get_for_model(instance)
-            )
 
 
 @receiver(post_save, sender=CollectionProvider)

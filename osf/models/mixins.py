@@ -5,6 +5,7 @@ import logging
 
 from django.apps import apps
 from django.contrib.auth.models import Group, AnonymousUser
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import models, transaction
 from django.utils import timezone
@@ -1079,6 +1080,8 @@ class ReviewProviderMixin(GuardianMixin):
 
         NotificationSubscription.objects.get_or_create(
             user=user,
+            content_type=ContentType.objects.get_for_model(self),
+            object_id=self.id,
             notification_type=NotificationType.objects.get(
                 name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
             )
