@@ -1,5 +1,5 @@
 import hashlib
-from django.db.models import Case, CharField, Q, Value, When, IntegerField
+from django.db.models import Case, CharField, Q, Value, When, IntegerField, OuterRef, Exists
 from django.http import JsonResponse
 from rest_framework.exceptions import ValidationError
 from rest_framework import generics
@@ -638,9 +638,12 @@ class ProviderModeratorsList(ModeratorMixin, JSONAPIBaseView, generics.ListCreat
         provider = self.get_provider()
         admin_group = provider.get_group(ADMIN)
         mod_group = provider.get_group('moderator')
-        return (admin_group.user_set.all() | mod_group.user_set.all()).annotate(
+
+        admin_membership_subquery = admin_group.user_set.filter(id=OuterRef('id'))
+        return OSFUser.objects.filter(Q(groups=admin_group) | Q(groups=mod_group)).distinct().annotate(
+            is_admin=Exists(admin_membership_subquery),
             permission_group=Case(
-                When(groups=admin_group, then=Value(ADMIN)),
+                When(is_admin=True, then=Value(ADMIN)),
                 default=Value('moderator'),
                 output_field=CharField(),
             ),
