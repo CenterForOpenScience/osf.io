@@ -2378,7 +2378,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def create_waterbutler_log(self, auth, action, payload):
         try:
             metadata = payload['metadata']
-            node_addon = self.get_addon(payload['provider'])
+            node_addon = self.get_addon(payload['provider'], auth=auth)
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
