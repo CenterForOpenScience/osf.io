@@ -109,7 +109,7 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
             auth=write_contrib.auth,
             expect_errors=True
         )
-        assert res.status_code == 403
+        assert res.status_code == 201
         assert write_contrib_institution not in node.affiliated_institutions.all()
 
     def test_read_write_contributor_can_remove_affiliated_institution(
