@@ -622,6 +622,7 @@ def emit_notification(self, target, user, payload, *args, **kwargs):
         'move': NotificationType.Type.ADDON_FILE_MOVED,
         'delete': NotificationType.Type.FILE_REMOVED,
         'update': NotificationType.Type.FILE_UPDATED,
+        'create_folder': NotificationType.Type.FOLDER_CREATED,
     }
     notification_type = notification_types[payload.get('action')]
     if notification_type not in notification_types.values():

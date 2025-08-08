@@ -553,8 +553,6 @@ class CeleryConfig:
         'osf.management.commands.registration_schema_metrics',
         'website.mailchimp_utils',
         'website.notifications.tasks',
-        'website.notifications.tasks.send_users_digest_email',
-        'website.notifications.tasks.send_moderators_digest_email',
         'website.archiver.tasks',
         'website.identifiers.tasks',
         'website.search.search',
@@ -627,12 +625,12 @@ class CeleryConfig:
             'kwargs': {'dry_run': False},
         },
         'send_moderators_digest_email': {
-            'task': 'website.notifications.tasks',
+            'task': 'website.notifications.tasks.send_moderators_digest_email',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
         'send_users_digest_email': {
-            'task': 'website.notifications.tasks',
+            'task': 'website.notifications.tasks.send_users_digest_email',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
