@@ -951,7 +951,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         # 上記のユーザに対してプロジェクトを作り直す
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.project.add_addon('wiki')
+        self.project.add_addon('wiki', auth=self.user.auth)
         self.project.save()
 
         mock_get_for_node.return_value = None
@@ -1053,7 +1053,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         # 上記のユーザに対してプロジェクトを作り直す
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.project.add_addon('wiki')
+        self.project.add_addon('wiki',auth=self.auth)
         self.project.save()
 
         mock_get_for_node.return_value = [
