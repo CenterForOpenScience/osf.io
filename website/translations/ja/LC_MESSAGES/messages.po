@@ -1405,6 +1405,10 @@ msgstr "再現性&nbsp;プロジェクト：心理学"
 msgid "Reproducibility&nbsp;Project: Cancer Biology"
 msgstr "再現性&nbsp;プロジェクト：がん生物学"
 
+#: website/templates/footer.mako:77
+msgid "/static/img/footer_logo_EN.png"
+msgstr "/static/img/footer_logo_JP.png"
+
 #: website/templates/institution.mako:8
 #: website/templates/project/project_header.mako:200
 msgid ""

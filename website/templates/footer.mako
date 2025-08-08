@@ -72,6 +72,7 @@
                     <a href="${footer_links['googleGroup']}" aria-label="Google Group"><i class="fa fa-group fa-2x"></i></a>
                     -->
                     <a href="${footer_links['github']}" aria-label="GitHub"><i class="fa fa-github fa-2x"></i></a>
+                    <a href="${footer_links['cos']}"><img src=${_("/static/img/footer_logo_EN.png")}></a>
                 </p>
             </div>
         </div>
