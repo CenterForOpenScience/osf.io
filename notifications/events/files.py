@@ -9,7 +9,7 @@ FileEvent and ComplexFileEvent are parent classes with shared functionality.
 from furl import furl
 import markupsafe
 
-from website.notifications.events.base import (
+from notifications.events.base import (
     register,
     Event,
     event_registry,

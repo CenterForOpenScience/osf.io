@@ -4,8 +4,8 @@ from django.contrib.contenttypes.models import ContentType
 
 from osf.models import NotificationType
 from tests.utils import capture_notifications
-from website.notifications.events.base import event_registry
-from website.notifications.events.files import (
+from notifications.events.base import event_registry
+from notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
     AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )

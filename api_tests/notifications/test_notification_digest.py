@@ -1,6 +1,6 @@
 import pytest
 from osf.models import Notification, NotificationType, EmailTask
-from website.notifications.tasks import (
+from notifications.tasks import (
     send_user_email_task,
     send_moderator_email_task,
     send_users_digest_email,

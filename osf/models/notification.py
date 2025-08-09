@@ -1,12 +1,11 @@
 import logging
 
-import waffle
 from django.db import models
 from django.utils import timezone
 
 from website import settings
 from api.base import settings as api_settings
-from osf import email, features
+from osf import email
 
 
 class Notification(models.Model):
@@ -29,9 +28,8 @@ class Notification(models.Model):
         """
 
         """
-        if not protocol_type == 'email':
-            raise NotImplementedError(f'Protocol type {protocol_type}. Email notifications are only implemented.')
         recipient_address = destination_address or self.subscription.user.username
+
         if not api_settings.CI_ENV:
             logging.info(
                 f"Attempting to send Notification:"
@@ -41,23 +39,13 @@ class Notification(models.Model):
                 f"\ncontext={self.event_context}"
                 f"\nemail={email_context}"
             )
-
-        if protocol_type == 'email' and waffle.switch_is_active(features.ENABLE_MAILHOG):
+        elif protocol_type == 'email' and settings.DEV_MODE:
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
                 self.event_context,
                 email_context
             )
-        elif protocol_type == 'email' and settings.DEV_MODE:
-            if not api_settings.CI_ENV:
-                logging.info(
-                    f"Attempting to send email in DEV_MODE for just mocked logs:"
-                    f"\nto={recipient_address}"
-                    f"\ntype={self.subscription.notification_type.name}"
-                    f"\ncontext={self.event_context}"
-                    f"\nemail_context={email_context}"
-                )
         elif protocol_type == 'email':
             email.send_email_with_send_grid(
                 self.subscription.user,

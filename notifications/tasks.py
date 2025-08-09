@@ -164,7 +164,7 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         logger.exception('Retrying send_moderator_email_task due to exception')
         raise self.retry(exc=e)
 
-@celery_app.task(bind=True, name='website.notifications.tasks.send_users_digest_email')
+@celery_app.task(bind=True, name='notifications.tasks.send_users_digest_email')
 def send_users_digest_email():
     today = date.today()
 
@@ -181,7 +181,7 @@ def send_users_digest_email():
             notification_ids = [msg['notification_id'] for msg in group['info']]
             send_user_email_task.delay(user_id, notification_ids, freq)
 
-@celery_app.task(bind=True, name='website.notifications.tasks.send_moderators_digest_email')
+@celery_app.task(bind=True, name='notifications.tasks.send_moderators_digest_email')
 def send_moderators_digest_email():
     today = date.today()
 
