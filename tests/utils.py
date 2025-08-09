@@ -255,23 +255,38 @@ def run_celery_tasks():
 
 
 @contextlib.contextmanager
-def capture_notifications():
+def capture_notifications(capture_email: bool = True):
     """
-    Context manager to capture NotificationType emits without interfering with ORM calls.
-    Yields a list of captured emits:
-        [{'type': <NotificationType.Type>, 'args': ..., 'kwargs': ...}, ...]
+    Context manager to capture NotificationType emits without interfering with ORM calls
+    and (optionally) stub out actual email sending so tests don't open sockets.
+
+    Yields a dict with two lists:
+      {
+        "emits": [
+          {"type": <str name>, "args": tuple, "kwargs": dict}, ...
+        ],
+        "emails": [
+          {
+            "protocol": "smtp" | "sendgrid",
+            "to": <str or user object>,
+            "notification_type": <NotificationType or str>,
+            "context": <dict>,
+            "email_context": <dict>
+          }, ...
+        ]
+      }
     """
     NotificationType = apps.get_model('osf', 'NotificationType')
     real_get = NotificationType.objects.get  # Save the real .get()
 
-    captured = []
+    captured = {'emits': [], 'emails': []}
 
     def side_effect(*args, **kwargs):
         notifier = real_get(*args, **kwargs)  # Call the real .get()
         original_emit = notifier.emit
 
         def wrapped_emit(*emit_args, **emit_kwargs):
-            captured.append({
+            captured['emits'].append({
                 'type': notifier.name,
                 'args': emit_args,
                 'kwargs': emit_kwargs
@@ -281,7 +296,34 @@ def capture_notifications():
         notifier.emit = wrapped_emit
         return notifier
 
-    with mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect):
+    patches = [
+        mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect),
+    ]
+    if capture_email:
+        def _fake_send_over_smtp(to_email, notification_type, context, email_context):
+            captured['emails'].append({
+                'protocol': 'smtp',
+                'to': to_email,
+                'notification_type': notification_type,
+                'context': context,
+                'email_context': email_context,
+            })
+
+        def _fake_send_with_sendgrid(user, notification_type, context, email_context):
+            captured['emails'].append({
+                'protocol': 'sendgrid',
+                'to': user,  # keeping the object for tests that assert user props
+                'notification_type': notification_type,
+                'context': context,
+                'email_context': email_context,
+            })
+
+        patches.extend([
+            mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),
+            mock.patch('osf.email.send_email_with_send_grid', new=_fake_send_with_sendgrid),
+        ])
+
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
         yield captured
-
-

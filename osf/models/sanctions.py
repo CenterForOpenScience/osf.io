@@ -547,6 +547,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
+                'user_fullname': user.fullname,
                 'project_name': registration.title,
                 'disapproval_link': disapproval_link,
                 'registration_link': registration_link,

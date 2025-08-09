@@ -66,14 +66,20 @@ for logger_name in SILENT_LOGGERS:
 # Fake factory
 fake = Factory.create()
 
-
 @pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
+
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+
+        # Start notifications capture (existing context manager; unchanged)
+        from tests.utils import capture_notifications
+
+        cls._notifications_cm = capture_notifications()
+        cls._notifications = cls._notifications_cm.__enter__()
 
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -81,11 +87,43 @@ class DbTestCase(unittest.TestCase):
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 4
 
+    def setUp(self):
+        super().setUp() if hasattr(super(), 'setUp') else None
+
+        # Expose for tests
+        self.notifications = self.__class__._notifications
+
+        # --- Robust reset without destroying dict keys ---
+        if isinstance(self.notifications, dict):
+            # Support both simple and extended capture shapes
+            for key in ('emits', 'emails', 'fallback'):
+                if key in self.notifications:
+                    # clear list contents but keep the key
+                    try:
+                        self.notifications[key].clear()
+                    except AttributeError:
+                        # in case it’s not a list-like with .clear()
+                        self.notifications[key] = []
+                else:
+                    self.notifications[key] = []
+        else:
+            # Assume list-like
+            try:
+                self.notifications.clear()
+            except AttributeError:
+                del self.notifications[:]
+        # -------------------------------------------------
+
     @classmethod
     def tearDownClass(cls):
+        if getattr(cls, '_notifications_cm', None) is not None:
+            cls._notifications_cm.__exit__(None, None, None)
+            cls._notifications_cm = None
+
         super().tearDownClass()
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
+
 
 
 class AppTestCase(unittest.TestCase):
@@ -95,7 +133,6 @@ class AppTestCase(unittest.TestCase):
     PUSH_CONTEXT = True
 
     def setUp(self):
-        super().setUp()
         self.app = test_app.test_client()
         self.app.response_wrapper = FormsTestResponse
         self.app.application.config.update({'TESTING': True, })
@@ -161,7 +198,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
+
 
 
 class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):

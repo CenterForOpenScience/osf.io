@@ -625,17 +625,19 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
     throttle = kwargs.get('throttle', settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)
     if notification_type and check_email_throttle(contributor, notification_type, throttle=throttle):
         return
-
+    referrer_name = getattr(getattr(auth, 'user', None), 'fullname', '') if auth else ''
     NotificationType.objects.get(
         name=notification_type
     ).emit(
         user=contributor,
         event_context={
-            'user': contributor.id,
-            'referrer_name': getattr(getattr(auth, 'user', None), 'fullname', '') if auth else '',
+            'user_fullname': contributor.fullname,
+            'referred_text': referrer_name + ' has added you' if referrer_name else 'You have been add',
+            'referrer_name': referrer_name,
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
-            'all_global_subscriptions_none': False,
             'branded_service': getattr(getattr(node, 'provider', None), 'id', None),
+            'node_title': node.title,
+            'node_absolute_url': node.absolute_url,
             'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,

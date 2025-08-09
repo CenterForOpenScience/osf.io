@@ -157,6 +157,8 @@ FAKE_EMAIL_DOMAIN = 'cos.io'
 
 # SMTP Settings
 MAIL_SERVER = 'smtp.sendgrid.net'
+MAIL_PORT = 1025
+
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = ''  # Set this in local.py
 

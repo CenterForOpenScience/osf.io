@@ -183,7 +183,13 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         user.save()
 
         node = ProjectFactory(creator=self.user)
-        node.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
+        node.add_contributor(
+            user,
+            permissions=permissions.READ,
+            auth=self.auth,
+            save=True,
+            notification_type=False
+        )
         node.add_addon(self.ADDON_SHORT_NAME, auth=self.auth)
         node.save()
         url = node.api_url_for(f'{self.ADDON_SHORT_NAME}_import_auth')
@@ -219,7 +225,13 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
     def test_get_config_unauthorized(self):
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_get_config')
         user = AuthUserFactory()
-        self.project.add_contributor(user, permissions=permissions.READ, auth=self.auth, save=True)
+        self.project.add_contributor(
+            user,
+            permissions=permissions.READ,
+            auth=self.auth,
+            save=True,
+            notification_type=False
+        )
         res = self.app.get(url, auth=user.auth, )
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
