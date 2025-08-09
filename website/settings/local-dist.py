@@ -60,7 +60,7 @@ ELASTIC_TIMEOUT = 10
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
 MAIL_SERVER = 'localhost'  # For local testing
-MAIL_PORT = 'localhost'  # For local testing
+MAIL_PORT = 1025  # For local testing
 
 MAILHOG_HOST = 'mailhog'
 MAILHOG_PORT = 1025

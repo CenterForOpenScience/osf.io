@@ -89,7 +89,7 @@ def configure_user_auth(registration, role):
     elif role == 'non-contributor':
         pass
     else:
-        registration.add_contributor(user, role)
+        registration.add_contributor(user, role, notification_type=False)
 
     return user.auth
 

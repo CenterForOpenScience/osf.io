@@ -111,6 +111,9 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
             context['message'] = f'submitted "{resource.title}".'
 
     for recipient in resource.provider.get_group('moderator').user_set.all():
+        context['user_fullname'] = recipient.fullname
+        context['recipient_fullname'] = recipient.fullname
+
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         ).emit(

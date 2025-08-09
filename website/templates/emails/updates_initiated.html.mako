@@ -4,12 +4,12 @@
 <tr>
   <td style="border-collapse: collapse;">
     <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You initiated updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % else:
-      ${initiator} initiated updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
+      ${initiator_fullname} initiated updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % endif
     <p>
     % if can_write:

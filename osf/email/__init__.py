@@ -31,7 +31,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         port = settings.MAIL_PORT
 
     email = EmailMessage(
-        subject=notification_type.subject.format(**context) if notification_type.subject else None,
+        subject=None if not notification_type.subject else notification_type.subject.format(**context),
         body=notification_type.template.format(**context),
         from_email=settings.OSF_SUPPORT_EMAIL,
         to=[to_email],

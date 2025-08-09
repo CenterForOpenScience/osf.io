@@ -200,7 +200,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        new_response._notify_users(event='create', event_initiator=initiator)
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
     def update_responses(self, updated_responses):
@@ -503,6 +506,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 {
                     'can_write': self.parent.has_permission(contributor, 'write'),
                     'is_approver': contributor in self.pending_approvers.all(),
+                    'user_fullname': contributor.fullname,
                     'is_initiator': contributor == event_initiator,
                 }
             )
