@@ -796,7 +796,10 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_subjects(subjects, auth=auth)
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
-            instance.set_published(is_published, auth=auth)
+            from tests.utils import capture_notifications
+
+            with capture_notifications():
+                instance.set_published(is_published, auth=auth)
             create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published and set_doi:

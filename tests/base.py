@@ -161,7 +161,11 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
+    def setUp(self):
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            return super().setUp()
 
 
 class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):

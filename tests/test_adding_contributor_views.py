@@ -27,7 +27,6 @@ from tests.base import (
 )
 from tests.utils import capture_notifications
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website import settings
 from website.project.views.contributor import (
     deserialize_contributors,
     notify_added_contributor,

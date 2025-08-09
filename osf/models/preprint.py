@@ -1026,35 +1026,29 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        if self.provider._id == 'osf':
-            logo = settings.OSF_PREPRINTS_LOGO
-        else:
-            logo = self.provider._id
-
-        context = {
-            'domain': settings.DOMAIN,
-            'reviewable_title': self.title,
-            'reviewable_absolute_url': self.absolute_url,
-            'reviewable_provider_name': self.provider.name,
-            'workflow': self.provider.reviews_workflow,
-            'provider_url': '{domain}preprints/{provider_id}'.format(
-                            domain=self.provider.domain or settings.DOMAIN,
-                            provider_id=self.provider._id if not self.provider.domain else '').strip('/'),
-            'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
-            'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
-            'no_future_emails': False,
-            'is_creator': True,
-            'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
-            'logo': logo,
-            'document_type': self.provider.preprint_word
-        }
-
         NotificationType.objects.get(
             name=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         ).emit(
             subscribed_object=self.provider,
             user=recipient,
-            event_context=context,
+            event_context={
+                'domain': settings.DOMAIN,
+                'user_fullname': recipient.fullname,
+                'referrer_fullname': recipient.fullname,
+                'reviewable_title': self.title,
+                'reviewable_absolute_url': self.absolute_url,
+                'reviewable_provider_name': self.provider.name,
+                'workflow': self.provider.reviews_workflow,
+                'provider_url': f'{self.provider.domain or settings.DOMAIN}preprints/'
+                                f'{(self.provider._id if not self.provider.domain else '').strip('/')}',
+                'provider_contact_email': self.provider.email_contact or settings.OSF_CONTACT_EMAIL,
+                'provider_support_email': self.provider.email_support or settings.OSF_SUPPORT_EMAIL,
+                'no_future_emails': False,
+                'is_creator': True,
+                'provider_name': 'OSF Preprints' if self.provider.name == 'Open Science Framework' else self.provider.name,
+                'logo': settings.OSF_PREPRINTS_LOGO if self.provider._id == 'osf' else self.provider._id,
+                'document_type': self.provider.preprint_word
+            },
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS
