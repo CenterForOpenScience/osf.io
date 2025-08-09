@@ -24,7 +24,7 @@ from api.nodes.serializers import (
     NodeLinksSerializer,
     NodeLicenseSerializer,
     NodeContributorDetailSerializer,
-    NodeContributorsCreateSerializer,
+    ResourceContributorsCreateSerializer,
     RegistrationProviderRelationshipField,
     get_license_details,
 )
@@ -934,7 +934,7 @@ class RegistrationContributorsSerializer(NodeContributorDetailSerializer):
         )
 
 
-class RegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, RegistrationContributorsSerializer):
+class RegistrationContributorsCreateSerializer(ResourceContributorsCreateSerializer, RegistrationContributorsSerializer):
     """
     Overrides RegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 

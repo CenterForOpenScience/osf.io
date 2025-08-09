@@ -2,7 +2,7 @@
 <div style="margin: 40px;">
     <p>Hello ${recipient.fullname},</p>
     <p>
-        Your ${document_type} "<a href="${reviewable.absolute_url}">${reviewable.title}</a>" has an updated comment by the moderator:<br/>
+        Your ${document_type} "<a href="${reviewable_absolute_url}">${reviewable_title}</a>" has an updated comment by the moderator:<br/>
         ${comment}
     </p>
     <p>
@@ -12,7 +12,7 @@
         email notification preferences, visit your <a href="${'{}settings/notifications/'.format(domain)}">user settings</a>.
     </p>
     <p>
-        If you have been erroneously associated with "${reviewable.title}", then you may visit the project's
+        If you have been erroneously associated with "${reviewable_title}", then you may visit the project's
         "Contributors" page and remove yourself as a contributor.
     </p>
     <p>

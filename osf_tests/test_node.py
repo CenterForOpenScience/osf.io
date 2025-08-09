@@ -34,7 +34,7 @@ from osf.models import (
     NodeRelation,
     Registration,
     DraftRegistration,
-    CollectionSubmission
+    CollectionSubmission, NotificationType
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -42,6 +42,7 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from framework.auth.core import Auth
+from tests.utils import capture_notifications
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -1214,7 +1215,7 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1231,12 +1232,12 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
         with pytest.raises(ValueError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
@@ -2127,23 +2128,19 @@ class TestSetPrivacy:
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert last_logged_before_method_call != node.last_logged
 
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth)
-        assert mock_queue.call_count == 1
+    def test_set_privacy_sends_mail_default(self, node, auth):
+        with capture_notifications() as notifications:
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
 
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_sends_mail(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth, meeting_creation=False)
-        assert mock_queue.call_count == 1
-
-    @mock.patch('osf.models.queued_mail.queue_mail')
-    def test_set_privacy_skips_mail_if_meeting(self, mock_queue, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth, meeting_creation=True)
-        assert bool(mock_queue.called) is False
+    def test_set_privacy_sends_mail(self, node, auth):
+        with capture_notifications() as notifications:
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth, meeting_creation=False)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)

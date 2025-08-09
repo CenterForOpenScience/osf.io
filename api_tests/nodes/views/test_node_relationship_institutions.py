@@ -1,12 +1,14 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
     NodeFactory,
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -113,7 +115,6 @@ class RelationshipInstitutionsTestMixin:
             ]
         }
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
 
     def test_node_with_no_permissions(self, app, unauthorized_user_with_affiliation, institution_one, node_institutions_url):
@@ -202,59 +203,68 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
-    def test_user_with_institution_and_permissions_through_patch(self, app, user, institution_one, institution_two,
-                                                                 node, node_institutions_url, mock_send_grid):
-
-        mock_send_grid.reset_mock()
-        res = app.patch_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one, institution_two]),
-            auth=user.auth
-        )
+    def test_user_with_institution_and_permissions_through_patch(
+            self,
+            app,
+            user,
+            institution_one,
+            institution_two,
+            node,
+            node_institutions_url
+    ):
+        with capture_notifications() as notifications:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth
+            )
         assert res.status_code == 200
-        assert mock_send_grid.call_count == 2
+        assert len(notifications) == 2
 
-        first_call_args = mock_send_grid.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications[1]['kwargs']['user'] == user
+        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
-        second_call_args = mock_send_grid.call_args_list[1][1]
-        assert second_call_args['to_addr'] == user.email
-        assert second_call_args['subject'] == 'Project Affiliation Changed'
-
-    def test_remove_institutions_with_affiliated_user(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
+    def test_remove_institutions_with_affiliated_user(
+            self,
+            app,
+            user,
+            institution_one,
+            node,
+            node_institutions_url
+    ):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
+        with capture_notifications() as notifications:
+            res = app.put_json_api(
+                node_institutions_url,
+                {
+                    'data': []
+                },
+                auth=user.auth
+            )
 
-        mock_send_grid.reset_mock()
-        res = app.put_json_api(
-            node_institutions_url,
-            {
-                'data': []
-            },
-            auth=user.auth
-        )
-
-        first_call_args = mock_send_grid.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
+        assert len(notifications) == 1
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
 
-    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
+    def test_using_post_making_no_changes_returns_201(self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        mock_send_grid.reset_mock()
-        res = app.post_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one]),
-            auth=user.auth
-        )
-        mock_send_grid.assert_not_called()
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+        assert not notifications
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -276,69 +286,87 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
 
     def test_add_through_patch_one_inst_to_node_with_inst(
-            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
+            self,
+            app,
+            user,
+            institution_one,
+            institution_two,
+            node,
+            node_institutions_url
+    ):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        mock_send_grid.reset_mock()
-        res = app.patch_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one, institution_two]),
-            auth=user.auth
-        )
-        assert mock_send_grid.call_count == 1
-        first_call_args = mock_send_grid.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
+        with capture_notifications() as notifications:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
     def test_add_through_patch_one_inst_while_removing_other(
-            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
+            self,
+            app,
+            user,
+            institution_one,
+            institution_two,
+            node,
+            node_institutions_url,
+    ):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        mock_send_grid.reset_mock()
-        res = app.patch_json_api(
-            node_institutions_url,
-            self.create_payload([institution_two]),
-            auth=user.auth
-        )
-        assert mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            res = app.patch_json_api(
+                node_institutions_url,
+                self.create_payload([institution_two]),
+                auth=user.auth
+            )
+        assert len(notifications) == 2
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
-        first_call_args = mock_send_grid.call_args_list[0][1]
-        assert first_call_args['to_addr'] == user.email
-        assert first_call_args['subject'] == 'Project Affiliation Changed'
-
-        second_call_args = mock_send_grid.call_args_list[1][1]
-        assert second_call_args['to_addr'] == user.email
-        assert second_call_args['subject'] == 'Project Affiliation Changed'
+        assert notifications[1]['kwargs']['user'] == user
+        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two in node.affiliated_institutions.all()
 
     def test_add_one_inst_with_post_to_node_with_inst(
-            self, app, user, institution_one, institution_two, node, node_institutions_url, mock_send_grid):
+            self,
+            app,
+            user,
+            institution_one,
+            institution_two,
+            node,
+            node_institutions_url,
+    ):
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        res = app.post_json_api(
-            node_institutions_url,
-            self.create_payload([institution_two]),
-            auth=user.auth
-        )
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Project Affiliation Changed'
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_two]),
+                auth=user.auth
+            )
+        assert len(notifications) == 1
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -352,19 +380,27 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         )
         assert res.status_code == 204
 
-    def test_delete_existing_inst(self, app, user, institution_one, node, node_institutions_url, mock_send_grid):
+    def test_delete_existing_inst(
+            self,
+            app,
+            user,
+            institution_one,
+            node,
+            node_institutions_url,
+    ):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
-        res = app.delete_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one]),
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
 
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Project Affiliation Changed'
+        assert len(notifications) == 1
+        assert notifications[0]['kwargs']['user'] == user
+        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()

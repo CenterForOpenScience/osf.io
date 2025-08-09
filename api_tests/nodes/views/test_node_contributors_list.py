@@ -4,8 +4,9 @@ import pytest
 import random
 
 from api.base.settings.defaults import API_BASE
-from api.nodes.serializers import NodeContributorsCreateSerializer
+from api.nodes.serializers import ResourceContributorsCreateSerializer
 from framework.auth.core import Auth
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -16,6 +17,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
+from tests.utils import capture_notifications
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -284,7 +286,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
     ):
         project = ProjectFactory(creator=user, is_public=True)
         project.add_unregistered_contributor(
-            'Robert Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(user)
         )
         url = f'/{API_BASE}nodes/{project._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -301,7 +305,9 @@ class TestNodeContributorList(NodeCRUDTestCase):
 
         project_two = ProjectFactory(creator=user, is_public=True)
         project_two.add_unregistered_contributor(
-            'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Bob Jackson',
+            'robert@gmail.com',
+            auth=Auth(user),
         )
         url = f'/{API_BASE}nodes/{project_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -312,16 +318,15 @@ class TestNodeContributorList(NodeCRUDTestCase):
             res.json['data'][1]['embeds']['users']['data']['attributes']['full_name']
             == 'Robert Jackson'
         )
-        assert (
-            res.json['data'][1]['attributes'].get('unregistered_contributor')
-            == 'Bob Jackson'
-        )
+        assert res.json['data'][1]['attributes'].get('unregistered_contributor') == 'Bob Jackson'
 
     def test_contributors_order_is_the_same_over_multiple_requests(
         self, app, user, project_public, url_public
     ):
         project_public.add_unregistered_contributor(
-            'Robert Jackson', 'robert@gmail.com', auth=Auth(user), save=True
+            'Robert Jackson',
+            'robert@gmail.com',
+            auth=Auth(user),
         )
 
         for i in range(0, 10):
@@ -956,7 +961,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     ):
         name, email = fake.name(), fake_email()
         project_public.add_unregistered_contributor(
-            auth=Auth(user), fullname=name, email=email
+            auth=Auth(user),
+            fullname=name,
+            email=email
         )
         payload = {
             'data': {
@@ -1146,7 +1153,7 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
     def create_serializer(self):
-        return NodeContributorsCreateSerializer
+        return ResourceContributorsCreateSerializer
 
     @pytest.fixture()
     def validate_data(self, create_serializer):
@@ -1202,7 +1209,6 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.enable_enqueue_task
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeContributorCreateEmail(NodeCRUDTestCase):
 
     @pytest.fixture()
@@ -1210,36 +1216,44 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         return f'/{API_BASE}nodes/{project_public._id}/contributors/'
 
     def test_add_contributor_no_email_if_false(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=false'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=false',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jason Kelece',
+                            'email': 'jason@kelece.com'
+                        },
+                    }
+                },
+                auth=user.auth
+            )
+        assert not notifications
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
     def test_add_contributor_sends_email(
-        self, mock_send_grid, app, user, user_two, url_project_contribs
+        self, app, user, user_two, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {},
-                'relationships': {
-                    'users': {'data': {'type': 'users', 'id': user_two._id}}
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {},
+                        'relationships': {
+                            'users': {'data': {'type': 'users', 'id': user_two._id}}
+                        },
+                    }
                 },
-            }
-        }
-
-        res = app.post_json_api(url, payload, auth=user.auth)
-        assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
 
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(
@@ -1258,7 +1272,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         res = app.post_json_api(url, payload, auth=user.auth)
         args, kwargs = mock_send.call_args
         assert res.status_code == 201
-        assert 'default' == kwargs['email_template']
+        assert NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT == kwargs['notification_type']
 
     def test_add_contributor_signal_preprint_email_disallowed(
         self, app, user, user_two, url_project_contribs
@@ -1281,34 +1295,44 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         )
 
     def test_add_unregistered_contributor_sends_email(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
+                    }
+                },
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
         self, mock_send, app, user, url_project_contribs
     ):
-        url = f'{url_project_contribs}?send_email=default'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
-        assert res.status_code == 201
-        assert 'default' == kwargs['email_template']
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=default',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Kanye West',
+                            'email': 'kanye@west.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
+            assert res.status_code == 201
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
         self, app, user, url_project_contribs
@@ -1328,7 +1352,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         )
 
     def test_add_contributor_invalid_send_email_param(
-        self, mock_send_grid, app, user, url_project_contribs
+        self, app, user, url_project_contribs
     ):
         url = f'{url_project_contribs}?send_email=true'
         payload = {
@@ -1337,31 +1361,31 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
             }
         }
-        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
+        assert not notifications
         assert res.status_code == 400
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
         )
-        assert mock_send_grid.call_count == 0
 
-    def test_add_unregistered_contributor_without_email_no_email(
-        self, mock_send_grid, app, user, url_project_contribs
-    ):
+    def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=default'
         payload = {
             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'full_name': 'Kanye West',
+                    'full_name': 'Jason Kelece',
                 },
             }
         }
 
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=user.auth)
+            assert not notifications
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
 
 @pytest.mark.django_db

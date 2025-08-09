@@ -5,9 +5,9 @@
             <span class="timestamp" style="color: grey;">At ${localized_timestamp}: </span>
             <span class="content" style="display: block;padding: 6px 5px 0px 8px;font-size: 14px;">
                 % if is_request_email:
-                    <span class="person" style="font-weight: bold;">${requester.fullname}</span>
+                    <span class="person" style="font-weight: bold;">${requester_fullname}</span>
                 % else:
-                    <span class="person" style="font-weight: bold;">${', '.join(reviewable.contributors.values_list('fullname', flat=True))}</span>
+                    <span class="person" style="font-weight: bold;">${requester_contributor_names}</span>
                 % endif
                 ${message}
             </span>

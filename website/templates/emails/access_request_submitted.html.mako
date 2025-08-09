@@ -6,9 +6,9 @@
     <%!
         from website import settings
     %>
-    Hello ${admin.fullname},<br>
+    Hello ${admin_fullname},<br>
     <br>
-    <a href="${requester.absolute_url}">${requester.fullname}</a> has requested access to your ${node.project_or_component} "<a href="${node.absolute_url}">${node.title}</a>."<br>
+    <a href="${requester_absolute_url}">${requester_fullname}</a> has requested access to your ${node_project_or_component} "<a href="${node_absolute_url}">${node_title}</a>."<br>
     <br>
     To review the request, click <a href="${contributors_url}">here</a> to allow or deny access and configure permissions.<br>
     <br>

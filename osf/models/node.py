@@ -320,10 +320,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     ) SELECT {fields} FROM "{nodelicenserecord}"
     WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
-    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
-    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')
@@ -942,10 +938,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return self.get_users_with_perm(READ)
 
     @property
-    def contributor_email_template(self):
-        return 'default'
-
-    @property
     def registrations_all(self):
         """For v1 compat."""
         return self.registrations.all()
@@ -1255,7 +1247,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+            project_signals.privacy_set_public.send(auth.user, node=self)
         return True
 
     @property
@@ -1341,11 +1333,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         and send emails to users that they have been added to the project.
         (DraftNodes are hidden until registration).
         """
+        from osf.models.notification_type import NotificationType
+
         for user in self.contributors.filter(is_registered=True):
             perm = self.contributor_set.get(user=user).permission
-            project_signals.contributor_added.send(self,
-                                                   contributor=user,
-                                                   auth=None, email_template='default', permissions=perm)
+            project_signals.contributor_added.send(
+                self,
+                contributor=user,
+                auth=None,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                permissions=perm
+            )
 
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
@@ -1673,7 +1671,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            forked,
+            contributor=user,
+            auth=auth,
+            notification_type=None
+        )
 
         return forked
 
@@ -1782,7 +1785,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save(suppress_log=True)
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            new,
+            contributor=auth.user,
+            auth=auth,
+            notification_type=None
+        )
 
         # Log the creation
         new.add_log(

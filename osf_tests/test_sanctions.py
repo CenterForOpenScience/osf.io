@@ -135,7 +135,6 @@ class TestSanctionEmailRendering:
         registration.save()
         return registration
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_admin_emails(self, registration, reviews_workflow, branched_from_node):
@@ -149,7 +148,6 @@ class TestSanctionEmailRendering:
         registration.sanction.ask([(registration.creator, registration)])
         assert True  # mail rendered successfully
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_non_admin_emails(

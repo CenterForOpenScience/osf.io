@@ -9,6 +9,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 from .metaschema import RegistrationSchemaBlock
 from .schema_response_block import SchemaResponseBlock
@@ -17,17 +18,9 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
-from website.mails import mails
 from website.reviews.signals import reviews_email_submit_moderators_notifications
 from website.settings import DOMAIN
 
-
-EMAIL_TEMPLATES_PER_EVENT = {
-    'create': mails.SCHEMA_RESPONSE_INITIATED,
-    'submit': mails.SCHEMA_RESPONSE_SUBMITTED,
-    'accept': mails.SCHEMA_RESPONSE_APPROVED,
-    'reject': mails.SCHEMA_RESPONSE_REJECTED,
-}
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
@@ -480,12 +473,18 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
-            email_context['referrer'] = self.initiator
             reviews_email_submit_moderators_notifications.send(
-                timestamp=timezone.now(), context=email_context
+                timestamp=timezone.now(),
+                context=email_context,
+                resource=self.parent
             )
 
-        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
+        template = {
+            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED,
+            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED,
+            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED,
+            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED,
+        }.get(event)
         if not template:
             return
 
@@ -500,11 +499,17 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
-            email_context['user'] = contributor
-            email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all(),
-            email_context['is_initiator'] = contributor == event_initiator
-            mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+            email_context.update(
+                {
+                    'can_write': self.parent.has_permission(contributor, 'write'),
+                    'is_approver': contributor in self.pending_approvers.all(),
+                    'is_initiator': contributor == event_initiator,
+                }
+            )
+            NotificationType.objects.get(name=template).emit(
+                user=contributor,
+                event_context=email_context
+            )
 
 
 def _is_updated_response(response_block, new_response):

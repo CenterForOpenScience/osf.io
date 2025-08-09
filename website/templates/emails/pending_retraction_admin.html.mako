@@ -8,10 +8,10 @@
     <p>
     % if is_initiator:
       You have requested final approvals to withdraw your registration
-      titled <a href="${registration_link}">${reviewable.title}</a>
+      titled <a href="${registration_link}">${reviewable_title}</a>
     % else:
       ${initiated_by} has requested final approvals to withdraw your registration
-      titled <a href="${registration_link}">${reviewable.title}</a>
+      titled <a href="${registration_link}">${reviewable_title}</a>
     % endif
     </p>
     % if reviewable.withdrawal_justification:

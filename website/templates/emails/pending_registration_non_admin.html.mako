@@ -7,7 +7,7 @@
     Hello ${user.fullname},
     <p>
     ${initiated_by} has requested final approvals to submit your registration
-    titled <a href="${registration_link}">${reviewable.title}</a>.
+    titled <a href="${registration_link}">${reviewable_title}</a>.
     </p>
     <p>
     % if is_moderated:
