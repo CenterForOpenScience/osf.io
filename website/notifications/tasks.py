@@ -16,7 +16,7 @@ from website import settings
 
 logger = get_task_logger(__name__)
 
-@celery_app.task
+@celery_app.task(bind=True)
 def send_user_email_task(self, user_id, notification_ids, message_freq):
     try:
         user = OSFUser.objects.get(
@@ -78,7 +78,7 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
         logger.exception('Retrying send_user_email_task due to exception')
         raise self.retry(exc=e)
 
-@celery_app.task
+@celery_app.task(bind=True)
 def send_moderator_email_task(self, user_id, provider_id, notification_ids, message_freq):
     try:
         user = OSFUser.objects.get(
@@ -164,7 +164,7 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         logger.exception('Retrying send_moderator_email_task due to exception')
         raise self.retry(exc=e)
 
-@celery_app.task
+@celery_app.task(bind=True, name='website.notifications.tasks.send_users_digest_email')
 def send_users_digest_email():
     today = date.today()
 
@@ -181,7 +181,7 @@ def send_users_digest_email():
             notification_ids = [msg['notification_id'] for msg in group['info']]
             send_user_email_task.delay(user_id, notification_ids, freq)
 
-@celery_app.task
+@celery_app.task(bind=True, name='website.notifications.tasks.send_moderators_digest_email')
 def send_moderators_digest_email():
     today = date.today()
 
