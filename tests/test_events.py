@@ -4,10 +4,15 @@ from django.contrib.contenttypes.models import ContentType
 
 from osf.models import NotificationType
 from tests.utils import capture_notifications
-from notifications.events.base import event_registry
-from notifications.events.files import (
-    FileAdded, FileRemoved, FolderCreated, FileUpdated,
-    AddonFileCopied, AddonFileMoved, AddonFileRenamed,
+from notifications.file_event_notifications import  (
+    event_registry,
+    FileAdded,
+    FileRemoved,
+    FolderCreated,
+    FileUpdated,
+    AddonFileCopied,
+    AddonFileMoved,
+    AddonFileRenamed,
 )
 from framework.auth import Auth
 from osf_tests import factories

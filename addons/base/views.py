@@ -63,7 +63,7 @@ from website.project.utils import serialize_node
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
-from notifications.events.files import FileEvent  # noqa
+from notifications.file_event_notifications import FileEvent  # noqa
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>

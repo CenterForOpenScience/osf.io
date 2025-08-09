@@ -47,6 +47,7 @@ from website.oauth import views as oauth_views
 from addons.osfstorage import views as osfstorage_views
 from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
+from website.notifications import views as notification_views
 from website.project import views as project_views
 from addons.base import views as addon_views
 from website.discovery import views as discovery_views
@@ -1708,6 +1709,28 @@ def make_url_map(app):
             '/settings/notifications/',
             'post',
             profile_views.user_choose_mailing_lists,
+            json_renderer,
+        ),
+        Rule(
+            '/subscriptions/',
+            'get',
+            notification_views.get_subscriptions,
+            json_renderer,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/subscriptions/',
+                '/project/<pid>/node/<nid>/subscriptions/'
+            ],
+            'get',
+            notification_views.get_node_subscriptions,
+            json_renderer,
+        ),
+        Rule(
+            '/subscriptions/',
+            'post',
+            notification_views.configure_subscription,
             json_renderer,
         ),
 
