@@ -265,8 +265,16 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
             save=True
         )
 
-        project_public.add_contributor(write_contrib, WRITE)
-        project_public.add_contributor(read_contrib, READ)
+        project_public.add_contributor(
+            write_contrib,
+            WRITE,
+            notification_type=False
+        )
+        project_public.add_contributor(
+            read_contrib,
+            READ,
+            notification_type=False
+        )
 
         # Only an admin can create a DraftRegistration
         res = app.post_json_api(url_draft_registrations, payload_alt, auth=write_contrib.auth, expect_errors=True)

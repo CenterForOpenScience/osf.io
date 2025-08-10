@@ -58,6 +58,8 @@ def notify_submit(resource, user, *args, **kwargs):
 def notify_resubmit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
     context['referrer_fullname'] = user.fullname
+    context['user_fullname'] = user.fullname
+
     context['resubmission'] = True
     recipients = list(resource.contributors)
     reviews_signals.reviews_email_submit.send(
@@ -75,6 +77,7 @@ def notify_resubmit(resource, user, *args, **kwargs):
 
 def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context = get_email_template_context(resource)
+    context['user_fullname'] = user.fullname
 
     context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
@@ -106,6 +109,8 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context['requester_fullname'] = action.creator.fullname
 
     for contributor in resource.contributors.all():
+        context['user_fullname'] = contributor.fullname
+
         context['contributor_fullname'] = contributor.fullname
         context['requester_fullname'] = action.creator.fullname
         context['is_requester'] = action.creator == contributor
@@ -139,6 +144,7 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
 
     for contributor in resource.contributors.all():
         context['contributor_fullname'] = contributor.fullname
+        context['user_fullname'] = contributor.fullname
         context['is_requester'] = resource.retraction.initiated_by == contributor
         NotificationType.objects.get(
             name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED

@@ -99,7 +99,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_return_public_contributor_list_logged_out(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(user_two, save=True, notification_type=False)
 
         res = app.get(url_public, expect_errors=True)
         assert res.status_code == 401
@@ -107,7 +107,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_disabled_contributors_contain_names_under_meta(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(user_two, save=True, notification_type=False)
 
         user_two.is_disabled = True
         user_two.save()
@@ -130,7 +130,9 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_contributor(
             non_bibliographic_user,
             visible=False,
-            auth=Auth(project_public.creator))
+            auth=Auth(project_public.creator),
+            notification_type=False
+        )
         project_public.save()
         res = app.get(url_public, auth=user.auth)
         assert res.status_code == 200
@@ -143,7 +145,8 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user)
+            auth=Auth(user),
+            notification_type=False,
         )
 
         for i in range(0, 10):
@@ -156,6 +159,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
                 new_user,
                 visible=visible,
                 auth=Auth(project_public.creator),
+                notification_type=False,
                 save=True
             )
         req_one = app.get(
@@ -347,11 +351,17 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         return project_public
 
     @pytest.fixture()
@@ -391,11 +401,17 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_public
 
     @pytest.fixture()
@@ -408,11 +424,17 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         return project_private
 
     @pytest.fixture()

@@ -180,7 +180,11 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_return_public_contributor_list_logged_out(
         self, app, user, user_two, project_public, url_public, make_contrib_id
     ):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(
+            user_two,
+            notification_type=False,
+            save=True
+        )
 
         res = app.get(url_public)
         assert res.status_code == 200
@@ -235,7 +239,11 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_disabled_contributors_contain_names_under_meta(
         self, app, user, user_two, project_public, url_public, make_contrib_id
     ):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(
+            user_two,
+            save=True,
+            notification_type=False
+        )
 
         user_two.is_disabled = True
         user_two.save()
@@ -264,7 +272,10 @@ class TestNodeContributorList(NodeCRUDTestCase):
     ):
         non_bibliographic_user = UserFactory()
         project_public.add_contributor(
-            non_bibliographic_user, visible=False, auth=Auth(project_public.creator)
+            non_bibliographic_user,
+            visible=False,
+            auth=Auth(project_public.creator),
+            notification_type=False,
         )
         project_public.save()
         res = app.get(url_public, auth=user_two.auth)
@@ -327,6 +338,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'Robert Jackson',
             'robert@gmail.com',
             auth=Auth(user),
+            notification_type=False,
         )
 
         for i in range(0, 10):
@@ -336,7 +348,11 @@ class TestNodeContributorList(NodeCRUDTestCase):
             else:
                 visible = False
             project_public.add_contributor(
-                new_user, visible=visible, auth=Auth(project_public.creator), save=True
+                new_user,
+                visible=visible,
+                auth=Auth(project_public.creator),
+                save=True,
+                notification_type=False
             )
         req_one = app.get(f'{url_public}?page=2', auth=Auth(project_public.creator))
         req_two = app.get(f'{url_public}?page=2', auth=Auth(project_public.creator))
@@ -963,7 +979,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         project_public.add_unregistered_contributor(
             auth=Auth(user),
             fullname=name,
-            email=email
+            email=email,
+            notification_type=False
         )
         payload = {
             'data': {
@@ -1035,7 +1052,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_public, url_public
     ):
         user_contrib_one = UserFactory()
-        project_public.add_contributor(user_contrib_one, save=True)
+        project_public.add_contributor(
+            user_contrib_one,
+            save=True,
+            notification_type=False,
+        )
         user_contrib_two = UserFactory()
         project_public.add_contributor(user_contrib_two, save=True)
         payload = {
@@ -1058,7 +1079,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_public, url_public
     ):
         user_contrib_one = UserFactory()
-        project_public.add_contributor(user_contrib_one, save=True)
+        project_public.add_contributor(
+            user_contrib_one,
+            notification_type=False,
+            save=True
+        )
         user_contrib_two = UserFactory()
         project_public.add_contributor(user_contrib_two, save=True)
         payload = {
@@ -1081,9 +1106,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_public, url_public
     ):
         user_contrib_one = UserFactory()
-        project_public.add_contributor(user_contrib_one, save=True)
+        project_public.add_contributor(user_contrib_one, save=True, notification_type=False)
         user_contrib_two = UserFactory()
-        project_public.add_contributor(user_contrib_two, save=True)
+        project_public.add_contributor(user_contrib_two, save=True, notification_type=False)
         payload = {
             'data': {
                 'type': 'contributors',
