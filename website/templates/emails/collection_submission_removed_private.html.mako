@@ -1,36 +1,33 @@
 <%inherit file="notify_base.mako" />
-<%!
-    from website import settings
-%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     <p>
         % if is_admin:
             You have changed the privacy of <a href="${node.absolute_url}">${node.title}</a> and it has therefore been
             removed from
             % if collection.provider:
-                <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
+                <a href="${domain + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
             % else:
-                <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
+                <a href="${domain + 'myprojects/'}">${collection.provider.name}</a>
             % endif
             . If you wish to be associated with the collection, you will need to request addition to the collection again.
         % else:
-            <a href="${remover.absolute_url}">${remover.fullname}</a> has changed the privacy settings for
-            <a href="${node.absolute_url}">${node.title}</a> it has therefore been removed from
+            <a href="${remover_absolute_url}">${remover_fullname}</a> has changed the privacy settings for
+            <a href="${node_absolute_url}">${node_title}</a> it has therefore been removed from
             % if collection.provider:
-                <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
+                <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>
             % else:
-                <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
+                <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
             % endif
             It will need to be re-submitteds to be included in the collection again.
         % endif
     </p>
     <p>
-        If you are not ${user.fullname} or you have been erroneously associated with
-        <a href="${node.absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
+        If you are not ${user_fullname} or you have been erroneously associated with
+        <a href="${node_absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>
     Sincerely,<br>

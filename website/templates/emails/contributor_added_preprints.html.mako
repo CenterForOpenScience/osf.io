@@ -3,14 +3,11 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the ${branded_service.preprint_word} "${node.title}" on ${branded_service.name}, which is hosted on the Open Science Framework: ${node.absolute_url}<br>
     <br>
-    If you have been erroneously associated with "${node.title}", then you may visit the ${branded_service.preprint_word} and remove yourself as a contributor.<br>
+    If you have been erroneously associated with "${node_title}", then you may visit the ${branded_service.preprint_word} and remove yourself as a contributor.<br>
     <br>
     Sincerely,<br>
     <br>

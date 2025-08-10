@@ -29,8 +29,8 @@ class TestDeactivateRequestedAccount:
 
         with capture_notifications() as notifications:
             deactivate_requested_accounts(dry_run=False)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
         user_requested_deactivation.reload()
 
         assert user_requested_deactivation.requested_deactivation
@@ -41,8 +41,8 @@ class TestDeactivateRequestedAccount:
 
         with capture_notifications() as notifications:
             deactivate_requested_accounts(dry_run=False)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
         user_requested_deactivation_with_node.reload()
 
         assert user_requested_deactivation_with_node.requested_deactivation

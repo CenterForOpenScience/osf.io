@@ -3,7 +3,7 @@
 <%def name="content()">
     <div style="margin: 40px;">
         <br>
-        Hello ${fullname},
+        Hello ${user_fullname},
         <br><br>
         Congratulations on making a public project on OSF! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
         <ul>

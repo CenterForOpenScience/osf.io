@@ -162,8 +162,8 @@ class TestCrossRefEmailResponse:
         context_data = self.make_mailgun_payload(crossref_response=error_xml)
         with capture_notifications() as notifications:
             app.post(url, context_data)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
         assert not preprint.get_identifier_value('doi')
 
     def test_success_response_sets_doi(self, app, url, preprint, success_xml):

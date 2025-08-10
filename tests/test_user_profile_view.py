@@ -720,8 +720,8 @@ class TestUserAccount(OsfTestCase):
         url = api_url_for('request_export')
         with capture_notifications() as notifications:
             self.app.post(url, auth=self.user.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
 
         with capture_notifications() as notifications:
             res = self.app.post(url, auth=self.user.auth)

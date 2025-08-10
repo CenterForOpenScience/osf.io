@@ -70,6 +70,7 @@ def queue_first_public_project_email(user, node):
         subscribed_object=user,
         user=user,
         event_context={
+            'domain': settings.DOMAIN,
             'nid': node._id,
             'fullname': user.fullname,
             'project_title': node.title,
@@ -88,6 +89,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
     from website.settings import DOMAIN
 
     provider = resource.provider
+    context['domain'] = DOMAIN
 
     # Set submission url
     if provider.type == 'osf.preprintprovider':

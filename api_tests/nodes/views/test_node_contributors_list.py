@@ -134,7 +134,11 @@ class TestNodeContributorList(NodeCRUDTestCase):
             perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
-            project_private.add_contributor(user, permissions=perm)
+            project_private.add_contributor(
+                user,
+                permissions=perm,
+                notification_type=False
+            )
             users[perm].append(user._id)
 
         res = app.get(url_private, auth=user.auth)
@@ -200,7 +204,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_return_private_contributor_list_logged_in_contributor(
         self, app, user, user_two, project_private, url_private, make_contrib_id
     ):
-        project_private.add_contributor(user_two)
+        project_private.add_contributor(user_two, notification_type=False)
         project_private.save()
 
         res = app.get(url_private, auth=user.auth)
@@ -292,14 +296,13 @@ class TestNodeContributorList(NodeCRUDTestCase):
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['attributes'].get('unregistered_contributor') is None
 
-    def test_unregistered_contributors_show_up_as_name_associated_with_project(
-        self, app, user
-    ):
+    def test_unregistered_contributors_show_up_as_name_associated_with_project(self, app, user):
         project = ProjectFactory(creator=user, is_public=True)
         project.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user)
+            auth=Auth(user),
+            notification_type=False
         )
         url = f'/{API_BASE}nodes/{project._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -319,6 +322,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'Bob Jackson',
             'robert@gmail.com',
             auth=Auth(user),
+            notification_type=False
         )
         url = f'/{API_BASE}nodes/{project_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -645,7 +649,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         url_public,
     ):
         project_public.add_contributor(
-            user_two, permissions=permissions.WRITE, auth=Auth(user), save=True
+            user_two,
+            permissions=permissions.WRITE,
+            auth=Auth(user),
+            save=True,
+            notification_type=False
         )
         res = app.post_json_api(
             url_public, data_user_three, auth=user_two.auth, expect_errors=True
@@ -816,7 +824,12 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_already_existing_contributor_private_project_admin(
         self, app, user, user_two, project_private, data_user_two, url_private
     ):
-        project_private.add_contributor(user_two, auth=Auth(user), save=True)
+        project_private.add_contributor(
+            user_two,
+            auth=Auth(user),
+            save=True,
+            notification_type=False
+        )
         project_private.reload()
 
         res = app.post_json_api(
@@ -851,7 +864,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         url_private,
     ):
         project_private.add_contributor(
-            user_two, permissions=permissions.WRITE, auth=Auth(user)
+            user_two,
+            permissions=permissions.WRITE,
+            auth=Auth(user),
+            notification_type=False
         )
         res = app.post_json_api(
             url_private, data_user_three, auth=user_two.auth, expect_errors=True
@@ -1058,7 +1074,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             notification_type=False,
         )
         user_contrib_two = UserFactory()
-        project_public.add_contributor(user_contrib_two, save=True)
+        project_public.add_contributor(
+            user_contrib_two,
+            save=True,
+            notification_type=False
+        )
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1085,7 +1105,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             save=True
         )
         user_contrib_two = UserFactory()
-        project_public.add_contributor(user_contrib_two, save=True)
+        project_public.add_contributor(
+            user_contrib_two,
+            notification_type=False,
+            save=True
+        )
         payload = {
             'data': {
                 'type': 'contributors',
@@ -1278,7 +1302,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
             assert res.status_code == 201
-        assert len(notifications) == 1
+        assert len(notifications['emits']) == 1
 
     @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_default(
@@ -1334,8 +1358,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
             assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
@@ -1356,8 +1380,8 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
             assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
         self, app, user, url_project_contribs
@@ -1454,7 +1478,11 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         self, app, user, user_two, project_public, payload_one, payload_two, url_public
     ):
         project_public.add_contributor(
-            user_two, permissions=permissions.READ, visible=True, save=True
+            user_two,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         res = app.post_json_api(
             url_public,
@@ -1526,7 +1554,10 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
 
         #   test_node_contributor_bulk_create_logged_in_read_only_contrib_private_project
         project_private.add_contributor(
-            user_two, permissions=permissions.READ, save=True
+            user_two,
+            permissions=permissions.READ,
+            save=True,
+            notification_type=False
         )
         res = app.post_json_api(
             url_private,
@@ -1683,10 +1714,18 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             creator=user,
         )
         project_private.add_contributor(
-            user_two, permissions=permissions.READ, visible=True, save=True
+            user_two,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         project_private.add_contributor(
-            user_three, permissions=permissions.READ, visible=True, save=True
+            user_three,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         return project_private
 
@@ -2136,10 +2175,18 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
             creator=user,
         )
         project_private.add_contributor(
-            user_two, permissions=permissions.READ, visible=True, save=True
+            user_two,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         project_private.add_contributor(
-            user_three, permissions=permissions.READ, visible=True, save=True
+            user_three,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         return project_private
 
@@ -2511,10 +2558,18 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
             creator=user,
         )
         project_private.add_contributor(
-            user_two, permissions=permissions.READ, visible=True, save=True
+            user_two,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         project_private.add_contributor(
-            user_three, permissions=permissions.READ, visible=True, save=True
+            user_three,
+            permissions=permissions.READ,
+            visible=True,
+            save=True,
+            notification_type=False
         )
         return project_private
 
@@ -2870,8 +2925,17 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        project.add_contributor(user_three, permissions.READ, visible=False)
+        project.add_contributor(
+            user_two,
+            permissions.WRITE,
+            notification_type=False
+        )
+        project.add_contributor(
+            user_three,
+            permissions.READ,
+            visible=False,
+            notification_type=False
+        )
 
         #   test_filtering_node_with_only_bibliographic_contributors
         # no filter
@@ -2929,8 +2993,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        project.add_contributor(user_three, permissions.READ, visible=False)
+        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
+        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
 
         # test_filtering_permission_field_admin
         filter_url = f'{url}?filter[permission]=admin'
@@ -2950,8 +3014,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        project.add_contributor(user_three, permissions.READ, visible=False)
+        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
+        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
 
         # test_filtering_permission_field_write
         filter_url = f'{url}?filter[permission]=write'
@@ -2970,8 +3034,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE)
-        project.add_contributor(user_three, permissions.READ, visible=False)
+        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
+        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
 
         # test_filtering_permission_field_read
         filter_url = f'{url}?filter[permission]=read'

@@ -96,9 +96,9 @@ class TestUserMessageInstitutionalAccess:
                 payload,
                 auth=institutional_admin.auth
             )
-        assert len(notifications) == 1
+        assert len(notifications['emits']) == 1
         user_message = UserMessage.objects.get(sender=institutional_admin)
-        assert notifications[0]['kwargs']['user'].username == user_message.recipient.username
+        assert notifications['emits'][0]['kwargs']['user'].username == user_message.recipient.username
         assert res.status_code == 201
         data = res.json['data']
 
@@ -220,9 +220,9 @@ class TestUserMessageInstitutionalAccess:
                 payload,
                 auth=institutional_admin.auth,
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
-        assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
         user_message = UserMessage.objects.get()
         assert user_message.is_sender_BCCed
@@ -234,9 +234,9 @@ class TestUserMessageInstitutionalAccess:
         """
         with capture_notifications() as notifications:
             res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
-        assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
 
         user_message = UserMessage.objects.get(sender=institutional_admin)
@@ -255,4 +255,4 @@ class TestUserMessageInstitutionalAccess:
                 auth=institutional_admin.auth,
             )
         assert res.status_code == 201
-        assert notifications[0]['kwargs']['user'].username == user_with_affiliation.username
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username

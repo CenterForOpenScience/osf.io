@@ -3,8 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You have requested final approvals to end the embargo for your registration
@@ -15,8 +14,8 @@
     % endif
     </p>
     <p>
-    If all admin contributors appove, the registration will be made public as part of the
-    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+    If all admin contributors approve, the registration will be made public as part of the
+    <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     </p>
     <p style="color:red;">
     You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this

@@ -323,8 +323,8 @@ class TestUsersCreate:
                 f'{url_base}?send_email=true',
                 data
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
 
@@ -362,8 +362,8 @@ class TestUsersCreate:
                 data,
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
@@ -528,8 +528,8 @@ class TestUsersCreate:
                 data,
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed

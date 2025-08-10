@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
     <td style="border-collapse: collapse;">
-        Hello ${user.fullname},<br>
+        Hello ${user_fullname},<br>
         <br>
         Thank you for connecting to OSF through your institution. This email address &lt;${email_to_add}&gt; has been added to your account as an alternate email address.<br>
         <br>

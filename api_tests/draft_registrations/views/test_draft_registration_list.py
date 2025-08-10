@@ -68,9 +68,9 @@ class TestDraftRegistrationListTopLevelEndpoint:
             registration_schema=schema,
             branched_from=project
         )
-        draft.add_contributor(user_read_contrib, permissions=READ)
-        draft.add_contributor(user_write_contrib, permissions=WRITE)
-        draft.add_contributor(user_admin_contrib, permissions=ADMIN)
+        draft.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
+        draft.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
+        draft.add_contributor(user_admin_contrib, permissions=ADMIN, notification_type=False)
         return draft
 
     def test_read_only_contributor_can_view_draft_list(
@@ -442,9 +442,9 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
                 payload,
                 auth=user.auth
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications[0]['kwargs']['user'] == user
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['kwargs']['user'] == user
 
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider
@@ -510,7 +510,13 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
             save=True
         )
 
-        res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 2
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
         assert attributes['title'] == ''

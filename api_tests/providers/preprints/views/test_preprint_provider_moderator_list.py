@@ -90,8 +90,8 @@ class ProviderModeratorListTestClass:
         assert res.status_code == 201
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
 
     def test_list_post_admin_failure_existing_moderator(self, app, url, moderator, admin):
         payload = self.create_payload(user_id=moderator._id, permission_group='moderator')
@@ -113,8 +113,8 @@ class ProviderModeratorListTestClass:
             res = app.post_json_api(url, payload, auth=admin.auth)
 
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'].username == unreg_user['email']
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'].username == unreg_user['email']
 
     def test_list_post_admin_failure_invalid_group(self, app, url, nonmoderator, moderator, admin):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='citizen')
@@ -131,7 +131,7 @@ class ProviderModeratorListTestClass:
         )
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
-        assert len(notifications) == 1
+        assert len(notifications['emits']) == 1
         assert res.status_code == 201
         assert len(res.json['data']['id']) == 5
         assert res.json['data']['attributes']['permission_group'] == 'moderator'

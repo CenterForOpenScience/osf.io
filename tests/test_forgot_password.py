@@ -49,8 +49,8 @@ class TestForgotPassword(OsfTestCase):
         with capture_notifications() as notifications:
             res = form.submit(self.app)
         # check mail was sent
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -167,8 +167,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
             res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword

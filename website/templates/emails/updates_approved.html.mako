@@ -3,8 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if pending_moderation:
       The updates for ${resource_type} <a href="${parent_url}">"${title}"</a>

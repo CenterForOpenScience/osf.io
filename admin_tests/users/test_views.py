@@ -624,7 +624,12 @@ class TestGetLinkView(AdminTestCase):
 
     def test_get_unclaimed_node_links(self):
         project = ProjectFactory()
-        unregistered_contributor = project.add_unregistered_contributor(fullname='Brother Nero', email='matt@hardyboyz.biz', auth=Auth(project.creator))
+        unregistered_contributor = project.add_unregistered_contributor(
+            fullname='Brother Nero',
+            email='matt@hardyboyz.biz',
+            auth=Auth(project.creator),
+            notification_type=False
+        )
         project.save()
 
         request = RequestFactory().get('/fake_path')

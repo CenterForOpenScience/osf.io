@@ -13,8 +13,8 @@ class TestRegistrationRelationshipSubjects(SubjectsRelationshipMixin):
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         registration = RegistrationFactory(is_public=False, creator=user_admin_contrib)
-        registration.add_contributor(user_write_contrib, permissions=WRITE)
-        registration.add_contributor(user_read_contrib, permissions=READ)
+        registration.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
+        registration.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
         registration.save()
         return registration
 

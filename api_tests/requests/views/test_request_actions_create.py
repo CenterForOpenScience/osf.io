@@ -198,8 +198,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         payload = self.create_payload(node_request._id, trigger='accept')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
@@ -211,8 +211,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         payload = self.create_payload(node_request._id, trigger='reject')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_DENIED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_DENIED
 
         assert res.status_code == 201
         node_request.reload()
@@ -396,9 +396,9 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             payload = self.create_payload(request._id, trigger='accept')
             with capture_notifications() as notifications:
                 res = app.post_json_api(url, payload, auth=moderator.auth)
-            assert len(notifications) == 2
-            assert notifications[0]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
-            assert notifications[1]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            assert len(notifications['emits']) == 2
+            assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            assert notifications['emits'][1]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
             assert res.status_code == 201
             request.reload()
             request.target.reload()

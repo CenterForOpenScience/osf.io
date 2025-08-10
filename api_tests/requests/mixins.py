@@ -1,6 +1,5 @@
 import pytest
 
-from osf.models import NotificationType
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import (
     AuthUserFactory,
@@ -38,7 +37,7 @@ class NodeRequestTestMixin:
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            notification_type=NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+            notification_type=None,
             save=True
         )
         return proj
@@ -116,6 +115,7 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
+            notification_type=False,
             save=True
         )
         pre.is_public = True
@@ -134,7 +134,8 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return pre
 
@@ -148,7 +149,8 @@ class PreprintRequestTestMixin:
         post.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return post
 
@@ -162,7 +164,8 @@ class PreprintRequestTestMixin:
         preprint.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return preprint
 

@@ -318,8 +318,8 @@ class TestAuthViews(OsfTestCase):
         with capture_notifications() as notifications:
             self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
 
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
 
         self.user.reload()
         assert token != self.user.get_confirmation_token(email)
@@ -497,8 +497,8 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': False, 'confirmed': False}
         with capture_notifications() as notifications:
             self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
         # 2nd call does not send email because throttle period has not expired
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400

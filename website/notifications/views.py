@@ -1,3 +1,4 @@
+from django.contrib.contenttypes.models import ContentType
 from rest_framework import status as http_status
 
 from flask import request
@@ -177,7 +178,10 @@ def get_all_node_subscriptions(user, node, user_subscriptions=None):
     """
     if not user_subscriptions:
         user_subscriptions = get_all_user_subscriptions(user)
-    return user_subscriptions.filter(user__isnull=True, node=node)
+    return user_subscriptions.filter(
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node).id,
+    )
 
 
 def format_data(user, nodes):

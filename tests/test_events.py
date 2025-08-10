@@ -134,8 +134,8 @@ class TestFileUpdated(OsfTestCase):
     def test_file_updated(self):
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.FILE_UPDATED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.FILE_UPDATED
 
 
 class TestFileAdded(OsfTestCase):
@@ -198,8 +198,8 @@ class TestFileRemoved(OsfTestCase):
     def test_file_removed(self):
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.FILE_REMOVED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.FILE_REMOVED
 
 
 class TestFolderCreated(OsfTestCase):
@@ -226,8 +226,8 @@ class TestFolderCreated(OsfTestCase):
     def test_folder_added(self):
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.FOLDER_CREATED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.FOLDER_CREATED
 
 
 class TestFolderFileRenamed(OsfTestCase):
@@ -326,17 +326,17 @@ class TestFileMoved(OsfTestCase):
         self.sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
-        assert notifications[0]['kwargs']['user'] == self.user_2
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
+        assert notifications['emits'][0]['kwargs']['user'] == self.user_2
 
     def test_perform_store_called_once(self):
         self.sub.user = self.user_1
         self.sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
     def test_perform_store_one_of_each(self):
         # Move Event: Tests that store_emails is called 3 times, one in
@@ -356,8 +356,8 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
     def test_remove_user_sent_once(self):
         # Move Event: Tests removed user is removed once. Regression
@@ -367,8 +367,8 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_MOVED
 
 
 class TestFileCopied(OsfTestCase):
@@ -438,8 +438,8 @@ class TestFileCopied(OsfTestCase):
         self.file_sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
 
     def test_user_performing_action_no_email(self):
         # Move Event: Makes sure user who performed the action is not
@@ -448,8 +448,8 @@ class TestFileCopied(OsfTestCase):
         self.sub.save()
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_COPIED
 
 
 class TestSubscriptionManipulations(OsfTestCase):

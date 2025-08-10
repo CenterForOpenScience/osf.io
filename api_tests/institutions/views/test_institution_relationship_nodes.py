@@ -398,8 +398,8 @@ class TestInstitutionRelationshipNodes:
             )
 
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
     def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
         current_institution = InstitutionFactory()
@@ -421,8 +421,8 @@ class TestInstitutionRelationshipNodes:
         # Assert response is successful
         assert res.status_code == 204
 
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
-        assert notifications[0]['kwargs']['user'] == node_public.creator
-        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['kwargs']['user'] == node_public.creator
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert notifications[1]['kwargs']['user'] == admin

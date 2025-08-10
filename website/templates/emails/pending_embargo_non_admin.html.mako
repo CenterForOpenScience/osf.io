@@ -3,7 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
     Hello ${user_fullname},
     <p>
     ${initiated_by} has requested final approvals to submit your registration
@@ -14,11 +13,11 @@
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
       ${embargo_end_date.date()}, at which time it will be made public as part of the
-      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+      <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+      <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     </p>
     <p>

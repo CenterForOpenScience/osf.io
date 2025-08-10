@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
     Hello ${admin_fullname},<br>
     <br>
     <a href="${requester_absolute_url}">${requester_fullname}</a> has requested access to your ${node_project_or_component} "<a href="${node_absolute_url}">${node_title}</a>."<br>

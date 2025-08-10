@@ -4,7 +4,7 @@
 <tr>
   <td style="border-collapse: collapse;">
     <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     ${initiated_by} has requested final approvals to submit your registration
     titled <a href="${registration_link}">${reviewable_title}</a>.

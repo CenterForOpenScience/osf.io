@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
     Hello ${referrer_fullname},<br>
     <br>
     You recently added ${fullname} to "${node.title}". ${fullname} wants to claim their account, but the email address they provided is different from the one you provided.  To maintain security of your project, we are sending the account confirmation to you first.<br>

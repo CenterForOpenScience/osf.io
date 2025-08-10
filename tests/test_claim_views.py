@@ -54,17 +54,20 @@ class TestClaimViews(OsfTestCase):
         self.project_with_source_tag.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         self.preprint_with_source_tag.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         self.project.save()
 
@@ -76,7 +79,8 @@ class TestClaimViews(OsfTestCase):
         unregistered_user = self.project.add_unregistered_contributor(
             fullname=name,
             email=None,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         assert unregistered_user in self.project.contributors
 
@@ -93,9 +97,9 @@ class TestClaimViews(OsfTestCase):
                     'value': email
                 }
             )
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications[1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
 
         # set unregistered record email since we are mocking send_claim_email()
         unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
@@ -124,7 +128,8 @@ class TestClaimViews(OsfTestCase):
         unregistered_user = self.project.add_unregistered_contributor(
             fullname=name,
             email=None,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         assert unregistered_user in self.project.contributors
 
@@ -141,9 +146,9 @@ class TestClaimViews(OsfTestCase):
                     'value': secondary_email
                 }
             )
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications[1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
 
         # set unregistered record email since we are mocking send_claim_email()
         unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
@@ -170,7 +175,8 @@ class TestClaimViews(OsfTestCase):
         invited_user = self.project.add_unregistered_contributor(
             fullname=given_name,
             email=None,
-            auth=Auth(user=self.referrer)
+            auth=Auth(user=self.referrer),
+            notification_type=False
         )
         self.project.save()
 
@@ -195,9 +201,9 @@ class TestClaimViews(OsfTestCase):
             )
 
         # mail was sent
-        assert len(notifications) == 2
+        assert len(notifications['emits']) == 2
         # ... to the correct address
-        assert notifications[0]['kwargs']['user'] == self.referrer
+        assert notifications['emits'][0]['kwargs']['user'] == self.referrer
         assert notifications[1]['kwargs']['user'] == reg_user
 
         # view returns the correct JSON
@@ -215,9 +221,9 @@ class TestClaimViews(OsfTestCase):
                 unclaimed_user=self.user,
                 node=self.project
             )
-        assert len(notifications) == 2
+        assert len(notifications['emits']) == 2
         # ... to the correct address
-        assert notifications[0]['kwargs']['user'] == self.referrer
+        assert notifications['emits'][0]['kwargs']['user'] == self.referrer
         assert notifications[1]['kwargs']['user'] == reg_user
 
     def test_send_claim_registered_email_before_throttle_expires(self):
@@ -228,9 +234,9 @@ class TestClaimViews(OsfTestCase):
                 unclaimed_user=self.user,
                 node=self.project,
             )
-            assert len(notifications) == 2
-            assert notifications[0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-            assert notifications[1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+            assert len(notifications['emits']) == 2
+            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         # second call raises error because it was called before throttle period
         with capture_notifications() as notifications:
             with pytest.raises(HTTPError):
@@ -427,8 +433,8 @@ class TestClaimViews(OsfTestCase):
                 },
             )
         assert res.json['fullname'] == self.given_name
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
     def test_claim_user_post_if_email_is_different_from_given_email(self):
         email = fake_email()  # email that is different from the one the referrer gave
@@ -440,10 +446,10 @@ class TestClaimViews(OsfTestCase):
                     'pk': self.user._primary_key
                 }
             )
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications[0]['kwargs']['user'].username == self.given_email
-        assert notifications[1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications['emits'][0]['kwargs']['user'].username == self.given_email
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
         assert notifications[1]['kwargs']['destination_address'] == email
 
     def test_claim_url_with_bad_token_returns_400(self):

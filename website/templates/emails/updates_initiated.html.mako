@@ -3,7 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
     Hello ${user_fullname},
     <p>
     % if is_initiator:

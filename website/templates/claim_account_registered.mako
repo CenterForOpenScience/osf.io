@@ -10,7 +10,7 @@
 
         <form method="POST" id='claimContributorForm' role='form'>
             <div class='form-group'>
-                <input type="text" class='form-control' value="${user.username}" disabled/>
+                <input type="text" class='form-control' value="${user_username}" disabled/>
             </div>
             <div class='form-group'>
                 ${form.password(placeholder='Password', autofocus=True) | unicode, n }
@@ -20,7 +20,7 @@
                 <input type='hidden' name='next_url' value='${next_url}'>
             %endif
             <span class='help-text'>
-                <a id="signOutLink" href='${signOutUrl}'>I am <strong>not</strong> <em>${user.fullname}</em>.</a>
+                <a id="signOutLink" href='${signOutUrl}'>I am <strong>not</strong> <em>${user_fullname}</em>.</a>
             </span>
             <button type='submit' class="btn btn-submit btn-primary pull-right">Continue</button>
         </form>

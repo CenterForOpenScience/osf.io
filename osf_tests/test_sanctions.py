@@ -88,7 +88,7 @@ class TestRegistrationEmbargoTermination:
     @pytest.fixture()
     def registration_with_contribs(self, user, user2):
         proj = factories.NodeFactory(creator=user)
-        proj.add_contributor(user2, permissions.ADMIN)
+        proj.add_contributor(user2, permissions.ADMIN, notification_type=False)
         embargo = factories.EmbargoFactory()
         embargo.end_date = timezone.now() + datetime.timedelta(days=4)
         return factories.RegistrationFactory(project=proj, creator=user, embargo=embargo)

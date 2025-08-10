@@ -1,7 +1,4 @@
 <%inherit file="notify_base.mako" />
-<%!
-    from website import settings
-%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
@@ -9,13 +6,13 @@
     <p>
         % if is_admin:
             Your request to add <a href="${node.absolute_url}">${node.title}</a> to
-            <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a> was approved.
+            <a href="${domain + 'collections/' + collection.provider._id}">${collection.provider.name}</a> was approved.
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was added to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
+            <a href="${node.absolute_url}">${node.title}</a> was added to <a href="${domain + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
         % endif
     </p>
     <p>
-        If you are not ${user.fullname} or you have been erroneously associated with
+        If you are not ${user_fullname} or you have been erroneously associated with
         <a href="${node.absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>

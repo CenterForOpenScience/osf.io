@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
     Hi ${user_fullname},<br>
     <br>
     Thank you for storing your research materials on OSF. We have updated the OSF Storage capacity to 5 GB for private content and 50 GB for public content. None of your current files stored on OSF Storage will be affected, but after November 3, 2020 projects exceeding capacity will no longer accept new file uploads.
@@ -15,7 +12,7 @@
     The following private projects and components have exceeded the 5 GB OSF Storage allotment and require your action:
     <ul>
       % for node in private_nodes:
-        <li> <a href="${settings.DOMAIN.rstrip('/') + node.url}">${node.title}</a>
+        <li> <a href="${domain.rstrip('/') + node.url}">${node.title}</a>
       % endfor
     </ul>
     <br>
@@ -24,7 +21,7 @@
     The following public projects and components have exceeded the 50 GB OSF Storage allotment and require your action:
     <ul>
       % for node in public_nodes:
-        <li> <a href="${settings.DOMAIN.rstrip('/') + node.url}">${node.title}</a>
+        <li> <a href="${domain.rstrip('/') + node.url}">${node.title}</a>
       % endfor
     </ul>
     <br>
