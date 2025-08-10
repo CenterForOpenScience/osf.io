@@ -1,5 +1,4 @@
 ## -*- coding: utf-8 -*-
-<% from website import settings %>
 <div style="margin: 15px 30px 30px; background: white;">
     <p>Hello ${recipient_fullname},</p>
     <p>

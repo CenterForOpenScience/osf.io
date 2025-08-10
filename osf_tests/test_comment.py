@@ -60,7 +60,8 @@ def unreg_contributor(project):
         unreg_user.fullname,
         unreg_user.email,
         Auth(project.creator),
-        permissions=permissions.READ
+        permissions=permissions.READ,
+        notification_type=False
     )
     return unreg_user
 

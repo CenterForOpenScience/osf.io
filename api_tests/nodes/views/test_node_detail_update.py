@@ -31,7 +31,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
         project_private.add_contributor(
             user_two,
             permissions=permissions.ADMIN,
-            auth=Auth(project_private.creator)
+            auth=Auth(project_private.creator),
+            notification_type=False
         )
         affiliated_institutions = {
             'affiliated_institutions':
@@ -83,7 +84,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
         project_private.add_contributor(
             non_admin,
             permissions=permissions.WRITE,
-            auth=Auth(project_private.creator)
+            auth=Auth(project_private.creator),
+            notification_type=False
         )
         project_private.save()
         res = app.patch_json(
@@ -103,7 +105,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
             project_private.add_contributor(
                 admin_user,
                 permissions=permissions.ADMIN,
-                auth=Auth(project_private.creator))
+                auth=Auth(project_private.creator),
+                notification_type=False
+            )
             project_private.save()
             res = app.patch_json_api(
                 url_private,

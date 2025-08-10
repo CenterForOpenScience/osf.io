@@ -1,3 +1,5 @@
+from unittest import mock
+
 import requests
 import pytest
 from waffle.testutils import override_switch
@@ -21,7 +23,9 @@ from website.util import api_url_for
 
 @pytest.mark.django_db
 class TestMailHog:
+    passthrough_notifications = True
 
+    @mock.patch('website.settings.DEV_MODE', True)
     def test_mailhog_received_mail(self):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
@@ -31,6 +35,7 @@ class TestMailHog:
             NotificationType.objects.get(
                 name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
             ).emit(
+                message_frequency='instantly',
                 destination_address='to_addr@mail.com',
                 event_context={
                     'fullname': '<NAME>',
@@ -51,6 +56,7 @@ class TestMailHog:
 
 @pytest.mark.django_db
 class TestAuthMailhog(OsfTestCase):
+    passthrough_notifications = True
 
     def setUp(self):
         super().setUp()

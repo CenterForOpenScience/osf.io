@@ -798,8 +798,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
         # Only the creator gets an email; the unreg user does not get emailed
         assert public_registration._contributors.count() == 2
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
 @pytest.mark.django_db

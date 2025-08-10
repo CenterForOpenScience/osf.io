@@ -248,8 +248,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         """
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_bcc_institutional_admin(
@@ -268,8 +268,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         create_payload['data']['attributes']['bcc_sender'] = True
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_reply_to_institutional_admin(
@@ -288,8 +288,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         create_payload['data']['attributes']['reply_to'] = True
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_access_requests_disabled_raises_permission_denied(
@@ -324,8 +324,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         create_payload['data']['attributes']['comment'] = ''
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_requester_can_resubmit(self, app, project, institutional_admin, url, create_payload):

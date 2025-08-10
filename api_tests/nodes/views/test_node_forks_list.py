@@ -428,10 +428,10 @@ class TestNodeForkCreate:
             )
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['kwargs']['event_context']['guid'] == public_project.forks.first()._id
-        assert notifications[0]['type'] == NotificationType.Type.NODE_FORK_COMPLETED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['kwargs']['event_context']['guid'] == public_project.forks.first()._id
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_FORK_COMPLETED
 
     def test_send_email_failed(
             self, app, user, public_project_url, fork_data_with_title, public_project):
@@ -444,5 +444,5 @@ class TestNodeForkCreate:
                         fork_data_with_title,
                         auth=user.auth
                     )
-                assert len(notifications) == 1
-                assert notifications[0]['type'] == NotificationType.Type.NODE_FORK_FAILED
+                assert len(notifications['emits']) == 1
+                assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_FORK_FAILED

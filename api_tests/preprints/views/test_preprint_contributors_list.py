@@ -1420,8 +1420,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_unregistered_contributor_sends_email(
             self, app, user, url_preprint_contribs):
@@ -1439,8 +1439,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 },
                 auth=user.auth
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
 
     def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
@@ -1459,8 +1459,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
@@ -1540,8 +1540,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_contributor_added_not_sent_if_unpublished(self, app, user, preprint_unpublished):
         with capture_notifications() as notifications:
@@ -3005,7 +3005,11 @@ class TestPreprintContributorFiltering:
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, preprint):
         non_bibliographic_contrib = UserFactory()
-        preprint.add_contributor(non_bibliographic_contrib, visible=False)
+        preprint.add_contributor(
+            non_bibliographic_contrib,
+            visible=False,
+            notification_type=False
+        )
         preprint.save()
 
         base_url = f'/{API_BASE}preprints/{preprint._id}/contributors/'

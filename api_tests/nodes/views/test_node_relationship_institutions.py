@@ -70,7 +70,8 @@ class RelationshipInstitutionsTestMixin:
         admin.save()
         node.add_contributor(
             admin,
-            permissions=permissions.ADMIN
+            permissions=permissions.ADMIN,
+            notification_type=False
         )
 
         return admin
@@ -84,11 +85,13 @@ class RelationshipInstitutionsTestMixin:
         project = NodeFactory(creator=user)
         project.add_contributor(
             write_contrib,
-            permissions=permissions.WRITE
+            permissions=permissions.WRITE,
+            notification_type=False
         )
         project.add_contributor(
             read_contrib,
-            permissions=permissions.READ
+            permissions=permissions.READ,
+            notification_type=False
         )
         project.save()
         return project
@@ -187,12 +190,15 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             self, app, user, institution_one, institution_two, node, node_institutions_url):
         assert institution_one not in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
-
-        res = app.post_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one, institution_two]),
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         data = res.json['data']
@@ -219,12 +225,12 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user.auth
             )
         assert res.status_code == 200
-        assert len(notifications) == 2
+        assert len(notifications['emits']) == 2
 
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
-        assert notifications[1]['kwargs']['user'] == user
-        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][1]['kwargs']['user'] == user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
     def test_remove_institutions_with_affiliated_user(
             self,
@@ -246,9 +252,9 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 auth=user.auth
             )
 
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert node.affiliated_institutions.count() == 0
@@ -273,14 +279,17 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution_one)
         user.save()
-        node.add_contributor(user)
+        node.add_contributor(user, notification_type=False)
         node.save()
 
-        res = app.put_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one]),
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.put_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
@@ -305,9 +314,9 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 self.create_payload([institution_one, institution_two]),
                 auth=user.auth
             )
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one in node.affiliated_institutions.all()
@@ -333,12 +342,12 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 self.create_payload([institution_two]),
                 auth=user.auth
             )
-        assert len(notifications) == 2
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
-        assert notifications[1]['kwargs']['user'] == user
-        assert notifications[1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][1]['kwargs']['user'] == user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 200
         assert institution_one not in node.affiliated_institutions.all()
@@ -364,9 +373,9 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 self.create_payload([institution_two]),
                 auth=user.auth
             )
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
@@ -397,10 +406,9 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 self.create_payload([institution_one]),
                 auth=user.auth
             )
-
-        assert len(notifications) == 1
-        assert notifications[0]['kwargs']['user'] == user
-        assert notifications[0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
@@ -412,11 +420,15 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         assert institution_one in node.affiliated_institutions.all()
         assert institution_two not in node.affiliated_institutions.all()
 
-        res = app.delete_json_api(
-            node_institutions_url,
-            self.create_payload([institution_one, institution_two]),
-            auth=user.auth,
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                node_institutions_url,
+                self.create_payload([institution_one, institution_two]),
+                auth=user.auth,
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
@@ -426,11 +438,15 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         node.affiliated_institutions.add(institution_one)
         node.save()
 
-        res = app.delete_json_api(
-            resource_url,
-            self.create_payload([institution_one]),
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                resource_url,
+                self.create_payload([institution_one]),
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
 
@@ -447,7 +463,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         user_auth = AuthUserFactory()
         user_auth.add_or_update_affiliated_institution(institution_one)
         user_auth.save()
-        node.add_contributor(user_auth, permissions=permissions.READ)
+        node.add_contributor(user_auth, permissions=permissions.READ, notification_type=False)
         node.affiliated_institutions.add(institution_one)
         node.save()
 
@@ -467,46 +483,56 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         project.save()
         assert institution_one in project.affiliated_institutions.all()
 
-        res = app.delete_json_api(
-            f'/{API_BASE}nodes/{project._id}/relationships/institutions/',
-            self.create_payload([institution_one]),
-            auth=user_auth.auth,
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                f'/{API_BASE}nodes/{project._id}/relationships/institutions/',
+                self.create_payload([institution_one]),
+                auth=user_auth.auth,
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 204
         assert institution_one not in project.affiliated_institutions.all()
 
     def test_admin_can_add_affiliated_institution(self, app, user, institution_one, node, node_institutions_url):
-        res = app.post_json_api(
-            node_institutions_url,
-            {
-                'data': [
-                    {
-                        'type': 'institutions',
-                        'id': institution_one._id
-                    }
-                ]
-            },
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                {
+                    'data': [
+                        {
+                            'type': 'institutions',
+                            'id': institution_one._id
+                        }
+                    ]
+                },
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()
 
     def test_admin_can_remove_admin_affiliated_institution(
             self, app, user, institution_one, node, node_institutions_url):
         node.affiliated_institutions.add(institution_one)
-        res = app.delete_json_api(
-            node_institutions_url,
-            {
-                'data': [
-                    {
-                        'type': 'institutions',
-                        'id': institution_one._id
-                    }
-                ]
-            },
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                node_institutions_url,
+                {
+                    'data': [
+                        {
+                            'type': 'institutions',
+                            'id': institution_one._id
+                        }
+                    ]
+                },
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert institution_one not in node.affiliated_institutions.all()
 
@@ -514,35 +540,41 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             self, app, user, read_contrib_institution, node, node_institutions_url):
         node.affiliated_institutions.add(read_contrib_institution)
         node.save()
-        res = app.delete_json_api(
-            node_institutions_url,
-            {
-                'data': [
-                    {
-                        'type': 'institutions',
-                        'id': read_contrib_institution._id
-                    }
-                ]
-            },
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                node_institutions_url,
+                {
+                    'data': [
+                        {
+                            'type': 'institutions',
+                            'id': read_contrib_institution._id
+                        }
+                    ]
+                },
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert read_contrib_institution not in node.affiliated_institutions.all()
 
     def test_read_write_contributor_can_add_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
-        res = app.post_json_api(
-            node_institutions_url,
-            {
-                'data': [
-                    {
-                        'type': 'institutions',
-                        'id': write_contrib_institution._id
-                    }
-                ]
-            },
-            auth=write_contrib.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                {
+                    'data': [
+                        {
+                            'type': 'institutions',
+                            'id': write_contrib_institution._id
+                        }
+                    ]
+                },
+                auth=write_contrib.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert res.status_code == 201
         assert write_contrib_institution in node.affiliated_institutions.all()
 
@@ -550,17 +582,21 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
         node.affiliated_institutions.add(write_contrib_institution)
         node.save()
-        res = app.delete_json_api(
-            node_institutions_url,
-            {
-                'data': [
-                    {
-                        'type': 'institutions',
-                        'id': write_contrib_institution._id
-                    }
-                ]
-            },
-            auth=write_contrib.auth)
+        with capture_notifications() as notifications:
+            res = app.delete_json_api(
+                node_institutions_url,
+                {
+                    'data': [
+                        {
+                            'type': 'institutions',
+                            'id': write_contrib_institution._id
+                        }
+                    ]
+                },
+                auth=write_contrib.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
         assert res.status_code == 204
         assert write_contrib_institution not in node.affiliated_institutions.all()
 

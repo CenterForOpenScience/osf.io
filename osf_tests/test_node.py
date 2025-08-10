@@ -1708,7 +1708,8 @@ class TestPermissionMethods:
         project.add_unregistered_contributor(
             fullname='David Davidson',
             email=unreg.username,
-            auth=auth
+            auth=auth,
+            notification_type=False
         )
         project.save()
         assert project.is_contributor(unreg) is True
@@ -2132,15 +2133,15 @@ class TestSetPrivacy:
         with capture_notifications() as notifications:
             node.set_privacy('private', auth=auth)
             node.set_privacy('public', auth=auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
 
     def test_set_privacy_sends_mail(self, node, auth):
         with capture_notifications() as notifications:
             node.set_privacy('private', auth=auth)
             node.set_privacy('public', auth=auth, meeting_creation=False)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)

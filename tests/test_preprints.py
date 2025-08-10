@@ -1996,13 +1996,13 @@ class TestPreprintConfirmationEmails(OsfTestCase):
     def test_creator_gets_email(self):
         with capture_notifications() as notifications:
             self.preprint.set_published(True, auth=Auth(self.user), save=True)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
         with capture_notifications() as notifications:
             self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
 
 class TestPreprintOsfStorage(OsfTestCase):

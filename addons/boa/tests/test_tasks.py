@@ -68,8 +68,8 @@ class TestBoaErrorHandling(OsfTestCase):
                         output_file_name=self.output_file_name,
                         job_id=self.job_id
                     )
-                assert len(notifications) == 1
-                assert notifications[0]['type'] == NotificationType.Type.ADDONS_BOA_JOB_FAILURE
+                assert len(notifications['emits']) == 1
+                assert notifications['emits'][0]['type'] == NotificationType.Type.ADDONS_BOA_JOB_FAILURE
                 mock_sentry_log_message.assert_called_with(self.error_message, skip_session=True)
                 mock_logger_error.assert_called_with(self.error_message)
                 assert return_value == BoaErrorCode.UNKNOWN

@@ -740,8 +740,10 @@ class TestOSFUser:
         u = UnregUserFactory()
         project = NodeFactory()
         project.add_unregistered_contributor(
-            fullname=name, email=u.username,
-            auth=Auth(project.creator)
+            fullname=name,
+            email=u.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         u.reload()
@@ -752,8 +754,10 @@ class TestOSFUser:
         project = NodeFactory()
         old_name = unreg_user.fullname
         project.add_unregistered_contributor(
-            fullname=old_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=old_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -765,8 +769,10 @@ class TestOSFUser:
         assert unreg_user not in project.contributors
         new_name = fake.name()
         project.add_unregistered_contributor(
-            fullname=new_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=new_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -903,8 +909,8 @@ class TestChangePassword:
             user.set_password(old_password)
             user.save()
 
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
 
     def test_set_password_no_notify(self, user):
         old_password = 'password'
@@ -2092,7 +2098,13 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
-        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions=permissions.ADMIN, auth=Auth(user))
+        project.add_unregistered_contributor(
+            'lisa',
+            'lisafrank@cos.io',
+            permissions=permissions.ADMIN,
+            auth=Auth(user),
+            notification_type=False
+        )
         project.save()
         return project
 

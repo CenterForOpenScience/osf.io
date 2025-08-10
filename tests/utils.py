@@ -255,34 +255,29 @@ def run_celery_tasks():
 
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True):
+def capture_notifications(capture_email: bool = True, passthrough: bool = False):
     """
     Context manager to capture NotificationType emits without interfering with ORM calls
     and (optionally) stub out actual email sending so tests don't open sockets.
 
-    Yields a dict with two lists:
-      {
-        "emits": [
-          {"type": <str name>, "args": tuple, "kwargs": dict}, ...
-        ],
-        "emails": [
-          {
-            "protocol": "smtp" | "sendgrid",
-            "to": <str or user object>,
-            "notification_type": <NotificationType or str>,
-            "context": <dict>,
-            "email_context": <dict>
-          }, ...
-        ]
-      }
+    Args:
+        capture_email (bool): If True, patch email senders to record sends.
+        passthrough (bool): If True, call the original email send functions after capturing.
+                            Defaults to False.
+
+    Yields:
+        dict: {
+            "emits": [ {"type": str, "args": tuple, "kwargs": dict}, ... ],
+            "emails": [ {"protocol": str, "to": ..., "notification_type": ..., "context": ..., "email_context": ...}, ... ]
+        }
     """
     NotificationType = apps.get_model('osf', 'NotificationType')
-    real_get = NotificationType.objects.get  # Save the real .get()
+    real_get = NotificationType.objects.get
 
     captured = {'emits': [], 'emails': []}
 
     def side_effect(*args, **kwargs):
-        notifier = real_get(*args, **kwargs)  # Call the real .get()
+        notifier = real_get(*args, **kwargs)
         original_emit = notifier.emit
 
         def wrapped_emit(*emit_args, **emit_kwargs):
@@ -299,7 +294,12 @@ def capture_notifications(capture_email: bool = True):
     patches = [
         mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect),
     ]
+
     if capture_email:
+        from osf import email as _osf_email
+        _real_send_over_smtp = _osf_email.send_email_over_smtp
+        _real_send_with_sendgrid = _osf_email.send_email_with_send_grid
+
         def _fake_send_over_smtp(to_email, notification_type, context, email_context):
             captured['emails'].append({
                 'protocol': 'smtp',
@@ -308,15 +308,19 @@ def capture_notifications(capture_email: bool = True):
                 'context': context,
                 'email_context': email_context,
             })
+            if passthrough:
+                return _real_send_over_smtp(to_email, notification_type, context, email_context)
 
         def _fake_send_with_sendgrid(user, notification_type, context, email_context):
             captured['emails'].append({
                 'protocol': 'sendgrid',
-                'to': user,  # keeping the object for tests that assert user props
+                'to': user,
                 'notification_type': notification_type,
                 'context': context,
                 'email_context': email_context,
             })
+            if passthrough:
+                return _real_send_with_sendgrid(user, notification_type, context, email_context)
 
         patches.extend([
             mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),

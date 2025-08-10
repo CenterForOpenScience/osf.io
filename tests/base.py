@@ -70,6 +70,7 @@ fake = Factory.create()
 class DbTestCase(unittest.TestCase):
     """Base `TestCase` for tests that require a scratch database.
     """
+    passthrough_notifications = False
 
     @classmethod
     def setUpClass(cls):
@@ -78,7 +79,7 @@ class DbTestCase(unittest.TestCase):
         # Start notifications capture (existing context manager; unchanged)
         from tests.utils import capture_notifications
 
-        cls._notifications_cm = capture_notifications()
+        cls._notifications_cm = capture_notifications(passthrough=cls.passthrough_notifications)
         cls._notifications = cls._notifications_cm.__enter__()
 
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS

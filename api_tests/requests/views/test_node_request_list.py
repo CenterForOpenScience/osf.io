@@ -87,9 +87,9 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
 
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
-        assert notifications[1]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
         assert res.status_code == 201
 
     def test_email_not_sent_to_parent_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
@@ -102,8 +102,8 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
                 create_payload,
                 auth=noncontrib.auth
             )
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1

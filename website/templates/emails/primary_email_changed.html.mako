@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     The primary email address for your OSF account has been changed to ${new_address}.<br>
     <br>

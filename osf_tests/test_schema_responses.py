@@ -583,7 +583,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert len(notifications) == 3
+        assert len(notifications['emits']) == 3
         assert any(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED for notification in notifications)
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
@@ -684,7 +684,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert not notifications  # Should only send email on final approval
         with capture_notifications() as notifications:
             revised_response.approve(user=alternate_user)
-        assert len(notifications) == 3
+        assert len(notifications['emits']) == 3
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications)
 
     def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
@@ -752,7 +752,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.reject(user=admin_user)
-        assert len(notifications) == 3
+        assert len(notifications['emits']) == 3
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
                    for notification in notifications)
 
@@ -862,11 +862,11 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-        assert len(notifications) == 3
-        assert notifications[0]['kwargs']['user'] == moderator
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert len(notifications['emits']) == 3
+        assert notifications['emits'][0]['kwargs']['user'] == moderator
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications[1]['kwargs']['user'] == moderator
-        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications[2]['kwargs']['user'] == admin_user
         assert notifications[2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
@@ -877,11 +877,11 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-        assert len(notifications) == 3
-        assert notifications[0]['kwargs']['user'] == moderator
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert len(notifications['emits']) == 3
+        assert notifications['emits'][0]['kwargs']['user'] == moderator
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications[1]['kwargs']['user'] == moderator
-        assert notifications[1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications[2]['kwargs']['user'] == admin_user
         assert notifications[2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
@@ -922,7 +922,7 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.accept(user=moderator)
-        assert len(notifications) == 3
+        assert len(notifications['emits']) == 3
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
                    for notification in notifications)
 
@@ -963,7 +963,7 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.reject(user=moderator)
-        assert len(notifications) == 3
+        assert len(notifications['emits']) == 3
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
                    for notification in notifications)
 

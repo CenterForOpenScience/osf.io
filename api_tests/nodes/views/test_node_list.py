@@ -1606,7 +1606,8 @@ class TestNodeCreate:
             fullname='far',
             email='foo@bar.baz',
             permissions=permissions.READ,
-            auth=Auth(user=user_one)
+            auth=Auth(user=user_one),
+            notification_type=False
         )
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'

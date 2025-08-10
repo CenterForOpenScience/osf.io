@@ -4,7 +4,7 @@
 <tr>
   <td style="border-collapse: collapse;">
     <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>

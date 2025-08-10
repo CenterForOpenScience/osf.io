@@ -1,7 +1,3 @@
-<%!
-    from website import settings
-    from datetime import datetime
-%>
 <!doctype html>
 <html class="no-js" lang="">
 <head>
@@ -24,7 +20,7 @@
                                         <td style="border-collapse: collapse;">
 											% if context.get('logo_url'):
 												<img src="${logo_url}" alt="${provider_name} logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;max-height: 100px;">
-                                            % elif 'logo' not in settings.OSF_LOGO_LIST:
+                                            % elif 'logo' not in OSF_LOGO_LIST:
                                                 <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${logo}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
                                             %else:
                                                 <img src="https://osf.io/static/img/${logo}.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
@@ -61,9 +57,9 @@
                             % else:
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
                                     % if context.get('can_change_node_preferences', False) and node:
-                                        this <a href="${settings.DOMAIN + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
+                                        this <a href="${domain + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
                                     % endif
-                                    your <a href="${settings.DOMAIN + "settings/notifications/"}">user settings</a> to manage default email settings.
+                                    your <a href="${domain + "settings/notifications/"}">user settings</a> to manage default email settings.
                                 </p>
                             % endif
                         </td>

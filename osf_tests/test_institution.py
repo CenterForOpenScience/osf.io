@@ -156,9 +156,9 @@ class TestInstitutionManager:
         user_2.save()
         with capture_notifications() as notifications:
             institution._send_deactivation_email()
-        assert len(notifications) == 2
-        assert notifications[0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
-        assert notifications[1]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
 
     def test_send_deactivation_email_call_args(self):
         institution = InstitutionFactory()
@@ -167,8 +167,8 @@ class TestInstitutionManager:
         user.save()
         with capture_notifications() as notifications:
             institution._send_deactivation_email()
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
 
     def test_deactivate_inactive_institution_noop(self):
         institution = InstitutionFactory()

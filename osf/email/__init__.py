@@ -20,15 +20,14 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         context (dict): The email content context.
         email_context (dict): The email context for sending, such as header changes for BCC or reply-to
     """
-    if not settings.MAIL_SERVER:
-        raise NotImplementedError('MAIL_SERVER is not set')
-
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
         host = settings.MAILHOG_HOST
         port = settings.MAILHOG_PORT
     else:
         host = settings.MAIL_SERVER
         port = settings.MAIL_PORT
+    if not host or not port:
+        raise NotImplementedError('MAIL_SERVER or MAIL_PORT is not set')
 
     email = EmailMessage(
         subject=None if not notification_type.subject else notification_type.subject.format(**context),
@@ -53,7 +52,8 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         if attachment_name and attachment_content:
             email.attach(attachment_name, attachment_content)
 
-    email.send()
+    if not settings.CI_ENV:
+        email.send()
 
 def send_email_with_send_grid(to_addr, notification_type, context, email_context):
     """Send an email notification using SendGrid.

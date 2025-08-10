@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hi ${user.given_name},
+    Hi ${user_fullname},
     <br>
     <br>
 

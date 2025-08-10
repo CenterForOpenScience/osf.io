@@ -9,7 +9,7 @@
 <tr>
   <td style="border-collapse: collapse;">
 
-Hello ${user.fullname},<br>
+Hello ${user_fullname},<br>
 <br>
 Thank you for verifying your account on OSF, a free, open source service maintained by the Center for Open Science. Here are a few things you can do with OSF:
 <br>

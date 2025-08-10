@@ -114,8 +114,8 @@ class TestPOSTCollectionsModeratorList:
 
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
         assert res.status_code == 201
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
@@ -143,9 +143,9 @@ class TestPOSTCollectionsModeratorList:
             res = app.post_json_api(url, payload, auth=admin.auth)
 
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
-        assert notifications[0]['kwargs']['user'].username == unreg_user['email']
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        assert notifications['emits'][0]['kwargs']['user'].username == unreg_user['email']
 
     def test_POST_admin_failure_invalid_group(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
@@ -158,8 +158,8 @@ class TestPOSTCollectionsModeratorList:
         payload = make_payload(email='somenewuser@gmail.com', full_name='Some User', permission_group='moderator')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
         assert res.status_code == 201
         assert len(res.json['data']['id']) == 5
         assert res.json['data']['attributes']['permission_group'] == 'moderator'

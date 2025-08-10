@@ -3,10 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
-    Hello ${fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     You have been added by ${referrer_fullname} as a contributor to the preprint "${node.title}" on the Open Science Framework. To set a password for your account, visit:<br>
     <br>

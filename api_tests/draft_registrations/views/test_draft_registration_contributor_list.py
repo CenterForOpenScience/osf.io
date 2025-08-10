@@ -183,7 +183,11 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
-            project_private.add_contributor(user, permissions=perm)
+            project_private.add_contributor(
+                user,
+                permissions=perm,
+                notification_type=False
+            )
             users[perm].append(user._id)
 
         res = app.get(url_private, auth=user.auth)
@@ -242,8 +246,8 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
                 auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
@@ -285,8 +289,8 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
                 auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_signal_if_default(self, app, user, url_project_contribs):
@@ -304,8 +308,8 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
                 }, auth=user.auth
             )
         assert res.status_code == 201
-        assert len(notifications) == 1
-        assert notifications[0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
@@ -374,11 +378,17 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_private
 
     @pytest.fixture()
@@ -484,11 +494,17 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_private
 
 

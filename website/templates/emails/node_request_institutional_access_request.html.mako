@@ -3,10 +3,9 @@
 <%def name="content()">
     <tr>
       <td style="border-collapse: collapse;">
-        <%!from website import settings%>
-        Hello ${recipient.fullname},
+        Hello ${recipient_fullname},
         <p>
-            <a href="${sender.absolute_url}">${sender.fullname}</a> has requested access to <a href="${node.absolute_url}">${node.title}</a>.
+            <a href="${sender_absolute_url}">${sender_fullname}</a> has requested access to <a href="${node_absolute_url}">${node_title}</a>.
         </p>
         % if comment:
         <p>
@@ -14,21 +13,21 @@
         </p>
         % endif
         <p>
-            To review the request, click <a href="${node.absolute_url}/contributors/">here</a> to allow or deny access and configure permissions.
+            To review the request, click <a href="${node_absolute_url}/contributors/">here</a> to allow or deny access and configure permissions.
         </p>
         <p>
             This request is being sent to you because your project has the “Request Access” feature enabled.
             This allows potential collaborators to request to be added to your project or to disable this feature, click
-            <a href="${node.absolute_url}/settings/">here</a>
+            <a href="${node_absolute_url}/settings/">here</a>
         </p>
 
         <p>
-            Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about OSF, or
+            Want more information? Visit <a href="${domain}">${n}</a> to learn about OSF, or
             <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization, the Center
             for Open Science.
         </p>
         <p>
-            Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
+            Questions? Email <a href="mailto:${OSF_CONTACT_EMAIL}">${OSF_CONTACT_EMAIL}</a>
         </p>
       </td>
     </tr>

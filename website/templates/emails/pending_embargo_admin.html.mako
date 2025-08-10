@@ -3,8 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You have requested final approvals to submit your registration
@@ -19,11 +18,11 @@
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be embargoed until
       ${embargo_end_date.date()}, at which time it will be made public as part of the
-      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+      <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be embargoed until
       ${embargo_end_date.date()}, at which point it will be made public as part of the
-      <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+      <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     </p>
     <p style="color:red;">
@@ -70,7 +69,7 @@
       <p>
       You will be automatically subscribed to notification emails for this project. To change your email notification
       preferences, visit your project or your user settings:
-      <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+      <a href="${domain + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
       </p>
     % endif
     <p>

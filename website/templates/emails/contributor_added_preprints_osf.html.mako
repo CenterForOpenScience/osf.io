@@ -3,10 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     ${referrer_text}} as a contributor to the preprint "${node_title}" on the Open Science Framework: ${node_absolute_url}<br>
     <br>

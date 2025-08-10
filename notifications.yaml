@@ -212,7 +212,7 @@ notification_types:
     subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/emails/archive_uncaught_error_user.html.mako'
+    template: 'website/templates/emails/new_public_project.html.mako'
   - name: user_confirm_email_erpc
     subject: 'OSF Account Verification, Election Research Preacceptance Competition'
     object_content_type_model_name: osfuser

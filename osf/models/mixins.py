@@ -317,9 +317,11 @@ class AffiliatedInstitutionMixin(models.Model):
                         name=NotificationType.Type.NODE_AFFILIATION_CHANGED
                     ).emit(
                         user=user,
+                        subscribed_object=user,
                         event_context={
                             'user_fullname': user.fullname,
                             'node_title': self.title,
+                            'node_absolute_url': self.get_absolute_url(),
                         }
                     )
         if log:
@@ -358,10 +360,12 @@ class AffiliatedInstitutionMixin(models.Model):
                     NotificationType.objects.get(
                         name=NotificationType.Type.NODE_AFFILIATION_CHANGED
                     ).emit(
+                        subscribed_object=self,
                         user=user,
                         event_context={
                             'user_fullname': user.fullname,
                             'node_title': self.title,
+                            'node_absolute_url': self.get_absolute_url(),
                         }
                     )
 
@@ -1511,8 +1515,12 @@ class ContributorMixin(models.Model):
         """
         for contrib in contributors:
             self.add_contributor(
-                contributor=contrib['user'], permissions=contrib['permissions'],
-                visible=contrib['visible'], auth=auth, log=False, save=False,
+                contributor=contrib['user'],
+                permissions=contrib['permissions'],
+                visible=contrib['visible'],
+                auth=auth,
+                log=False,
+                save=False,
             )
         if log and contributors:
             params = self.log_params

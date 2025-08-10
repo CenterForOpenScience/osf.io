@@ -3,8 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
