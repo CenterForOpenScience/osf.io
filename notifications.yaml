@@ -93,12 +93,12 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/pending_invite.html.mako'
   - name: user_forward_invite_registered
-    subject: 'Please forward to ${fullname}'
+    subject: 'Please forward to ${user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite_registered.html.mako'
   - name: user_forward_invite
-    subject: 'Please forward to ${fullname}'
+    subject: 'Please forward to ${user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/emails/forward_invite.html.mako'
@@ -349,7 +349,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/access_request_rejected.html.mako'
   - name: node_access_request_submitted
-    subject: 'An OSF user has requested access to your ${node.project_or_component}'
+    subject: 'An OSF user has requested access to your project'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/access_request_submitted.html.mako'
@@ -381,7 +381,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/updates_rejected.html.mako'
   - name: node_archive_file_not_found_desk
-    subject: 'Problem registering ${unescape_entities(src.title)}'
+    subject: 'Problem registering ${src_title}'
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/archive_file_not_found_desk.html.mako'
   - name: node_archive_file_not_found_user
@@ -389,7 +389,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/archive_file_not_found_user.html.mako'
   - name: node_archive_uncaught_error_desk
-    subject: 'Problem registering ${unescape_entities(src.title)}'
+    subject: 'Problem registering ${src_title}'
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/archive_uncaught_error_desk.html.mako'
   - name: node_archive_registration_stuck_desk
@@ -397,7 +397,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/archive_registration_stuck_desk.html.mako'
   - name: node_archive_success
-    subject: 'Registration of ${unescape_entities(src.title)} complete'
+    subject: 'Registration of ${src_title} complete'
     object_content_type_model_name: abstractnode
     template: 'website/templates/emails/archive_success.html.mako'
 

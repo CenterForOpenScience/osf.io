@@ -139,6 +139,7 @@ class TestContributorDetail(ContributorDetailMixin):
             'Nesiehr Sinned',
             'reason@gmail.com',
             auth=Auth(user),
+            notification_type=False,
         )
         url = self.make_resource_url(project_private._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth)

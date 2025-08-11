@@ -715,15 +715,18 @@ class Retraction(EmailApprovableSanction):
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
+                'user_fullname': user.fullname,
             }
         else:
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
+
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
+                'user_fullname': user.fullname,
             }
 
     def _on_reject(self, event_data):
@@ -1006,6 +1009,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'approval_time_span': approval_time_span,
+                'user_fullname': user.fullname,
             })
         else:
             context.update({
@@ -1017,6 +1021,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'reviewable_title': registration.title,
                 'reviewable_absolute_url': registration.absolute_url,
                 'approval_time_span': approval_time_span,
+                'user_fullname': user.fullname,
             })
         return context
 
