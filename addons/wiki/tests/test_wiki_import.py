@@ -1057,8 +1057,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.project.add_addon('wiki', auth=self.auth)
         self.project.save()
 
-        self.app.set_user(self.user)
-
         mock_get_for_node.return_value = [
             {
                 'name': 'TEST',
