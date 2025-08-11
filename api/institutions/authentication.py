@@ -341,6 +341,7 @@ class InstitutionAuthentication(BaseAuthentication):
                 event_context={
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'user_fullname': user.fullname,
                     'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
                 },
             )

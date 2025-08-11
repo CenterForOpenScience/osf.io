@@ -12,7 +12,7 @@
     <br>
     ${claim_url}<br>
     <br>
-    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${settings.DOMAIN + "settings/notifications/"}<br>
+    Once you have set a password, you will be able to make contributions to "${node.title}" and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${domain + "settings/notifications/"}<br>
     <br>
     To preview "${node.title}" click the following link: ${node.absolute_url}<br>
     <br>

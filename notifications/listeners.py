@@ -70,9 +70,9 @@ def queue_first_public_project_email(user, node):
         subscribed_object=user,
         user=user,
         event_context={
+            'user_fullname': user.fullname,
             'domain': settings.DOMAIN,
             'nid': node._id,
-            'fullname': user.fullname,
             'project_title': node.title,
             'osf_url': settings.DOMAIN,
         }
