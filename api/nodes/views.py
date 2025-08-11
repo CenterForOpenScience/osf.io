@@ -1049,9 +1049,11 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 name=NotificationType.Type.NODE_FORK_FAILED,
             ).emit(
                 user=user,
+                subscribed_object=node,
                 event_context={
-                    'guid': node._id,
-                    'title': node.title,
+                    'guid': fork._id,
+                    'node_title': node.title,
+                    'node__id': node._id,
                     'can_change_preferences': False,
                 },
             )
@@ -1061,9 +1063,11 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 name=NotificationType.Type.NODE_FORK_COMPLETED,
             ).emit(
                 user=user,
+                subscribed_object=node,
                 event_context={
                     'guid': fork._id,
-                    'title': node.title,
+                    'node_title': node.title,
+                    'node__id': node._id,
                     'can_change_preferences': False,
                 },
             )

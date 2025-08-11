@@ -861,7 +861,7 @@ def addon_deleted_file(auth, target, error_type='BLAME_PROVIDER', **kwargs):
             'version_id': None,
             'file_guid': file_guid,
             'file_id': file_node._id,
-            'provider': file_node.provider,
+            'preprint_word': file_node.provider.preprint_word,
             'materialized_path': file_node.materialized_path or file_path,
             'private': getattr(target.get_addon(file_node.provider), 'is_private', False),
             'file_tags': list(file_node.tags.filter(system=False).values_list('name', flat=True)) if not file_node._state.adding else [],  # Only access ManyRelatedManager if saved
