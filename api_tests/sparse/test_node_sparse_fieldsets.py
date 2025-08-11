@@ -223,14 +223,20 @@ class TestSparseViewOnlyLinks:
         private_node_one = ProjectFactory(
             is_public=False,
             creator=creation_user,
-            title='Private One')
+            title='Private One'
+        )
         private_node_one.add_contributor(
             contributing_read_user,
-            permissions=permissions.READ, save=True)
+            permissions=permissions.READ,
+            save=True,
+            notification_type=False
+        )
         private_node_one.add_contributor(
             contributing_write_user,
             permissions=permissions.WRITE,
-            save=True)
+            notification_type=False,
+            save=True
+        )
         return private_node_one
 
     @pytest.fixture()

@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_name + ' has added you' if referrer_name else 'You have been added'} as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}<br>
+    ${referrer_text} as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}<br>
     <br>
     This project also contains the supplemental files for the following preprint(s):
     <br>
