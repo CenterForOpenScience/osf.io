@@ -1486,6 +1486,9 @@ class ContributorMixin(models.Model):
             if save:
                 self.save()
             if self._id and contrib_to_add:
+                if settings.DEV_MODE or settings.CI_MODE or settings.TEST_ENV:
+                    if notification_type is None:
+                        notification_type = False
                 project_signals.contributor_added.send(
                     self,
                     contributor=contributor,

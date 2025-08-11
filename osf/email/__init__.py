@@ -7,6 +7,7 @@ from sendgrid.helpers.mail import Mail
 
 from osf import features
 from website import settings
+from api.base.settings import CI_ENV
 from django.core.mail import EmailMessage, get_connection
 
 
@@ -52,7 +53,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         if attachment_name and attachment_content:
             email.attach(attachment_name, attachment_content)
 
-    if not settings.CI_ENV:
+    if not CI_ENV:
         email.send()
 
 def send_email_with_send_grid(to_addr, notification_type, context, email_context):
