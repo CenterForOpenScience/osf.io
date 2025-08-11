@@ -1050,11 +1050,14 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
         self.user.is_registered = True
         self.user.save()
+        self.auth = Auth(user=self.user)
 
         # 上記のユーザに対してプロジェクトを作り直す
         self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.project.add_addon('wiki',auth=self.auth)
+        self.project.add_addon('wiki', auth=self.auth)
         self.project.save()
+
+        self.app.set_user(self.user)
 
         mock_get_for_node.return_value = [
             {
