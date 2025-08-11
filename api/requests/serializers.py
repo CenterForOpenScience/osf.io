@@ -193,14 +193,17 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 user=recipient,
                 message_frequency='instantly',
                 event_context={
-                    'sender': sender.username,
-                    'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,
-                    'reply_to': sender.username if validated_data['reply_to'] else None,
-                    'recipient': recipient.username if recipient else None,
+                    'sender_fullname': sender.fullname,
+                    'sender_absolute_url': sender.absolute_url,
+                    'recipient_fullname': recipient.username if recipient else None,
                     'comment': comment,
-                    'institution': institution.id if institution else None,
+                    'institution_name': institution.name if institution else None,
                     'osf_url': settings.DOMAIN,
                     'node': node_request.target._id,
+                },
+                email_context={
+                    'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,
+                    'reply_to': sender.username if validated_data['reply_to'] else None,
                 },
             )
 

@@ -15,7 +15,7 @@
 
             was canceled. If you wish to be associated with the collection, you will need to request to be added again.
         % else:
-            <a href="${remover_absolute_url}">${remover.fullname}</a> canceled the request to add
+            <a href="${remover_absolute_url}">${remover_fullname}</a> canceled the request to add
             <a href="${node_absolute_url}">${node_title}</a>to
             % if collection.provider:
                 <a href="${collections_link}">${collection_provider_name}</a>

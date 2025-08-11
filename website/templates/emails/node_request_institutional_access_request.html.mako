@@ -27,7 +27,7 @@
             for Open Science.
         </p>
         <p>
-            Questions? Email <a href="mailto:${OSF_CONTACT_EMAIL}">${OSF_CONTACT_EMAIL}</a>
+            Questions? Email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
         </p>
       </td>
     </tr>

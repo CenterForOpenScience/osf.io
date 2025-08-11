@@ -1,6 +1,6 @@
 ## -*- coding: utf-8 -*-
 <div style="margin: 40px;">
-    <p>Hello ${recipient.fullname},</p>
+    <p>Hello ${recipient_fullname},</p>
     <p>
         Your ${document_type} "<a href="${reviewable_absolute_url}">${reviewable_title}</a>" has an updated comment by the moderator:<br/>
         ${comment}

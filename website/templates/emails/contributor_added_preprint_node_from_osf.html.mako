@@ -5,17 +5,15 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_text} as a contributor to the project "${node.title}" on the Open Science Framework: ${node.absolute_url}<br>
+    ${referrer_text} as a contributor to the project "${node_title}" on the Open Science Framework: ${node_absolute_url}<br>
     <br>
     This project also contains the supplemental files for the following preprint(s):
     <br>
     <ul>
-    % for preprint in published_preprints:
-        <li>${preprint['absolute_url']}</li>
-    % endfor
+        ${preprint_list}
     </ul>
     <br>
-    If you are erroneously being associated with "${node.title}," then you may visit the project's "Contributors" page and remove yourself as a contributor.<br>
+    If you are erroneously being associated with "${node_title}," then you may visit the project's "Contributors" page and remove yourself as a contributor.<br>
     <br>
     Sincerely,<br>
     <br>

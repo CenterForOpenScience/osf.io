@@ -355,6 +355,7 @@ class InstitutionAuthentication(BaseAuthentication):
             ).emit(
                 user=user,
                 event_context={
+                    'user_fullname': user.fullname,
                     'email_to_add': email_to_add,
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,

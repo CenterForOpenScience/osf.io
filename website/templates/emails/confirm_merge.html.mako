@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${merge_target.fullname},<br>
+    Hello ${merge_target_fullname},<br>
     <br>
     This email is to notify you that ${user_username} has initiated an account merge with your account on the Open Science Framework (OSF). This merge will move all of the projects and components associated with ${email} and with ${user_username} into one account. All projects and components will be displayed under ${user.username}.<br>
     <br>

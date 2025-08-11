@@ -17,7 +17,7 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import get_session
 from framework.transactions.handlers import no_auto_transaction
 from framework.utils import get_timestamp, throttle_period_expired
-from osf.models import Tag
+from osf.models import Tag, Node
 from osf.exceptions import NodeStateError
 from osf.models import (
     AbstractNode,
@@ -637,7 +637,9 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
             'referrer_name': referrer_name,
             'domain': settings.DOMAIN,
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
-            'branded_service': getattr(getattr(node, 'provider', None), 'id', None),
+            'branded_service__id': getattr(getattr(node, 'provider', None), '_id', None),
+            'branded_service_name': getattr(getattr(node, 'provider', None), 'name', None),
+            'branded_service_preprint_word': getattr(getattr(node, 'provider', None), 'preprint_word', None),
             'node_title': node.title,
             'node_id': node._id,
             'node_provider__id': getattr(node.provider, '_id', None),
@@ -645,7 +647,7 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
             'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-            'published_preprints': [] if isinstance(node, (Preprint, DraftRegistration)) else serialize_preprints(node, user=None),
+            'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(node, user=None)) if isinstance(node, Node) else '- (none)\n'
         }
     )
 

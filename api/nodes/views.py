@@ -1051,6 +1051,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 user=user,
                 subscribed_object=node,
                 event_context={
+                    'domain': settings.DOMAIN,
                     'guid': fork._id,
                     'node_title': node.title,
                     'node__id': node._id,
@@ -1065,6 +1066,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
                 user=user,
                 subscribed_object=node,
                 event_context={
+                    'domain': settings.DOMAIN,
                     'guid': fork._id,
                     'node_title': node.title,
                     'node__id': node._id,

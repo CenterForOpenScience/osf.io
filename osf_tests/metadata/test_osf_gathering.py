@@ -101,9 +101,9 @@ class TestOsfGathering(TestCase):
             creator=cls.user__admin,
             is_public=True,
         )
-        cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
-        cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ)
-        cls.preprint.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False)
+        cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE, notification_type=False)
+        cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, notification_type=False)
+        cls.preprint.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False, notification_type=False)
         cls.registration_cedar_record = factories.CedarMetadataRecordFactory(
             template=cls.cedar_template,
             is_published=True,

@@ -550,15 +550,15 @@
                                 % if preprint['state'] == 'pending':
                                     % if preprint['provider']['workflow'] == 'post-moderation':
                                         <% icon_tooltip = 'This {preprint_word} is publicly available and searchable but is subject to' \
-                                        ' removal by a moderator.'.format(preprint_word=preprint['word'])%>
+                                        ' removal by a moderator.'%>
                                     % else:
                                         <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable until approved ' \
-                                        'by a moderator.'.format(preprint_word=preprint['word'])%>
+                                        'by a moderator.' %>
                                     % endif
                                 % elif preprint['state'] == 'accepted':
-                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = 'This {preprint_word} is publicly available and searchable.' %>
                                 % else:
-                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.'.format(preprint_word=preprint['word'])%>
+                                    <% icon_tooltip = 'This {preprint_word} is not publicly available or searchable.' %>
                                 % endif
                                 <i class="fa fa-question-circle text-muted" data-toggle="tooltip" data-placement="bottom" title="${icon_tooltip}"></i>
                             % endif
