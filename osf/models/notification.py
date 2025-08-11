@@ -39,7 +39,7 @@ class Notification(models.Model):
                 f"\ncontext={self.event_context}"
                 f"\nemail={email_context}"
             )
-        if protocol_type == 'email' and settings.DEV_MODE:
+        if protocol_type == 'email' and settings.TEST_ENV:
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
