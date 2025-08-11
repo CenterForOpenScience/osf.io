@@ -1045,17 +1045,22 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         assert_equal(res.message, 'home')
 
+    #nishiAdd
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
+
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
-        self.user.is_registered = True
-        self.user.save()
-        self.auth = Auth(user=self.user)
+        #self.user.is_registered = True
+        #self.user.save()
+        #self.auth = Auth(user=self.user)
 
         # 上記のユーザに対してプロジェクトを作り直す
-        self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.project.add_addon('wiki', auth=self.auth)
-        self.project.save()
+        #self.project = ProjectFactory(is_public=True, creator=self.user)
+        #self.project.add_addon('wiki', auth=self.auth)
+        #self.project.save()
 
         mock_get_for_node.return_value = [
             {
@@ -1070,7 +1075,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             }
         ]
         mock_create_for_node.return_value = None
-
+        #nishiAdd
+        self.external_account = self.ExternalAccountFactory()
+        self.external_account.save()
+        self.node_settings = self.project.get_addon(None)
+        self.node_settings.set_auth(self.external_account, self.user)
+        #nishiAdd
         url = self.project.api_url_for(
             'project_wiki_validate_name',
             wname='Capslock',
