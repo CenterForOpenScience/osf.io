@@ -8,7 +8,7 @@
     <p>
         % if is_admin:
             <a href="${node_absolute_url}">${node_title}</a> was removed from
-            <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>. If you wish to be associated with the collection, you
+            <a href="${collections_link}">${collection_provider_name}</a>. If you wish to be associated with the collection, you
             will need to reapply to the collection again.
         % else:
             <a href="${remover_absolute_url}">${remover_fullname}</a> removed

@@ -1,6 +1,7 @@
 import logging
 
 from django.db import models
+from django.utils import timezone
 from django.utils.functional import cached_property
 from framework import sentry
 from framework.exceptions import PermissionsError
@@ -104,17 +105,26 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             NotificationType.objects.get(
                 name=NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
             ).emit(
+                is_digest=True,
                 user=contributor,
                 subscribed_object=self,
                 event_context={
-                    'user': contributor.id,
-                    'submitter': user.id,
+                    'requester_contributor_names': ''.join(
+                        self.guid.referent.contributors.values_list('fullname', flat=True)),
+                    'localized_timestamp': str(timezone.now()),
+                    'user_fullname': contributor.fullname,
+                    'submitter_fullname': user.fullname,
+                    'requester_fullname': self.creator.fullname,
+                    'profile_image_url': user.profile_image_url(),
+                    'submitter_absolute_url': user.get_absolute_url(),
+                    'collections_link': settings.DOMAIN + 'collections/' + self.collection.provider._id,
+                    'collection_provider_name': self.collection.provider.name,
                     'is_initiator': self.creator == contributor,
                     'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                     'is_registered_contrib': contributor.is_registered,
-                    'collection': self.collection.id,
                     'claim_url': claim_url,
-                    'node': self.guid.referent.id,
+                    'node_title': self.guid.referent.title,
+                    'node_absolute_url': self.guid.referent.get_absolute_url(),
                     'domain': settings.DOMAIN,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },
@@ -128,7 +138,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             user=user,
             subscribed_object=self.guid.referent,
             event_context={
-                'submitter': self.creator.id,
+                'submitter_fullname': self.creator.fullname,
                 'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True))
             },
             is_digest=True,

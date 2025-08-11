@@ -321,6 +321,7 @@ class AffiliatedInstitutionMixin(models.Model):
                         event_context={
                             'user_fullname': user.fullname,
                             'node_title': self.title,
+                            'node_id': self._id,
                             'node_absolute_url': self.get_absolute_url(),
                         }
                     )
@@ -365,6 +366,7 @@ class AffiliatedInstitutionMixin(models.Model):
                         event_context={
                             'user_fullname': user.fullname,
                             'node_title': self.title,
+                            'node_id': self._id,
                             'node_absolute_url': self.get_absolute_url(),
                         }
                     )

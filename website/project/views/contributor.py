@@ -639,6 +639,7 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
             'branded_service': getattr(getattr(node, 'provider', None), 'id', None),
             'node_title': node.title,
+            'node_id': node._id,
             'node_provider__id': getattr(node.provider, '_id', None),
             'node_absolute_url': node.absolute_url,
             'can_change_preferences': False,

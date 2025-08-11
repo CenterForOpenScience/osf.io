@@ -304,6 +304,7 @@ class NodeRequestMachine(BaseMachine):
     def get_context(self):
         return {
             'node_title': self.machineable.target.title,
+            'node_id': self.machineable.target._id,
             'node_absolute_url': self.machineable.target.absolute_url,
             'requester_absolute_url': self.machineable.creator.absolute_url,
         }

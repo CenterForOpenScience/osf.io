@@ -69,7 +69,7 @@
       <p>
       You will be automatically subscribed to notification emails for this project. To change your email notification
       preferences, visit your project or your user settings:
-      <a href="${domain + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+      <a href="${domain + "settings/notifications/"}">${domain}settings/notifications</a>
       </p>
     % endif
     <p>

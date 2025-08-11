@@ -7,7 +7,7 @@
     <br>
     <p>
         % if is_admin:
-            <a href="${node.absolute_url}">${node.title}</a> was  removed by <a href="${domain + 'collections/' + collection.provider._id}">${collection.provider.name}</a>:
+            <a href="${node.absolute_url}">${node.title}</a> was  removed by <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a>:
             <br>
             <p>
                 ${rejection_justification}
@@ -16,7 +16,7 @@
             If you wish to be associated with the collection, you will need to reapply to the collection again.
         % else:
             <a href="${node.absolute_url}">${node.title}</a> was removed by
-            <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>
+            <a href="${collections_link}">${collection_provider_name}</a>
         % endif
     </p>
     <p>

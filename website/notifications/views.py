@@ -153,9 +153,13 @@ def get_configured_projects(user):
 
 
 def check_project_subscriptions_are_all_none(user, node):
-    node_subscriptions = get_all_node_subscriptions(user, node)
+    node_subscriptions = NotificationSubscription.objects.filter(
+        user=user,
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node).id,
+    )
     for s in node_subscriptions:
-        if not s.none.filter(id=user.id).exists():
+        if not s.message_frequecy == 'none':
             return False
     return True
 
@@ -164,8 +168,8 @@ def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
     queryset = NotificationSubscription.objects.filter(
-        Q(user=user)
-    ).distinct()
+        user=user,
+    )
     return queryset.filter(extra) if extra else queryset
 
 
