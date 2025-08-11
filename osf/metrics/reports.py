@@ -90,7 +90,7 @@ class MonthlyReport(metrics.Metric):
     @classmethod
     def most_recent_yearmonth(cls, base_search=None) -> YearMonth | None:
         _search = base_search or cls.search()
-        _search = _search.update_from_dict({'size': 0})  # omit hits
+        _search = _search[0:0]  # omit hits
         _search.aggs.bucket(
             'agg_most_recent_yearmonth',
             'terms',
@@ -101,8 +101,12 @@ class MonthlyReport(metrics.Metric):
         _response = _search.execute()
         if not _response.aggregations:
             return None
-        (_bucket,) = _response.aggregations.agg_most_recent_yearmonth.buckets
-        return _bucket.key
+
+        buckets = _response.aggregations.agg_most_recent_yearmonth.buckets
+        if not buckets:
+            return None
+
+        return buckets[0].key
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

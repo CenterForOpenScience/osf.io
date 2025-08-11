@@ -2,12 +2,14 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestMixin
+from osf.models import NotificationType
 
 from osf.utils import permissions
+from tests.utils import capture_notifications
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_enqueue_task
-@pytest.mark.usefixtures('mock_send_grid')
 class TestCreateNodeRequestAction(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, node_request):
@@ -190,41 +192,44 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         assert initial_state == node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
 
-    def test_email_sent_on_approve(self, mock_send_grid, app, admin, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_approve(self, app, admin, url, node_request):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
         assert node_request.creator in node_request.target.contributors
-        assert mock_send_grid.call_count == 1
 
-    def test_email_sent_on_reject(self, mock_send_grid, app, admin, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_reject(self, app, admin, url, node_request):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='reject')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=admin.auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_DENIED
+
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
-        assert mock_send_grid.call_count == 1
 
-    def test_email_not_sent_on_reject(self, mock_send_grid, app, requester, url, node_request):
-        mock_send_grid.reset_mock()
+    def test_email_not_sent_on_reject(self, app, requester, url, node_request):
         initial_state = node_request.machine_state
         initial_comment = node_request.comment
         payload = self.create_payload(node_request._id, trigger='edit_comment', comment='ASDFG')
-        res = app.post_json_api(url, payload, auth=requester.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=requester.auth)
+        assert not notifications
         assert res.status_code == 201
         node_request.reload()
         assert initial_state == node_request.machine_state
         assert initial_comment != node_request.comment
-        assert mock_send_grid.call_count == 0
 
     def test_set_permissions_on_approve(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
@@ -255,7 +260,6 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
     @pytest.fixture()
     def url(self, pre_request, post_request, none_request):
@@ -385,46 +389,21 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
                 assert initial_state == request.machine_state
                 assert initial_comment == request.comment
 
-    def test_email_sent_on_approve(self, mock_send_grid, app, moderator, url, pre_request, post_request):
-        mock_send_grid.reset_mock()
+    def test_email_sent_on_approve(self, app, moderator, url, pre_request, post_request):
         for request in [pre_request, post_request]:
             initial_state = request.machine_state
             assert not request.target.is_retracted
             payload = self.create_payload(request._id, trigger='accept')
-            res = app.post_json_api(url, payload, auth=moderator.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=moderator.auth)
+            assert len(notifications) == 2
+            assert notifications[0]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
+            assert notifications[1]['type'] == NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
             assert res.status_code == 201
             request.reload()
             request.target.reload()
             assert initial_state != request.machine_state
             assert request.target.is_retracted
-        # There are two preprints withdrawn and each preprint have 2 contributors. So 4 emails are sent in total.
-        assert mock_send_grid.call_count == 4
-
-    @pytest.mark.skip('TODO: IN-331 -- add emails')
-    def test_email_sent_on_reject(self, mock_send_grid, app, moderator, url, pre_request, post_request):
-        for request in [pre_request, post_request]:
-            initial_state = request.machine_state
-            assert not request.target.is_retracted
-            payload = self.create_payload(request._id, trigger='reject')
-            res = app.post_json_api(url, payload, auth=moderator.auth)
-            assert res.status_code == 201
-            request.reload()
-            assert initial_state != request.machine_state
-            assert not request.target.is_retracted
-        assert mock_send_grid.call_count == 2
-
-    @pytest.mark.skip('TODO: IN-284/331 -- add emails')
-    def test_email_not_sent_on_edit_comment(self, mock_send_grid, app, moderator, url, pre_request, post_request):
-        for request in [pre_request, post_request]:
-            initial_state = request.machine_state
-            assert not request.target.is_retracted
-            payload = self.create_payload(request._id, trigger='edit_comment', comment='ASDFG')
-            res = app.post_json_api(url, payload, auth=moderator.auth)
-            assert res.status_code == 201
-            request.reload()
-            assert initial_state != request.machine_state
-            assert not request.target.is_retracted
-        assert mock_send_grid.call_count == 0
 
     def test_auto_approve(self, app, auto_withdrawable_pre_mod_preprint, auto_approved_pre_request):
         assert auto_withdrawable_pre_mod_preprint.is_retracted

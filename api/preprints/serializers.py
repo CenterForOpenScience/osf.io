@@ -29,7 +29,7 @@ from api.nodes.serializers import (
     NodeLicenseSerializer,
     NodeContributorsSerializer,
     NodeStorageProviderSerializer,
-    NodeContributorsCreateSerializer,
+    ResourceContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
@@ -48,7 +48,7 @@ from osf.models import (
     Preprint,
     PreprintProvider,
     Node,
-    NodeLicense,
+    NodeLicense, NotificationType,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
@@ -470,7 +470,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         preprint,
                         contributor=author,
                         auth=auth,
-                        email_template='preprint',
+                        notification_type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
                     )
 
         return preprint
@@ -590,7 +590,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
+class PreprintContributorsCreateSerializer(ResourceContributorsCreateSerializer, PreprintContributorsSerializer):
     """
     Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 

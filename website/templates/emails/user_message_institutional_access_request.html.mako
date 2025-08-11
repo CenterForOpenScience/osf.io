@@ -4,7 +4,7 @@
     <tr>
       <td style="border-collapse: collapse;">
         <%!from website import settings%>
-        Hello ${recipient.fullname},
+        Hello ${recipient_fullname},
         <p>
             This message is coming from an Institutional administrator within your Institution.
         </p>
@@ -14,12 +14,12 @@
         </p>
         % endif
         <p>
-            Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about OSF, or
+            Want more information? Visit <a href="${domain}">${domain}</a> to learn about OSF, or
             <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization, the Center
             for Open Science.
         </p>
         <p>
-            Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
+            Questions? Email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
         </p>
       </td>
     </tr>

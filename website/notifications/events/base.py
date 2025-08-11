@@ -2,7 +2,7 @@
 
 from django.utils import timezone
 
-from website.notifications import emails
+from osf.models import NotificationType
 
 
 event_registry = {}
@@ -32,14 +32,14 @@ class Event:
 
     def perform(self):
         """Call emails.notify to notify users of an action"""
-        emails.notify(
-            event=self.event_type,
+        NotificationType.objects.get(
+            name=self.action
+        ).emit(
             user=self.user,
-            node=self.node,
-            timestamp=self.timestamp,
-            message=self.html_message,
-            profile_image_url=self.profile_image_url,
-            url=self.url
+            event_context={
+                'profile_image_url': self.profile_image_url,
+                'action': self.action,
+            }
         )
 
     @property
@@ -64,7 +64,3 @@ class Event:
         Examples:
             <waterbutler id>_file_updated"""
         raise NotImplementedError
-
-
-class RegistryError(TypeError):
-    pass

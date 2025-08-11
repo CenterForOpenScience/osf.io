@@ -2,16 +2,14 @@
 """Views tests for the OSF."""
 from hashlib import md5
 from unittest import mock
+
 import pytest
 from rest_framework import status as http_status
 
 from addons.github.tests.factories import GitHubAccountFactory
-from conftest import start_mock_send_grid
 from framework.celery_tasks import handlers
 from osf.external.spam import tasks as spam_tasks
-from osf.models import (
-    NotableDomain
-)
+from osf.models import NotableDomain, NotificationType
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -23,6 +21,7 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website import mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST
 from website.util import api_url_for, web_url_for
@@ -513,8 +512,6 @@ class TestUserAccount(OsfTestCase):
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def test_password_change_valid(self,
                                    old_password='password',
                                    new_password='Pa$$w0rd',
@@ -719,15 +716,17 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_blank_confirm_password(self):
         self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    @mock.patch('website.mails.settings.USE_CELERY', False)
     def test_user_cannot_request_account_export_before_throttle_expires(self):
         url = api_url_for('request_export')
-        self.app.post(url, auth=self.user.auth)
-        assert self.mock_send_grid.called
-        res = self.app.post(url, auth=self.user.auth)
+        with capture_notifications() as notifications:
+            self.app.post(url, auth=self.user.auth)
+        assert len(notifications) == 1
+        assert notifications[0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+
+        with capture_notifications() as notifications:
+            res = self.app.post(url, auth=self.user.auth)
         assert res.status_code == 400
-        assert self.mock_send_grid.call_count == 1
+        assert len(notifications) == 0
 
     def test_get_unconfirmed_emails_exclude_external_identity(self):
         external_identity = {

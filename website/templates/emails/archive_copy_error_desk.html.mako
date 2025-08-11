@@ -11,9 +11,9 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      User: ${user.fullname} (${user.username}) [${user._id}]
+      User: ${user_fullname} (${user_username}) [${user__id}]
 
-      Tried to register ${src.title} (${url}) [${src._id}], but the archive task failed when copying files.
+      Tried to register ${src_title} (${url}) [${src__id}], but the archive task failed when copying files.
 
     <br />
       A report is included below:

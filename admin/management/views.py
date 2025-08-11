@@ -130,6 +130,7 @@ class MonthlyReportersGo(ManagementCommandPermissionView):
                 if report_date is not None
                 else ''
             ),
+            reporter_key=request.POST.get('monthly_reporter', '')
         )
 
         if errors:

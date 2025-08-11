@@ -34,7 +34,6 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -52,7 +51,7 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion, NotificationType
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -576,20 +575,24 @@ def create_waterbutler_log(payload, **kwargs):
                     params=payload
                 )
 
-            if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
-                )
+            if payload.get('email') or payload.get('errors'):
+                if payload.get('email'):
+                    notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
+                if payload.get('errors'):
+                    notification_type = NotificationType.Type.FILE_OPERATION_FAILED
 
+                NotificationType.objects.get(name=notification_type).emit(
+                    user=user,
+                    event_context={
+                        'action': payload['action'],
+                        'source_node': source_node,
+                        'destination_node': destination_node,
+                        'source_path': payload['source']['materialized'],
+                        'source_addon': payload['source']['addon'],
+                        'destination_addon': payload['destination']['addon'],
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL
+                    }
+                )
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -605,18 +608,48 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+        file_signals.file_updated.send(target=node, user=user, payload=payload)
+
+    with transaction.atomic():
+        match action:
+            case NotificationType.Type.FILE_ADDED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_ADDED)
+            case NotificationType.Type.FILE_REMOVED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_REMOVED)
+            case NotificationType.Type.FILE_UPDATED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED)
+            case NotificationType.Type.ADDON_FILE_RENAMED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_RENAMED)
+            case NotificationType.Type.ADDON_FILE_COPIED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_COPIED)
+            case NotificationType.Type.ADDON_FILE_REMOVED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_REMOVED)
+            case NotificationType.Type.ADDON_FILE_MOVED:
+                notification = NotificationType.objects.get(name=NotificationType.Type.ADDON_FILE_MOVED)
+            case _:
+                raise NotImplementedError(f'action {action} not implemented')
+
+        notification.emit(
+            user=user,
+            event_context={
+                'profile_image_url': user.profile_image_url(),
+                'localized_timestamp': str(timezone.now()),
+                'user_fullname': user.fullname,
+                'url': node.absolute_url,
+            }
+        )
 
     return {'status': 'success'}
 
 
 @file_signals.file_updated.connect
-def addon_delete_file_node(self, target, user, event_type, payload):
+def addon_delete_file_node(self, target, user, payload):
     """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
+    event_type = payload['action']
     if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
         provider = payload['provider']
         path = payload['metadata']['path']
@@ -1004,14 +1037,17 @@ def persistent_file_download(auth, **kwargs):
     file = BaseFileNode.active.filter(_id=id_or_guid).first()
     if not file:
         guid = Guid.load(id_or_guid)
-        if guid:
-            referent = guid.referent
-            file = referent.primary_file if type(referent) is Preprint else referent
-        else:
+        if not guid:
             raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
                 'message_short': 'File Not Found',
                 'message_long': 'The requested file could not be found.'
             })
+
+        file = guid.referent
+        if type(file) is Preprint:
+            referent, _ = Guid.load_referent(id_or_guid)
+            file = referent.primary_file
+
     if not file.is_file:
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={
             'message_long': 'Downloading folders is not permitted.'

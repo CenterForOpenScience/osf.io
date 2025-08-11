@@ -3,11 +3,11 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    ID: ${user._id}<br>
+    ID: ${user__id}<br>
     <br>
-    Profile: ${user.absolute_url}<br>
+    Profile: ${user_absolute_url}<br>
     <br>
-    Primary Email: ${user.username} <br>
+    Primary Email: ${user_username} <br>
 
 </tr>
 </%def>

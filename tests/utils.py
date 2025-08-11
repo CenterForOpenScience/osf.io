@@ -2,7 +2,10 @@ import contextlib
 import datetime
 import functools
 from unittest import mock
+import requests
+import waffle
 
+from django.apps import apps
 from django.http import HttpRequest
 from django.utils import timezone
 
@@ -13,6 +16,8 @@ from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
+from website import settings as website_settings
+from osf import features
 
 def requires_module(module):
     def decorator(fn):
@@ -251,3 +256,53 @@ def unique(factory):
 def run_celery_tasks():
     yield
     celery_teardown_request()
+
+
+@contextlib.contextmanager
+def capture_notifications():
+    """
+    Context manager to capture NotificationType emits without interfering with ORM calls.
+    Yields a list of captured emits:
+        [{'type': <NotificationType.Type>, 'args': ..., 'kwargs': ...}, ...]
+    """
+    NotificationType = apps.get_model('osf', 'NotificationType')
+    real_get = NotificationType.objects.get  # Save the real .get()
+
+    captured = []
+
+    def side_effect(*args, **kwargs):
+        notifier = real_get(*args, **kwargs)  # Call the real .get()
+        original_emit = notifier.emit
+
+        def wrapped_emit(*emit_args, **emit_kwargs):
+            captured.append({
+                'type': notifier.name,
+                'args': emit_args,
+                'kwargs': emit_kwargs
+            })
+            return original_emit(*emit_args, **emit_kwargs)
+
+        notifier.emit = wrapped_emit
+        return notifier
+
+    with mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect):
+        yield captured
+
+
+def get_mailhog_messages():
+    """Fetch messages from MailHog API."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return []
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v2/messages'
+    response = requests.get(mailhog_url)
+    if response.status_code == 200:
+        return response.json()
+    return []
+
+
+def delete_mailhog_messages():
+    """Delete all messages from MailHog."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v1/messages'
+    requests.delete(mailhog_url)

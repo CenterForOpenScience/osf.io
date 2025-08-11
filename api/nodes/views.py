@@ -110,7 +110,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    NodeContributorsCreateSerializer,
+    ResourceContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
@@ -152,11 +152,11 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint, Collection,
+    Preprint, Collection, NotificationType,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
-from website import mails, settings
+from website import settings
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -442,7 +442,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             return NodeContributorDetailSerializer
         elif self.request.method == 'POST':
-            return NodeContributorsCreateSerializer
+            return ResourceContributorsCreateSerializer
         else:
             return NodeContributorsSerializer
 
@@ -1045,11 +1045,28 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, can_change_preferences=False)
+            NotificationType.objects.get(
+                name=NotificationType.Type.NODE_FORK_FAILED,
+            ).emit(
+                user=user,
+                event_context={
+                    'guid': node._id,
+                    'title': node.title,
+                    'can_change_preferences': False,
+                },
+            )
             raise exc
         else:
-            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, can_change_preferences=False)
-
+            NotificationType.objects.get(
+                name=NotificationType.Type.NODE_FORK_COMPLETED,
+            ).emit(
+                user=user,
+                event_context={
+                    'guid': fork._id,
+                    'title': node.title,
+                    'can_change_preferences': False,
+                },
+            )
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (

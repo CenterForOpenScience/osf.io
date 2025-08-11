@@ -8,7 +8,7 @@
     %>
     Hello ${fullname},<br>
     <br>
-    You have been added by ${referrer.fullname} as a contributor to the ${branded_service.preprint_word} "${node.title}" on ${branded_service.name}, powered by the Open Science Framework. To set a password for your account, visit:<br>
+    You have been added by ${referrer_fullname} as a contributor to the ${branded_service.preprint_word} "${node.title}" on ${branded_service.name}, powered by the Open Science Framework. To set a password for your account, visit:<br>
     <br>
     ${claim_url}<br>
     <br>
