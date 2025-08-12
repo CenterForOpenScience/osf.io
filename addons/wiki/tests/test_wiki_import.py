@@ -721,6 +721,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         assert cloned.copied_from == src
 
 class TestWikiViews(OsfTestCase, unittest.TestCase):
+    maxDiff = None
     def setUp(self):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
@@ -761,9 +762,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.guid = self.project.guids.first()._id
         self.guid1 = self.wiki_page1.guids.first()._id
         self.guid2 = self.wiki_page2.guids.first()._id
-        self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wikichildpage1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
-        self.wiki_child_page2 = WikiPage.objects.create_for_node(self.project, 'wikichildpage2', 'wiki child page2 content', self.consolidate_auth, self.wiki_page2)
-        self.wiki_child_page3 = WikiPage.objects.create_for_node(self.project, 'wikichildpage3', 'wiki child page3 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wiki child page1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page2 = WikiPage.objects.create_for_node(self.project, 'wiki child page2', 'wiki child page2 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page3 = WikiPage.objects.create_for_node(self.project, 'wiki child page3', 'wiki child page3 content', self.consolidate_auth, self.wiki_page2)
         self.child_guid1 = self.wiki_child_page1.guids.first()._id
         self.child_guid2 = self.wiki_child_page2.guids.first()._id
         self.child_guid3 = self.wiki_child_page3.guids.first()._id
@@ -878,7 +879,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             }
         ]
 
-    def test_get_wiki_version_none(self, mock_filter):
+    def test_get_wiki_version_none(self):
         project = ProjectFactory()
         versions = _get_wiki_versions(project, 'home', anonymous=False)
         assert_equal(len(versions),0)
@@ -886,7 +887,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_get_wiki_version(self):
         self.wiki_page1.update(self.user, 'updated_content')
         result = _get_wiki_versions(self.project, self.wiki_page1.page_name, anonymous=False)
-        expect = [
+        expected = [
             {
                 'version': 2,
                 'user_fullname': self.user.fullname,
