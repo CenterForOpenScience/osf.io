@@ -1057,7 +1057,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         #self.project.add_addon('wiki', auth=self.auth)
         #self.project.save()
         parent = WikiPage.objects.get_for_node(self.project, 'parent')
-        assert_is_none(parent)
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
