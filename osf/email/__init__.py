@@ -7,7 +7,7 @@ from html import unescape
 
 from django.core.mail import EmailMessage, get_connection
 
-from mako.template import Template
+from mako.template import Template as MakoTemplate
 from mako.lookup import TemplateLookup
 
 from sendgrid import SendGridAPIClient
@@ -22,11 +22,10 @@ from osf import features
 from website import settings
 from api.base.settings import CI_ENV
 
+# --- Point lookup at the *templates root* ---
 _BASE = getattr(settings, 'BASE_PATH', '')
-TEMPLATE_ROOT = os.path.join(_BASE, 'emails')
+TEMPLATE_ROOT = os.path.join(_BASE, 'website', 'templates')
 EMAIL_TEMPLATE_DIRS = getattr(settings, 'EMAIL_TEMPLATE_DIRS', [TEMPLATE_ROOT])
-
-# Normalize to absolute dirs
 EMAIL_TEMPLATE_DIRS = [os.path.abspath(p) for p in EMAIL_TEMPLATE_DIRS]
 
 MAKO_LOOKUP = TemplateLookup(
@@ -35,11 +34,10 @@ MAKO_LOOKUP = TemplateLookup(
 )
 
 def _detect_email_folder() -> str:
-    """Find the folder that contains notify_base.mako: 'emails' or 'notifications' (default to 'emails')."""
+    """Return 'emails' or 'notifications' based on where notify_base.mako exists (default 'emails')."""
     for folder in ('emails', 'notifications'):
         if os.path.exists(os.path.join(TEMPLATE_ROOT, folder, 'notify_base.mako')):
             return folder
-        # also allow custom roots in EMAIL_TEMPLATE_DIRS
         for root in EMAIL_TEMPLATE_DIRS:
             if os.path.exists(os.path.join(root, folder, 'notify_base.mako')):
                 return folder
@@ -48,16 +46,16 @@ def _detect_email_folder() -> str:
 _EMAIL_FOLDER = _detect_email_folder()
 
 def _render_email_html(template_text: str, ctx: dict, folder: str | None = None) -> str:
-    """Render a DB-backed Mako template that may do <%inherit file="notify_base.mako">.
-    We assign a virtual URI inside the same folder as notify_base.mako so the relative inherit resolves.
+    """Render a DB-backed Mako template that may <%inherit file="notify_base.mako">.
+    We give it a virtual URI inside the folder that contains notify_base.mako so
+    the relative inherit resolves to /<folder>/notify_base.mako.
     """
     if not template_text:
         return ''
     folder = folder or _EMAIL_FOLDER
-    # unique-but-stable-ish URI to avoid Mako cache collisions; must be inside the folder
     uri = f'/{folder}/inline_{abs(hash(template_text))}.mako'
     try:
-        return Template(text=template_text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
+        return MakoTemplate(text=template_text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
     except Exception:
         logging.exception('Mako render failed; returning raw template')
         return template_text
@@ -120,6 +118,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
     if not CI_ENV:
         email.send()
 
+# ---------------- SendGrid path ----------------
 def send_email_with_send_grid(to_addr, notification_type, context, email_context=None):
     if not settings.SENDGRID_API_KEY:
         raise NotImplementedError('SENDGRID_API_KEY is required for sendgrid notifications.')
@@ -140,7 +139,8 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')
         return False
 
-    html = _render_email_html(render_notification(notification_type.template, context))
+    # Render ONCE with lookup + proper virtual URI
+    html = _render_email_html(notification_type.template, context) or '<p>(no content)</p>'
     text = _strip_html(html)
 
     subject_tpl = getattr(notification_type, 'subject', None)
@@ -221,10 +221,3 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     except Exception as exc:
         logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise
-
-
-def render_notification(template, context):
-    if not template:
-        return ''
-    t = Template(template)
-    return t.render(context)
