@@ -1045,11 +1045,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         assert_equal(res.message, 'home')
 
-    #nishiAdd
-    @property
-    def ExternalAccountFactory(self):
-        raise NotImplementedError()
-
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
@@ -1061,33 +1056,33 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         #self.project = ProjectFactory(is_public=True, creator=self.user)
         #self.project.add_addon('wiki', auth=self.auth)
         #self.project.save()
-
-        mock_get_for_node.return_value = [
-            {
-                'name': 'TEST',
-                'path': '/page2',
-                'original_name': 'page2',
-                'wiki_name': 'page2',
-                'status': 'valid',
-                'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'content2'
-            }
-        ]
-        mock_create_for_node.return_value = None
-        #nishiAdd
-        self.external_account = self.ExternalAccountFactory()
-        self.external_account.save()
-        self.node_settings = self.project.get_addon(None)
-        self.node_settings.set_auth(self.external_account, self.user)
-        #nishiAdd
-        url = self.project.api_url_for(
-            'project_wiki_validate_name',
-            wname='Capslock',
-            p_wname='test')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
-
+        parent = WikiPage.objects.get_for_node(self.project, 'parent')
+        assert_is_none(parent)
+        url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        #mock_get_for_node.return_value = [
+        #    {
+        #        'name': 'TEST',
+        #        'path': '/page2',
+        #        'original_name': 'page2',
+        #        'wiki_name': 'page2',
+        #        'status': 'valid',
+        #        'message': '',
+        #        '_id': 'yyy',
+        #        'wiki_content': 'content2'
+        #v    }
+        #]
+        #mock_create_for_node.return_value = None
+
+        #dir_id = self.root_import_folder1._id
+        #url = self.project.api_url_for(
+        #    'project_wiki_validate_name',
+        #    wname='Capslock',
+        #    p_wname='test')
+        #res = self.app.get(url, auth=self.auth, expect_errors=True)
+
+        #assert_equal(res.status_code, 404)
 
     def test_format_home_wiki_page(self):
         result = views.format_home_wiki_page(self.project)
