@@ -331,7 +331,11 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.pagefile3.parent.name}^{self.pagefile3.name}': self.pagefile3._id,
             f'{self.attachment3.parent.name}^{self.attachment3.name}': self.attachment3._id,
         }
+        child_info = _get_all_child_file_ids(self.wiki_import_dir._id)
+        node_info = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
+        assert_equal(child_info, node_info)
         assert_equal(expect, result)
+
 
     def test_get_import_wiki_name_list(self):
         wiki_info = [
@@ -721,7 +725,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         assert cloned.copied_from == src
 
 class TestWikiViews(OsfTestCase, unittest.TestCase):
-    maxDiff = None
+    self.maxDiff = None
     def setUp(self):
         super(TestWikiViews, self).setUp()
         self.user = AuthUserFactory()
@@ -899,7 +903,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                 'date': '{} UTC'.format(self.wiki_page1.get_version(version=1).created.replace(microsecond=0).isoformat().replace('T', ' ')),
             }
         ]
-        assert_equal(expected, privacy_info_handle)
+        assert_equal(expected, result)
 
     def test_get_wiki_child_pages_latest(self):
         expected = [
@@ -2391,7 +2395,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         dir_id = self.root_import_folder1._id
         node=self.node
-        replaced_wiki_info = views._wiki_content_replace(wiki_info_input_date,dir_id,node,mock_task)
+        replaced_wiki_info = views._wiki_content_replace(wiki_info_input_date, dir_id, node, mock_task)
         assert_equal(wiki_info_output_date, replaced_wiki_info)
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
@@ -2411,97 +2415,72 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         depth = 1
         with assert_raises(ImportTaskAbortedError):
-            views._import_same_level_wiki(wiki_info,depth,self.consolidate_auth,self.project2,mock_task)
+            views._import_same_level_wiki(wiki_info, depth,self.consolidate_auth, self.project2, mock_task)
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
-    def test_import_same_level_wiki_matching_depth(self,mock_task):
+    def test_import_same_level_wiki_matching_depth(self, mock_task):
         mock_task.is_aborted.return_value = False
-        mock.patch('addons.wiki.views._wiki_import_create_or_update',side_effect=['',''])
         wiki_info = [
             {
                 'parent_wiki_name': None,
-                'path': '/page1',
-                'original_name': 'page1',
-                'wiki_name': 'page1',
+                'path': '/importpagec',
+                'original_name': self.wiki_page3.page_name,
+                'wiki_name': self.wiki_page3.page_name,
                 'status': 'valid',
                 'message': '',
-                '_id': 'xxx',
-                'wiki_content': 'content1'
+                '_id': self.wiki_page3._id,
+                'wiki_content': 'updated content'
             },
             {
                 'parent_wiki_name': None,
-                'path': '/page2',
-                'original_name': 'page2',
-                'wiki_name': 'page2',
+                'path': '/importpagee',
+                'original_name': 'new_pagea',
+                'wiki_name': 'new_pagea',
                 'status': 'valid',
                 'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'content2'
+                '_id': None,
+                'wiki_content': 'new content'
             },
         ]
-        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
-        assert_true(len(ret)>0)
-        assert_true(len(wiki_id_list)>0)
+        expected_ret = [
+            {'status': 'success', 'path': '/importpagec'},
+            {'status': 'success', 'path': '/importpagee'},
+        ]
+        ret, wiki_id_list = views._import_same_level_wiki(wiki_info, 0, self.consolidate_auth2, self.project2, mock_task)
+        assert_equal(expected_ret, ret)
+        assert_equal(self.wiki_page3.id, wiki_id_list[0])
+        assert_is_not_none(wiki_id_list[1])
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
-    def test_import_same_level_wiki_logger_info(self,mock_task):
+    def test_import_same_level_wiki_unmatched_depth(self, mock_task):
         mock_task.is_aborted.return_value = False
-        with mock.patch('addons.wiki.views._wiki_import_create_or_update', side_effect=ImportTaskAbortedError), \
-        mock.patch('addons.wiki.logger.info') as mock_info:
-            wiki_info = [
-                {
-                    'parent_wiki_name': None,
-                    'path': '/page1',
-                    'original_name': 'page1',
-                    'wiki_name': 'page1',
-                    'status': 'valid',
-                    'message': '',
-                    '_id': 'xxx',
-                    'wiki_content': 'content1'
-                },
-                {
-                    'parent_wiki_name': None,
-                    'path': '/page2',
-                    'original_name': 'page2',
-                    'wiki_name': 'page2',
-                    'status': 'valid',
-                    'message': '',
-                    '_id': 'yyy',
-                    'wiki_content': 'content2'
-                },
-            ]
-        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
-        mock_info.assert_called_once()
-
-    @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
-    def test_import_same_level_wiki_logger_error(self,mock_task):
-        mock_task.is_aborted.return_value = False
-        with mock.patch('addons.wiki.views._wiki_import_create_or_update',side_effect=Exception), \
-        mock.patch('logger.error') as mock_info:
-            wiki_info = [
+        wiki_info = [
             {
-                    'parent_wiki_name': None,
-                    'path': '/page1',
-                    'original_name': 'page1',
-                    'wiki_name': 'page1',
-                    'status': 'valid',
-                    'message': '',
-                    '_id': 'xxx',
-                    'wiki_content': 'content1'
-                },
-                {
-                    'parent_wiki_name': None,
-                    'path': '/page2',
-                    'original_name': 'page2',
-                    'wiki_name': 'page2',
-                    'status': 'valid',
-                    'message': '',
-                    '_id': 'yyy',
-                    'wiki_content': 'content2'
-                },
-            ]
-        ret,wiki_id_list = views._import_same_level_wiki(wiki_info,0,self.consolidate_auth,self.project2,mock_task)
-        mock_info.assert_called_once()
+                'parent_wiki_name': None,
+                'path': '/importpagec',
+                'original_name': self.wiki_page3.page_name,
+                'wiki_name': self.wiki_page3.page_name,
+                'status': 'valid',
+                'message': '',
+                '_id': self.wiki_page3._id,
+                'wiki_content': 'updated content'
+            },
+            {
+                'parent_wiki_name': None,
+                'path': '/importpagee',
+                'original_name': 'new_pagea',
+                'wiki_name': 'new_pagea',
+                'status': 'valid',
+                'message': '',
+                '_id': None,
+                'wiki_content': 'new content'
+            },
+        ]
+        expected_ret = []
+        expectec_ids = []
+        ret, wiki_id_list = views._import_same_level_wiki(wiki_info, 2, self.consolidate_auth2, self.project2, mock_task)
+        assert_equal(expected_ret, ret)
+        assert_equal([], wiki_id_list)
 
     @mock.patch('addons.wiki.views.AsyncResult')
     def project_get_task_result_not_ready(self, mock_async_result):
