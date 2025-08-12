@@ -108,12 +108,15 @@ def main(dry_run=True):
 
     update_node_links(new_and_noteworthy_links_node, new_and_noteworthy_node_ids, 'new and noteworthy')
 
-    try:
-        new_and_noteworthy_links_node.save()
-        logger.info(f'Node links on {new_and_noteworthy_links_node._id} updated.')
-    except (KeyError, RuntimeError) as error:
-        logger.error('Could not migrate new and noteworthy nodes due to error')
-        logger.exception(error)
+    if new_and_noteworthy_node_ids:
+        try:
+            new_and_noteworthy_links_node.save()
+            logger.info(f'Node links on {new_and_noteworthy_links_node._id} updated.')
+        except (KeyError, RuntimeError) as error:
+            logger.error('Could not migrate new and noteworthy nodes due to error')
+            logger.exception(error)
+    else:
+        logger.error('No new and noteworthy node ids found.')
 
     if dry_run:
         raise RuntimeError('Dry run -- transaction rolled back.')

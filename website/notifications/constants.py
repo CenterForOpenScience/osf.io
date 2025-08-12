@@ -1,5 +1,4 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
-    'comments': 'Comments added',
     'file_updated': 'Files updated'
 }
 
@@ -7,10 +6,7 @@ NODE_SUBSCRIPTIONS_AVAILABLE = {
 # subscription. If no notification type has been assigned, the user subscription
 # will default to 'email_transactional'.
 USER_SUBSCRIPTIONS_AVAILABLE = {
-    'global_comment_replies': 'Replies to your comments',
-    'global_comments': 'Comments added',
     'global_file_updated': 'Files updated',
-    'global_mentions': 'Mentions added',
     'global_reviews': 'Preprint submissions updated'
 }
 

@@ -11,7 +11,7 @@ from framework.exceptions import HTTPError, TemplateHTTPError
 from framework.auth.decorators import collect_auth
 from framework.database import get_or_http_error
 
-from osf.models import AbstractNode, Guid, Preprint, OSFGroup, Registration
+from osf.models import AbstractNode, Guid, Preprint, Registration
 from osf.utils.permissions import WRITE
 from website import language
 from website.util import web_url_for
@@ -75,7 +75,7 @@ def must_not_be_rejected(func):
 
     return wrapped
 
-def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=False, preprints_valid=False, groups_valid=False):
+def must_be_valid_project(func=None, retractions_valid=False, preprints_valid=False, groups_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 
     # TODO: Check private link
@@ -88,13 +88,9 @@ def must_be_valid_project(func=None, retractions_valid=False, quickfiles_valid=F
 
                 return func(*args, **kwargs)
 
-            if groups_valid and OSFGroup.load(kwargs.get('pid')):
-                kwargs['node'] = OSFGroup.load(kwargs.get('pid'))
-                return func(*args, **kwargs)
-
             _inject_nodes(kwargs)
 
-            if getattr(kwargs['node'], 'is_collection', True) or (getattr(kwargs['node'], 'is_quickfiles', True) and not quickfiles_valid):
+            if getattr(kwargs['node'], 'is_collection', True):
                 raise HTTPError(
                     http_status.HTTP_404_NOT_FOUND
                 )

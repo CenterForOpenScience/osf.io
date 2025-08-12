@@ -8,7 +8,6 @@ from osf.utils.sanitize import strip_html
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
-    OSFGroupFactory,
     RegistrationFactory,
     AuthUserFactory,
     PrivateLinkFactory,
@@ -105,16 +104,6 @@ class TestNodeChildrenList:
         res = app.get(private_project_url, auth=user.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
-        assert len(res.json['data']) == 1
-        assert res.json['data'][0]['id'] == component._id
-
-    #   test_return_private_node_children_osf_group_member_admin
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, permissions.ADMIN)
-        res = app.get(private_project_url, auth=group_mem.auth)
-        assert res.status_code == 200
-        # Can view node children that you have implict admin permissions
         assert len(res.json['data']) == 1
         assert res.json['data'][0]['id'] == component._id
 
@@ -390,23 +379,6 @@ class TestNodeChildCreate:
 
         project.reload()
         assert len(project.nodes) == 0
-
-    #   test_creates_child_group_member_read
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, permissions.READ)
-        res = app.post_json_api(
-            url, child, auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
-        project.update_osf_group(group, permissions.WRITE)
-        res = app.post_json_api(
-            url, child, auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 201
 
     #   test_creates_child_no_type
         child = {

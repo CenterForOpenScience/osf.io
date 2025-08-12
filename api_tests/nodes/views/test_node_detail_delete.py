@@ -11,7 +11,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
     IdentifierFactory,
-    OSFGroupFactory,
 )
 from tests.utils import assert_latest_log
 from website.views import find_bookmark_collection
@@ -67,17 +66,6 @@ class TestNodeDelete(NodeCRUDTestCase):
     ):
         res = app.delete(url_fake, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-        assert 'detail' in res.json['errors'][0]
-
-    def test_delete_osf_group_improper_permissions(
-        self, app, user, user_two, project_public, project_private, url_public, url_private, url_fake
-    ):
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.delete(url_private, auth=user_two.auth, expect_errors=True)
-        project_private.reload()
-        assert res.status_code == 403
-        assert project_private.is_deleted is False
         assert 'detail' in res.json['errors'][0]
 
     def test_deletes_private_node_logged_in_read_only_contributor(self, app, user_two, project_private, url_private):
