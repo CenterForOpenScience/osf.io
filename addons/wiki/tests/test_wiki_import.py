@@ -761,9 +761,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.guid = self.project.guids.first()._id
         self.guid1 = self.wiki_page1.guids.first()._id
         self.guid2 = self.wiki_page2.guids.first()._id
-        self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wiki child page1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
-        self.wiki_child_page2 = WikiPage.objects.create_for_node(self.project, 'wiki child page2', 'wiki child page2 content', self.consolidate_auth, self.wiki_page2)
-        self.wiki_child_page3 = WikiPage.objects.create_for_node(self.project, 'wiki child page3', 'wiki child page3 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page1 = WikiPage.objects.create_for_node(self.project, 'wikichildpage1', 'wiki child page1 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page2 = WikiPage.objects.create_for_node(self.project, 'wikichildpage2', 'wiki child page2 content', self.consolidate_auth, self.wiki_page2)
+        self.wiki_child_page3 = WikiPage.objects.create_for_node(self.project, 'wikichildpage3', 'wiki child page3 content', self.consolidate_auth, self.wiki_page2)
         self.child_guid1 = self.wiki_child_page1.guids.first()._id
         self.child_guid2 = self.wiki_child_page2.guids.first()._id
         self.child_guid3 = self.wiki_child_page3.guids.first()._id
@@ -1168,8 +1168,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(expected, result)
 
     def test_format_child_wiki_pages(self):
-        self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
-        self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
+        self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parentpage', 'parent content', self.consolidate_auth)
+        self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'childpage', 'child content', self.consolidate_auth, self.parent_wiki_page)
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
         result = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
         expected = [
