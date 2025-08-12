@@ -572,6 +572,8 @@ class AddonModelMixin(models.Model):
         # Avoid test-breakages by avoiding early access to the request context
         if name not in self.OSF_HOSTED_ADDONS:
             request, user_id = get_request_and_user_id()
+            if not user_id and auth and auth.user:
+                user_id = auth.user._id
             if flag_is_active(request, features.ENABLE_GV):
                 return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth)
 
