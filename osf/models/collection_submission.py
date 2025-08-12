@@ -162,11 +162,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     user=contributor,
                     subscribed_object=self,
                     event_context={
-                        'user': contributor.id,
-                        'submitter': event_data.kwargs.get('user').id,
+                        'user_fullname': contributor.fullname,
+                        'submitter_fullname': event_data.kwargs.get('user').fullname,
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
-                        'collection': self.collection.id,
-                        'node': self.guid.referent.id,
+                        'collection__name': self.collection.name,
+                        'node_title': self.guid.referent.title,
+                        'node_absolute_url': self.guid.referent.get_absolute_url(),
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                     },
@@ -193,10 +194,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 user=contributor,
                 subscribed_object=self,
                 event_context={
-                    'user': contributor.id,
+                    'user_fullname': contributor.fullname,
                     'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
-                    'collection': self.collection.id,
-                    'node': self.guid.referent.id,
+                    'collection__name': self.collection.name,
+                    'node_title': self.guid.referent.title,
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },
@@ -228,9 +229,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         node = self.guid.referent
 
         event_context_base = {
-            'remover': user.id,
+            'remover_fullname': user.fullname,
             'collection_id': self.collection.id,
-            'node_id': node.id,
+            'node_title': node.title,
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }

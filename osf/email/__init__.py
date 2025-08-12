@@ -7,7 +7,7 @@ from html import unescape
 
 from django.core.mail import EmailMessage, get_connection
 
-from mako.template import Template as MakoTemplate
+from mako.template import Template
 from mako.lookup import TemplateLookup
 
 from sendgrid import SendGridAPIClient
@@ -27,12 +27,20 @@ EMAIL_TEMPLATE_DIRS = getattr(
     'EMAIL_TEMPLATE_DIRS',
     [os.path.join(getattr(settings, 'BASE_PATH', ''), 'website', 'templates', 'emails')],
 )
-_MAKO_LOOKUP = TemplateLookup(
+MAKO_LOOKUP = TemplateLookup(
     directories=EMAIL_TEMPLATE_DIRS,
     input_encoding='utf-8',
-    default_filters=['h'],   # optional: HTML-escape by default; tune to your needs
-    imports=[],
 )
+
+def render_email_html(template_text: str, ctx: dict) -> str:
+    # Give the string template a URI so relative includes (if any) have a base;
+    # 'inline_email' can be any unique label.
+    try:
+        return Template(text=template_text, lookup=MAKO_LOOKUP, uri='inline_email').render(**ctx)
+    except Exception:
+        logging.exception('Mako render failed; returning raw template')
+        return template_text
+
 
 def _strip_html(html: str) -> str:
     if not html:
@@ -53,7 +61,7 @@ def _safe_categories(cats):
     return out[:10]
 
 def _render_mako_string(template_str: str, ctx: dict) -> str:
-    return MakoTemplate(template_str, lookup=_MAKO_LOOKUP).render(**ctx)
+    return Template(template_str, lookup=MAKO_LOOKUP).render(**ctx)
 
 def send_email_over_smtp(to_email, notification_type, context, email_context):
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
@@ -117,7 +125,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         return False
 
     # Render with Mako + base inheritance
-    html = _render_mako_string(notification_type.template, context) or '<p>(no content)</p>'
+    html = render_email_html(notification_type.template, context) or '<p>(no content)</p>'
     text = _strip_html(html)
 
     subject_tpl = getattr(notification_type, 'subject', None)
