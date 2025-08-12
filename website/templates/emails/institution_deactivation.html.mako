@@ -7,7 +7,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    Hello, ${user.fullname},<br>
+    Hello, ${user_fullname},<br>
     <br>
     Starting today, you can no longer sign into OSF using your institution's SSO. However, you will not lose access to your account or your OSF content.<br>
     <br>

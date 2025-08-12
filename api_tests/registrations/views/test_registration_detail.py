@@ -10,10 +10,8 @@ from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
+from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse, NotificationType
 from framework.auth import Auth
-from website.project.signals import contributor_added
-from api_tests.utils import disconnected_from_listeners
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf.migrations import update_provider_auth_groups
@@ -32,7 +30,7 @@ from osf_tests.factories import (
 from osf_tests.utils import get_default_test_schema
 
 from api_tests.nodes.views.test_node_detail_license import TestNodeUpdateLicense
-from tests.utils import assert_latest_log
+from tests.utils import assert_latest_log, capture_notifications
 from api_tests.utils import create_test_file
 
 
@@ -695,7 +693,6 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @pytest.fixture
@@ -754,14 +751,13 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_initiate_withdrawal_success(self, mock_send_grid, app, user, public_registration, public_url, public_payload):
+    def test_initiate_withdrawal_success(self, app, user, public_registration, public_url, public_payload):
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
         assert public_registration.is_pending_retraction
         assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
-        assert mock_send_grid.called
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(
@@ -786,16 +782,15 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert not public_registration.is_pending_embargo
 
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
-            self, mock_send_grid, app, user, public_registration, public_url, public_payload):
+            self, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()
-        with disconnected_from_listeners(contributor_added):
+        with capture_notifications() as notifications:
             public_registration.add_unregistered_contributor(
                 unreg.fullname,
                 unreg.email,
                 auth=Auth(user),
                 permissions=permissions.ADMIN,
                 existing_user=unreg,
-                save=True
             )
 
         res = app.put_json_api(public_url, public_payload, auth=user.auth)
@@ -803,7 +798,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
         # Only the creator gets an email; the unreg user does not get emailed
         assert public_registration._contributors.count() == 2
-        assert mock_send_grid.call_count == 3
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
 @pytest.mark.django_db

@@ -88,7 +88,7 @@ class TestRegistrationEmbargoTermination:
     @pytest.fixture()
     def registration_with_contribs(self, user, user2):
         proj = factories.NodeFactory(creator=user)
-        proj.add_contributor(user2, permissions.ADMIN)
+        proj.add_contributor(user2, permissions.ADMIN, notification_type=False)
         embargo = factories.EmbargoFactory()
         embargo.end_date = timezone.now() + datetime.timedelta(days=4)
         return factories.RegistrationFactory(project=proj, creator=user, embargo=embargo)
@@ -135,7 +135,6 @@ class TestSanctionEmailRendering:
         registration.save()
         return registration
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_admin_emails(self, registration, reviews_workflow, branched_from_node):
@@ -149,7 +148,6 @@ class TestSanctionEmailRendering:
         registration.sanction.ask([(registration.creator, registration)])
         assert True  # mail rendered successfully
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_non_admin_emails(

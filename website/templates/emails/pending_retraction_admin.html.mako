@@ -3,15 +3,14 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if is_initiator:
       You have requested final approvals to withdraw your registration
-      titled <a href="${registration_link}">${reviewable.title}</a>
+      titled <a href="${registration_link}">${reviewable_title}</a>
     % else:
       ${initiated_by} has requested final approvals to withdraw your registration
-      titled <a href="${registration_link}">${reviewable.title}</a>
+      titled <a href="${registration_link}">${reviewable_title}</a>
     % endif
     </p>
     % if reviewable.withdrawal_justification:
@@ -28,7 +27,7 @@
       If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
     Its content will be removed from the
-    <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
+    <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
     but basic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
     % if reviewable.withdrawal_justification:
       The provided justification or explanation of the withdrawal will also be visible.

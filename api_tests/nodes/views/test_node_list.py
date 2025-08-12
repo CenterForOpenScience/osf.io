@@ -1603,9 +1603,12 @@ class TestNodeCreate:
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
         parent_project.add_unregistered_contributor(
-            fullname='far', email='foo@bar.baz',
+            fullname='far',
+            email='foo@bar.baz',
             permissions=permissions.READ,
-            auth=Auth(user=user_one), save=True)
+            auth=Auth(user=user_one),
+            notification_type=False
+        )
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
         contributor.save()

@@ -1,9 +1,11 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 
 from osf_tests.factories import DraftRegistrationFactory, AuthUserFactory, InstitutionFactory
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -139,18 +141,21 @@ class TestDraftRegistrationRelationshipInstitutions():
     # Overrides TestNodeRelationshipInstitutions
     def test_read_write_contributor_can_add_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
-        payload = {
-            'data': [{
-                'type': 'institutions',
-                'id': write_contrib_institution._id
-            }]
-        }
-        res = app.post_json_api(
-            node_institutions_url,
-            payload,
-            auth=write_contrib.auth,
-            expect_errors=True
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                {
+                    'data': [{
+                        'type': 'institutions',
+                        'id': write_contrib_institution._id
+                    }]
+                },
+                auth=write_contrib.auth,
+                expect_errors=True
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+
         node.reload()
         assert res.status_code == 201
 
@@ -235,11 +240,14 @@ class TestDraftRegistrationRelationshipInstitutions():
         user.add_or_update_affiliated_institution(institution_three)
         assert institution_three not in node.affiliated_institutions.all()
 
-        res = app.post_json_api(
-            node_institutions_url,
-            create_payload(institution_three._id),
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                node_institutions_url,
+                create_payload(institution_three._id),
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
 
         assert res.status_code == 201
         data = res.json['data']
@@ -276,11 +284,13 @@ class TestDraftRegistrationRelationshipInstitutions():
         node.affiliated_institutions.add(institution_one)
         assert institution_one in node.affiliated_institutions.all()
 
-        res = app.put_json_api(
-            node_institutions_url,
-            {'data': []},
-            auth=user.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.put_json_api(
+                node_institutions_url,
+                {'data': []},
+                auth=user.auth
+            )
+        assert not notifications
 
         assert res.status_code == 200
         node.reload()

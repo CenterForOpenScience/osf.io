@@ -4,19 +4,19 @@
 <tr>
   <td style="border-collapse: collapse;">
     <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     ${initiated_by} has requested final approvals to submit your registration
-    titled <a href="${registration_link}">${reviewable.title}</a>.
+    titled <a href="${registration_link}">${reviewable_title}</a>.
     </p>
     <p>
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be made public as part of the
-	  <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+	  <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be made public as part of the
-	  <a href="${settings.DOMAIN}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+	  <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
     % endif
     <p>
     Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
@@ -31,7 +31,7 @@
       <p>
       You will be automatically subscribed to notification emails for this project. To change your email notification
       preferences, visit your project or your user settings:
-	  <a href="${settings.DOMAIN + "settings/notifications/"}">${settings.DOMAIN}settings/notifications</a>
+	  <a href="${domain + "settings/notifications/"}">${domain}settings/notifications</a>
       </p>
     % endif
     <p>

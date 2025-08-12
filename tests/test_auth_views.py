@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 from rest_framework import status as http_status
-from tests.utils import run_celery_tasks
+from tests.utils import run_celery_tasks, capture_notifications
 
 from framework import auth
 from framework.auth import Auth, cas
@@ -25,7 +25,7 @@ from framework.auth.campaigns import (
 )
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.views import login_and_register_handler
-from osf.models import OSFUser, NotableDomain
+from osf.models import OSFUser, NotableDomain, NotificationType
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -38,22 +38,17 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
-from website import mails, settings
+from website import settings
 from website.util import api_url_for, web_url_for
-from conftest import start_mock_send_grid
 
 pytestmark = pytest.mark.django_db
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
         self.auth = self.user.auth
-
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_register_ok(self):
         url = api_url_for('register_user')
@@ -320,8 +315,11 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
-        self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
-        assert self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
 
         self.user.reload()
         assert token != self.user.get_confirmation_token(email)
@@ -497,8 +495,10 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
-        self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
-        assert self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
         # 2nd call does not send email because throttle period has not expired
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400

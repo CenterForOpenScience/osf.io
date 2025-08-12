@@ -1,5 +1,4 @@
 import pytest
-from unittest import mock
 import random
 
 from framework.auth.core import Auth
@@ -17,6 +16,7 @@ from api_tests.nodes.views.test_node_contributors_list import (
     TestNodeContributorFiltering,
 )
 from api_tests.nodes.views.utils import NodeCRUDTestCase
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     DraftRegistrationFactory,
     AuthUserFactory,
@@ -25,6 +25,7 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 from tests.base import capture_signals
+from tests.utils import capture_notifications
 from website.project.signals import contributor_added
 
 
@@ -98,7 +99,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_return_public_contributor_list_logged_out(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(user_two, save=True, notification_type=False)
 
         res = app.get(url_public, expect_errors=True)
         assert res.status_code == 401
@@ -106,7 +107,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_disabled_contributors_contain_names_under_meta(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True)
+        project_public.add_contributor(user_two, save=True, notification_type=False)
 
         user_two.is_disabled = True
         user_two.save()
@@ -129,7 +130,9 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_contributor(
             non_bibliographic_user,
             visible=False,
-            auth=Auth(project_public.creator))
+            auth=Auth(project_public.creator),
+            notification_type=False
+        )
         project_public.save()
         res = app.get(url_public, auth=user.auth)
         assert res.status_code == 200
@@ -142,7 +145,8 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True
+            auth=Auth(user),
+            notification_type=False,
         )
 
         for i in range(0, 10):
@@ -155,6 +159,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
                 new_user,
                 visible=visible,
                 auth=Auth(project_public.creator),
+                notification_type=False,
                 save=True
             )
         req_one = app.get(
@@ -178,7 +183,11 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
-            project_private.add_contributor(user, permissions=perm)
+            project_private.add_contributor(
+                user,
+                permissions=perm,
+                notification_type=False
+            )
             users[perm].append(user._id)
 
         res = app.get(url_private, auth=user.auth)
@@ -208,37 +217,37 @@ class TestDraftRegistrationContributorCreateValidation(DraftRegistrationCRUDTest
         return DraftRegistrationContributorsCreateSerializer
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeContributorCreateEmail):
     @pytest.fixture()
     def url_project_contribs(self, project_public):
         # Overrides TestNodeContributorCreateEmail
         return f'/{API_BASE}draft_registrations/{project_public._id}/contributors/'
 
-    def test_add_contributor_sends_email(
-            self, app, user, user_two,
-            url_project_contribs, mock_send_grid):
+    def test_add_contributor_sends_email(self, app, user, user_two, url_project_contribs):
         # Overrides TestNodeContributorCreateEmail
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'users',
-                            'id': user_two._id
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                        },
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'type': 'users',
+                                    'id': user_two._id
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
-
-        res = app.post_json_api(url, payload, auth=user.auth)
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_contributor_signal_if_default(
@@ -264,44 +273,46 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
 
     # Overrides TestNodeContributorCreateEmail
-    def test_add_unregistered_contributor_sends_email(
-            self, mock_send_grid, app, user, url_project_contribs):
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
+    def test_add_unregistered_contributor_sends_email(self, app, user, url_project_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Brian Dawkins',
+                            'email': 'b@dawk.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 1
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_add_unregistered_contributor_signal_if_default(
-            self, mock_send, app, user, url_project_contribs):
-        url = f'{url_project_contribs}?send_email=draft_registration'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
+    def test_add_unregistered_contributor_signal_if_default(self, app, user, url_project_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_project_contribs}?send_email=draft_registration',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jalen Hurts',
+                            'email': 'numberone@eagles.com'
+                        }
+                    }
+                }, auth=user.auth
+            )
         assert res.status_code == 201
-        assert 'draft_registration' == kwargs['email_template']
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
 
     # Overrides TestNodeContributorCreateEmail
-    def test_add_unregistered_contributor_without_email_no_email(
-            self, mock_send_grid, app, user, url_project_contribs):
+    def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
         url = f'{url_project_contribs}?send_email=draft_registration'
         payload = {
             'data': {
@@ -313,10 +324,11 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         }
 
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications() as notifications:
+                res = app.post_json_api(url, payload, auth=user.auth)
+            assert not notifications
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_send_grid.call_count == 0
 
 
 class TestDraftContributorBulkCreate(DraftRegistrationCRUDTestCase, TestNodeContributorBulkCreate):
@@ -343,11 +355,17 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         return project_public
 
     @pytest.fixture()
@@ -360,11 +378,17 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_private
 
     @pytest.fixture()
@@ -387,11 +411,17 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_public
 
     @pytest.fixture()
@@ -404,11 +434,17 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            notification_type=False,
+            save=True
+        )
         return project_private
 
     @pytest.fixture()
@@ -458,11 +494,17 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True, save=True)
+            visible=True,
+            save=True,
+            notification_type=False
+        )
         return project_private
 
 

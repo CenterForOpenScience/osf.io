@@ -9,10 +9,11 @@ from urllib.error import HTTPError
 from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
 from addons.boa.tasks import submit_to_boa, submit_to_boa_async, handle_boa_error
+from osf.models import NotificationType
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
+from tests.utils import capture_notifications
 from website import settings as osf_settings
-from website.mails import ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
 
 DEFAULT_REFRESH_JOB_INTERVAL = boa_settings.REFRESH_JOB_INTERVAL
 DEFAULT_MAX_JOB_WAITING_TIME = boa_settings.MAX_JOB_WAITING_TIME
@@ -38,9 +39,6 @@ class TestBoaErrorHandling(OsfTestCase):
         self.output_file_name = 'fake_boa_script_results.txt'
         self.job_id = '1a2b3c4d5e6f7g8'
 
-        from conftest import start_mock_send_grid
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def tearDown(self):
         super().tearDown()
 
@@ -55,27 +53,26 @@ class TestBoaErrorHandling(OsfTestCase):
         assert BoaErrorCode.FILE_TOO_LARGE_ERROR == 6
         assert BoaErrorCode.JOB_TIME_OUT_ERROR == 7
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    @mock.patch('website.mails.settings.USE_CELERY', False)
     def test_handle_boa_error(self):
-        with mock.patch('addons.boa.tasks.sentry.log_message', return_value=None) as mock_sentry_log_message, \
-                mock.patch('addons.boa.tasks.logger.error', return_value=None) as mock_logger_error:
-            return_value = handle_boa_error(
-                self.error_message,
-                BoaErrorCode.UNKNOWN,
-                self.user_username,
-                self.user_fullname,
-                self.project_url,
-                self.file_full_path,
-                query_file_name=self.query_file_name,
-                file_size=self.file_size,
-                output_file_name=self.output_file_name,
-                job_id=self.job_id
-            )
-            self.mock_send_grid.assert_called()
-            mock_sentry_log_message.assert_called_with(self.error_message, skip_session=True)
-            mock_logger_error.assert_called_with(self.error_message)
-            assert return_value == BoaErrorCode.UNKNOWN
+        with mock.patch('addons.boa.tasks.sentry.log_message', return_value=None) as mock_sentry_log_message:
+            with mock.patch('addons.boa.tasks.logger.error', return_value=None) as mock_logger_error:
+                with capture_notifications() as notifications:
+                    return_value = handle_boa_error(
+                        self.error_message,
+                        BoaErrorCode.UNKNOWN,
+                        self.user_username,
+                        self.user_fullname,
+                        self.project_url,
+                        self.file_full_path,
+                        file_size=self.file_size,
+                        output_file_name=self.output_file_name,
+                        job_id=self.job_id
+                    )
+                assert len(notifications['emits']) == 1
+                assert notifications['emits'][0]['type'] == NotificationType.Type.ADDONS_BOA_JOB_FAILURE
+                mock_sentry_log_message.assert_called_with(self.error_message, skip_session=True)
+                mock_logger_error.assert_called_with(self.error_message)
+                assert return_value == BoaErrorCode.UNKNOWN
 
 
 class TestSubmitToBoa(OsfTestCase):
@@ -154,14 +151,9 @@ class TestSubmitToBoaAsync(OsfTestCase):
         boa_settings.REFRESH_JOB_INTERVAL = DEFAULT_REFRESH_JOB_INTERVAL
         boa_settings.MAX_JOB_WAITING_TIME = DEFAULT_MAX_JOB_WAITING_TIME
 
-        from conftest import start_mock_send_grid
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def tearDown(self):
         super().tearDown()
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    @mock.patch('website.mails.settings.USE_CELERY', False)
     async def test_submit_success(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
                 mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \
@@ -171,6 +163,7 @@ class TestSubmitToBoaAsync(OsfTestCase):
                 mock.patch('boaapi.boa_client.BoaClient.query', return_value=self.mock_job), \
                 mock.patch('boaapi.boa_client.BoaClient.close', return_value=None) as mock_close, \
                 mock.patch('asyncio.sleep', new_callable=AsyncMock, return_value=None) as mock_async_sleep, \
+                mock.patch('addons.boa.tasks.send_mail', return_value=None) as mock_send_mail, \
                 mock.patch('addons.boa.tasks.handle_boa_error', return_value=None) as mock_handle_boa_error:
             return_value = await submit_to_boa_async(
                 self.host,
@@ -190,7 +183,19 @@ class TestSubmitToBoaAsync(OsfTestCase):
             assert self.mock_job.refresh.call_count == 4
             assert mock_async_sleep.call_count == 4
             mock_close.assert_called()
-            self.mock_send_grid.assert_called()
+            mock_send_mail.assert_called_with(
+                to_addr=self.user.username,
+                mail=ADDONS_BOA_JOB_COMPLETE,
+                fullname=self.user.fullname,
+                query_file_name=self.query_file_name,
+                query_file_full_path=self.file_full_path,
+                output_file_name=self.output_file_name,
+                job_id=self.mock_job.id,
+                project_url=self.project_url,
+                boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
+                boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
+                osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+            )
             mock_handle_boa_error.assert_not_called()
 
     async def test_download_error(self):

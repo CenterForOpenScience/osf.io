@@ -12,9 +12,8 @@ class TestDraftRegistrationSubjectsList(SubjectsListMixin):
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         # Overrides SubjectsListMixin
         draft = DraftRegistrationFactory(initiator=user_admin_contrib)
-        draft.add_contributor(user_write_contrib, permissions=WRITE)
-        draft.add_contributor(user_read_contrib, permissions=READ)
-        draft.save()
+        draft.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
+        draft.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
         return draft
 
     @pytest.fixture()

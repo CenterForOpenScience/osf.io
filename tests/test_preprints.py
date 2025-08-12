@@ -26,7 +26,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from admin_tests.utilities import setup_view
 from api.preprints.views import PreprintContributorDetail
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, NotificationType
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf_tests.factories import (
     ProjectFactory,
@@ -43,8 +43,8 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewStates
 from tests.base import assert_datetime_equal, OsfTestCase
-from tests.utils import assert_preprint_logs
-from website import settings, mails
+from tests.utils import assert_preprint_logs, capture_notifications
+from website import settings
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from website.preprints.tasks import (
@@ -53,8 +53,6 @@ from website.preprints.tasks import (
     update_or_enqueue_on_preprint_updated,
     should_update_preprint_identifiers
 )
-from conftest import start_mock_send_grid
-
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -570,19 +568,19 @@ class TestPreprintAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
         with pytest.raises(ValidationError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
         with pytest.raises(ValueError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
@@ -971,7 +969,7 @@ class TestPreprintSpam:
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @pytest.mark.skip('Technically still true, but skipping because mocking is outdated')
-    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -998,10 +996,10 @@ class TestPreprintSpam:
                 preprint3.reload()
                 assert preprint3.is_public is True
 
-    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_send_mail, preprint, user):
+    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_mailchimp, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -1985,8 +1983,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1996,16 +1992,17 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
         self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
         self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_creator_gets_email(self):
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
-        domain = self.preprint.provider.domain or settings.DOMAIN
-        self.mock_send_grid.assert_called()
-        assert self.mock_send_grid.call_count == 1
+        with capture_notifications() as notifications:
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
-        self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
 
 class TestPreprintOsfStorage(OsfTestCase):

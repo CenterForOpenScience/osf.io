@@ -54,13 +54,19 @@ class AbstractDraftRegistrationTestCase:
         project_public = ProjectFactory(is_public=True, creator=user)
         project_public.add_contributor(
             user_write_contrib,
-            permissions=permissions.WRITE)
+            permissions=permissions.WRITE,
+            notification_type=False,
+        )
         project_public.add_contributor(
             user_read_contrib,
-            permissions=permissions.READ)
+            permissions=permissions.READ,
+            notification_type=False,
+        )
         project_public.add_contributor(
             user_admin_contrib,
-            permissions=permissions.ADMIN)
+            permissions=permissions.ADMIN,
+            notification_type=False,
+        )
         project_public.save()
         project_public.add_tag('hello', Auth(user), save=True)
         return project_public

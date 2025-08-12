@@ -3,8 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!from website import settings%>
-    Hello ${user.fullname},
+    Hello ${user_fullname},
     <p>
     % if pending_moderation:
       The updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
@@ -20,11 +19,11 @@
     The OSF Team
     <p>
     <p>
-    Want more information? Visit <a href="${settings.DOMAIN}">${settings.DOMAIN}</a> to learn about the OSF,
+    Want more information? Visit <a href="${domain}">${domain}</a> to learn about the OSF,
     or <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization,
     the Center for Open Science.
     <p>
-    Questions? Email <a href="mailto:${settings.OSF_CONTACT_EMAIL}">${settings.OSF_CONTACT_EMAIL}</a>
+    Questions? Email <a href="mailto:${osf_contact_email}}">${osf_contact_email}}</a>
   </td>
 </tr>
 </%def>

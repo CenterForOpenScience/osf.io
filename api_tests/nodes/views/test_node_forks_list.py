@@ -3,6 +3,7 @@ from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
+from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -14,6 +15,7 @@ from rest_framework import exceptions
 from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -203,7 +205,6 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -417,28 +418,31 @@ class TestNodeForkCreate:
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
             private_project.title
 
-    def test_send_email_success(
-            self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+    def test_send_email_success(self, app, user, public_project_url, fork_data_with_title, public_project):
 
-        res = app.post_json_api(
-            public_project_url,
-            fork_data_with_title,
-            auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                public_project_url,
+                fork_data_with_title,
+                auth=user.auth
+            )
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
-        call_args = mock_send_grid.call_args[1]
-        assert call_args['to_addr'] == user.email
-        assert call_args['subject'] == 'Your fork has completed'
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['kwargs']['user'] == user
+        assert notifications['emits'][0]['kwargs']['event_context']['guid'] == public_project.forks.first()._id
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_FORK_COMPLETED
 
     def test_send_email_failed(
-            self, app, user, public_project_url,
-            fork_data_with_title, public_project, mock_send_grid):
+            self, app, user, public_project_url, fork_data_with_title, public_project):
 
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
-            with pytest.raises(Exception):
-                app.post_json_api(
-                    public_project_url,
-                    fork_data_with_title,
-                    auth=user.auth)
-                assert mock_send_grid.called
+            with capture_notifications() as notifications:
+                with pytest.raises(Exception):
+                    app.post_json_api(
+                        public_project_url,
+                        fork_data_with_title,
+                        auth=user.auth
+                    )
+                assert len(notifications['emits']) == 1
+                assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_FORK_FAILED

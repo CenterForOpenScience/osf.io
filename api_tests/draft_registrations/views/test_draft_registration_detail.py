@@ -95,7 +95,11 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
 
     def test_admin_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
         node_admin = AuthUserFactory()
-        project_public.add_contributor(node_admin, ADMIN)
+        project_public.add_contributor(
+            node_admin,
+            ADMIN,
+            notification_type=False,
+        )
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False
         res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
@@ -117,7 +121,11 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
 
     def test_write_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
         node_admin = AuthUserFactory()
-        project_public.add_contributor(node_admin, WRITE)
+        project_public.add_contributor(
+            node_admin,
+            WRITE,
+            notification_type=False
+        )
         assert project_public.has_permission(node_admin, WRITE) is True
         assert draft_registration.has_permission(node_admin, WRITE) is False
         res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)
@@ -139,7 +147,11 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
 
     def test_read_node_not_draft(self, app, user, project_public, draft_registration, url_draft_registrations):
         node_admin = AuthUserFactory()
-        project_public.add_contributor(node_admin, READ)
+        project_public.add_contributor(
+            node_admin,
+            READ,
+            notification_type=False
+        )
         assert project_public.has_permission(node_admin, READ) is True
         assert draft_registration.has_permission(node_admin, READ) is False
         res = app.get(url_draft_registrations, auth=node_admin.auth, expect_errors=True)

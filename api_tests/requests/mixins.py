@@ -37,7 +37,7 @@ class NodeRequestTestMixin:
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            send_email='access_request',
+            notification_type=None,
             save=True
         )
         return proj
@@ -115,6 +115,7 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
+            notification_type=False,
             save=True
         )
         pre.is_public = True
@@ -133,7 +134,8 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return pre
 
@@ -147,7 +149,8 @@ class PreprintRequestTestMixin:
         post.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return post
 
@@ -161,7 +164,8 @@ class PreprintRequestTestMixin:
         preprint.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True
+            save=True,
+            notification_type=False
         )
         return preprint
 

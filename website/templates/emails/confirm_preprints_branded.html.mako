@@ -3,7 +3,7 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     Welcome to ${branded_preprints_provider}, powered by the Open Science Framework. To continue, please verify your email address by visiting this link:<br>
     <br>

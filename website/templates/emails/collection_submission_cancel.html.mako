@@ -1,36 +1,33 @@
 <%inherit file="notify_base.mako" />
-<%!
-    from website import settings
-%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     <p>
         % if is_admin:
-             The request to add <a href="${node.absolute_url}">${node.title}</a> to
+             The request to add <a href="${node_absolute_url}">${node_title}</a> to
              % if collection.provider:
-                <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
+                <a href="${collections_link}">${collection_provider_name}</a>
             % else:
-                <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
+                <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
             % endif
 
             was canceled. If you wish to be associated with the collection, you will need to request to be added again.
         % else:
-            <a href="${remover.absolute_url}">${remover.fullname}</a> canceled the request to add
-            <a href="${node.absolute_url}">${node.title}</a>to
+            <a href="${remover_absolute_url}">${remover_fullname}</a> canceled the request to add
+            <a href="${node_absolute_url}">${node_title}</a>to
             % if collection.provider:
-                <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>
+                <a href="${collections_link}">${collection_provider_name}</a>
             % else:
-                <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
+                <a href="${domain  + 'myprojects/'}">${collection_provider_name}</a>
             % endif
             If you wish to be associated with the collection, an admin will need to request addition again.
         % endif
     </p>
     <p>
-        If you are not ${user.fullname} or you have been erroneously associated with
-        <a href="${node.absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
+        If you are not ${user_fullname} or you have been erroneously associated with
+        <a href="${node_absolute_url}">${node_title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>
     Sincerely,<br>

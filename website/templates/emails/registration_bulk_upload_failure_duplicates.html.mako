@@ -7,7 +7,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      Hello ${fullname},<br>
+      Hello ${user_fullname},<br>
       <br>
       All ${count} registrations could not be uploaded due to duplicate rows found either within the uploaded csv file
       or in our system. Duplicates are listed below. Review the file and try to upload the registrations again after

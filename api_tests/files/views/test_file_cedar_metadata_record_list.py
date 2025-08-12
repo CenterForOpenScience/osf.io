@@ -29,7 +29,7 @@ class TestFileCedarMetadataRecordListPublicFile(TestFileCedarMetadataRecord):
     def test_record_list_with_read_auth(self, app, node_pub, file_pub, cedar_record_for_file_pub, cedar_draft_record_for_file_pub):
 
         read = AuthUserFactory()
-        node_pub.add_contributor(read, permissions=READ)
+        node_pub.add_contributor(read, permissions=READ, notification_type=False)
         node_pub.save()
         resp = app.get(f'/v2/files/{file_pub._id}/cedar_metadata_records/', auth=read.auth)
         assert resp.status_code == 200
@@ -103,7 +103,7 @@ class TestFileCedarMetadataRecordListPrivateFile(TestFileCedarMetadataRecord):
     def test_record_list_with_admin_auth(self, app, node, file, cedar_record_for_file, cedar_draft_record_for_file):
 
         admin = AuthUserFactory()
-        node.add_contributor(admin, permissions=ADMIN)
+        node.add_contributor(admin, permissions=ADMIN, notification_type=False)
         node.save()
         resp = app.get(f'/v2/files/{file._id}/cedar_metadata_records/', auth=admin.auth)
         assert resp.status_code == 200
@@ -120,7 +120,7 @@ class TestFileCedarMetadataRecordListFileWithGuid(TestFileCedarMetadataRecord):
 
         file_guid = file.get_guid(create=False)
         admin = AuthUserFactory()
-        node.add_contributor(admin, permissions=ADMIN)
+        node.add_contributor(admin, permissions=ADMIN, notification_type=False)
         node.save()
         resp = app.get(f'/v2/files/{file_guid._id}/cedar_metadata_records/', auth=admin.auth)
         assert resp.status_code == 200

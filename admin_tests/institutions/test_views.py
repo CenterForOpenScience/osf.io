@@ -1,10 +1,12 @@
 import json
 import pytest
+from unittest import mock
 
 from django.test import RequestFactory
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from osf_tests.factories import faker, FakeList
 
 from tests.base import AdminTestCase
 from osf_tests.factories import (
@@ -198,6 +200,32 @@ class TestCreateInstitution(AdminTestCase):
     def test_get_view(self):
         res = self.view.get(self.request)
         assert res.status_code == 200
+
+    @mock.patch('admin.institutions.views.monthly_reporter_do.apply_async')
+    def test_monthly_reporter_called_on_create(self, mock_monthly_reporter_do):
+        data = {
+            '_id': 'wqhx1',
+            'name': 'company',
+            'login_url': faker.url(),
+            'logout_url': faker.url(),
+            'identifier_domain': faker.url(),
+            'ror_uri': faker.url(),
+            'domains': FakeList('url', n=3),
+            'email_domains': FakeList('domain_name', n=1),
+            'orcid_record_verified_source': '',
+            'delegation_protocol': '',
+            'institutional_request_access_enabled': False
+        }
+        form = InstitutionForm(data=data)
+        assert form.is_valid()
+
+        view = setup_form_view(self.base_view(), self.request, form=form)
+        view.object = form.save()
+        view.form_valid(form)
+
+        mock_monthly_reporter_do.assert_called_once()
+        _, kwargs = mock_monthly_reporter_do.call_args
+        assert kwargs['kwargs']['report_kwargs']['institution_pk'] == view.object.id
 
 
 class TestAffiliatedNodeList(AdminTestCase):
