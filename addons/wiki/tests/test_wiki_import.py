@@ -1057,25 +1057,28 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         #self.project = ProjectFactory(is_public=True, creator=self.user)
         #self.project.add_addon('wiki', auth=self.auth)
         #self.project.save()
-
-        mock_get_for_node.return_value = [
-            {
-                'name': 'TEST',
-                'path': '/page2',
-                'original_name': 'page2',
-                'wiki_name': 'page2',
-                'status': 'valid',
-                'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'content2'
-            }
-        ]
-        mock_create_for_node.return_value = None
+        # 1回目（子の存在確認）→ None で 409 を避ける
+        # 2回目（親の存在確認）→ None で 404 を発生させる
+        mock_get_for_node.side_effect = [None, None]
+        #mock_get_for_node.return_value = [
+        #    {
+        #        'name': 'TEST',
+        #        'path': '/page2',
+        #        'original_name': 'page2',
+        #        'wiki_name': 'page2',
+        #        'status': 'valid',
+        #        'message': '',
+        #        '_id': 'yyy',
+        #        'wiki_content': 'content2'
+        #    }
+        #]
+        #mock_create_for_node.return_value = None
 
         #parent = WikiPage.objects.get_for_node(self.project, 'parent')
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        mock_create_for_node.assert_not_called()
         #dir_id = self.root_import_folder1._id
         #url = self.project.api_url_for(
         #    'project_wiki_validate_name',
