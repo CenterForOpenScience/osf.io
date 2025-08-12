@@ -102,6 +102,49 @@ class TestGetFileObjFromLog:
         file_obj = get_file_obj_from_log(log, reg)
         assert file_obj == file
 
+    @pytest.mark.django_db
+    def test_file_multiple_creations_deletions(self, node, reg):
+        file1 = OsfStorageFile.create(target=node, name='duplicate.txt')
+        file1.save()
+        file1.delete()
+        log1 = NodeLog.objects.create(
+            node=node,
+            action='osf_storage_file_removed',
+            params={'path': '/duplicate.txt'},
+            date=timezone.now(),
+        )
+
+        file2 = OsfStorageFile.create(target=node, name='duplicate.txt')
+        file2.save()
+        file2.delete()
+        log2 = NodeLog.objects.create(
+            node=node,
+            action='osf_storage_file_removed',
+            params={'path': '/duplicate.txt'},
+            date=timezone.now(),
+        )
+
+        file3 = OsfStorageFile.create(target=node, name='duplicate.txt')
+        file3.save()
+        log3 = NodeLog.objects.create(
+            node=node,
+            action='osf_storage_file_added',
+            params={'urls': {'view': f'/{node._id}/files/osfstorage/{file3._id}/'}},
+            date=timezone.now(),
+        )
+
+        file_obj1 = get_file_obj_from_log(log1, reg)
+        assert file_obj1 == file1
+        assert isinstance(file_obj1, TrashedFileNode)
+
+        file_obj2 = get_file_obj_from_log(log2, reg)
+        assert file_obj2 == file2
+        assert isinstance(file_obj2, TrashedFileNode)
+
+        file_obj3 = get_file_obj_from_log(log3, reg)
+        assert file_obj3 == file3
+        assert isinstance(file_obj3, OsfStorageFile)
+
 
 class TestBuildFileTree:
 
