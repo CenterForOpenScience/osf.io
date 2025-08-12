@@ -725,9 +725,9 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         assert cloned.copied_from == src
 
 class TestWikiViews(OsfTestCase, unittest.TestCase):
-    self.maxDiff = None
     def setUp(self):
         super(TestWikiViews, self).setUp()
+        self.maxDiff = None
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -2404,18 +2404,17 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_info = [
             {
                 'parent_wiki_name': None,
-                'path': '/page1',
-                'original_name': 'page1',
-                'wiki_name': 'page1',
+                'path': '/importpagec',
+                'original_name': self.wiki_page3.page_name,
+                'wiki_name': self.wiki_page3.page_name,
                 'status': 'valid',
                 'message': '',
-                '_id': 'xxx',
-                'wiki_content': 'content1'
+                '_id': self.wiki_page3._id,
+                'wiki_content': 'updated content'
             }
         ]
-        depth = 1
         with assert_raises(ImportTaskAbortedError):
-            views._import_same_level_wiki(wiki_info, depth,self.consolidate_auth, self.project2, mock_task)
+            views._import_same_level_wiki(wiki_info, 0, self.consolidate_auth, self.project2, mock_task)
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
     def test_import_same_level_wiki_matching_depth(self, mock_task):
