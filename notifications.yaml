@@ -683,7 +683,7 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: desk
     template: 'emails/support_request.html.mako'
-    tests: ['tests/test_deactivate_requested_accounts.py']
+    tests: ['scripts/tests/test_deactivate_requested_accounts.py']
   - name: desk_request_export
     subject: 'Export Request'
     __docs__: ...
