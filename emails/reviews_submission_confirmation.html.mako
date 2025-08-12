@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-<%inherit file="notify_base.mako"/>
+<%inherit file="notify_base.mako" />
 <%def name="content()">
     <%
         isOsfSubmission = reviewable_provider_name == 'Open Science Framework'

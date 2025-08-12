@@ -7,7 +7,7 @@
     <br>
     <p>
         % if is_admin:
-            Your request to add  <a href="${node.absolute_url}">${node.title}</a> to
+            Your request to add  <a href="${node_absolute_url}">${node.title}</a> to
             <a href="${collections_link}">${collection_provider_name}</a> was not accepted.
             <p>
                 Rejection Justification:
@@ -16,7 +16,7 @@
                 ${rejection_justification}
             </p>
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was not accepted  by <a href="${collections_link}">${collection_provider_name}</a>.
+            <a href="${node.absolute_url}">${node_title}</a> was not accepted  by <a href="${collections_link}">${collection_provider_name}</a>.
         % endif
     </p>
     <p>

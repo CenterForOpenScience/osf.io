@@ -22,25 +22,45 @@ from osf import features
 from website import settings
 from api.base.settings import CI_ENV
 
-EMAIL_TEMPLATE_DIRS = getattr(
-    settings,
-    'EMAIL_TEMPLATE_DIRS',
-    [os.path.join(getattr(settings, 'BASE_PATH', ''), 'website', 'templates', 'emails')],
-)
+_BASE = getattr(settings, 'BASE_PATH', '')
+TEMPLATE_ROOT = os.path.join(_BASE, 'emails')
+EMAIL_TEMPLATE_DIRS = getattr(settings, 'EMAIL_TEMPLATE_DIRS', [TEMPLATE_ROOT])
+
+# Normalize to absolute dirs
+EMAIL_TEMPLATE_DIRS = [os.path.abspath(p) for p in EMAIL_TEMPLATE_DIRS]
+
 MAKO_LOOKUP = TemplateLookup(
     directories=EMAIL_TEMPLATE_DIRS,
     input_encoding='utf-8',
 )
 
-def render_email_html(template_text: str, ctx: dict) -> str:
-    # Give the string template a URI so relative includes (if any) have a base;
-    # 'inline_email' can be any unique label.
+def _detect_email_folder() -> str:
+    """Find the folder that contains notify_base.mako: 'emails' or 'notifications' (default to 'emails')."""
+    for folder in ('emails', 'notifications'):
+        if os.path.exists(os.path.join(TEMPLATE_ROOT, folder, 'notify_base.mako')):
+            return folder
+        # also allow custom roots in EMAIL_TEMPLATE_DIRS
+        for root in EMAIL_TEMPLATE_DIRS:
+            if os.path.exists(os.path.join(root, folder, 'notify_base.mako')):
+                return folder
+    return 'emails'
+
+_EMAIL_FOLDER = _detect_email_folder()
+
+def _render_email_html(template_text: str, ctx: dict, folder: str | None = None) -> str:
+    """Render a DB-backed Mako template that may do <%inherit file="notify_base.mako">.
+    We assign a virtual URI inside the same folder as notify_base.mako so the relative inherit resolves.
+    """
+    if not template_text:
+        return ''
+    folder = folder or _EMAIL_FOLDER
+    # unique-but-stable-ish URI to avoid Mako cache collisions; must be inside the folder
+    uri = f'/{folder}/inline_{abs(hash(template_text))}.mako'
     try:
-        return Template(text=template_text, lookup=MAKO_LOOKUP, uri='inline_email').render(**ctx)
+        return Template(text=template_text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
     except Exception:
         logging.exception('Mako render failed; returning raw template')
         return template_text
-
 
 def _strip_html(html: str) -> str:
     if not html:
@@ -60,9 +80,7 @@ def _safe_categories(cats):
                 out.append(c)
     return out[:10]
 
-def _render_mako_string(template_str: str, ctx: dict) -> str:
-    return Template(template_str, lookup=MAKO_LOOKUP).render(**ctx)
-
+# ---------------- SMTP path ----------------
 def send_email_over_smtp(to_email, notification_type, context, email_context):
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
         host = settings.MAILHOG_HOST
@@ -74,7 +92,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         raise NotImplementedError('MAIL_SERVER or MAIL_PORT is not set')
 
     subject = None if not notification_type.subject else notification_type.subject.format(**context)
-    body_html = _render_mako_string(notification_type.template, context)
+    body_html = _render_email_html(notification_type.template, context)
 
     email = EmailMessage(
         subject=subject,
@@ -115,8 +133,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     if settings.SENDGRID_WHITELIST_MODE:
         not_allowed = [a for a in to_list if a not in getattr(settings, 'SENDGRID_EMAIL_WHITELIST', ())]
         if not_allowed:
-            from framework.sentry import sentry
-            sentry.log_message(f'SENDGRID_WHITELIST_MODE: blocked non-whitelisted: {", ".join(not_allowed)}')
             return False
 
     from_email = getattr(settings, 'SENDGRID_FROM_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
@@ -124,8 +140,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')
         return False
 
-    # Render with Mako + base inheritance
-    html = render_email_html(notification_type.template, context) or '<p>(no content)</p>'
+    html = _render_email_html(render_notification(notification_type.template, context))
     text = _strip_html(html)
 
     subject_tpl = getattr(notification_type, 'subject', None)
@@ -144,7 +159,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         'subject': subject,
         'personalizations': [personalization],
         'content': [
-            {'type': 'text/plain', 'value': text},   # plain first (SendGrid best practice)
+            {'type': 'text/plain', 'value': text},   # plain first
             {'type': 'text/html', 'value': html},
         ],
     }
@@ -206,3 +221,10 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     except Exception as exc:
         logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise
+
+
+def render_notification(template, context):
+    if not template:
+        return ''
+    t = Template(template)
+    return t.render(context)

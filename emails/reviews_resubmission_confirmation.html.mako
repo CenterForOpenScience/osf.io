@@ -1,4 +1,4 @@
-<%inherit file="notify_base.mako"/>
+<%inherit file="notify_base.mako" />
 <%def name="content()">
     <div style="margin: 40px;">
        <p>

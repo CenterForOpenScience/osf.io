@@ -5,15 +5,15 @@
     Hello ${user_fullname},<br>
     <p>
         % if is_admin:
-            Your request to add <a href="${node.absolute_url}">${node.title}</a> to
-            <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a> was approved.
+            Your request to add <a href="${node_absolute_url}">${node_title}</a> to
+            <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a> was approved.
         % else:
-            <a href="${node.absolute_url}">${node.title}</a> was added to <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a>.
+            <a href="${node_absolute_url}">${node_title}</a> was added to <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a>.
         % endif
     </p>
     <p>
         If you are not ${user_fullname} or you have been erroneously associated with
-        <a href="${node.absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
+        <a href="${node_absolute_url}">${node_title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>
     <br>

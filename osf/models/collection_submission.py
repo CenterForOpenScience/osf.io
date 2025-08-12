@@ -165,7 +165,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'user_fullname': contributor.fullname,
                         'submitter_fullname': event_data.kwargs.get('user').fullname,
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
-                        'collection__name': self.collection.name,
+                        'collection_title': self.collection.title,
                         'node_title': self.guid.referent.title,
                         'node_absolute_url': self.guid.referent.get_absolute_url(),
                         'domain': settings.DOMAIN,
@@ -196,7 +196,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 event_context={
                     'user_fullname': contributor.fullname,
                     'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
-                    'collection__name': self.collection.name,
+                    'collection_title': self.collection.title,
                     'node_title': self.guid.referent.title,
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
