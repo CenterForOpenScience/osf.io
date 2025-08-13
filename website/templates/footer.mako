@@ -7,9 +7,7 @@
                     <span>
                         Copyright &copy;
                     </span>
-                    <a href="${footer_links['cos']}">
                         ${_("National Institute of Informatics")}
-                    </a>
                     <span>
                         |
                     </span>
