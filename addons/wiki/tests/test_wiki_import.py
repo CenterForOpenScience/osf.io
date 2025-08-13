@@ -1022,11 +1022,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(result[0] , {'id': root_import_folder._id, 'name': 'rootimportfolder'})
 
     def test_project_wiki_edit_post(self):
-        self.user.is_registered = True
-        self.user.save()
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         url = self.project.web_url_for('project_wiki_edit_post', wname='home')
-        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.auth).follow()
+        res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
@@ -1052,8 +1049,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             wname='home',
             p_wname='home')
         res = self.app.get(url, auth=self.auth, expect_errors=True)
+        try:
+            body = res.json
+        except AttributeError:
+            body = res.json_body
 
-        assert_equal(res.message, 'home')
+        assert_equal(body['message'], 'home')
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
@@ -2661,11 +2662,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_project_clean_celery_task_one_running_task(self, mock_abort):
         WikiImportTask.objects.create(node=self.project, task_id='task-id-11', status=WikiImportTask.STATUS_COMPLETED, creator=self.user)
         WikiImportTask.objects.create(node=self.project, task_id='task-id-2222', status=WikiImportTask.STATUS_RUNNING, creator=self.user)
-        self.user.is_registered = True
-        self.user.save()
-        self.project.add_contributor(self.user, permissions=['read', 'write', 'admin'], save=True)
         url = self.project.api_url_for('project_clean_celery_tasks')
-        res = self.app.post(url, auth=self.consolidate_auth)
+        res = self.app.post(url, auth=self.user.auth)
         task_completed = WikiImportTask.objects.get(task_id='task-id-11')
         task_running = WikiImportTask.objects.get(task_id='task-id-2222')
         assert_equal(task_completed.status, 'Completed')
@@ -2930,6 +2928,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
+        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=WIKI_INVALID_VERSION_ERROR):
             with assert_raises(WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
