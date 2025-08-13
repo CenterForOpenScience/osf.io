@@ -320,7 +320,6 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.import_page_folder2.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id
         }
 
-
     def test_get_node_file_mapping(self):
         result = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
         expect = {
@@ -332,10 +331,9 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.attachment3.parent.name}^{self.attachment3.name}': self.attachment3._id,
         }
         child_info = _get_all_child_file_ids(self.wiki_import_dir._id)
-        node_info = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
+        node_info = BaseFileNode.objects.filter(target_object_id=self.project1.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
         assert_equal(child_info, node_info)
         assert_equal(expect, result)
-
 
     def test_get_import_wiki_name_list(self):
         wiki_info = [
