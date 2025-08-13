@@ -1,14 +1,17 @@
 import os
 import re
 import json
-import waffle
 import logging
+import importlib
 from html import unescape
+from typing import List, Optional
 
+import waffle
 from django.core.mail import EmailMessage, get_connection
 
 from mako.template import Template as MakoTemplate
 from mako.lookup import TemplateLookup
+from mako.exceptions import TopLevelLookupException
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -22,42 +25,111 @@ from osf import features
 from website import settings
 from api.base.settings import CI_ENV
 
-# --- Point lookup at the *templates root* ---
-_BASE = getattr(settings, 'BASE_PATH', '')
-TEMPLATE_ROOT = os.path.join(_BASE, 'website', 'templates')
-EMAIL_TEMPLATE_DIRS = getattr(settings, 'EMAIL_TEMPLATE_DIRS', [TEMPLATE_ROOT])
-EMAIL_TEMPLATE_DIRS = [os.path.abspath(p) for p in EMAIL_TEMPLATE_DIRS]
+def _existing_dirs(paths: List[str]) -> List[str]:
+    out = []
+    seen = set()
+    for p in paths:
+        if not p:
+            continue
+        ap = os.path.abspath(p)
+        # If user passed .../emails or .../notifications, lift to its parent templates root
+        tail = os.path.basename(ap.rstrip(os.sep))
+        if tail in ('emails', 'notifications'):
+            ap = os.path.dirname(ap)
+        if os.path.isdir(ap) and ap not in seen:
+            out.append(ap)
+            seen.add(ap)
+    return out
 
-MAKO_LOOKUP = TemplateLookup(
-    directories=EMAIL_TEMPLATE_DIRS,
-    input_encoding='utf-8',
-)
+def _default_template_roots() -> List[str]:
+    roots = []
+    # 1) settings.EMAIL_TEMPLATE_DIRS (if provided)
+    cfg = getattr(settings, 'EMAIL_TEMPLATE_DIRS', None)
+    if cfg:
+        roots.extend(cfg if isinstance(cfg, (list, tuple)) else [cfg])
 
-def _detect_email_folder() -> str:
-    """Return 'emails' or 'notifications' based on where notify_base.mako exists (default 'emails')."""
-    for folder in ('emails', 'notifications'):
-        if os.path.exists(os.path.join(TEMPLATE_ROOT, folder, 'notify_base.mako')):
-            return folder
-        for root in EMAIL_TEMPLATE_DIRS:
-            if os.path.exists(os.path.join(root, folder, 'notify_base.mako')):
-                return folder
-    return 'emails'
+    # 2) website package path (most reliable)
+    try:
+        website_pkg = importlib.import_module('website')
+        base = os.path.abspath(os.path.dirname(website_pkg.__file__))
+        roots.append(os.path.join(base, 'templates'))
+    except Exception:
+        pass
 
-_EMAIL_FOLDER = _detect_email_folder()
+    # 3) settings.BASE_PATH fallback
+    base_path = getattr(settings, 'BASE_PATH', '')
+    if base_path:
+        roots.append(os.path.join(base_path, 'website', 'templates'))
 
-def _render_email_html(template_text: str, ctx: dict, folder: str | None = None) -> str:
-    """Render a DB-backed Mako template that may <%inherit file="notify_base.mako">.
-    We give it a virtual URI inside the folder that contains notify_base.mako so
-    the relative inherit resolves to /<folder>/notify_base.mako.
-    """
+    return _existing_dirs(roots)
+
+LOOKUP_DIRS = _default_template_roots()
+MAKO_LOOKUP = TemplateLookup(directories=LOOKUP_DIRS, input_encoding='utf-8')
+
+def _discover_notify_base_uri() -> Optional[str]:
+    # Try common locations quickly
+    for root in LOOKUP_DIRS:
+        for folder in ('emails', 'notifications', ''):
+            p = os.path.join(root, folder, 'notify_base.mako')
+            if os.path.exists(p):
+                rel = os.path.relpath(p, root).replace(os.sep, '/')
+                return '/' + rel
+    # Deep search
+    for root in LOOKUP_DIRS:
+        for dirpath, _, files in os.walk(root):
+            if 'notify_base.mako' in files:
+                rel = os.path.relpath(os.path.join(dirpath, 'notify_base.mako'), root).replace(os.sep, '/')
+                return '/' + rel
+    return None
+
+NOTIFY_BASE_URI = _discover_notify_base_uri()
+if not NOTIFY_BASE_URI:
+    logging.error('Email templates: could not locate notify_base.mako. lookup_dirs=%s', LOOKUP_DIRS)
+else:
+    logging.info('Email templates: notify_base.mako resolved at URI %s (roots=%s)', NOTIFY_BASE_URI, LOOKUP_DIRS)
+
+def _inline_uri_for_db_template() -> str:
+    folder = 'emails'
+    if NOTIFY_BASE_URI:
+        parts = NOTIFY_BASE_URI.strip('/').split('/')
+        if len(parts) > 1:
+            folder = '/'.join(parts[:-1])
+    return f'/{folder}/inline_{os.getpid()}_{id(MAKO_LOOKUP)}.mako'
+
+def _render_email_html(template_text: str, ctx: dict) -> str:
     if not template_text:
         return ''
-    folder = folder or _EMAIL_FOLDER
-    uri = f'/{folder}/inline_{abs(hash(template_text))}.mako'
+    uri = _inline_uri_for_db_template()
+
     try:
         return MakoTemplate(text=template_text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
+    except TopLevelLookupException as e:
+        if NOTIFY_BASE_URI:
+            patched = re.sub(
+                r'(<%inherit\s+file=)(["\'])notify_base\.mako\2',
+                rf'\1\2{NOTIFY_BASE_URI}\2',
+                template_text,
+                count=1,
+            )
+            try:
+                return MakoTemplate(text=patched, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
+            except Exception:
+                logging.exception(
+                    'Mako fallback render failed. base_uri=%s; inline_uri=%s; lookup_dirs=%s',
+                    NOTIFY_BASE_URI, uri, LOOKUP_DIRS
+                )
+                return template_text
+        else:
+            logging.error(
+                'Mako render failed and notify_base.mako not found. inline_uri=%s; lookup_dirs=%s; err=%r',
+                uri, LOOKUP_DIRS, e
+            )
+            return template_text
     except Exception:
-        logging.exception('Mako render failed; returning raw template')
+        logging.exception(
+            'Mako render failed. inline_uri=%s; lookup_dirs=%s',
+            uri, LOOKUP_DIRS
+        )
         return template_text
 
 def _strip_html(html: str) -> str:
@@ -78,7 +150,6 @@ def _safe_categories(cats):
                 out.append(c)
     return out[:10]
 
-# ---------------- SMTP path ----------------
 def send_email_over_smtp(to_email, notification_type, context, email_context):
     if waffle.switch_is_active(features.ENABLE_MAILHOG):
         host = settings.MAILHOG_HOST
@@ -118,10 +189,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
     if not CI_ENV:
         email.send()
 
-# ---------------- SendGrid path ----------------
 def send_email_with_send_grid(to_addr, notification_type, context, email_context=None):
-    if not settings.SENDGRID_API_KEY:
-        raise NotImplementedError('SENDGRID_API_KEY is required for sendgrid notifications.')
 
     email_context = email_context or {}
     to_list = [to_addr] if isinstance(to_addr, str) else [a for a in (to_addr or []) if a]
@@ -139,7 +207,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')
         return False
 
-    # Render ONCE with lookup + proper virtual URI
     html = _render_email_html(notification_type.template, context) or '<p>(no content)</p>'
     text = _strip_html(html)
 
@@ -159,7 +226,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         'subject': subject,
         'personalizations': [personalization],
         'content': [
-            {'type': 'text/plain', 'value': text},   # plain first
+            {'type': 'text/plain', 'value': text},
             {'type': 'text/html', 'value': html},
         ],
     }

@@ -1,5 +1,4 @@
 import logging
-import sys
 
 from django.db import models
 from django.utils import timezone
@@ -39,7 +38,7 @@ class Notification(models.Model):
                 f"\ncontext={self.event_context}"
                 f"\nemail={email_context}"
             )
-        if protocol_type == 'email' and 'pytest' in sys.modules or api_settings.CI_ENV:
+        if protocol_type == 'email' and False:
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
