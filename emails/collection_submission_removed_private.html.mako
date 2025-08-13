@@ -6,10 +6,10 @@
     <br>
     <p>
         % if is_admin:
-            You have changed the privacy of <a href="${node.absolute_url}">${node.title}</a> and it has therefore been
+            You have changed the privacy of <a href="${node_absolute_url}">${node_title}</a> and it has therefore been
             removed from
             % if collection.provider:
-                <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a>
+                <a href="${domain + 'collections/' + collection.provider__id}">${collection_provider_name}</a>
             % else:
                 <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
             % endif
@@ -27,7 +27,7 @@
     </p>
     <p>
         If you are not ${user_fullname} or you have been erroneously associated with
-        <a href="${node_absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
+        <a href="${node_absolute_url}">${node_title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>
     Sincerely,<br>
