@@ -66,6 +66,8 @@ from osf_tests.factories import (
 from .factories import get_default_metaschema
 from addons.wiki.tests.factories import WikiVersionFactory, WikiFactory
 from osf_tests.utils import capture_signals, assert_datetime_equal, mock_archive
+from osf.models.spam import SpamStatus
+from osf.external.spam import tasks as spam_tasks
 
 pytestmark = pytest.mark.django_db
 
@@ -2358,6 +2360,107 @@ class TestNodeSpam:
 
         project.confirm_ham()
         assert not project.is_public
+
+    def test_get_spam_content_includes_wiki_content(self, project, user):
+        wiki = WikiFactory(node=project, user=user)
+        WikiVersionFactory(wiki_page=wiki, content='Some wiki content')
+
+        content = project._get_spam_content()
+        assert 'Some wiki content' in content
+
+        project.title = 'Test Title'
+        project.save()
+        content = project._get_spam_content()
+        assert 'Test Title' in content
+        assert 'Some wiki content' in content
+
+
+class TestCheckResourceForSpamPostcommit:
+
+    @pytest.fixture()
+    def user(self):
+        return UserFactory()
+
+    @pytest.fixture()
+    def project(self, user):
+        return ProjectFactory(creator=user)
+
+    @pytest.fixture()
+    def request_headers(self):
+        return {
+            'Remote-Addr': '1.2.3.4',
+            'User-Agent': 'Mozilla/5.0',
+            'Referer': 'https://osf.io'
+        }
+
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_check_resource_for_spam_postcommit_with_spammy_domains(self, mock_check_domains, project, user):
+        mock_check_domains.return_value = ['spam.com']
+        with mock.patch('osf.external.spam.tasks.check_resource_with_spam_services') as mock_check_services:
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=project._id,
+                content='Check me for spam at spam.com',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers={}
+            )
+            project.reload()
+            assert project.spam_status == SpamStatus.SPAM
+            assert project.spam_data['domains'] == ['spam.com']
+            mock_check_services.assert_not_called()
+
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_check_resource_for_spam_postcommit_no_spammy_domains_checks_services(self, mock_check_domains, project, user, request_headers):
+        mock_check_domains.return_value = []
+        with mock.patch('osf.external.spam.tasks.check_resource_with_spam_services') as mock_check_services:
+            mock_check_services.return_value = True
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=project._id,
+                content='Check me for spam',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers=request_headers
+            )
+            mock_check_services.assert_called_once_with(
+                project,
+                'Check me for spam',
+                user.fullname,
+                user.username,
+                {
+                    'remote_addr': '1.2.3.4',
+                    'user_agent': 'Mozilla/5.0',
+                    'referer': 'https://osf.io'
+                }
+            )
+
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', False)
+    def test_check_resource_for_spam_postcommit_no_spammy_domains_services_disabled(self, mock_check_domains, project, user):
+        mock_check_domains.return_value = []
+        with mock.patch('osf.external.spam.tasks.check_resource_with_spam_services') as mock_check_services:
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=project._id,
+                content='Check me for spam',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers={}
+            )
+            mock_check_services.assert_not_called()
+
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_check_resource_for_spam_postcommit_checks_user(self, mock_check_domains, project, user, request_headers):
+        mock_check_domains.return_value = []
+        with mock.patch.object(Node, 'check_spam_user') as mock_check_user:
+            spam_tasks.check_resource_for_spam_postcommit(
+                guid=project._id,
+                content='Check me for spam',
+                author=user.fullname,
+                author_email=user.username,
+                request_headers=request_headers
+            )
+            mock_check_user.assert_called_once_with(user)
 
 
 # copied from tests/test_models.py

@@ -366,3 +366,38 @@ class TestReviewActionCreateRoot:
             expect_errors=True
         )
         assert res.status_code == 404
+
+    def test_submit_preprint_without_files_returns_400(self, app, url, preprint, node_admin):
+        # Ensure preprint has no files
+        preprint.primary_file = None
+        preprint.save()
+
+        submit_payload = self.create_payload(
+            preprint._id,
+            trigger='submit'
+        )
+
+        res = app.post_json_api(
+            url,
+            submit_payload,
+            auth=node_admin.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+
+    def test_provider_not_reviewed_returns_409(self, app, url, preprint, node_admin):
+        preprint.provider = PreprintProviderFactory(reviews_workflow=None)
+        preprint.save()
+
+        submit_payload = self.create_payload(
+            preprint._id,
+            trigger='submit'
+        )
+
+        res = app.post_json_api(
+            url,
+            submit_payload,
+            auth=node_admin.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 409

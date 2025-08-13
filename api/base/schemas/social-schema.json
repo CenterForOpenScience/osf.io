@@ -64,6 +64,10 @@
       "description": "The academiaProfileID for the given user",
       "type": "string"
     },
+    "academiaInstitution": {
+      "description": "The academiaInstitution for the given user",
+      "type": "string"
+    },
     "orcid": {
       "description": "The orcid for the given user",
       "type": "string"
