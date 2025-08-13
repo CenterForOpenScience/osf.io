@@ -5,11 +5,9 @@ from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
-    OSFGroupFactory,
     RegistrationFactory,
     AuthUserFactory,
 )
-from osf.utils.permissions import WRITE, READ
 from rest_framework import exceptions
 from tests.utils import assert_latest_log
 
@@ -108,13 +106,6 @@ class TestNodeLinkDetail:
         target_node = res.json['data']['embeds']['target_node']
         assert 'errors' in target_node
         assert target_node['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
-
-    #   test_returns_private_node_pointer_detail_logged_in_group_mem
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, READ)
-        res = app.get(private_url, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 200
 
     #   test_self_link_points_to_node_link_detail_url
         res = app.get(public_url, auth=user.auth)
@@ -297,17 +288,6 @@ class TestDeleteNodeLink:
         res = app.delete(private_url, auth=user_two.auth, expect_errors=True)
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
-
-    def test_deletes_private_node_pointer_logged_in_read_group_mem(
-            self, app, user_two, private_url, private_project):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, READ)
-        res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
-        private_project.update_osf_group(group, WRITE)
-        res = app.delete(private_url, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 204
 
     def test_return_deleted_public_node_pointer(
             self, app, user, public_project, public_url):
