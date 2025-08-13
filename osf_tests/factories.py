@@ -1299,6 +1299,7 @@ class BrandFactory(DjangoModelFactory):
 
     primary_color = factory.Faker('hex_color')
     secondary_color = factory.Faker('hex_color')
+    background_color = factory.Faker('hex_color')
 
 
 class SchemaResponseFactory(DjangoModelFactory):
