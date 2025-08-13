@@ -297,13 +297,13 @@ class TestAddingContributorViews(OsfTestCase):
         project = ProjectFactory()
         with capture_notifications() as notifications:
             project.fork_node(auth=Auth(project.creator))
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_templating_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
         with capture_notifications() as notifications:
             project.use_as_template(auth=Auth(project.creator))
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     @mock.patch('website.archiver.tasks.archive')
     def test_registering_project_does_not_send_contributor_added_email(self, mock_archive):
@@ -317,7 +317,7 @@ class TestAddingContributorViews(OsfTestCase):
                 None,
                 provider=provider
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self):
         contributor = UserFactory()
@@ -341,7 +341,7 @@ class TestAddingContributorViews(OsfTestCase):
                 notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
                 auth=auth
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_notify_contributor_email_sends_after_throttle_expires(self):
         contributor = UserFactory()
@@ -390,12 +390,12 @@ class TestAddingContributorViews(OsfTestCase):
     def test_creating_fork_does_not_email_creator(self):
         with capture_notifications() as notifications:
             self.project.fork_node(auth=Auth(self.creator))
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_creating_template_does_not_email_creator(self):
         with capture_notifications() as notifications:
             self.project.use_as_template(auth=Auth(self.creator))
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
@@ -569,6 +569,6 @@ class TestUserInviteViews(OsfTestCase):
         with capture_notifications() as notifications:
             with pytest.raises(HTTPError):
                 send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
 

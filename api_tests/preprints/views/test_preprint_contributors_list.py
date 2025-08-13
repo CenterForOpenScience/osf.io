@@ -1371,7 +1371,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         }
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user.auth)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
 
     def test_add_contributor_needs_preprint_filter_to_send_email(self, app, user, user_two, url_preprint_contribs):
@@ -1393,7 +1393,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         }
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
 
@@ -1480,7 +1480,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth,
                 expect_errors=True
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
 
@@ -1499,7 +1499,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         with capture_signals() as mock_signal:
             with capture_notifications() as notifications:
                 res = app.post_json_api(url, payload, auth=user.auth)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
 
@@ -1558,7 +1558,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 },
                 auth=user.auth
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
 
 

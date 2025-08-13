@@ -245,7 +245,7 @@ class TestClaimViews(OsfTestCase):
                         unclaimed_user=self.user,
                         node=self.project,
                     )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')
     def test_claim_user_post_with_email_already_registered_sends_correct_email(

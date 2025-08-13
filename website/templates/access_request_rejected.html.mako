@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${requester_fullname},<br>
     <br>
-    This email is to inform you that your request for access to the project at ${node.absolute_url} has been declined.<br>
+    This email is to inform you that your request for access to the project at ${node_absolute_url} has been declined.<br>
     <br>
     Sincerely,<br>
     <br>

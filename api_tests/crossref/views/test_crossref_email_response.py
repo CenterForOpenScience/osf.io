@@ -172,7 +172,7 @@ class TestCrossRefEmailResponse:
         context_data = self.make_mailgun_payload(crossref_response=success_xml)
         with capture_notifications() as notifications:
             app.post(url, context_data)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         preprint.reload()
         assert preprint.get_identifier_value('doi')
@@ -186,7 +186,7 @@ class TestCrossRefEmailResponse:
         context_data = self.make_mailgun_payload(crossref_response=update_xml)
         with capture_notifications() as notifications:
             app.post(url, context_data)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert preprint.get_identifier_value(category='doi') != initial_value
 
     def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url):
@@ -223,5 +223,5 @@ class TestCrossRefEmailResponse:
             context_data = self.make_mailgun_payload(crossref_response=update_xml)
             app.post(url, context_data)
 
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert preprint.identifiers.get(category='legacy_doi').deleted

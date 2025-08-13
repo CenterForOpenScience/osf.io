@@ -288,7 +288,7 @@ class TestUsersCreate:
                 auth=user.auth,
                 expect_errors=True
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -302,7 +302,7 @@ class TestUsersCreate:
                 data,
                 expect_errors=True
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 401
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -405,7 +405,7 @@ class TestUsersCreate:
                 data,
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
@@ -447,7 +447,7 @@ class TestUsersCreate:
                 data,
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 201
         username = res.json['data']['attributes']['username']
@@ -489,7 +489,7 @@ class TestUsersCreate:
                 headers={'Authorization': f'Bearer {token.token_id}'},
                 expect_errors=True
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0

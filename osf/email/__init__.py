@@ -96,41 +96,40 @@ def _inline_uri_for_db_template() -> str:
             folder = '/'.join(parts[:-1])
     return f'/{folder}/inline_{os.getpid()}_{id(MAKO_LOOKUP)}.mako'
 
+
+INHERIT_RX = re.compile(
+    r'(<%inherit\s+file=)(["\'])(?:/?(?:emails|notifications)/)?notify_base\.mako\2',
+    flags=re.I
+)
+
 def _render_email_html(template_text: str, ctx: dict) -> str:
     if not template_text:
         return ''
+
     uri = _inline_uri_for_db_template()
 
+    # Proactively normalize the inherit target if we discovered the base
+    text = template_text
+    if NOTIFY_BASE_URI:
+        text = INHERIT_RX.sub(rf'\1\2{NOTIFY_BASE_URI}\2', text, count=1)
+
     try:
-        return MakoTemplate(text=template_text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
-    except TopLevelLookupException as e:
+        return MakoTemplate(text=text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
+
+    except TopLevelLookupException:
+        # Second chance: maybe NOTIFY_BASE_URI was unset at boot
         if NOTIFY_BASE_URI:
-            patched = re.sub(
-                r'(<%inherit\s+file=)(["\'])notify_base\.mako\2',
-                rf'\1\2{NOTIFY_BASE_URI}\2',
-                template_text,
-                count=1,
-            )
-            try:
-                return MakoTemplate(text=patched, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
-            except Exception:
-                logging.exception(
-                    'Mako fallback render failed. base_uri=%s; inline_uri=%s; lookup_dirs=%s',
-                    NOTIFY_BASE_URI, uri, LOOKUP_DIRS
-                )
-                return template_text
-        else:
-            logging.error(
-                'Mako render failed and notify_base.mako not found. inline_uri=%s; lookup_dirs=%s; err=%r',
-                uri, LOOKUP_DIRS, e
-            )
+            # already tried; nothing else to do
+            logging.exception('Mako render failed even after pre-rewrite. uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
             return template_text
+        else:
+            logging.error('Mako render failed and notify_base.mako not found. inline_uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
+            return template_text
+
     except Exception:
-        logging.exception(
-            'Mako render failed. inline_uri=%s; lookup_dirs=%s',
-            uri, LOOKUP_DIRS
-        )
+        logging.exception('Mako render failed. inline_uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
         return template_text
+
 
 def _strip_html(html: str) -> str:
     if not html:
@@ -208,7 +207,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         return False
 
     html = _render_email_html(notification_type.template, context) or '<p>(no content)</p>'
-    text = _strip_html(html)
 
     subject_tpl = getattr(notification_type, 'subject', None)
     subject = subject_tpl.format(**context) if subject_tpl else f'Notification: {getattr(notification_type, "name", "OSF")}'
@@ -226,7 +224,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         'subject': subject,
         'personalizations': [personalization],
         'content': [
-            {'type': 'text/plain', 'value': text},
             {'type': 'text/html', 'value': html},
         ],
     }

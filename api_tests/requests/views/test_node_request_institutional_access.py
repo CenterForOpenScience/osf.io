@@ -217,7 +217,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         # Check that an email is not sent
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
 
     def test_email_not_sent_outside_institution(self, app, project, institutional_admin, url,
@@ -229,7 +229,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         # Check that an email is not sent
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 403
         assert f'User {user_without_affiliation._id} is not affiliated with the institution.' in res.json['errors'][0]['detail']
 

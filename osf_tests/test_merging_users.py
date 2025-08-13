@@ -288,5 +288,5 @@ class TestUserMerging(OsfTestCase):
         with capture_notifications() as notifications:
             with override_flag(ENABLE_GV, active=True):
                 self.user.merge_user(other_user)
-            assert not notifications
+            assert notifications == {'emails': [], 'emits': []}
         assert other_user.merged_by._id == self.user._id

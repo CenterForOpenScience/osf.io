@@ -1281,7 +1281,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 },
                 auth=user.auth
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
 
     def test_add_contributor_sends_email(
@@ -1412,7 +1412,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 400
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
@@ -1432,7 +1432,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         with capture_signals() as mock_signal:
             with capture_notifications() as notifications:
                 res = app.post_json_api(url, payload, auth=user.auth)
-            assert not notifications
+            assert notifications == {'emails': [], 'emits': []}
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
 

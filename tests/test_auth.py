@@ -89,7 +89,7 @@ class TestAuthUtils(OsfTestCase):
         with capture_notifications() as notifications:
             res = self.app.get(f'/confirm/{user._id}/{token}')
             res = self.app.resolve_redirect(res)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 302
         assert 'login?service=' in res.location
 
@@ -104,7 +104,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):

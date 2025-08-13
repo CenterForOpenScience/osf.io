@@ -124,7 +124,7 @@ class TestPOSTCollectionsModeratorList:
         payload = make_payload(user_id=moderator._id, permission_group='moderator')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 400
 
@@ -134,7 +134,7 @@ class TestPOSTCollectionsModeratorList:
         payload = make_payload(permission_group='moderator', **unreg_user)
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 403
 
         # test_user_with_moderator_admin_permissions
@@ -151,7 +151,7 @@ class TestPOSTCollectionsModeratorList:
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 400
 
     def test_POST_admin_success_email(self, app, url, nonmoderator, moderator, admin, provider):

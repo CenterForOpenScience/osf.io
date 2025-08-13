@@ -270,7 +270,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
                 self.create_payload([institution_one]),
                 auth=user.auth
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()

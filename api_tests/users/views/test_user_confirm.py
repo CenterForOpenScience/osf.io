@@ -133,7 +133,7 @@ class TestConfirmEmail:
                 expect_errors=True
             )
         assert res.status_code == 201
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.json == {
             'redirect_url': f'http://localhost:80/v2/users/{user._id}/confirm/&new=true',
             'meta': {
@@ -195,7 +195,7 @@ class TestConfirmEmail:
                 },
                 expect_errors=True
             )
-        assert not notifications  # no orcid sso message
+        assert notifications == {'emails': [], 'emits': []}  # no orcid sso message
         assert res.status_code == 201
 
         user.reload()

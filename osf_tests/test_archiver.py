@@ -901,7 +901,7 @@ class TestArchiverListeners(ArchiverTestCase):
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             with capture_notifications() as notifications:
                 listeners.archive_callback(self.dst)
-            assert not notifications
+            assert notifications == {'emails': [], 'emits': []}
         assert not mock_fail.called
         assert mock_delay.called
 
@@ -911,7 +911,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.save()
         with capture_notifications() as notifications:
             listeners.archive_callback(self.dst)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_archive_success):
@@ -927,7 +927,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.save()
         with capture_notifications() as notifications:
             listeners.archive_callback(self.dst)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1020,17 +1020,17 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild.save()
         with capture_notifications() as notifications:
             listeners.archive_callback(rchild)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
         with capture_notifications() as notifications:
             listeners.archive_callback(reg)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
         with capture_notifications() as notifications:
             listeners.archive_callback(rchild2)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
 class TestArchiverScripts(ArchiverTestCase):
 

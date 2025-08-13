@@ -290,7 +290,7 @@ class TestDraftRegistrationRelationshipInstitutions():
                 {'data': []},
                 auth=user.auth
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
         assert res.status_code == 200
         node.reload()

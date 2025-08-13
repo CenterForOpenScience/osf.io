@@ -277,7 +277,7 @@ class TestUpdateRequestedDeactivation:
         payload['data']['type'] = 'Invalid Type'
         with capture_notifications() as notifications:
             res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None

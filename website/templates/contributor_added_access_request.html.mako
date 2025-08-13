@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_name + ' has approved your access request and added you' if referrer_name else 'Your access request has been approved, and you have been added'} as a contributor to the project "<a href="${node.absolute_url}">${node.title}</a>" on OSF.<br>
+    ${referrer_name + ' has approved your access request and added you' if referrer_name else 'Your access request has been approved, and you have been added'} as a contributor to the project "<a href="${node_absolute_url}">${node_title}</a>" on OSF.<br>
     <br>
     Sincerely,<br>
     <br>

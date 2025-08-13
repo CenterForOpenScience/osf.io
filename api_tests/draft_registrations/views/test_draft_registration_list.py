@@ -347,7 +347,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
     def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
         with capture_notifications() as notifications:
             app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """

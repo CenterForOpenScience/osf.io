@@ -13,12 +13,12 @@
             <td style="border-collapse: collapse;">
                 <table id="layout-table" width="100%" border="0" cellpadding="10" cellspacing="0" height="100%">
                     <tbody>
-                        <tr class="banner" style="background: ${context.get('top_bar_color', '#214762')};color: white;">
+                        <tr class="banner" style="background: #214762;color: white;">
                             <td class="text-center" style="border-collapse: collapse;text-align: center;">
                                 <table id="header-logo" border="0" style="margin: 0 auto;padding: 0px;">
                                     <tr>
                                         <td style="border-collapse: collapse;">
-											% if context.get('logo_url'):
+											% if logo_url:
 												<img src="${logo_url}" alt="${provider_name} logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;max-height: 100px;">
                                             % elif 'logo' not in OSF_LOGO_LIST:
                                                 <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${logo}/wide_white.png" alt="OSF logo" style="border: 0;height: auto;line-height: 100%;outline: none;text-decoration: none;">
@@ -56,8 +56,8 @@
                                 </p>
                             % else:
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change how often you receive emails, visit
-                                    % if context.get('can_change_node_preferences', False) and node:
-                                        this <a href="${domain + node._id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
+                                    % if context.get('can_change_node_preferences', False) and node__id:
+                                        this <a href="${domain + node__id + '/settings#configureNotificationsAnchor'}">project's settings</a> for emails about this project or
                                     % endif
                                     your <a href="${domain + "settings/notifications/"}">user settings</a> to manage default email settings.
                                 </p>
@@ -75,7 +75,7 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; ${datetime.utcnow().year} Center For Open Science, All rights reserved. |
+                                <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2025 Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
                                 </p>
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083</p>

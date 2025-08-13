@@ -195,11 +195,11 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 event_context={
                     'sender_fullname': sender.fullname,
                     'sender_absolute_url': sender.absolute_url,
+                    'node_absolute_url': node_request.target.absolute_url,
                     'recipient_fullname': recipient.username if recipient else None,
                     'comment': comment,
                     'institution_name': institution.name if institution else None,
                     'osf_url': settings.DOMAIN,
-                    'node': node_request.target._id,
                 },
                 email_context={
                     'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,

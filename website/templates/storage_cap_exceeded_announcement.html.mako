@@ -12,7 +12,7 @@
     The following private projects and components have exceeded the 5 GB OSF Storage allotment and require your action:
     <ul>
       % for node in private_nodes:
-        <li> <a href="${domain.rstrip('/') + node.url}">${node.title}</a>
+        <li> <a href="${domain.rstrip('/') + node.url}">${node_title}</a>
       % endfor
     </ul>
     <br>
@@ -21,7 +21,7 @@
     The following public projects and components have exceeded the 50 GB OSF Storage allotment and require your action:
     <ul>
       % for node in public_nodes:
-        <li> <a href="${domain.rstrip('/') + node.url}">${node.title}</a>
+        <li> <a href="${domain.rstrip('/') + node.url}">${node_title}</a>
       % endfor
     </ul>
     <br>

@@ -234,7 +234,7 @@ class TestClaimUser:
                 auth=claimer.auth,
                 expect_errors=True
             )
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
 

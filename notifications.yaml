@@ -8,543 +8,543 @@ notification_types:
     __docs__: This email is sent when a user requests access to a node and has confirm their identity,
       `referrer` is sent an email to forward the confirmation link.
     object_content_type_model_name: osfuser
-    template: 'emails/pending_registered.html.mako'
+    template: 'website/templates/pending_registered.html.mako'
   - name: user_digest
     subject: 'Digest email'
     __docs__: Digest email
     object_content_type_model_name: osfuser
-    template: 'emails/digest.html.mako'
+    template: 'website/templates/digest.html.mako'
   - name: digest_reviews_moderators
     subject: 'Digest email'
     __docs__: Digest email
     object_content_type_model_name: osfuser
-    template: 'emails/digest_reviews_moderators.html.mako'
+    template: 'website/templates/digest_reviews_moderators.html.mako'
   - name: user_pending_verification
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/pending_invite.html.mako'
+    template: 'website/templates/pending_invite.html.mako'
   - name: user_password_reset
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/password_reset.html.mako'
+    template: 'website/templates/password_reset.html.mako'
   - name: user_contributor_added_preprint_node_from_osf
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/contributor_added_preprint_node_from_osf.html.mako'
+    template: 'website/templates/contributor_added_preprint_node_from_osf.html.mako'
   - name: user_contributor_added_access_request
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/contributor_added_access_request.html.mako'
+    template: 'website/templates/contributor_added_access_request.html.mako'
   - name: user_contributor_added_osf_preprint
     subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/contributor_added_preprint_node_from_osf.html.mako'
+    template: 'website/templates/contributor_added_preprint_node_from_osf.html.mako'
   - name: user_external_login_link_success
     subject: 'OSF Verification Success'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/external_confirm_success.html.mako'
+    template: 'website/templates/external_confirm_success.html.mako'
   - name: user_confirm_email
     subject: 'Add a new email to your OSF account'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/confirm.html.mako'
+    template: 'website/templates/confirm.html.mako'
   - name: forgot_password
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/forgot_password.html.mako'
+    template: 'website/templates/forgot_password.html.mako'
   - name: user_welcome
     subject: 'Welcome to OSF'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/welcome.html.mako'
+    template: 'website/templates/welcome.html.mako'
   - name: user_welcome_osf4i
     subject: 'Welcome to OSF'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/welcome_osf4i.html.mako'
+    template: 'website/templates/welcome_osf4i.html.mako'
   - name: user_institution_deactivation
     subject: "Your OSF login has changed - here's what you need to know!"
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/institution_deactivation.html.mako'
+    template: 'website/templates/institution_deactivation.html.mako'
   - name: user_invite_preprints_osf
     subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/invite_preprints_osf.html.mako'
+    template: 'website/templates/invite_preprints_osf.html.mako'
   - name: user_invite_preprints
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/invite_preprints.html.mako'
+    template: 'website/templates/invite_preprints.html.mako'
   - name: user_invite_draft_registration
     subject: 'You have a new registration draft'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/invite_draft_registration.html.mako'
+    template: 'website/templates/invite_draft_registration.html.mako'
   - name: user_invite_default
     subject: 'You have been added as a contributor to an OSF project.'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/invite_default.html.mako'
+    template: 'website/templates/invite_default.html.mako'
   - name: user_pending_invite
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/pending_invite.html.mako'
+    template: 'website/templates/pending_invite.html.mako'
   - name: user_forward_invite_registered
     subject: 'Please forward to ${user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/forward_invite_registered.html.mako'
+    template: 'website/templates/forward_invite_registered.html.mako'
   - name: user_forward_invite
     subject: 'Please forward to ${user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/forward_invite.html.mako'
+    template: 'website/templates/forward_invite.html.mako'
   - name: user_initial_confirm_email
     subject: 'OSF Account Verification'
     __docs__: 'Sign up confirmation emails for OSF, native campaigns and branded campaigns'
     object_content_type_model_name: osfuser
-    template: 'emails/initial_confirm.html.mako'
+    template: 'website/templates/initial_confirm.html.mako'
   - name: user_export_data_request
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/support_request.html.mako'
+    template: 'website/templates/support_request.html.mako'
   - name: user_request_deactivation
     subject: '[via OSF] Deactivation Request'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/support_request.html.mako'
+    template: 'website/templates/support_request.html.mako'
   - name: user_request_deactivation_complete
     subject: '[via OSF] OSF account deactivated'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/request_deactivation_complete.html.mako'
+    template: 'website/templates/request_deactivation_complete.html.mako'
   - name: user_storage_cap_exceeded_announcement
     subject: 'Action Required to avoid disruption to your OSF project'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/storage_cap_exceeded_announcement.html.mako'
+    template: 'website/templates/storage_cap_exceeded_announcement.html.mako'
   - name: user_duplicate_accounts_sso_osf4i
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/duplicate_accounts_sso_osf4i.html.mako'
+    template: 'website/templates/duplicate_accounts_sso_osf4i.html.mako'
   - name: user_duplicate_accounts_osf4i
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/duplicate_accounts_sso_osf4i.html.mako'
+    template: 'website/templates/duplicate_accounts_sso_osf4i.html.mako'
   - name: user_forgot_password
     subject: 'Reset Password'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/forgot_password.html.mako'
+    template: 'website/templates/forgot_password.html.mako'
   - name: user_forgot_password_institution
     subject: 'Set Password'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/forgot_password_institution.html.mako'
+    template: 'website/templates/forgot_password_institution.html.mako'
   - name: user_registration_bulk_upload_success_all
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/registration_bulk_upload_success_all.html.mako'
+    template: 'website/templates/registration_bulk_upload_success_all.html.mako'
   - name: user_registration_bulk_upload_failure_all
     subject: "Registrations Were Not Bulk Uploaded to your Community's Registry"
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/registration_bulk_upload_failure_all.html.mako'
+    template: 'website/templates/registration_bulk_upload_failure_all.html.mako'
   - name: user_registration_bulk_upload_success_partial
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/registration_bulk_upload_success_partial.html.mako'
+    template: 'website/templates/registration_bulk_upload_success_partial.html.mako'
   - name: user_registration_bulk_upload_failure_duplicates
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/registration_bulk_upload_failure_duplicates.html.mako'
+    template: 'website/templates/registration_bulk_upload_failure_duplicates.html.mako'
   - name: user_external_login_email_confirm_link
     subject: 'OSF Account Verification'
     __docs__: 'Emails for first-time login through external identity providers.'
     object_content_type_model_name: osfuser
-    template: 'emails/external_confirm_link.html.mako'
+    template: 'website/templates/external_confirm_link.html.mako'
   - name: user_external_login_confirm_email_create
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/external_confirm_create.html.mako'
+    template: 'website/templates/external_confirm_create.html.mako'
   - name: user_spam_banned
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/spam_user_banned.html.mako'
+    template: 'website/templates/spam_user_banned.html.mako'
   - name: user_file_updated
     subject: 'Your ${action} has finished'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/file_operation_success.html.mako'
+    template: 'website/templates/file_operation_success.html.mako'
   - name: user_file_operation_success
     subject: 'Your ${action} has finished'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/file_operation_success.html.mako'
+    template: 'website/templates/file_operation_success.html.mako'
   - name: user_file_operation_failed
     subject: 'Your ${action} has failed'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/file_operation_failed.html.mako'
+    template: 'website/templates/file_operation_failed.html.mako'
   - name: user_reviews
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/file_operation_failed.html.mako'
+    template: 'website/templates/file_operation_failed.html.mako'
   - name: user_archive_job_exceeded
     subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/archive_size_exceeded_user.html.mako'
+    template: 'website/templates/archive_size_exceeded_user.html.mako'
   - name: user_archive_job_copy_error
     subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/archive_copy_error_user.html.mako'
+    template: 'website/templates/archive_copy_error_user.html.mako'
   - name: user_archive_job_uncaught_error
     subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/archive_uncaught_error_user.html.mako'
+    template: 'website/templates/archive_uncaught_error_user.html.mako'
   - name: user_new_public_project
     subject: 'Problem Registering'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'emails/new_public_project.html.mako'
+    template: 'website/templates/new_public_project.html.mako'
   - name: user_confirm_email_erpc
     subject: 'OSF Account Verification, Election Research Preacceptance Competition'
     object_content_type_model_name: osfuser
-    template: 'emails/confirm_erpc.html.mako'
+    template: 'website/templates/confirm_erpc.html.mako'
   - name: user_confirm_email_agu_conference
     subject: 'OSF Account Verification, from the American Geophysical Union Conference'
     object_content_type_model_name: osfuser
-    template: 'emails/confirm_erpc.html.mako'
+    template: 'website/templates/confirm_erpc.html.mako'
   - name: user_confirm_email_registries_osf
     subject: 'OSF Account Verification, OSF Registries'
     object_content_type_model_name: osfuser
-    template: 'emails/confirm_registries_osf.html.mako'
+    template: 'website/templates/confirm_registries_osf.html.mako'
   - name: user_confirm_merge
     subject: 'Confirm account merge'
     object_content_type_model_name: osfuser
-    template: 'emails/confirm_merge.html.mako'
+    template: 'website/templates/confirm_merge.html.mako'
   - name: user_primary_email_changed
     subject: 'Primary email changed'
     object_content_type_model_name: osfuser
-    template: 'emails/primary_email_changed.html.mako'
+    template: 'website/templates/primary_email_changed.html.mako'
   - name: user_spam_files_detected
     subject: '[auto] Spam files audit'
     object_content_type_model_name: osfuser
-    template: 'emails/spam_files_detected.html.mako'
+    template: 'website/templates/spam_files_detected.html.mako'
   - name: user_crossref_doi_pending
     subject: 'There are ${pending_doi_count} preprints with crossref DOI pending.'
     object_content_type_model_name: osfuser
-    template: 'emails/crossref_doi_pending.html.mako'
+    template: 'website/templates/crossref_doi_pending.html.mako'
   - name: user_terms_of_use_updated
     subject: 'Updated Terms of Use for COS Websites and Services'
     object_content_type_model_name: osfuser
-    template: 'emails/tou_notif.html.mako'
+    template: 'website/templates/tou_notif.html.mako'
   - name: user_registration_bulk_upload_product_owner
     subject: 'Registry Could Not Bulk Upload Registrations'
     object_content_type_model_name: osfuser
-    template: 'emails/registration_bulk_upload_product_owner.html.mako'
+    template: 'website/templates/registration_bulk_upload_product_owner.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: provider_new_pending_withdraw_requests
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: provider_contributor_added_preprint
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/contributor_added_preprints.html.mako'
+    template: 'website/templates/contributor_added_preprints.html.mako'
   - name: provider_confirm_email_moderation
     subject: 'OSF Account Verification, {provider.name}'
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/confirm_moderation.html.mako'
+    template: 'website/templates/confirm_moderation.html.mako'
   - name: provider_moderator_added
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/moderator_added.html.mako'
+    template: 'website/templates/moderator_added.html.mako'
   - name: provider_reviews_submission_confirmation
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/reviews_submission_confirmation.html.mako'
+    template: 'website/templates/reviews_submission_confirmation.html.mako'
   - name: provider_reviews_resubmission_confirmation
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'emails/reviews_resubmission_confirmation.html.mako'
+    template: 'website/templates/reviews_resubmission_confirmation.html.mako'
 
   #### NODE
   - name: node_wiki_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: node_files_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: node_file_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: node_institutional_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/node_request_institutional_access_request.html.mako'
+    template: 'website/templates/node_request_institutional_access_request.html.mako'
   - name: node_contributor_added_default
     subject: 'You have been added as a contributor to an OSF project.'
     __docs__: This email notifies the user that they have been added as a contributor to a node.
     object_content_type_model_name: abstractnode
-    template: 'emails/contributor_added_default.html.mako'
+    template: 'website/templates/contributor_added_default.html.mako'
   - name: node_contributor_added_access_request
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/contributor_added_access_request.html.mako'
+    template: 'website/templates/contributor_added_access_request.html.mako'
   - name: node_pending_registration_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_registration_admin.html.mako'
+    template: 'website/templates/pending_registration_admin.html.mako'
   - name: node_pending_registration_non_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_registration_non_admin.html.mako'
+    template: 'website/templates/pending_registration_non_admin.html.mako'
   - name: node_pending_retraction_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_retraction_admin.html.mako'
+    template: 'website/templates/pending_retraction_admin.html.mako'
   - name: node_pending_retraction_non_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_retraction_non_admin.html.mako'
+    template: 'website/templates/pending_retraction_non_admin.html.mako'
   - name: node_pending_embargo_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_embargo_admin.html.mako'
+    template: 'website/templates/pending_embargo_admin.html.mako'
   - name: node_pending_embargo_non_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_embargo_non_admin.html.mako'
+    template: 'website/templates/pending_embargo_non_admin.html.mako'
   - name: node_pending_embargo_termination_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_embargo_termination_admin.html.mako'
+    template: 'website/templates/pending_embargo_termination_admin.html.mako'
   - name: node_pending_embargo_termination_non_admin
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/pending_embargo_termination_non_admin.html.mako'
+    template: 'website/templates/pending_embargo_termination_non_admin.html.mako'
   - name: node_affiliation_changed
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/project_affiliation_changed.html.mako'
+    template: 'website/templates/project_affiliation_changed.html.mako'
   - name: node_request_access_denied
     subject: 'Your access request to an OSF project has been declined'
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/access_request_rejected.html.mako'
+    template: 'website/templates/access_request_rejected.html.mako'
   - name: node_access_request_submitted
     subject: 'An OSF user has requested access to your project'
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/access_request_submitted.html.mako'
+    template: 'website/templates/access_request_submitted.html.mako'
   - name: node_fork_failed
     subject: 'Your fork has failed'
     __docs__: This email is sent when a fork fails to be created, this could be due to addons or network outages or
       technical errors.
     object_content_type_model_name: abstractnode
-    template: 'emails/fork_failed.html.mako'
+    template: 'website/templates/fork_failed.html.mako'
   - name: node_fork_completed
     subject: 'Your fork has completed'
     __docs__: 'This email is sent when a fork is successfully created,'
     object_content_type_model_name: abstractnode
-    template: 'emails/fork_completed.html.mako'
+    template: 'website/templates/fork_completed.html.mako'
   - name: node_schema_response_initiated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/updates_initiated.html.mako'
+    template: 'website/templates/updates_initiated.html.mako'
   - name: node_schema_response_submitted
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/updates_pending_approval.html.mako'
+    template: 'website/templates/updates_pending_approval.html.mako'
   - name: node_schema_response_approved
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/updates_approved.html.mako'
+    template: 'website/templates/updates_approved.html.mako'
   - name: node_schema_response_rejected
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/updates_rejected.html.mako'
+    template: 'website/templates/updates_rejected.html.mako'
   - name: node_archive_file_not_found_desk
     subject: 'Problem registering ${src_title}'
     object_content_type_model_name: abstractnode
-    template: 'emails/archive_file_not_found_desk.html.mako'
+    template: 'website/templates/archive_file_not_found_desk.html.mako'
   - name: node_archive_file_not_found_user
     subject: 'Registration failed because of altered files'
     object_content_type_model_name: abstractnode
-    template: 'emails/archive_file_not_found_user.html.mako'
+    template: 'website/templates/archive_file_not_found_user.html.mako'
   - name: node_archive_uncaught_error_desk
     subject: 'Problem registering ${src_title}'
     object_content_type_model_name: abstractnode
-    template: 'emails/archive_uncaught_error_desk.html.mako'
+    template: 'website/templates/archive_uncaught_error_desk.html.mako'
   - name: node_archive_registration_stuck_desk
     subject: '[auto] Stuck registrations audit'
     object_content_type_model_name: abstractnode
-    template: 'emails/archive_registration_stuck_desk.html.mako'
+    template: 'website/templates/archive_registration_stuck_desk.html.mako'
   - name: node_archive_success
     subject: 'Registration of ${src_title} complete'
     object_content_type_model_name: abstractnode
-    template: 'emails/archive_success.html.mako'
+    template: 'website/templates/archive_success.html.mako'
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf
     subject: 'You have been added as a contributor to an OSF project.'
     __docs__: ...
     object_content_type_model_name: preprint
-    template: 'emails/contributor_added_preprint_node_from_osf.html.mako'
+    template: 'website/templates/contributor_added_preprint_node_from_osf.html.mako'
   - name: preprint_request_withdrawal_approved
     __docs__: ...
     object_content_type_model_name: preprint
-    template: 'emails/withdrawal_request_granted.html.mako'
+    template: 'website/templates/withdrawal_request_granted.html.mako'
   - name: preprint_request_withdrawal_declined
     __docs__: ...
     object_content_type_model_name: preprint
-    template: 'emails/withdrawal_request_declined.html.mako'
+    template: 'website/templates/withdrawal_request_declined.html.mako'
   - name: preprint_contributor_added_default
     __docs__: ...
     object_content_type_model_name: preprint
-    template: 'emails/contributor_added_preprints.html.mako'
+    template: 'website/templates/contributor_added_preprints.html.mako'
   - name: preprint_withdrawal_request_granted
     subject: 'Your ${document_type} has been withdrawn'
     object_content_type_model_name: preprint
-    template: 'emails/withdrawal_request_granted.html.mako'
+    template: 'website/templates/withdrawal_request_granted.html.mako'
   - name: preprint_withdrawal_request_declined
     subject: 'Your withdrawal request has been declined'
     object_content_type_model_name: preprint
-    template: 'emails/withdrawal_request_declined.html.mako'
+    template: 'website/templates/withdrawal_request_declined.html.mako'
 
 
   #### SUPPORT
   - name: crossref_error
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   #### Collection Submissions
   - name: collection_submission_removed_moderator
     subject: f'{node.title} was removed from {collection.title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_removed_private
     subject: '{node.title} was removed from {collection.title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_removed_admin
     subject: '{node.title} was removed from {collection.title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_submitted
     subject: f'{submitter_fullname} has requested to add {node_title} to a collection'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_cancel
     subject: 'Request to add {node_title} to {collection_title} was canceled'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_accepted
     subject: '{node_title} was accepted into {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_rejected
     subject: '{node_title} was not accepted into {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   #### DESK
   - name: addon_boa_job_failure
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'emails/addons_boa_job_failure.html.mako'
+    template: 'website/templates/addons_boa_job_failure.html.mako'
   - name: addon_boa_job_complete
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'emails/addons_boa_job_complete.html.mako'
+    template: 'website/templates/addons_boa_job_complete.html.mako'
   - name: desk_archive_job_copy_error
     subject: 'Problem registering'
     __docs__: Archive job failed due to copy error. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'emails/archive_copy_error_desk.html.mako'
+    template: 'website/templates/archive_copy_error_desk.html.mako'
   - name: desk_archive_job_exceeded
     subject: 'Problem registering'
     __docs__: Archive job failed due to size exceeded
     object_content_type_model_name: desk
-    template: 'emails/archive_size_exceeded_desk.html.mako'
+    template: 'website/templates/archive_size_exceeded_desk.html.mako'
   - name: desk_archive_job_file_not_found
     __docs__: Archive job failed because files were not found. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: desk_archive_job_uncaught_error
     __docs__: Archive job failed due to an uncaught error. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'emails/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_submissions.html.mako'
   - name: desk_osf_support_email
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'emails/crossref_doi_error.html.mako'
+    template: 'website/templates/crossref_doi_error.html.mako'
   - name: desk_request_deactivation
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'emails/support_request.html.mako'
+    template: 'website/templates/support_request.html.mako'
   - name: desk_request_export
     __docs__: ...
     object_content_type_model_name: desk
-    template: 'emails/support_request.html.mako'
+    template: 'website/templates/support_request.html.mako'
 ### Draft Registration
   - name: draft_registration_contributor_added_default
     subject: 'You have a new registration draft.'
     __docs__: ...
     object_content_type_model_name: draftregistration
-    template: 'emails/contributor_added_draft_registration.html.mako'
+    template: 'website/templates/contributor_added_draft_registration.html.mako'
 ### Files
   - name: file_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: file_added
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: file_removed
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: addon_file_renamed
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: addon_file_copied
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: addon_file_moved
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: addon_file_removed
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: folder_created
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'emails/file_updated.html.mako'
+    template: 'website/templates/file_updated.html.mako'

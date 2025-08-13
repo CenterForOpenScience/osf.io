@@ -7,7 +7,7 @@
     <br>
     <p>
         % if is_admin:
-            Your request to add  <a href="${node_absolute_url}">${node.title}</a> to
+            Your request to add  <a href="${node_absolute_url}">${node_title}</a> to
             <a href="${collections_link}">${collection_provider_name}</a> was not accepted.
             <p>
                 Rejection Justification:
@@ -16,12 +16,12 @@
                 ${rejection_justification}
             </p>
         % else:
-            <a href="${node.absolute_url}">${node_title}</a> was not accepted  by <a href="${collections_link}">${collection_provider_name}</a>.
+            <a href="${node_absolute_url}">${node_title}</a> was not accepted  by <a href="${collections_link}">${collection_provider_name}</a>.
         % endif
     </p>
     <p>
         If you are not ${user_fullname} or you have been erroneously associated with
-        <a href="${node_absolute_url}">${node.title}</a>, email ${osf_contact_email} with the subject line
+        <a href="${node_absolute_url}">${node_title}</a>, email ${osf_contact_email} with the subject line
         "Claiming error" to report the problem.
     </p>
     Sincerely,<br>

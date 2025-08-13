@@ -225,7 +225,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         payload = self.create_payload(node_request._id, trigger='edit_comment', comment='ASDFG')
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=requester.auth)
-        assert not notifications
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
         node_request.reload()
         assert initial_state == node_request.machine_state
