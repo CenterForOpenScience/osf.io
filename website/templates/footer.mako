@@ -5,7 +5,7 @@
             <div class="col-sm-12 col-md-8 col-md-offset-2">
                 <p>
                     <span>
-                        Copyright &copy; 2016-${datetime.utcnow().year}
+                        Copyright &copy;
                     </span>
                     <a href="${footer_links['cos']}">
                         ${_("National Institute of Informatics")}
