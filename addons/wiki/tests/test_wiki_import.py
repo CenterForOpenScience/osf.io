@@ -948,27 +948,32 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         urls = _get_wiki_api_urls(self.project, self.wname)
         assert_equal(urls['sort'], self.project.api_url_for('project_update_wiki_page_sort'))
 
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
+    @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    def test_project_wiki_delete_404Err(self, mock_get_sharejs_uuid, mock_get_for_node):
-        self.user.is_registered = True
-        self.user.save()
-
-        # 上記のユーザに対してプロジェクトを作り直す
-        self.project = ProjectFactory(is_public=True, creator=self.user)
-        self.project.add_addon('wiki', auth=self.user.auth)
-        self.project.save()
-
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
+    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
+    def test_wiki_delete_404err(
+        self,
+        mock_get_for_node,
+        mock_get_for_child_nodes,
+        mock_get_sharejs_uuid,
+        mock_broadcast_to_sharejs
+    ):
+        # Wikiが存在しない
         mock_get_for_node.return_value = None
-        mock_get_sharejs_uuid.return_value = None
 
-        delete_url = self.project.api_url_for('project_wiki_delete', wname='funpage')
+        url = self.project.api_url_for('project_wiki_delete', wname='child')
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
 
-        self.app.set_user(self.consolidate_auth.user)
-        self.app.delete(delete_url, auth=self.consolidate_auth, expect_errors=True)
-        #res = self.app.get(delete_url, expect_errors=True)
-        res = self.app.get(delete_url)
+        # 404が返る
         assert_equal(res.status_code, 404)
+
+        # sharejsのUUID取得は実装上先に呼ばれる
+        mock_get_sharejs_uuid.assert_called_once()
+
+        # 子ページ取得やブロードキャストは呼ばれない
+        mock_get_for_child_nodes.assert_not_called()
+        mock_broadcast_to_sharejs.assert_not_called()
 
     @mock.patch('addons.wiki.utils.get_sharejs_uuid')
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
@@ -1053,44 +1058,12 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
-        #self.user.is_registered = True
-        #self.user.save()
-        #self.auth = Auth(user=self.user)
-
-        # 上記のユーザに対してプロジェクトを作り直す
-        #self.project = ProjectFactory(is_public=True, creator=self.user)
-        #self.project.add_addon('wiki', auth=self.auth)
-        #self.project.save()
-        # 1回目（子の存在確認）→ None で 409 を避ける
-        # 2回目（親の存在確認）→ None で 404 を発生させる
         mock_get_for_node.side_effect = [None, None]
-        #mock_get_for_node.return_value = [
-        #    {
-        #        'name': 'TEST',
-        #        'path': '/page2',
-        #        'original_name': 'page2',
-        #        'wiki_name': 'page2',
-        #        'status': 'valid',
-        #        'message': '',
-        #        '_id': 'yyy',
-        #        'wiki_content': 'content2'
-        #    }
-        #]
-        #mock_create_for_node.return_value = None
 
-        #parent = WikiPage.objects.get_for_node(self.project, 'parent')
         url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         mock_create_for_node.assert_not_called()
-        #dir_id = self.root_import_folder1._id
-        #url = self.project.api_url_for(
-        #    'project_wiki_validate_name',
-        #    wname='Capslock',
-        #    p_wname='test')
-        #res = self.app.get(url, auth=self.auth, expect_errors=True)
-
-        #assert_equal(res.status_code, 404)
 
     def test_format_home_wiki_page(self):
         result = views.format_home_wiki_page(self.project)
@@ -2947,6 +2920,10 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
     def test_invalid_version_exception(self):
+        WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='The requested version of this wiki page does not exist.'
+        ))
         auth = self.auth
         node = self.node
         page = self.create_wiki_page()
@@ -2954,5 +2931,5 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         kwargs = {'node': node}
 
         with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=self.WIKI_INVALID_VERSION_ERROR):
-            with assert_raises(self.WIKI_INVALID_VERSION_ERROR):
+            with assert_raises(WIKI_INVALID_VERSION_ERROR):
                 views.project_wiki_view(auth, 'Home', **kwargs)
