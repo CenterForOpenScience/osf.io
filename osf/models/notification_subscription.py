@@ -84,6 +84,8 @@ class NotificationSubscription(BaseModel):
                 subscription=self,
                 event_context=event_context
             )
+            if save:
+                notification.save()
             notification.send(
                 destination_address=destination_address,
                 email_context=email_context,
@@ -94,8 +96,6 @@ class NotificationSubscription(BaseModel):
                 subscription=self,
                 event_context=event_context
             )
-        if save:
-            notification.save()
 
     @property
     def absolute_api_v2_url(self):
