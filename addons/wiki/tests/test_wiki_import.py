@@ -2805,7 +2805,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             views.project_wiki_view(auth, 'NotHome', **kwargs)
 
     # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
-    @patch('django.apps')
     def test_edit_arg_public_editable_unauthorized(self):
         auth = self.auth
         node = self.node
