@@ -407,6 +407,20 @@ class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, Registrat
 
     model_class = Registration
 
+    def get_queryset(self):
+        node = self.get_node()
+        auth = get_user_auth(self.request)
+        user = auth.user
+        provider = getattr(node, 'provider', None)
+        is_moderated = getattr(provider, 'is_reviewed', False)
+        custom_filters = {}
+
+        if is_moderated and user and user.is_authenticated and provider.is_moderator(user):
+            from osf.utils.workflows import RegistrationModerationStates
+            custom_filters['moderation_state__in'] = RegistrationModerationStates.in_moderation_states()
+
+        return super().get_queryset(**custom_filters)
+
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_citations_list).

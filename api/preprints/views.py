@@ -2,6 +2,7 @@ import re
 from packaging.version import Version
 
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import generics
 from rest_framework.exceptions import MethodNotAllowed, NotFound, PermissionDenied, NotAuthenticated, ValidationError
 from rest_framework import permissions as drf_permissions
@@ -279,7 +280,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
         return super().create(request, *args, **kwargs)
 
 
-class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin, WaterButlerMixin):
+class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
     """
     permission_classes = (
@@ -326,6 +327,11 @@ class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin
         res['legacy_type_allowed'] = True
         return res
 
+    def delete(self, request, *args, **kwargs):
+        if self.get_preprint().machine_state == 'initial':
+            return super().delete(request, *args, **kwargs)
+
+        raise ValidationError('You cannot delete created preprint')
 
 class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveUpdateAPIView, PreprintMixin):
     permission_classes = (
@@ -704,7 +710,10 @@ class PreprintActionList(JSONAPIBaseView, generics.ListCreateAPIView, PreprintAs
                 f'If you are an admin, set up moderation by setting `reviews_workflow` at {url}',
             )
 
-        serializer.save(user=self.request.user)
+        try:
+            serializer.save(user=self.request.user)
+        except (ValueError, DjangoValidationError) as exc:
+            raise ValidationError(str(exc)) from exc
 
     # overrides ListFilterMixin
     def get_default_queryset(self):

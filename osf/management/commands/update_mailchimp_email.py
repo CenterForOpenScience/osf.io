@@ -13,7 +13,7 @@ def update_mailchimp_email():
     for user in OSFUser.objects.filter(deleted__isnull=True):
         for list_name, subscription in user.mailchimp_mailing_lists.items():
             if subscription:
-                mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+                mailchimp_utils.subscribe_mailchimp_async(list_name, user._id)
         users_updated += 1
 
     return users_updated

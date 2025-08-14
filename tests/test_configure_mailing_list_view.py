@@ -11,7 +11,6 @@ from tests.base import (
     OsfTestCase,
 )
 from website import mailchimp_utils, settings
-from website.profile.views import update_osf_help_mails_subscription
 from website.settings import MAILCHIMP_GENERAL_LIST
 from website.util import api_url_for
 
@@ -46,21 +45,6 @@ class TestConfigureMailingListViews(OsfTestCase):
         res = self.app.get(url, auth=user.auth)
         assert mailing_lists == res.json['mailing_lists']
 
-    def test_osf_help_mails_subscribe(self):
-        user = UserFactory()
-        user.osf_mailing_lists[settings.OSF_HELP_LIST] = False
-        user.save()
-        update_osf_help_mails_subscription(user, True)
-        assert user.osf_mailing_lists[settings.OSF_HELP_LIST]
-
-    def test_osf_help_mails_unsubscribe(self):
-        user = UserFactory()
-        user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
-        user.save()
-        update_osf_help_mails_subscription(user, False)
-        assert not user.osf_mailing_lists[settings.OSF_HELP_LIST]
-
-    @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
         user = AuthUserFactory()

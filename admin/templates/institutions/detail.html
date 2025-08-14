@@ -9,9 +9,17 @@
 {% endblock title %}
 {% block content %}
     <div class="container-fluid">
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
         <div class="row">
             <div class="col-md-12">
                 <a class="btn btn-primary" href={% url 'institutions:export' institution.id %}>Export institution metadata</a>
+                <a data-toggle="modal" data-target="#monthlyReportModal" class="btn btn-primary">
+                    Run monthly report
+                </a>
                 {%  if perms.osf.delete_institution %}
                 <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
                 {%  endif %}
@@ -96,6 +104,33 @@
                         {{ import_form.as_p }}
                         <input class="form-button" type="submit" value="Import" />
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="monthlyReportModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Are you sure you want to run monthly report for this institution?</h3>
+                </div>
+                <div style="text-align: center">
+                    <form id="run-monthly-report-form" method="post" action={% url 'institutions:monthly_report' institution.id %}>
+                        {% csrf_token %}
+                        <label for="monthly_report_date">
+                        Report date:
+                        </label>
+                        <input type="date" name="monthly_report_date" id="monthly_report_date"/>
+                        <input type="text" value="INSTITUTIONAL_SUMMARY" name="monthly_reporter" id="monthly_reporter" hidden/>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <input class="btn btn-danger" type="submit" form="run-monthly-report-form" value="Confirm" />
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
                 </div>
             </div>
         </div>

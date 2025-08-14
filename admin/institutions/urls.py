@@ -9,6 +9,7 @@ urlpatterns = [
     re_path(r'^import/$', views.ImportInstitution.as_view(), name='import'),
     re_path(r'^(?P<institution_id>[0-9]+)/$', views.InstitutionDetail.as_view(), name='detail'),
     re_path(r'^(?P<institution_id>[0-9]+)/export/$', views.InstitutionExport.as_view(), name='export'),
+    re_path(r'^(?P<institution_id>[0-9]+)/monthly_report/$', views.InstitutionMonthlyReporterDo.as_view(), name='monthly_report'),
     re_path(r'^(?P<institution_id>[0-9]+)/delete/$', views.DeleteInstitution.as_view(), name='delete'),
     re_path(r'^(?P<institution_id>[0-9]+)/deactivate/$', views.DeactivateInstitution.as_view(), name='deactivate'),
     re_path(r'^(?P<institution_id>[0-9]+)/reactivate/$', views.ReactivateInstitution.as_view(), name='reactivate'),

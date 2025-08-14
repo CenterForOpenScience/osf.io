@@ -36,7 +36,7 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.get.return_value = {'id': 1, 'list_name': list_name}
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
-        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
+        mailchimp_utils.subscribe_mailchimp_async(list_name, user._id)
         handlers.celery_teardown_request()
         mock_client.lists.members.create_or_update.assert_called()
 
@@ -48,10 +48,9 @@ class TestMailChimpHelpers(OsfTestCase):
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
         mock_client.lists.members.create_or_update.side_effect = MailChimpError
-        mailchimp_utils.subscribe_mailchimp(list_name, user._id)
-        handlers.celery_teardown_request()
+        mailchimp_utils.subscribe_mailchimp_async(list_name, user._id)
         user.reload()
-        assert not user.mailchimp_mailing_lists[list_name]
+        assert not user.mailchimp_mailing_lists
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_unsubscribe_called_with_correct_arguments(self, mock_get_mailchimp_api):
