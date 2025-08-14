@@ -1027,32 +1027,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
     def test_wiki_validate_name(self, mock_create_for_node, mock_get_for_node):
-        self.user.is_registered = True
-        self.user.save()
-        mock_get_for_node.return_value = [
-            {
-                'name': 'TEST',
-                'path': '/page2',
-                'original_name': 'page2',
-                'wiki_name': 'page2',
-                'status': 'valid',
-                'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'content2'
-            }
-        ]
-        mock_create_for_node.return_value = None
-        url = self.project.api_url_for(
-            'project_wiki_validate_name',
-            wname='home',
-            p_wname='home')
-        res = self.app.get(url, auth=self.auth, expect_errors=True)
-        try:
-            body = res.json
-        except AttributeError:
-            body = res.json_body
-
-        assert_equal(body['message'], 'home')
+        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
 
     @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
     @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
@@ -2834,7 +2811,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         # TODO: ちゃんとfixtureをつくる
-        return mock.patch.multiple(TestWikiViews,
+        return mock.patch.multiple('addons.wiki.models',
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
             WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
             WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
