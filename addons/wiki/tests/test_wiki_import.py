@@ -1823,7 +1823,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        expected_content = f'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
+        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ \"tooltip1\")'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
@@ -1832,7 +1832,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        expected_content = f'Wiki content with [wiki page1](wiki%20page1)'
+        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/)'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
