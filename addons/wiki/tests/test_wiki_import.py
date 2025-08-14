@@ -2839,7 +2839,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
 
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
-    @patch('addons.wiki.utils.format_wiki_version')
+    @mock.patch('addons.wiki.utils.format_wiki_version')
     def test_invalid_version_exception(self, mock_format_wiki_version):
         format_wiki_version.side_effect = InvalidVersionError
         auth = self.auth
