@@ -980,7 +980,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.user.is_registered = True
         self.user.save()
         page1 = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
-        page2 = WikiPage.objects.create_for_node(self.project, 'Elephant child', 'Hello Elephants', parent=page1, self.consolidate_auth)
+        page2 = WikiPage.objects.create_for_node(self.project, 'Elephant child', 'Hello Elephants', self.consolidate_auth, parent=page1)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
