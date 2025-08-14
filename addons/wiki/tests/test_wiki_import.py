@@ -52,6 +52,7 @@ from addons.wiki.utils import (
 )
 from addons.wiki.tests.test_utils import MockWbResponse, MockResponse
 from osf.utils.fields import NonNaiveDateTimeField
+from osf.utils.permissions import ADMIN, REVIEW_GROUPS, READ, WRITE
 from django.utils import timezone
 from framework.auth import Auth
 
@@ -1023,9 +1024,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_validate_name_exist_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname=self.wiki_page1.page_name)
         res = self.app.get(url, auth=self.user.auth)
-        expected = {'message': self.wiki_page1.page_name}
-        assert_equal(200, res.status_code)
-        assert_equal(expected, res.body)
+        assert_equal(409, res.status_code)
 
     def test_wiki_validate_name_new_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='pageNotExist')
