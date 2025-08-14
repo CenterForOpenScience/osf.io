@@ -1034,7 +1034,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.api_url_for('project_wiki_validate_name', wname='pageNotExist')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
- 
+
     def test_format_home_wiki_page(self):
         result = views.format_home_wiki_page(self.project)
         expected = {
