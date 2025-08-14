@@ -1000,7 +1000,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             self.app.delete(
                 url,
-                auth=self.auth
+                auth=self.user.auth
             )
         self.project.reload()
         page.reload()
@@ -1262,7 +1262,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_count_equal(result['data'], [{'parent_wiki_name': 'importpage1', 'path': '/importpage1/importpage2', 'original_name': 'importpage2', 'wiki_name': 'importpage2', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_2._id}, {'parent_wiki_name': None, 'path': '/importpage1', 'original_name': 'importpage1', 'wiki_name': 'importpage1', 'status': 'valid', 'message': '', '_id': self.import_page_md_file_1._id}])
 
     def test_validate_import_folder_invalid(self):
-        folder = BaseFileNode.objects.get(name='importpagex', target=self.project).first()
+        folder = BaseFileNode.objects.get(name='importpagex', target_object_id=self.project.id).first()
         parent_path = ''
         result = views._validate_import_folder(self.project, folder, parent_path)
         for info in result:
@@ -1316,7 +1316,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_check_file_object_in_node.return_value = True
         dir_id = self.root_import_folder1._id
         url = self.project.api_url_for('project_wiki_import', dir_id=dir_id)
-        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.consolidate_auth)
+        res = self.app.post_json(url, { 'data': [{'test': 'test1'}] }, auth=self.user.auth)
         response_json = res.json
         task_id = response_json['taskId']
         uuid_obj = uuid.UUID(task_id)
@@ -1823,7 +1823,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/ \"tooltip1\")'
+        expected_content = f'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
@@ -1832,7 +1832,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
-        expected_content = f'Wiki content with [wiki page1](../wiki%20page1/)'
+        expected_content = f'Wiki content with [wiki page1](wiki%20page1)'
         result_content = views._replace_wiki_link_notation(self.project, link_matches, wiki_content_link, info, self.node_file_mapping, self.import_wiki_name_list, self.root_import_folder1._id)
         assert_equal(result_content, expected_content)
 
@@ -2656,7 +2656,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             creator=self.user
         )
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
-        respose = self.app.get(url, auth=self.consolidate_auth)
+        respose = self.app.get(url, auth=self.user.auth)
         json_string = response._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
         assert_equal(result, {'aborted': True})
