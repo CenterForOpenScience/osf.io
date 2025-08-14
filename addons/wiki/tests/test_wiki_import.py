@@ -2806,7 +2806,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     @staticmethod
     def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
         # TODO: ちゃんとfixtureをつくる
-        return mock.patch.multiple('addons.wiki.models',
+        return mock.patch.multiple(TestWikiViews,
             WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
             WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
             WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
