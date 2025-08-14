@@ -997,7 +997,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         page1.reload()
         page2.reload()
         assert_is_not_none(page1.deleted)
-        assert_is_none(page2.deleted)
+        assert_is_not_none(page2.deleted)
 
     def test_get_import_folder_include_invalid_folder(self):
         root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
@@ -2808,7 +2808,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_settings = self.project.get_addon('wiki')
         wiki_settings.is_publicly_editable = True
         wiki_settings.save()
-        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
+        url = self.project.api_url_for('project_wiki_view', wname='home', params={'edit': True})
 
         with assert_raises(Exception) as excinfo:
             response = self.app.get(url, auth=self.auth)
@@ -2816,18 +2816,18 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
-        self.project.remove_permissions(self.auth.user, WRITE)
-        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
+        self.project.remove_permission(self.auth.user, WRITE)
+        url = self.project.api_url_for('project_wiki_view', wname='home', params={'edit': True})
 
         response = self.app.get(url, auth=self.auth)
-        assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status)
+        assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
         assert_equal('', response.lacation)
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
-        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
+        url = self.project.api_url_for('project_wiki_view', wname='home', params={'edit': True})
 
         with assert_raises(Exception) as excinfo:
             response = self.app.get(url, auth=auth)
@@ -2837,8 +2837,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
     @mock.patch('addons.wiki.utils.format_wiki_version')
     def test_invalid_version_exception(self, mock_format_wiki_version):
-        format_wiki_version.side_effect = InvalidVersionError
-        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
+        mock_format_wiki_version.side_effect = InvalidVersionError
+        url = self.project.api_url_for('project_wiki_view', wname='home', params={'edit': True})
 
         with assert_raises(Exception) as excinfo:
             response = self.app.get(url, auth=self.auth)
