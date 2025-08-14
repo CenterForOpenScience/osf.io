@@ -61,6 +61,7 @@ from addons.wiki.views import (
     _get_wiki_versions
 )
 from addons.wiki import views
+from addons.wiki.exceptions import InvalidVersionError
 
 from tests.base import OsfTestCase
 
@@ -2783,65 +2784,16 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         assert_equal(expected_list, result_list)
 
-    # テスト用のWikiページを作成
-    def create_wiki_page(has_parent=True):
-        page = MagicMock()
-        page.page_name = 'TestPage'
-        page.parent = has_parent
-        page.parent_id = 'parent123' if has_parent else None
-        page._primary_key = 'wiki123'
-        return page
-
-    # テスト用のWikiバージョンを作成
-    @staticmethod
-    def create_wiki_version():
-        version = MagicMock()
-        version.identifier = 'v1'
-        version.is_current = True
-        version.rendered_before_update = True
-        version.content = 'markdown content'
-        return version
-
-    # 外部依存をまとめてモックする関数
-    @staticmethod
-    def mock_dependencies(wiki_page=None, wiki_version=None, request_args=None, format_version_side_effect=None):
-        # TODO: ちゃんとfixtureをつくる
-        return mock.patch.multiple(TestWikiViews,
-            WikiPage=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_page), get=MagicMock(return_value=wiki_page))),
-            WikiVersion=MagicMock(objects=MagicMock(get_for_node=MagicMock(return_value=wiki_version))),
-            WikiImportTask=MagicMock(objects=MagicMock(values_list=MagicMock(return_value=[]))),
-            _get_wiki_versions=MagicMock(return_value=[]),
-            _get_import_folder=MagicMock(return_value=[]),
-            _get_wiki_pages_latest=MagicMock(return_value=[]),
-            _get_wiki_api_urls=MagicMock(return_value={}),
-            _get_wiki_web_urls=MagicMock(return_value={}),
-            _view_project=MagicMock(return_value={'user': {}}),
-            get_profile_image_url=MagicMock(return_value='http://image.url'),
-            has_anonymous_link=MagicMock(return_value=False),
-            to_mongo_key=MagicMock(return_value='home'),
-            wiki_utils=MagicMock(
-                format_wiki_version=MagicMock(side_effect=format_version_side_effect or (lambda version, num_versions, allow_preview: None)),
-                get_sharejs_uuid=MagicMock(return_value='uuid123'),
-                generate_private_uuid=MagicMock(),
-                get_wiki_fullpath=MagicMock(return_value='home/TestPage')
-            ),
-            request=MagicMock(args=request_args or {}),
-            settings=MagicMock(SHAREJS_URL='http://sharejs', Y_WEBSOCKET_URL='ws://yjs')
-        )
-
     # 編集権限がある場合の正常系テスト
     def test_valid_view_with_edit_permission(self):
         auth = self.auth
         node = self.node
-        page = self.create_wiki_page()
-        version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version):
-            result = views.project_wiki_view(auth, 'Home', **kwargs)
-            # 編集権限があるため、can_edit_wiki_body は True
-            assert result['user']['can_edit_wiki_body'] is True
-            assert result['wiki_name'] == 'TestPage'
+        result = views.project_wiki_view(auth, 'home', **kwargs)
+        # 編集権限があるため、can_edit_wiki_body は True
+        assert result['user']['can_edit_wiki_body'] is True
+        assert result['wiki_name'] == 'home'
 
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
@@ -2853,50 +2805,48 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             views.project_wiki_view(auth, 'NotHome', **kwargs)
 
     # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
+    @patch('django.apps')
     def test_edit_arg_public_editable_unauthorized(self):
         auth = self.auth
         node = self.node
-        kwargs = {'node': node}
+        kwargs = {'node': node, 'edit': True}
+        wiki_settings = node.get_addon('wiki')
+        wiki_settings.is_publicly_editable = True
+        wiki_settings.save()
 
-        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
-            with assert_raises(Exception) as excinfo:
-                views.project_wiki_view(auth, 'NotHome', **kwargs)
-            assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
+        with assert_raises(Exception) as excinfo:
+            views.project_wiki_view(auth, 'home', **kwargs)
+        assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
 
     # 'edit' が args に含まれ、閲覧可能 → リダイレクト
     def test_edit_arg_redirect_if_can_view(self):
         auth = self.auth
         node = self.node
-        kwargs = {'node': node}
+        kwargs = {'node': node, 'edit': True}
 
-        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
-            result = views.project_wiki_view(auth, 'NotHome', **kwargs)
-            # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
-            assert '/web/wiki' in result.headers['Location']
+        result = views.project_wiki_view(auth, 'home', **kwargs)
+        # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
+        assert '/web/wiki' in result.headers['Location']
 
     # 'edit' が args に含まれ、閲覧不可 → 403 エラー
     def test_edit_arg_forbidden_if_cannot_view(self):
-        auth = self.auth
+        user = UserFactory()
+        auth = user.auth
         node = self.node
-        kwargs = {'node': node}
+        kwargs = {'node': node, 'edit': True}
 
-        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={'edit': True}):
-            with assert_raises(Exception) as excinfo:
-                views.project_wiki_view(auth, 'NotHome', **kwargs)
-            assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
+        with assert_raises(Exception) as excinfo:
+            views.project_wiki_view(auth, 'home', **kwargs)
+        assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
 
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
-    def test_invalid_version_exception(self):
-        WIKI_INVALID_VERSION_ERROR = HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
-            message_short='Invalid request',
-            message_long='The requested version of this wiki page does not exist.'
-        ))
+    @patch('addons.wiki.utils.format_wiki_version')
+    def test_invalid_version_exception(self, mock_format_wiki_version):
+        format_wiki_version.side_effect = InvalidVersionError
         auth = self.auth
         node = self.node
-        page = self.create_wiki_page()
-        version = self.create_wiki_version()
         kwargs = {'node': node}
 
-        with TestWikiViews.mock_dependencies(wiki_page=page, wiki_version=version, format_version_side_effect=WIKI_INVALID_VERSION_ERROR):
-            with assert_raises(WIKI_INVALID_VERSION_ERROR):
-                views.project_wiki_view(auth, 'Home', **kwargs)
+        with assert_raises(Exception) as excinfo:
+            views.project_wiki_view(auth, 'home', **kwargs)
+        assert_equal(self.WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
