@@ -1,8 +1,10 @@
 import pytest
 import uuid
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from api_tests import utils
+from framework.auth.cas import CasResponse
 from framework.auth.core import Auth
 from osf.models import RegistrationSchema
 from osf_tests.factories import (
@@ -1026,3 +1028,24 @@ class TestSearchCollections(ApiSearchTestCase):
         assert res.status_code == 200
         assert res.json['links']['meta']['total'] == 2
         assert len(res.json['data']) == 2
+
+    def test_POST_search_collections_scope(self, app, url_collection_search, user):
+        payload = self.post_payload(q='Collection')
+
+        token_invalid = CasResponse(
+            authenticated=True,
+            user=user._id,
+            attributes={'accessTokenScope': ['osf.full_read']}
+        )
+        with mock.patch('framework.auth.cas.CasClient.profile', return_value=token_invalid):
+            res = app.post_json_api(url_collection_search, payload, auth='some-invalid-token', expect_errors=True, auth_type='jwt')
+            assert res.status_code == 403
+
+        token_valid = CasResponse(
+            authenticated=True,
+            user=user._id,
+            attributes={'accessTokenScope': ['osf.full_read', 'osf.full_write']}
+        )
+        with mock.patch('framework.auth.cas.CasClient.profile', return_value=token_valid):
+            res = app.post_json_api(url_collection_search, payload, auth='some-valid-token', auth_type='jwt')
+            assert res.status_code == 200

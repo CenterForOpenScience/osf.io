@@ -121,6 +121,15 @@ class RegistrationModerationStates(ModerationEnum):
 
         return new_state
 
+    @classmethod
+    def in_moderation_states(cls):
+        return [
+            cls.PENDING.db_name,
+            cls.EMBARGO.db_name,
+            cls.PENDING_EMBARGO_TERMINATION.db_name,
+            cls.PENDING_WITHDRAW.db_name,
+        ]
+
 
 class RegistrationModerationTriggers(ModerationEnum):
     '''The acceptable 'triggers' to describe a moderated action on a Registration.'''

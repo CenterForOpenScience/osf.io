@@ -79,7 +79,12 @@ def schedule_monthly_reporter(
     retry_backoff=True,
 )
 def monthly_reporter_do(reporter_key: str, yearmonth: str, report_kwargs: dict):
-    _reporter = _get_reporter(reporter_key, yearmonth)
+    try:
+        _reporter = _get_reporter(reporter_key, yearmonth)
+    except KeyError as exc:
+        framework.sentry.log_exception(exc)
+        return
+
     _report = _reporter.report(**report_kwargs)
     if _report is not None:
         _report.report_yearmonth = _reporter.yearmonth
