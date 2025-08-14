@@ -1826,6 +1826,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(result, expected_result)
 
     def test_replace_wiki_link_notation_wiki_page_with_tooptip(self):
+        wiki_page1_sp = WikiPage.objects.create_for_node(self.project, 'wiki page1', 'wiki pagea content', self.consolidate_auth)
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1 \"tooltip1\")'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
@@ -1834,6 +1835,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(result_content, expected_content)
 
     def test_replace_wiki_link_notation_wiki_page_without_tooptip(self):
+        wiki_page1_sp = WikiPage.objects.create_for_node(self.project, 'wiki page1', 'wiki pagea content', self.consolidate_auth)
         wiki_content_link = 'Wiki content with [wiki page1](wiki%20page1)'
         link_matches = list(re.finditer(self.rep_link, wiki_content_link))
         info = self.wiki_info
