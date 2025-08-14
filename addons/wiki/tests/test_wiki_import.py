@@ -1033,7 +1033,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         expected = {'message': 'pageNotExist'}
         new_page = WikiPage.objects.get_for_node(self.project, 'pageNotExist')
         assert_equal(200, res.status_code)
-        assert_equal(expected, res.body)
+        assert_equal(expected, res.json)
         assert_is_not_none(new_page)
 
     def test_format_home_wiki_page(self):
@@ -2787,68 +2787,59 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     # 編集権限がある場合の正常系テスト
     def test_valid_view_with_edit_permission(self):
-        auth = self.auth
-        node = self.node
-        kwargs = {'node': node}
-
-        result = views.project_wiki_view(auth, 'home', **kwargs)
-        # 編集権限があるため、can_edit_wiki_body は True
+        url = self.project.api_url_for('project_wiki_view', wname='home')
+        response = self.app.get(url, auth=self.auth)
+        result = response.json
         assert_true(result['user']['can_edit_wiki_body'])
         assert_equal('home', result['wiki_name'])
 
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
-        auth = self.consolidate_auth
-        node = self.node
-        kwargs = {'node': node}
+        url = self.project.api_url_for('project_wiki_view', wname='NotHome')
 
-        with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
-            views.project_wiki_view(auth, 'NotHome', **kwargs)
+        with assert_raises(Exception) as excinfo:
+            response = self.app.get(url, auth=self.consolidate_auth)
+        assert_equal(http_status.HTTP_404_NOT_FOUND, excinfo.value.code)
 
     # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
     def test_edit_arg_public_editable_unauthorized(self):
         auth = self.auth
-        auth.user = None
-        node = self.node
-        kwargs = {'node': node, 'edit': True}
-        wiki_settings = node.get_addon('wiki')
+        self.auth.user = None
+        wiki_settings = self.project.get_addon('wiki')
         wiki_settings.is_publicly_editable = True
         wiki_settings.save()
+        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
 
         with assert_raises(Exception) as excinfo:
-            views.project_wiki_view(auth, 'home', **kwargs)
-        assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
+            response = self.app.get(url, auth=self.auth)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, excinfo.value.code)
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
-        auth = self.auth
-        node = self.node
-        self.project.remove_permissions(auth.user, WRITE)
-        kwargs = {'node': node, 'edit': True}
+        self.project.remove_permissions(self.auth.user, WRITE)
+        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
 
-        result = views.project_wiki_view(auth, 'home', **kwargs)
-        # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
-        assert '/web/wiki' in result.headers['Location']
+        response = self.app.get(url, auth=self.auth)
+        assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status)
+        assert_equal('', response.lacation)
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
-        node = self.node
-        kwargs = {'node': node, 'edit': True}
+        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
 
         with assert_raises(Exception) as excinfo:
-            views.project_wiki_view(auth, 'home', **kwargs)
-        assert excinfo.value.code == http_status.HTTP_403_FORBIDDEN
+            response = self.app.get(url, auth=auth)
+        assert_equal(http_status.HTTP_403_FORBIDDEN, excinfo.value.code)
+
 
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
     @mock.patch('addons.wiki.utils.format_wiki_version')
     def test_invalid_version_exception(self, mock_format_wiki_version):
         format_wiki_version.side_effect = InvalidVersionError
-        auth = self.auth
-        node = self.node
-        kwargs = {'node': node}
+        url = self.project.api_url_for('project_wiki_view', wname='home', edit=True)
 
         with assert_raises(Exception) as excinfo:
-            views.project_wiki_view(auth, 'home', **kwargs)
+            response = self.app.get(url, auth=self.auth)
         assert_equal(self.WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
