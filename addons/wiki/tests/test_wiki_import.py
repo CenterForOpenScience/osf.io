@@ -1122,7 +1122,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parentpage', 'parent content', self.consolidate_auth)
         self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'childpage', 'child content', self.consolidate_auth, self.parent_wiki_page)
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
-        result = views.format_project_wiki_pages(node=self.project, auth=self.consolidate_auth)
+        result = views.format_child_wiki_pages(node=self.project, auth=self.consolidate_auth)
         expected = [
             {
                 'page': {
