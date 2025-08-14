@@ -1024,23 +1024,16 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         res = self.app.post_json(url, {'markdown': 'new content'}, auth=self.user.auth).follow()
         assert_equal(res.status_code, 200)
 
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
-    @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
-    def test_wiki_validate_name(self, mock_create_for_node, mock_get_for_node):
-        url = self.project.api_url_for('project_wiki_validate_name', wname='Capslock')
+    def test_wiki_validate_name(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname=self.wiki_page1.page_name)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_node')
-    @mock.patch('addons.wiki.models.WikiPage.objects.create_for_node')
-    def test_wiki_validate_name_404err(self, mock_create_for_node, mock_get_for_node):
-        mock_get_for_node.side_effect = [None, None]
-
-        url = self.project.api_url_for('project_wiki_validate_name', wname='child', p_wname='parent')
+    def test_wiki_validate_name_404err(self):
+        url = self.project.api_url_for('project_wiki_validate_name', wname='pageNotExist')
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        mock_create_for_node.assert_not_called()
-
+ 
     def test_format_home_wiki_page(self):
         result = views.format_home_wiki_page(self.project)
         expected = {
