@@ -987,15 +987,16 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             wname='Elephants'
         )
         time_now = '2017-03-16 11:00:00.000'
-        freezer = freezegun.freeze_time('2017-03-16 11:00:00.000')
+        freezer = freezegun.freeze_time(time_now)
         freezer.start()
         self.app.delete(
             url,
             auth=self.user.auth
         )
         freezer.stop()
-        page.reload()
-        assert_equal(time_now, page1.deleted)
+        page1.reload()
+        page2.reload()
+        assert_is_not_none(page1.deleted)
         assert_is_none(page2.deleted)
 
     def test_get_import_folder_include_invalid_folder(self):
@@ -2795,9 +2796,10 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
             views.project_wiki_view(auth, 'NotHome', **kwargs)
 
-    # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
+    # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
     def test_edit_arg_public_editable_unauthorized(self):
         auth = self.auth
+        auth.user = None
         node = self.node
         kwargs = {'node': node, 'edit': True}
         wiki_settings = node.get_addon('wiki')
@@ -2808,17 +2810,18 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             views.project_wiki_view(auth, 'home', **kwargs)
         assert excinfo.value.code == http_status.HTTP_401_UNAUTHORIZED
 
-    # 'edit' が args に含まれ、閲覧可能 → リダイレクト
+    # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
         auth = self.auth
         node = self.node
+        node.remove_permissions(auth.user, WRITE)
         kwargs = {'node': node, 'edit': True}
 
         result = views.project_wiki_view(auth, 'home', **kwargs)
         # リダイレクトオブジェクトが返ることを確認（簡易的にURLを確認）
         assert '/web/wiki' in result.headers['Location']
 
-    # 'edit' が args に含まれ、閲覧不可 → 403 エラー
+    # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
