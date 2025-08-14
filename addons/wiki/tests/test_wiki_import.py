@@ -3,6 +3,7 @@ import pytest
 import unittest
 from unittest.mock import MagicMock
 import json
+import freezegun
 from freezegun import freeze_time
 import time
 import pytz
@@ -974,38 +975,28 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_get_for_child_nodes.assert_not_called()
         mock_broadcast_to_sharejs.assert_not_called()
 
-    @mock.patch('addons.wiki.utils.get_sharejs_uuid')
-    @mock.patch('addons.wiki.models.WikiPage.objects.get_for_child_nodes')
-    def test_project_wiki_delete(self, mock_get_for_child_nodes, mock_get_sharejs_uuid):
+    @mock.patch('addons.wiki.utils.broadcast_to_sharejs')
+    def test_project_wiki_delete(self, mock_broadcast_to_sharejs):
         self.user.is_registered = True
         self.user.save()
-        page = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
+        page1 = WikiPage.objects.create_for_node(self.project, 'Elephants', 'Hello Elephants', self.consolidate_auth)
+        page2 = WikiPage.objects.create_for_node(self.project, 'Elephant child', 'Hello Elephants', parent=page1, self.consolidate_auth)
 
         url = self.project.api_url_for(
             'project_wiki_delete',
             wname='Elephants'
         )
-        mock_get_for_child_nodes.return_value =[
-            {
-                'name': 'TEST',
-                'path': '/page2',
-                'original_name': 'page2',
-                'wiki_name': 'page2',
-                'status': 'valid',
-                'message': '',
-                '_id': 'yyy',
-                'wiki_content': 'content2'
-            }
-        ]
-        mock_now = datetime.datetime(2017, 3, 16, 11, 00, tzinfo=pytz.utc)
-        with mock.patch.object(timezone, 'now', return_value=mock_now):
-            self.app.delete(
-                url,
-                auth=self.user.auth
-            )
-        self.project.reload()
+        time_now = '2017-03-16 11:00:00.000'
+        freezer = freezegun.freeze_time('2017-03-16 11:00:00.000')
+        freezer.start()
+        self.app.delete(
+            url,
+            auth=self.user.auth
+        )
+        freezer.stop()
         page.reload()
-        assert_equal(page.deleted, mock_now)
+        assert_equal(time_now, page1.deleted)
+        assert_is_none(page2.deleted)
 
     def test_get_import_folder_include_invalid_folder(self):
         root = BaseFileNode.objects.get(target_object_id=self.project.id, is_root=True)
@@ -1321,7 +1312,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         response_json = res.json
         task_id = response_json['taskId']
         uuid_obj = uuid.UUID(task_id)
-        assert_not_none(uuid_obj)
+        assert_is_not_none(uuid_obj)
 
     @mock.patch('addons.wiki.views._get_md_content_from_wb')
     @mock.patch('addons.wiki.views._get_or_create_wiki_folder')
@@ -2657,7 +2648,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             creator=self.user
         )
         url = self.project.api_url_for('project_get_abort_wiki_import_result')
-        respose = self.app.get(url, auth=self.user.auth)
+        response = self.app.get(url, auth=self.user.auth)
         json_string = response._app_iter[0].decode('utf-8')
         result = json.loads(json_string)
         assert_equal(result, {'aborted': True})
@@ -2792,8 +2783,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         result = views.project_wiki_view(auth, 'home', **kwargs)
         # 編集権限があるため、can_edit_wiki_body は True
-        assert result['user']['can_edit_wiki_body'] is True
-        assert result['wiki_name'] == 'home'
+        assert_true(result['user']['can_edit_wiki_body'])
+        assert_equal('home', result['wiki_name'])
 
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
@@ -2829,7 +2820,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     # 'edit' が args に含まれ、閲覧不可 → 403 エラー
     def test_edit_arg_forbidden_if_cannot_view(self):
-        user = UserFactory()
+        user = AuthUserFactory()
         auth = user.auth
         node = self.node
         kwargs = {'node': node, 'edit': True}
