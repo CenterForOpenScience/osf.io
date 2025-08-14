@@ -2849,9 +2849,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         node = self.node
         kwargs = {'node': node}
 
-        with TestWikiViews.mock_dependencies(wiki_page=None, wiki_version=None, request_args={}, format_version_side_effect=None), mock.patch('addons.wiki.utils.to_mongo_key', return_value='not_home'):
-            with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
-                views.project_wiki_view(auth, 'NotHome', **kwargs)
+        with assert_raises(self.WIKI_PAGE_NOT_FOUND_ERROR):
+            views.project_wiki_view(auth, 'NotHome', **kwargs)
 
     # 'edit' が args に含まれ、公開編集が有効 → 401 エラー
     def test_edit_arg_public_editable_unauthorized(self):
