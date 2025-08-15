@@ -897,7 +897,6 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 )
         return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
 
-    @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
