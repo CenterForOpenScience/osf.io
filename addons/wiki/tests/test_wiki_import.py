@@ -2786,8 +2786,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_valid_view_with_edit_permission(self):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
         response = self.app.get(url, auth=self.auth)
-        expected = ''
-        assert_equal(expected, response.location)
+        assert_equal(http_status.HTTP_200_OK, response.status_code)
 
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
@@ -2811,19 +2810,22 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
         try:
-            self.project.remove_permission(self.auth.user, WRITE)
+            self.project.remove_permission(self.user, WRITE)
         except ValueError as e:
             pass
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, edit=True, auth=self.auth)
+        response = self.app.get(url, edit=True, auth=self.user.auth)
         assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
-        assert_equal('', response.lacation)
+        assert_equal('', response.headers['lacation'])
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
+        try:
+            self.project.remove_permission(user, READ)
+        except ValueError as e:
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, edit=True, auth=auth, expect_errors=True)
@@ -2837,4 +2839,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, edit=True, auth=self.auth, expect_errors=True)
-        assert_equal(WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
+        assert_equal(WIKI_INVALID_VERSION_ERROR.data['message_short'], response.data['message_short'])
