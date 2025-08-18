@@ -1131,7 +1131,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'name': self.wiki_page1.page_name,
                     'id': self.wiki_page1._id,
                     'sort_order': self.wiki_page1.sort_order
-                }
+                },
+                'children': []
             },
             {
                 'page': {
@@ -1147,7 +1148,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page1.page_name,
                             'id': self.wiki_child_page1._id,
                             'sort_order': self.wiki_child_page1.sort_order
-                        }
+                        },
+                        'children': []
                     },
                     {
                         'page': {
@@ -1155,7 +1157,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page2.page_name,
                             'id': self.wiki_child_page2._id,
                             'sort_order': self.wiki_child_page2.sort_order
-                        }
+                        },
+                        'children': []
                     },
                     {
                         'page': {
@@ -1163,7 +1166,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                             'name': self.wiki_child_page3.page_name,
                             'id': self.wiki_child_page3._id,
                             'sort_order': self.wiki_child_page3.sort_order
-                        }
+                        },
+                        'children': []
                     },
                 ],
                 'kind': 'folder'
@@ -1190,7 +1194,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                                     'name': self.grandchild_wiki_page.page_name,
                                     'id': self.grandchild_wiki_page._id,
                                     'sort_order': self.grandchild_wiki_page.sort_order
-                                }
+                                },
+                                'children': []
                             },
                         ],
                         'kind': 'folder'
@@ -2834,4 +2839,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
-        assert_equal(http_status.HTTP_500_INTERNAL_SERVER_ERROR)
+        assert_equal(http_status.HTTP_500_INTERNAL_SERVER_ERROR, response.status)
