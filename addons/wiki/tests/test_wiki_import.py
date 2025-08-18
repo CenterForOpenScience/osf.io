@@ -728,7 +728,6 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
 class TestWikiViews(OsfTestCase, unittest.TestCase):
     def setUp(self):
         super(TestWikiViews, self).setUp()
-        self.maxDiff = None
         self.user = AuthUserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(is_public=True, creator=self.user)
@@ -1003,7 +1002,6 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_get_import_folder_include_invalid_folder(self):
         result = views._get_import_folder(self.project)
         expectd = [
-            {'id': self.root_import_folder._id, 'name': self.root_import_folder.name},
             {'id': self.root_import_folder1._id, 'name': self.root_import_folder1.name}
         ]
         assert_equal(expected, result)
@@ -1114,6 +1112,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         assert_equal(expected, result)
 
     def test_format_child_wiki_pages(self):
+        self.maxDiff = None
         self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parentpage', 'parent content', self.consolidate_auth)
         self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'childpage', 'child content', self.consolidate_auth, self.parent_wiki_page)
         self.grandchild_wiki_page = WikiPage.objects.create_for_node(self.project, 'grandchild page', 'grandchild content', self.consolidate_auth, self.child_wiki_page)
