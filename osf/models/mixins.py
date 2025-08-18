@@ -554,12 +554,12 @@ class AddonModelMixin(models.Model):
             return addon
         return self.add_addon(name, *args, **kwargs)
 
-    def get_addon(self, name, is_deleted=False, auth=None):
+    def get_addon(self, name, is_deleted=False, auth=None, cached=True):
         # Avoid test-breakages by avoiding early access to the request context
         if name not in self.OSF_HOSTED_ADDONS:
             request, user_id = get_request_and_user_id()
             if flag_is_active(request, features.ENABLE_GV):
-                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth)
+                return self._get_addon_from_gv(gv_pk=name, requesting_user_id=user_id, auth=auth, cached=cached)
 
         try:
             settings_model = self._settings_model(name)
