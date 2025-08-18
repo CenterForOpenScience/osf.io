@@ -1002,7 +1002,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_get_import_folder_include_invalid_folder(self):
         result = views._get_import_folder(self.project)
         expected = [
-            {'id': self.root_import_folder1._id, 'name': self.root_import_folder1.name}
+            {'id': self.root_import_folder_validate._id, 'name': self.root_import_folder_validate.name}
         ]
         assert_equal(expected, result)
 
@@ -2805,7 +2805,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_settings.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, edit=true, auth=self.auth, expect_errors=True)
+        response = self.app.get(url, edit=True, auth=self.auth, expect_errors=True)
         assert_equal(http_status.HTTP_401_UNAUTHORIZED, response.status_code)
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
@@ -2816,7 +2816,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             pass
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, edit=true, auth=self.auth)
+        response = self.app.get(url, edit=True, auth=self.auth)
         assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
         assert_equal('', response.lacation)
 
@@ -2826,7 +2826,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         auth = user.auth
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, edit=true, auth=auth, expect_errors=True)
+        response = self.app.get(url, edit=True, auth=auth, expect_errors=True)
         assert_equal(http_status.HTTP_403_FORBIDDEN, response.status_code)
 
 
@@ -2836,5 +2836,5 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         mock_format_wiki_version.side_effect = InvalidVersionError
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, edit=true, auth=self.auth, expect_errors=True)
+        response = self.app.get(url, edit=True, auth=self.auth, expect_errors=True)
         assert_equal(WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
