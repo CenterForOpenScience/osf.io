@@ -5,6 +5,7 @@ from django.dispatch import receiver
 
 from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
+from website import settings
 
 
 class MessageTypes(models.TextChoices):
@@ -31,7 +32,7 @@ class MessageTypes(models.TextChoices):
             str: The email template string for the specified message type.
         """
         return {
-            cls.INSTITUTIONAL_REQUEST: NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+            cls.INSTITUTIONAL_REQUEST: NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
         }[message_type]
 
 
@@ -93,6 +94,8 @@ class UserMessage(BaseModel, ObjectIDMixin):
                 'recipient_fullname': self.recipient.fullname,
                 'message_text': self.message_text,
                 'institution_name': self.institution.name,
+                'domain': settings.DOMAIN,
+                'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             },
             email_context={
                 'bcc_addr': [self.sender.username] if self.is_sender_BCCed else None,

@@ -249,6 +249,11 @@ notification_types:
     subject: 'Registry Could Not Bulk Upload Registrations'
     object_content_type_model_name: osfuser
     template: 'website/templates/registration_bulk_upload_product_owner.html.mako'
+  - name: user_institutional_access_request
+    subject: 'Message from Institutional Admin'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/user_message_institutional_access_request.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions

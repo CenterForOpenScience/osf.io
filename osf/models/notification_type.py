@@ -67,6 +67,7 @@ class NotificationType(models.Model):
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
         USER_NEW_PUBLIC_PROJECT = 'user_new_public_project'
+        USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
 
         USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
