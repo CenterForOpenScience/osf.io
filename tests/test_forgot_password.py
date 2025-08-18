@@ -95,11 +95,11 @@ class TestForgotPassword(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = self.user.username
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = form.submit(self.app)
 
         # check mail was not sent
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -206,11 +206,11 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.deactivate_account()
         self.user.save()
 
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was not sent
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution

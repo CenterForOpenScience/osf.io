@@ -335,7 +335,8 @@ class TestContributorMethods:
                 {'user': user1, 'permissions': ADMIN, 'visible': True},
                 {'user': user2, 'permissions': WRITE, 'visible': False}
             ],
-            auth=auth
+            auth=auth,
+            notification_type=False
         )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (

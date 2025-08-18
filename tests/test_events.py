@@ -159,9 +159,9 @@ class TestFileAdded(OsfTestCase):
         assert f'added file "{materialized.lstrip("/")}".' == self.event.text_message
 
     def test_file_added(self):
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notification) == 1
+        assert len(notifications) == 1
         assert notification[0]['type'] == NotificationType.Type.FILE_ADDED
 
 

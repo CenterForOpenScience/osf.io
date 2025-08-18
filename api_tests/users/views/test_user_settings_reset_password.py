@@ -41,18 +41,18 @@ class TestResetPassword:
     def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.get(url)
-        assert len(notification) == 1
-        assert notification[0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert len(notifications) == 1
+        assert notifications['emit'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
         assert res.status_code == 200
         user_one.reload()
 
     def test_get_invalid_email(self, app, url):
         url = f'{url}?email={'invalid_email'}'
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.get(url)
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 200
 
     def test_post(self, app, url, user_one, csrf_token):

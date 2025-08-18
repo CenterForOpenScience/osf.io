@@ -204,7 +204,7 @@ class TestClaimViews(OsfTestCase):
         assert len(notifications['emits']) == 2
         # ... to the correct address
         assert notifications['emits'][0]['kwargs']['user'] == self.referrer
-        assert notifications[1]['kwargs']['user'] == reg_user
+        assert notifications['emits'][1]['kwargs']['user'] == reg_user
 
         # view returns the correct JSON
         assert res.json == {
@@ -224,7 +224,7 @@ class TestClaimViews(OsfTestCase):
         assert len(notifications['emits']) == 2
         # ... to the correct address
         assert notifications['emits'][0]['kwargs']['user'] == self.referrer
-        assert notifications[1]['kwargs']['user'] == reg_user
+        assert notifications['emits'][1]['kwargs']['user'] == reg_user
 
     def test_send_claim_registered_email_before_throttle_expires(self):
         reg_user = UserFactory()
@@ -450,7 +450,7 @@ class TestClaimViews(OsfTestCase):
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
         assert notifications['emits'][0]['kwargs']['user'].username == self.given_email
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
-        assert notifications[1]['kwargs']['destination_address'] == email
+        assert notifications['emits'][1]['kwargs']['destination_address'] == email
 
     def test_claim_url_with_bad_token_returns_400(self):
         url = self.project.web_url_for(

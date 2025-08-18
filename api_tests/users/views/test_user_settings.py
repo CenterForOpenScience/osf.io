@@ -57,10 +57,10 @@ class TestUserRequestExport:
 
         # Logged in
         assert user_one.email_last_sent is None
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user_one.auth)
-        assert len(notification) == 1
-        assert notification[0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+        assert len(notifications) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None
@@ -68,9 +68,9 @@ class TestUserRequestExport:
     def test_post_invalid_type(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None

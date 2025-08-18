@@ -371,15 +371,19 @@ class TestDraftRegistrationContributorMethods():
 
     def test_cant_add_same_contributor_twice(self, draft_registration):
         contrib = factories.UserFactory()
-        draft_registration.add_contributor(contributor=contrib)
+        draft_registration.add_contributor(contributor=contrib, notification_type=False)
         draft_registration.save()
-        draft_registration.add_contributor(contributor=contrib)
+        draft_registration.add_contributor(contributor=contrib, notification_type=False)
         draft_registration.save()
         assert len(draft_registration.contributors) == 2
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
-        new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
+        new_user = draft_registration.add_unregistered_contributor(
+            fullname='David Davidson',
+            email='david@davidson.com',
+            auth=auth,
+            notification_type=False
+        )
         draft_registration.save()
         assert draft_registration.is_contributor(new_user)  # sanity check
         assert draft_registration._primary_key in new_user.unclaimed_records

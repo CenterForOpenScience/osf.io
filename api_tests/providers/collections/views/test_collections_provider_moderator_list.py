@@ -93,21 +93,21 @@ class TestPOSTCollectionsModeratorList:
 
     def test_POST_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.post(url, payload, expect_errors=True)
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 401
 
     def test_POST_forbidden(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
             assert res.status_code == 403
 
             res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
             assert res.status_code == 403
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_POST_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')

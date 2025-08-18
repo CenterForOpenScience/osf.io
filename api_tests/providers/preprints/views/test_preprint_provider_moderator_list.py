@@ -71,7 +71,7 @@ class ProviderModeratorListTestClass:
 
     def test_list_post_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
-        with capture_notifications() as notification:
+        with capture_notifications() as notifications:
             res = app.post(url, payload, expect_errors=True)
             assert res.status_code == 401
 
@@ -80,7 +80,7 @@ class ProviderModeratorListTestClass:
 
             res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
             assert res.status_code == 403
-        assert not notification
+        assert notifications == {'emails': [], 'emits': []}
 
     def test_list_post_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin):
         payload = self.create_payload(user_id=nonmoderator._id, permission_group='moderator')
