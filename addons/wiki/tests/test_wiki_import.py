@@ -2792,7 +2792,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_page_not_found_error(self):
         url = self.project.web_url_for('project_wiki_view', wname='NotHome', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, self.consolidate_auth, expect_errors=True)
+        response = self.app.get(url, {'edit': True}, auth=self.consolidate_auth, expect_errors=True)
         assert_equal(http_status.HTTP_404_NOT_FOUND, response.status_code)
 
     # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
@@ -2814,7 +2814,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
-        assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
+        assert_equal(http_status.HTTP_302_FOUND, response.status_code)
         assert_equal('', response.headers['lacation'])
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
@@ -2836,4 +2836,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
-        assert_equal(WIKI_INVALID_VERSION_ERROR.data['message_short'], response.data['message_short'])
+        assert_equal(WIKI_INVALID_VERSION_ERROR.data['message_short'], response.json['message_short'])
