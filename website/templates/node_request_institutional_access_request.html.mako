@@ -22,7 +22,7 @@
         </p>
 
         <p>
-            Want more information? Visit <a href="${domain}">${n}</a> to learn about OSF, or
+            Want more information? Visit <a href="${domain}">${domain}</a> to learn about OSF, or
             <a href="https://cos.io/">https://cos.io/</a> for information about its supporting organization, the Center
             for Open Science.
         </p>

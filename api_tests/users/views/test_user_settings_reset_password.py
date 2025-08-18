@@ -43,8 +43,8 @@ class TestResetPassword:
         url = f'{url}?email={encoded_email}'
         with capture_notifications() as notifications:
             res = app.get(url)
-        assert len(notifications) == 1
-        assert notifications['emit'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
         assert res.status_code == 200
         user_one.reload()
 

@@ -191,15 +191,16 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                 name=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
             ).emit(
                 user=recipient,
-                message_frequency='instantly',
+                subscribed_object=node_request.target,
                 event_context={
                     'sender_fullname': sender.fullname,
                     'sender_absolute_url': sender.absolute_url,
                     'node_absolute_url': node_request.target.absolute_url,
+                    'node_title': node_request.target.title,
                     'recipient_fullname': recipient.username if recipient else None,
                     'comment': comment,
+                    'domain': settings.DOMAIN,
                     'institution_name': institution.name if institution else None,
-                    'osf_url': settings.DOMAIN,
                 },
                 email_context={
                     'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,

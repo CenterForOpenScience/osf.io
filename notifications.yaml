@@ -295,6 +295,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/file_updated.html.mako'
   - name: node_institutional_access_request
+    subject: 'Message from Institutional Admin'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/node_request_institutional_access_request.html.mako'
