@@ -176,6 +176,7 @@ class TestSerializers(OsfTestCase):
             mock.patch('osf.models.base.generate_guid', new=osfguid_sequence),
             mock.patch('osf.models.base.Guid.objects.get_or_create', new=osfguid_sequence.get_or_create),
             mock.patch('django.utils.timezone.now', new=forever_now),
+            mock.patch('osf.models.mixins.timezone.now', new=forever_now),
             mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
             mock.patch('osf.models.node.Node.get_verified_links', return_value=[
                 {'target_url': 'https://foo.bar', 'resource_type': 'Other'}
