@@ -1131,7 +1131,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
                     'name': self.wiki_page1.page_name,
                     'id': self.wiki_page1._id,
                     'sort_order': self.wiki_page1.sort_order
-                },
+                }
             },
             {
                 'page': {
