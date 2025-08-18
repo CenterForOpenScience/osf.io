@@ -2792,7 +2792,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_wiki_page_not_found_error(self):
         url = self.project.web_url_for('project_wiki_view', wname='NotHome', _guid=True)
 
-        response = self.app.get(url, {'edit': True}.consolidate_auth, expect_errors=True)
+        response = self.app.get(url, {'edit': True}, self.consolidate_auth, expect_errors=True)
         assert_equal(http_status.HTTP_404_NOT_FOUND, response.status_code)
 
     # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
@@ -2809,13 +2809,11 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
-        try:
-            self.project.remove_permission(self.user, WRITE)
-        except ValueError as e:
-            pass
+        user = AuthUserFactory()
+        auth = user.auth
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, {'edit': True}, auth=self.user.auth)
+        response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
         assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
         assert_equal('', response.headers['lacation'])
 
@@ -2823,10 +2821,8 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
-        try:
-            self.project.remove_permission(user, READ)
-        except ValueError as e:
-            pass
+        self.project.is_public = False
+        self.project.save()
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
