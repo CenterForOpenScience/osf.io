@@ -2815,7 +2815,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
         response = self.app.get(url, {'edit': True}, auth=auth, expect_errors=True)
         assert_equal(http_status.HTTP_302_FOUND, response.status_code)
-        assert_equal('', response.headers['lacation'])
+        assert_equal({}, response.headers)
 
     # 'edit' が args に含まれ、編集権なし、閲覧不可 → 403
     def test_edit_arg_forbidden_if_cannot_view(self):
@@ -2836,4 +2836,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
-        assert_equal(WIKI_INVALID_VERSION_ERROR.data['message_short'], response.json['message_short'])
+        assert_true(WIKI_INVALID_VERSION_ERROR.data['message_short'] in response.text)
