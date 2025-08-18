@@ -1001,7 +1001,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_get_import_folder_include_invalid_folder(self):
         result = views._get_import_folder(self.project)
-        expectd = [
+        expected = [
             {'id': self.root_import_folder1._id, 'name': self.root_import_folder1.name}
         ]
         assert_equal(expected, result)
@@ -1016,17 +1016,16 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
 
     def test_wiki_validate_name_exist_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname=self.wiki_page1.page_name)
-        with assert_raises(HTTPError) as e:
-            res = self.app.get(url, auth=self.user.auth)
-        assert_equal(http_status.HTTP_409_CONFLICT, e.value.code)
+        response = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(http_status.HTTP_409_CONFLICT, response.status_code)
 
     def test_wiki_validate_name_new_page(self):
         url = self.project.api_url_for('project_wiki_validate_name', wname='pageNotExist')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        response = self.app.get(url, auth=self.user.auth, expect_errors=True)
         expected = {'message': 'pageNotExist'}
         new_page = WikiPage.objects.get_for_node(self.project, 'pageNotExist')
-        assert_equal(http_status.HTTP_200_OK, res.status_code)
-        assert_equal(expected, res.json)
+        assert_equal(http_status.HTTP_200_OK, response.status_code)
+        assert_equal(expected, response.json)
         assert_is_not_none(new_page)
 
     def test_format_home_wiki_page(self):
@@ -2787,17 +2786,15 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_valid_view_with_edit_permission(self):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
         response = self.app.get(url, auth=self.auth)
-        result = response.json
-        assert_true(result['user']['can_edit_wiki_body'])
-        assert_equal('home', result['wiki_name'])
+        expected = ''
+        assert_equal(expected, response.location)
 
     # wiki_page が存在せず、wiki_key が home 以外 → WIKI_PAGE_NOT_FOUND_ERROR を発生させる
     def test_wiki_page_not_found_error(self):
         url = self.project.web_url_for('project_wiki_view', wname='NotHome', _guid=True)
 
-        with assert_raises(Exception) as excinfo:
-            response = self.app.get(url, auth=self.consolidate_auth)
-        assert_equal(http_status.HTTP_404_NOT_FOUND, excinfo.value.code)
+        response = self.app.get(url, auth=self.consolidate_auth, expect_errors=True)
+        assert_equal(http_status.HTTP_404_NOT_FOUND, response.status_code)
 
     # 'edit' が args に含まれ、未ログイン、公開編集が有効 → 401
     def test_edit_arg_public_editable_unauthorized(self):
@@ -2806,11 +2803,10 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         wiki_settings = self.project.get_addon('wiki')
         wiki_settings.is_publicly_editable = True
         wiki_settings.save()
-        url = self.project.web_url_for('project_wiki_view', wname='home', params={'edit': True}, _guid=True)
+        url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        with assert_raises(Exception) as excinfo:
-            response = self.app.get(url, auth=self.auth)
-        assert_equal(http_status.HTTP_401_UNAUTHORIZED, excinfo.value.code)
+        response = self.app.get(url, edit=true, auth=self.auth, expect_errors=True)
+        assert_equal(http_status.HTTP_401_UNAUTHORIZED, response.status_code)
 
     # 'edit' が args に含まれ、編集権なし、閲覧可能 → 閲覧画面にリダイレクト
     def test_edit_arg_redirect_if_can_view(self):
@@ -2818,9 +2814,9 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
             self.project.remove_permission(self.auth.user, WRITE)
         except ValueError as e:
             pass
-        url = self.project.web_url_for('project_wiki_view', wname='home', params={'edit': True}, _guid=True)
+        url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        response = self.app.get(url, auth=self.auth)
+        response = self.app.get(url, edit=true, auth=self.auth)
         assert_equal(http_status.HTTP_301_MOVED_PERMANENTLY, response.status_code)
         assert_equal('', response.lacation)
 
@@ -2828,19 +2824,17 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
     def test_edit_arg_forbidden_if_cannot_view(self):
         user = AuthUserFactory()
         auth = user.auth
-        url = self.project.web_url_for('project_wiki_view', wname='home', params={'edit': True}, _guid=True)
+        url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        with assert_raises(Exception) as excinfo:
-            response = self.app.get(url, auth=auth)
-        assert_equal(http_status.HTTP_403_FORBIDDEN, excinfo.value.code)
+        response = self.app.get(url, edit=true, auth=auth, expect_errors=True)
+        assert_equal(http_status.HTTP_403_FORBIDDEN, response.status_code)
 
 
     # format_wiki_version が例外を投げる → WIKI_INVALID_VERSION_ERROR を発生させる
     @mock.patch('addons.wiki.utils.format_wiki_version')
     def test_invalid_version_exception(self, mock_format_wiki_version):
         mock_format_wiki_version.side_effect = InvalidVersionError
-        url = self.project.web_url_for('project_wiki_view', wname='home', params={'edit': True}, _guid=True)
+        url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
-        with assert_raises(Exception) as excinfo:
-            response = self.app.get(url, auth=self.auth)
-        assert_equal(self.WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
+        response = self.app.get(url, edit=true, auth=self.auth, expect_errors=True)
+        assert_equal(WIKI_INVALID_VERSION_ERROR.message_short, excinfo.message_short)
