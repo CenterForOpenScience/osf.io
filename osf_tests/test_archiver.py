@@ -463,7 +463,7 @@ class TestArchiverTasks(ArchiverTestCase):
 
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_pass(self, mock_archive_addon):
-        settings.MAX_ARCHIVE_SIZE = 1024 ** 3
+        settings.STORAGE_LIMIT_PRIVATE = 1  # 1gb
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
             mock_file_tree.return_value = FILE_TREE
             results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage']]
@@ -474,8 +474,9 @@ class TestArchiverTasks(ArchiverTestCase):
         )
 
     @use_fake_addons
-    def test_archive_node_fail(self):
-        settings.MAX_ARCHIVE_SIZE = 100
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_fail(self, mock_archive_addon):
+        settings.STORAGE_LIMIT_PRIVATE = 500 / 1024 ** 3  # 500 KB
         results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
         with pytest.raises(ArchiverSizeExceeded):  # Note: Requires task_eager_propagates = True in celery
             archive_node.apply(args=(results, self.archive_job._id))
@@ -503,7 +504,7 @@ class TestArchiverTasks(ArchiverTestCase):
     @use_fake_addons
     @mock.patch('website.archiver.tasks.archive_addon.delay')
     def test_archive_node_no_archive_size_limit(self, mock_archive_addon):
-        settings.MAX_ARCHIVE_SIZE = 100
+        settings.STORAGE_LIMIT_PRIVATE = 100 / 1024 ** 3  # 100KB
         self.archive_job.initiator.add_system_tag(NO_ARCHIVE_LIMIT)
         self.archive_job.initiator.save()
         with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
@@ -514,6 +515,68 @@ class TestArchiverTasks(ArchiverTestCase):
             addon_short_name='dropbox',
             job_pk=self.archive_job._id,
         )
+
+    @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_fail_and_use_updated_storage_size_limit(self, mock_archive_addon):
+        self.src.is_public = True
+        self.src.save()
+        draft_reg = DraftRegistration.objects.get(registered_node=self.dst)
+        draft_reg.custom_storage_usage_limit = 2
+        draft_reg.save()
+        with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
+            FILE_TREE['children'][0]['size'] = 1024 ** 3 + 1  # 1GB + 1 kilobyte
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+
+        with self.assertRaises(ArchiverSizeExceeded):
+            archive_node(results, self.archive_job._id)
+
+        FILE_TREE['children'][0]['size'] = '128'
+
+    @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_success_and_use_updated_storage_size_limit(self, mock_archive_addon):
+        self.src.is_public = True
+        self.src.save()
+        draft_reg = DraftRegistration.objects.get(registered_node=self.dst)
+        draft_reg.custom_storage_usage_limit = 3
+        draft_reg.save()
+        with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
+            FILE_TREE['children'][0]['size'] = 1024 ** 3  # 1GB
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+
+        archive_node(results, self.archive_job._id)
+        FILE_TREE['children'][0]['size'] = '128'
+
+    @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_fail_and_use_default_storage_size_limit(self, mock_archive_addon):
+        self.src.is_public = True
+        self.src.save()
+        with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
+            settings.STORAGE_LIMIT_PRIVATE = 4
+            FILE_TREE['children'][0]['size'] = 1024 ** 3 * 2  # 2GB
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+
+        with self.assertRaises(ArchiverSizeExceeded):
+            archive_node(results, self.archive_job._id)
+
+        FILE_TREE['children'][0]['size'] = '128'
+
+    @use_fake_addons
+    @mock.patch('website.archiver.tasks.archive_addon.delay')
+    def test_archive_node_success_and_use_default_private_storage_size_limit(self, mock_archive_addon):
+        with mock.patch.object(BaseStorageAddon, '_get_file_tree') as mock_file_tree:
+            settings.STORAGE_LIMIT_PRIVATE = 4
+            FILE_TREE['children'][0]['size'] = 1024 ** 3  # 1GB
+            mock_file_tree.return_value = FILE_TREE
+            results = [stat_addon(addon, self.archive_job._id) for addon in ['osfstorage', 'dropbox']]
+
+        archive_node(results, self.archive_job._id)
+        FILE_TREE['children'][0]['size'] = '128'
 
     @mock.patch('website.archiver.tasks.make_copy_request.delay')
     def test_archive_addon(self, mock_make_copy_request):
@@ -793,6 +856,7 @@ class TestArchiverUtils(ArchiverTestCase):
             stat_result={},
             can_change_preferences=False,
             url=url,
+            draft_registration=DraftRegistration.objects.get(registered_node=self.dst)
         )
         mock_send_mail.assert_has_calls([
             call(**args_user),
