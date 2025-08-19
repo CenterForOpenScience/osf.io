@@ -297,8 +297,8 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
 
         self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
-        self.import_page_folder1 = TestFileWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
-        self.import_page_folder2 = TestFileWiki.objects.create(name='importpage2', target=self.project, parent=self.root_import_folder1)
+        self.import_page_folder1 = TestFolderWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
+        self.import_page_folder2 = TestFolderWiki.objects.create(name='importpage2', target=self.project, parent=self.root_import_folder1)
         self.import_page_md_file1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
         self.import_page_md_file2 = TestFileWiki.objects.create(name='importpage2.md', target=self.project, parent=self.import_page_folder2)
         self.import_attachment_image1 = TestFileWiki.objects.create(name='image1.png', target=self.project, parent=self.import_page_folder1)
@@ -335,7 +335,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.import_page_md_file2.parent.name}^{self.import_page_md_file2.name}': self.import_page_md_file2._id,
             f'{self.import_attachment3_xlsx.parent.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id,
         }
-        child_info = _get_all_child_file_ids(self.wiki_import_dir._id)
+        child_info = _get_all_child_file_ids(self.root_import_folder1._id)
         node_info = BaseFileNode.objects.filter(target_object_id=self.project1.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
         assert_equal([0], list(child_info))
         assert_equal(expect, result)
@@ -2242,7 +2242,7 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         ]
         dir_id = self.root_import_folder1._id
         node=self.node
-        replaced_wiki_info = views._wiki_content_replace(wiki_info,dir_id,node,mock_task)
+        replaced_wiki_info = views._wiki_content_replace(wiki_info, dir_id, node, mock_task)
         assert_equal(wiki_info, replaced_wiki_info)
 
     @mock.patch('celery.contrib.abortable.AbortableAsyncResult')
