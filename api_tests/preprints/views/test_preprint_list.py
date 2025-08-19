@@ -521,6 +521,14 @@ class TestPreprintCreate(ApiTestCase):
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
 
+    def test_submission_to_provider_not_allowed(self):
+        provider = PreprintProviderFactory(allow_submissions=False)
+        public_project_payload = build_preprint_create_payload(provider_id=provider._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == f'Provider {provider.name} doesn\'t allow new submissions.'
+
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(provider_id=self.provider._id)
 
