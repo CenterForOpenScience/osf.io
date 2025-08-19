@@ -145,9 +145,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     row.append(root.pk)
                 return AbstractNode.objects.filter(id__in=row)
 
-    def can_view(self, user=None, private_link=None):
-        qs = self.filter(is_public=True)
-
+    def can_view(self, user=None, private_link=None, **custom_filters):
         if private_link is not None:
             if isinstance(private_link, PrivateLink):
                 private_link = private_link.key
@@ -157,9 +155,12 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
             return self.filter(private_links__is_deleted=False, private_links__key=private_link).filter(
                 is_deleted=False)
 
+        # By default, only public nodes are shown. However, custom filters can be provided.
+        # This is useful when you want to display a specific subset of nodes unrelated to
+        # the current user (e.g. only `pending` nodes for moderators).
+        qs = self.filter(is_public=True) if not custom_filters else self.filter(**custom_filters)
         if user is not None and not isinstance(user, AnonymousUser):
-            read_user_query = get_objects_for_user(user, READ_NODE, self, with_superuser=False)
-            qs |= read_user_query
+            qs |= get_objects_for_user(user, READ_NODE, self, with_superuser=False)
             qs |= self.extra(where=["""
                 "osf_abstractnode".id in (
                     WITH RECURSIVE implicit_read AS (
@@ -179,6 +180,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
                     ) SELECT * FROM implicit_read
                 )
             """], params=(user.id,))
+
         return qs.filter(is_deleted=False)
 
 
@@ -2378,7 +2380,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def create_waterbutler_log(self, auth, action, payload):
         try:
             metadata = payload['metadata']
-            node_addon = self.get_addon(payload['provider'])
+            node_addon = self.get_addon(payload['provider'], auth=auth)
         except KeyError:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 

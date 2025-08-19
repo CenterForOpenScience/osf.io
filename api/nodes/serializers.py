@@ -681,9 +681,22 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                              AND UG.osfuser_id = %s)
                       )
                   )
+                  OR (
+                    osf_abstractnode.type = 'osf.registration'
+                    AND osf_abstractnode.moderation_state IN ('pending', 'pending_withdraw', 'embargo', 'pending_embargo_termination')
+                    AND EXISTS (
+                        SELECT 1
+                        FROM auth_permission AS P2
+                        INNER JOIN osf_abstractprovidergroupobjectpermission AS G2 ON (P2.id = G2.permission_id)
+                        INNER JOIN osf_osfuser_groups AS UG2 ON (G2.group_id = UG2.group_id)
+                        WHERE P2.codename = 'view_submissions'
+                          AND G2.content_object_id = osf_abstractnode.provider_id
+                          AND UG2.osfuser_id = %s
+                    )
+                  )
                   OR (osf_privatelink.key = %s AND osf_privatelink.is_deleted = FALSE)
                 );
-            """, [obj.id, obj.id, user_id, obj.id, user_id, auth.private_key],
+            """, [obj.id, obj.id, user_id, obj.id, user_id, user_id, auth.private_key],
             )
 
             return int(cursor.fetchone()[0])

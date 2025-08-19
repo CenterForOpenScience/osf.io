@@ -6,10 +6,9 @@ from django.utils import timezone
 
 from osf.exceptions import ValidationValueError, ValidationTypeError
 from osf.external.askismet import tasks as akismet_tasks
-from osf.external.spam.tasks import check_resource_for_domains_postcommit, check_resource_with_spam_services
+from osf.external.spam.tasks import check_resource_for_spam_postcommit
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
-from osf.utils.fields import ensure_str, NonNaiveDateTimeField
-from website import settings
+from osf.utils.fields import NonNaiveDateTimeField
 
 logger = logging.getLogger(__name__)
 
@@ -197,28 +196,15 @@ class SpamMixin(models.Model):
         if self.is_spammy:
             return
 
-        request_kwargs = {
-            'remote_addr': request_headers.get('Remote-Addr') or request_headers.get('Host'),  # for local testing
-            'user_agent': request_headers.get('User-Agent'),
-            'referer': request_headers.get('Referer'),
-        }
         if isinstance(self, Preprint):
             guid__id = self._id
         else:
             guid__id = self.guids.first()._id
-        check_resource_for_domains_postcommit(
+
+        check_resource_for_spam_postcommit(
             guid__id,
             content,
+            author,
+            author_email,
+            request_headers,
         )
-
-        if settings.SPAM_SERVICES_ENABLED:
-            for key, value in request_kwargs.items():
-                request_kwargs[key] = ensure_str(value)
-
-            check_resource_with_spam_services(
-                guid__id,
-                content,
-                author,
-                author_email,
-                request_kwargs,
-            )
