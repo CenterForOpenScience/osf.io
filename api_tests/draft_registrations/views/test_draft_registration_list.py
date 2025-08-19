@@ -516,7 +516,8 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
                 payload,
                 auth=user.auth
             )
-        assert len(notifications['emits']) == 2
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
         assert attributes['title'] == ''

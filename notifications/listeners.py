@@ -5,8 +5,6 @@ from django.apps import apps
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import run_postcommit
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
-from website.project.signals import privacy_set_public
-from website import settings
 from website.reviews import signals as reviews_signals
 
 logger = logging.getLogger(__name__)
@@ -57,26 +55,6 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
             _is_digest=True,
         )
 
-@privacy_set_public.connect
-def queue_first_public_project_email(user, node):
-    """Queue and email after user has made their first
-    non-OSF4M project public.
-    """
-    from osf.models import NotificationType
-
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,
-    ).emit(
-        subscribed_object=user,
-        user=user,
-        event_context={
-            'user_fullname': user.fullname,
-            'domain': settings.DOMAIN,
-            'nid': node._id,
-            'project_title': node.title,
-            'osf_url': settings.DOMAIN,
-        }
-    )
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, timestamp, context, resource):
