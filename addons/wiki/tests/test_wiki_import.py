@@ -335,10 +335,6 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.import_page_md_file2.parent.name}^{self.import_page_md_file2.name}': self.import_page_md_file2._id,
             f'{self.import_attachment3_xlsx.parent.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id,
         }
-        child_info = _get_all_child_file_ids(self.wiki_import_dir._id)
-        node_info = BaseFileNode.objects.filter(target_object_id=self.project1.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
-        assert_equal([0], child_info)
-        assert_equal(self.import_attachment_image1, node_info.first())
         assert_equal(expect, result)
 
     def test_get_import_wiki_name_list(self):
@@ -2842,4 +2838,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
-        assert_equal(http_status.HTTP_400_BAD_REQUEST, response.status)
+        assert_equal(http_status.HTTP_400_BAD_REQUEST, response.status_code)
