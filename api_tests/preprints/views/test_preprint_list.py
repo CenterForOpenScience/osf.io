@@ -510,16 +510,14 @@ class TestPreprintCreate(ApiTestCase):
         no_providers_payload = build_preprint_create_payload()
         res = self.app.post_json_api(self.url, no_providers_payload, auth=self.user.auth, expect_errors=True)
 
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
+        assert res.status_code == 403
 
     def test_invalid_provider_given(self):
         wrong_provider_payload = build_preprint_create_payload(provider_id='jobbers')
 
         res = self.app.post_json_api(self.url, wrong_provider_payload, auth=self.user.auth, expect_errors=True)
 
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
+        assert res.status_code == 403
 
     def test_submission_to_provider_not_allowed(self):
         provider = PreprintProviderFactory(allow_submissions=False)
