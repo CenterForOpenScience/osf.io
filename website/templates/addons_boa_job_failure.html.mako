@@ -7,7 +7,7 @@
 </tr>
 <tr>
     <td style="border-collapse: collapse;">
-        Hello ${fullname},<br>
+        Hello ${user_fullname},<br>
         <br>
         Your submission of file [${query_file_full_path}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
         <br>

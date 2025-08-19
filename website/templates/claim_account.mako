@@ -102,7 +102,7 @@
                 </div>
             %endif
             <div class='help-block'>
-                <p>If you are not ${fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
+                <p>If you are not ${user_fullname}, or if you were erroneously added as a contributor to the project described in the email invitation, please email <a href="mailto:${osf_contact_email}">${osf_contact_email}</a>
                 </p>
             </div>
             ${form.token | unicode, n }

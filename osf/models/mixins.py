@@ -319,6 +319,7 @@ class AffiliatedInstitutionMixin(models.Model):
                         user=user,
                         subscribed_object=user,
                         event_context={
+                            'domain': settings.DOMAIN,
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,
@@ -364,6 +365,7 @@ class AffiliatedInstitutionMixin(models.Model):
                         subscribed_object=self,
                         user=user,
                         event_context={
+                            'domain': settings.DOMAIN,
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,

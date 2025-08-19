@@ -216,7 +216,7 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
     ).emit(
         destination_address=username,
         event_context={
-            'fullname': fullname,
+            'user_fullname': fullname,
             'code': code,
             'query_file_name': query_file_name,
             'file_size': file_size,

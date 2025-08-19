@@ -45,9 +45,9 @@
                     <tr>
                         <th colspan="2" style="padding: 0px 15px 0 15px">
                             <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
-                              ${destination_node.title}
+                              ${destination_node_title}
                               %if destination_node.parent_node:
-                                <small style="font-size: 14px;color: #999;"> in ${destination_node.parent_node.title} </small>
+                                <small style="font-size: 14px;color: #999;"> in ${destination_node_parent_node_title} </small>
                               %endif
                             </h3>
                         </th>
@@ -56,7 +56,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                          The ${'folder' if source_path.endswith('/') else 'file'} "${source_path.strip('/')}" has been successfully ${'moved' if action == 'move' else 'copied'} from ${source_addon} in ${source_node.title} to ${destination_addon}.
+                          The item "${source_path}" has been successfully ${'moved' if action == 'move' else 'copied'} from ${source_addon} in ${source_node_title} to ${destination_addon}.
                         </td>
                     </tr>
                 </tbody>
@@ -69,7 +69,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; ${datetime.utcnow().year} Center For Open Science, All rights reserved. |
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2025 Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a></p>
                             <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903-5083</p>
                         </td>

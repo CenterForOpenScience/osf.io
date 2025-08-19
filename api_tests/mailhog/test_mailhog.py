@@ -38,7 +38,7 @@ class TestMailHog:
                 message_frequency='instantly',
                 destination_address='to_addr@mail.com',
                 event_context={
-                    'fullname': '<NAME>',
+                    'user_fullname': '<NAME>',
                     'osf_support_email': '<EMAIL>',
                     'count': 'US',
                     'error': 'eooer',

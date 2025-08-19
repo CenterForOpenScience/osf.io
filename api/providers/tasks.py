@@ -141,7 +141,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
         ).emit(
             user=initiator,
             event_context={
-                'fullname': initiator.fullname,
+                'user_fullname': initiator.fullname,
                 'count': initial_row_count,
                 'draft_errors': draft_error_list,
                 'osf_support_email': settings.OSF_SUPPORT_EMAIL,

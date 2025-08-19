@@ -1,4 +1,4 @@
-<%inherit file="website/templates/notify_base.mako" />
+<%inherit file="notify_base.mako" />
 
 <%def name="content()">
 <tr>

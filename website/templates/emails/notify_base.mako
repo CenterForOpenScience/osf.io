@@ -115,7 +115,7 @@
                         <tr>
                             <td style="border-collapse: collapse;">
                                 <p class="text-smaller text-center" style="text-align: center;font-size: 12px;margin: 0 0 6px 0;">
-                                    Copyright &copy; ${year}
+                                    Copyright &copy; 2025
                                     Center For Open Science, All rights reserved. |
                                     <a href="https://github.com/CenterForOpenScience/centerforopenscience.org/blob/master/PRIVACY_POLICY.md">Privacy Policy</a>
                                 </p>

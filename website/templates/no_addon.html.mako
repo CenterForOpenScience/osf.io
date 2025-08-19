@@ -3,7 +3,7 @@
 <%def name="content()">
     <div style="margin: 40px;">
     <br>
-        Hello ${fullname},
+        Hello ${user_fullname},
         <br><br>
         Do you use storage services like Dropbox, GitHub, or Google Drive to keep track of your research materials?
         The Open Science Framework (OSF) makes it easy to integrate various research tools you already use by allowing

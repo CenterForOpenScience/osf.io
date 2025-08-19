@@ -3,7 +3,7 @@
 <%def name="content()">
     <div style="margin: 40px;">
         <br>
-        Hello ${fullname},
+        Hello ${user_fullname},
         <br><br>
         Thanks for adding your presentation from ${conference} to the conference's <a href="${domain}">OSF Meetings</a> page! Sharing virtually is an easy way to increase the impact of your research.
         <br>

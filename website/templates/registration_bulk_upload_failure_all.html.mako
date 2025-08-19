@@ -7,7 +7,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      Hello ${fullname},<br>
+      Hello ${user_fullname},<br>
       <br>
       All ${count} registrations could not be uploaded. Errors are listed below. Review the file and try to upload the
       registrations again. Contact the Help Desk at <a href="mailto:${osf_support_email}">${osf_support_email}</a> if

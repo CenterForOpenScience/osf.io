@@ -263,7 +263,7 @@ notification_types:
   - name: provider_new_pending_withdraw_requests
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_withdraw_requests.html.mako'
   - name: provider_contributor_added_preprint
     __docs__: ...
     object_content_type_model_name: abstractprovider

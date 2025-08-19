@@ -1259,8 +1259,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             )
             if create:
                 subscription.emit(
-                    subscribed_object=auth.user,
-                    user=auth.user,
                     event_context={
                         'user_fullname': auth.user.fullname,
                         'domain': settings.DOMAIN,

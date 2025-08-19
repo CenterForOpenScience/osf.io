@@ -7,7 +7,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      Hello ${fullname},<br>
+      Hello ${user_fullname},<br>
       <br>
       % if auto_approval:
           All ${count} of your registrations were successfully uploaded! Click the link below to begin moderating the

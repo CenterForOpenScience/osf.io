@@ -6,7 +6,7 @@
     <%!
         from website import settings
     %>
-    Hello ${fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
     You have been added by ${referrer_fullname} as a contributor to the project "${node_title}" on the Open Science Framework. To set a password for your account, visit:<br>
     <br>
@@ -18,7 +18,7 @@
     <br>
     (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
     <br>
-    If you are not ${fullname} or you are erroneously being associated with "${node_title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
+    If you are not ${user_fullname} or you are erroneously being associated with "${node_title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
     <br>
     Sincerely,<br>
     <br>

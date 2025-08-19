@@ -540,7 +540,7 @@ def send_claim_email(
                 event_context={
                     'user': unclaimed_user.id,
                     'referrer': referrer.id,
-                    'fullname': unclaimed_record['name'],
+                    'user_fullname': unclaimed_record['name'],
                     'node': node.id,
                     'logo': logo,
                     'can_change_preferences': False,

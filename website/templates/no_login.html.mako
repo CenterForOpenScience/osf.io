@@ -3,7 +3,7 @@
 <%def name="content()">
     <div style="margin: 40px;">
         <br>
-        Hello ${fullname},
+        Hello ${user_fullname},
         <br><br>
         We’ve noticed it’s been a while since you used the OSF. We are constantly adding and improving features, so we thought it might be time to check in with you.
         Most researchers begin using the OSF by creating a project to organize their files and notes. Projects are equipped with powerful features to help you manage your research:

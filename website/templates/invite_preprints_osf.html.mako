@@ -15,7 +15,7 @@
     <br>
     (NOTE: if this preprint is unpublished, you will not be able to view it until you have confirmed your account)<br>
     <br>
-    If you are not ${fullname} or you are erroneously being associated with "${node_title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
+    If you are not ${user_fullname} or you are erroneously being associated with "${node_title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
     <br>
     Sincerely,<br>
     <br>
