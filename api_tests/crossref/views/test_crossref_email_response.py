@@ -163,7 +163,7 @@ class TestCrossRefEmailResponse:
         with capture_notifications() as notifications:
             app.post(url, context_data)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_OSF_SUPPORT_EMAIL
         assert not preprint.get_identifier_value('doi')
 
     def test_success_response_sets_doi(self, app, url, preprint, success_xml):

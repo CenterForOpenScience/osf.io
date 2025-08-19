@@ -308,13 +308,35 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if force:
             return
 
-        for contributor in self.guid.referent.contributors:
+        user = event_data.kwargs.get('user')  # the remover
+        node = self.guid.referent
+
+        provider = getattr(self.collection, 'provider', None)
+        if provider:
+            collections_link = settings.DOMAIN + 'collections/' + provider._id
+            collection_provider_name = provider.name
+        else:
+            collections_link = None  # not used in the else branch of the template
+            collection_provider_name = self.collection.title
+
+        for contributor in node.contributors.all():
             NotificationType.objects.get(
                 name=NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
             ).emit(
                 user=contributor,
+                subscribed_object=self.collection,
                 event_context={
-                    'is_admin': self.collection.has_permission(contributor, ADMIN),
+                    'user_fullname': contributor.fullname,
+                    'is_admin': node.has_permission(contributor, ADMIN),
+                    'node_title': node.title,
+                    'node_absolute_url': node.get_absolute_url(),
+                    'remover_fullname': user.fullname if user else '',
+                    'remover_absolute_url': user.get_absolute_url() if user else '',
+                    'collections_link': collections_link,
+                    'collection_provider_name': collection_provider_name,
+                    'collection': self.collection,
+                    'domain': settings.DOMAIN,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },
             )
 
