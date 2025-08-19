@@ -131,7 +131,6 @@ def get_globals():
         'sanitize': sanitize,
         'sjson': lambda s: sanitize.safe_json(s),
         'webpack_asset': paths.webpack_asset,
-        'osf_url': settings.INTERNAL_DOMAIN,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request_login_url),
         'sign_up_url': util.web_url_for('auth_register', _absolute=True, next=request_login_url),

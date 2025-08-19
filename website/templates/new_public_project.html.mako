@@ -7,9 +7,9 @@
         <br><br>
         Congratulations on making a public project on OSF! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
         <ul>
-            <li><a href="${osf_url}${nid}/files/">The number of downloads of your files will be automatically logged for you</a></li>
-            <li><a href="${osf_url}${nid}/analytics/">You can see analytics on how many others are accessing your projects</a></li>
-            <li><a href="${osf_url}${nid}/">Visitors to your project can cite your work using the citation widget on your project’s page</a></li>
+            <li><a href="${domain}${nid}/files/">The number of downloads of your files will be automatically logged for you</a></li>
+            <li><a href="${domain}${nid}/analytics/">You can see analytics on how many others are accessing your projects</a></li>
+            <li><a href="${domain}${nid}/">Visitors to your project can cite your work using the citation widget on your project’s page</a></li>
         </ul>
         <br>
         <br>
@@ -23,5 +23,5 @@
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="${osf_url}">OSF</a> is provided as a free, open source service from the <a href="https://cos.io/">Center for Open Science</a>.
+    The <a href="${domain}">OSF</a> is provided as a free, open source service from the <a href="https://cos.io/">Center for Open Science</a>.
 </%def>

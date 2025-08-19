@@ -6,10 +6,10 @@
        </p>
        <p>
             The ${document_type} <a href="${reviewable_absolute_url}">${reviewable_title}</a> has been successfully
-            resubmitted to ${reviewable.provider.name}.
+            resubmitted to ${reviewable_provider_name}.
        </p>
        <p>
-            ${reviewable.provider.name} has chosen to moderate their submissions using a pre-moderation workflow, which
+            ${reviewable_provider_name} has chosen to moderate their submissions using a pre-moderation workflow, which
             means your submission is pending until accepted by a moderator.
             % if not no_future_emails:
                 You will receive a separate notification informing you of any status changes.
@@ -33,7 +33,7 @@
        <br>
        Sincerely,
        <br>
-       Your ${reviewable.provider.name} and OSF teams
+       Your ${reviewable_provider_name} and OSF teams
        <p>
             Center for Open Science<br> 210 Ridge McIntire Road, Suite 500, Charlottesville, VA 22903
        </p>

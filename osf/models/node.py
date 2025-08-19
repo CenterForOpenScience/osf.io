@@ -1264,9 +1264,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     event_context={
                         'user_fullname': auth.user.fullname,
                         'domain': settings.DOMAIN,
-                        'nid': auth.user._id,
-                        'project_title': auth.user.title,
-                        'osf_url': settings.DOMAIN,
+                        'nid': self._id,
+                        'project_title': self.title,
                     }
                 )
         return True
