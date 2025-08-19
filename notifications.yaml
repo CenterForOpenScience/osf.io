@@ -594,19 +594,19 @@ notification_types:
     tests: []
   #### Collection Submissions
   - name: collection_submission_removed_moderator
-    subject: f'{node.title} was removed from {collection.title}'
+    subject: f'{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'emails/new_pending_submissions.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
   - name: collection_submission_removed_private
-    subject: '{node.title} was removed from {collection.title}'
+    subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'emails/new_pending_submissions.html.mako'
     tests: ['osf_tests/test_collection.py']
   - name: collection_submission_removed_admin
-    subject: '{node.title} was removed from {collection.title}'
+    subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'emails/new_pending_submissions.html.mako'
