@@ -324,18 +324,21 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         }
 
     def test_get_node_file_mapping(self):
-        result = get_node_file_mapping(self.project1, self.wiki_import_dir._id)
+        result = get_node_file_mapping(self.project, self.root_import_folder1._id)
         expect = {
-            f'{self.pagefile1.parent.name}^{self.pagefile1.name}': self.pagefile1._id,
-            f'{self.attachment1.parent.name}^{self.attachment1.name}': self.attachment1._id,
-            f'{self.pagefile2.parent.name}^{self.pagefile2.name}': self.pagefile2._id,
-            f'{self.attachment2.parent.name}^{self.attachment2.name}': self.attachment2._id,
-            f'{self.pagefile3.parent.name}^{self.pagefile3.name}': self.pagefile3._id,
-            f'{self.attachment3.parent.name}^{self.attachment3.name}': self.attachment3._id,
+            f'{self.import_page_md_file1.parent.name}^{self.import_page_md_file1.name}': self.import_page_md_file1._id,
+            f'{self.import_attachment_image1.parent.name}^{self.import_attachment_image1.name}': self.import_attachment_image1._id,
+            f'{self.import_attachment_image2.parent.name}^{self.import_attachment_image2.name}': self.import_attachment_image2._id,
+            f'{self.import_attachment_image3.parent.name}^{self.import_attachment_image3.name}': self.import_attachment_image3._id,
+            f'{self.import_attachment1_doc.parent.name}^{self.import_attachment1_doc.name}': self.import_attachment1_doc._id,
+            f'{self.import_attachment2_txt.parent.name}^{self.import_attachment2_txt.name}': self.import_attachment2_txt._id,
+            f'{self.import_page_md_file2.parent.name}^{self.import_page_md_file2.name}': self.import_page_md_file2._id,
+            f'{self.import_attachment3_xlsx.parent.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id,
         }
         child_info = _get_all_child_file_ids(self.wiki_import_dir._id)
         node_info = BaseFileNode.objects.filter(target_object_id=self.project1.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=child_info).values_list('_id', 'name', 'parent_id__name')
-        logger.info(child_info, node_info)
+        assert_equal([0], child_info)
+        assert_equal(self.import_attachment_image1, node_info.first())
         assert_equal(expect, result)
 
     def test_get_import_wiki_name_list(self):
@@ -2839,4 +2842,4 @@ class TestWikiViews(OsfTestCase, unittest.TestCase):
         url = self.project.web_url_for('project_wiki_view', wname='home', _guid=True)
 
         response = self.app.get(url, {'edit': True}, auth=self.auth, expect_errors=True)
-        assert_equal(http_status.HTTP_500_INTERNAL_SERVER_ERROR, response.status)
+        assert_equal(http_status.HTTP_400_BAD_REQUEST, response.status)
