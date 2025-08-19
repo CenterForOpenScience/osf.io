@@ -2,6 +2,8 @@ import contextlib
 import datetime
 import functools
 from unittest import mock
+import requests
+import waffle
 
 from django.apps import apps
 from django.http import HttpRequest
@@ -14,6 +16,8 @@ from osf.models import Sanction
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
+from website import settings as website_settings
+from osf import features
 
 def requires_module(module):
     def decorator(fn):
@@ -331,3 +335,22 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
         for p in patches:
             stack.enter_context(p)
         yield captured
+
+
+def get_mailhog_messages():
+    """Fetch messages from MailHog API."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return []
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v2/messages'
+    response = requests.get(mailhog_url)
+    if response.status_code == 200:
+        return response.json()
+    return []
+
+
+def delete_mailhog_messages():
+    """Delete all messages from MailHog."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v1/messages'
+    requests.delete(mailhog_url)

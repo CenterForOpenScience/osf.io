@@ -62,6 +62,7 @@ class NotificationSubscription(BaseModel):
             event_context=None,
             destination_address=None,
             email_context=None,
+            save=True,
     ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
@@ -82,13 +83,16 @@ class NotificationSubscription(BaseModel):
 
             )
         if self.message_frequency == 'instantly':
-            notification = Notification.objects.create(
+            notification = Notification(
                 subscription=self,
                 event_context=event_context
             )
+            if save:
+                notification.save()
             notification.send(
                 destination_address=destination_address,
                 email_context=email_context,
+                save=save,
             )
         else:
             Notification.objects.create(

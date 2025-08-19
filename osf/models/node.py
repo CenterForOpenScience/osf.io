@@ -5,7 +5,6 @@ import re
 from urllib.parse import urljoin
 import warnings
 
-from pyasn1_modules.rfc5126 import ContentType
 from rest_framework import status as http_status
 
 import bson
@@ -1251,6 +1250,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if auth and permissions == 'public':
             project_signals.privacy_set_public.send(auth.user, node=self)
             from osf.models import NotificationSubscription, NotificationType
+            from django.contrib.contenttypes.models import ContentType
 
             subscription, create = NotificationSubscription.objects.get_or_create(
                 notification_type__name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,

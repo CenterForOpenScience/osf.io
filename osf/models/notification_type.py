@@ -3,6 +3,8 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
 from enum import Enum
+from osf.utils.caching import cached_property
+
 
 def get_default_frequency_choices():
     DEFAULT_FREQUENCY_CHOICES = ['none', 'instantly', 'daily', 'weekly', 'monthly']
@@ -146,7 +148,7 @@ class NotificationType(models.Model):
 
         DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
-        @property
+        @cached_property
         def instance(self):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
@@ -208,7 +210,8 @@ class NotificationType(models.Model):
             message_frequency='instantly',
             event_context=None,
             email_context=None,
-            is_digest=False
+            is_digest=False,
+            save=True,
     ):
         """Emit a notification to a user by creating Notification and NotificationSubscription objects.
 
@@ -221,18 +224,29 @@ class NotificationType(models.Model):
             email_context (dict, optional): Context for additional email notification information, so as blind cc etc
         """
         from osf.models.notification_subscription import NotificationSubscription
-        subscription, created = NotificationSubscription.objects.get_or_create(
-            notification_type=self,
-            user=user,
-            content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
-            object_id=subscribed_object.pk if subscribed_object else None,
-            defaults={'message_frequency': message_frequency},
-            _is_digest=is_digest,
-        )
+        if not save:
+            subscription = NotificationSubscription(
+                notification_type=self,
+                user=user,
+                content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+                object_id=subscribed_object.pk if subscribed_object else None,
+                message_frequency=message_frequency,
+                _is_digest=is_digest,
+            )
+        else:
+            subscription, created = NotificationSubscription.objects.get_or_create(
+                notification_type=self,
+                user=user,
+                content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+                object_id=subscribed_object.pk if subscribed_object else None,
+                defaults={'message_frequency': message_frequency},
+                _is_digest=is_digest,
+            )
         subscription.emit(
             destination_address=destination_address,
             event_context=event_context,
             email_context=email_context,
+            save=save,
         )
 
     def remove_user_from_subscription(self, user):

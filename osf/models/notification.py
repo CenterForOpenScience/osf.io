@@ -1,10 +1,11 @@
 import logging
 
+import waffle
 from django.db import models
 from django.utils import timezone
 
 from api.base import settings as api_settings
-from osf import email
+from osf import email, features
 
 
 class Notification(models.Model):
@@ -23,6 +24,7 @@ class Notification(models.Model):
             protocol_type='email',
             destination_address=None,
             email_context=None,
+            save=True,
     ):
         """
 
@@ -38,7 +40,7 @@ class Notification(models.Model):
                 f"\ncontext={self.event_context}"
                 f"\nemail={email_context}"
             )
-        if protocol_type == 'email' and False:
+        if protocol_type == 'email' and waffle.switch_is_active(features.ENABLE_MAILHOG):
             email.send_email_over_smtp(
                 recipient_address,
                 self.subscription.notification_type,
@@ -55,7 +57,8 @@ class Notification(models.Model):
         else:
             raise NotImplementedError(f'protocol `{protocol_type}` is not supported.')
 
-        self.mark_sent()
+        if save:
+            self.mark_sent()
 
     def mark_sent(self) -> None:
         self.sent = timezone.now()
