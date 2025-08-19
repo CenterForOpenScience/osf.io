@@ -416,7 +416,9 @@ class _OldInstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, I
     # overrides RetrieveAPIView
     def get_object(self):
         institution = self.get_institution()
-        return InstitutionProjectCounts.get_latest_institution_project_document(institution)
+        results = InstitutionProjectCounts.get_latest_institution_project_document(institution)
+        results['last_updated'] = results['timestamp'].replace(microsecond=0, second=0)
+        return results
 
 
 class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):

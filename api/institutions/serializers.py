@@ -214,6 +214,7 @@ class InstitutionSummaryMetricSerializer(JSONAPISerializer):
     public_project_count = ser.IntegerField(read_only=True)
     private_project_count = ser.IntegerField(read_only=True)
     user_count = ser.IntegerField(read_only=True)
+    last_updated = ser.DateTimeField(read_only=True)
 
     links = LinksField({
         'self': 'get_absolute_url',
