@@ -115,7 +115,6 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            notification_type=False,
             save=True
         )
         pre.is_public = True

@@ -81,7 +81,6 @@ class WikiCRUDTestCase:
         )
         project_private.add_contributor(
             user,
-            notification_type=False,
             permissions=permissions.WRITE
         )
         return user

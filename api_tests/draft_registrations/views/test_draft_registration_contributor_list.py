@@ -146,7 +146,6 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             'Robert Jackson',
             'robert@gmail.com',
             auth=Auth(user),
-            notification_type=False,
         )
 
         for i in range(0, 10):
@@ -159,7 +158,6 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
                 new_user,
                 visible=visible,
                 auth=Auth(project_public.creator),
-                notification_type=False,
                 save=True
             )
         req_one = app.get(
@@ -356,14 +354,12 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
             user_two,
             permissions=permissions.READ,
             visible=True,
-            notification_type=False,
             save=True
         )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
             visible=True,
-            notification_type=False,
             save=True
         )
         return project_public
@@ -435,14 +431,12 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
             user_two,
             permissions=permissions.READ,
             visible=True,
-            notification_type=False,
             save=True
         )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
             visible=True,
-            notification_type=False,
             save=True
         )
         return project_private

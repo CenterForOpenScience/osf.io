@@ -645,7 +645,6 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -663,7 +662,6 @@ class TestNodeCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1090,7 +1088,6 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1110,7 +1107,6 @@ class TestFileCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1235,7 +1231,6 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1256,7 +1251,6 @@ class TestWikiCommentCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         project_public.save()
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1385,7 +1379,6 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         comment_public = CommentFactory(node=project_public, user=user)
         url_public = '/{}nodes/{}/comments/'.format(
@@ -1427,7 +1420,6 @@ class TestCommentRepliesCreate(NodeCommentsCreateMixin):
         project_public.add_contributor(
             user_read_contrib,
             permissions=READ,
-            notification_type=False,
         )
         comment_public = CommentFactory(node=project_public, user=user)
         comment_reply = CommentFactory(

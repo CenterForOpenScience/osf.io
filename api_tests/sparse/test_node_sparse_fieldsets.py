@@ -229,12 +229,10 @@ class TestSparseViewOnlyLinks:
             contributing_read_user,
             permissions=permissions.READ,
             save=True,
-            notification_type=False
         )
         private_node_one.add_contributor(
             contributing_write_user,
             permissions=permissions.WRITE,
-            notification_type=False,
             save=True
         )
         return private_node_one

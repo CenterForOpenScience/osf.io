@@ -98,7 +98,6 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         project_public.add_contributor(
             node_admin,
             ADMIN,
-            notification_type=False,
         )
         assert project_public.has_permission(node_admin, ADMIN) is True
         assert draft_registration.has_permission(node_admin, ADMIN) is False

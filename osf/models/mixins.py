@@ -1407,7 +1407,7 @@ class ContributorMixin(models.Model):
             contributor,
             permissions=None,
             visible=True,
-            notification_type=None,
+            notification_type=False,
             auth=None,
             log=True,
             save=False,
@@ -1428,7 +1428,7 @@ class ContributorMixin(models.Model):
         """
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-        if notification_type is None:
+        if notification_type in ('default', None):
             from osf.models import AbstractNode, Preprint, DraftRegistration
 
             if isinstance(self, AbstractNode):

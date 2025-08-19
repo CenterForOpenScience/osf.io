@@ -55,17 +55,14 @@ class AbstractDraftRegistrationTestCase:
         project_public.add_contributor(
             user_write_contrib,
             permissions=permissions.WRITE,
-            notification_type=False,
         )
         project_public.add_contributor(
             user_read_contrib,
             permissions=permissions.READ,
-            notification_type=False,
         )
         project_public.add_contributor(
             user_admin_contrib,
             permissions=permissions.ADMIN,
-            notification_type=False,
         )
         project_public.save()
         project_public.add_tag('hello', Auth(user), save=True)

@@ -418,7 +418,6 @@ class TestDraftRegistrationContributorMethods():
             contributor=invisible_user,
             permissions=ADMIN,
             visible=False,
-            notification_type=False,
         )
         invisible_project_contributor = project.contributor_set.get(user=invisible_user)
         assert invisible_project_contributor.visible is False

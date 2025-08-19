@@ -96,7 +96,6 @@ class TestDraftContributorDetail(ContributorDetailMixin):
         project_public.add_contributor(
             user_two,
             permissions=permissions.WRITE,
-            notification_type=False,
         )
         project_public.save()
 

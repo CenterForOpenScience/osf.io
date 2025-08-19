@@ -186,7 +186,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
     ):
         project_public.add_contributor(
             user_two,
-            notification_type=False,
             save=True
         )
 
@@ -279,7 +278,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
             non_bibliographic_user,
             visible=False,
             auth=Auth(project_public.creator),
-            notification_type=False,
         )
         project_public.save()
         res = app.get(url_public, auth=user_two.auth)
@@ -342,7 +340,6 @@ class TestNodeContributorList(NodeCRUDTestCase):
             'Robert Jackson',
             'robert@gmail.com',
             auth=Auth(user),
-            notification_type=False,
         )
 
         for i in range(0, 10):
@@ -1071,7 +1068,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         project_public.add_contributor(
             user_contrib_one,
             save=True,
-            notification_type=False,
         )
         user_contrib_two = UserFactory()
         project_public.add_contributor(
@@ -1101,13 +1097,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         user_contrib_one = UserFactory()
         project_public.add_contributor(
             user_contrib_one,
-            notification_type=False,
             save=True
         )
         user_contrib_two = UserFactory()
         project_public.add_contributor(
             user_contrib_two,
-            notification_type=False,
             save=True
         )
         payload = {
