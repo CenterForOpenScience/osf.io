@@ -228,6 +228,13 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
 
 
 class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
+    """List existing versions of a preprint or create a new version.
+
+    GET: Returns a collection of preprint resources representing all versions of the given preprint.
+    POST: Creates a new version from the current preprint. Requires ADMIN on the source preprint.
+
+    Related to the `versions` relationship on the Preprint resource.
+    """
     # These permissions are not checked for the list of preprints, permissions handled by the query
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -282,6 +289,9 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
 
 class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
+
+    Note: The resource now exposes a `versions` relationship pointing to
+    `/v2/preprints/{preprint_id}/versions/` for listing or creating versions.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
