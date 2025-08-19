@@ -1045,9 +1045,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            NotificationType.objects.get(
-                name=NotificationType.Type.NODE_FORK_FAILED,
-            ).emit(
+            NotificationType.Type.instance.NODE_FORK_FAILED.emit(
                 user=user,
                 subscribed_object=node,
                 event_context={
@@ -1060,9 +1058,7 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
             )
             raise exc
         else:
-            NotificationType.objects.get(
-                name=NotificationType.Type.NODE_FORK_COMPLETED,
-            ).emit(
+            NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
                 user=user,
                 subscribed_object=node,
                 event_context={

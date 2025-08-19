@@ -1253,7 +1253,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             from django.contrib.contenttypes.models import ContentType
 
             subscription, create = NotificationSubscription.objects.get_or_create(
-                notification_type__name=NotificationType.Type.USER_NEW_PUBLIC_PROJECT,
+                notification_type=NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance,
                 object_id=auth.user.id,
                 content_type=ContentType.objects.get_for_model(auth.user),
             )
