@@ -335,9 +335,6 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.import_page_md_file2.parent.name}^{self.import_page_md_file2.name}': self.import_page_md_file2._id,
             f'{self.import_attachment3_xlsx.parent.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id,
         }
-        # child_info = _get_all_child_file_ids(self.root_import_folder1._id)
-        child_info = self.root_import_folder1._children.filter(type='osf.osfstoragefolder').values_list('name', flat=True)
-        assert_equal([0], list(child_info))
         assert_equal(expect, result)
 
     def test_get_import_wiki_name_list(self):
