@@ -334,7 +334,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'remover_absolute_url': user.get_absolute_url() if user else '',
                     'collections_link': collections_link,
                     'collection_provider_name': collection_provider_name,
-                    'collection': self.collection,
                     'domain': settings.DOMAIN,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },

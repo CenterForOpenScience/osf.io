@@ -29,6 +29,7 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from tests.base import ApiTestCase, capture_signals
+from tests.utils import capture_notifications
 from website.project import signals as project_signals
 
 
@@ -323,11 +324,12 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
                 PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
                 PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
             ]
-            preprints[0].run_submit(user)
-            preprints[0].run_accept(user, 'comment')
-            preprints[1].run_submit(user)
-            preprints[1].run_reject(user, 'comment')
-            preprints[2].run_submit(user)
+            with capture_notifications():
+                preprints[0].run_submit(user)
+                preprints[0].run_accept(user, 'comment')
+                preprints[1].run_submit(user)
+                preprints[1].run_reject(user, 'comment')
+                preprints[2].run_submit(user)
             return preprints
 
     @pytest.fixture

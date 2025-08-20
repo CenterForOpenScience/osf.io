@@ -20,7 +20,7 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
-from tests.utils import assert_latest_log, assert_equals, capture_notifications
+from tests.utils import assert_latest_log, assert_equals, capture_notifications, assert_notification
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -1065,22 +1065,23 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             fullname=name,
             email=email
         )
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Doesn\'t Matter',
-                    'email': email
-                }
-            }
-        }
         res = app.post_json_api(
-            url_published, payload,
-            auth=user.auth, expect_errors=True)
+            url_published,
+            {
+                'data': {
+                    'type': 'contributors',
+                    'attributes': {
+                        'full_name': 'Doesn\'t Matter',
+                        'email': email
+                    }
+                }
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
         preprint_published.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '{} is already a contributor.'.format(
-            name)
+        assert res.json['errors'][0]['detail'] == f'{name} is already a contributor.'
 
     def test_add_contributor_user_is_deactivated_registered_payload(
             self, app, user, url_published):
@@ -1509,17 +1510,21 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         url = f'/{API_BASE}preprints/{preprint_unpublished._id}/'
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
-        payload = {
-            'data': {
-                'id': preprint_unpublished._id,
-                'type': 'preprints',
-                'attributes': {
-                    'is_published': True
-                }
-            }
-        }
         with capture_signals() as mock_signal:
-            res = app.patch_json_api(url, payload, auth=user.auth)
+            with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+                res = app.patch_json_api(
+                    url,
+                    {
+                        'data': {
+                            'id': preprint_unpublished._id,
+                            'type': 'preprints',
+                            'attributes': {
+                                'is_published': True
+                            }
+                        }
+                    },
+                    auth=user.auth
+                )
         assert res.status_code == 200
         assert contributor_added in mock_signal.signals_sent()
         assert mock_update.called

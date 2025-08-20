@@ -1551,7 +1551,7 @@ class ContributorMixin(models.Model):
             fullname,
             email,
             auth,
-            notification_type=None,
+            notification_type=False,
             visible=True,
             permissions=None,
             existing_user=None

@@ -107,19 +107,18 @@ def notify_edit_comment(resource, user, action, *args, **kwargs):
 def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
     context['requester_fullname'] = action.creator.fullname
+    context['referrer_fullname'] = action.creator.fullname
 
     for contributor in resource.contributors.all():
         context['user_fullname'] = contributor.fullname
-
         context['contributor_fullname'] = contributor.fullname
-        context['requester_fullname'] = action.creator.fullname
         context['is_requester'] = action.creator == contributor
         NotificationType.objects.get(
             name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
         ).emit(
             user=contributor,
             event_context={
-                'is_requester': contributor,
+                'is_requester': contributor == action.creator,
                 **context
             },
         )

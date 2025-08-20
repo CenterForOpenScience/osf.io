@@ -346,6 +346,7 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/pending_embargo_termination_non_admin.html.mako'
   - name: node_affiliation_changed
+    subject: 'Project Institutional Affiliation has Changed'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/project_affiliation_changed.html.mako'

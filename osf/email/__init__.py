@@ -118,12 +118,12 @@ def _read_lookup_uri(uri: str) -> str:
 
 
 NOTIFY_BASE_DEFAULTS = {
-    'logo': 'osf',  # matches default in notify_base.mako
-    'logo_url': None,
+    'logo': settings.OSF_LOGO,  # matches default in notify_base.mako
+    'logo_url': settings.OSF_LOGO,
     'node_url': '',
     'ns_url': '',
-    'osf_contact_email': 'support@osf.io',
-    'provider_name': 'OSF',
+    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+    'provider_name': '',
 }
 
 def _render_email_html(template_text: str, ctx: dict) -> str:

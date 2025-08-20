@@ -556,6 +556,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
+
             })
         else:
             context.update({
