@@ -85,10 +85,10 @@ class TestFileNodeTmp(BaseFileNode):
     _provider = 'test',
 
 class TestFolderWiki(TestFileNodeTmp, Folder):
-    pass
+    type = 'osf.osfstoragefolder'
 
 class TestFileWiki(TestFileNodeTmp, File):
-    pass
+    type = 'osf.osfstoragefile'
 
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
     message_short='Not found',
@@ -336,7 +336,7 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
             f'{self.import_attachment3_xlsx.parent.name}^{self.import_attachment3_xlsx.name}': self.import_attachment3_xlsx._id,
         }
         # child_info = _get_all_child_file_ids(self.root_import_folder1._id)
-        child_info = self.root_import_folder1._children.values_list('_id', flat=True)
+        child_info = self.root_import_folder1._children.filter(type='osf.osfstoragefolder').values_list('name', flat=True)
         assert_equal([0], list(child_info))
         assert_equal(expect, result)
 
