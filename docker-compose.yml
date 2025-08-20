@@ -152,7 +152,7 @@ services:
 
   mfr:
     image: quay.io/centerforopenscience/mfr:develop
-    command: invoke server
+    command: python -m invoke server
     restart: unless-stopped
     ports:
       - 7778:7778
@@ -168,10 +168,8 @@ services:
 
   mfr_worker:
     image: quay.io/centerforopenscience/mfr:develop
-    command: invoke celery --concurrency=1
+    command: python -m invoke celery --concurrency=1
     restart: unless-stopped
-    ports:
-      - 7778:7778
     env_file:
       - .docker-compose.mfr.env
     extra_hosts:
