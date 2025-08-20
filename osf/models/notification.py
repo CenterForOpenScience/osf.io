@@ -35,10 +35,10 @@ class Notification(models.Model):
             logging.info(
                 f"Attempting to send Notification:"
                 f"\nto={getattr(self.subscription.user, 'username', destination_address)}"
-                f"\nat={destination_address}"
+                f"\nat={recipient_address}"
                 f"\ntype={self.subscription.notification_type}"
                 f"\ncontext={self.event_context}"
-                f"\nemail={email_context}"
+                f"\nemail_context={email_context}"
             )
         if protocol_type == 'email' and waffle.switch_is_active(features.ENABLE_MAILHOG):
             email.send_email_over_smtp(

@@ -1045,30 +1045,28 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            NotificationType.Type.instance.NODE_FORK_FAILED.emit(
+            NotificationType.Type.NODE_FORK_FAILED.instance.emit(
                 user=user,
                 subscribed_object=node,
                 event_context={
                     'domain': settings.DOMAIN,
-                    'guid': fork._id,
                     'node_title': node.title,
-                    'node__id': node._id,
                     'can_change_preferences': False,
                 },
             )
             raise exc
-        else:
-            NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
-                user=user,
-                subscribed_object=node,
-                event_context={
-                    'domain': settings.DOMAIN,
-                    'guid': fork._id,
-                    'node_title': node.title,
-                    'node__id': node._id,
-                    'can_change_preferences': False,
-                },
-            )
+
+        NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
+            user=user,
+            subscribed_object=node,
+            event_context={
+                'domain': settings.DOMAIN,
+                'node_title': node.title,
+                'fork_title': fork.title,
+                'fork__id': fork._id,
+                'can_change_preferences': False,
+            },
+        )
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (

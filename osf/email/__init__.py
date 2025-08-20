@@ -5,13 +5,13 @@ import logging
 import importlib
 from html import unescape
 from typing import List, Optional
+from mako.template import Template as MakoTemplate
+
 
 import waffle
 from django.core.mail import EmailMessage, get_connection
 
-from mako.template import Template as MakoTemplate
 from mako.lookup import TemplateLookup
-from mako.exceptions import TopLevelLookupException
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -32,7 +32,6 @@ def _existing_dirs(paths: List[str]) -> List[str]:
         if not p:
             continue
         ap = os.path.abspath(p)
-        # If user passed .../emails or .../notifications, lift to its parent templates root
         tail = os.path.basename(ap.rstrip(os.sep))
         if tail in ('emails', 'notifications'):
             ap = os.path.dirname(ap)
@@ -43,12 +42,10 @@ def _existing_dirs(paths: List[str]) -> List[str]:
 
 def _default_template_roots() -> List[str]:
     roots = []
-    # 1) settings.EMAIL_TEMPLATE_DIRS (if provided)
     cfg = getattr(settings, 'EMAIL_TEMPLATE_DIRS', None)
     if cfg:
         roots.extend(cfg if isinstance(cfg, (list, tuple)) else [cfg])
 
-    # 2) website package path (most reliable)
     try:
         website_pkg = importlib.import_module('website')
         base = os.path.abspath(os.path.dirname(website_pkg.__file__))
@@ -56,7 +53,6 @@ def _default_template_roots() -> List[str]:
     except Exception:
         pass
 
-    # 3) settings.BASE_PATH fallback
     base_path = getattr(settings, 'BASE_PATH', '')
     if base_path:
         roots.append(os.path.join(base_path, 'website', 'templates'))
@@ -67,14 +63,12 @@ LOOKUP_DIRS = _default_template_roots()
 MAKO_LOOKUP = TemplateLookup(directories=LOOKUP_DIRS, input_encoding='utf-8')
 
 def _discover_notify_base_uri() -> Optional[str]:
-    # Try common locations quickly
     for root in LOOKUP_DIRS:
         for folder in ('emails', 'notifications', ''):
             p = os.path.join(root, folder, 'notify_base.mako')
             if os.path.exists(p):
                 rel = os.path.relpath(p, root).replace(os.sep, '/')
                 return '/' + rel
-    # Deep search
     for root in LOOKUP_DIRS:
         for dirpath, _, files in os.walk(root):
             if 'notify_base.mako' in files:
@@ -102,32 +96,63 @@ INHERIT_RX = re.compile(
     flags=re.I
 )
 
+_VAR_RX = re.compile(r'\$\{\s*([A-Za-z_]\w*)(?:[^\}]*)\}')
+
+def _extract_vars(src: str) -> set[str]:
+    return {m.group(1) for m in _VAR_RX.finditer(src or '')}
+
+def _read_lookup_uri(uri: str) -> str:
+    """Read template source for a lookup URI using LOOKUP_DIRS."""
+    if not uri:
+        return ''
+    rel = uri.lstrip('/')
+    for root in LOOKUP_DIRS:
+        p = os.path.join(root, rel)
+        if os.path.exists(p):
+            try:
+                with open(p, 'r', encoding='utf-8') as f:
+                    return f.read()
+            except Exception:
+                pass
+    return ''
+
+
+NOTIFY_BASE_DEFAULTS = {
+    'logo': 'osf',  # matches default in notify_base.mako
+    'logo_url': None,
+    'node_url': '',
+    'ns_url': '',
+    'osf_contact_email': 'support@osf.io',
+    'provider_name': 'OSF',
+}
+
 def _render_email_html(template_text: str, ctx: dict) -> str:
     if not template_text:
         return ''
 
     uri = _inline_uri_for_db_template()
-
-    # Proactively normalize the inherit target if we discovered the base
     text = template_text
     if NOTIFY_BASE_URI:
         text = INHERIT_RX.sub(rf'\1\2{NOTIFY_BASE_URI}\2', text, count=1)
 
-    try:
-        return MakoTemplate(text=text, lookup=MAKO_LOOKUP, uri=uri).render(**ctx)
+    # If using notify_base, merge in defaults
+    if 'notify_base' in text or 'notify_base' in (uri or ''):
+        for k, v in NOTIFY_BASE_DEFAULTS.items():
+            ctx.setdefault(k, v)
 
-    except TopLevelLookupException:
-        # Second chance: maybe NOTIFY_BASE_URI was unset at boot
-        if NOTIFY_BASE_URI:
-            # already tried; nothing else to do
-            logging.exception('Mako render failed even after pre-rewrite. uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
-            return template_text
-        else:
-            logging.error('Mako render failed and notify_base.mako not found. inline_uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
-            return template_text
+    try:
+        return MakoTemplate(
+            text=text,
+            lookup=MAKO_LOOKUP,
+            uri=uri,
+            strict_undefined=True,
+        ).render(**(ctx or {}))
 
     except Exception:
-        logging.exception('Mako render failed. inline_uri=%s; lookup_dirs=%s', uri, LOOKUP_DIRS)
+        logging.exception(
+            'Mako render failed. provided_keys=%s inline_uri=%s base_uri=%s lookup_dirs=%s',
+            sorted((ctx or {}).keys()), uri, NOTIFY_BASE_URI, LOOKUP_DIRS,
+        )
         return template_text
 
 

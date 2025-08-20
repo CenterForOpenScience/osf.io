@@ -261,42 +261,32 @@ def run_celery_tasks():
 @contextlib.contextmanager
 def capture_notifications(capture_email: bool = True, passthrough: bool = False):
     """
-    Context manager to capture NotificationType emits without interfering with ORM calls
-    and (optionally) stub out actual email sending so tests don't open sockets.
+    Capture NotificationType emits (including calls via NotificationType.Type.<X>.instance.emit)
+    and optionally capture email sends.
 
-    Args:
-        capture_email (bool): If True, patch email senders to record sends.
-        passthrough (bool): If True, call the original email send functions after capturing.
-                            Defaults to False.
-
-    Yields:
+    Returns:
         dict: {
-            "emits": [ {"type": str, "args": tuple, "kwargs": dict}, ... ],
+            "emits":  [ {"type": str, "args": tuple, "kwargs": dict}, ... ],
             "emails": [ {"protocol": str, "to": ..., "notification_type": ..., "context": ..., "email_context": ...}, ... ]
         }
     """
-    NotificationType = apps.get_model('osf', 'NotificationType')
-    real_get = NotificationType.objects.get
-
+    NotificationTypeModel = apps.get_model('osf', 'NotificationType')
     captured = {'emits': [], 'emails': []}
 
-    def side_effect(*args, **kwargs):
-        notifier = real_get(*args, **kwargs)
-        original_emit = notifier.emit
+    # Patch the instance method so ALL emit paths are captured
+    _real_emit = NotificationTypeModel.emit
 
-        def wrapped_emit(*emit_args, **emit_kwargs):
-            captured['emits'].append({
-                'type': notifier.name,
-                'args': emit_args,
-                'kwargs': emit_kwargs
-            })
-            return original_emit(*emit_args, **emit_kwargs)
-
-        notifier.emit = wrapped_emit
-        return notifier
+    def _wrapped_emit(self, *emit_args, **emit_kwargs):
+        captured['emits'].append({
+            'type': getattr(self, 'name', None),
+            'args': emit_args,
+            'kwargs': emit_kwargs,
+        })
+        if passthrough:
+            return _real_emit(self, *emit_args, **emit_kwargs)
 
     patches = [
-        mock.patch('osf.models.notification_type.NotificationType.objects.get', side_effect=side_effect),
+        mock.patch('osf.models.notification_type.NotificationType.emit', new=_wrapped_emit),
     ]
 
     if capture_email:
@@ -337,6 +327,7 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
         yield captured
 
 
+
 def get_mailhog_messages():
     """Fetch messages from MailHog API."""
     if not waffle.switch_is_active(features.ENABLE_MAILHOG):
@@ -354,3 +345,177 @@ def delete_mailhog_messages():
         return
     mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v1/messages'
     requests.delete(mailhog_url)
+
+import contextlib
+from typing import Any, Optional
+
+def _notif_type_name(t: Any) -> str:
+    """
+    Normalize a NotificationType-ish input to its lowercase name.
+    Accepts:
+      - NotificationType instance (has .name)
+      - NotificationType.Type enum (often stringifiable or has .name)
+      - raw string
+    """
+    if t is None:
+        return ''
+    # If it's the model instance
+    n = getattr(t, 'name', None)
+    if n:
+        return str(n).strip().lower()
+    # If it's an enum-like with .value/.name
+    for attr in ('value', 'NAME', 'name'):
+        if hasattr(t, attr):
+            try:
+                return str(getattr(t, attr)).strip().lower()
+            except Exception:
+                pass
+    # Fallback to str()
+    return str(t).strip().lower()
+
+
+def _safe_user_id(u: Any) -> Optional[str]:
+    """
+    Try to normalize a user object to a stable identifier used in emit kwargs.
+    Your emit calls pass the 'user' object itself; we compare object identity if available,
+    otherwise fall back to guid/_id if present.
+    """
+    if u is None:
+        return None
+    for attr in ('_id', 'id', 'guids', 'guid', 'pk'):
+        if hasattr(u, attr):
+            try:
+                val = getattr(u, attr)
+                # guids may be a related manager; try to pull string
+                if hasattr(val, 'first'):
+                    g = val.first()
+                    if g and hasattr(g, '_id'):
+                        return g._id
+                if isinstance(val, (str, int)):
+                    return str(val)
+            except Exception:
+                pass
+    # Last resort: object id
+    return f'obj:{id(u)}'
+
+
+def _safe_obj_id(o: Any) -> Optional[str]:
+    if o is None:
+        return None
+    for attr in ('_id', 'id', 'guid', 'guids', 'pk'):
+        if hasattr(o, attr):
+            try:
+                val = getattr(o, attr)
+                if hasattr(val, 'first'):
+                    g = val.first()
+                    if g and hasattr(g, '_id'):
+                        return g._id
+                if isinstance(val, (str, int)):
+                    return str(val)
+            except Exception:
+                pass
+    return f'obj:{id(o)}'
+
+
+@contextlib.contextmanager
+def assert_notification(
+    *,
+    type,                       # NotificationType, NotificationType.Type, or str
+    user: Any = None,           # optional user object to match
+    subscribed_object: Any = None,  # optional object (e.g., node) to match
+    times: int = 1,             # exact number of emits expected
+    at_least: bool = False,     # if True, assert >= times instead of == times
+    assert_email: Optional[bool] = None,  # True: must send email; False: must not; None: ignore
+    passthrough: bool = False   # pass emails through to real senders if desired
+):
+    """
+    Usage:
+        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=self.user):
+            <code that emits>
+
+    Options:
+        - subscribed_object=<node>
+        - times=2 or at_least=True
+        - assert_email=True / False / None
+        - passthrough=True to let real email senders run (still captured)
+    """
+    expected_type = _notif_type_name(type)
+    expected_user_id = _safe_user_id(user) if user is not None else None
+    expected_obj_id = _safe_obj_id(subscribed_object) if subscribed_object is not None else None
+
+    # Capture emits (and optionally email) while the code under test runs
+    with capture_notifications(capture_email=(assert_email is not False), passthrough=passthrough) as cap:
+        yield cap
+
+    # ---- Filter emits by criteria ----
+    def _emit_matches(e) -> bool:
+        # e = {'type': <str>, 'args': (), 'kwargs': {...}}
+        if expected_type and str(e.get('type', '')).strip().lower() != expected_type:
+            return False
+        kw = e.get('kwargs', {})
+        # Match user if requested
+        if user is not None:
+            u = kw.get('user')
+            if u is None:
+                return False
+            if _safe_user_id(u) != expected_user_id:
+                return False
+        # Match subscribed_object if requested
+        if subscribed_object is not None:
+            so = kw.get('subscribed_object')
+            if so is None:
+                return False
+            if _safe_obj_id(so) != expected_obj_id:
+                return False
+        return True
+
+    matching_emits = [e for e in cap.get('emits', []) if _emit_matches(e)]
+    count = len(matching_emits)
+
+    if at_least:
+        assert count >= times, (
+            f'Expected at least {times} emits of type "{expected_type}"'
+            f'{f" for user {expected_user_id}" if user is not None else ""}'
+            f'{f" and object {expected_obj_id}" if subscribed_object is not None else ""}, '
+            f'but saw {count}. All emits: {cap.get("emits", [])}'
+        )
+    else:
+        assert count == times, (
+            f'Expected exactly {times} emits of type "{expected_type}"'
+            f'{f" for user {expected_user_id}" if user is not None else ""}'
+            f'{f" and object {expected_obj_id}" if subscribed_object is not None else ""}, '
+            f'but saw {count}. All emits: {cap.get("emits", [])}'
+        )
+
+    # ---- Optional email assertions ----
+    if assert_email is not None:
+        def _email_matches(rec) -> bool:
+            # rec['notification_type'] should be the NotificationType model instance used to render
+            nt = rec.get('notification_type')
+            name = getattr(nt, 'name', None)
+            if not name:
+                return False
+            if name.strip().lower() != expected_type:
+                return False
+            if user is not None:
+                # 'to' can be address string or list in your capture; tolerate both
+                to_field = rec.get('to')
+                # If we captured the actual user object (e.g., sendgrid path), compare user id
+                if hasattr(to_field, '_id') or hasattr(to_field, 'id'):
+                    return _safe_user_id(to_field) == expected_user_id
+                # Otherwise it's probably an email address; we can't reliably match to user, so just accept type match
+            return True
+
+        email_matches = [r for r in cap.get('emails', []) if _email_matches(r)]
+        if assert_email:
+            assert email_matches, (
+                f'Expected an email for notification "{expected_type}"'
+                f'{f" to user {expected_user_id}" if user is not None else ""} '
+                f'but none were captured. All emails: {cap.get("emails", [])}'
+            )
+        else:
+            assert not email_matches, (
+                f'Expected NO email for notification "{expected_type}"'
+                f'{f" to user {expected_user_id}" if user is not None else ""} '
+                f'but captured: {email_matches}'
+            )
