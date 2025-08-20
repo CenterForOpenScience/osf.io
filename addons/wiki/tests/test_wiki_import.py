@@ -85,10 +85,10 @@ class TestFileNodeTmp(BaseFileNode):
     _provider = 'test',
 
 class TestFolderWiki(TestFileNodeTmp, Folder):
-    type = 'osf.osfstoragefolder'
+    pass
 
 class TestFileWiki(TestFileNodeTmp, File):
-    type = 'osf.osfstoragefile'
+    pass
 
 WIKI_PAGE_NOT_FOUND_ERROR = HTTPError(http_status.HTTP_404_NOT_FOUND, data=dict(
     message_short='Not found',
@@ -297,16 +297,16 @@ class TestWikiUtils(OsfTestCase, unittest.TestCase):
         self.attachment3 = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project1, parent=self.pagefolder3)
 
         self.root_import_folder1 = TestFolderWiki.objects.create(name='rootimportfolder1', target=self.project, parent=self.root)
-        self.import_page_folder1 = TestFolderWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1)
-        self.import_page_folder2 = TestFolderWiki.objects.create(name='importpage2', target=self.project, parent=self.root_import_folder1)
-        self.import_page_md_file1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1)
-        self.import_page_md_file2 = TestFileWiki.objects.create(name='importpage2.md', target=self.project, parent=self.import_page_folder2)
-        self.import_attachment_image1 = TestFileWiki.objects.create(name='image1.png', target=self.project, parent=self.import_page_folder1)
-        self.import_attachment_image2 = TestFileWiki.objects.create(name='image2.png', target=self.project, parent=self.import_page_folder1)
-        self.import_attachment_image3 = TestFileWiki.objects.create(name='ima/ge3.png', target=self.project, parent=self.import_page_folder1)
-        self.import_attachment1_doc = TestFileWiki.objects.create(name='attachment1.doc', target=self.project, parent=self.import_page_folder1)
-        self.import_attachment2_txt = TestFileWiki.objects.create(name='wiki#page.txt', target=self.project, parent=self.import_page_folder1)
-        self.import_attachment3_xlsx = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project, parent=self.import_page_folder2)
+        self.import_page_folder1 = TestFolderWiki.objects.create(name='importpage1', target=self.project, parent=self.root_import_folder1, type='osf.osfstoragefolder')
+        self.import_page_folder2 = TestFolderWiki.objects.create(name='importpage2', target=self.project, parent=self.root_import_folder1, type='osf.osfstoragefolder')
+        self.import_page_md_file1 = TestFileWiki.objects.create(name='importpage1.md', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_page_md_file2 = TestFileWiki.objects.create(name='importpage2.md', target=self.project, parent=self.import_page_folder2, type='osf.osfstoragefile')
+        self.import_attachment_image1 = TestFileWiki.objects.create(name='image1.png', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_attachment_image2 = TestFileWiki.objects.create(name='image2.png', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_attachment_image3 = TestFileWiki.objects.create(name='ima/ge3.png', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_attachment1_doc = TestFileWiki.objects.create(name='attachment1.doc', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_attachment2_txt = TestFileWiki.objects.create(name='wiki#page.txt', target=self.project, parent=self.import_page_folder1, type='osf.osfstoragefile')
+        self.import_attachment3_xlsx = TestFileWiki.objects.create(name='attachment3.xlsx', target=self.project, parent=self.import_page_folder2, type='osf.osfstoragefile')
         self.wiki_info = {'original_name': 'importpage1'}
         self.parent_wiki_page = WikiPage.objects.create_for_node(self.project, 'parent page', 'parent content', self.consolidate_auth)
         self.child_wiki_page = WikiPage.objects.create_for_node(self.project, 'child page', 'child content', self.consolidate_auth, self.parent_wiki_page)
