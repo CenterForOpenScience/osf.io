@@ -591,7 +591,7 @@ def check_email_throttle(
     if not subscription:
         return False  # No subscription means no previous notifications, so no throttling
     # Check the most recent Notification for this subscription
-    subscription = subscription.get()
+    subscription = subscription.order_by('created').last()
     last_notification = Notification.objects.filter(subscription=subscription).order_by('created').last()
     if last_notification:
         cutoff_time = timezone.now() - timedelta(seconds=throttle)
