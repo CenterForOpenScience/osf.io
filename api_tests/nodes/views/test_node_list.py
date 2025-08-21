@@ -1670,7 +1670,7 @@ class TestNodeCreate:
                 }
             }
         }
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one):
+        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
             res = app.post_json_api(
                 url,
                 private_project,

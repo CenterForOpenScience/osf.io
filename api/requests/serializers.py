@@ -187,9 +187,7 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
 
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
-            NotificationType.objects.get(
-                name=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST,
-            ).emit(
+            NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST.instance.emit(
                 user=recipient,
                 subscribed_object=node_request.target,
                 event_context={

@@ -209,6 +209,7 @@ class ReviewsMachine(BaseMachine):
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
             'provider_support_email': self.machineable.provider.email_support or OSF_SUPPORT_EMAIL,
+            'osf_contact_email': OSF_SUPPORT_EMAIL,
         }
 
 
@@ -258,6 +259,7 @@ class NodeRequestMachine(BaseMachine):
         context = self.get_context()
         context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
         context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
+
         from osf.models.notification_type import NotificationType
 
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
@@ -266,7 +268,7 @@ class NodeRequestMachine(BaseMachine):
                     user=admin,
                     subscribed_object=self.machineable,
                     event_context={
-                        'osf_contact_email': OSF_CONTACT_EMAIL,
+                        'user_fullname': admin.fullname,
                         **context
                     }
                 )
@@ -284,13 +286,11 @@ class NodeRequestMachine(BaseMachine):
 
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
+
             NotificationType.Type.NODE_REQUEST_ACCESS_DENIED.instance.emit(
                 user=self.machineable.creator,
                 subscribed_object=self.machineable,
-                event_context={
-                    'osf_contact_email': OSF_CONTACT_EMAIL,
-                    **context
-                }
+                event_context=context
             )
         else:
             # add_contributor sends approval notification email
@@ -341,6 +341,7 @@ class PreprintRequestMachine(BaseMachine):
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
             context['comment'] = self.action.comment
+            context['contributor_fullname'] = self.machineable.creator.fullname
 
             NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED.instance.emit(
                 user=self.machineable.creator,

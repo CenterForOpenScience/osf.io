@@ -17,10 +17,10 @@
     % if is_moderated:
       If approved by all admin contributors, the registration will be submitted for moderator review.
       If the moderators approve, the registration will be made public as part of the
-	  <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+	  <a href="${domain}/registries/${reviewable_provider__id if reviewable_provider__id else 'osf'}">${reviewable_provider_name if reviewable_provider__id else "OSF Registry"}</a>.
     % else:
       If approved by all admin contributors, the registration will be made public as part of the
-	  <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+	  <a href="${domain}/registries/${reviewable_provider__id if reviewable_provider__id else 'osf'}">${reviewable_provider_name if reviewable_provider__id else "OSF Registry"}</a>.
     % endif
     </p>
     <p style="color:red;">
@@ -32,7 +32,7 @@
     To cancel this registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
-    % if not reviewable.provider or reviewable.provider._id != 'gfs':
+    % if not reviewable_provider__id != 'gfs':
         Note: If any admin clicks their cancel link, the submission will be canceled immediately, and the
         pending registration will be reverted to draft state to revise and resubmit. This operation is irreversible.
     % else:
@@ -72,7 +72,7 @@
     % endif
     <p>
     Sincerely yours,<br>
-    % if not reviewable.provider or reviewable.provider._id != 'gfs':
+    % if reviewable_provider__id != 'gfs':
         The OSF Team<br>
     % else:
         COS and Global Flourishing Study<br>

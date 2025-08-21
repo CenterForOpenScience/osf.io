@@ -23,7 +23,7 @@
       If approved by all admin contributors, the registration will be marked as withdrawn.
     % endif
     Its content will be removed from the
-    <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>,
+    <a href="${domain}/registries/${reviewable_provider__id if reviewable_provider__id else 'osf'}">${reviewable_provider_name if reviewable_provider__id else "OSF Registry"}</a>,
     but basic metadata will be left behind. The title of the withdrawn registration and its list of contributors will remain.
     % if reviewable.withdrawal_justification:
       The provided justification or explanation of the withdrawal will also be visible.

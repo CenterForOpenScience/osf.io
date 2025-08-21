@@ -3,9 +3,9 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${admin_fullname},<br>
+    Hello ${user_fullname},<br>
     <br>
-    <a href="${requester_absolute_url}">${requester_fullname}</a> has requested access to your ${node_project_or_component} "<a href="${node_absolute_url}">${node_title}</a>."<br>
+    <a href="${requester_absolute_url}">${requester_fullname}</a> has requested access to your project "<a href="${node_absolute_url}">${node_title}</a>."<br>
     <br>
     To review the request, click <a href="${contributors_url}">here</a> to allow or deny access and configure permissions.<br>
     <br>

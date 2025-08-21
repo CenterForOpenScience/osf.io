@@ -26,7 +26,10 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
 
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
-    preprint = context['reviewable']
+    preprint = context.pop('reviewable')
+    context['reviewable_absolute_url'] = preprint.absolute_url
+    context['reviewable_title'] = preprint.title
+    context['reviewable__id'] = preprint._id
     from osf.models import NotificationType
 
     preprint_word = preprint.provider.preprint_word

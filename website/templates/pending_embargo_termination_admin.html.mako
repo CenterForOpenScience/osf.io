@@ -15,7 +15,7 @@
     </p>
     <p>
     If all admin contributors approve, the registration will be made public as part of the
-    <a href="${domain}/registries/${reviewable.provider._id if reviewable.provider else 'osf'}">${reviewable.provider.name if reviewable.provider else "OSF Registry"}</a>.
+    <a href="${domain}/registries/${reviewable_provider__id if reviewable_provider__id else 'osf'}">${reviewable_provider_name if reviewable_provider__id else "OSF Registry"}</a>.
     </p>
     <p style="color:red;">
     You have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel this
