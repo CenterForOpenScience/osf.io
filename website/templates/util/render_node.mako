@@ -100,11 +100,6 @@
         <div class="project-authors">
             ${contributor_list.render_contributors(contributors=summary['contributors'], others_count=summary['others_count'], node_url=summary['url'])}
         </div>
-        % if summary['groups']:
-            <div class="project-authors">
-                ${summary['groups']}
-            </div>
-        % endif
         % else:
             <div>Anonymous Contributors</div>
         % endif

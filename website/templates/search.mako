@@ -249,16 +249,6 @@
             </span>
         </p>
         <!-- /ko -->
-        <!-- ko if: groups ? groups.length > 0 : false -->
-        <p>
-            <strong>Groups:</strong> <span data-bind="foreach: groups">
-                <!-- ko if: url -->
-                    <span data-bind="text: name"></span>
-                <!-- /ko-->
-            <!-- ko if: ($index()+1) < ($parent.groups.length) -->&nbsp;- <!-- /ko -->
-            </span>
-        </p>
-        <!-- /ko -->
       <!-- ko if: affiliated_institutions ? affiliated_institutions.length > 0 : false -->
         <p><strong>Affiliated institutions:</strong>
             <!-- ko foreach: {data: affiliated_institutions, as: 'item'} -->

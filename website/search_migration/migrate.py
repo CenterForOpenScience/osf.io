@@ -15,7 +15,7 @@ from website.search_migration import (
     JSON_UPDATE_FILES_SQL, JSON_DELETE_FILES_SQL,
     JSON_UPDATE_USERS_SQL, JSON_DELETE_USERS_SQL)
 from scripts import utils as script_utils
-from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, OSFGroup, CollectionSubmission
+from osf.models import OSFUser, Institution, AbstractNode, BaseFileNode, Preprint, CollectionSubmission
 from website import settings
 from website.app import init_app
 from website.search.elastic_search import client as es_client
@@ -108,15 +108,6 @@ def migrate_preprint_files(index, delete):
     for page_number in paginator.page_range:
         logger.info(f'Updating page {page_number} / {paginator.num_pages}')
         search.bulk_update_nodes(serialize, paginator.page(page_number).object_list, index=index, category='file')
-
-def migrate_groups(index, delete):
-    logger.info(f'Migrating groups to index: {index}')
-    groups = OSFGroup.objects.all()
-    increment = 100
-    paginator = Paginator(groups, increment)
-    for page_number in paginator.page_range:
-        logger.info(f'Updating page {page_number} / {paginator.num_pages}')
-        OSFGroup.bulk_update_search(paginator.page(page_number).object_list, index=index)
 
 def migrate_files(index, delete, increment=10000):
     logger.info(f'Migrating files to index: {index}')
@@ -217,7 +208,6 @@ def migrate(delete, remove=False, index=None, app=None):
     migrate_preprints(new_index, delete=delete)
     migrate_preprint_files(new_index, delete=delete)
     migrate_collected_metadata(new_index, delete=delete)
-    migrate_groups(new_index, delete=delete)
 
     set_up_alias(index, new_index)
 
