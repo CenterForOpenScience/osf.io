@@ -47,7 +47,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 ]
                 }
         }
-        with assert_notification(type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS, user=user_two):
+        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_two, times=2):
             res = app.patch_json_api(
                 url_private,
                 make_node_payload(

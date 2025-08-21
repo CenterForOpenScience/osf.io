@@ -175,10 +175,12 @@ class ReviewsMachine(BaseMachine):
                 trigger='accept'
             )
             requester = preprint_request_action.target.creator
+            comment = preprint_request_action.comment
         except PreprintRequestAction.DoesNotExist:
             # If there is no preprint request action, it means the withdrawal is directly initiated by admin/moderator
             context['force_withdrawal'] = True
             requester = self.machineable.creator
+            comment = None
 
         context['requester_fullname'] = requester.fullname
         for contributor in self.machineable.contributors.all():
@@ -188,9 +190,12 @@ class ReviewsMachine(BaseMachine):
 
             NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED.instance.emit(
                 user=contributor,
-                subscribed_object=self.machineable.preprint,
+                subscribed_object=self.machineable,
                 event_context={
-                    **{'document_type': self.machineable.provider.preprint_word},
+                    **{
+                        'document_type': self.machineable.provider.preprint_word,
+                        'comment': comment
+                    },
                     **context
                 }
             )
@@ -361,7 +366,7 @@ class PreprintRequestMachine(BaseMachine):
         return {
             'reviewable_title': self.machineable.target.title,
             'reviewable_absolute_url': self.machineable.target.absolute_url,
-            'reviewable_provicer_name': self.machineable.target.provider.name,
+            'reviewable_provider_name': self.machineable.target.provider.name,
             'requester_fullname': self.machineable.creator.fullname,
             'is_request_email': True,
             'document_type': self.machineable.target.provider.preprint_word

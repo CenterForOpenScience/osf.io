@@ -25,7 +25,6 @@ def get_email_template_context(resource):
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
         'document_type': document_type,
         'notify_comment': not resource.provider.reviews_comments_private
-
     }
 
     if document_type == 'registration':

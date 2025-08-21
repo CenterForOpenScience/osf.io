@@ -6,7 +6,7 @@ import pytest
 import logging
 
 from unittest import mock
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from rest_framework import status as http_status
 from flask import Flask
 from werkzeug.wrappers import Response
@@ -117,7 +117,8 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_with_wrong_password_returns_false(self):
         user = UserFactory.build()
-        user.set_password('killerqueen')
+        with capture_notifications():
+            user.set_password('killerqueen')
         assert not auth.get_user(email=user.username, password='wrong')
 
     def test_get_user_by_external_info(self):
