@@ -8,6 +8,7 @@ from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
 from osf_tests.utils import get_default_test_schema
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications
+from osf.email import _render_email_html
 
 # See osf_tests.utils.default_test_schema for block types and valid answers
 INITIAL_SCHEMA_RESPONSES = {
@@ -106,7 +107,15 @@ class TestCreateSchemaResponse():
         assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -128,7 +137,15 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert any(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -148,7 +165,15 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -165,7 +190,15 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -210,7 +243,15 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -231,7 +272,15 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -247,7 +296,15 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
 
@@ -263,6 +320,14 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        # TODO check email content
+        for i in range(len(notifications['emails'])):
+            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
+            expected = _render_email_html(
+                notifications['emails'][i]['notification_type'].template,
+                notifications['emails'][i]['context']
+            )
+            actual = massages['items'][i]['Content']['Body']
+            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
 
         delete_mailhog_messages()
