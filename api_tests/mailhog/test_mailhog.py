@@ -40,7 +40,8 @@ class TestMailHog:
                 event_context={
                     'user_fullname': '<NAME>',
                     'osf_support_email': '<EMAIL>',
-                    'count': 'US',
+                    'count': 'test_count',
+                    'draft_errors': [],
                     'error': 'eooer',
                 }
             )
