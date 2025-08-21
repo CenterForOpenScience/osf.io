@@ -24,7 +24,7 @@
            "Edit" page and remove yourself as a contributor.
        </p>
        <p>
-            For more information about ${reviewable.provider.name}, visit <a href="${provider_url}">${provider_url}</a> to
+            For more information about ${reviewable_provider_name}, visit <a href="${provider_url}">${provider_url}</a> to
             learn more. To learn about the Open Science Framework, visit <a href=" "> </a>.
        </p>
        <p>

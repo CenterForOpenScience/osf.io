@@ -16,12 +16,12 @@
         "Contributors" page and remove yourself as a contributor.
     </p>
     <p>
-        For more information about ${reviewable.provider.name}, visit <a href="${provider_url}">${provider_url}</a> to
+        For more information about ${reviewable_provider_name}, visit <a href="${provider_url}">${provider_url}</a> to
         learn more. To learn about the Open Science Framework, visit <a href="https://osf.io/">https://osf.io/</a>.
     </p>
     <p>For questions regarding submission criteria, please email ${provider_contact_email}</p>
     <br>
     Sincerely,
     <br>
-    Your ${reviewable.provider.name} and OSF teams
+    Your ${reviewable_provider_name} and OSF teams
 </div>
