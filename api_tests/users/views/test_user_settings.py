@@ -10,6 +10,7 @@ from osf_tests.factories import (
     UserFactory,
 )
 from django.middleware import csrf
+from django.core.cache import cache
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
 from website import mails, settings
@@ -188,6 +189,10 @@ class TestResetPassword:
     @pytest.fixture
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
+
+    @pytest.fixture(autouse=True)
+    def clear_throttle_cache(self):
+        cache.clear()
 
     def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
