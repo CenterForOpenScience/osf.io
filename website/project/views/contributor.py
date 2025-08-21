@@ -600,7 +600,7 @@ def check_email_throttle(
     return False  # No previous sent notification, not throttled
 
 @contributor_added.connect
-def notify_added_contributor(node, contributor, notification_type, auth=None, *args, **kwargs):
+def notify_added_contributor(resource, contributor, notification_type, auth=None, *args, **kwargs):
     """Send a notification to a contributor who was just added to a node.
 
     Handles:
@@ -618,7 +618,7 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
         return
 
     logo = settings.OSF_LOGO
-    if getattr(node, 'has_linked_published_preprints', None):
+    if getattr(resource, 'has_linked_published_preprints', None):
         notification_type = NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF
         logo = settings.OSF_PREPRINTS_LOGO
 
@@ -630,24 +630,26 @@ def notify_added_contributor(node, contributor, notification_type, auth=None, *a
         name=notification_type
     ).emit(
         user=contributor,
+        subscribed_object=resource,
         event_context={
             'user_fullname': contributor.fullname,
             'referrer_text': referrer_name + ' has added you' if referrer_name else 'You have been add',
-            'registry_text': node.provider.name if node.provider else 'OSF Registry',
+            'registry_text': resource.provider.name if resource.provider else 'OSF Registry',
             'referrer_name': referrer_name,
             'domain': settings.DOMAIN,
             'is_initiator': getattr(getattr(auth, 'user', None), 'id', None) == contributor.id if auth else False,
-            'branded_service__id': getattr(getattr(node, 'provider', None), '_id', None),
-            'branded_service_name': getattr(getattr(node, 'provider', None), 'name', None),
-            'branded_service_preprint_word': getattr(getattr(node, 'provider', None), 'preprint_word', None),
-            'node_title': node.title,
-            'node_id': node._id,
-            'node_provider__id': getattr(node.provider, '_id', None),
-            'node_absolute_url': node.absolute_url,
+            'branded_service__id': getattr(getattr(resource, 'provider', None), '_id', None),
+            'branded_service_name': getattr(getattr(resource, 'provider', None), 'name', None),
+            'branded_service_preprint_word': getattr(getattr(resource, 'provider', None), 'preprint_word', None),
+            'node_title': resource.title,
+            'node_id': resource._id,
+            'node_provider__id': getattr(resource.provider, '_id', None),
+            'node_absolute_url': resource.absolute_url,
+            'node_has_permission_admin': resource.has_permission(user=contributor, permission='admin'),
             'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-            'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(node, user=None)) if isinstance(node, Node) else '- (none)\n'
+            'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(resource, user=None)) if isinstance(resource, Node) else '- (none)\n'
         }
     )
 

@@ -188,7 +188,7 @@ class ReviewsMachine(BaseMachine):
 
             NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED.instance.emit(
                 user=contributor,
-                subscribed_object=self.machineable.preprint,
+                subscribed_object=self.machineable,
                 event_context={
                     **{'document_type': self.machineable.provider.preprint_word},
                     **context
