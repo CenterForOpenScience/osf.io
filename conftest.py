@@ -20,10 +20,6 @@ from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
 from osf.management.commands.populate_notification_types import populate_notification_types
 
-def pytest_configure(config):
-    if not os.getenv('GITHUB_ACTIONS') == 'true':
-        config.option.allow_hosts += ',mailhog'
-
 logger = logging.getLogger(__name__)
 
 # Silence some 3rd-party logging and some "loud" internal loggers

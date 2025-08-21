@@ -79,6 +79,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
 class TestBitbucketViews(OsfTestCase):
 
     def setUp(self):
+        super().setUp()
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
 

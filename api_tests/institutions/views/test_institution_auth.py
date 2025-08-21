@@ -323,8 +323,7 @@ class TestInstitutionAuth:
         user = project.add_unregistered_contributor(
             fullname=fullname,
             email=username,
-            auth=Auth(project.creator),
-            notification_type=False
+            auth=Auth(project.creator)
         )
         user.save()
         # Unclaimed user is given an unusable password when being added as a contributor

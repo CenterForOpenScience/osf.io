@@ -29,7 +29,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
     def test_record_list_with_read_auth(self, app, node_pub, cedar_record_for_node_pub, cedar_draft_record_for_node_pub):
 
         read = AuthUserFactory()
-        node_pub.add_contributor(read, permissions=READ, notification_type=False)
+        node_pub.add_contributor(read, permissions=READ)
         node_pub.save()
         resp = app.get(f'/v2/nodes/{node_pub._id}/cedar_metadata_records/', auth=read.auth)
         assert resp.status_code == 200
@@ -103,7 +103,7 @@ class TestNodeCedarMetadataRecordListPrivateProject(TesNodeCedarMetadataRecord):
     def test_record_list_with_admin_auth(self, app, node, cedar_record_for_node, cedar_draft_record_for_node):
 
         admin = AuthUserFactory()
-        node.add_contributor(admin, permissions=ADMIN, notification_type=False)
+        node.add_contributor(admin, permissions=ADMIN)
         node.save()
         resp = app.get(f'/v2/nodes/{node._id}/cedar_metadata_records/', auth=admin.auth)
         assert resp.status_code == 200

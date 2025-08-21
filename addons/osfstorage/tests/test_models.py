@@ -24,7 +24,6 @@ import datetime
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
-from tests.utils import capture_notifications
 from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -867,8 +866,7 @@ class TestOsfStorageCheckout(StorageTestCase):
 
     def test_checkout_logs(self):
         non_admin = factories.AuthUserFactory()
-        with capture_notifications():
-            self.node.add_contributor(non_admin, permissions=WRITE)
+        self.node.add_contributor(non_admin, permissions=WRITE)
         self.node.save()
         self.file.check_in_or_out(non_admin, non_admin, save=True)
         self.file.reload()

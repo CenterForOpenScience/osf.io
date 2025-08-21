@@ -108,7 +108,7 @@ class TestCedarMetadataRecordMetadataDownloadPublicProjectPublishedMetadata(Test
     def test_record_metadata_download_for_node_with_read_auth(self, app, node_pub, cedar_record_for_node_pub, cedar_record_metadata_json):
 
         read = AuthUserFactory()
-        node_pub.add_contributor(read, permissions=READ, notification_type=False)
+        node_pub.add_contributor(read, permissions=READ)
         node_pub.save()
         resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_node_pub._id}/metadata_download/', auth=read.auth)
         assert resp.status_code == 200
@@ -361,7 +361,7 @@ class TestCedarMetadataRecordMetadataDownloadPublicFilePublishedMetadata(TestCed
     def test_record_metadata_download_for_node_with_read_auth(self, app, node_pub, cedar_record_for_file_pub, cedar_record_metadata_json):
 
         read = AuthUserFactory()
-        node_pub.add_contributor(read, permissions=READ, notification_type=False)
+        node_pub.add_contributor(read, permissions=READ)
         node_pub.save()
         resp = app.get(f'/_/cedar_metadata_records/{cedar_record_for_file_pub._id}/metadata_download/', auth=read.auth)
         assert resp.status_code == 200
