@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
-from django.db import IntegrityError, transaction
+from django.db import transaction
 
 from osf.models import Node, RegistrationProvider
 from osf_tests.factories import (
@@ -49,7 +49,6 @@ class TestNotificationSubscriptionMigration:
     def node(self):
         return ProjectFactory()
 
-
     ALL_PROVIDER_EVENTS = [
         'new_pending_withdraw_requests',
         'contributor_added_preprint',
@@ -96,9 +95,7 @@ class TestNotificationSubscriptionMigration:
         self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=provider)
         self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=provider2)
         self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=RegistrationProvider.get_default())
-
         migrate_legacy_notification_subscriptions()
-
         subs = NotificationSubscription.objects.filter(
             notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         )
@@ -109,15 +106,11 @@ class TestNotificationSubscriptionMigration:
 
     def test_migrate_node_subscription(self, users, user, node):
         self.create_legacy_sub('file_updated', users, user=user, node=node)
-
         migrate_legacy_notification_subscriptions()
-
         nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         assert nt.object_content_type == ContentType.objects.get_for_model(Node)
-
         subs = NotificationSubscription.objects.filter(notification_type=nt)
         assert subs.count() == 1
-
         for sub in subs:
             assert sub.subscribed_object == node
 
@@ -140,8 +133,6 @@ class TestNotificationSubscriptionMigration:
 
     def test_migrate_all_subscription_types(self, users, user, provider, provider2, node):
         providers = [provider, provider2]
-        # Create legacy subscriptions for all events
-
         for event_name in self.ALL_EVENT_NAMES:
             if event_name in self.ALL_PROVIDER_EVENTS:
                 self.create_legacy_sub(event_name=event_name, users=users, user=user, node=node, provider=provider)
@@ -168,7 +159,7 @@ class TestNotificationSubscriptionMigration:
                 notification_type__name=nt_name
             )
             assert nt_objs.exists()
-        # Optional: Verify subscriptions belong to correct objects
+        # Verify subscriptions belong to correct objects
         for provider in providers:
             nt_name = NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
             content_type = ContentType.objects.get_for_model(provider.__class__)
@@ -194,16 +185,11 @@ class TestNotificationSubscriptionMigration:
 
         with pytest.raises(RuntimeError):
             failing_migration()
-        # nothing persisted
         assert NotificationSubscription.objects.filter(user=user).count() == 0
 
     def test_migrate_skips_invalid_data(self, users, user, node, provider):
-        # Create a legacy subscription with an invalid event name
         self.create_legacy_sub(event_name='wrong_data', users=users, user=user, node=node, provider=provider)
-
         migrate_legacy_notification_subscriptions()
-
-        # Invalid subs should be ignored, so no new subscriptions are created for this user
         assert NotificationSubscription.objects.filter(user=user).count() == 0
 
     def test_migrate_batch_with_valid_and_invalid(self, users, user, node, provider):
@@ -223,11 +209,7 @@ class TestNotificationSubscriptionMigration:
             node=node,
             provider=provider,
         )
-
         migrate_legacy_notification_subscriptions()
-
-        # Valid one should be migrated
         assert NotificationSubscription.objects.filter(user=user).count() == 1
-        # Check that the migrated subscription corresponds to the valid type
         migrated = NotificationSubscription.objects.filter(user=user).first()
         assert migrated.notification_type.name == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value

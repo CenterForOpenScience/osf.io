@@ -41,7 +41,7 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
 
 
 TIMEOUT_SECONDS = 3600  # 60 minutes timeout
-BATCH_SIZE = 1000
+BATCH_SIZE = 1000 # batch size, can be changed
 
 
 @contextmanager
@@ -83,10 +83,10 @@ def migrate_legacy_notification_subscriptions(
     def timeout_handler(signum, frame):
         raise TimeoutError("Batch processing timed out")
 
-    # Precompute notification type IDs
+    # Notification type IDs
     notiftype_map = dict(NotificationType.objects.values_list('name', 'id'))
 
-    # Cache existing keys only once
+    # Cache existing keys
     existing_keys = set(
         (
             user_id,
@@ -115,7 +115,7 @@ def migrate_legacy_notification_subscriptions(
             .order_by("id")[:batch_size]
         )
         if not batch:
-            break  # done
+            break
         subscriptions_to_create = []
 
         signal.signal(signal.SIGALRM, timeout_handler)
@@ -180,7 +180,7 @@ def migrate_legacy_notification_subscriptions(
                     )
                     created += len(subscriptions_to_create)
 
-            # Logging with ETA
+            # Logging ETA
             batch_time = time.time() - batch_start_time
             processed = last_id + len(batch)
             rate = processed / (time.time() - start_time_total)
