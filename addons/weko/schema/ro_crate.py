@@ -489,6 +489,15 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
                 continue
             if weko_mapping['@type'] in ['object', 'jsonobject']:
                 value = source_data.get('value', '')
+                if 'choose-additional-metadata' in value:
+                    url = value['choose-additional-metadata']
+                    value_data = json.loads(url['value'])
+                    file_path = value_data[0]['path']
+                    file_name = file_path.split('/')[-1]
+                    for item in value_data:
+                        item['path'] = item['path'].replace('osfstorage/', '')
+                    url['value'] = file_name
+                    value['choose-additional-metadata'] = url
                 if 'absolute_url' in value:
                     url = value['absolute_url']
                     parsed_url = urlparse(url)

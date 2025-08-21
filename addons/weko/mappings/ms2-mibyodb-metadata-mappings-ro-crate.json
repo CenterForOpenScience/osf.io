@@ -404,6 +404,13 @@
                 "description": "{% if purpose_of_experiment_value %}{{ purpose_of_experiment_en_value }}{% elif purpose_of_experiment_value %}{{ purpose_of_experiment_value }}{% endif %}",
                 "dateModified": "{{date_updated_in_metadata_value}}",
                 "dateCreated": "{{ date_registered_in_metadata_value }}",
+                "hasPart[]": [
+                    {
+                        ".@type": "File",
+                        ".@id": "/data/files/{{choose_additional_metadata_value}}",
+                        "name": "{{choose_additional_metadata_value}}"
+                    }
+                ],
                 "conformsTo": {
                     ".@id": "https://w3id.org/ro/crate/1.1"
                 },
