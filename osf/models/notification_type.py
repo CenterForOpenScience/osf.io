@@ -15,6 +15,7 @@ class NotificationType(models.Model):
 
     class Type(str, Enum):
         # Desk notifications
+        REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
         ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
         ADDONS_BOA_JOB_COMPLETE = 'addon_boa_job_complete'
 
@@ -52,7 +53,8 @@ class NotificationType(models.Model):
         USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
         USER_COMMENT_REPLIES = 'user_comment_replies'
         USER_FILE_UPDATED = 'user_file_updated'
-        USER_REVIEWS = 'user_reviews'
+        USER_FILE_OPERATION_SUCCESS = 'user_file_operation_success'
+        USER_FILE_OPERATION_FAILED = 'user_file_operation_failed'
         USER_PASSWORD_RESET = 'user_password_reset'
         USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE = 'user_external_login_confirm_email_create'
         USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK = 'user_external_login_email_confirm_link'
@@ -70,7 +72,6 @@ class NotificationType(models.Model):
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
         USER_NEW_PUBLIC_PROJECT = 'user_new_public_project'
         USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
-
         USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
         USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE = 'user_campaign_confirm_email_agu_conference'

@@ -84,10 +84,12 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context['requester_fullname'] = action.creator.fullname
     context['is_rejected'] = action.to_state == states.REJECTED.db_name
     context['was_pending'] = action.from_state == states.PENDING.db_name
+    context['notify_comment'] = not resource.provider.reviews_comments_private
+
     reviews_signals.reviews_email.send(
         creator=user,
         context=context,
-        template='reviews_submission_status',
+        template=NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
         action=action
     )
 
@@ -108,6 +110,7 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
     context['requester_fullname'] = action.creator.fullname
     context['referrer_fullname'] = action.creator.fullname
+    context['notify_comment'] = not resource.provider.reviews_comments_private
 
     for contributor in resource.contributors.all():
         context['user_fullname'] = contributor.fullname

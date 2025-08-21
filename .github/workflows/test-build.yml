@@ -11,7 +11,6 @@ env:
   ELASTICSEARCH6_ARCHIVE: elasticsearch-6.3.1.tar.gz
   OSF_DB_PORT: 5432
   OSF_DB_PASSWORD: postgres
-  GITHUB_ACTIONS: true
 
 jobs:
   build-cache:

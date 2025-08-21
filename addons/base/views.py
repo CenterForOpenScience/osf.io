@@ -577,11 +577,10 @@ def create_waterbutler_log(payload, **kwargs):
 
             if payload.get('email') or payload.get('errors'):
                 if payload.get('email'):
-                    notification_type = NotificationType.Type.FILE_OPERATION_SUCCESS
+                    notification_type = NotificationType.Type.USER_FILE_OPERATION_SUCCESS.instance
                 if payload.get('errors'):
-                    notification_type = NotificationType.Type.FILE_OPERATION_FAILED
-
-                NotificationType.objects.get(name=notification_type).emit(
+                    notification_type = NotificationType.Type.USER_FILE_OPERATION_FAILED.instance
+                notification_type.emit(
                     user=user,
                     subscribed_object=node,
                     event_context={

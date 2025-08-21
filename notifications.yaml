@@ -178,7 +178,7 @@ notification_types:
     subject: 'Your ${action} has finished'
     __docs__: ...
     object_content_type_model_name: osfuser
-    template: 'website/templates/file_operation_success.html.mako'
+    template: 'website/templates/file_updated.html.mako'
   - name: user_file_operation_success
     subject: 'Your ${action} has finished'
     __docs__: ...
@@ -186,10 +186,6 @@ notification_types:
     template: 'website/templates/file_operation_success.html.mako'
   - name: user_file_operation_failed
     subject: 'Your ${action} has failed'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/file_operation_failed.html.mako'
-  - name: user_reviews
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/file_operation_failed.html.mako'
@@ -287,10 +283,6 @@ notification_types:
     template: 'website/templates/reviews_resubmission_confirmation.html.mako'
 
   #### NODE
-  - name: node_wiki_updated
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/file_updated.html.mako'
   - name: node_files_updated
     __docs__: ...
     object_content_type_model_name: abstractnode
@@ -443,17 +435,17 @@ notification_types:
     template: 'website/templates/new_pending_submissions.html.mako'
   #### Collection Submissions
   - name: collection_submission_removed_moderator
-    subject: f'{node.title} was removed from {collection.title}'
+    subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_removed_private
-    subject: '{node.title} was removed from {collection.title}'
+    subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'website/templates/new_pending_submissions.html.mako'
   - name: collection_submission_removed_admin
-    subject: '{node.title} was removed from {collection.title}'
+    subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
     template: 'website/templates/new_pending_submissions.html.mako'
@@ -499,11 +491,11 @@ notification_types:
   - name: desk_archive_job_file_not_found
     __docs__: Archive job failed because files were not found. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/archive_file_not_found_desk.html.mako'
   - name: desk_archive_job_uncaught_error
     __docs__: Archive job failed due to an uncaught error. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/archive_uncaught_error_desk.html.mako'
   - name: desk_osf_support_email
     __docs__: ...
     object_content_type_model_name: desk

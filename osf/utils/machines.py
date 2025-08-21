@@ -262,10 +262,9 @@ class NodeRequestMachine(BaseMachine):
 
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-                NotificationType.objects.get(
-                    name=NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED,
-                ).emit(
+                NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.instance.emit(
                     user=admin,
+                    subscribed_object=self.machineable,
                     event_context={
                         'osf_contact_email': OSF_CONTACT_EMAIL,
                         **context
@@ -285,10 +284,9 @@ class NodeRequestMachine(BaseMachine):
 
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
-            NotificationType.objects.get(
-                name=NotificationType.Type.NODE_REQUEST_ACCESS_DENIED
-            ).emit(
+            NotificationType.Type.NODE_REQUEST_ACCESS_DENIED.instance.emit(
                 user=self.machineable.creator,
+                subscribed_object=self.machineable,
                 event_context={
                     'osf_contact_email': OSF_CONTACT_EMAIL,
                     **context
@@ -308,6 +306,7 @@ class NodeRequestMachine(BaseMachine):
             'node_title': self.machineable.target.title,
             'node_id': self.machineable.target._id,
             'node_absolute_url': self.machineable.target.absolute_url,
+            'requester_fullname': self.machineable.creator.fullname,
             'requester_absolute_url': self.machineable.creator.absolute_url,
         }
 
@@ -341,10 +340,11 @@ class PreprintRequestMachine(BaseMachine):
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
-            NotificationType.objects.get(
-                name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
-            ).emit(
+            context['comment'] = self.action.comment
+
+            NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED.instance.emit(
                 user=self.machineable.creator,
+                subscribed_object=self.machineable,
                 event_context=context
             )
         else:

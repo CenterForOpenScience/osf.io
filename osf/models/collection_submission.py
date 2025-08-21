@@ -163,6 +163,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     subscribed_object=self,
                     event_context={
                         'user_fullname': contributor.fullname,
+                        'requester_fullname': event_data.kwargs.get('user').fullname,
                         'submitter_fullname': event_data.kwargs.get('user').fullname,
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                         'collection_title': self.collection.title,
