@@ -23,7 +23,9 @@ def get_email_template_context(resource):
         'provider_name': resource.provider.name,
         'provider_contact_email': resource.provider.email_contact or OSF_CONTACT_EMAIL,
         'provider_support_email': resource.provider.email_support or OSF_SUPPORT_EMAIL,
-        'document_type': document_type
+        'document_type': document_type,
+        'notify_comment': not resource.provider.reviews_comments_private
+
     }
 
     if document_type == 'registration':
@@ -79,7 +81,6 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     context = get_email_template_context(resource)
     context['user_fullname'] = user.fullname
 
-    context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
     context['comment'] = action.comment
     context['requester_fullname'] = action.creator.fullname
     context['is_rejected'] = action.to_state == states.REJECTED.db_name
@@ -139,7 +140,6 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
-    context['notify_comment'] = not resource.provider.reviews_comments_private and action.comment
 
     for contributor in resource.contributors.all():
         context['contributor_fullname'] = contributor.fullname

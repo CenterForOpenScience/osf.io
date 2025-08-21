@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.views.utils import NodeCRUDTestCase
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
-from osf.models import NodeLog
+from osf.models import NodeLog, NotificationType
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -19,7 +19,7 @@ from osf_tests.factories import (
     IdentifierFactory,
 )
 from tests.base import fake
-from tests.utils import assert_latest_log, assert_latest_log_not
+from tests.utils import assert_latest_log, assert_latest_log_not, assert_notification
 from website import settings
 
 
@@ -32,7 +32,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
             user_two,
             permissions=permissions.ADMIN,
             auth=Auth(project_private.creator),
-            notification_type=False
         )
         affiliated_institutions = {
             'affiliated_institutions':
@@ -48,8 +47,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 ]
                 }
         }
-        payload = make_node_payload(project_private, {'public': False}, relationships=affiliated_institutions)
-        res = app.patch_json_api(url_private, payload, auth=user_two.auth, expect_errors=False)
+        with assert_notification(type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS, user=user_two):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(
+                    project_private,
+                    {'public': False},
+                    relationships=affiliated_institutions
+                ),
+                auth=user_two.auth,
+                expect_errors=False
+            )
         assert res.status_code == 200
         institutions = project_private.affiliated_institutions.all()
         assert institution_one in institutions

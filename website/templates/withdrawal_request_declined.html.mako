@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
         % if document_type == 'registration':
             Dear ${contributor_fullname},
 		    <p>

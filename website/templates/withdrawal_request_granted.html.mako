@@ -3,9 +3,6 @@
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">
-    <%!
-        from website import settings
-    %>
         Dear ${contributor_fullname},
         <p>
     % if document_type == 'registration':
@@ -14,7 +11,7 @@
         % else:
             Your request to withdraw your ${document_type} <a href="${reviewable_absolute_url}">"${reviewable_title}"</a> has been approved by ${reviewable.provider.name} moderators.
         % endif
-        % if notify_comment:
+        % if comment and notify_comment:
             <p>
             The moderator has provided the following comment:<br>
             ${comment}

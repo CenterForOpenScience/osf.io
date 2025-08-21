@@ -3,7 +3,6 @@
 <%def name="content()">
     <tr>
       <td style="border-collapse: collapse;">
-        <%!from website import settings%>
         Hello ${recipient_fullname},
         <p>
             This message is coming from an Institutional administrator within your Institution.
