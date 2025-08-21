@@ -167,6 +167,8 @@ class ReviewsMachine(BaseMachine):
     def notify_withdraw(self, ev):
         context = self.get_context()
         context['ever_public'] = self.machineable.ever_public
+        context['force_withdrawal'] = False
+
         try:
             preprint_request_action = PreprintRequestAction.objects.get(
                 target__target__id=self.machineable.id,
@@ -194,7 +196,11 @@ class ReviewsMachine(BaseMachine):
                 event_context={
                     **{
                         'document_type': self.machineable.provider.preprint_word,
-                        'comment': comment
+                        'withdrawal_justification': self.machineable.withdrawal_justification,
+                        'reviewable_withdrawal_justification': self.machineable.withdrawal_justification,
+                        'reviewable_provider_name': self.machineable.provider.name,
+                        'comment': comment,
+                        'notify_comment': not self.machineable.provider.reviews_comments_private
                     },
                     **context
                 }
@@ -228,10 +234,8 @@ class NodeRequestMachine(BaseMachine):
                 contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
                 make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
                 visible = False if make_curator else ev.kwargs.get('visible', True)
-                if self.machineable.request_type == NodeRequestTypes.ACCESS.value:
-                    notification_type = NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
-                elif self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
-                    notification_type = NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST
+                if self.machineable.request_type in (NodeRequestTypes.ACCESS.value, NodeRequestTypes.INSTITUTIONAL_REQUEST.value):
+                    notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
                 else:
                     notification_type = None
 

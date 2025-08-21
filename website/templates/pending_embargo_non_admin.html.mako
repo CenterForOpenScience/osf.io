@@ -24,7 +24,7 @@
     Admins have ${approval_time_span} hours from midnight tonight (EDT) to approve or cancel the
     registration before the registration is automatically submitted.
     </p>
-    % if not reviewable.branched_from_node:
+    % if not reviewable_branched_from_node:
       <p>
       An <a href="${reviewable_registered_from_absolute_url}">OSF Project</a> was created from
 	  this registration to support continued collaboration and sharing of your research.

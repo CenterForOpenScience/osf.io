@@ -10,6 +10,8 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
+
 
 @pytest.mark.django_db
 class NodeRequestTestMixin:
@@ -49,7 +51,8 @@ class NodeRequestTestMixin:
             request_type=RequestTypes.ACCESS.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        node_request.run_submit(requester)
+        with capture_notifications():
+            node_request.run_submit(requester)
         return node_request
 
     @pytest.fixture()
@@ -197,7 +200,8 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(admin)
+        with capture_notifications():
+            request.run_submit(admin)
         return request
 
     @pytest.fixture()
@@ -208,7 +212,8 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(admin)
+        with capture_notifications():
+            request.run_submit(admin)
         return request
 
     @pytest.fixture()
@@ -219,7 +224,8 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(requester)
+        with capture_notifications():
+            request.run_submit(requester)
         return request
 
     @pytest.fixture()
@@ -230,7 +236,8 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(requester)
+        with capture_notifications():
+            request.run_submit(requester)
         return request
 
     @pytest.fixture()
@@ -241,7 +248,8 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(requester)
+        with capture_notifications():
+            request.run_submit(requester)
         return request
 
     @pytest.fixture()
@@ -252,5 +260,6 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        request.run_submit(requester)
+        with capture_notifications():
+            request.run_submit(requester)
         return request

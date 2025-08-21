@@ -347,7 +347,7 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/access_request_rejected.html.mako'
-  - name: node_access_request_submitted
+  - name: node_request_access_submitted
     subject: 'An OSF user has requested access to your project'
     __docs__: ...
     object_content_type_model_name: abstractnode

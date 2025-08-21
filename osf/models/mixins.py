@@ -1497,7 +1497,7 @@ class ContributorMixin(models.Model):
                         notification_type = False
                 project_signals.contributor_added.send(
                     self,
-                    contributor=contributor,
+                    contributor=contrib_to_add,
                     auth=auth,
                     notification_type=notification_type,
                     permissions=permissions

@@ -27,8 +27,8 @@
                 <br>
             % else:
                 ${requester_fullname} has withdrawn your ${document_type} <a href="${reviewable_absolute_url}">"${reviewable_title}"</a> from ${reviewable_provider_name}.
-                % if reviewable.withdrawal_justification:
-                    ${requester_fullname} provided the following justification: "${reviewable+withdrawal_justification}"
+                % if reviewable_withdrawal_justification:
+                    ${requester_fullname} provided the following justification: "${reviewable_withdrawal_justification}"
                 % endif
                 <br>
                 The ${document_type} has been removed from ${reviewable_provider_name}.
@@ -44,7 +44,7 @@
                 A moderator has withdrawn your ${document_type} <a href="${reviewable_absolute_url}">"${reviewable_title}"</a> from ${reviewable_provider_name}.
                 <br>
                 The ${document_type} has been removed from ${reviewable_provider_name}, but its metadata is still available: title of the withdrawn ${document_type}, its contributor list, abstract, tags, and DOI.
-                % if reviewable.withdrawal_justification:
+                % if reviewable_withdrawal_justification:
                     The moderator has provided the following justification: "${reviewable_withdrawal_justification}".
                     <br>
                 % endif

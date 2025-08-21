@@ -5,7 +5,7 @@ from api_tests.requests.mixins import NodeRequestTestMixin, PreprintRequestTestM
 from osf.models import NotificationType
 
 from osf.utils import permissions
-from tests.utils import capture_notifications
+from tests.utils import capture_notifications, assert_notification
 
 
 @pytest.mark.django_db
@@ -66,7 +66,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
@@ -76,7 +77,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         initial_state = node_request.machine_state
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='reject')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
@@ -199,7 +201,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state
@@ -234,7 +236,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
     def test_set_permissions_on_approve(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept', permissions=permissions.ADMIN)
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()
         assert node_request.target.has_permission(node_request.creator, permissions.ADMIN)
@@ -242,7 +245,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
     def test_set_visible_on_approve(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept', visible=False)
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()
         assert node_request.creator in node_request.target.contributors
@@ -251,7 +255,8 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
     def test_accept_request_defaults_to_read_and_visible(self, app, admin, url, node_request):
         assert node_request.creator not in node_request.target.contributors
         payload = self.create_payload(node_request._id, trigger='accept')
-        res = app.post_json_api(url, payload, auth=admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=admin.auth)
         assert res.status_code == 201
         node_request.reload()
         assert node_request.creator in node_request.target.contributors
@@ -323,7 +328,8 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             initial_state = request.machine_state
             assert not request.target.is_retracted
             payload = self.create_payload(request._id, trigger='accept')
-            res = app.post_json_api(url, payload, auth=moderator.auth)
+            with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED, user=request.target.creator):
+                res = app.post_json_api(url, payload, auth=moderator.auth)
             assert res.status_code == 201
             request.reload()
             request.target.reload()
@@ -359,7 +365,8 @@ class TestCreatePreprintRequestAction(PreprintRequestTestMixin):
             initial_state = request.machine_state
             assert not request.target.is_retracted
             payload = self.create_payload(request._id, trigger='reject')
-            res = app.post_json_api(url, payload, auth=moderator.auth)
+            with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED, user=request.target.creator):
+                res = app.post_json_api(url, payload, auth=moderator.auth)
             assert res.status_code == 201
             request.reload()
             assert initial_state != request.machine_state

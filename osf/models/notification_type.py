@@ -85,7 +85,7 @@ class NotificationType(models.Model):
         NODE_FILE_UPDATED = 'node_file_updated'
         NODE_FILES_UPDATED = 'node_files_updated'
         NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
-        NODE_REQUEST_ACCESS_SUBMITTED = 'node_access_request_submitted'
+        NODE_REQUEST_ACCESS_SUBMITTED = 'node_request_access_submitted'
         NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
         NODE_FORK_COMPLETED = 'node_fork_completed'
         NODE_FORK_FAILED = 'node_fork_failed'
