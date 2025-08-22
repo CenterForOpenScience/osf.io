@@ -117,6 +117,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'profile_image_url': user.profile_image_url(),
                     'submitter_absolute_url': user.get_absolute_url(),
                     'collections_link': settings.DOMAIN + 'collections/' + self.collection.provider._id,
+                    'collections_title': self.collection.title,
                     'collection_provider_name': self.collection.provider.name,
                     'is_initiator': self.creator == contributor,
                     'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
@@ -125,7 +126,10 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'node_title': self.guid.referent.title,
                     'node_absolute_url': self.guid.referent.get_absolute_url(),
                     'domain': settings.DOMAIN,
+                    'is_request_email': True,
+                    'message': f'submitted "{self.guid.referent.title}".',
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}'
                 },
             )
 
@@ -194,16 +198,22 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderated_rejected(self, event_data):
         for contributor in self.guid.referent.contributors:
-            NotificationType.objects.get(
-                name=NotificationType.Type.COLLECTION_SUBMISSION_REJECTED,
-            ).emit(
+            NotificationType.Type.COLLECTION_SUBMISSION_REJECTED.instance.emit(
                 user=contributor,
                 subscribed_object=self,
                 event_context={
+                    'requester_contributor_names': ''.join(
+                        self.guid.referent.contributors.values_list('fullname', flat=True)),
+                    'localized_timestamp': str(timezone.now()),
                     'user_fullname': contributor.fullname,
+                    'requester_fullname': event_data.kwargs.get('user').fullname,
                     'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                     'collection_title': self.collection.title,
+                    'profile_image_url': contributor.profile_image_url(),
+                    'message': f'submission of "{self.collection.title} was rejected',
                     'node_title': self.guid.referent.title,
+                    'is_request_email': True,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                 },
@@ -237,7 +247,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         event_context_base = {
             'remover_fullname': user.fullname,
             'collection_id': self.collection.id,
+            'collection_title': self.collection.title,
             'node_title': node.title,
+            'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
@@ -266,25 +278,36 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 )
         elif is_moderator and self.collection.provider:
             for contributor in node.contributors.all():
-                NotificationType.objects.get(
-                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
-                ).emit(
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+
                         'is_admin': node.has_permission(contributor, ADMIN),
                         'rejection_justification': event_data.kwargs.get('comment'),
+                        'collections_title': self.collection.title,
+                        'is_request_email': False,
+                        'message': '',
+                        'localized_timestamp': str(timezone.now()),
+                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     },
                 )
         elif is_admin and self.collection.provider:
             for contributor in node.contributors.all():
-                NotificationType.objects.get(
-                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
-                ).emit(
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+                        'collections_title': self.collection.title,
+                        'is_request_email': False,
+                        'message': '',
                         'is_admin': node.has_permission(contributor, ADMIN),
+                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+
                     },
                 )
 
@@ -326,9 +349,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             collection_provider_name = self.collection.title
 
         for contributor in node.contributors.all():
-            NotificationType.objects.get(
-                name=NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
-            ).emit(
+            NotificationType.Type.COLLECTION_SUBMISSION_CANCEL.instance.emit(
                 user=contributor,
                 subscribed_object=self.collection,
                 event_context={
@@ -339,9 +360,13 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'remover_fullname': user.fullname if user else '',
                     'remover_absolute_url': user.get_absolute_url() if user else '',
                     'collections_link': collections_link,
+                    'collection_title': self.collection.title,
                     'collection_provider_name': collection_provider_name,
                     'domain': settings.DOMAIN,
+                    'is_request_email': False,
+                    'message': '',
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 },
             )
 

@@ -1424,7 +1424,6 @@ class ContributorMixin(models.Model):
         :param bool make_curator indicates whether the user should be an institutional curator
         :returns: Whether contributor was added
         """
-        print(make_curator, 'ss')
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if notification_type in ('default', None):

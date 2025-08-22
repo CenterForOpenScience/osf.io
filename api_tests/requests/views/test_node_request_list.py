@@ -156,7 +156,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         # Create the first request a basic request_type == `institutional_request` request
         app.post_json_api(url, create_payload, auth=noncontrib.auth)
         node_request = project.requests.get()
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT, user=node_request.creator):
+        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST, user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
         assert node_request.machine_state == 'accepted'
