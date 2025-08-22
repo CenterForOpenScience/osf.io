@@ -112,7 +112,7 @@ class TestCreateSchemaResponse():
 
 
 @pytest.mark.django_db
-class TestUnmoderatedSchemaResponseApprovalFlows():
+class TestUnmoderatedSchemaResponseApprovalFlows:
 
     @override_switch(features.ENABLE_MAILHOG, active=True)
     def test_submit_response_notification(
@@ -171,7 +171,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
 
 
 @pytest.mark.django_db
-class TestModeratedSchemaResponseApprovalFlows():
+class TestModeratedSchemaResponseApprovalFlows:
 
     @pytest.fixture
     def provider(self):
