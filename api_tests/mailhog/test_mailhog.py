@@ -29,19 +29,19 @@ class TestMailHog:
     def test_mailhog_received_mail(self):
         delete_mailhog_messages()
 
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
-            ).emit(
-                message_frequency='instantly',
-                destination_address='to_addr@mail.com',
-                event_context={
-                    'user_fullname': '<NAME>',
-                    'osf_support_email': '<EMAIL>',
-                    'count': 'test_count',
-                    'draft_errors': [],
-                    'error': 'eooer',
-                }
-            )
+        NotificationType.objects.get(
+            name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
+        ).emit(
+            message_frequency='instantly',
+            destination_address='to_addr@mail.com',
+            event_context={
+                'user_fullname': '<NAME>',
+                'osf_support_email': '<EMAIL>',
+                'count': 'test_count',
+                'draft_errors': [],
+                'error': 'eooer',
+            }
+        )
 
         res = get_mailhog_messages()
         assert res['count'] == 1
