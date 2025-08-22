@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.utils.functional import cached_property
 from framework import sentry
 from framework.exceptions import PermissionsError
+from website.settings import DOMAIN
 
 from .base import BaseModel
 from .mixins import TaxonomizableMixin
@@ -102,9 +103,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
                 claim_url = None
 
-            NotificationType.objects.get(
-                name=NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
-            ).emit(
+            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.instance.emit(
                 is_digest=True,
                 user=contributor,
                 subscribed_object=self,
@@ -156,15 +155,21 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_accepted(self, event_data):
         if self.collection.provider:
             for contributor in self.guid.referent.contributors:
-                NotificationType.objects.get(
-                    name=NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED,
-                ).emit(
+                NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED.instance.emit(
                     user=contributor,
                     subscribed_object=self,
                     event_context={
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+                        'localized_timestamp': str(timezone.now()),
                         'user_fullname': contributor.fullname,
                         'requester_fullname': event_data.kwargs.get('user').fullname,
                         'submitter_fullname': event_data.kwargs.get('user').fullname,
+                        'profile_image_url': contributor.profile_image_url(),
+                        'is_request_email': False,
+                        'reviews_submission_url': f'{DOMAIN}reviews/preprints/{self.guid.referent.provider._id}/'
+                                                  f'{self.guid.referent._id}' if self.guid.referent.provider else '',
+                        'message': event_data.kwargs.get('comment'),
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                         'collection_title': self.collection.title,
                         'node_title': self.guid.referent.title,

@@ -399,11 +399,12 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         user.add_or_update_affiliated_institution(institution)
 
         del payload['data']['relationships']['branched_from']
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth,
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth,
+            )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
@@ -419,7 +420,8 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
             self, app, user, url_draft_registrations,
             payload, metaschema_open_ended):
         url = f'{url_draft_registrations}embed=branched_from&embed=initiator'
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user.auth)
 
         assert res.status_code == 201
         data = res.json['data']
@@ -449,7 +451,8 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider
     ):
-        res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
         assert data['relationships']['provider']['links']['related']['href'] == \
@@ -462,20 +465,24 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         """(no node supplied, so any logged in user can create)
         """
         assert user_write_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_write_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_read_only(self, app, user, url_draft_registrations, user_read_contrib, project_public, payload):
         '''(no node supplied, so any logged in user can create)
         '''
         assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_read_contrib.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_read_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_non_authenticated_user_cannot_create_draft(self, app, user, url_draft_registrations, payload):
@@ -489,11 +496,12 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     def test_logged_in_non_contributor(self, app, user, url_draft_registrations, user_non_contrib, payload):
         '''(no node supplied, so any logged in user can create)
         '''
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_non_contrib.auth
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_non_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_draft_registration_attributes_not_copied_from_node(self, app, project_public,
