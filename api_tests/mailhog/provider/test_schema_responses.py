@@ -81,10 +81,11 @@ def initial_response(registration):
 
 @pytest.fixture
 def revised_response(initial_response):
-    revised_response = schema_response.SchemaResponse.create_from_previous_response(
-        previous_response=initial_response,
-        initiator=initial_response.initiator
-    )
+    with override_switch(features.ENABLE_MAILHOG, active=True):
+        revised_response = schema_response.SchemaResponse.create_from_previous_response(
+            previous_response=initial_response,
+            initiator=initial_response.initiator
+        )
     return revised_response
 
 
