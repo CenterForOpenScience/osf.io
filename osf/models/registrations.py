@@ -1325,7 +1325,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @classmethod
-    def create_from_node(cls, user, schema, node=None, data=None, provider=None):
+    def create_from_node(
+            cls,
+            user,
+            schema,
+            node=None,
+            data=None,
+            provider=None,
+            notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+    ):
         if not provider:
             provider = RegistrationProvider.get_default()
 
@@ -1367,7 +1375,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 draft,
                 contributor=user,
                 auth=None,
-                notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
+                notification_type=notification_type,
                 permissions=initiator_permissions
             )
 

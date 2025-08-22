@@ -427,7 +427,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         node_request = project.requests.get()
 
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                                  user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
@@ -454,7 +454,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
             app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         node_request = project.requests.get()
 
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                                  user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()

@@ -201,7 +201,7 @@ class TestCreateNodeRequestAction(NodeRequestTestMixin):
         with capture_notifications() as notifications:
             res = app.post_json_api(url, payload, auth=admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         node_request.reload()
         assert initial_state != node_request.machine_state

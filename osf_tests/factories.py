@@ -572,6 +572,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
+            notification_type=False
         )
         if title:
             draft.title = title

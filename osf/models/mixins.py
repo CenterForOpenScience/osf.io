@@ -313,11 +313,9 @@ class AffiliatedInstitutionMixin(models.Model):
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    NotificationType.objects.get(
-                        name=NotificationType.Type.NODE_AFFILIATION_CHANGED
-                    ).emit(
+                    NotificationType.Type.NODE_AFFILIATION_CHANGED.instance.emit(
                         user=user,
-                        subscribed_object=user,
+                        subscribed_object=self,
                         event_context={
                             'domain': settings.DOMAIN,
                             'user_fullname': user.fullname,
@@ -359,11 +357,9 @@ class AffiliatedInstitutionMixin(models.Model):
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
-                    NotificationType.objects.get(
-                        name=NotificationType.Type.NODE_AFFILIATION_CHANGED
-                    ).emit(
-                        subscribed_object=self,
+                    NotificationType.Type.NODE_AFFILIATION_CHANGED.instance.emit(
                         user=user,
+                        subscribed_object=self,
                         event_context={
                             'domain': settings.DOMAIN,
                             'user_fullname': user.fullname,
@@ -1428,6 +1424,7 @@ class ContributorMixin(models.Model):
         :param bool make_curator indicates whether the user should be an institutional curator
         :returns: Whether contributor was added
         """
+        print(make_curator, 'ss')
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
         if notification_type in ('default', None):
