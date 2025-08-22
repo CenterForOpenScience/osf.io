@@ -19,6 +19,7 @@ from osf.models.institution import SsoFilterCriteriaAction
 from osf_tests.factories import InstitutionFactory, ProjectFactory, UserFactory, RegionFactory
 
 from tests.base import capture_signals
+from tests.utils import capture_notifications
 
 
 def make_user(username, fullname):
@@ -195,7 +196,8 @@ class TestInstitutionAuth:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution, username))
+            with capture_notifications():
+                res = app.post(url_auth_institution, make_payload(institution, username))
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -254,7 +256,8 @@ class TestInstitutionAuth:
     def test_new_user_names_guessed_if_not_provided(self, app, institution, url_auth_institution):
 
         username = 'user_created_with_fullname_only@osf.edu'
-        res = app.post(url_auth_institution, make_payload(institution, username))
+        with capture_notifications():
+            res = app.post(url_auth_institution, make_payload(institution, username))
         assert res.status_code == 204
 
         user = OSFUser.objects.filter(username=username).first()
@@ -267,10 +270,11 @@ class TestInstitutionAuth:
     def test_new_user_names_used_when_provided(self, app, institution, url_auth_institution):
 
         username = 'user_created_with_names@osf.edu'
-        res = app.post(
-            url_auth_institution,
-            make_payload(institution, username, given_name='Foo', family_name='Bar')
-        )
+        with capture_notifications():
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, username, given_name='Foo', family_name='Bar')
+            )
         assert res.status_code == 204
 
         user = OSFUser.objects.filter(username=username).first()
@@ -284,21 +288,23 @@ class TestInstitutionAuth:
 
         username, fullname, password = 'user_active@user.edu', 'Foo Bar', 'FuAsKeEr'
         user = make_user(username, fullname)
-        user.set_password(password)
+        with capture_notifications():
+            user.set_password(password)
         user.save()
 
         with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(
-                    institution,
-                    username,
-                    family_name='User',
-                    given_name='Fake',
-                    fullname='Fake User',
-                    department='Fake Department',
+            with capture_notifications():
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(
+                        institution,
+                        username,
+                        family_name='User',
+                        given_name='Fake',
+                        fullname='Fake User',
+                        department='Fake Department',
+                    )
                 )
-            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
@@ -330,17 +336,18 @@ class TestInstitutionAuth:
         assert not user.has_usable_password()
 
         with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(
-                    institution,
-                    username,
-                    family_name='User',
-                    given_name='Fake',
-                    fullname='Fake User',
-                    department='Fake Department',
+            with capture_notifications():
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(
+                        institution,
+                        username,
+                        family_name='User',
+                        given_name='Fake',
+                        fullname='Fake User',
+                        department='Fake Department',
+                    )
                 )
-            )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -370,17 +377,18 @@ class TestInstitutionAuth:
         # Unconfirmed user has a usable password created during sign-up
         assert user.has_usable_password()
 
-        with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(
-                    institution,
-                    username,
-                    family_name='User',
-                    given_name='Fake',
-                    fullname='Fake User'
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(
+                        institution,
+                        username,
+                        family_name='User',
+                        given_name='Fake',
+                        fullname='Fake User'
+                    )
                 )
-            )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -403,7 +411,8 @@ class TestInstitutionAuth:
 
         username, fullname, password = 'user_inactive@osf.edu', 'Foo Bar', 'FuAsKeEr'
         user = make_user(username, fullname)
-        user.set_password(password)
+        with capture_notifications() as mock_signals:
+            user.set_password(password)
         # User must be saved before deactivation
         user.save()
         user.deactivate_account()
@@ -501,7 +510,8 @@ class TestInstitutionStorageRegion:
     def test_region_updated_for_new_user(self, app, institution_region_preferred, institution_without_user_default_region, url_auth_institution):
         username = 'user_with_region_1@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
-        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+        with capture_notifications():
+            res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user = OSFUser.objects.get(username=username)
         assert user.addons_osfstorage_user_settings.default_region == institution_region_preferred
@@ -509,7 +519,8 @@ class TestInstitutionStorageRegion:
     def test_region_not_updated_for_new_user(self, app, user_default_region, institution_region_preferred, institution_with_default_user_region, url_auth_institution):
         username = 'user_with_region_2@osf.edu'
         assert OSFUser.objects.filter(username=username).count() == 0
-        res = app.post(url_auth_institution, make_payload(institution_with_default_user_region, username))
+        with capture_notifications():
+            res = app.post(url_auth_institution, make_payload(institution_with_default_user_region, username))
         assert res.status_code == 204
         user = OSFUser.objects.filter(username=username).first()
         assert user.addons_osfstorage_user_settings.default_region == user_default_region
@@ -520,7 +531,9 @@ class TestInstitutionStorageRegion:
         username = 'user_with_region_3@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+
+        with capture_notifications():
+            res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region
@@ -549,10 +562,11 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(institution_primary_type_2, username, user_roles=type_2_ineligible_user_roles)
-            )
+            with capture_notifications():
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(institution_primary_type_2, username, user_roles=type_2_ineligible_user_roles)
+                )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -570,10 +584,11 @@ class TestInstitutionAuthnSharedSSOCriteriaType2:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(institution_primary_type_2, username, user_roles=type_2_eligible_user_roles)
-            )
+            with capture_notifications():
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(institution_primary_type_2, username, user_roles=type_2_eligible_user_roles)
+                )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -803,7 +818,8 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
+            with capture_notifications():
+                res = app.post(url_auth_institution, make_payload(institution_primary_type_1, username))
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -823,10 +839,11 @@ class TestInstitutionAuthnSharedSSOCriteriaType1:
         assert OSFUser.objects.filter(username=username).count() == 0
 
         with capture_signals() as mock_signals:
-            res = app.post(
-                url_auth_institution,
-                make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
-            )
+            with capture_notifications():
+                res = app.post(
+                    url_auth_institution,
+                    make_payload(institution_primary_type_1, username, is_member_of='thepolicylab')
+                )
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -1056,7 +1073,8 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType1:
             selective_sso_filter='http://directory.manchester.ac.uk/epe/3rdparty/osf'
         )
         with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+            with capture_notifications():
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -1144,8 +1162,9 @@ class TestInstitutionAuthnSelectiveSSOCriteriaType2:
             username,
             selective_sso_filter='Yes'
         )
-        with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -1231,8 +1250,9 @@ class TestInstitutionAuthnWithIdentity:
         assert get_user(email=sso_email) is None
 
         payload = make_payload(institution, sso_email, sso_identity=sso_identity, department=department)
-        with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
@@ -1351,8 +1371,9 @@ class TestInstitutionAuthnWithIdentity:
         assert sso_email not in user.emails.values_list('address', flat=True)
 
         payload = make_payload(institution, sso_email, sso_identity=sso_identity)
-        with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
@@ -1384,8 +1405,9 @@ class TestInstitutionAuthnWithIdentity:
         assert user_by_identity.is_affiliated_with_institution(institution)
 
         payload = make_payload(institution, sso_email, sso_identity=sso_identity)
-        with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
@@ -1499,8 +1521,9 @@ class TestInstitutionAuthnWithIdentity:
         assert user.is_affiliated_with_institution(institution)
 
         payload = make_payload(institution, sso_email, sso_identity=sso_identity, fullname=fullname)
-        with capture_signals() as mock_signals:
-            res = app.post(url_auth_institution, payload)
+        with capture_notifications():
+            with capture_signals() as mock_signals:
+                res = app.post(url_auth_institution, payload)
         assert res.status_code == 204
         assert mock_signals.signals_sent() == {signals.user_confirmed}
 
