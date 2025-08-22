@@ -414,7 +414,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return
         for contrib, node in group:
             if contrib._id in self.approval_state:
-                return self.AUTHORIZER_NOTIFY_EMAIL_TYPE.emit(
+                return self.AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
                     event_context=self._email_template_context(
                         contrib,
@@ -423,7 +423,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
                     )
                 )
             else:
-                return self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.emit(
+                return self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
                     event_context=self._email_template_context(contrib, node)
                 )
@@ -649,8 +649,8 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN.instance
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN.instance
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'

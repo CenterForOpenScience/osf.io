@@ -116,9 +116,7 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
         context['user_fullname'] = contributor.fullname
         context['contributor_fullname'] = contributor.fullname
         context['is_requester'] = action.creator == contributor
-        NotificationType.objects.get(
-            name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED
-        ).emit(
+        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
             user=contributor,
             event_context={
                 'is_requester': contributor == action.creator,
@@ -142,14 +140,13 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
+    context['reviewable_withdrawal_justification'] = resource.withdrawal_justification
 
     for contributor in resource.contributors.all():
         context['contributor_fullname'] = contributor.fullname
         context['user_fullname'] = contributor.fullname
         context['is_requester'] = resource.retraction.initiated_by == contributor
-        NotificationType.objects.get(
-            name=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED
-        ).emit(
+        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
             user=contributor,
             event_context=context
         )

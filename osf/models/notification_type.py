@@ -104,6 +104,8 @@ class NotificationType(models.Model):
         NODE_SCHEMA_RESPONSE_APPROVED = 'node_schema_response_approved'
         NODE_SCHEMA_RESPONSE_SUBMITTED = 'node_schema_response_submitted'
         NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
+        NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
+        NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
 
         FILE_UPDATED = 'file_updated'
         FILE_ADDED = 'file_added'

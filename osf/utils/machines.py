@@ -166,7 +166,6 @@ class ReviewsMachine(BaseMachine):
 
     def notify_withdraw(self, ev):
         context = self.get_context()
-        context['ever_public'] = self.machineable.ever_public
         context['force_withdrawal'] = False
 
         try:
@@ -185,6 +184,9 @@ class ReviewsMachine(BaseMachine):
             comment = None
 
         context['requester_fullname'] = requester.fullname
+        context['ever_public'] = self.machineable.ever_public
+        context['reviewable_withdrawal_justification'] = self.machineable.withdrawal_justification
+
         for contributor in self.machineable.contributors.all():
             context['contributor_fullname'] = contributor.fullname
             if context.get('requester_fullname', None):
@@ -194,14 +196,10 @@ class ReviewsMachine(BaseMachine):
                 user=contributor,
                 subscribed_object=self.machineable,
                 event_context={
-                    **{
-                        'document_type': self.machineable.provider.preprint_word,
-                        'withdrawal_justification': self.machineable.withdrawal_justification,
-                        'reviewable_withdrawal_justification': self.machineable.withdrawal_justification,
-                        'reviewable_provider_name': self.machineable.provider.name,
-                        'comment': comment,
-                        'notify_comment': not self.machineable.provider.reviews_comments_private
-                    },
+                    'document_type': self.machineable.provider.preprint_word,
+                    'reviewable_provider_name': self.machineable.provider.name,
+                    'comment': comment,
+                    'notify_comment': not self.machineable.provider.reviews_comments_private,
                     **context
                 }
             )

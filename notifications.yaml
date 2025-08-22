@@ -399,6 +399,12 @@ notification_types:
     subject: 'Registration of ${src_title} complete'
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_success.html.mako'
+  - name: node_withdraw_registration_approved
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/project/retract_registration.mako'
+  - name: node_withdraw_registration_declined
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/project/retract_registration.mako'
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf
