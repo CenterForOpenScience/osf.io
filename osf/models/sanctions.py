@@ -414,7 +414,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return
         for contrib, node in group:
             if contrib._id in self.approval_state:
-                return NotificationType.objects.get(name=self.AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+                return self.AUTHORIZER_NOTIFY_EMAIL_TYPE.emit(
                     user=contrib,
                     event_context=self._email_template_context(
                         contrib,
@@ -423,7 +423,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
                     )
                 )
             else:
-                return NotificationType.objects.get(name=self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE).emit(
+                return self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.emit(
                     user=contrib,
                     event_context=self._email_template_context(contrib, node)
                 )
@@ -555,6 +555,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
 
@@ -567,6 +568,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'approval_time_span': approval_time_span,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
             })
         return context
@@ -647,8 +649,8 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN.instance
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN.instance
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -710,6 +712,7 @@ class Retraction(EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
@@ -723,9 +726,9 @@ class Retraction(EmailApprovableSanction):
             return {
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
-
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
@@ -843,6 +846,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable__id': self._get_registration()._id,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
@@ -1003,6 +1007,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': registration.title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': registration.absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -1021,6 +1026,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'embargo_end_date': self.end_date,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': registration.title,
+                'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': registration.absolute_url,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
