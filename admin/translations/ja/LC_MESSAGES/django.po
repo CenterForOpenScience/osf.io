@@ -519,6 +519,10 @@ msgstr "GakuNin RDM機関管理者ページへようこそ"
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
 
+#: admin/templates/base.html:345
+msgid "/static/img/footer_logo_EN.png"
+msgstr "/static/img/footer_logo_JP.png"
+
 #: admin/templates/collection_providers/cannot_delete.html:7
 msgid "Collection Provider Delete"
 msgstr "コレクションプロバイダーの削除"
