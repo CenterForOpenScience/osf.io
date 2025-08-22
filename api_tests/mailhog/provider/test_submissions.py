@@ -6,7 +6,6 @@ from api.base.settings.defaults import API_BASE
 
 from api.providers.workflows import Workflows
 from osf.utils.workflows import RegistrationModerationTriggers
-from osf.email import _render_email_html
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -20,7 +19,7 @@ from tests.base import get_default_metaschema
 from osf.models import NotificationType
 
 from osf.migrations import update_provider_auth_groups
-from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages
+from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages, assert_emails
 
 
 @pytest.mark.django_db
@@ -85,15 +84,7 @@ class TestRegistriesModerationSubmissions:
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        for i in range(len(notifications['emails'])):
-            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
-            expected = _render_email_html(
-                notifications['emails'][i]['notification_type'].template,
-                notifications['emails'][i]['context']
-            )
-            actual = massages['items'][i]['Content']['Body']
-            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
-            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
+        assert_emails(massages, notifications)
 
         delete_mailhog_messages()
 
@@ -128,15 +119,7 @@ class TestRegistriesModerationSubmissions:
         assert notifications['emits'][2]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        for i in range(len(notifications['emails'])):
-            assert notifications['emails'][i]['to'] == massages['items'][i]['Content']['Headers']['To'][0]
-            expected = _render_email_html(
-                notifications['emails'][i]['notification_type'].template,
-                notifications['emails'][i]['context']
-            )
-            actual = massages['items'][i]['Content']['Body']
-            normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
-            assert normalize(expected).rstrip("\n") == normalize(actual).rstrip("\n")
+        assert_emails(massages, notifications)
 
         delete_mailhog_messages()
 
