@@ -355,7 +355,7 @@ def assert_emails(mailhog_messages, notifications):
     expected_reciver = []
     actual_reciver = []
 
-    normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+    normalize = lambda s: s.replace('\r\n', '\n').replace('\r', '\n')
 
     for item in notifications['emails']:
         expected_reciver.append(item['to'])
@@ -364,12 +364,12 @@ def assert_emails(mailhog_messages, notifications):
             item['context']
         )
 
-        expected_html.append(normalize(expected).rstrip("\n"))
+        expected_html.append(normalize(expected).rstrip('\n'))
 
     for item in mailhog_messages['items']:
         actual_reciver.append(item['Content']['Headers']['To'][0])
         actual = item['Content']['Body']
-        actual_html.append(normalize(actual).rstrip("\n"))
+        actual_html.append(normalize(actual).rstrip('\n'))
     assert Counter(expected_html) == Counter(actual_html)
     assert Counter(expected_reciver) == Counter(actual_reciver)
 
