@@ -1,3 +1,4 @@
+from collections import Counter
 import contextlib
 import datetime
 import functools
@@ -11,6 +12,7 @@ from django.utils import timezone
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
+from osf.email import _render_email_html
 from osf_tests.factories import DraftRegistrationFactory
 from osf.models import Sanction
 from tests.base import get_default_metaschema
@@ -294,24 +296,24 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
         _real_send_over_smtp = _osf_email.send_email_over_smtp
         _real_send_with_sendgrid = _osf_email.send_email_with_send_grid
 
-        def _fake_send_over_smtp(to_email, notification_type, context, email_context):
+        def _fake_send_over_smtp(to_email, notification_type, context=None, email_context=None):
             captured['emails'].append({
                 'protocol': 'smtp',
                 'to': to_email,
                 'notification_type': notification_type,
-                'context': context,
-                'email_context': email_context,
+                'context': context.copy() if isinstance(context, dict) else context,
+                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
             })
             if passthrough:
                 return _real_send_over_smtp(to_email, notification_type, context, email_context)
 
-        def _fake_send_with_sendgrid(user, notification_type, context, email_context):
+        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None):
             captured['emails'].append({
                 'protocol': 'sendgrid',
                 'to': user,
                 'notification_type': notification_type,
-                'context': context,
-                'email_context': email_context,
+                'context': context.copy() if isinstance(context, dict) else context,
+                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
             })
             if passthrough:
                 return _real_send_with_sendgrid(user, notification_type, context, email_context)
@@ -345,6 +347,31 @@ def delete_mailhog_messages():
         return
     mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v1/messages'
     requests.delete(mailhog_url)
+
+
+def assert_emails(mailhog_messages, notifications):
+    expected_html = []
+    actual_html = []
+    expected_reciver = []
+    actual_reciver = []
+
+    normalize = lambda s: s.replace("\r\n", "\n").replace("\r", "\n")
+
+    for item in notifications['emails']:
+        expected_reciver.append(item['to'])
+        expected = _render_email_html(
+            item['notification_type'].template,
+            item['context']
+        )
+
+        expected_html.append(normalize(expected).rstrip("\n"))
+
+    for item in mailhog_messages['items']:
+        actual_reciver.append(item['Content']['Headers']['To'][0])
+        actual = item['Content']['Body']
+        actual_html.append(normalize(actual).rstrip("\n"))
+    assert Counter(expected_html) == Counter(actual_html)
+    assert Counter(expected_reciver) == Counter(actual_reciver)
 
 import contextlib
 from typing import Any, Optional
