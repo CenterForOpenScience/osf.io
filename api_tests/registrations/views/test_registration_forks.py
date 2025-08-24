@@ -12,6 +12,7 @@ from osf_tests.factories import (
     WithdrawnRegistrationFactory,
     ForkFactory
 )
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -258,10 +259,12 @@ class TestRegistrationForkCreate:
     def test_create_fork_from_public_registration_with_new_title(
             self, app, user, public_registration,
             public_registration_url, fork_data_with_title):
-        res = app.post_json_api(
-            public_registration_url,
-            fork_data_with_title,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                public_registration_url,
+                fork_data_with_title,
+                auth=user.auth
+            )
         assert res.status_code == 201
         data = res.json['data']
         assert data['id'] == public_registration.forks.first()._id
@@ -272,10 +275,12 @@ class TestRegistrationForkCreate:
     def test_create_fork_from_private_registration_with_new_title(
             self, app, user, private_registration,
             private_registration_url, fork_data_with_title):
-        res = app.post_json_api(
-            private_registration_url,
-            fork_data_with_title,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                private_registration_url,
+                fork_data_with_title,
+                auth=user.auth
+            )
         assert res.status_code == 201
         data = res.json['data']
         assert data['id'] == private_registration.forks.first()._id
@@ -286,10 +291,12 @@ class TestRegistrationForkCreate:
     def test_can_fork_public_registration_logged_in(
             self, app, user_two, public_registration,
             public_registration_url, fork_data):
-        res = app.post_json_api(
-            public_registration_url,
-            fork_data,
-            auth=user_two.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                public_registration_url,
+                fork_data,
+                auth=user_two.auth
+            )
         assert res.status_code == 201
         data = res.json['data']
         assert data['id'] == public_registration.forks.first()._id
@@ -341,8 +348,13 @@ class TestRegistrationForkCreate:
 
     def test_can_fork_private_registration_logged_in_contributor(
             self, app, user, private_registration, private_registration_url, fork_data):
-        res = app.post_json_api('{}?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from'.format(
-            private_registration_url), fork_data, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                f'{private_registration_url}?'
+                f'embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from',
+                fork_data,
+                auth=user.auth
+            )
         assert res.status_code == 201
 
         data = res.json['data']
@@ -367,7 +379,8 @@ class TestRegistrationForkCreate:
             creator=user_two,
             is_public=False
         )
-        res = app.post_json_api(url, fork_data, auth=user_three.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, fork_data, auth=user_three.auth)
         assert res.status_code == 201
         # Private components that you do not have access to are not forked
         assert res.json['data']['embeds']['children']['links']['meta']['total'] == 0
@@ -377,7 +390,8 @@ class TestRegistrationForkCreate:
             private_registration_url, fork_data):
         url = f'{private_registration_url}?embed=children'
         new_component = NodeFactory(parent=private_registration, creator=user)
-        res = app.post_json_api(url, fork_data, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['embeds']['children']['links']['meta']['total'] == 1
         assert res.json['data']['embeds']['children']['data'][0]['id'] == new_component.forks.first(
@@ -389,7 +403,8 @@ class TestRegistrationForkCreate:
         url = f'{private_registration_url}?embed=node_links'
 
         # Node link is forked, but shows up as a private node link
-        res = app.post_json_api(url, fork_data, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node'][
             'errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
         assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 1
@@ -405,7 +420,8 @@ class TestRegistrationForkCreate:
         url = '/{}registrations/{}/forks/{}'.format(
             API_BASE, new_registration._id, '?embed=node_links')
 
-        res = app.post_json_api(url, fork_data, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['data']['id'] == pointer._id
         assert res.json['data']['embeds']['node_links']['links']['meta']['total'] == 2
 

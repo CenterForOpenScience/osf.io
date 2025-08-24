@@ -558,7 +558,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
-
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification
             })
         else:
             context.update({
@@ -570,6 +570,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification
             })
         return context
 
@@ -713,6 +715,8 @@ class Retraction(EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
+                'reviewable_provider_name': self._get_registration().provider.name,
+                'reviewable_provider__id': self._get_registration().provider._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
@@ -729,6 +733,7 @@ class Retraction(EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
+                'reviewable_provider__id': self._get_registration().provider._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,

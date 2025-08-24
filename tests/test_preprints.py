@@ -336,7 +336,6 @@ class TestContributorMethods:
                 {'user': user2, 'permissions': WRITE, 'visible': False}
             ],
             auth=auth,
-            notification_type=False
         )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
@@ -569,36 +568,42 @@ class TestPreprintAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
-        with pytest.raises(ValidationError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
+        with capture_notifications():
+            with pytest.raises(ValidationError) as excinfo:
+                preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
-        with pytest.raises(ValueError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
+        with capture_notifications():
+            with pytest.raises(ValueError) as excinfo:
+                preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, preprint):
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
@@ -2350,7 +2355,8 @@ class TestWithdrawnPreprint:
         assert preprint.ever_public
 
         # pre-mod
-        unpublished_preprint_pre_mod.run_submit(user)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(user)
 
         assert not unpublished_preprint_pre_mod.ever_public
         unpublished_preprint_pre_mod.run_reject(user, 'it')
@@ -2361,7 +2367,8 @@ class TestWithdrawnPreprint:
         assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        unpublished_preprint_post_mod.run_submit(user)
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_submit(user)
         assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False
@@ -2381,7 +2388,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.is_retracted
         assert preprint.verified_publishable
@@ -2392,7 +2400,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_post_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_post_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_post_mod.is_retracted
         assert preprint_post_mod.verified_publishable
@@ -2403,7 +2412,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_pre_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_pre_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable
@@ -2458,7 +2468,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_pre_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(creator)
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2478,7 +2489,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_pre_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(creator)
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2486,7 +2498,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.REJECTED.value
         assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
@@ -2512,7 +2525,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
@@ -2546,7 +2560,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
@@ -2554,7 +2569,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_reject(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_reject(moderator, 'comment')
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.REJECTED.value
         assert new_version.versioned_guids.first().is_rejected is True
@@ -2566,7 +2582,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_post_mod.is_published is False
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_post_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_submit(creator)
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_post_mod.get_guid()
@@ -2574,7 +2591,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_post_mod.run_accept(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_post_mod.get_guid()
@@ -2599,7 +2617,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
@@ -2607,7 +2626,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()
@@ -2623,7 +2643,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert preprint_pre_mod.is_published is True
         assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         preprint_pre_mod.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2639,7 +2660,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert preprint_post_mod.is_published is True
         assert preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         preprint_post_mod.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2655,8 +2677,9 @@ class TestPreprintVersionWithModeration:
             is_published=False,
             set_doi=False
         )
-        new_version.run_submit(creator)
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_submit(creator)
+            new_version.run_accept(moderator, 'comment')
         new_version.reload()
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
@@ -2665,7 +2688,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         new_version.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2681,8 +2705,9 @@ class TestPreprintVersionWithModeration:
             is_published=False,
             set_doi=False
         )
-        new_version.run_submit(creator)
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_submit(creator)
+            new_version.run_accept(moderator, 'comment')
         new_version.reload()
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
@@ -2691,7 +2716,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         new_version.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`

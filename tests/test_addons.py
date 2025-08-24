@@ -22,6 +22,7 @@ from osf_tests.factories import (
     ProjectFactory,
     RegistrationFactory,
 )
+from tests.utils import capture_notifications
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -354,7 +355,8 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.node._id, 'path': 'pizza'})
         nlogs = self.node.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
 

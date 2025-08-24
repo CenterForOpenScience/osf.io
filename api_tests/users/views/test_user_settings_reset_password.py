@@ -17,7 +17,8 @@ class TestResetPassword:
     @pytest.fixture()
     def throttle_user(self):
         user = UserFactory()
-        user.set_password('password1')
+        with capture_notifications():
+            user.set_password('password1')
         user.auth = (user.username, 'password1')
         user.save()
         return user
@@ -25,7 +26,8 @@ class TestResetPassword:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        user.set_password('password1')
+        with capture_notifications():
+            user.set_password('password1')
         user.auth = (user.username, 'password1')
         user.save()
         return user

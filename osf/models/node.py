@@ -35,6 +35,7 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
+from osf.models.notification_type import NotificationType
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -1553,8 +1554,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
-    # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None, parent=None):
+    def fork_node(
+            self,
+            auth,
+            title=None,
+            parent=None,
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+    ):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
@@ -1675,7 +1681,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             forked,
             contributor=user,
             auth=auth,
-            notification_type=None
+            notification_type=notification_type
         )
 
         return forked

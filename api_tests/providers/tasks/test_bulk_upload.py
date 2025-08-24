@@ -330,7 +330,7 @@ class TestBulkUploadTasks:
     ):
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_full.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications]
+        notification_types = [notifications['type'] for notifications in notifications['emits']]
         assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL in notification_types
         upload_job_done_full.reload()
         assert upload_job_done_full.state == JobState.DONE_FULL
@@ -358,7 +358,7 @@ class TestBulkUploadTasks:
     ):
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_partial.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications]
+        notification_types = [notifications['type'] for notifications in notifications['emits']]
         assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL in notification_types
         upload_job_done_partial.reload()
         assert upload_job_done_partial.state == JobState.DONE_PARTIAL
@@ -386,7 +386,7 @@ class TestBulkUploadTasks:
     ):
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_error.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications]
+        notification_types = [notifications['type'] for notifications in notifications['emits']]
         assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL in notification_types
 
         upload_job_done_error.reload()

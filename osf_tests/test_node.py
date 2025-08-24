@@ -1241,20 +1241,23 @@ class TestNodeAddContributorRegisteredOrNot:
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1263,7 +1266,8 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         secondary_email = 'secondary@test.test'
         Email.objects.create(address=secondary_email, user=registered_user)
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
         contributor = contributor_obj.user
         assert contributor == registered_user
         assert contributor in node.contributors
@@ -1272,7 +1276,8 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_unregistered(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
         contributor = contributor_obj.user
         assert contributor == unregistered_user
         assert contributor in node.contributors

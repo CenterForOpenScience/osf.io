@@ -32,6 +32,7 @@ from osf_tests.utils import get_default_test_schema
 from osf_tests.test_registrations import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
+from tests.utils import capture_notifications
 from website import settings
 from website.views import find_bookmark_collection
 from website.project.metadata.schemas import from_json
@@ -1935,7 +1936,8 @@ class TestRegistrationBulkUpdate:
         assert registration_one.is_pending_embargo_termination is False
         assert registration_two.is_pending_embargo_termination is False
 
-        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        with capture_notifications():
+            res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
         assert ({registration_one._id, registration_two._id} == {
                 res.json['data'][0]['id'], res.json['data'][1]['id']})

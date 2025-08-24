@@ -752,7 +752,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert res.status_code == 400
 
     def test_initiate_withdrawal_success(self, app, user, public_registration, public_url, public_payload):
-        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
@@ -762,11 +763,12 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(
             self, app, user, public_project, public_registration, public_url, public_payload):
-        public_registration.embargo_registration(
-            user,
-            (timezone.now() + datetime.timedelta(days=10)),
-            for_existing_registration=True
-        )
+        with capture_notifications():
+            public_registration.embargo_registration(
+                user,
+                (timezone.now() + datetime.timedelta(days=10)),
+                for_existing_registration=True
+            )
         public_registration.save()
         assert public_registration.is_pending_embargo
 
@@ -793,13 +795,14 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
                 existing_user=unreg,
             )
 
-        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
 
         # Only the creator gets an email; the unreg user does not get emailed
         assert public_registration._contributors.count() == 2
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
 
 
 @pytest.mark.django_db
