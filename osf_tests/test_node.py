@@ -378,7 +378,8 @@ class TestParentNode:
         assert reg_grandchild.root == reg_root
 
     def test_fork_has_no_parent(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         assert fork.parent_node is None
 
     def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
@@ -390,12 +391,14 @@ class TestParentNode:
         assert set(fork_affiliations) == set(user_affiliations)
 
     def test_fork_child_has_parent(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         assert fork_child.parent_node._id == fork._id
 
     def test_fork_grandchild_has_child_id(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.parent_node._id == fork_child._id
@@ -404,7 +407,8 @@ class TestParentNode:
         child = NodeFactory(parent=project)
         NodeFactory(parent=child)
 
-        fork_root = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork_root = project.fork_node(auth=auth)
         fork_child = fork_root._nodes.first()
         fork_grandchild = fork_child._nodes.first()
 
@@ -1659,14 +1663,16 @@ class TestPermissionMethods:
         assert project.can_view(other_guy_auth)
 
     def test_is_fork_of(self, project):
-        fork1 = project.fork_node(auth=Auth(user=project.creator))
-        fork2 = fork1.fork_node(auth=Auth(user=project.creator))
+        with capture_notifications():
+            fork1 = project.fork_node(auth=Auth(user=project.creator))
+            fork2 = fork1.fork_node(auth=Auth(user=project.creator))
         assert fork1.is_fork_of(project) is True
         assert fork2.is_fork_of(project) is True
 
     def test_is_fork_of_false(self, project):
         to_fork = ProjectFactory()
-        fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
+        with capture_notifications():
+            fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
         assert fork.is_fork_of(project) is False
 
     def test_is_fork_of_no_forked_from(self, project):
@@ -2056,7 +2062,8 @@ def test_find_by_institutions():
     user = project.creator
     user.add_or_update_affiliated_institution(inst1)
     user.add_or_update_affiliated_institution(inst2)
-    project.add_affiliated_institution(inst1, user=user)
+    with capture_notifications():
+        project.add_affiliated_institution(inst1, user=user)
     project.save()
 
     inst1_result = Node.find_by_institutions(inst1)
@@ -3048,11 +3055,13 @@ class TestPointerMethods:
 
     def test_fork_pointer_project(self, node, user, auth):
         project = ProjectFactory(creator=user)
-        self._fork_pointer(node=node, content=project, auth=auth)
+        with capture_notifications():
+            self._fork_pointer(node=node, content=project, auth=auth)
 
     def test_fork_pointer_component(self, node, user, auth):
         component = NodeFactory(creator=user)
-        self._fork_pointer(node=node, content=component, auth=auth)
+        with capture_notifications():
+            self._fork_pointer(node=node, content=component, auth=auth)
 
 
 # copied from tests/test_models.py
@@ -3136,8 +3145,9 @@ class TestForkNode:
         fork_date = timezone.now()
 
         # Fork node
-        with mock.patch.object(Node, 'bulk_update_search'):
-            fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            with mock.patch.object(Node, 'bulk_update_search'):
+                fork = project.fork_node(auth=auth)
 
         # Compare fork to original
         self._cmp_fork_original(user, fork_date, fork, project)
@@ -3191,7 +3201,8 @@ class TestForkNode:
         user2_auth = Auth(user=user2)
         fork = None
         # New user forks the project
-        fork = node.fork_node(user2_auth)
+        with capture_notifications():
+            fork = node.fork_node(user2_auth)
 
         # fork correct children
         assert fork._nodes.count() == 2
@@ -3228,14 +3239,16 @@ class TestForkNode:
         node.set_privacy('public')
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        fork = node.fork_node(user2_auth)
+        with capture_notifications():
+            fork = node.fork_node(user2_auth)
         assert bool(fork) is True
 
     def test_contributor_can_fork(self, node):
         user2 = UserFactory()
         node.add_contributor(user2)
         user2_auth = Auth(user=user2)
-        fork = node.fork_node(user2_auth)
+        with capture_notifications():
+            fork = node.fork_node(user2_auth)
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
@@ -3245,12 +3258,14 @@ class TestForkNode:
         license = NodeLicenseRecordFactory()
         node.node_license = license
         node.save()
-        fork = node.fork_node(auth)
+        with capture_notifications():
+            fork = node.fork_node(auth)
         assert fork.node_license.license_id == license.license_id
 
     def test_fork_registration(self, user, node, auth):
         registration = RegistrationFactory(project=node)
-        fork = registration.fork_node(auth)
+        with capture_notifications():
+            fork = registration.fork_node(auth)
 
         # fork should not be a registration
         assert fork.is_registration is False
@@ -3265,7 +3280,8 @@ class TestForkNode:
 
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
@@ -3282,7 +3298,8 @@ class TestForkNode:
                 wiki_page=wiki_page,
             )
             current_wiki = WikiVersionFactory(wiki_page=wiki_page, identifier=2)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
         fork_wiki_current = WikiVersion.objects.get_for_node(fork, current_wiki.wiki_page.page_name)
@@ -4591,13 +4608,13 @@ class TestCollectionProperties:
         assert not node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
-
-        collection_one.collect_object(node, collector)
-        collection_two.collect_object(node, collector)
-        public_non_provided_collection.collect_object(node, collector)
-        private_non_provided_collection.collect_object(node, collector)
-        bookmark_collection.collect_object(node, collector)
-        collection_public.collect_object(node, collector)
+        with capture_notifications():
+            collection_one.collect_object(node, collector)
+            collection_two.collect_object(node, collector)
+            public_non_provided_collection.collect_object(node, collector)
+            private_non_provided_collection.collect_object(node, collector)
+            bookmark_collection.collect_object(node, collector)
+            collection_public.collect_object(node, collector)
 
         assert node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
@@ -4615,14 +4632,14 @@ class TestCollectionProperties:
             self, user, node, contrib, subjects, collection_one, collection_two,
             collection_public, public_non_provided_collection, private_non_provided_collection,
             bookmark_collection, collector):
-
-        collection_one.collect_object(node, collector)
-        collection_two.collect_object(node, collector)
-        public_non_provided_collection.collect_object(node, collector)
-        private_non_provided_collection.collect_object(node, collector)
-        bookmark_collection.collect_object(node, collector)
-        collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
-        collection_submission.set_subjects(subjects, Auth(collector))
+        with capture_notifications():
+            collection_one.collect_object(node, collector)
+            collection_two.collect_object(node, collector)
+            public_non_provided_collection.collect_object(node, collector)
+            private_non_provided_collection.collect_object(node, collector)
+            bookmark_collection.collect_object(node, collector)
+            collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+            collection_submission.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collection_submissions, Auth())

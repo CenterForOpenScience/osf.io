@@ -558,7 +558,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
-                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
+                'reviewable_branched_from_node': self._get_registration().branched_from_node
             })
         else:
             context.update({
@@ -571,7 +572,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
-                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
+                'reviewable_branched_from_node': self._get_registration().branched_from_node
             })
         return context
 
@@ -718,6 +720,8 @@ class Retraction(EmailApprovableSanction):
                 'reviewable_provider_name': self._get_registration().provider.name,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
@@ -733,8 +737,11 @@ class Retraction(EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
+                'reviewable_provider_name': self._get_registration().provider.name,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
             }

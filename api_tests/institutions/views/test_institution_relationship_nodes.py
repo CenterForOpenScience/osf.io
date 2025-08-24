@@ -216,11 +216,13 @@ class TestInstitutionRelationshipNodes:
 
     def test_add_some_with_permissions_others_without(
             self, user, node, node_without_institution, app, url_institution_nodes, institution):
-        res = app.post_json_api(
-            url_institution_nodes,
-            make_payload(node_without_institution._id, node._id),
-            expect_errors=True, auth=user.auth
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_institution_nodes,
+                make_payload(node_without_institution._id, node._id),
+                expect_errors=True,
+                auth=user.auth
+            )
 
         assert res.status_code == 403
         node_without_institution.reload()

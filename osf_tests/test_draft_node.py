@@ -21,6 +21,7 @@ from osf_tests.factories import (
     ProjectFactory,
     get_default_metaschema,
 )
+from tests.utils import capture_notifications
 from website.project.signals import after_create_registration
 from website import settings
 
@@ -81,31 +82,32 @@ def license():
 def make_complex_draft_registration(title, institution, description, category,
         write_contrib, license, subject, user):
     def make_draft_registration(node=None):
-        draft_registration = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data={},
-            node=node if node else None
-        )
-        user.add_or_update_affiliated_institution(institution)
-        draft_registration.set_title(title, Auth(user))
-        draft_registration.set_description(description, Auth(user))
-        draft_registration.category = category
-        draft_registration.add_contributor(write_contrib, permissions=WRITE)
-        draft_registration.set_node_license(
-            {
-                'id': license.license_id,
-                'year': NEW_YEAR,
-                'copyrightHolders': COPYLEFT_HOLDERS
-            },
-            auth=Auth(user),
-            save=True
-        )
-        draft_registration.add_tag('savanna', Auth(user))
-        draft_registration.add_tag('taxonomy', Auth(user))
-        draft_registration.set_subjects([[subject._id]], auth=Auth(draft_registration.creator))
-        draft_registration.affiliated_institutions.add(institution)
-        draft_registration.save()
+        with capture_notifications():
+            draft_registration = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data={},
+                node=node if node else None
+            )
+            user.add_or_update_affiliated_institution(institution)
+            draft_registration.set_title(title, Auth(user))
+            draft_registration.set_description(description, Auth(user))
+            draft_registration.category = category
+            draft_registration.add_contributor(write_contrib, permissions=WRITE)
+            draft_registration.set_node_license(
+                {
+                    'id': license.license_id,
+                    'year': NEW_YEAR,
+                    'copyrightHolders': COPYLEFT_HOLDERS
+                },
+                auth=Auth(user),
+                save=True
+            )
+            draft_registration.add_tag('savanna', Auth(user))
+            draft_registration.add_tag('taxonomy', Auth(user))
+            draft_registration.set_subjects([[subject._id]], auth=Auth(draft_registration.creator))
+            draft_registration.affiliated_institutions.add(institution)
+            draft_registration.save()
         return draft_registration
     return make_draft_registration
 

@@ -58,11 +58,13 @@ class TestRegistrationForksList:
 
     @pytest.fixture()
     def private_fork(self, user, private_registration):
-        return ForkFactory(project=private_registration, user=user)
+        with capture_notifications():
+            return ForkFactory(project=private_registration, user=user)
 
     @pytest.fixture()
     def public_fork(self, user, public_registration):
-        return ForkFactory(project=public_registration, user=user)
+        with capture_notifications():
+            return ForkFactory(project=public_registration, user=user)
 
     @pytest.fixture()
     def private_registration_url(self, private_registration):
@@ -316,10 +318,12 @@ class TestRegistrationForkCreate:
 
     def test_can_fork_public_registration_logged_in_contributor(
             self, app, user, public_registration, public_registration_url, fork_data):
-        res = app.post_json_api(
-            public_registration_url,
-            fork_data,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                public_registration_url,
+                fork_data,
+                auth=user.auth
+            )
         assert res.status_code == 201
         data = res.json['data']
         assert data['id'] == public_registration.forks.first()._id

@@ -776,7 +776,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         public_registration.embargo.approve(user, approval_token)
         assert public_registration.embargo_end_date
 
-        res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.reload()

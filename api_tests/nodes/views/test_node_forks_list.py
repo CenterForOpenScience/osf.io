@@ -15,7 +15,7 @@ from rest_framework import exceptions
 from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
-from tests.utils import assert_notification
+from tests.utils import assert_notification, capture_notifications
 
 
 @pytest.fixture()
@@ -53,11 +53,13 @@ class TestNodeForksList:
 
     @pytest.fixture()
     def private_fork(self, user, private_project):
-        return ForkFactory(project=private_project, user=user)
+        with capture_notifications():
+            return ForkFactory(project=private_project, user=user)
 
     @pytest.fixture()
     def public_fork(self, user, public_project):
-        return ForkFactory(project=public_project, user=user)
+        with capture_notifications():
+            return ForkFactory(project=public_project, user=user)
 
     @pytest.fixture()
     def private_project_url(self, private_project):

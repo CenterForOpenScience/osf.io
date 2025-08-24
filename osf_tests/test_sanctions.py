@@ -11,6 +11,7 @@ from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -145,7 +146,8 @@ class TestSanctionEmailRendering:
         registration.branched_from_node = branched_from_node
         registration.save()
 
-        registration.sanction.ask([(registration.creator, registration)])
+        with capture_notifications():
+            registration.sanction.ask([(registration.creator, registration)])
         assert True  # mail rendered successfully
 
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])

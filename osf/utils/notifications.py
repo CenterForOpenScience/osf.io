@@ -14,6 +14,7 @@ def get_email_template_context(resource):
     base_context = {
         'domain': DOMAIN,
         'reviewable_title': resource.title,
+        'reviewable_branched_from_node': getattr(resource, 'branched_from_node', None),
         'reviewable_absolute_url': resource.absolute_url,
         'profile_image_url': get_profile_image_url(resource.creator),
         'reviewable_provider_name': resource.provider.name,

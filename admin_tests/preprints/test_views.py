@@ -26,7 +26,7 @@ from osf.utils.permissions import ADMIN
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
 from admin.preprints import views
-from tests.utils import assert_notification
+from tests.utils import assert_notification, capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -542,7 +542,8 @@ class TestPreprintWithdrawalRequests:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
-        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        with capture_notifications():
+            request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
         request.POST = {'action': 'approve'}
         request.user = admin
 
@@ -563,7 +564,8 @@ class TestPreprintWithdrawalRequests:
     def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
 
-        request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
+        with capture_notifications():
+            request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
         request.POST = {'action': 'reject'}
         request.user = admin
 
@@ -583,7 +585,8 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'approve'}
         request.user = admin
 
-        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        with capture_notifications():
+            response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -704,7 +707,9 @@ class TestPreprintWithdrawalRequests:
     def test_approve_reject_on_list_view(self, withdrawal_request, admin, action, final_state):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
-        request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
+
+        with capture_notifications():
+            request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin
 
         response = views.PreprintWithdrawalRequestList.as_view()(request)
@@ -803,7 +808,8 @@ class TestPreprintMakePublishedView:
         admin_group.permissions.add(Permission.objects.get(codename='change_node'))
         user.groups.add(admin_group)
 
-        plain_view.as_view()(request, guid=preprint._id)
+        with capture_notifications():
+            plain_view.as_view()(request, guid=preprint._id)
         preprint.reload()
 
         assert preprint.is_published

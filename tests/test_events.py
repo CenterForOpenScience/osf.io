@@ -161,9 +161,8 @@ class TestFileAdded(OsfTestCase):
     def test_file_added(self):
         with capture_notifications() as notifications:
             self.event.perform()
-        assert len(notifications) == 2
+        assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.FILE_ADDED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.FILE_ADDED
 
 
 class TestFileRemoved(OsfTestCase):

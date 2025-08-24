@@ -389,8 +389,8 @@ class TestHybridModeratedCollectionSubmission:
             collection=hybrid_moderated_collection,
             creator=node.creator,
         )
-
-        collection_submission.save()
+        with capture_notifications():
+            collection_submission.save()
         assert collection_submission.is_hybrid_moderated
         # .submit on post_save
         assert collection_submission.state == CollectionSubmissionStates.PENDING
@@ -405,7 +405,8 @@ class TestHybridModeratedCollectionSubmission:
             collection=hybrid_moderated_collection,
             creator=not_admin_moderator,
         )
-        collection_submission.save()
+        with capture_notifications():
+            collection_submission.save()
         assert collection_submission.is_hybrid_moderated
         assert collection_submission.state == CollectionSubmissionStates.PENDING
 
@@ -418,7 +419,8 @@ class TestHybridModeratedCollectionSubmission:
             collection=hybrid_moderated_collection,
             creator=user,
         )
-        collection_submission.save()
+        with capture_notifications():
+            collection_submission.save()
         assert collection_submission.is_hybrid_moderated
         assert collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
