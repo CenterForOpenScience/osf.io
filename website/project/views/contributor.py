@@ -265,7 +265,10 @@ def project_contributors_post(auth, node, **kwargs):
         except ValidationError as e:
             return {'status': 400, 'message': e.message}, 400
 
-        child.add_contributors(contributors=child_contribs, auth=auth)
+        child.add_contributors(
+            contributors=child_contribs,
+            auth=auth,
+        )
         child.save()
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)

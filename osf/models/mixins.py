@@ -1523,6 +1523,7 @@ class ContributorMixin(models.Model):
                 auth=auth,
                 log=False,
                 save=False,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
             )
         if log and contributors:
             params = self.log_params
