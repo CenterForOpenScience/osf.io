@@ -28,9 +28,7 @@ def normalize_unicode_filenames(filename):
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     from osf.models.notification_type import NotificationType
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
-    ).emit(
+    NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
         user=user,
         event_context={
             'user': user.id,
@@ -55,9 +53,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
 def send_archiver_copy_error_mails(src, user, results, url):
     from osf.models.notification_type import NotificationType
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
-    ).emit(
+    NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         user=user,
         event_context={
             'user': user.id,
@@ -82,9 +78,8 @@ def send_archiver_copy_error_mails(src, user, results, url):
 def send_archiver_file_not_found_mails(src, user, results, url):
     from osf.models.notification_type import NotificationType
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND
-    ).emit(
+    NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user': user.id,
             'src': src._id,
@@ -108,9 +103,7 @@ def send_archiver_file_not_found_mails(src, user, results, url):
 def send_archiver_uncaught_error_mails(src, user, results, url):
     from osf.models.notification_type import NotificationType
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
-    ).emit(
+    NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,

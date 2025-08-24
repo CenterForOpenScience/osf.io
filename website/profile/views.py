@@ -799,9 +799,7 @@ def request_export(auth):
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_REQUEST_EXPORT
-    ).emit(
+    NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
         user=user,
         event_context={
             'can_change_preferences': False

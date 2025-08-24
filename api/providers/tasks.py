@@ -680,9 +680,7 @@ def handle_internal_error(initiator=None, provider=None, message=None, dry_run=T
     sentry.log_message(message)
 
     if not dry_run and initiator:
-        NotificationType.objects.get(
-            name=NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE,
-        ).emit(
+        NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE.instance.emit(
             user=initiator,
             event_context={
                 'initiator_fullname': initiator.fullname,
@@ -702,9 +700,7 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
     user_info = f'{initiator._id}, {initiator.fullname}, {initiator.username}' if initiator else 'UNIDENTIFIED'
     provider_name = provider.name if provider else 'UNIDENTIFIED'
 
-    NotificationType.objects.get(
-        name=NotificationType.Type.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER,
-    ).emit(
+    NotificationType.Type.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER.instance.emit(
         destination_address=email,
         event_context={
             'user': user_info,

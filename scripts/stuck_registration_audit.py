@@ -95,9 +95,7 @@ def main():
         dict_writer.writeheader()
         dict_writer.writerows(broken_registrations)
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.DESK_ARCHIVE_REGISTRATION_STUCK
-        ).emit(
+        NotificationType.Type.DESK_ARCHIVE_REGISTRATION_STUCK.instance.emit(
             destination_address=settings.OSF_SUPPORT_EMAIL,
             event_context={
                 'broken_registrations_count': len(broken_registrations),

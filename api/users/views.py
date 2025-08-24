@@ -639,12 +639,13 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
-        NotificationType.objects.get(
-            name=NotificationType.Type.DESK_REQUEST_EXPORT,
-        ).emit(
+        NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
             user=user,
             destination_address=settings.OSF_SUPPORT_EMAIL,
             event_context={
+                'user_username': user.username,
+                'user_absolute_url': user.absolute_url,
+                'user__id': user._id,
                 'can_change_preferences': False,
             },
         )
