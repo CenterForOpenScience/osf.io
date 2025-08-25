@@ -1277,13 +1277,14 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
         user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id
@@ -1292,7 +1293,8 @@ class TestContributorOrdering:
         old_order = [user_contrib_id, user1_contrib_id, user2_contrib_id]
         assert list(preprint.get_preprintcontributor_order()) == old_order
 
-        preprint.move_contributor(user2, auth=auth, index=0, save=True)
+        with capture_notifications():
+            preprint.move_contributor(user2, auth=auth, index=0, save=True)
 
         new_order = [user2_contrib_id, user_contrib_id, user1_contrib_id]
         assert list(preprint.get_preprintcontributor_order()) == new_order

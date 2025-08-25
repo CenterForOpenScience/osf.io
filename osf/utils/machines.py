@@ -209,7 +209,7 @@ class ReviewsMachine(BaseMachine):
             'domain': DOMAIN,
             'reviewable_title': self.machineable.title,
             'reviewable_absolute_url': self.machineable.absolute_url,
-            'reviewable_provider__id': self.machineable.target.provider._id,
+            'reviewable_provider__id': self.machineable.provider._id,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,

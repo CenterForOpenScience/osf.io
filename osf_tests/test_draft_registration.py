@@ -342,13 +342,14 @@ class TestDraftRegistrationContributorMethods():
     def test_add_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth
+            )
         last_log = draft_registration.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==

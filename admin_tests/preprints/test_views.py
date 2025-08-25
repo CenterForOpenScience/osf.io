@@ -570,7 +570,8 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'reject'}
         request.user = admin
 
-        response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
+        with capture_notifications():
+            response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -664,7 +665,8 @@ class TestPreprintWithdrawalRequests:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(admin)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.machine_state == 'withdrawn'
 

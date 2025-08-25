@@ -859,7 +859,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         # Account creation confirmation: from OSF
         notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-    NotificationType.objects.get(name=notification_type).emit(
+    notification_type.instance.emit(
         user=user,
         subscribed_object=user,
         event_context={
