@@ -10,6 +10,7 @@ from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNo
 from osf_tests.test_node_license import TestNodeLicenses
 from django.utils import timezone
 
+from tests.utils import capture_notifications
 from website import settings
 
 from . import factories
@@ -249,10 +250,11 @@ class TestDraftRegistrations:
         assert draft.branched_from == node
 
     def test_create_from_node_draft_node(self, user):
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         assert draft.title == ''
         assert draft.description == ''

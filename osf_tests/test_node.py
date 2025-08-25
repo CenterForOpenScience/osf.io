@@ -383,7 +383,8 @@ class TestParentNode:
         assert fork.parent_node is None
 
     def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
-        fork = project_with_affiliations.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project_with_affiliations.fork_node(auth=auth)
         user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         fork_affiliations = fork.affiliated_institutions.values_list('id', flat=True)
@@ -508,17 +509,20 @@ class TestRoot:
         assert registration_grandchild.root._id == registration._id
 
     def test_fork_has_own_root(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         fork.save()
         assert fork.root._id == fork._id
 
     def test_fork_children_have_correct_root(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         assert fork_child.root._id == fork._id
 
     def test_fork_grandchildren_have_correct_root(self, project, auth):
-        fork = project.fork_node(auth=auth)
+        with capture_notifications():
+            fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.root._id == fork._id
@@ -900,13 +904,14 @@ class TestContributorMethods:
     def test_add_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        node.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            node.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth
+            )
         last_log = node.logs.all().order_by('-date')[0]
         assert (
             last_log.params['contributors'] ==
@@ -1097,13 +1102,14 @@ class TestContributorMethods:
     def test_remove_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        node.add_contributors(
-            [
-                {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
-                {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            node.add_contributors(
+                [
+                    {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
+                    {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in node.contributors
         assert user2 in node.contributors
 
@@ -1219,7 +1225,8 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1227,7 +1234,8 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+        with capture_notifications():
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
 
         contributor = contributor_obj.user
         assert contributor in node.contributors
@@ -1235,13 +1243,15 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor.unclaimed_records != {}
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
-        with pytest.raises(ValidationError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
+        with capture_notifications():
+            with pytest.raises(ValidationError) as excinfo:
+                node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
-        with pytest.raises(ValueError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
+        with capture_notifications():
+            with pytest.raises(ValueError) as excinfo:
+                node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
@@ -1331,7 +1341,8 @@ class TestContributorAddedSignal:
             'permissions': permissions.WRITE
         }]
         with capture_signals() as mock_signals:
-            node.add_contributors(contributors=contributors, auth=auth)
+            with capture_notifications():
+                node.add_contributors(contributors=contributors, auth=auth)
             node.save()
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == {contributor_added}
@@ -2589,12 +2600,13 @@ class TestManageContributors:
 
     def test_contributor_set_visibility_validation(self, node, user, auth):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        node.add_contributors(
-            [
-                {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
-                {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-            ]
-        )
+        with capture_notifications():
+            node.add_contributors(
+                [
+                    {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
+                ]
+            )
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
             node.set_visible(user=user, visible=False, auth=None)
@@ -3022,7 +3034,8 @@ class TestPointerMethods:
     def test_cannot_fork_deleted_node(self, node, auth):
         child = NodeFactory(parent=node, is_deleted=True)
         child.save()
-        fork = node.fork_node(auth=auth)
+        with capture_notifications():
+            fork = node.fork_node(auth=auth)
         assert not fork.nodes
 
     def test_cannot_template_deleted_node(self, node, auth):
@@ -3209,12 +3222,14 @@ class TestForkNode:
         assert 'Not Forked' not in fork._nodes.values_list('title', flat=True)
 
     def test_fork_not_public(self, node, auth):
-        node.set_privacy('public')
-        fork = node.fork_node(auth)
+        with capture_notifications():
+            node.set_privacy('public')
+            fork = node.fork_node(auth)
         assert fork.is_public is False
 
     def test_fork_log_has_correct_log(self, node, auth):
-        fork = node.fork_node(auth)
+        with capture_notifications():
+            fork = node.fork_node(auth)
         last_log = fork.logs.latest()
         assert last_log.action == NodeLog.NODE_FORKED
         # Legacy 'registration' param should be the ID of the fork
@@ -3226,14 +3241,16 @@ class TestForkNode:
         link = PrivateLinkFactory()
         link.nodes.add(node)
         link.save()
-        fork = node.fork_node(auth)
+        with capture_notifications():
+            fork = node.fork_node(auth)
         assert link not in fork.private_links.all()
 
     def test_cannot_fork_private_node(self, node):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        with pytest.raises(PermissionsError):
-            node.fork_node(user2_auth)
+        with capture_notifications():
+            with pytest.raises(PermissionsError):
+                node.fork_node(user2_auth)
 
     def test_can_fork_public_node(self, node):
         node.set_privacy('public')
@@ -3334,13 +3351,14 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        node.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            node.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
 
         user_contrib_id = node.contributor_set.get(user=user).id
         user1_contrib_id = node.contributor_set.get(user=user1).id
@@ -4230,7 +4248,8 @@ class TestNodeLog:
     def test_original_node_and_current_node_for_fork_logs(self):
         user = UserFactory()
         project = ProjectFactory(creator=user)
-        fork = project.fork_node(auth=Auth(user))
+        with capture_notifications():
+            fork = project.fork_node(auth=Auth(user))
 
         log_project_created_original = project.logs.last()
         log_project_created_fork = fork.logs.last()
@@ -4405,12 +4424,13 @@ class TestAddonCallbacks:
             )
 
     def test_fork_callback(self, node, auth):
-        fork = node.fork_node(auth=auth)
-        for addon in node.addons:
-            callback = addon.after_fork
-            callback.assert_called_once_with(
-                node, fork, auth.user
-            )
+        with capture_notifications():
+            fork = node.fork_node(auth=auth)
+            for addon in node.addons:
+                callback = addon.after_fork
+                callback.assert_called_once_with(
+                    node, fork, auth.user
+                )
 
     def test_register_callback(self, node, auth):
         with mock_archive(node) as registration:

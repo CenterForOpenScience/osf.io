@@ -178,10 +178,11 @@ class TestNotificationSubscriptionMigration:
     def test_migrate_rolls_back_on_runtime_error(self, users, user, node, provider):
         user = AuthUserFactory()
         self.create_legacy_sub(event_name='collection_submission_submitted', users=users, user=user, node=node, provider=provider)
+
         def failing_migration():
             with transaction.atomic():
                 migrate_legacy_notification_subscriptions()
-                raise RuntimeError("Simulated failure")
+                raise RuntimeError('Simulated failure')
 
         with pytest.raises(RuntimeError):
             failing_migration()

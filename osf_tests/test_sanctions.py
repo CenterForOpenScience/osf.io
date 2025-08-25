@@ -161,7 +161,8 @@ class TestSanctionEmailRendering:
         registration.branched_from_node = branched_from_node
         registration.save()
 
-        registration.sanction.ask([(contributor, registration)])
+        with capture_notifications():
+            registration.sanction.ask([(contributor, registration)])
         assert True  # mail rendered successfully
 
 

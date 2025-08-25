@@ -496,6 +496,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'update_url': self.absolute_url,
             'initiator': event_initiator.fullname if event_initiator else None,
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
         }
 

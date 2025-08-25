@@ -26,7 +26,7 @@ from osf_tests.factories import (
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_equals, assert_notification
+from tests.utils import assert_equals, assert_notification, capture_notifications
 from website.views import find_bookmark_collection
 from website import settings
 from osf.utils.workflows import DefaultStates
@@ -1565,7 +1565,8 @@ class TestNodeCreate:
                 }
             }
         }
-        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, component_data, auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
