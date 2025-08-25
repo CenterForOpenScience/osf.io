@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 
 from osf.models import Node, RegistrationProvider
 from osf_tests.factories import (
@@ -14,7 +15,7 @@ from osf.models import (
 )
 from osf.management.commands.migrate_notifications import (
     migrate_legacy_notification_subscriptions,
-    populate_notification_types
+    populate_notification_types, EVENT_NAME_TO_NOTIFICATION_TYPE
 )
 
 @pytest.mark.django_db
@@ -48,6 +49,32 @@ class TestNotificationSubscriptionMigration:
     def node(self):
         return ProjectFactory()
 
+    ALL_PROVIDER_EVENTS = [
+        'new_pending_withdraw_requests',
+        'contributor_added_preprint',
+        'new_pending_submissions',
+        'moderator_added',
+        'reviews_submission_confirmation',
+        'reviews_resubmission_confirmation',
+        'confirm_email_moderation',
+    ]
+
+    ALL_NODE_EVENTS = [
+        'file_updated',
+    ]
+
+    ALL_COLLECTION_EVENTS = [
+        'collection_submission_submitted',
+        'collection_submission_accepted',
+        'collection_submission_rejected',
+        'collection_submission_removed_admin',
+        'collection_submission_removed_moderator',
+        'collection_submission_removed_private',
+        'collection_submission_cancel',
+    ]
+
+    ALL_EVENT_NAMES = ALL_PROVIDER_EVENTS + ALL_NODE_EVENTS + ALL_COLLECTION_EVENTS
+
     def create_legacy_sub(self, event_name, users, user=None, provider=None, node=None):
         legacy = NotificationSubscriptionLegacy.objects.create(
             _id=f'{(provider or node)._id}_{event_name}',
@@ -56,55 +83,34 @@ class TestNotificationSubscriptionMigration:
             provider=provider,
             node=node
         )
-        legacy.none.add(users['none'])
-        legacy.email_digest.add(users['digest'])
-        legacy.email_transactional.add(users['transactional'])
+        if hasattr(legacy, 'none'):
+            legacy.none.add(users['none'])
+        if hasattr(legacy, 'email_digest'):
+            legacy.email_digest.add(users['digest'])
+        if hasattr(legacy, 'email_transactional'):
+            legacy.email_transactional.add(users['transactional'])
         return legacy
 
-    def test_migrate_provider_subscription(self, user, users, provider, provider2):
-        self.create_legacy_sub('new_pending_submissions', users, provider=provider)
-        self.create_legacy_sub('new_pending_submissions', users, provider=provider2)
-        self.create_legacy_sub('new_pending_submissions', users, provider=RegistrationProvider.get_default())
-        NotificationSubscriptionLegacy.objects.get(
-            event_name='new_pending_submissions',
-            provider=provider
-        )
-        NotificationSubscriptionLegacy.objects.get(
-            event_name='new_pending_submissions',
-            provider=provider2
-        )
-        NotificationSubscriptionLegacy.objects.get(
-            event_name='new_pending_submissions',
-            provider=RegistrationProvider.get_default()
-        )
+    def test_migrate_provider_subscription(self, users, provider, provider2):
+        self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=provider)
+        self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=provider2)
+        self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=RegistrationProvider.get_default())
         migrate_legacy_notification_subscriptions()
-
         subs = NotificationSubscription.objects.filter(
             notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         )
         assert subs.count() == 3
-        assert subs.get(
-            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-            object_id=provider.id,
-            content_type=ContentType.objects.get_for_model(provider.__class__)
-        )
-        assert subs.get(
-            notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-            object_id=provider2.id,
-            content_type=ContentType.objects.get_for_model(provider2.__class__)
-        )
+        for obj in [provider, provider2, RegistrationProvider.get_default()]:
+            content_type = ContentType.objects.get_for_model(obj.__class__)
+            assert subs.filter(object_id=obj.id, content_type=content_type).exists()
 
     def test_migrate_node_subscription(self, users, user, node):
         self.create_legacy_sub('file_updated', users, user=user, node=node)
-
         migrate_legacy_notification_subscriptions()
-
         nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         assert nt.object_content_type == ContentType.objects.get_for_model(Node)
-
         subs = NotificationSubscription.objects.filter(notification_type=nt)
         assert subs.count() == 1
-
         for sub in subs:
             assert sub.subscribed_object == node
 
@@ -125,12 +131,85 @@ class TestNotificationSubscriptionMigration:
             notification_type__name=NotificationType.Type.NODE_FILE_UPDATED
         )
 
-    def test_errors_invalid_subscription(self, users):
-        legacy = NotificationSubscriptionLegacy.objects.create(
-            _id='broken',
-            event_name='invalid_event'
-        )
-        legacy.none.add(users['none'])
+    def test_migrate_all_subscription_types(self, users, user, provider, provider2, node):
+        providers = [provider, provider2]
+        for event_name in self.ALL_EVENT_NAMES:
+            if event_name in self.ALL_PROVIDER_EVENTS:
+                self.create_legacy_sub(event_name=event_name, users=users, user=user, node=node, provider=provider)
+                self.create_legacy_sub(event_name=event_name, users=users, user=user, node=node, provider=provider2)
+            else:
+                self.create_legacy_sub(event_name=event_name, users=users, user=user, node=node)
 
-        with pytest.raises(NotImplementedError):
-            migrate_legacy_notification_subscriptions()
+        # Run migration the first time
+        migrate_legacy_notification_subscriptions()
+        subs = NotificationSubscription.objects.all()
+        # Calculate expected total
+        expected_total = len(self.ALL_PROVIDER_EVENTS) * len(providers) \
+                         + len(self.ALL_NODE_EVENTS) \
+                         + len(self.ALL_COLLECTION_EVENTS)
+        assert subs.count() >= expected_total
+        # Run migration again to test deduplication
+        migrate_legacy_notification_subscriptions()
+        subs_after_second_run = NotificationSubscription.objects.all()
+        assert subs_after_second_run.count() == subs.count()
+        # Verify every notification type is present
+        for nt_legacy_name in self.ALL_EVENT_NAMES:
+            nt_name = EVENT_NAME_TO_NOTIFICATION_TYPE[nt_legacy_name].value
+            nt_objs = NotificationSubscription.objects.filter(
+                notification_type__name=nt_name
+            )
+            assert nt_objs.exists()
+        # Verify subscriptions belong to correct objects
+        for provider in providers:
+            nt_name = NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+            content_type = ContentType.objects.get_for_model(provider.__class__)
+            assert NotificationSubscription.objects.filter(
+                notification_type__name=nt_name,
+                content_type=content_type,
+                object_id=provider.id
+            ).exists()
+        node_ct = ContentType.objects.get_for_model(node.__class__)
+        assert NotificationSubscription.objects.filter(
+            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED,
+            content_type=node_ct,
+            object_id=node.id
+        ).exists()
+
+    def test_migrate_rolls_back_on_runtime_error(self, users, user, node, provider):
+        user = AuthUserFactory()
+        self.create_legacy_sub(event_name='collection_submission_submitted', users=users, user=user, node=node, provider=provider)
+        def failing_migration():
+            with transaction.atomic():
+                migrate_legacy_notification_subscriptions()
+                raise RuntimeError("Simulated failure")
+
+        with pytest.raises(RuntimeError):
+            failing_migration()
+        assert NotificationSubscription.objects.filter(user=user).count() == 0
+
+    def test_migrate_skips_invalid_data(self, users, user, node, provider):
+        self.create_legacy_sub(event_name='wrong_data', users=users, user=user, node=node, provider=provider)
+        migrate_legacy_notification_subscriptions()
+        assert NotificationSubscription.objects.filter(user=user).count() == 0
+
+    def test_migrate_batch_with_valid_and_invalid(self, users, user, node, provider):
+        # Valid subscription
+        self.create_legacy_sub(
+            event_name='reviews_resubmission_confirmation',
+            users=users,
+            user=user,
+            node=node,
+            provider=provider,
+        )
+        # Invalid subscription
+        self.create_legacy_sub(
+            event_name='wrong_data',
+            users=users,
+            user=user,
+            node=node,
+            provider=provider,
+        )
+        migrate_legacy_notification_subscriptions()
+        assert NotificationSubscription.objects.filter(user=user).count() == 1
+        migrated = NotificationSubscription.objects.filter(user=user).first()
+        assert migrated.notification_type.name == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value
