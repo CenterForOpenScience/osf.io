@@ -230,7 +230,7 @@ class NodeRequestMachine(BaseMachine):
         if ev.event.name == DefaultTriggers.ACCEPT.value:
             if not self.machineable.target.is_contributor(self.machineable.creator):
                 contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
-                make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+                make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST
                 visible = False if make_curator else ev.kwargs.get('visible', True)
                 if self.machineable.request_type in (NodeRequestTypes.ACCESS.value, NodeRequestTypes.INSTITUTIONAL_REQUEST.value):
                     notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST

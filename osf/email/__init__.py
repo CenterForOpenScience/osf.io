@@ -23,7 +23,6 @@ from python_http_client.exceptions import (
 
 from osf import features
 from website import settings
-from api.base.settings import CI_ENV
 
 def _existing_dirs(paths: List[str]) -> List[str]:
     out = []
@@ -155,7 +154,6 @@ def _render_email_html(template_text: str, ctx: dict) -> str:
         )
         return template_text
 
-
 def _strip_html(html: str) -> str:
     if not html:
         return ''
@@ -209,9 +207,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         attachment_content = email_context.get('attachment_content')
         if attachment_name and attachment_content:
             email.attach(attachment_name, attachment_content)
-
-    if not CI_ENV:
-        email.send()
+    email.send()
 
 def send_email_with_send_grid(to_addr, notification_type, context, email_context=None):
 

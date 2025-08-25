@@ -200,10 +200,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
-        from tests.utils import capture_notifications
 
-        with capture_notifications():
-            new_response._notify_users(event='create', event_initiator=initiator)
+        new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
     def update_responses(self, updated_responses):

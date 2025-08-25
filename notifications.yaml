@@ -265,7 +265,7 @@ notification_types:
     object_content_type_model_name: abstractprovider
     template: 'website/templates/contributor_added_preprints.html.mako'
   - name: provider_confirm_email_moderation
-    subject: 'OSF Account Verification, {provider.name}'
+    subject: 'OSF Account Verification, {provider_name}'
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/confirm_moderation.html.mako'
