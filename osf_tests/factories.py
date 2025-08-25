@@ -21,6 +21,7 @@ from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
 from osf.utils import permissions
+from tests.utils import capture_notifications
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
 from framework.auth.core import Auth
@@ -1321,7 +1322,8 @@ class SchemaResponseFactory(DjangoModelFactory):
             ).get()
             previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
             previous_schema_response.save()
-            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+            with capture_notifications():
+                return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
 
 
 class SchemaResponseActionFactory(DjangoModelFactory):

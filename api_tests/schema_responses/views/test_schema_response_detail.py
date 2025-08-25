@@ -458,10 +458,11 @@ class TestSchemaResponseDetailPATCHBehavior:
     @pytest.fixture()
     def schema_response(self, schema_response):
         # Use create_from_previous_response to better test update_response_keys behavior
-        return SchemaResponse.create_from_previous_response(
-            previous_response=schema_response,
-            initiator=schema_response.initiator
-        )
+        with capture_notifications():
+            return SchemaResponse.create_from_previous_response(
+                previous_response=schema_response,
+                initiator=schema_response.initiator
+            )
 
     def test_PATCH_sets_responses(self, app, schema_response, payload, admin_user):
         assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES

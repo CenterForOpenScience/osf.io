@@ -7,6 +7,7 @@ from osf.management.commands.approve_pending_schema_responses import approve_pen
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import RegistrationFactory
+from tests.utils import capture_notifications
 from website.settings import REGISTRATION_UPDATE_APPROVAL_TIME
 
 
@@ -38,10 +39,10 @@ class TestApprovePendingSchemaResponses:
         initial_response = reg.schema_responses.last()
         initial_response.state = ApprovalStates.APPROVED
         initial_response.save()
-
-        return SchemaResponse.create_from_previous_response(
-            previous_response=initial_response, initiator=reg.creator
-        )
+        with capture_notifications():
+            return SchemaResponse.create_from_previous_response(
+                previous_response=initial_response, initiator=reg.creator
+            )
 
     @pytest.mark.parametrize(
         'is_moderated, expected_state',
