@@ -165,7 +165,7 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         raise self.retry(exc=e)
 
 @celery_app.task(bind=True, name='notifications.tasks.send_users_digest_email')
-def send_users_digest_email():
+def send_users_digest_email(dry_run=False):
     today = date.today()
 
     frequencies = ['daily']
@@ -179,10 +179,11 @@ def send_users_digest_email():
         for group in grouped_emails:
             user_id = group['user_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
-            send_user_email_task.delay(user_id, notification_ids, freq)
+            if not dry_run:
+                send_user_email_task.delay(user_id, notification_ids, freq)
 
 @celery_app.task(bind=True, name='notifications.tasks.send_moderators_digest_email')
-def send_moderators_digest_email():
+def send_moderators_digest_email(dry_run=False):
     today = date.today()
 
     frequencies = ['daily']
@@ -197,7 +198,8 @@ def send_moderators_digest_email():
             user_id = group['user_id']
             provider_id = group['provider_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
-            send_moderator_email_task.delay(user_id, provider_id, notification_ids, freq)
+            if not dry_run:
+                send_moderator_email_task.delay(user_id, provider_id, notification_ids, freq)
 
 def get_moderators_emails(message_freq: str):
     """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.

@@ -360,6 +360,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'node_absolute_url': node.get_absolute_url(),
                     'remover_fullname': user.fullname if user else '',
                     'remover_absolute_url': user.get_absolute_url() if user else '',
+                    'localized_timestamp': str(timezone.now()),
                     'collections_link': collections_link,
                     'collection_title': self.collection.title,
                     'collection_provider_name': collection_provider_name,
