@@ -142,6 +142,7 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
+    context['notify_comment'] = not resource.provider.reviews_comments_private
     context['reviewable_withdrawal_justification'] = resource.withdrawal_justification
 
     for contributor in resource.contributors.all():

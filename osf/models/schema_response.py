@@ -494,8 +494,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'title': self.parent.title,
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'initiator': event_initiator.fullname if event_initiator else None,
+            'initiator_fullname': event_initiator.fullname if event_initiator else None,
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
         }
 
@@ -508,7 +509,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                     'is_initiator': contributor == event_initiator,
                 }
             )
-            NotificationType.objects.get(name=template).emit(
+            template.instance.emit(
                 user=contributor,
                 event_context=email_context
             )

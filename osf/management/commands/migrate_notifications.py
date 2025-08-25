@@ -41,13 +41,13 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
 
 
 TIMEOUT_SECONDS = 3600  # 60 minutes timeout
-BATCH_SIZE = 1000 # batch size, can be changed
+BATCH_SIZE = 1000  # batch size, can be changed
 
 
 @contextmanager
 def time_limit(seconds):
     def signal_handler(signum, frame):
-        raise TimeoutError("Migration timed out")
+        raise TimeoutError('Migration timed out')
 
     signal.signal(signal.SIGALRM, signal_handler)
     signal.alarm(seconds)
@@ -81,7 +81,7 @@ def migrate_legacy_notification_subscriptions(
         'user_invite_preprint',
     ]
     def timeout_handler(signum, frame):
-        raise TimeoutError("Batch processing timed out")
+        raise TimeoutError('Batch processing timed out')
 
     # Notification type IDs
     notiftype_map = dict(NotificationType.objects.values_list('name', 'id'))
@@ -96,7 +96,7 @@ def migrate_legacy_notification_subscriptions(
         )
         for user_id, content_type_id, object_id, notification_type_id in
         NotificationSubscription.objects.all().values_list(
-            "user_id", "content_type_id", "object_id", "notification_type_id"
+            'user_id', 'content_type_id', 'object_id', 'notification_type_id'
         )
     )
 
@@ -112,7 +112,7 @@ def migrate_legacy_notification_subscriptions(
         batch = list(
             NotificationSubscriptionLegacy.objects
             .filter(id__gt=last_id)
-            .order_by("id")[:batch_size]
+            .order_by('id')[:batch_size]
         )
         if not batch:
             break
@@ -189,8 +189,8 @@ def migrate_legacy_notification_subscriptions(
             logger.info(
                 f"Processed batch {last_id}-{last_id + len(batch)} "
                 f"in {batch_time:.2f}s | "
-                f"Progress {processed}/{total} ({processed/total:.1%}) | "
-                f"ETA ~ {eta/60:.1f} min"
+                f"Progress {processed}/{total} ({processed / total:.1%}) | "
+                f"ETA ~ {eta / 60:.1f} min"
             )
 
         except TimeoutError:
@@ -227,16 +227,15 @@ class Command(BaseCommand):
             with time_limit(TIMEOUT_SECONDS):
                 if not dry_run:
                     with transaction.atomic():
-                        logger.info("Populating notification types...")
+                        logger.info('Populating notification types...')
                         populate_notification_types(args, options)
 
                 with transaction.atomic():
                     migrate_legacy_notification_subscriptions(dry_run=dry_run)
 
         except TimeoutError:
-            logger.error("Migration timed out. Rolling back changes.")
-            raise CommandError("Migration failed due to timeout")
+            logger.error('Migration timed out. Rolling back changes.')
+            raise CommandError('Migration failed due to timeout')
         except Exception as e:
-            logger.exception("Migration failed. Rolling back changes.")
+            logger.exception('Migration failed. Rolling back changes.')
             raise CommandError(str(e))
-

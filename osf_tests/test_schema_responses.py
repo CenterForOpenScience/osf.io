@@ -257,10 +257,10 @@ class TestCreateSchemaResponse():
                 previous_response=initial_response,
                 initiator=admin_user
             )
-        assert len(notifications) == len(notification_recipients)
+        assert len(notifications['emits']) == len(notification_recipients)
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED
-                   for notification in notifications)
-        assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications)
+                   for notification in notifications['emits'])
+        assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications['emits'])
 
     @pytest.mark.parametrize(
         'invalid_response_state',

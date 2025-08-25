@@ -121,11 +121,12 @@ class TestDraftNode:
 
     def test_create_draft_registration_without_node(self, user):
         data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data=data,
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data=data,
+            )
         assert draft.title == ''
         assert draft.branched_from.title == settings.DEFAULT_DRAFT_NODE_TITLE
         assert draft.branched_from.type == 'osf.draftnode'
