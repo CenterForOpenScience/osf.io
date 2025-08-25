@@ -563,6 +563,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             })
         else:
             context.update({
+                'user_fullname': user.fullname,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'embargo_end_date': str(self.end_date),
@@ -729,6 +730,7 @@ class Retraction(EmailApprovableSanction):
                 'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
+                'reviewable_branched_from_node': self._get_registration().branched_from_node
             }
         else:
             return {
@@ -744,6 +746,7 @@ class Retraction(EmailApprovableSanction):
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
+                'reviewable_branched_from_node': self._get_registration().branched_from_node
             }
 
     def _on_reject(self, event_data):

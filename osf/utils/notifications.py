@@ -60,6 +60,7 @@ def notify_submit(resource, user, *args, **kwargs):
 def notify_resubmit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
     context['referrer_fullname'] = user.fullname
+    context['requester_fullname'] = user.fullname
     context['user_fullname'] = user.fullname
 
     context['resubmission'] = True
@@ -141,6 +142,7 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
+    context['notify_comment'] = not resource.provider.reviews_comments_private
     context['reviewable_withdrawal_justification'] = resource.withdrawal_justification
 
     for contributor in resource.contributors.all():

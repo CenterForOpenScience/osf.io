@@ -3,6 +3,7 @@ import re
 import json
 import logging
 import importlib
+import sys
 from html import unescape
 from typing import List, Optional
 from mako.template import Template as MakoTemplate
@@ -12,6 +13,7 @@ import waffle
 from django.core.mail import EmailMessage, get_connection
 
 from mako.lookup import TemplateLookup
+from pytest_socket import SocketConnectBlockedError
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -23,7 +25,6 @@ from python_http_client.exceptions import (
 
 from osf import features
 from website import settings
-from api.base.settings import CI_ENV
 
 def _existing_dirs(paths: List[str]) -> List[str]:
     out = []
@@ -155,7 +156,6 @@ def _render_email_html(template_text: str, ctx: dict) -> str:
         )
         return template_text
 
-
 def _strip_html(html: str) -> str:
     if not html:
         return ''
@@ -209,9 +209,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         attachment_content = email_context.get('attachment_content')
         if attachment_name and attachment_content:
             email.attach(attachment_name, attachment_content)
-
-    if not CI_ENV:
-        email.send()
+    email.send()
 
 def send_email_with_send_grid(to_addr, notification_type, context, email_context=None):
 
@@ -220,11 +218,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     if not to_list:
         logging.error('SendGrid: no recipients after normalization')
         return False
-
-    if settings.SENDGRID_WHITELIST_MODE:
-        not_allowed = [a for a in to_list if a not in getattr(settings, 'SENDGRID_EMAIL_WHITELIST', ())]
-        if not_allowed:
-            return False
 
     from_email = getattr(settings, 'SENDGRID_FROM_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
     if not from_email:
@@ -307,6 +300,13 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid HTTPError: %s | payload=%s', body, payload)
         raise
 
+    except SocketConnectBlockedError as exc:
+        if 'pytest' in sys.modules:
+            logging.error('You sent an email while in the local test environment, try using `capture_notifications` '
+                          'or `assert_notifications` instead')
+        else:
+            logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
+        raise
     except Exception as exc:
         logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise

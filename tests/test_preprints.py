@@ -465,13 +465,14 @@ class TestContributorMethods:
     def test_remove_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in preprint.contributors
         assert user2 in preprint.contributors
         assert preprint.has_permission(user1, WRITE)
@@ -1070,13 +1071,13 @@ class TestManageContributors:
 
     def test_contributor_set_visibility_validation(self, preprint, user, auth):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
-                {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-            ]
-        )
-        print(preprint.visible_contributor_ids)
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
+                ]
+            )
         with pytest.raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
             preprint.set_visible(user=user, visible=False, auth=None)

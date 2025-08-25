@@ -108,11 +108,6 @@ class CeleryConfig(defaults.CeleryConfig):
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
-# WARNING: `SENDGRID_WHITELIST_MODE` should always be True in local dev env to prevent unintentional spamming.
-# Add specific email addresses to `SENDGRID_EMAIL_WHITELIST` for testing purposes.
-SENDGRID_WHITELIST_MODE = False
-SENDGRID_EMAIL_WHITELIST = []
-
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
 

@@ -1321,7 +1321,10 @@ class SchemaResponseFactory(DjangoModelFactory):
             ).get()
             previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
             previous_schema_response.save()
-            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+            from tests.utils import capture_notifications
+
+            with capture_notifications():
+                return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
 
 
 class SchemaResponseActionFactory(DjangoModelFactory):

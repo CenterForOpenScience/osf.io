@@ -199,7 +199,7 @@ class ReviewsMachine(BaseMachine):
                     'document_type': self.machineable.provider.preprint_word,
                     'reviewable_provider_name': self.machineable.provider.name,
                     'comment': comment,
-                    'notify_comment': not self.machineable.provider.reviews_comments_private,
+                    'notify_comment': not self.machineable.target.provider.reviews_comments_private,
                     **context
                 }
             )
@@ -209,6 +209,7 @@ class ReviewsMachine(BaseMachine):
             'domain': DOMAIN,
             'reviewable_title': self.machineable.title,
             'reviewable_absolute_url': self.machineable.absolute_url,
+            'reviewable_provider__id': self.machineable.target.provider._id,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
@@ -230,7 +231,7 @@ class NodeRequestMachine(BaseMachine):
         if ev.event.name == DefaultTriggers.ACCEPT.value:
             if not self.machineable.target.is_contributor(self.machineable.creator):
                 contributor_permissions = ev.kwargs.get('permissions', self.machineable.requested_permissions)
-                make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
+                make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST
                 visible = False if make_curator else ev.kwargs.get('visible', True)
                 if self.machineable.request_type in (NodeRequestTypes.ACCESS.value, NodeRequestTypes.INSTITUTIONAL_REQUEST.value):
                     notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
@@ -369,10 +370,12 @@ class PreprintRequestMachine(BaseMachine):
         return {
             'reviewable_title': self.machineable.target.title,
             'reviewable_absolute_url': self.machineable.target.absolute_url,
+            'reviewable_provider__id': self.machineable.target.provider._id,
             'reviewable_provider_name': self.machineable.target.provider.name,
             'requester_fullname': self.machineable.creator.fullname,
             'is_request_email': True,
-            'document_type': self.machineable.target.provider.preprint_word
+            'document_type': self.machineable.target.provider.preprint_word,
+            'notify_comment': not self.machineable.target.provider.reviews_comments_private,
         }
 
 

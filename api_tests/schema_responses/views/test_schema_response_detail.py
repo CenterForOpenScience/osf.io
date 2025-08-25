@@ -13,6 +13,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
 )
 from osf_tests.utils import get_default_test_schema
+from tests.utils import capture_notifications
 
 USER_ROLES = ['unauthenticated', 'non-contributor', 'read', 'write', 'admin', 'moderator']
 
@@ -251,10 +252,11 @@ class TestSchemaResponseDetailGETBehavior:
         assert data['relationships']['initiated_by']['data']['id'] == schema_response.initiator._id
 
     def test_schema_response_displays_updated_responses(self, app, schema_response, admin_user):
-        revised_response = SchemaResponse.create_from_previous_response(
-            previous_response=schema_response,
-            initiator=admin_user
-        )
+        with capture_notifications():
+            revised_response = SchemaResponse.create_from_previous_response(
+                previous_response=schema_response,
+                initiator=admin_user
+            )
 
         resp = app.get(make_api_url(revised_response), auth=admin_user.auth)
         attributes = resp.json['data']['attributes']
@@ -456,10 +458,11 @@ class TestSchemaResponseDetailPATCHBehavior:
     @pytest.fixture()
     def schema_response(self, schema_response):
         # Use create_from_previous_response to better test update_response_keys behavior
-        return SchemaResponse.create_from_previous_response(
-            previous_response=schema_response,
-            initiator=schema_response.initiator
-        )
+        with capture_notifications():
+            return SchemaResponse.create_from_previous_response(
+                previous_response=schema_response,
+                initiator=schema_response.initiator
+            )
 
     def test_PATCH_sets_responses(self, app, schema_response, payload, admin_user):
         assert schema_response.all_responses == INITIAL_SCHEMA_RESPONSES

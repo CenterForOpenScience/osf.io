@@ -30,7 +30,6 @@ class Notification(models.Model):
 
         """
         recipient_address = destination_address or self.subscription.user.username
-
         if not api_settings.CI_ENV:
             logging.info(
                 f"Attempting to send Notification:"

@@ -57,9 +57,11 @@ def configure_test_preconditions(
 
     updated_response = None
     if updated_response_state is not None:
-        updated_response = SchemaResponse.create_from_previous_response(
-            previous_response=initial_response, initiator=initial_response.initiator
-        )
+        with capture_notifications():
+            updated_response = SchemaResponse.create_from_previous_response(
+                previous_response=initial_response,
+                initiator=initial_response.initiator
+            )
         updated_response.approvals_state_machine.set_state(updated_response_state)
         updated_response.save()
     with capture_notifications():

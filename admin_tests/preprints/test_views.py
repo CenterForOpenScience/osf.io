@@ -547,7 +547,8 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'approve'}
         request.user = admin
 
-        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        with capture_notifications():
+            response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()

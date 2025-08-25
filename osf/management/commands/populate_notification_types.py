@@ -23,6 +23,7 @@ def populate_notification_types(*args, **kwargs):
         notification_types = yaml.safe_load(stream)
     for notification_type in notification_types['notification_types']:
         notification_type.pop('__docs__', None)
+        notification_type.pop('tests', None)
         object_content_type_model_name = notification_type.pop('object_content_type_model_name')
 
         if object_content_type_model_name == 'desk':
@@ -54,15 +55,18 @@ def populate_notification_types(*args, **kwargs):
             except ContentType.DoesNotExist:
                 raise ValueError(f'No content type for osf.{object_content_type_model_name}')
 
-        with open(notification_type['template']) as stream:
-            template = stream.read()
+        template_path = notification_type.pop('template')
+        if template_path:
+            with open(template_path) as stream:
+                template = stream.read()
 
         nt, _ = NotificationType.objects.update_or_create(
             name=notification_type['name'],
             defaults=notification_type,
         )
         nt.object_content_type = content_type
-        nt.template = template
+        if not nt.template:
+            nt.template = template
         nt.save()
 
 

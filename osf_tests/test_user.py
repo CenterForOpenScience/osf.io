@@ -898,9 +898,11 @@ class TestChangePassword:
         old_password = 'password'
         new_password = 'new password'
         confirm_password = new_password
-        user.set_password(old_password)
+        with capture_notifications():
+            user.set_password(old_password)
         user.save()
-        user.change_password(old_password, new_password, confirm_password)
+        with capture_notifications():
+            user.change_password(old_password, new_password, confirm_password)
         assert bool(user.check_password(new_password)) is True
 
     def test_set_password_notify_default(self, user):
@@ -1006,7 +1008,8 @@ class TestIsActive:
                 is_disabled=False,
                 date_confirmed=timezone.now(),
             )
-            user.set_password('secret')
+            with capture_notifications():
+                user.set_password('secret')
             for attr, value in attrs.items():
                 setattr(user, attr, value)
             return user
