@@ -168,10 +168,7 @@ MAILHOG_API_HOST = 'http://mailhog:8025'
 
 # OR, if using Sendgrid's API
 # WARNING: If `SENDGRID_WHITELIST_MODE` is True,
-# `tasks.send_email` would only email recipients included in `SENDGRID_EMAIL_WHITELIST`
 SENDGRID_API_KEY = None
-SENDGRID_WHITELIST_MODE = False
-SENDGRID_EMAIL_WHITELIST = []
 
 # Mailchimp
 MAILCHIMP_API_KEY = None

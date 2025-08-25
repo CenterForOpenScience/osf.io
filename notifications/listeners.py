@@ -94,9 +94,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        ).emit(
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=recipient,
             subscribed_object=provider,
             event_context=context,

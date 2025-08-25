@@ -221,11 +221,6 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: no recipients after normalization')
         return False
 
-    if settings.SENDGRID_WHITELIST_MODE:
-        not_allowed = [a for a in to_list if a not in getattr(settings, 'SENDGRID_EMAIL_WHITELIST', ())]
-        if not_allowed:
-            return False
-
     from_email = getattr(settings, 'SENDGRID_FROM_EMAIL', None) or getattr(settings, 'FROM_EMAIL', None)
     if not from_email:
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')

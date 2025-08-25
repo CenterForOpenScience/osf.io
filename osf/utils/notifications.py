@@ -60,6 +60,7 @@ def notify_submit(resource, user, *args, **kwargs):
 def notify_resubmit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
     context['referrer_fullname'] = user.fullname
+    context['requester_fullname'] = user.fullname
     context['user_fullname'] = user.fullname
 
     context['resubmission'] = True
