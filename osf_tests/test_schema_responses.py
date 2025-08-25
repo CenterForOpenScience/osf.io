@@ -84,10 +84,11 @@ def initial_response(registration):
 
 @pytest.fixture
 def revised_response(initial_response):
-    revised_response = schema_response.SchemaResponse.create_from_previous_response(
-        previous_response=initial_response,
-        initiator=initial_response.initiator
-    )
+    with capture_notifications():
+        revised_response = schema_response.SchemaResponse.create_from_previous_response(
+            previous_response=initial_response,
+            initiator=initial_response.initiator
+        )
     return revised_response
 
 
@@ -233,11 +234,12 @@ class TestCreateSchemaResponse():
         ).exists()
 
     def test_create_from_previous_response(self, registration, initial_response):
-        revised_response = schema_response.SchemaResponse.create_from_previous_response(
-            initiator=registration.creator,
-            previous_response=initial_response,
-            justification='Leeeeerooooy Jeeeenkiiiinns'
-        )
+        with capture_notifications():
+            revised_response = schema_response.SchemaResponse.create_from_previous_response(
+                initiator=registration.creator,
+                previous_response=initial_response,
+                justification='Leeeeerooooy Jeeeenkiiiinns'
+            )
 
         assert revised_response.initiator == registration.creator
         assert revised_response.parent == registration
@@ -509,10 +511,12 @@ class TestDeleteSchemaResponse():
         assert not SchemaResponseBlock.objects.exists()
 
     def test_delete_revised_response_only_deletes_updated_blocks(self, initial_response):
-        revised_response = schema_response.SchemaResponse.create_from_previous_response(
-            previous_response=initial_response,
-            initiator=initial_response.initiator
-        )
+
+        with capture_notifications():
+            revised_response = schema_response.SchemaResponse.create_from_previous_response(
+                previous_response=initial_response,
+                initiator=initial_response.initiator
+            )
         revised_response.update_responses({'q1': 'blahblahblah', 'q2': 'whoopdedoo'})
 
         old_blocks = initial_response.response_blocks.all()

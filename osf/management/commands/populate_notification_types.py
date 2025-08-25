@@ -56,8 +56,9 @@ def populate_notification_types(*args, **kwargs):
                 raise ValueError(f'No content type for osf.{object_content_type_model_name}')
 
         template_path = notification_type.pop('template')
-        with open(template_path) as stream:
-            template = stream.read()
+        if template_path:
+            with open(template_path) as stream:
+                template = stream.read()
 
         nt, _ = NotificationType.objects.update_or_create(
             name=notification_type['name'],
