@@ -246,6 +246,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
         event_context_base = {
             'remover_fullname': user.fullname,
+            'requester_fullname': user.fullname,
             'collection_id': self.collection.id,
             'collection_title': self.collection.title,
             'node_title': node.title,

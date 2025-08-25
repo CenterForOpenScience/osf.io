@@ -1493,11 +1493,12 @@ class TestRegistrationResponses:
 
     @pytest.fixture
     def revised_schema_response(self, approved_schema_response):
-        response = SchemaResponse.create_from_previous_response(
-            previous_response=approved_schema_response,
-            initiator=approved_schema_response.initiator
-        )
-        response.update_responses({'q1': 'updated', 'q2': 'answers'})
+        with capture_notifications():
+            response = SchemaResponse.create_from_previous_response(
+                previous_response=approved_schema_response,
+                initiator=approved_schema_response.initiator
+            )
+            response.update_responses({'q1': 'updated', 'q2': 'answers'})
         return response
 
     @pytest.fixture

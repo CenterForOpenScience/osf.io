@@ -209,6 +209,7 @@ class ReviewsMachine(BaseMachine):
             'domain': DOMAIN,
             'reviewable_title': self.machineable.title,
             'reviewable_absolute_url': self.machineable.absolute_url,
+            'reviewable_provider__id': self.machineable.provider._id,
             'workflow': self.machineable.provider.reviews_workflow,
             'provider_url': self.machineable.provider.domain or f'{DOMAIN}preprints/{self.machineable.provider._id}',
             'provider_contact_email': self.machineable.provider.email_contact or OSF_CONTACT_EMAIL,
@@ -369,10 +370,12 @@ class PreprintRequestMachine(BaseMachine):
         return {
             'reviewable_title': self.machineable.target.title,
             'reviewable_absolute_url': self.machineable.target.absolute_url,
+            'reviewable_provider__id': self.machineable.provider._id,
             'reviewable_provider_name': self.machineable.target.provider.name,
             'requester_fullname': self.machineable.creator.fullname,
             'is_request_email': True,
-            'document_type': self.machineable.target.provider.preprint_word
+            'document_type': self.machineable.target.provider.preprint_word,
+            'notify_comment': not self.machineable.provider.reviews_comments_private,
         }
 
 

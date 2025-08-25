@@ -3,6 +3,7 @@ import re
 import json
 import logging
 import importlib
+import sys
 from html import unescape
 from typing import List, Optional
 from mako.template import Template as MakoTemplate
@@ -12,6 +13,7 @@ import waffle
 from django.core.mail import EmailMessage, get_connection
 
 from mako.lookup import TemplateLookup
+from pytest_socket import SocketConnectBlockedError
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -298,6 +300,13 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid HTTPError: %s | payload=%s', body, payload)
         raise
 
+    except SocketConnectBlockedError as exc:
+        if 'pytest' in sys.modules:
+            logging.error('You sent an email while in the local test environment, try using `capture_notifications` '
+                          'or `assert_notifications` instead')
+        else:
+            logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
+        raise
     except Exception as exc:
         logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise

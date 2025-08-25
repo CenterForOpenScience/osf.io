@@ -465,13 +465,14 @@ class TestContributorMethods:
     def test_remove_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in preprint.contributors
         assert user2 in preprint.contributors
         assert preprint.has_permission(user1, WRITE)
