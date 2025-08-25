@@ -503,13 +503,14 @@ class TestDraftRegistrationContributorMethods():
     def test_remove_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in draft_registration.contributors
         assert user2 in draft_registration.contributors
         assert draft_registration.has_permission(user1, WRITE)
