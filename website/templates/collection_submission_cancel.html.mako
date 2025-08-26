@@ -7,7 +7,7 @@
     <p>
         % if is_admin:
              The request to add <a href="${node_absolute_url}">${node_title}</a> to
-             % if collection.provider:
+             % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
                 <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
@@ -17,7 +17,7 @@
         % else:
             <a href="${remover_absolute_url}">${remover_fullname}</a> canceled the request to add
             <a href="${node_absolute_url}">${node_title}</a>to
-            % if collection.provider:
+            % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
                 <a href="${domain  + 'myprojects/'}">${collection_provider_name}</a>

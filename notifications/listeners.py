@@ -19,11 +19,14 @@ def subscribe_creator(resource):
         return None
     user = resource.creator
     if user.is_registered:
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
-            _is_digest=True,
-        )
+        try:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
+                _is_digest=True,
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
         NotificationSubscription.objects.get_or_create(
             user=user,
             notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
@@ -41,15 +44,18 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
             return None
+
     if contributor.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
+            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=contributor.id,
+            content_type=ContentType.objects.get_for_model(contributor),
             _is_digest=True,
         )
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
+            notification_type=NotificationType.Type.FILE_UPDATED.instance,
             object_id=resource.id,
             content_type=ContentType.objects.get_for_model(resource),
             _is_digest=True,

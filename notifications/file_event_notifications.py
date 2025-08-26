@@ -285,12 +285,11 @@ class AddonFileMoved(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.ADDON_FILE_MOVED,
-        ).emit(
+        NotificationType.Type.ADDON_FILE_MOVED.emit(
             user=self.user,
             event_context={
                 'profile_image_url': self.profile_image_url,
+                'localized_timestamp': self.timestamp,
                 'url': self.url,
             },
             is_digest=True,
@@ -310,6 +309,7 @@ class AddonFileCopied(ComplexFileEvent):
             user=self.user,
             event_context={
                 'profile_image_url': self.profile_image_url,
+                'localized_timestamp': self.timestamp,
                 'url': self.url,
             },
             is_digest=True,

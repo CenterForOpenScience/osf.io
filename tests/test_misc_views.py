@@ -422,9 +422,8 @@ class TestExternalAuthViews(OsfTestCase):
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         with capture_notifications() as notifications:
             res = self.app.get(url)
-        assert len(notifications) == 2
+        assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location

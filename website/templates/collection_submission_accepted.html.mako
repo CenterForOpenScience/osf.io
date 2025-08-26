@@ -8,7 +8,7 @@
             Your request to add <a href="${node_absolute_url}">${node_title}</a> to
             <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a> was approved.
         % else:
-            <a href="${node_absolute_url}">${node_title}</a> was added to <a href="${domain + 'collections/' + collection.provider._id}">${collection_provider_name}</a>.
+            <a href="${node_absolute_url}">${node_title}</a> was added to <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>.
         % endif
     </p>
     <p>

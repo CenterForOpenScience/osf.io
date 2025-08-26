@@ -9,7 +9,6 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
-from tests.utils import capture_notifications
 
 
 def make_payload(*node_ids):
@@ -175,16 +174,15 @@ class TestInstitutionRelationshipRegistrations:
     def test_add_some_with_permissions_others_without(
             self, admin, app, registration_no_affiliation, registration_no_owner, url_institution_registrations,
             institution):
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_registrations,
-                make_registration_payload(
-                    registration_no_owner._id,
-                    registration_no_affiliation._id
-                ),
-                expect_errors=True,
-                auth=admin.auth
-            )
+        res = app.post_json_api(
+            url_institution_registrations,
+            make_registration_payload(
+                registration_no_owner._id,
+                registration_no_affiliation._id
+            ),
+            expect_errors=True,
+            auth=admin.auth
+        )
 
         assert res.status_code == 403
         assert institution not in registration_no_owner.affiliated_institutions.all()

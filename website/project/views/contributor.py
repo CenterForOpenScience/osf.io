@@ -445,7 +445,8 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         user=referrer,
         event_context={
             'claim_url': claim_url,
-            'fullname': unclaimed_record['name'],
+            'user_fullname': unclaimed_record['name'],
+            'node_title': node.title,
             'can_change_preferences': False,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
@@ -456,10 +457,10 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         user=claimer,
         event_context={
             'claim_url': claim_url,
-            'fullname': unclaimed_record['name'],
+            'user_fullname': unclaimed_record['name'],
             'referrer_username': referrer.username,
             'referrer_fullname': referrer.fullname,
-            'node': node.title,
+            'node_title': node.title,
             'can_change_preferences': False,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
@@ -627,9 +628,7 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
     if notification_type and check_email_throttle(contributor, notification_type, throttle=throttle):
         return
     referrer_name = getattr(getattr(auth, 'user', None), 'fullname', '') if auth else ''
-    NotificationType.objects.get(
-        name=notification_type
-    ).emit(
+    notification_type.instance.emit(
         user=contributor,
         subscribed_object=resource,
         event_context={

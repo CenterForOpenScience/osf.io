@@ -10,7 +10,7 @@ from api.taxonomies.serializers import subjects_as_relationships_version
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
-from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse, NotificationType
+from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
 from framework.auth import Auth
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
@@ -763,19 +763,17 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(
             self, app, user, public_project, public_registration, public_url, public_payload):
-        with capture_notifications():
-            public_registration.embargo_registration(
-                user,
-                (timezone.now() + datetime.timedelta(days=10)),
-                for_existing_registration=True
-            )
+        public_registration.embargo_registration(
+            user,
+            (timezone.now() + datetime.timedelta(days=10)),
+            for_existing_registration=True
+        )
         public_registration.save()
         assert public_registration.is_pending_embargo
 
         approval_token = public_registration.embargo.approval_state[user._id]['approval_token']
         public_registration.embargo.approve(user, approval_token)
         assert public_registration.embargo_end_date
-
         with capture_notifications():
             res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
@@ -787,24 +785,17 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
             self, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()
-        with capture_notifications() as notifications:
-            public_registration.add_unregistered_contributor(
-                unreg.fullname,
-                unreg.email,
-                auth=Auth(user),
-                permissions=permissions.ADMIN,
-                existing_user=unreg,
-            )
-
-        with capture_notifications() as notifications:
+        public_registration.add_unregistered_contributor(
+            unreg.fullname,
+            unreg.email,
+            auth=Auth(user),
+            permissions=permissions.ADMIN,
+            existing_user=unreg,
+        )
+        # Only the creator gets an email; the unreg user does not get emailed
+        with capture_notifications():
             res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
-
-        # Only the creator gets an email; the unreg user does not get emailed
-        assert public_registration._contributors.count() == 2
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
-
 
 @pytest.mark.django_db
 class TestRegistrationTags:

@@ -349,7 +349,7 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
         nt = NotificationType.objects.get(name=rec.get('type'))
         name = getattr(nt, 'name', '(unknown)')
         template_text = getattr(nt, 'template', '') or ''
-        rendered = _render_email_html(template_text, rec['kwargs']['event_context'])
+        rendered = _render_email_html(nt, rec['kwargs']['event_context'])
         # Fail if rendering produced nothing
         if not isinstance(rendered, str) or not rendered.strip():
             missing = set()

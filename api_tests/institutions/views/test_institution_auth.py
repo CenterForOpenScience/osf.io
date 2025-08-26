@@ -288,23 +288,21 @@ class TestInstitutionAuth:
 
         username, fullname, password = 'user_active@user.edu', 'Foo Bar', 'FuAsKeEr'
         user = make_user(username, fullname)
-        with capture_notifications():
-            user.set_password(password)
+        user.set_password(password)
         user.save()
 
         with capture_signals() as mock_signals:
-            with capture_notifications():
-                res = app.post(
-                    url_auth_institution,
-                    make_payload(
-                        institution,
-                        username,
-                        family_name='User',
-                        given_name='Fake',
-                        fullname='Fake User',
-                        department='Fake Department',
-                    )
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    username,
+                    family_name='User',
+                    given_name='Fake',
+                    fullname='Fake User',
+                    department='Fake Department',
                 )
+            )
         assert res.status_code == 204
         assert not mock_signals.signals_sent()
 
@@ -532,8 +530,7 @@ class TestInstitutionStorageRegion:
         user = make_user(username, 'Foo Bar')
         user.save()
 
-        with capture_notifications():
-            res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
+        res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user.reload()
         assert user.addons_osfstorage_user_settings.default_region != institution_region

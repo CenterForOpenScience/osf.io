@@ -15,7 +15,6 @@ from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_n
 
 
 class TestPreprintConfirmationEmails(OsfTestCase):
-    passthrough_notifications = True
 
     def setUp(self):
         super().setUp()

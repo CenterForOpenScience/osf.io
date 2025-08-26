@@ -180,6 +180,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'message': f'accepted "{self.guid.referent.title}".',
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                         'collection_title': self.collection.title,
+                        'collection_provider_name': self.collection.provider.name,
                         'node_title': self.guid.referent.title,
                         'node_absolute_url': self.guid.referent.get_absolute_url(),
                         'domain': settings.DOMAIN,

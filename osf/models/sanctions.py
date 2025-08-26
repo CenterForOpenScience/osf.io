@@ -557,6 +557,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_provider_name': self.provider.name,
+                'reviewable_provider__id': self.provider._id,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
                 'reviewable_branched_from_node': self._get_registration().branched_from_node
@@ -572,6 +574,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
                 'reviewable_branched_from_node': self._get_registration().branched_from_node
@@ -714,6 +717,7 @@ class Retraction(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
 
             return {
+                'domain': osf_settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
@@ -734,6 +738,7 @@ class Retraction(EmailApprovableSanction):
             }
         else:
             return {
+                'dpmain': osf_settings.DOMAIN,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
@@ -856,6 +861,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             registration = self._get_registration()
             context.update({
+                'domain': osf_settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'is_moderated': self.is_moderated,
@@ -870,6 +876,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             })
         else:
             context.update({
+                'domain': osf_settings.DOMAIN,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,

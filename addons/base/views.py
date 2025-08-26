@@ -626,9 +626,7 @@ def emit_notification(self, target, user, payload, *args, **kwargs):
     notification_type = notification_types[payload.get('action')]
     if notification_type not in notification_types.values():
         raise NotImplementedError(f'Notification type {notification_type} is not supported')
-    NotificationType.objects.get(
-        name=notification_type,
-    ).emit(
+    notification_type.emit(
         user=user,
         subscribed_object=target,
         event_context={
