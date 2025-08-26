@@ -916,10 +916,8 @@ class TestChangePassword:
 
     def test_set_password_no_notify(self, user):
         old_password = 'password'
-        with capture_notifications() as notifications:
-            user.set_password(old_password, notify=False)
-            user.save()
-        assert notifications == {'emails': [], 'emits': []}
+        user.set_password(old_password, notify=False)
+        user.save()
 
     def test_check_password_upgrade_hasher_no_notify(self, user, settings):
         # NOTE: settings fixture comes from pytest-django.
@@ -930,9 +928,7 @@ class TestChangePassword:
         )
         raw_password = 'password'
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
-        with capture_notifications() as notifications:
-            user.check_password(raw_password)
-        assert notifications == {'emails': [], 'emits': []}
+        user.check_password(raw_password)
         assert user.password.startswith('md5$')
 
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,

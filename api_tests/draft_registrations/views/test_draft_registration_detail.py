@@ -16,7 +16,6 @@ from osf_tests.factories import (
     SubjectFactory,
     ProjectFactory,
 )
-from tests.utils import capture_notifications
 from website.settings import API_DOMAIN
 
 
@@ -64,8 +63,7 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         assert 'contributors' in relationships
 
     def test_detail_view_returns_editable_fields_no_specified_node(self, app, user):
-        with capture_notifications():
-            draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
+        draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
         url = f'{API_DOMAIN}{API_BASE}draft_registrations/{draft_registration._id}/'
 
         res = app.get(url, auth=user.auth, expect_errors=True)

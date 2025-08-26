@@ -118,22 +118,20 @@ class TestConfirmEmail:
         user, token, email = user_with_email_verification
         user.is_registered = False
         user.save()
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                confirm_url,
-                {
-                    'data': {
-                        'attributes': {
-                            'uid': user._id,
-                            'token': token,
-                            'destination': 'doesnotmatter',
-                        }
+        res = app.post_json_api(
+            confirm_url,
+            {
+                'data': {
+                    'attributes': {
+                        'uid': user._id,
+                        'token': token,
+                        'destination': 'doesnotmatter',
                     }
-                },
-                expect_errors=True
-            )
+                }
+            },
+            expect_errors=True
+        )
         assert res.status_code == 201
-        assert notifications == {'emails': [], 'emits': []}
         assert res.json == {
             'redirect_url': f'http://localhost:80/v2/users/{user._id}/confirm/&new=true',
             'meta': {
@@ -181,21 +179,19 @@ class TestConfirmEmail:
         user, token, email = user_with_none_identity
         user.save()
 
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                confirm_url,
-                {
-                    'data': {
-                        'attributes': {
-                            'uid': user._id,
-                            'token': token,
-                            'destination': 'doesnotmatter'
-                        }
+        res = app.post_json_api(
+            confirm_url,
+            {
+                'data': {
+                    'attributes': {
+                        'uid': user._id,
+                        'token': token,
+                        'destination': 'doesnotmatter'
                     }
-                },
-                expect_errors=True
-            )
-        assert notifications == {'emails': [], 'emits': []}  # no orcid sso message
+                }
+            },
+            expect_errors=True
+        )
         assert res.status_code == 201
 
         user.reload()

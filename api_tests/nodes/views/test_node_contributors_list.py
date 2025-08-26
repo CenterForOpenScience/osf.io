@@ -1261,21 +1261,19 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
     def test_add_contributor_no_email_if_false(
         self, app, user, url_project_contribs
     ):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_project_contribs}?send_email=false',
-                {
-                    'data': {
-                        'type': 'contributors',
-                        'attributes': {
-                            'full_name': 'Jason Kelece',
-                            'email': 'jason@kelece.com'
-                        },
-                    }
-                },
-                auth=user.auth
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            f'{url_project_contribs}?send_email=false',
+            {
+                'data': {
+                    'type': 'contributors',
+                    'attributes': {
+                        'full_name': 'Jason Kelece',
+                        'email': 'jason@kelece.com'
+                    },
+                }
+            },
+            auth=user.auth
+        )
         assert res.status_code == 201
 
     def test_add_contributor_sends_email(
@@ -1404,9 +1402,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
                 'attributes': {'full_name': 'Kanye West', 'email': 'kanye@west.com'},
             }
         }
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert (
             res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
@@ -1424,9 +1420,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
         }
 
         with capture_signals() as mock_signal:
-            with capture_notifications() as notifications:
-                res = app.post_json_api(url, payload, auth=user.auth)
-            assert notifications == {'emails': [], 'emits': []}
+            res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
 

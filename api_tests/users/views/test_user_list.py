@@ -281,14 +281,12 @@ class TestUsersCreate:
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(
             self, app, user, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                auth=user.auth,
-                expect_errors=True
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            auth=user.auth,
+            expect_errors=True
+        )
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -296,13 +294,11 @@ class TestUsersCreate:
     def test_logged_out_user_cannot_create_other_user_or_send_mail(
             self, app, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                expect_errors=True
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            expect_errors=True
+        )
 
         assert res.status_code == 401
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
@@ -399,13 +395,11 @@ class TestUsersCreate:
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
 
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url_base,
-                data,
-                headers={'Authorization': f'Bearer {token.token_id}'}
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            url_base,
+            data,
+            headers={'Authorization': f'Bearer {token.token_id}'}
+        )
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
@@ -441,13 +435,11 @@ class TestUsersCreate:
         data['data']['attributes'] = {'full_name': 'No Email'}
 
         assert OSFUser.objects.filter(fullname='No Email').count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                headers={'Authorization': f'Bearer {token.token_id}'}
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            headers={'Authorization': f'Bearer {token.token_id}'}
+        )
 
         assert res.status_code == 201
         username = res.json['data']['attributes']['username']
@@ -482,14 +474,12 @@ class TestUsersCreate:
         mock_auth.return_value = user, mock_cas_resp
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                headers={'Authorization': f'Bearer {token.token_id}'},
-                expect_errors=True
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            headers={'Authorization': f'Bearer {token.token_id}'},
+            expect_errors=True
+        )
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0

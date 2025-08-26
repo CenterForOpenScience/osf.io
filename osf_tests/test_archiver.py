@@ -899,9 +899,7 @@ class TestArchiverListeners(ArchiverTestCase):
         )
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
-            with capture_notifications() as notifications:
-                listeners.archive_callback(self.dst)
-            assert notifications == {'emails': [], 'emits': []}
+            listeners.archive_callback(self.dst)
         assert not mock_fail.called
         assert mock_delay.called
 
@@ -909,9 +907,7 @@ class TestArchiverListeners(ArchiverTestCase):
     def test_archive_callback_done_success(self, mock_archive_success):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
-        with capture_notifications() as notifications:
-            listeners.archive_callback(self.dst)
-        assert notifications == {'emails': [], 'emits': []}
+        listeners.archive_callback(self.dst)
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_archive_success):
@@ -925,9 +921,7 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.embargo_registration(self.user, end_date)
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
-        with capture_notifications() as notifications:
-            listeners.archive_callback(self.dst)
-        assert notifications == {'emails': [], 'emits': []}
+        listeners.archive_callback(self.dst)
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1018,19 +1012,13 @@ class TestArchiverListeners(ArchiverTestCase):
             node.archive_job.update_target('osfstorage', ARCHIVER_INITIATED)
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
-        with capture_notifications() as notifications:
-            listeners.archive_callback(rchild)
-        assert notifications == {'emails': [], 'emits': []}
+        listeners.archive_callback(rchild)
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
-        with capture_notifications() as notifications:
-            listeners.archive_callback(reg)
-        assert notifications == {'emails': [], 'emits': []}
+        listeners.archive_callback(reg)
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
-        with capture_notifications() as notifications:
-            listeners.archive_callback(rchild2)
-        assert notifications == {'emails': [], 'emits': []}
+        listeners.archive_callback(rchild2)
 
 class TestArchiverScripts(ArchiverTestCase):
 

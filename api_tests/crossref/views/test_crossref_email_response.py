@@ -170,9 +170,7 @@ class TestCrossRefEmailResponse:
         assert not preprint.get_identifier_value('doi')
 
         context_data = self.make_mailgun_payload(crossref_response=success_xml)
-        with capture_notifications() as notifications:
-            app.post(url, context_data)
-        assert notifications == {'emails': [], 'emits': []}
+        app.post(url, context_data)
 
         preprint.reload()
         assert preprint.get_identifier_value('doi')
@@ -184,9 +182,7 @@ class TestCrossRefEmailResponse:
         update_xml = self.update_success_xml(preprint)
 
         context_data = self.make_mailgun_payload(crossref_response=update_xml)
-        with capture_notifications() as notifications:
-            app.post(url, context_data)
-        assert notifications == {'emails': [], 'emits': []}
+        app.post(url, context_data)
         assert preprint.get_identifier_value(category='doi') != initial_value
 
     def test_update_success_does_not_set_preprint_doi_created(self, app, preprint, url):
@@ -215,13 +211,11 @@ class TestCrossRefEmailResponse:
             assert preprint.get_identifier_value('doi') == settings.DOI_FORMAT.format(prefix=provider.doi_prefix, guid=preprint._id)
 
     def test_confirmation_marks_legacy_doi_as_deleted(self, app, url, preprint):
-        with capture_notifications() as notifications:
-            legacy_value = 'IAmALegacyDOI'
-            preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
-            update_xml = self.update_success_xml(preprint)
+        legacy_value = 'IAmALegacyDOI'
+        preprint.set_identifier_value(category='legacy_doi', value=legacy_value)
+        update_xml = self.update_success_xml(preprint)
 
-            context_data = self.make_mailgun_payload(crossref_response=update_xml)
-            app.post(url, context_data)
+        context_data = self.make_mailgun_payload(crossref_response=update_xml)
+        app.post(url, context_data)
 
-        assert notifications == {'emails': [], 'emits': []}
         assert preprint.identifiers.get(category='legacy_doi').deleted

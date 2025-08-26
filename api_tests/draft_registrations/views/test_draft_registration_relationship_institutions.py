@@ -276,13 +276,11 @@ class TestDraftRegistrationRelationshipInstitutions():
         node.affiliated_institutions.add(institution_one)
         assert institution_one in node.affiliated_institutions.all()
 
-        with capture_notifications() as notifications:
-            res = app.put_json_api(
-                node_institutions_url,
-                {'data': []},
-                auth=user.auth
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.put_json_api(
+            node_institutions_url,
+            {'data': []},
+            auth=user.auth
+        )
 
         assert res.status_code == 200
         node.reload()

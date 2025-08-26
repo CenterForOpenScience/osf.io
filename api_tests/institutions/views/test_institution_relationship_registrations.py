@@ -218,12 +218,11 @@ class TestInstitutionRelationshipRegistrations:
                                     url_institution_registrations, institution):
         registration_no_affiliation.add_contributor(affiliated_user)
         registration_no_affiliation.save()
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_registrations,
-                make_registration_payload(registration_no_affiliation._id),
-                auth=affiliated_user.auth
-            )
+        res = app.post_json_api(
+            url_institution_registrations,
+            make_registration_payload(registration_no_affiliation._id),
+            auth=affiliated_user.auth
+        )
 
         assert res.status_code == 201
         assert institution in registration_no_affiliation.affiliated_institutions.all()

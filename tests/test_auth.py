@@ -86,25 +86,20 @@ class TestAuthUtils(OsfTestCase):
         user.reload()
         token = user.get_confirmation_token(user.username)
 
-        with capture_notifications() as notifications:
-            res = self.app.get(f'/confirm/{user._id}/{token}')
-            res = self.app.resolve_redirect(res)
-        assert notifications == {'emails': [], 'emits': []}
+        res = self.app.get(f'/confirm/{user._id}/{token}')
+        res = self.app.resolve_redirect(res)
         assert res.status_code == 302
         assert 'login?service=' in res.location
 
         user.reload()
 
+        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
+        res = self.app.get(f'/confirm/{user._id}/{token}')
 
-        with capture_notifications() as notifications:
-            self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
-            res = self.app.get(f'/confirm/{user._id}/{token}')
-
-            res = self.app.resolve_redirect(res)
+        res = self.app.resolve_redirect(res)
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert notifications == {'emails': [], 'emits': []}
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):

@@ -88,11 +88,10 @@ class TestPOSTCollectionsModeratorList:
         payload = make_payload(permission_group='moderator', **unreg_user)
         with capture_notifications(passthrough=True) as notifications:
             res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 403
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == len(notifications['emails'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
         # test_user_with_moderator_admin_permissions

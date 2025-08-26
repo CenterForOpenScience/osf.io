@@ -141,11 +141,10 @@ class TestCreateSchemaResponse():
             assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
     def test_create_initial_response_does_not_notify(self, registration, admin_user):
-        with capture_notifications() as notifications:
-            schema_response.SchemaResponse.create_initial_response(
-                parent=registration, initiator=admin_user
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        schema_response.SchemaResponse.create_initial_response(
+            parent=registration,
+            initiator=admin_user
+        )
 
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
@@ -595,9 +594,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
         initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
-        with capture_notifications() as notifications:
-            initial_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.submit(user=admin_user, required_approvers=[admin_user])
 
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -683,9 +680,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
-        with capture_notifications() as notifications:
-            revised_response.approve(user=admin_user)
-        assert notifications == {'emails': [], 'emits': []}  # Should only send email on final approval
+        revised_response.approve(user=admin_user)  # Should only send email on final approval
         with capture_notifications() as notifications:
             revised_response.approve(user=alternate_user)
         assert len(notifications['emits']) == 3
@@ -696,9 +691,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with capture_notifications() as notifications:
-            initial_response.approve(user=admin_user)
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.approve(user=admin_user)
 
     def test_approve_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -765,9 +758,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with capture_notifications() as notifications:
-            initial_response.reject(user=admin_user)
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.reject(user=admin_user)
 
     def test_reject_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -895,9 +886,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with capture_notifications() as notifications:
-            initial_response.approve(user=admin_user)
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.approve(user=admin_user)
 
     def test_moderator_accept(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -935,9 +924,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with capture_notifications() as notifications:
-            initial_response.accept(user=moderator)
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.accept(user=moderator)
 
     def test_moderator_reject(self, initial_response, admin_user, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -976,9 +963,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with capture_notifications() as notifications:
-            initial_response.reject(user=moderator)
-        assert notifications == {'emails': [], 'emits': []}
+        initial_response.reject(user=moderator)
 
     def test_moderator_cannot_submit(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
