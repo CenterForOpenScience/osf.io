@@ -1079,12 +1079,11 @@ class ConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.value,
-            ).emit(
+            NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
                 user=user,
                 message_frequency='instantly',
                 event_context={
+                    'user_fullname': user.fullname,
                     'can_change_preferences': False,
                     'external_id_provider': provider,
                 },

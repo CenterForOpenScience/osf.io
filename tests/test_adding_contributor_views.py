@@ -188,8 +188,10 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -215,8 +217,10 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
@@ -374,7 +378,11 @@ class TestAddingContributorViews(OsfTestCase):
         contributor = UserFactory()
         with capture_notifications() as notifications:
             template = self.project.use_as_template(auth=Auth(self.creator))
-            template.add_contributor(contributor, auth=Auth(self.creator))
+            template.add_contributor(
+                contributor,
+                auth=Auth(self.creator),
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            )
             template.save()
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT

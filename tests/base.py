@@ -121,8 +121,11 @@ class DbTestCase(unittest.TestCase):
             try:
                 cls._notifications_cm.__exit__(None, None, None)
             except AssertionError as exc:
-                if exc == ('No notifications were emitted. Expected at least one call to NotificationType.emit. Tip'
-                           ': ensure your code path triggers an emit and that patches did not get overridden.'):
+                if str(exc) == (
+                        'No notifications were emitted. Expected at least one '
+                        'call to NotificationType.emit. Tip: ensure your code '
+                        'path triggers an emit and that patches did not get overridden.'
+                ):
                     pass
                 else:
                     raise exc
