@@ -441,9 +441,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         )
 
     # Send mail to referrer, telling them to forward verification link to claimer
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-    ).emit(
+    NotificationType.Type.USER_FORWARD_INVITE_REGISTERED.instance.emit(
         user=referrer,
         event_context={
             'claim_url': claim_url,
@@ -453,9 +451,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         }
     )
     # Send mail to claimer, telling them to wait for referrer
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
-    ).emit(
+    NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED.instance.emit(
         subscribed_object=claimer,
         user=claimer,
         event_context={
@@ -535,16 +531,13 @@ def send_claim_email(
         unclaimed_user.save()
 
         if notify:
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_PENDING_VERIFICATION
-            ).emit(
+            NotificationType.Type.USER_PENDING_VERIFICATION.instance.emit(
                 subscribed_object=unclaimed_user,
                 user=unclaimed_user,
                 event_context={
-                    'user': unclaimed_user.id,
-                    'referrer': referrer.id,
+                    'referrer_fullname': referrer.fullname,
                     'user_fullname': unclaimed_record['name'],
-                    'node': node.id,
+                    'node_title': node.title,
                     'logo': logo,
                     'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
@@ -552,17 +545,22 @@ def send_claim_email(
             )
 
         notification_type = NotificationType.Type.USER_FORWARD_INVITE
+    claim_url = unclaimed_user.get_claim_url(node._primary_key, external=True)
 
     notification_type.instance.emit(
         user=referrer,
         destination_address=email,
         event_context={
-            'user': unclaimed_user.id,
-            'referrer': referrer.id,
+            'user_fullname': referrer.id,
+            'referrer_fullname': referrer.fullname,
             'fullname': unclaimed_record['name'],
-            'node': node.id,
+            'node_url': node.url,
             'logo': logo,
+            'claim_url': claim_url,
             'can_change_preferences': False,
+            'domain': settings.DOMAIN,
+            'node_absolute_url': node.absolute_url,
+            'node_title': node.title,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
         }
     )

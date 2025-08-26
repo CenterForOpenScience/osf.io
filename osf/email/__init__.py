@@ -13,7 +13,6 @@ import waffle
 from django.core.mail import EmailMessage, get_connection
 
 from mako.lookup import TemplateLookup
-from pytest_socket import SocketConnectBlockedError
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -299,14 +298,10 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
             pass
         logging.error('SendGrid HTTPError: %s | payload=%s', body, payload)
         raise
-
-    except SocketConnectBlockedError as exc:
+    except Exception as exc:
         if 'pytest' in sys.modules:
             logging.error(f'You sent an email of {notification_type.name} while in the local test environment, try'
                           f' using `capture_notifications` or `assert_notifications` instead')
         else:
             logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
-        raise
-    except Exception as exc:
-        logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise

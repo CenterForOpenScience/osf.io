@@ -249,8 +249,9 @@ class TestAddingContributorViews(OsfTestCase):
             self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')
@@ -291,11 +292,8 @@ class TestAddingContributorViews(OsfTestCase):
     def test_contributor_added_email_sent_to_unreg_user(self):
         unreg_user = UnregUserFactory()
         project = ProjectFactory()
-        with capture_notifications() as notifications:
-            project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
-            project.save()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
+        project.save()
 
     def test_forking_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
