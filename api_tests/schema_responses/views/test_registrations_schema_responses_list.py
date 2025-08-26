@@ -64,8 +64,7 @@ def configure_test_preconditions(
             )
         updated_response.approvals_state_machine.set_state(updated_response_state)
         updated_response.save()
-    with capture_notifications():
-        auth = configure_auth(registration, role)
+    auth = configure_auth(registration, role)
     return auth, updated_response, registration, provider
 
 
@@ -80,8 +79,7 @@ def configure_auth(registration, role):
     elif role == 'non-contributor':
         pass
     else:
-        with capture_notifications():
-            registration.add_contributor(user, role, notification_type=False)
+        registration.add_contributor(user, role, notification_type=False)
 
     return user.auth
 

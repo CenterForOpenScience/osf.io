@@ -88,9 +88,7 @@ def send_archiver_file_not_found_mails(src, user, results, url):
             'can_change_preferences': False,
         }
     )
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND
-    ).emit(
+    NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
         user=user,
         event_context={
             'user': user.id,

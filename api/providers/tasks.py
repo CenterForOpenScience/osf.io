@@ -650,14 +650,14 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             logger.error(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
             return
 
-        NotificationType.objects.get(
-            name=notification_type,
-        ).emit(
+        notification_type.instance.emit(
             user=initiator,
             event_context={
+                'user_fullname': initiator.fullname,
                 'initiator_fullname': initiator.fullname,
                 'auto_approval': auto_approval,
                 'count': row_count,
+                'total': row_count,
                 'pending_submissions_url': get_registration_provider_submissions_url(provider),
                 'draft_errors': draft_errors,
                 'approval_errors': approval_errors,

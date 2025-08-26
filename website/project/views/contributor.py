@@ -553,7 +553,7 @@ def send_claim_email(
 
         notification_type = NotificationType.Type.USER_FORWARD_INVITE
 
-    NotificationType.objects.get(name=notification_type).emit(
+    notification_type.instance.emit(
         user=referrer,
         destination_address=email,
         event_context={

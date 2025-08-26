@@ -330,13 +330,14 @@ class TestContributorMethods:
     def test_add_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth,
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth,
+            )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==

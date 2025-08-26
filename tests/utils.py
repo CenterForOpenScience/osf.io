@@ -14,7 +14,7 @@ from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from osf.email import _render_email_html
 from osf_tests.factories import DraftRegistrationFactory
-from osf.models import Sanction
+from osf.models import Sanction, NotificationType
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
@@ -266,12 +266,22 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
     Capture NotificationType emits (including calls via NotificationType.Type.<X>.instance.emit)
     and optionally capture email sends.
 
+    Asserts (post-yield):
+      - At least one notification was emitted.
+      - Every captured email successfully renders via _render_email_html.
+
     Returns:
         dict: {
             "emits":  [ {"type": str, "args": tuple, "kwargs": dict}, ... ],
             "emails": [ {"protocol": str, "to": ..., "notification_type": ..., "context": ..., "email_context": ...}, ... ]
         }
     """
+    from osf.email import _render_email_html
+    try:
+        from osf.email import _extract_vars as _extract_template_vars
+    except Exception:
+        _extract_template_vars = None
+
     NotificationTypeModel = apps.get_model('osf', 'NotificationType')
     captured = {'emits': [], 'emails': []}
 
@@ -327,6 +337,47 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
         for p in patches:
             stack.enter_context(p)
         yield captured
+
+    if not captured['emits']:
+        raise AssertionError(
+            'No notifications were emitted. '
+            'Expected at least one call to NotificationType.emit. '
+            'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
+        )
+
+    for idx, rec in enumerate(captured.get('emits', []), start=1):
+        nt = NotificationType.objects.get(name=rec.get('type'))
+        name = getattr(nt, 'name', '(unknown)')
+        template_text = getattr(nt, 'template', '') or ''
+        rendered = _render_email_html(template_text, rec['kwargs']['event_context'])
+        # Fail if rendering produced nothing
+        if not isinstance(rendered, str) or not rendered.strip():
+            missing = set()
+            if _extract_template_vars:
+                try:
+                    missing = set(_extract_template_vars(template_text)) - set(ctx.keys())
+                except Exception:
+                    pass
+            hint = f' Likely missing variables: {sorted(missing)}.' if missing else ''
+            raise AssertionError(
+                f'Email render produced empty/blank HTML for notification "{name}" '
+                f'(index {idx}, protocol={rec.get("protocol")}).{hint}'
+            )
+
+        # Fail if rendering just echoed the raw template text (Mako likely failed and _render returned template)
+        if template_text and rendered.strip() == template_text.strip():
+            missing = set()
+            if _extract_template_vars:
+                try:
+                    missing = set(_extract_template_vars(template_text)) - set(rec.keys())
+                except Exception:
+                    pass
+            raise AssertionError(
+                f'Email render returned the raw template (no interpolation) for "{name}" '
+                f'(index {idx}, protocol={rec.get("protocol")}). '
+                f'This usually means Mako failed and _render_email_html fell back to the template.'
+                f'{f" Missing variables: {sorted(missing)}." if missing else ""}'
+            )
 
 
 

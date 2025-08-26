@@ -192,7 +192,8 @@ class TestModeratedCollectionSubmission:
 
     def test_accept_success(self, node, moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        moderated_collection_submission.accept(user=moderator, comment='Test Comment')
+        with capture_notifications():
+            moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     def test_notify_moderated_accepted(self, node, moderated_collection_submission):
@@ -207,9 +208,8 @@ class TestModeratedCollectionSubmission:
     @pytest.mark.parametrize('user_role', [UserRoles.UNAUTHENTICATED, UserRoles.NONCONTRIB])
     def test_reject_fails(self, node, user_role, moderated_collection_submission):
         user = configure_test_auth(node, user_role)
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                moderated_collection_submission.reject(user=user, comment='Test Comment')
+        with pytest.raises(PermissionsError):
+            moderated_collection_submission.reject(user=user, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
 
     def test_reject_success(self, node, moderated_collection_submission):
@@ -291,9 +291,8 @@ class TestModeratedCollectionSubmission:
         user = configure_test_auth(node, user_role)
         moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         moderated_collection_submission.save()
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        with pytest.raises(PermissionsError):
+            moderated_collection_submission.cancel(user=user, comment='Test Comment')
         assert moderated_collection_submission.state == CollectionSubmissionStates.PENDING
 
     def test_cancel_succeeds(self, node, moderated_collection_submission):
@@ -340,7 +339,8 @@ class TestUnmoderatedCollectionSubmission:
         user = configure_test_auth(node, user_role)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         unmoderated_collection_submission.save()
-        unmoderated_collection_submission.remove(user=user, comment='Test Comment')
+        with capture_notifications():
+            unmoderated_collection_submission.remove(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_notify_moderated_removed_admin(self, node, unmoderated_collection_submission):
@@ -358,7 +358,8 @@ class TestUnmoderatedCollectionSubmission:
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
         unmoderated_collection_submission.save()
-        unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
+        with capture_notifications():
+            unmoderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
@@ -383,7 +384,8 @@ class TestUnmoderatedCollectionSubmission:
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
         unmoderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         unmoderated_collection_submission.save()
-        unmoderated_collection_submission.cancel(user=user, comment='Test Comment')
+        with capture_notifications():
+            unmoderated_collection_submission.cancel(user=user, comment='Test Comment')
         assert unmoderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS
 
 
@@ -442,7 +444,8 @@ class TestHybridModeratedCollectionSubmission:
 
     def test_accept_success(self, node, hybrid_moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.accept(user=moderator, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     def test_notify_moderated_accepted(self, node, hybrid_moderated_collection_submission):
@@ -463,7 +466,8 @@ class TestHybridModeratedCollectionSubmission:
 
     def test_reject_success(self, node, hybrid_moderated_collection_submission):
         moderator = configure_test_auth(node, UserRoles.MODERATOR)
-        hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.reject(user=moderator, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REJECTED
 
     def test_notify_moderated_rejected(self, node, hybrid_moderated_collection_submission):
@@ -489,7 +493,8 @@ class TestHybridModeratedCollectionSubmission:
         user = configure_test_auth(node, user_role)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         hybrid_moderated_collection_submission.save()
-        hybrid_moderated_collection_submission.remove(user=user, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.remove(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.REMOVED
 
     def test_notify_moderated_removed_moderator(self, node, hybrid_moderated_collection_submission):
@@ -518,7 +523,8 @@ class TestHybridModeratedCollectionSubmission:
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
         hybrid_moderated_collection_submission.save()
-        hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.PENDING
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
@@ -548,7 +554,8 @@ class TestHybridModeratedCollectionSubmission:
         node.add_contributor(user)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.REMOVED)
         hybrid_moderated_collection_submission.save()
-        hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.resubmit(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.ACCEPTED
 
     @pytest.mark.parametrize('user_role', UserRoles.excluding(UserRoles.ADMIN_USER))
@@ -564,5 +571,6 @@ class TestHybridModeratedCollectionSubmission:
         user = configure_test_auth(node, UserRoles.ADMIN_USER)
         hybrid_moderated_collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         hybrid_moderated_collection_submission.save()
-        hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
+        with capture_notifications():
+            hybrid_moderated_collection_submission.cancel(user=user, comment='Test Comment')
         assert hybrid_moderated_collection_submission.state == CollectionSubmissionStates.IN_PROGRESS

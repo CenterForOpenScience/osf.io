@@ -852,7 +852,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 else:
                     notification_type = NotificationType.Type.USER_FORGOT_PASSWORD
 
-                NotificationType.objects.get(name=notification_type).emit(
+                notification_type.instance.emit(
                     user=user_obj,
                     message_frequency='instantly',
                     event_context={

@@ -570,7 +570,8 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'reject'}
         request.user = admin
 
-        response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
+        with capture_notifications():
+            response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -622,7 +623,8 @@ class TestPreprintWithdrawalRequests:
         new_request.POST = {'action': 'approve'}
         new_request.user = admin
 
-        response = views.PreprintApproveWithdrawalRequest.as_view()(new_request, guid=preprint._id)
+        with capture_notifications():
+            response = views.PreprintApproveWithdrawalRequest.as_view()(new_request, guid=preprint._id)
         assert response.status_code == 302
 
         new_withdrawal_request.refresh_from_db()
@@ -664,7 +666,8 @@ class TestPreprintWithdrawalRequests:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(admin)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.machine_state == 'withdrawn'
 
@@ -699,7 +702,8 @@ class TestPreprintWithdrawalRequests:
         request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
 
         request.user = admin
-        response = views.PreprintWithdrawalRequestList.as_view()(request)
+        with capture_notifications():
+            response = views.PreprintWithdrawalRequestList.as_view()(request)
         assert response.status_code == 200
 
     @pytest.mark.parametrize('action, final_state', [
@@ -713,7 +717,8 @@ class TestPreprintWithdrawalRequests:
             request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin
 
-        response = views.PreprintWithdrawalRequestList.as_view()(request)
+        with capture_notifications():
+            response = views.PreprintWithdrawalRequestList.as_view()(request)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()

@@ -57,7 +57,9 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     # imports moved here to avoid AppRegistryNotReady error
 
     provider = resource.provider
-
+    context['reviews_submission_url'] = (
+        f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
+    )
     # Set submission url
     if provider.type == 'osf.preprintprovider':
         context['reviews_submission_url'] = (
@@ -85,9 +87,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         context['recipient_fullname'] = recipient.fullname
         context['user_fullname'] = recipient.fullname
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        ).emit(
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=recipient,
             subscribed_object=provider,
             event_context=context,

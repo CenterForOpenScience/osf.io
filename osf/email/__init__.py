@@ -302,8 +302,8 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
 
     except SocketConnectBlockedError as exc:
         if 'pytest' in sys.modules:
-            logging.error('You sent an email while in the local test environment, try using `capture_notifications` '
-                          'or `assert_notifications` instead')
+            logging.error(f'You sent an email of {notification_type.name} while in the local test environment, try'
+                          f' using `capture_notifications` or `assert_notifications` instead')
         else:
             logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
         raise
