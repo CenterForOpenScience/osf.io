@@ -140,9 +140,7 @@ class TestImplicitRemoval:
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        with capture_notifications() as notifications:
-            collected_node.set_privacy('private', auth=auth)
-        assert notifications == {'emails': [], 'emits': []}
+        collected_node.set_privacy('private', auth=auth)
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

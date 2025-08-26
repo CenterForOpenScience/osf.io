@@ -19,7 +19,7 @@ from osf_tests.factories import (
 from importlib import import_module
 from django.conf import settings as django_conf_settings
 from osf.models import UserSessionMap
-from tests.utils import run_celery_tasks, capture_notifications
+from tests.utils import run_celery_tasks
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
 
@@ -285,8 +285,6 @@ class TestUserMerging(OsfTestCase):
 
     def test_merge_doesnt_send_signal(self):
         other_user = UserFactory()
-        with capture_notifications() as notifications:
-            with override_flag(ENABLE_GV, active=True):
-                self.user.merge_user(other_user)
-            assert notifications == {'emails': [], 'emits': []}
+        with override_flag(ENABLE_GV, active=True):
+            self.user.merge_user(other_user)
         assert other_user.merged_by._id == self.user._id

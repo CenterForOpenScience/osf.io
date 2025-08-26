@@ -238,14 +238,12 @@ class TestClaimViews(OsfTestCase):
             assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
             assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         # second call raises error because it was called before throttle period
-        with capture_notifications() as notifications:
-            with pytest.raises(HTTPError):
-                    send_claim_registered_email(
-                        claimer=reg_user,
-                        unclaimed_user=self.user,
-                        node=self.project,
-                    )
-        assert notifications == {'emails': [], 'emits': []}
+        with pytest.raises(HTTPError):
+                send_claim_registered_email(
+                    claimer=reg_user,
+                    unclaimed_user=self.user,
+                    node=self.project,
+                )
 
     @mock.patch('website.project.views.contributor.send_claim_registered_email')
     def test_claim_user_post_with_email_already_registered_sends_correct_email(

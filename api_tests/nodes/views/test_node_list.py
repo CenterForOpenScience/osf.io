@@ -1195,7 +1195,8 @@ class TestNodeFiltering:
     def test_withdrawn_preprint_in_preprint_true_filter_results(
             self, app, user_one, user_two):
         project_one = ProjectFactory(creator=user_one, is_public=True)
-        preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
+        with capture_notifications():
+            preprint_one = PreprintFactory(is_published=False, creator=user_one, project=project_one)
         project_one.add_contributor(user_two, permissions.WRITE, save=True)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True

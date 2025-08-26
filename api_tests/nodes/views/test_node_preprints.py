@@ -11,6 +11,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
@@ -60,7 +61,8 @@ class TestNodePreprintsListFiltering(PreprintsListFilteringMixin):
         assert expected == actual
 
     def test_filter_withdrawn_preprint(self, app, url, user, project_one, provider_one, provider_two):
-        preprint_one = PreprintFactory(is_published=False, creator=user, project=project_one, provider=provider_one)
+        with capture_notifications():
+            preprint_one = PreprintFactory(is_published=False, creator=user, project=project_one, provider=provider_one)
         preprint_one.date_withdrawn = timezone.now()
         preprint_one.is_public = True
         preprint_one.is_published = True

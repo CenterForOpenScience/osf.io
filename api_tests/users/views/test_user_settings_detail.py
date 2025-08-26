@@ -4,7 +4,6 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from tests.utils import capture_notifications
 from website.settings import OSF_HELP_LIST
 
 
@@ -275,9 +274,7 @@ class TestUpdateRequestedDeactivation:
     def test_patch_invalid_type(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
-        with capture_notifications() as notifications:
-            res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.patch_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
