@@ -512,6 +512,10 @@ msgstr ""
 msgid "National Institute of Informatics"
 msgstr ""
 
+#: admin/templates/base.html:345
+msgid "/static/img/footer_logo_EN.png"
+msgstr ""
+
 #: admin/templates/collection_providers/cannot_delete.html:7
 msgid "Collection Provider Delete"
 msgstr ""
