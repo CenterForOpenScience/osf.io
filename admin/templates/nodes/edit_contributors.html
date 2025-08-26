@@ -1,0 +1,42 @@
+<a data-toggle="modal" data-target="#editContributors" class="btn btn-info">
+    Edit Contributors
+</a>
+<div class="modal" id="editContributors" style="width: 100%;">
+    <div class="modal-dialog" style="width: 60vw; margin: 50px 20vw;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">x</button>
+                <h3>Edit Contributors</h3>
+            </div>
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <td>Email</td>
+                        <td>Name</td>
+                        <td>Permission</td>
+                        <!-- for preprint and node? -->
+                        <!-- {%  if perms.osf.change_node %}
+                        {% endif %} -->
+                        <td></td>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contributor in contributors %}
+                        <tr>
+                            <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.email }}</a></td>
+                            <td>{{ contributor.fullname }}</td>
+                            <td>{{ contributor.email }}</td>
+                            <td>{{ contributor.email }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">
+                    Cancel
+                </button>
+                <input class="btn btn-success" type="submit" value="Save" />
+            </div>
+        </div>
+    </div>
+</div>

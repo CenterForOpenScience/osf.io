@@ -110,6 +110,8 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
+            # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
+            'annotated_contributors': node.contributors.annotate(guid=F('guids___id')),
             'children': children,
             'duplicates': detailed_duplicates
         })
