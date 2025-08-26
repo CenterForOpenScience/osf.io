@@ -18,7 +18,7 @@ module.exports = assign(admin, {
             '__DEV__': false
         }),
         new UglifyJsPlugin({
-            exclude: /conference.*?\.js$/,
+            exclude: /(conference|metrics).*?\.js$/,
             sourceMap: true,
             uglifyOptions: {warnings: true},
         }),
