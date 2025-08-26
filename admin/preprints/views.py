@@ -75,6 +75,8 @@ class PreprintView(PreprintMixin, GuidView):
         preprint = self.get_object()
         return super().get_context_data(**{
             'preprint': preprint,
+            # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
+            'annotated_contributors': preprint.contributors.annotate(guid=F('guids___id')),
             'SPAM_STATUS': SpamStatus,
             'change_provider_form': ChangeProviderForm(instance=preprint),
             'change_machine_state_form': MachineStateForm(instance=preprint),
