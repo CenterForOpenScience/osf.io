@@ -47,6 +47,7 @@ from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
 
+from api.users.services import send_password_reset_email
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -864,38 +865,32 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
 
     def get(self, request, *args, **kwargs):
+        institutional = bool(request.query_params.get('institutional', None))
         email = request.query_params.get('email', None)
         if not email:
             raise ValidationError('Request must include email in query params.')
 
-        institutional = bool(request.query_params.get('institutional', None))
-        mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
-
-        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
-        kind = 'success'
         # check if the user exists
         user_obj = get_user(email=email)
+        if not (user_obj and user_obj.is_active):
+            raise ValidationError(f'User with email {email} not found or inactive.')
 
-        if user_obj:
-            # rate limit forgot_password_post
-            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                status_message = 'You have recently requested to change your password. Please wait a few minutes ' \
-                                 'before trying again.'
-                kind = 'error'
-                return Response({'message': status_message, 'kind': kind}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-            elif user_obj.is_active:
-                # new random verification key (v2)
-                user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                user_obj.email_last_sent = timezone.now()
-                user_obj.save()
-                reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                mails.send_mail(
-                    to_addr=email,
-                    mail=mail_template,
-                    reset_link=reset_link,
-                    can_change_preferences=False,
-                )
-        return Response(status=status.HTTP_200_OK, data={'message': status_message, 'kind': kind, 'institutional': institutional})
+        # rate limit forgot_password_post
+        if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+            status_message = 'You have recently requested to change your password. ' \
+                'Please wait a few minutes before trying again.'
+            return Response({'message': status_message, 'kind': 'error'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        send_password_reset_email(user_obj, email, institutional=institutional)
+
+        return Response(
+            status=status.HTTP_200_OK,
+            data={
+                'message': language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email),
+                'kind': 'success',
+                'institutional': institutional,
+            },
+        )
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
