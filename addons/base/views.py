@@ -584,6 +584,7 @@ def create_waterbutler_log(payload, **kwargs):
                     user=user,
                     subscribed_object=node,
                     event_context={
+                        'user_fullname': user.fullname,
                         'action': payload['action'],
                         'source_node': source_node,
                         'destination_node': destination_node,
@@ -615,13 +616,13 @@ def create_waterbutler_log(payload, **kwargs):
 @file_signals.file_updated.connect
 def emit_notification(self, target, user, payload, *args, **kwargs):
     notification_types = {
-        'rename': NotificationType.Type.ADDON_FILE_RENAMED,
-        'copy': NotificationType.Type.ADDON_FILE_COPIED,
-        'create': NotificationType.Type.FILE_UPDATED,
-        'move': NotificationType.Type.ADDON_FILE_MOVED,
-        'delete': NotificationType.Type.FILE_REMOVED,
-        'update': NotificationType.Type.FILE_UPDATED,
-        'create_folder': NotificationType.Type.FOLDER_CREATED,
+        'rename': NotificationType.Type.ADDON_FILE_RENAMED.instance,
+        'copy': NotificationType.Type.ADDON_FILE_COPIED.instance,
+        'create': NotificationType.Type.FILE_UPDATED.instance,
+        'move': NotificationType.Type.ADDON_FILE_MOVED.instance,
+        'delete': NotificationType.Type.FILE_REMOVED.instance,
+        'update': NotificationType.Type.FILE_UPDATED.instance,
+        'create_folder': NotificationType.Type.FOLDER_CREATED.instance,
     }
     notification_type = notification_types[payload.get('action')]
     if notification_type not in notification_types.values():
@@ -632,6 +633,7 @@ def emit_notification(self, target, user, payload, *args, **kwargs):
         event_context={
             'profile_image_url': user.profile_image_url(),
             'localized_timestamp': str(timezone.now()),
+            'message': payload.get('message'),
             'user_fullname': user.fullname,
             'url': target.absolute_url,
         }

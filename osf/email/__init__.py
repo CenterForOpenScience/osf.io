@@ -154,7 +154,7 @@ def _render_email_html(notification_type, ctx: dict) -> str:
             f'Mako render failed. type {notification_type.name} provided_keys=%s inline_uri=%s base_uri=%s lookup_dirs=%s',
             sorted((ctx or {}).keys()), uri, NOTIFY_BASE_URI, LOOKUP_DIRS,
         )
-        raise Exception('Failed to render email template')
+        raise Exception(f'Failed to render email template {notification_type.name}')
 
 def _strip_html(html: str) -> str:
     if not html:

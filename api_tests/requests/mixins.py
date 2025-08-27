@@ -200,8 +200,7 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(admin)
+        request.run_submit(admin)
         return request
 
     @pytest.fixture()

@@ -211,9 +211,7 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         sentry.log_message(message, skip_session=True)
     except Exception:
         pass
-    NotificationType.objects.get(
-        name=NotificationType.Type.ADDONS_BOA_JOB_FAILURE
-    ).emit(
+    NotificationType.Type.ADDONS_BOA_JOB_FAILURE.instance.emit(
         destination_address=username,
         event_context={
             'user_fullname': fullname,

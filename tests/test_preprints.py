@@ -2272,7 +2272,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
@@ -2282,7 +2283,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
