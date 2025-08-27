@@ -288,7 +288,8 @@ class TestInstitutionAuth:
 
         username, fullname, password = 'user_active@user.edu', 'Foo Bar', 'FuAsKeEr'
         user = make_user(username, fullname)
-        user.set_password(password)
+        with capture_notifications():
+            user.set_password(password)
         user.save()
 
         with capture_signals() as mock_signals:

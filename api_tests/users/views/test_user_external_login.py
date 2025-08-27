@@ -20,7 +20,8 @@ class TestExternalLogin:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        user.set_password('password1')
+        with capture_notifications():
+            user.set_password('password1')
         user.auth = (user.username, 'password1')
         user.save()
         return user

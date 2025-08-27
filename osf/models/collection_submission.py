@@ -181,6 +181,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
                         'collection_title': self.collection.title,
                         'collection_provider_name': self.collection.provider.name,
+                        'collection_provider__id': self.collection.provider._id,
                         'node_title': self.guid.referent.title,
                         'node_absolute_url': self.guid.referent.get_absolute_url(),
                         'domain': settings.DOMAIN,

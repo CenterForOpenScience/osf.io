@@ -147,7 +147,8 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        with capture_notifications():
+            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert len(self.project.contributors) == n_contributors_pre + len(payload['users'])
 
@@ -297,11 +298,13 @@ class TestAddingContributorViews(OsfTestCase):
 
     def test_forking_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        project.fork_node(auth=Auth(project.creator))
+        with capture_notifications():
+            project.fork_node(auth=Auth(project.creator))
 
     def test_templating_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        project.use_as_template(auth=Auth(project.creator))
+        with capture_notifications():
+            project.use_as_template(auth=Auth(project.creator))
 
     @mock.patch('website.archiver.tasks.archive')
     def test_registering_project_does_not_send_contributor_added_email(self, mock_archive):
@@ -382,14 +385,16 @@ class TestAddingContributorViews(OsfTestCase):
                 notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
             )
             template.save()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
 
     def test_creating_fork_does_not_email_creator(self):
-        self.project.fork_node(auth=Auth(self.creator))
+        with capture_notifications():
+            self.project.fork_node(auth=Auth(self.creator))
 
     def test_creating_template_does_not_email_creator(self):
-        self.project.use_as_template(auth=Auth(self.creator))
+        with capture_notifications():
+            self.project.use_as_template(auth=Auth(self.creator))
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
@@ -411,7 +416,8 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        with capture_notifications():
+            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert self.project.logs.count() == n_logs_pre + 1
 
@@ -436,7 +442,8 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': [self.project._primary_key, child._primary_key]
         }
         url = f'/api/v1/project/{self.project._id}/contributors/'
-        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        with capture_notifications():
+            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         child.reload()
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 

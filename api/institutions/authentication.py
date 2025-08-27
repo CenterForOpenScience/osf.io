@@ -13,7 +13,7 @@ from addons.osfstorage.models import Region
 
 from api.base.authentication import drf
 from api.base import exceptions, settings
-from api.waffle.utils import flag_is_active
+from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 from framework import sentry
 from framework.auth import get_or_create_institutional_user
@@ -355,6 +355,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     'email_to_add': email_to_add,
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'storage_flag_is_active': storage_i18n_flag_active(),
                 },
             )
 

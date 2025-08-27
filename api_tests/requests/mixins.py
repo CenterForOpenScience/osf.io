@@ -223,8 +223,7 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(requester)
+        request.run_submit(requester)
         return request
 
     @pytest.fixture()
@@ -235,8 +234,7 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(requester)
+        request.run_submit(requester)
         return request
 
     @pytest.fixture()
@@ -247,8 +245,7 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(requester)
+        request.run_submit(requester)
         return request
 
     @pytest.fixture()

@@ -40,6 +40,7 @@ from admin.nodes.views import (
 )
 from admin_tests.utilities import setup_log_view, setup_view, handle_post_view_request
 from api_tests.share._utils import mock_update_share
+from tests.utils import capture_notifications
 from website import settings
 from framework.auth.core import Auth
 
@@ -658,7 +659,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
     def test_cannot_revert_updated_and_approved_registration_new_version(self):
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         self.approve_version(self.get_current_version(self.registration))
 
         # registration has a few versions including the root
@@ -696,7 +698,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert self.registration.provider.allow_updates
 
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         self.approve_version(self.get_current_version(self.registration))
 
         self.registration.provider.allow_updates = False

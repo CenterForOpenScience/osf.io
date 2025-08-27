@@ -35,8 +35,7 @@ class TestUniqueIndexOnNodeRequest:
     @pytest.fixture()
     def user_with_affiliation(self, institution):
         user = AuthUserFactory()
-        with capture_notifications():
-            user.add_or_update_affiliated_institution(institution)
+        user.add_or_update_affiliated_institution(institution)
         institution.get_group('institutional_admins').user_set.add(user)
         return user
 

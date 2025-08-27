@@ -11,6 +11,7 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintRequestFactory
 from tests.base import ApiTestCase
+from tests.utils import capture_notifications
 
 
 class TestPreprintVersionsListCreate(ApiTestCase):
@@ -710,12 +711,13 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         post_mod_versions_list_url = f"/{API_BASE}preprints/{post_mod_preprint.get_guid()._id}/versions/"
 
         # Post moderation V2 (Withdrawn)
-        post_mod_preprint_v2 = PreprintFactory.create_version(
-            create_from=post_mod_preprint,
-            creator=self.creator,
-            final_machine_state='initial',
-            set_doi=False
-        )
+        with capture_notifications():
+            post_mod_preprint_v2 = PreprintFactory.create_version(
+                create_from=post_mod_preprint,
+                creator=self.creator,
+                final_machine_state='initial',
+                set_doi=False
+            )
         post_mod_preprint_v2.run_submit(self.creator)
         post_mod_preprint_v2.run_accept(self.moderator, 'comment')
         withdrawal_request = PreprintRequestFactory(
@@ -863,11 +865,12 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=True
         )
         for _ in range(5):
-            new_version = PreprintFactory.create_version(
-                create_from=latest_version,
-                creator=self.creator,
-                set_doi=False
-            )
+            with capture_notifications():
+                new_version = PreprintFactory.create_version(
+                    create_from=latest_version,
+                    creator=self.creator,
+                    set_doi=False
+                )
             latest_version = new_version
         versions_url_base_guid = f'/{API_BASE}preprints/{latest_version.get_guid()._id}/versions/'
         res_1 = self.app.get(versions_url_base_guid, auth=self.creator.auth)
