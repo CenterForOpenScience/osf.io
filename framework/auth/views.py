@@ -661,11 +661,10 @@ def external_login_confirm_email_get(auth, uid, token):
     if external_status == 'CREATE':
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
-        NotificationType.objects.get(
-            name=NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS,
-        ).emit(
+        NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
             user=user,
             event_context={
+                'user_fullname': user.fullname,
                 'external_id_provider': provider,
                 'can_change_preferences': False,
                 'osf_contact_email': settings.OSF_CONTACT_EMAIL,

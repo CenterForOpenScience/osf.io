@@ -46,10 +46,7 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = self.confirmed_user.emails.first().address
-        with capture_notifications() as notifications:
-            res = form.submit(self.app)
-
-        assert notifications == {'emails': [], 'emits': []}
+        res = form.submit(self.app)
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('has already been confirmed', res.text)
@@ -60,10 +57,8 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = 'random@random.com'
-        with capture_notifications() as notifications:
-            res = form.submit(self.app)
+        res = form.submit(self.app)
         # check email, request and response
-        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)

@@ -22,7 +22,6 @@ from tests.utils import get_mailhog_messages, delete_mailhog_messages
 
 @pytest.mark.django_db
 class TestMailHog:
-    passthrough_notifications = True
 
     @override_switch(features.ENABLE_MAILHOG, active=True)
     @mock.patch('website.settings.DEV_MODE', True)
@@ -54,7 +53,6 @@ class TestMailHog:
 
 @pytest.mark.django_db
 class TestAuthMailhog(OsfTestCase):
-    passthrough_notifications = True
 
     def setUp(self):
         super().setUp()

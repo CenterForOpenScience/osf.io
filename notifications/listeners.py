@@ -19,14 +19,17 @@ def subscribe_creator(resource):
         return None
     user = resource.creator
     if user.is_registered:
+        try:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+                _is_digest=True,
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
         NotificationSubscription.objects.get_or_create(
             user=user,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
-            _is_digest=True,
-        )
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
+            notification_type=NotificationType.Type.FILE_UPDATED.instance,
             object_id=resource.id,
             content_type=ContentType.objects.get_for_model(resource),
             _is_digest=True,
@@ -41,15 +44,18 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
             return None
+
     if contributor.is_registered:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED),
+            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=contributor.id,
+            content_type=ContentType.objects.get_for_model(contributor),
             _is_digest=True,
         )
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type=NotificationType.objects.get(name=NotificationType.Type.FILE_UPDATED),
+            notification_type=NotificationType.Type.FILE_UPDATED.instance,
             object_id=resource.id,
             content_type=ContentType.objects.get_for_model(resource),
             _is_digest=True,
@@ -112,9 +118,8 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
-    NotificationType.objects.get(
-        name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
-    ).emit(
+    context['localized_timestamp'] = timestamp
+    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
         subscribed_object=provider,
         user=user,
         event_context=context

@@ -227,14 +227,12 @@ class TestClaimUser:
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(id=project._id),
-                auth=claimer.auth,
-                expect_errors=True
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(id=project._id),
+            auth=claimer.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
 

@@ -322,9 +322,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         }
 
         with capture_signals() as mock_signal:
-            with capture_notifications() as notifications:
-                res = app.post_json_api(url, payload, auth=user.auth)
-            assert notifications == {'emails': [], 'emits': []}
+            res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
 

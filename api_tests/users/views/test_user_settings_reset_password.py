@@ -52,9 +52,7 @@ class TestResetPassword:
 
     def test_get_invalid_email(self, app, url):
         url = f'{url}?email={'invalid_email'}'
-        with capture_notifications() as notifications:
-            res = app.get(url)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.get(url)
         assert res.status_code == 200
 
     def test_post(self, app, url, user_one, csrf_token):

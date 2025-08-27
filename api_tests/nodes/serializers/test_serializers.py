@@ -80,7 +80,8 @@ class TestNodeSerializer:
 
     #   test_template_serialization
         node = NodeFactory(creator=user)
-        fork = node.use_as_template(auth=Auth(user))
+        with capture_notifications():
+            fork = node.use_as_template(auth=Auth(user))
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(fork, context={'request': req}).data
         data = result['data']

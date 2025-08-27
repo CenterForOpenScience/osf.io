@@ -57,7 +57,9 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     # imports moved here to avoid AppRegistryNotReady error
 
     provider = resource.provider
-
+    context['reviews_submission_url'] = (
+        f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
+    )
     # Set submission url
     if provider.type == 'osf.preprintprovider':
         context['reviews_submission_url'] = (
@@ -85,9 +87,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         context['recipient_fullname'] = recipient.fullname
         context['user_fullname'] = recipient.fullname
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        ).emit(
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=recipient,
             subscribed_object=provider,
             event_context=context,
@@ -100,8 +100,6 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
     """
     Handle email notifications for a new submission or a resubmission
     """
-    from osf.models import NotificationType
-
     provider = resource.provider
     if provider._id == 'osf':
         if provider.type == 'osf.preprintprovider':
@@ -118,9 +116,8 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
     for recipient in recipients:
         context['is_creator'] = recipient == resource.creator
         context['provider_name'] = resource.provider.name
-        NotificationType.objects.get(
-            name=notification_type
-        ).emit(
+        context['user_username'] = recipient.username
+        notification_type.instance.emit(
             user=recipient,
             subscribed_object=provider,
             event_context=context,

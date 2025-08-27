@@ -330,13 +330,14 @@ class TestContributorMethods:
     def test_add_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth,
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth,
+            )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -2273,7 +2274,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
@@ -2283,7 +2285,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)

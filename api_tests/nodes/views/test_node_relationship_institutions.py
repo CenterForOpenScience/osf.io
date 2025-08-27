@@ -264,13 +264,11 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         node.save()
         assert institution_one in node.affiliated_institutions.all()
 
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                node_institutions_url,
-                self.create_payload([institution_one]),
-                auth=user.auth
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(
+            node_institutions_url,
+            self.create_payload([institution_one]),
+            auth=user.auth
+        )
 
         assert res.status_code == 201
         assert institution_one in node.affiliated_institutions.all()

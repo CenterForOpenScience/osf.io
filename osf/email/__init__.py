@@ -13,7 +13,6 @@ import waffle
 from django.core.mail import EmailMessage, get_connection
 
 from mako.lookup import TemplateLookup
-from pytest_socket import SocketConnectBlockedError
 
 from sendgrid import SendGridAPIClient
 from python_http_client.exceptions import (
@@ -127,7 +126,8 @@ NOTIFY_BASE_DEFAULTS = {
     'provider_name': '',
 }
 
-def _render_email_html(template_text: str, ctx: dict) -> str:
+def _render_email_html(notification_type, ctx: dict) -> str:
+    template_text = notification_type.template
     if not template_text:
         return ''
 
@@ -151,10 +151,10 @@ def _render_email_html(template_text: str, ctx: dict) -> str:
 
     except Exception:
         logging.exception(
-            'Mako render failed. provided_keys=%s inline_uri=%s base_uri=%s lookup_dirs=%s',
+            f'Mako render failed. type {notification_type.name} provided_keys=%s inline_uri=%s base_uri=%s lookup_dirs=%s',
             sorted((ctx or {}).keys()), uri, NOTIFY_BASE_URI, LOOKUP_DIRS,
         )
-        return template_text
+        raise Exception(f'Failed to render email template {notification_type.name}')
 
 def _strip_html(html: str) -> str:
     if not html:
@@ -185,7 +185,7 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         raise NotImplementedError('MAIL_SERVER or MAIL_PORT is not set')
 
     subject = None if not notification_type.subject else notification_type.subject.format(**context)
-    body_html = _render_email_html(notification_type.template, context)
+    body_html = _render_email_html(notification_type, context)
 
     email = EmailMessage(
         subject=subject,
@@ -224,7 +224,7 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
         logging.error('SendGrid: missing SENDGRID_FROM_EMAIL/FROM_EMAIL')
         return False
 
-    html = _render_email_html(notification_type.template, context) or '<p>(no content)</p>'
+    html = _render_email_html(notification_type, context) or '<p>(no content)</p>'
 
     subject_tpl = getattr(notification_type, 'subject', None)
     subject = subject_tpl.format(**context) if subject_tpl else f'Notification: {getattr(notification_type, "name", "OSF")}'
@@ -299,14 +299,10 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
             pass
         logging.error('SendGrid HTTPError: %s | payload=%s', body, payload)
         raise
-
-    except SocketConnectBlockedError as exc:
+    except Exception as exc:
         if 'pytest' in sys.modules:
-            logging.error('You sent an email while in the local test environment, try using `capture_notifications` '
-                          'or `assert_notifications` instead')
+            logging.error(f'You sent an email of {notification_type.name} while in the local test environment, try'
+                          f' using `capture_notifications` or `assert_notifications` instead')
         else:
             logging.error('SendGrid hit a blocked socket error: %r | payload=%s', exc, payload)
-        raise
-    except Exception as exc:
-        logging.error('SendGrid unexpected error: %r | payload=%s', exc, payload)
         raise

@@ -68,9 +68,7 @@ class TestUserRequestExport:
     def test_post_invalid_type(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None

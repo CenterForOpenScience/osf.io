@@ -8,8 +8,8 @@
         % if is_admin:
             You have changed the privacy of <a href="${node_absolute_url}">${node_title}</a> and it has therefore been
             removed from
-            % if collection.provider:
-                <a href="${domain + 'collections/' + collection.provider__id}">${collection_provider_name}</a>
+            % if collection_provider:
+                <a href="${domain + 'collections/' + collection_provider__id}">${collection_provider_name}</a>
             % else:
                 <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>
             % endif
@@ -17,7 +17,7 @@
         % else:
             <a href="${remover_absolute_url}">${remover_fullname}</a> has changed the privacy settings for
             <a href="${node_absolute_url}">${node_title}</a> it has therefore been removed from
-            % if collection.provider:
+            % if collection_provider:
                 <a href="${collections_link}">${collection_provider_name}</a>
             % else:
                 <a href="${domain + 'myprojects/'}">${collection_provider_name}</a>

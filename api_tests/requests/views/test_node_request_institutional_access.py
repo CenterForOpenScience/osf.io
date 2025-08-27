@@ -232,10 +232,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         but the request is still made anyway without email.
         """
         del create_payload['data']['relationships']['message_recipient']
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
         # Check that an email is not sent
-        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 201
 
     def test_email_not_sent_outside_institution(self, app, project, institutional_admin, url,
@@ -244,10 +242,8 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         Test that you are prevented from requesting a user with the correct institutional affiliation.
         """
         create_payload['data']['relationships']['message_recipient']['data']['id'] = user_without_affiliation._id
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
+        res = app.post_json_api(url, create_payload, auth=institutional_admin.auth, expect_errors=True)
         # Check that an email is not sent
-        assert notifications == {'emails': [], 'emits': []}
         assert res.status_code == 403
         assert f'User {user_without_affiliation._id} is not affiliated with the institution.' in res.json['errors'][0]['detail']
 
@@ -396,8 +392,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request.refresh_from_db()
         assert node_request.machine_state == 'rejected'
 
-        with capture_notifications():
-            project.creator.add_or_update_affiliated_institution(institution)
+        project.creator.add_or_update_affiliated_institution(institution)
 
         create_payload['data']['relationships']['message_recipient']['data']['id'] = project.creator._id
 

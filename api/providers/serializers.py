@@ -361,6 +361,10 @@ class ModeratorSerializer(JSONAPISerializer):
             raise ValidationError('Unrecognized permission_group')
         context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
         context['provider_name'] = provider.name
+        context['provider__id'] = provider._id
+        context['is_reviews_moderator_notification'] = True
+        context['referrer_fullname'] = user.fullname
+        context['user_fullname'] = user.fullname
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
 
@@ -370,9 +374,7 @@ class ModeratorSerializer(JSONAPISerializer):
             notification_type = NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
         else:
             notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
-        NotificationType.objects.get(
-            name=notification_type,
-        ).emit(
+        notification_type.instance.emit(
             user=user,
             event_context=context,
         )

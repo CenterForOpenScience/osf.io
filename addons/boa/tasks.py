@@ -211,15 +211,14 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         sentry.log_message(message, skip_session=True)
     except Exception:
         pass
-    NotificationType.objects.get(
-        name=NotificationType.Type.ADDONS_BOA_JOB_FAILURE
-    ).emit(
+    NotificationType.Type.ADDONS_BOA_JOB_FAILURE.instance.emit(
         destination_address=username,
         event_context={
             'user_fullname': fullname,
             'code': code,
             'query_file_name': query_file_name,
             'file_size': file_size,
+            'message': message,
             'max_file_size': boa_settings.MAX_SUBMISSION_SIZE,
             'query_file_full_path': query_file_full_path,
             'output_file_name': output_file_name,

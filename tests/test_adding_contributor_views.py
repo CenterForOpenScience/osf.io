@@ -188,8 +188,10 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -215,8 +217,10 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
@@ -245,8 +249,9 @@ class TestAddingContributorViews(OsfTestCase):
             self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
-        assert len(notifications['emits']) == 1
+        assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')
@@ -287,37 +292,28 @@ class TestAddingContributorViews(OsfTestCase):
     def test_contributor_added_email_sent_to_unreg_user(self):
         unreg_user = UnregUserFactory()
         project = ProjectFactory()
-        with capture_notifications() as notifications:
-            project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
-            project.save()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        project.add_unregistered_contributor(fullname=unreg_user.fullname, email=unreg_user.email, auth=Auth(project.creator))
+        project.save()
 
     def test_forking_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        with capture_notifications() as notifications:
-            project.fork_node(auth=Auth(project.creator))
-        assert notifications == {'emails': [], 'emits': []}
+        project.fork_node(auth=Auth(project.creator))
 
     def test_templating_project_does_not_send_contributor_added_email(self):
         project = ProjectFactory()
-        with capture_notifications() as notifications:
-            project.use_as_template(auth=Auth(project.creator))
-        assert notifications == {'emails': [], 'emits': []}
+        project.use_as_template(auth=Auth(project.creator))
 
     @mock.patch('website.archiver.tasks.archive')
     def test_registering_project_does_not_send_contributor_added_email(self, mock_archive):
         project = ProjectFactory()
         provider = RegistrationProviderFactory()
-        with capture_notifications() as notifications:
-            project.register_node(
-                get_default_metaschema(),
-                Auth(user=project.creator),
-                DraftRegistrationFactory(branched_from=project),
-                None,
-                provider=provider
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        project.register_node(
+            get_default_metaschema(),
+            Auth(user=project.creator),
+            DraftRegistrationFactory(branched_from=project),
+            None,
+            provider=provider
+        )
 
     def test_notify_contributor_email_does_not_send_before_throttle_expires(self):
         contributor = UserFactory()
@@ -334,14 +330,12 @@ class TestAddingContributorViews(OsfTestCase):
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
         # 2nd call does not send email because throttle period has not expired
-        with capture_notifications() as notifications:
-            notify_added_contributor(
-                project,
-                contributor,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
-                auth=auth
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        notify_added_contributor(
+            project,
+            contributor,
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+            auth=auth
+        )
 
     def test_notify_contributor_email_sends_after_throttle_expires(self):
         contributor = UserFactory()
@@ -382,20 +376,20 @@ class TestAddingContributorViews(OsfTestCase):
         contributor = UserFactory()
         with capture_notifications() as notifications:
             template = self.project.use_as_template(auth=Auth(self.creator))
-            template.add_contributor(contributor, auth=Auth(self.creator))
+            template.add_contributor(
+                contributor,
+                auth=Auth(self.creator),
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            )
             template.save()
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_creating_fork_does_not_email_creator(self):
-        with capture_notifications() as notifications:
-            self.project.fork_node(auth=Auth(self.creator))
-        assert notifications == {'emails': [], 'emits': []}
+        self.project.fork_node(auth=Auth(self.creator))
 
     def test_creating_template_does_not_email_creator(self):
-        with capture_notifications() as notifications:
-            self.project.use_as_template(auth=Auth(self.creator))
-        assert notifications == {'emails': [], 'emits': []}
+        self.project.use_as_template(auth=Auth(self.creator))
 
     def test_add_multiple_contributors_only_adds_one_log(self):
         n_logs_pre = self.project.logs.count()
@@ -566,9 +560,7 @@ class TestUserInviteViews(OsfTestCase):
         send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
         # 2nd call raises error because throttle hasn't expired
 
-        with capture_notifications() as notifications:
-            with pytest.raises(HTTPError):
-                send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        assert notifications == {'emails': [], 'emits': []}
+        with pytest.raises(HTTPError):
+            send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
 
 

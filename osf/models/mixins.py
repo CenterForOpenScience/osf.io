@@ -2310,11 +2310,10 @@ class SpamOverrideMixin(SpamMixin):
         user.flag_spam()
         if not user.is_disabled:
             user.deactivate_account()
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_SPAM_BANNED
-            ).emit(
+            NotificationType.Type.USER_SPAM_BANNED.instance.emit(
                 user,
                 event_context={
+                    'user_fullname': user.fullname,
                     'osf_support_email': settings.OSF_SUPPORT_EMAIL,
                     'can_change_preferences': False
                 }

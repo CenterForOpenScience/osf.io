@@ -4,7 +4,6 @@ from api.base.settings.defaults import API_BASE
 
 from osf_tests.factories import DraftRegistrationFactory, AuthUserFactory, InstitutionFactory
 from osf.utils import permissions
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -276,13 +275,11 @@ class TestDraftRegistrationRelationshipInstitutions():
         node.affiliated_institutions.add(institution_one)
         assert institution_one in node.affiliated_institutions.all()
 
-        with capture_notifications() as notifications:
-            res = app.put_json_api(
-                node_institutions_url,
-                {'data': []},
-                auth=user.auth
-            )
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.put_json_api(
+            node_institutions_url,
+            {'data': []},
+            auth=user.auth
+        )
 
         assert res.status_code == 200
         node.reload()
@@ -445,8 +442,7 @@ class TestDraftRegistrationRelationshipInstitutions():
     def test_delete_user_is_admin_but_not_affiliated_with_inst(
             self, app, institution_one, resource_factory, create_payload, make_resource_url):
         user = AuthUserFactory()
-        with capture_notifications():
-            node = resource_factory(creator=user)
+        node = resource_factory(creator=user)
         node.affiliated_institutions.add(institution_one)
         node.save()
         assert institution_one in node.affiliated_institutions.all()

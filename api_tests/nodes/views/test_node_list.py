@@ -1504,10 +1504,11 @@ class TestNodeCreate:
                     }
             }
         }
-
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_one.auth
+            )
         assert res.status_code == 201
         json_data = res.json['data']
 

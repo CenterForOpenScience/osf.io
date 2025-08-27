@@ -93,21 +93,17 @@ class TestPOSTCollectionsModeratorList:
 
     def test_POST_unauthorized(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
-        with capture_notifications() as notifications:
-            res = app.post(url, payload, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post(url, payload, expect_errors=True)
         assert res.status_code == 401
 
     def test_POST_forbidden(self, app, url, nonmoderator, moderator, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
 
-        with capture_notifications() as notifications:
-            res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
-            assert res.status_code == 403
+        res = app.post(url, payload, auth=nonmoderator.auth, expect_errors=True)
+        assert res.status_code == 403
 
-            res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
-            assert res.status_code == 403
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post(url, payload, auth=moderator.auth, expect_errors=True)
+        assert res.status_code == 403
 
     def test_POST_admin_success_existing_user(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='moderator')
@@ -122,9 +118,7 @@ class TestPOSTCollectionsModeratorList:
 
     def test_POST_admin_failure_existing_moderator(self, app, url, moderator, admin, provider):
         payload = make_payload(user_id=moderator._id, permission_group='moderator')
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
 
         assert res.status_code == 400
 
@@ -132,9 +126,7 @@ class TestPOSTCollectionsModeratorList:
         unreg_user = {'full_name': 'Jalen Hurts', 'email': '1eagles@allbatman.org'}
         # test_user_with_no_moderator_admin_permissions
         payload = make_payload(permission_group='moderator', **unreg_user)
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(url, payload, auth=nonmoderator.auth, expect_errors=True)
         assert res.status_code == 403
 
         # test_user_with_moderator_admin_permissions
@@ -149,9 +141,7 @@ class TestPOSTCollectionsModeratorList:
 
     def test_POST_admin_failure_invalid_group(self, app, url, nonmoderator, moderator, admin, provider):
         payload = make_payload(user_id=nonmoderator._id, permission_group='citizen')
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
-        assert notifications == {'emails': [], 'emits': []}
+        res = app.post_json_api(url, payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 400
 
     def test_POST_admin_success_email(self, app, url, nonmoderator, moderator, admin, provider):

@@ -13,7 +13,7 @@ from addons.osfstorage.models import Region
 
 from api.base.authentication import drf
 from api.base import exceptions, settings
-from api.waffle.utils import flag_is_active
+from api.waffle.utils import flag_is_active, storage_i18n_flag_active
 
 from framework import sentry
 from framework.auth import get_or_create_institutional_user
@@ -333,9 +333,7 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_WELCOME_OSF4I,
-            ).emit(
+            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
                 user=user,
                 message_frequency='instantly',
                 event_context={
@@ -350,15 +348,14 @@ class InstitutionAuthentication(BaseAuthentication):
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_WELCOME_OSF4I,
-            ).emit(
+            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,
                     'email_to_add': email_to_add,
                     'domain': DOMAIN,
                     'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'storage_flag_is_active': storage_i18n_flag_active(),
                 },
             )
 
@@ -370,9 +367,7 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I,
-            ).emit(
+            NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I.instance.emit(
                 user=user,
                 subscribed_object=user,
                 event_context={

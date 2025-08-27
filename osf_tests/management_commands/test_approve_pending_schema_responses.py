@@ -24,10 +24,10 @@ class TestApprovePendingSchemaResponses:
         initial_response = reg.schema_responses.last()
         initial_response.state = ApprovalStates.APPROVED
         initial_response.save()
-
-        revision = SchemaResponse.create_from_previous_response(
-            previous_response=initial_response, initiator=reg.creator
-        )
+        with capture_notifications():
+            revision = SchemaResponse.create_from_previous_response(
+                previous_response=initial_response, initiator=reg.creator
+            )
         revision.state = ApprovalStates.UNAPPROVED
         revision.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         revision.save()

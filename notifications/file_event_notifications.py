@@ -59,9 +59,12 @@ class Event:
         ).emit(
             user=self.user,
             event_context={
+                'user_fullname': self.user.fullname,
                 'profile_image_url': self.profile_image_url,
                 'action': self.action,
+                'url': self.url,
                 'message': self.html_message,
+                'localized_timestamp': str(self.timestamp),
             }
         )
 
@@ -285,12 +288,12 @@ class AddonFileMoved(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.ADDON_FILE_MOVED,
-        ).emit(
+        NotificationType.Type.ADDON_FILE_MOVED.instance.emit(
             user=self.user,
             event_context={
+                'user_fullname': self.user.fullname,
                 'profile_image_url': self.profile_image_url,
+                'localized_timestamp': self.timestamp,
                 'url': self.url,
             },
             is_digest=True,
@@ -304,12 +307,12 @@ class AddonFileCopied(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.ADDON_FILE_MOVED,
-        ).emit(
+        NotificationType.Type.ADDON_FILE_MOVED.instance.emit(
             user=self.user,
             event_context={
+                'user_fullname': self.user.fullname,
                 'profile_image_url': self.profile_image_url,
+                'localized_timestamp': self.timestamp,
                 'url': self.url,
             },
             is_digest=True,

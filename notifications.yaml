@@ -404,7 +404,7 @@ notification_types:
     subject: 'New Pending Withdrawal Requests'
     __docs__: ...
     object_content_type_model_name: abstractprovider
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/new_pending_withdraw_requests.html.mako'
     tests: []
 
   - name: provider_contributor_added_preprint
@@ -555,7 +555,7 @@ notification_types:
     template: 'website/templates/access_request_rejected.html.mako'
     tests: ['api_tests/requests/views/test_request_actions_create.py']
 
-  - name: node_access_request_submitted
+  - name: node_request_access_submitted
     subject: 'An OSF user has requested access to your project'
     __docs__: ...
     object_content_type_model_name: abstractnode
@@ -690,7 +690,7 @@ notification_types:
     subject: 'Crossref Error Notification'
     __docs__: ...
     object_content_type_model_name: abstractnode
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/crossref_doi_error.html.mako'
     tests: []
 
   #### Collection Submissions
@@ -698,49 +698,49 @@ notification_types:
     subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_removed_moderator.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
 
   - name: collection_submission_removed_private
     subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_removed_private.html.mako'
     tests: ['osf_tests/test_collection.py']
 
   - name: collection_submission_removed_admin
     subject: '{node_title} was removed from {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_removed_admin.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
 
   - name: collection_submission_submitted
     subject: '{submitter_fullname} has requested to add {node_title} to a collection'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_submitted.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
 
   - name: collection_submission_cancel
     subject: 'Request to add {node_title} to {collection_title} was canceled'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_cancel.html.mako'
     tests: []
 
   - name: collection_submission_accepted
     subject: '{node_title} was accepted into {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_accepted.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
 
   - name: collection_submission_rejected
     subject: '{node_title} was not accepted into {collection_title}'
     __docs__: ...
     object_content_type_model_name: collectionsubmission
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/collection_submission_rejected.html.mako'
     tests: ['osf_tests/test_collection_submission.py']
 
   #### DESK
@@ -776,14 +776,14 @@ notification_types:
     subject: 'Archive Job File Not Found'
     __docs__: Archive job failed because files were not found. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/archive_file_not_found_desk.html.mako'
     tests: ['tests/test_auth_views.py']
 
   - name: desk_archive_job_uncaught_error
     subject: 'Archive Job Uncaught Error'
     __docs__: Archive job failed due to an uncaught error. Sent to support desk.
     object_content_type_model_name: desk
-    template: 'website/templates/new_pending_submissions.html.mako'
+    template: 'website/templates/archive_uncaught_error_desk.html.mako'
     tests: []
 
   - name: desk_osf_support_email
