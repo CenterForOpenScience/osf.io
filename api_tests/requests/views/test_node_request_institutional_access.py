@@ -392,8 +392,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         node_request.refresh_from_db()
         assert node_request.machine_state == 'rejected'
 
-        with capture_notifications():
-            project.creator.add_or_update_affiliated_institution(institution)
+        project.creator.add_or_update_affiliated_institution(institution)
 
         create_payload['data']['relationships']['message_recipient']['data']['id'] = project.creator._id
 
