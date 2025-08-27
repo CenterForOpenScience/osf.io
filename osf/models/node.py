@@ -1559,7 +1559,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             auth,
             title=None,
             parent=None,
-            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            notification_type=None
     ):
         """Recursively fork a node.
 
@@ -1568,6 +1568,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
+        if notification_type is None:
+            notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         Registration = apps.get_model('osf.Registration')
         PREFIX = 'Fork of '
         user = auth.user
@@ -1795,7 +1797,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             new,
             contributor=auth.user,
             auth=auth,
-            notification_type=None
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         )
 
         # Log the creation

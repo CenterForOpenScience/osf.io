@@ -555,7 +555,7 @@ notification_types:
     template: 'website/templates/access_request_rejected.html.mako'
     tests: ['api_tests/requests/views/test_request_actions_create.py']
 
-  - name: node_access_request_submitted
+  - name: node_request_access_submitted
     subject: 'An OSF user has requested access to your project'
     __docs__: ...
     object_content_type_model_name: abstractnode
