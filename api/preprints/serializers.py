@@ -154,6 +154,10 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='preprints:preprint-versions',
         related_view_kwargs={'preprint_id': '<_id>'},
         read_only=True,
+        help_text=(
+            'Relationship to all versions of this preprint. '
+            'Related URL: /v2/preprints/{preprint_id}/versions/ (GET to list, POST to create a new version).'
+        ),
     )
 
     citation = NoneIfWithdrawal(
@@ -190,6 +194,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         related_view='providers:preprint-providers:preprint-provider-detail',
         related_view_kwargs={'provider_id': '<provider._id>'},
         read_only=False,
+        help_text='Relationship to the preprint provider. Required on creation.',
     )
 
     files = NoneIfWithdrawal(
@@ -500,11 +505,30 @@ class PreprintDraftSerializer(PreprintSerializer):
 
 
 class PreprintCreateSerializer(PreprintSerializer):
+    """Serializer for creating a new preprint.
+
+    Notes
+    - Overrides `PreprintSerializer` to allow nullable `id` and implements `create`.
+    - Requires `provider` and `title`.
+    - Optional `description`.
+    - Optional privileged fields: `manual_guid`, `manual_doi` (gated by MANUAL_DOI_AND_GUID flag).
+    """
     # Overrides PreprintSerializer to make id nullable, adds `create`
-    # TODO: add better Docstrings
     id = IDField(source='_id', required=False, allow_null=True)
-    manual_guid = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
-    manual_doi = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
+    manual_guid = ser.CharField(
+        write_only=True,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text='Privileged: manually assign a GUID on creation (feature-flag gated).',
+    )
+    manual_doi = ser.CharField(
+        write_only=True,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+        help_text='Privileged: manually assign an article DOI on creation (feature-flag gated).',
+    )
 
     def create(self, validated_data):
 
@@ -527,11 +551,22 @@ class PreprintCreateSerializer(PreprintSerializer):
 
 
 class PreprintCreateVersionSerializer(PreprintSerializer):
-    # Overrides PreprintSerializer to make title nullable and customize version creation
-    # TODO: add better Docstrings
+    """Serializer for creating a new version of an existing preprint.
+
+    Notes
+    - Overrides `PreprintSerializer` to make `title` optional during version creation.
+    - Requires `create_from_guid` referencing the source preprint GUID (base or versioned).
+    - Only users with ADMIN on the source preprint may create a new version.
+    """
     id = IDField(source='_id', required=False, allow_null=True)
     title = ser.CharField(required=False)
-    create_from_guid = ser.CharField(required=True, write_only=True)
+    create_from_guid = ser.CharField(
+        required=True,
+        write_only=True,
+        help_text=(
+            'GUID of the source preprint to version (accepts base GUID or versioned GUID, e.g., abc12 or abc12_v3).'
+        ),
+    )
 
     def create(self, validated_data):
         create_from_guid = validated_data.pop('create_from_guid', None)
