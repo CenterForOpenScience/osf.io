@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from api.base.settings.defaults import API_BASE
+from tests.utils import capture_notifications
 
 
 class TestRegistrationContributorDetailTestCase(ApiTestCase):
@@ -64,16 +65,17 @@ class TestRegistrationContributorDetailTestCase(ApiTestCase):
     def test_initial_contributors_ordering_is_correct(self):
         read_payload = self.form_contributors_create_payload('read', self.read_contributor)
         write_payload = self.form_contributors_create_payload('write', self.write_contributor)
-        self.app.post_json_api(
-            self.add_contributor_url,
-            read_payload,
-            auth=self.creator.auth
-        )
-        self.app.post_json_api(
-            self.add_contributor_url,
-            write_payload,
-            auth=self.creator.auth
-        )
+        with capture_notifications():
+            self.app.post_json_api(
+                self.add_contributor_url,
+                read_payload,
+                auth=self.creator.auth
+            )
+            self.app.post_json_api(
+                self.add_contributor_url,
+                write_payload,
+                auth=self.creator.auth
+            )
 
         contributors = self.app.get(self.add_contributor_url, auth=self.creator.auth)
         # shift by 1 because creator is the first contributor

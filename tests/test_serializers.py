@@ -14,6 +14,7 @@ from osf.utils import permissions
 from tests.base import OsfTestCase, get_default_metaschema
 
 from framework.auth import Auth
+from tests.utils import capture_notifications
 from website.project.views.node import _view_project, _serialize_node_search, _get_children, _get_readable_descendants
 from website.views import serialize_node_summary
 from website.profile import utils
@@ -146,7 +147,8 @@ class TestNodeSerializers(OsfTestCase):
         # non-contributor cannot see private fork of public project
         node = ProjectFactory(is_public=True)
         consolidated_auth = Auth(user=node.creator)
-        fork = node.fork_node(consolidated_auth)
+        with capture_notifications():
+            fork = node.fork_node(consolidated_auth)
 
         res = serialize_node_summary(
             fork, auth=Auth(user),
@@ -163,7 +165,8 @@ class TestNodeSerializers(OsfTestCase):
 
         # contributor cannot see private fork of this project
         consolidated_auth = Auth(user=node.creator)
-        fork = node.fork_node(consolidated_auth)
+        with capture_notifications():
+            fork = node.fork_node(consolidated_auth)
 
         res = serialize_node_summary(
             fork, auth=Auth(user),

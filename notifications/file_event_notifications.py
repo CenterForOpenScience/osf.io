@@ -292,6 +292,7 @@ class AddonFileMoved(ComplexFileEvent):
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,
+                'message': self.html_message,
                 'profile_image_url': self.profile_image_url,
                 'localized_timestamp': self.timestamp,
                 'url': self.url,
@@ -311,6 +312,7 @@ class AddonFileCopied(ComplexFileEvent):
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,
+                'message': self.html_message,
                 'profile_image_url': self.profile_image_url,
                 'localized_timestamp': self.timestamp,
                 'url': self.url,

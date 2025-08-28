@@ -564,7 +564,8 @@ class TestUserInviteViews(OsfTestCase):
             auth=Auth(project.creator),
         )
         project.save()
-        send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
+        with capture_notifications():
+            send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
         # 2nd call raises error because throttle hasn't expired
 
         with pytest.raises(HTTPError):

@@ -740,7 +740,8 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
     def test_can_revert_registration_with_unapproved_update_to_draft(self):
         self.approve_version(self.get_current_version(self.registration))
-        self.create_new_version(self.registration)
+        with capture_notifications():
+            self.create_new_version(self.registration)
         from_draft = self.registration.draft
 
         latest_version = self.registration.schema_responses.first()
@@ -786,10 +787,11 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.UNAPPROVED
 
         for contributor in contributors:
-            self.pre_moderation_registration.sanction.approve(
-                user=contributor,
-                token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
-            )
+            with capture_notifications():
+                self.pre_moderation_registration.sanction.approve(
+                    user=contributor,
+                    token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
+                )
             assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
 
         self.approve_version(self.get_current_version(self.pre_moderation_registration))

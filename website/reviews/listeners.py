@@ -1,3 +1,4 @@
+from django.utils import timezone
 
 from website.settings import DOMAIN, OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO
 from website.reviews import signals as reviews_signals
@@ -82,6 +83,8 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
             context['message'] = f'submitted "{resource.title}".'
 
     from osf.models import NotificationType
+    context['requester_contributor_names'] = resource.contributors.values_list('fullname', flat=True)
+    context['localized_timestamp'] = str(timezone.now())
 
     for recipient in resource.provider.get_group('moderator').user_set.all():
         context['recipient_fullname'] = recipient.fullname
@@ -112,6 +115,8 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
         context['logo'] = resource.provider._id
 
     context['no_future_emails'] = resource.provider.allow_submissions
+    context['is_request_email'] = False
+    context['requester_fullname'] = resource.actions.last().creator.fullname
 
     for recipient in recipients:
         context['is_creator'] = recipient == resource.creator
