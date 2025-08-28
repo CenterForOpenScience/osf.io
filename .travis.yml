@@ -37,7 +37,6 @@ env:
     # Workaround for travis
     - ES_GC_OPTS="-XX:+UseG1GC"
     - ES_HEAP_SIZE="1024m"
-    - NODE_VERSION=8.11.3
   jobs:
     - TEST_BUILD="addons"
     - TEST_BUILD="website"
