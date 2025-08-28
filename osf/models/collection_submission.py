@@ -186,6 +186,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'node_absolute_url': self.guid.referent.get_absolute_url(),
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                        'is_initiator': self.creator == contributor,
                     },
                 )
 
