@@ -348,7 +348,8 @@ class TestUserProfile(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
                              {'address': email, 'primary': False, 'confirmed': False}
                   ]}
-        res = self.app.put(url, json=header, auth=user1.auth)
+        with capture_notifications():
+            res = self.app.put(url, json=header, auth=user1.auth)
         assert res.status_code == 200
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
@@ -360,7 +361,8 @@ class TestUserProfile(OsfTestCase):
         header = {'id': user1._id,
                   'email': {'address': email, 'primary': False, 'confirmed': False}
                   }
-        res = self.app.put(url, json=header, auth=user1.auth)
+        with capture_notifications():
+            res = self.app.put(url, json=header, auth=user1.auth)
         assert res.status_code == 200
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
@@ -508,7 +510,8 @@ class TestUserAccount(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.user.set_password('password')
+        with capture_notifications():
+            self.user.set_password('password')
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 

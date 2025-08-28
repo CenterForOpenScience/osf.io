@@ -1026,9 +1026,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
-        ).emit(
+        NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.instance.emit(
             subscribed_object=self.provider,
             user=recipient,
             event_context={

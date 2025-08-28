@@ -25,6 +25,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
+from tests.utils import capture_notifications
 from website.util import web_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
@@ -47,7 +48,8 @@ class TestDisabledUser(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = UserFactory()
-        self.user.set_password('Korben Dallas')
+        with capture_notifications():
+            self.user.set_password('Korben Dallas')
         self.user.is_disabled = True
         self.user.save()
 
@@ -371,10 +373,12 @@ class TestMergingAccounts(OsfTestCase):
         super().setUp()
         self.user = UserFactory.build()
         self.user.fullname = "tess' test string"
-        self.user.set_password('science')
+        with capture_notifications():
+            self.user.set_password('science')
         self.user.save()
         self.dupe = UserFactory.build()
-        self.dupe.set_password('example')
+        with capture_notifications():
+            self.dupe.set_password('example')
         self.dupe.save()
 
     def test_merged_user_is_not_shown_as_a_contributor(self):

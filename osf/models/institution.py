@@ -220,11 +220,10 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         success = 0
         for user in self.get_institution_users():
             attempts += 1
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_INSTITUTION_DEACTIVATION
-            ).emit(
+            NotificationType.Type.USER_INSTITUTION_DEACTIVATION.instance.emit(
                 user=user,
                 event_context={
+                    'user_fullname': user.fullname,
                     'forgot_password_link': f'{website_settings.DOMAIN}{forgot_password}',
                     'osf_support_email': website_settings.OSF_SUPPORT_EMAIL
                 }

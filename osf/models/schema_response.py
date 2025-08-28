@@ -19,7 +19,7 @@ from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 from website.reviews.signals import reviews_email_submit_moderators_notifications
-from website.settings import DOMAIN
+from website.settings import DOMAIN, REGISTRATION_UPDATE_APPROVAL_TIME
 
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
@@ -480,18 +480,19 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 resource=self.parent
             )
 
-        template = {
-            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED,
-            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED,
-            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED,
-            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED,
+        notification_type = {
+            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED.instance,
+            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED.instance,
+            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED.instance,
+            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED.instance,
         }.get(event)
-        if not template:
+        if not notification_type:
             return
 
-        email_context = {
+        event_context = {
             'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
+            'registration_update_approval_time': int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600),
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
             'initiator_fullname': event_initiator.fullname if event_initiator else None,
@@ -501,7 +502,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         }
 
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
-            email_context.update(
+            event_context.update(
                 {
                     'can_write': self.parent.has_permission(contributor, 'write'),
                     'is_approver': contributor in self.pending_approvers.all(),
@@ -509,9 +510,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                     'is_initiator': contributor == event_initiator,
                 }
             )
-            template.instance.emit(
+            notification_type.emit(
                 user=contributor,
-                event_context=email_context
+                event_context=event_context
             )
 
 

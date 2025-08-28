@@ -200,16 +200,17 @@ class TestAuthViews(OsfTestCase):
         name, email, password = fake.name(), fake_email(), 'underpressure'
         captcha = 'some valid captcha'
         with mock.patch.object(settings, 'RECAPTCHA_SITE_KEY', 'some_value'):
-            resp = self.app.post(
-                url,
-                json={
-                    'fullName': name,
-                    'email1': email,
-                    'email2': str(email).upper(),
-                    'password': password,
-                    'g-recaptcha-response': captcha,
-                }
-            )
+            with capture_notifications():
+                resp = self.app.post(
+                    url,
+                    json={
+                        'fullName': name,
+                        'email1': email,
+                        'email2': str(email).upper(),
+                        'password': password,
+                        'g-recaptcha-response': captcha,
+                    }
+                )
             validate_recaptcha.assert_called_with(captcha, remote_ip='127.0.0.1')
             assert resp.status_code == http_status.HTTP_200_OK
             user = OSFUser.objects.get(username=email)

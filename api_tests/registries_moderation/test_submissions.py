@@ -318,8 +318,7 @@ class TestRegistriesModerationSubmissions:
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_registries_moderation_post_accept(self, app, registration, moderator, registration_actions_url, actions_payload_base, reg_creator):
         registration.require_approval(user=registration.creator)
-        with capture_notifications():
-            registration.registration_approval.accept()
+        registration.registration_approval.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -356,8 +355,7 @@ class TestRegistriesModerationSubmissions:
 
     def test_registries_moderation_post_embargo(self, app, embargo_registration, moderator, provider, embargo_registration_actions_url, actions_payload_base, reg_creator):
         assert embargo_registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
-        with capture_notifications():
-            embargo_registration.sanction.accept()
+        embargo_registration.sanction.accept()
         embargo_registration.refresh_from_db()
         assert embargo_registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -663,8 +661,7 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        with capture_notifications():
-            registration.sanction.accept()
+        registration.sanction.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -749,8 +746,7 @@ class TestRegistriesModerationSubmissions:
 
         # approve the project
         registration.require_approval(user=registration.creator)
-        with capture_notifications():
-            registration.registration_approval.accept()
+        registration.registration_approval.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -796,8 +792,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
-        with capture_notifications():
-            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()

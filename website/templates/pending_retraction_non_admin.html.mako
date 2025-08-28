@@ -6,7 +6,7 @@
     <%!from website import settings%>
     Hello ${user_fullname},
     <p>
-    ${initiated_by} has requested final approval to withdraw your registration
+    ${initiated_by_fullname} has requested final approval to withdraw your registration
     titled <a href="${registration_link}">${reviewable_title}</a>
     </p>
     % if reviewable_withdrawal_justification:

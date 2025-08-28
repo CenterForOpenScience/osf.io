@@ -1425,7 +1425,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
         assert not self.preprint.is_published
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         assert self.preprint.is_published
 
@@ -1500,18 +1501,20 @@ class TestSetPreprintFile(OsfTestCase):
         assert self.project.created != self.preprint.created
 
     def test_cant_save_without_file(self):
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
-        self.preprint.set_published(True, auth=self.auth, save=False)
+        with capture_notifications():
+            self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+            self.preprint.set_published(True, auth=self.auth, save=False)
         self.preprint.primary_file = None
 
         with pytest.raises(ValidationError):
             self.preprint.save()
 
     def test_cant_update_without_file(self):
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.primary_file = None
         with pytest.raises(ValidationError):
             self.preprint.save()
@@ -1628,7 +1631,8 @@ class TestPreprintPermissions(OsfTestCase):
     def test_admin_can_publish(self):
         assert not self.preprint.is_published
 
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
         assert self.preprint.is_published
 
@@ -2172,7 +2176,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        self.app.put(url, json=payload)
+        with capture_notifications():
+            self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
 
@@ -2241,10 +2246,11 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        self.app.put(
-            url,
-            json=payload,
-        )
+        with capture_notifications():
+            self.app.put(
+                url,
+                json=payload,
+            )
         self.preprint.reload()
 
         assert self.preprint.logs.latest().action == 'osf_storage_addon_file_renamed'
