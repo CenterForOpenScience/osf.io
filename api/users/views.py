@@ -872,16 +872,14 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
 
         # check if the user exists
         user_obj = get_user(email=email)
-        if not (user_obj and user_obj.is_active):
-            raise ValidationError(f'User with email {email} not found or inactive.')
+        if user_obj and user_obj.is_active:
+            # rate limit forgot_password_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                status_message = 'You have recently requested to change your password. ' \
+                    'Please wait a few minutes before trying again.'
+                return Response({'message': status_message, 'kind': 'error'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-        # rate limit forgot_password_post
-        if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-            status_message = 'You have recently requested to change your password. ' \
-                'Please wait a few minutes before trying again.'
-            return Response({'message': status_message, 'kind': 'error'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
-
-        send_password_reset_email(user_obj, email, institutional=institutional)
+            send_password_reset_email(user_obj, email, institutional=institutional)
 
         return Response(
             status=status.HTTP_200_OK,

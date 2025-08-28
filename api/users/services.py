@@ -13,8 +13,9 @@ def send_password_reset_email(user, email, verification_type='password', institu
     user.email_last_sent = timezone.now()
     user.save()
 
-    reset_link = furl(settings.DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
+    reset_link = furl(settings.DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}').url
     mail_template = mails.FORGOT_PASSWORD if not institutional else mails.FORGOT_PASSWORD_INSTITUTION
+
     mails.send_mail(
         to_addr=email,
         mail=mail_template,
