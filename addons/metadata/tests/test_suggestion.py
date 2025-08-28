@@ -38,20 +38,27 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         self.mock_fetch_metadata_asset_files.stop()
 
     @mock.patch('addons.metadata.suggestion.requests')
-    def test_suggestion_ror(self, mock_requests):
-        ror_data = {
+    def test_suggestion_ror_v2(self, mock_requests):
+        ror_v2_data = {
             'items': [
                 {
                     'id': 'https://ror.org/0123456789',
-                    'name': 'Example University',
-                    'labels': [{
-                        'label': 'EXAMPLE UNIV.',
-                        'iso639': 'ja',
-                    }],
+                    'names': [
+                        {
+                            'value': 'Example University',
+                            'lang': 'en',
+                            'types': ['ror_display', 'label']
+                        },
+                        {
+                            'value': 'EXAMPLE UNIV.',
+                            'lang': 'ja',
+                            'types': ['label']
+                        }
+                    ],
                 },
             ],
         }
-        mock_requests.get.return_value = mock.Mock(status_code=200, json=lambda: ror_data)
+        mock_requests.get.return_value = mock.Mock(status_code=200, json=lambda: ror_v2_data)
         r = suggestion_metadata('ror', 'searchkey', None, self.project)
         logger.info('ror suggestion: {}'.format(r))
 
@@ -60,12 +67,38 @@ class TestSuggestion(BaseAddonTestCase, OsfTestCase):
         assert r[0]['value']['id'] == 'https://ror.org/0123456789'
         assert r[0]['value']['name'] == 'Example University'
         assert r[0]['value']['name-ja'] == 'EXAMPLE UNIV.'
-        assert len(r[0]['value']['labels']) == 1
-        assert r[0]['value']['labels'][0]['label'] == 'EXAMPLE UNIV.'
-        assert r[0]['value']['labels'][0]['iso639'] == 'ja'
 
         mock_requests.get.assert_called_once()
         assert mock_requests.get.call_args[1]['params']['query'] == 'searchkey'
+
+    @mock.patch('addons.metadata.suggestion.requests')
+    def test_suggestion_ror_v2_no_japanese(self, mock_requests):
+        ror_v2_data = {
+            'items': [
+                {
+                    'id': 'https://ror.org/9876543210',
+                    'names': [
+                        {
+                            'value': 'MIT',
+                            'lang': 'en',
+                            'types': ['ror_display', 'label']
+                        }
+                    ],
+                },
+            ],
+        }
+        mock_requests.get.return_value = mock.Mock(status_code=200, json=lambda: ror_v2_data)
+        r = suggestion_metadata('ror', 'MIT', None, self.project)
+        logger.info('ror suggestion without Japanese: {}'.format(r))
+
+        assert len(r) == 1
+        assert r[0]['key'] == 'ror'
+        assert r[0]['value']['id'] == 'https://ror.org/9876543210'
+        assert r[0]['value']['name'] == 'MIT'
+        assert r[0]['value']['name-ja'] == 'MIT'
+
+        mock_requests.get.assert_called_once()
+        assert mock_requests.get.call_args[1]['params']['query'] == 'MIT'
 
     def test_suggestion_erad(self):
         r = suggestion_metadata('erad:kenkyusha_no', '0', None, self.project)
