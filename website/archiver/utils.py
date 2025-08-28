@@ -93,6 +93,8 @@ def send_archiver_file_not_found_mails(src, user, results, url):
         event_context={
             'user': user.id,
             'src': src._id,
+            'src_title': src.title,
+            'src_url': src.url,
             'results': results,
             'can_change_preferences': False,
         }
@@ -105,17 +107,17 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,
+            'user_username': user.username,
             'src_title': src.title,
             'src__id': src._id,
+            'src_url': src.url,
             'src': src._id,
             'results': [str(error) for error in results],
             'url': url,
             'can_change_preferences': False,
         }
     )
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
-    ).emit(
+    NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,

@@ -446,6 +446,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
         user=referrer,
         event_context={
             'claim_url': claim_url,
+            'referrer_fullname': referrer.fullname,
             'user_fullname': unclaimed_record['name'],
             'node_title': node.title,
             'can_change_preferences': False,

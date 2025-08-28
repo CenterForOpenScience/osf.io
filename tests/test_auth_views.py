@@ -53,15 +53,16 @@ class TestAuthViews(OsfTestCase):
     def test_register_ok(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.fullname == name
         assert user.accepted_terms_of_service is None
@@ -69,47 +70,50 @@ class TestAuthViews(OsfTestCase):
     def test_register_email_case_insensitive(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': str(email).upper(),
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': str(email).upper(),
+                    'password': password,
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.fullname == name
 
     def test_register_email_with_accepted_tos(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-                'acceptedTermsOfService': True
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                    'acceptedTermsOfService': True
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service
 
     def test_register_email_without_accepted_tos(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-                'acceptedTermsOfService': False
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                    'acceptedTermsOfService': False
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service is None
 
@@ -118,15 +122,16 @@ class TestAuthViews(OsfTestCase):
         url = api_url_for('register_user')
         name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
         email, password = fake_email(), 'underpressure'
-        res = self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            res = self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
 
         expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
         user = OSFUser.objects.get(username=email)
@@ -278,7 +283,8 @@ class TestAuthViews(OsfTestCase):
             'password': password,
         }
         # Send registration request
-        self.app.post(url, json=payload)
+        with capture_notifications():
+            self.app.post(url, json=payload)
 
         new_user.reload()
 
@@ -875,7 +881,8 @@ class TestResetPassword(OsfTestCase):
         form = res.get_form('resetPasswordForm')
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
-        res = form.submit(self.app)
+        with capture_notifications():
+            res = form.submit(self.app)
 
         # check request URL is /resetpassword with username and new verification_key_v2 token
         request_url_path = res.request.path

@@ -416,7 +416,8 @@ class TestPreprintCreate(ApiTestCase):
         assert not self.private_project.is_public
 
         preprint = Preprint.load(res.json['data']['id'])
-        res = self.publish_preprint(preprint, self.user)
+        with capture_notifications():
+            res = self.publish_preprint(preprint, self.user)
         preprint.reload()
         assert res.status_code == 200
         self.private_project.reload()
@@ -576,7 +577,8 @@ class TestPreprintCreate(ApiTestCase):
         assert res.status_code == 201
 
         preprint = Preprint.load(res.json['data']['id'])
-        res = self.publish_preprint(preprint, self.user)
+        with capture_notifications():
+            self.publish_preprint(preprint, self.user)
 
         log = preprint.logs.latest()
         assert log.action == 'published'
@@ -589,7 +591,8 @@ class TestPreprintCreate(ApiTestCase):
 
         assert not mock_on_preprint_updated.called
         preprint = Preprint.load(res.json['data']['id'])
-        self.publish_preprint(preprint, self.user)
+        with capture_notifications():
+            self.publish_preprint(preprint, self.user)
 
         assert mock_on_preprint_updated.called
 

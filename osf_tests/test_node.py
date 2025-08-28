@@ -1243,15 +1243,13 @@ class TestNodeAddContributorRegisteredOrNot:
         assert contributor.unclaimed_records != {}
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
-        with capture_notifications():
-            with pytest.raises(ValidationError) as excinfo:
-                node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
+        with pytest.raises(ValidationError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
-        with capture_notifications():
-            with pytest.raises(ValueError) as excinfo:
-                node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
+        with pytest.raises(ValueError) as excinfo:
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):

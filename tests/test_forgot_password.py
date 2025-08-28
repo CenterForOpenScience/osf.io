@@ -115,8 +115,9 @@ class TestForgotPassword(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
         form['forgot_password-email'] = self.user.username
-        res = form.submit(self.app)
-        res = form.submit(self.app)
+        with capture_notifications():
+            res = form.submit(self.app)
+            res = form.submit(self.app)
 
         # check http 200 response
         assert res.status_code == 200
@@ -182,7 +183,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
     def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
 
-        res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
+        with capture_notifications():
+            res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
         # check mail was not sent
 
         # check http 200 response
@@ -202,7 +204,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.user.deactivate_account()
         self.user.save()
 
-        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        with capture_notifications():
+            res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check http 200 response
         assert res.status_code == 200
@@ -219,8 +222,9 @@ class TestForgotPasswordInstitution(OsfTestCase):
     # test that user cannot submit forgot password request too quickly
     def test_cannot_reset_password_twice_quickly(self):
         # submit institutional forgot-password request in rapid succession
-        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
-        res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+        with capture_notifications():
+            res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
+            res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check http 200 response
         assert res.status_code == 200

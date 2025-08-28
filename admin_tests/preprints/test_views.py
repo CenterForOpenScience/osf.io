@@ -542,8 +542,7 @@ class TestPreprintWithdrawalRequests:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
-        with capture_notifications():
-            request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
+        request = RequestFactory().post(reverse('preprints:approve-withdrawal', kwargs={'guid': preprint._id}))
         request.POST = {'action': 'approve'}
         request.user = admin
 
@@ -565,8 +564,7 @@ class TestPreprintWithdrawalRequests:
     def test_can_reject_withdrawal_request(self, withdrawal_request, admin, preprint):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
 
-        with capture_notifications():
-            request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
+        request = RequestFactory().post(reverse('preprints:reject-withdrawal', kwargs={'guid': preprint._id}))
         request.POST = {'action': 'reject'}
         request.user = admin
 
@@ -702,8 +700,7 @@ class TestPreprintWithdrawalRequests:
         request = RequestFactory().get(reverse('preprints:withdrawal-requests'))
 
         request.user = admin
-        with capture_notifications():
-            response = views.PreprintWithdrawalRequestList.as_view()(request)
+        response = views.PreprintWithdrawalRequestList.as_view()(request)
         assert response.status_code == 200
 
     @pytest.mark.parametrize('action, final_state', [
@@ -713,8 +710,7 @@ class TestPreprintWithdrawalRequests:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
 
-        with capture_notifications():
-            request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
+        request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin
 
         with capture_notifications():
