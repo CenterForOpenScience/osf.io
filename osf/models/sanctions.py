@@ -867,6 +867,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'registration_link': registration_link,
@@ -884,6 +885,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'approval_time_span': approval_time_span,
+                'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
             })
         return context
 
@@ -1031,7 +1033,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': registration.title,
                 'reviewable__id': self._get_registration()._id,
-                'reviewable_provider_name': self.provider.name,
+                'reviewable_provider_name': self._get_registration().provider.name,
                 'reviewable_absolute_url': registration.absolute_url,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -1052,7 +1054,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'reviewable_title': registration.title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': registration.absolute_url,
-                'reviewable_provider_name': self.provider.name,
+                'reviewable_provider_name': self.target_registration.provider.name,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
             })

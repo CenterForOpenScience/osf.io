@@ -1992,7 +1992,8 @@ class TestRegistrationContributors(ApiTestCase):
                 'type': 'contributors'
             }
         }
-        return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
+        with capture_notifications():
+            return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def remove_contributor_request(self, auth_user, contributor, expect_errors=False):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'

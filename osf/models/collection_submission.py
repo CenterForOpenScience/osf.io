@@ -146,6 +146,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 'message': f'submitted "{self.guid.referent.title}".',
                 'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 'is_request_email': False,
+                'is_initiator': self.creator == user,
                 'profile_image_url': user.profile_image_url()
             },
             is_digest=True,

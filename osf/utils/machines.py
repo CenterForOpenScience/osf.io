@@ -199,7 +199,7 @@ class ReviewsMachine(BaseMachine):
                     'document_type': self.machineable.provider.preprint_word,
                     'reviewable_provider_name': self.machineable.provider.name,
                     'comment': comment,
-                    'notify_comment': not self.machineable.target.provider.reviews_comments_private,
+                    'notify_comment': not self.machineable.provider.reviews_comments_private,
                     **context
                 }
             )

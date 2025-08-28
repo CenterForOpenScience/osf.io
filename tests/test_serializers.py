@@ -251,7 +251,8 @@ class TestViewProjectEmbeds(OsfTestCase):
 
     def test_view_project_embed_forks_excludes_registrations(self):
         project = ProjectFactory()
-        fork = project.fork_node(Auth(project.creator))
+        with capture_notifications():
+            fork = project.fork_node(Auth(project.creator))
         reg = RegistrationFactory(project=fork)
 
         res = _view_project(project, auth=Auth(project.creator), embed_forks=True)

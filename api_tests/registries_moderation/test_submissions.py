@@ -663,8 +663,7 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        with capture_notifications():
-            registration.sanction.accept()
+        registration.sanction.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -796,8 +795,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
-        with capture_notifications():
-            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()

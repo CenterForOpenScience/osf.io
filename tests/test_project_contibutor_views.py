@@ -25,6 +25,7 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website import language
 from website.profile.utils import add_contributor_json
 
@@ -318,12 +319,13 @@ class TestProjectContributorViews(OsfTestCase):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        project.add_contributors(
-            [
-                {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
-                {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': False},
-            ]
-        )
+        with capture_notifications():
+            project.add_contributors(
+                [
+                    {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
+                    {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': False},
+                ]
+            )
         # Add a non-registered user
         unregistered_user = project.add_unregistered_contributor(
             fullname=fake.name(),
@@ -534,20 +536,21 @@ class TestProjectContributorViews(OsfTestCase):
         # create a project with 3 registered contributors
         project = ProjectFactory(creator=self.user1, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        project.add_contributors(
-            [
-                {
-                    'user': reg_user1,
-                    'permissions': permissions.ADMIN,
-                    'visible': True
-                },
-                {
-                    'user': reg_user2,
-                    'permissions': permissions.ADMIN,
-                    'visible': True
-                },
-            ]
-        )
+        with capture_notifications():
+            project.add_contributors(
+                [
+                    {
+                        'user': reg_user1,
+                        'permissions': permissions.ADMIN,
+                        'visible': True
+                    },
+                    {
+                        'user': reg_user2,
+                        'permissions': permissions.ADMIN,
+                        'visible': True
+                    },
+                ]
+            )
 
         # add an unregistered contributor
         project.add_unregistered_contributor(
