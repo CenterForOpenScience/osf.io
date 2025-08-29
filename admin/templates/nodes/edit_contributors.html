@@ -23,10 +23,20 @@
                 <tbody>
                     {% for contributor in contributors %}
                         <tr>
-                            <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.email }}</a></td>
-                            <td>{{ contributor.fullname }}</td>
-                            <td>{{ contributor.email }}</td>
-                            <td>{{ contributor.email }}</td>
+                            <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.user.email }}</a></td>
+                            <td>{{ contributor.user.fullname }}</td>
+                            <td>
+                                <select name="category">
+                                    {% for permission in permissions %}
+                                        {% if contributor.permission == permission %}
+                                            <option value="{{ permission }}" selected>{{ permission }}</option>
+                                        {% else %}
+                                            <option value="{{ permission }}">{{ permission }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td style="text-align: center;"><a data-toggle="modal" data-target="#{{ user.id }}Modal" class="btn btn-danger">Remove</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
