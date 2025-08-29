@@ -29,7 +29,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     CommentFactory,
     NodeFactory,
-    OSFGroupFactory,
     PreprintFactory,
     PreprintProviderFactory,
     PrivateLinkFactory,
@@ -50,6 +49,7 @@ from website.project.model import has_anonymous_link
 from website.project.views.node import _should_show_wiki_widget
 from website.util import web_url_for
 from website.util import rubeus
+from conftest import start_mock_send_grid
 
 pytestmark = pytest.mark.django_db
 
@@ -192,13 +192,6 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.project.add_contributor(contributor, auth=Auth(self.project.creator))
         self.project.save()
         assert check_can_access(self.project, contributor)
-
-    def test_check_can_access_osf_group_member_valid(self):
-        user = AuthUserFactory()
-        group = OSFGroupFactory(creator=user)
-        self.project.add_osf_group(group, permissions.READ)
-        self.project.save()
-        assert check_can_access(self.project, user)
 
     def test_check_user_access_invalid(self):
         noncontrib = AuthUserFactory()
@@ -368,6 +361,8 @@ class TestPublicViews(OsfTestCase):
         assert res.status_code == 200
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestExternalAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -389,6 +384,8 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.save()
         self.auth = (self.user.username, password)
 
+        self.mock_send_grid = start_mock_send_grid(self)
+
     def test_external_login_email_get_with_invalid_session(self):
         url = web_url_for('external_login_email_get')
         resp = self.app.get(url)
@@ -408,8 +405,7 @@ class TestExternalAuthViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert res.status_code == 400, 'bad request'
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_create(self, mock_welcome):
+    def test_external_login_confirm_email_get_create(self):
         # TODO: check in qa url encoding
         assert not self.user.is_registered
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
@@ -418,15 +414,14 @@ class TestExternalAuthViews(OsfTestCase):
         assert '/login?service=' in res.location
         assert quote_plus('new=true') in res.location
 
-        assert mock_welcome.call_count == 0
+        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
         assert self.user.is_registered
         assert self.user.has_usable_password()
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_link(self, mock_link_confirm):
+    def test_external_login_confirm_email_get_link(self):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert not self.user.is_registered
@@ -437,15 +432,14 @@ class TestExternalAuthViews(OsfTestCase):
         assert '/login?service=' in res.location
         assert 'new=true' not in parse.unquote(res.location)
 
-        assert mock_link_confirm.call_count == 1
+        assert self.mock_send_grid.call_count == 1
 
         self.user.reload()
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
         assert self.user.is_registered
         assert self.user.has_usable_password()
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duped_id(self, mock_confirm):
+    def test_external_login_confirm_email_get_duped_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert dupe_user.external_identity == self.user.external_identity
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
@@ -454,7 +448,7 @@ class TestExternalAuthViews(OsfTestCase):
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
 
-        assert mock_confirm.call_count == 0
+        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         dupe_user.reload()
@@ -462,14 +456,13 @@ class TestExternalAuthViews(OsfTestCase):
         assert self.user.external_identity['orcid'][self.provider_id] == 'VERIFIED'
         assert dupe_user.external_identity == {}
 
-    @mock.patch('website.mails.send_mail')
-    def test_external_login_confirm_email_get_duping_id(self, mock_confirm):
+    def test_external_login_confirm_email_get_duping_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
         url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
         res = self.app.get(url)
         assert res.status_code == 403, 'only allows one user to link an id'
 
-        assert mock_confirm.call_count == 0
+        assert self.mock_send_grid.call_count == 0
 
         self.user.reload()
         dupe_user.reload()
@@ -631,17 +624,6 @@ class TestWikiWidgetViews(OsfTestCase):
 
     def test_show_wiki_is_false_for_noncontributors_when_no_wiki_or_content(self):
         assert not _should_show_wiki_widget(self.project, None)
-
-    def test_show_wiki_for_osf_group_members(self):
-        group = OSFGroupFactory(creator=self.noncontributor)
-        self.project.add_osf_group(group, permissions.READ)
-        assert not _should_show_wiki_widget(self.project, self.noncontributor)
-        assert not _should_show_wiki_widget(self.project2, self.noncontributor)
-
-        self.project.remove_osf_group(group)
-        self.project.add_osf_group(group, permissions.WRITE)
-        assert _should_show_wiki_widget(self.project, self.noncontributor)
-        assert not _should_show_wiki_widget(self.project2, self.noncontributor)
 
 
 class TestUnconfirmedUserViews(OsfTestCase):

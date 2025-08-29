@@ -36,6 +36,7 @@ from addons.wiki.models import WikiPage, WikiVersion
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from website import language
 from website.util import web_url_for, api_url_for
+from conftest import start_mock_send_grid
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
@@ -714,6 +715,8 @@ class TestClaimingAsARegisteredUser(OsfTestCase):
         assert preprint not in unreg_user.unclaimed_records
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestResendConfirmation(OsfTestCase):
 
     def setUp(self):
@@ -723,6 +726,8 @@ class TestResendConfirmation(OsfTestCase):
         self.get_url = web_url_for('resend_confirmation_get')
         self.post_url = web_url_for('resend_confirmation_post')
 
+        self.mock_send_grid = start_mock_send_grid(self)
+
     # test that resend confirmation page is load correctly
     def test_resend_confirmation_get(self):
         res = self.app.get(self.get_url)
@@ -731,8 +736,7 @@ class TestResendConfirmation(OsfTestCase):
         assert res.get_form('resendForm')
 
     # test that unconfirmed user can receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_resend_confirmation_email(self, mock_send_mail):
+    def test_can_receive_resend_confirmation_email(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -740,14 +744,13 @@ class TestResendConfirmation(OsfTestCase):
         res = form.submit(self.app)
 
         # check email, request and response
-        assert mock_send_mail.called
+        assert self.mock_send_grid.called
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)
 
     # test that confirmed user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_1(self, mock_send_mail):
+    def test_cannot_receive_resend_confirmation_email_1(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -755,14 +758,13 @@ class TestResendConfirmation(OsfTestCase):
         res = form.submit(self.app)
 
         # check email, request and response
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('has already been confirmed', res.text)
 
     # test that non-existing user cannot receive resend confirmation email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_resend_confirmation_email_2(self, mock_send_mail):
+    def test_cannot_receive_resend_confirmation_email_2(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -770,14 +772,13 @@ class TestResendConfirmation(OsfTestCase):
         res = form.submit(self.app)
 
         # check email, request and response
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         assert res.status_code == 200
         assert res.request.path == self.post_url
         assert_in_html('If there is an OSF account', res.text)
 
     # test that user cannot submit resend confirmation request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_resend_confirmation_twice_quickly(self, mock_send_mail):
+    def test_cannot_resend_confirmation_twice_quickly(self):
         # load resend confirmation page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
@@ -790,6 +791,8 @@ class TestResendConfirmation(OsfTestCase):
         assert_in_html('Please wait', res.text)
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestForgotPassword(OsfTestCase):
 
     def setUp(self):
@@ -800,6 +803,8 @@ class TestForgotPassword(OsfTestCase):
         self.post_url = web_url_for('forgot_password_post')
         self.user.verification_key_v2 = {}
         self.user.save()
+
+        self.mock_send_grid = start_mock_send_grid(self)
 
     # log users out before they land on forgot password page
     def test_forgot_password_logs_out_user(self):
@@ -820,8 +825,7 @@ class TestForgotPassword(OsfTestCase):
         assert res.get_form('forgotPasswordForm')
 
     # test that existing user can receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_reset_password_email(self, mock_send_mail):
+    def test_can_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -829,7 +833,7 @@ class TestForgotPassword(OsfTestCase):
         res = form.submit(self.app)
 
         # check mail was sent
-        assert mock_send_mail.called
+        assert self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -843,8 +847,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+    def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -852,7 +855,7 @@ class TestForgotPassword(OsfTestCase):
         res = form.submit(self.app)
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -866,8 +869,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+    def test_not_active_user_no_reset_password_email(self):
         self.user.deactivate_account()
         self.user.save()
 
@@ -878,7 +880,7 @@ class TestForgotPassword(OsfTestCase):
         res = form.submit(self.app)
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -892,8 +894,7 @@ class TestForgotPassword(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+    def test_cannot_reset_password_twice_quickly(self):
         # load forgot password page and submit email
         res = self.app.get(self.get_url)
         form = res.get_form('forgotPasswordForm')
@@ -908,6 +909,8 @@ class TestForgotPassword(OsfTestCase):
         assert_not_in_html('If there is an OSF account', res.text)
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestForgotPasswordInstitution(OsfTestCase):
 
     def setUp(self):
@@ -918,6 +921,8 @@ class TestForgotPasswordInstitution(OsfTestCase):
         self.post_url = web_url_for('forgot_password_institution_post')
         self.user.verification_key_v2 = {}
         self.user.save()
+
+        self.mock_send_grid = start_mock_send_grid(self)
 
     # log users out before they land on institutional forgot password page
     def test_forgot_password_logs_out_user(self):
@@ -939,13 +944,12 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert 'campaign=unsupportedinstitution' in location
 
     # test that user from disabled institution can receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_can_receive_reset_password_email(self, mock_send_mail):
+    def test_can_receive_reset_password_email(self):
         # submit email to institutional forgot-password page
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was sent
-        assert mock_send_mail.called
+        assert self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword
@@ -959,13 +963,12 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 != {}
 
     # test that non-existing user cannot receive reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_receive_reset_password_email(self, mock_send_mail):
+    def test_cannot_receive_reset_password_email(self):
         # load forgot password page and submit email
         res = self.app.post(self.post_url, data={'forgot_password-email': 'fake' + self.user.username})
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution
@@ -979,15 +982,14 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that non-existing user cannot receive institutional reset password email
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_not_active_user_no_reset_password_email(self, mock_send_mail):
+    def test_not_active_user_no_reset_password_email(self):
         self.user.deactivate_account()
         self.user.save()
 
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
 
         # check mail was not sent
-        assert not mock_send_mail.called
+        assert not self.mock_send_grid.called
         # check http 200 response
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution
@@ -1001,8 +1003,7 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert self.user.verification_key_v2 == {}
 
     # test that user cannot submit forgot password request too quickly
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_cannot_reset_password_twice_quickly(self, mock_send_mail):
+    def test_cannot_reset_password_twice_quickly(self):
         # submit institutional forgot-password request in rapid succession
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})
         res = self.app.post(self.post_url, data={'forgot_password-email': self.user.username})

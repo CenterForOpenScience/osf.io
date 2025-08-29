@@ -9,10 +9,10 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
+from website import settings
 from django.middleware import csrf
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
-from website import mails, settings
 
 @pytest.fixture()
 def user_one():
@@ -29,6 +29,7 @@ def unconfirmed_address():
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUserRequestExport:
 
     @pytest.fixture()
@@ -48,8 +49,7 @@ class TestUserRequestExport:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post(self, mock_mail, app, user_one, user_two, url, payload):
+    def test_post(self, mock_send_grid, app, user_one, user_two, url, payload):
         # Logged out
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -64,20 +64,18 @@ class TestUserRequestExport:
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None
-        assert mock_mail.call_count == 1
+        assert mock_send_grid.call_count == 1
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post_invalid_type(self, mock_mail, app, user_one, url, payload):
+    def test_post_invalid_type(self, mock_send_grid, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_mail.call_count == 0
+        assert mock_send_grid.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
+    def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
@@ -95,7 +93,7 @@ class TestUserChangePassword:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        user.set_password('password1')
+        user.set_password('password1', notify=False)
         user.auth = (user.username, 'password1')
         user.save()
         return user
@@ -131,7 +129,8 @@ class TestUserChangePassword:
         assert res.status_code == 403
 
         # Logged in
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with mock.patch.object(settings, 'USE_EMAIL', False):
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
         user_one.reload()
         assert user_one.check_password('password2')
@@ -171,6 +170,7 @@ class TestUserChangePassword:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestResetPassword:
 
     @pytest.fixture()
@@ -189,27 +189,20 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    def test_get(self, app, url, user_one):
+    def test_get(self, mock_send_grid, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-            res = app.get(url)
-            assert res.status_code == 200
+        res = app.get(url)
+        assert res.status_code == 200
 
-            user_one.reload()
-            mock_send_mail.assert_called_with(
-                to_addr=user_one.username,
-                mail=mails.FORGOT_PASSWORD,
-                reset_link=f'{settings.RESET_PASSWORD_URL}{user_one._id}/{user_one.verification_key_v2['token']}/',
-                can_change_preferences=False,
-            )
+        user_one.reload()
+        assert mock_send_grid.call_args[1]['to_addr'] == user_one.username
 
-    def test_get_invalid_email(self, app, url):
+    def test_get_invalid_email(self, mock_send_grid, app, url):
         url = f'{url}?email={'invalid_email'}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-            res = app.get(url)
-            assert res.status_code == 200
-            assert not mock_send_mail.called
+        res = app.get(url)
+        assert res.status_code == 200
+        assert not mock_send_grid.called
 
     def test_post(self, app, url, user_one, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
@@ -276,10 +269,10 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throrrle(self, app, url, user_one):
+    def test_throttle(self, app, url, user_one, csrf_token):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        res = app.get(url)
+        app.get(url)
         user_one.reload()
         payload = {
             'data': {
@@ -291,7 +284,18 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload, expect_errors=True)
+        res = app.post_json_api(
+            url,
+            payload,
+            headers={'X-CSRFToken': csrf_token},
+            expect_errors=True
+        )
+        res = app.post_json_api(
+            url,
+            payload,
+            headers={'X-CSRFToken': csrf_token},
+            expect_errors=True
+        )
         assert res.status_code == 429
 
         res = app.get(url, expect_errors=True)

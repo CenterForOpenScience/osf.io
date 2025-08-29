@@ -24,11 +24,12 @@ from api.cedar_metadata_records.serializers import CedarMetadataRecordsListSeria
 from api.cedar_metadata_records.utils import can_view_record
 from api.nodes.permissions import ContributorOrPublic
 from api.files import annotations
-from api.files.permissions import IsPreprintFile
-from api.files.permissions import CheckedOutOrAdmin
-from api.files.serializers import FileSerializer
-from api.files.serializers import FileDetailSerializer
-from api.files.serializers import FileVersionSerializer
+from api.files.permissions import IsPreprintFile, CheckedOutOrAdmin
+from api.files.serializers import (
+    FileSerializer,
+    FileDetailSerializer,
+    FileVersionSerializer,
+)
 from osf.utils.permissions import ADMIN
 
 
@@ -52,10 +53,6 @@ class FileMixin:
 
         if getattr(obj.target, 'deleted', None):
             raise Gone(detail='The requested file is no longer available')
-
-        if getattr(obj.target, 'is_quickfiles', False) and getattr(obj.target, 'creator'):
-            if obj.target.creator.is_disabled:
-                raise Gone(detail='This user has been deactivated and their quickfiles are no longer available.')
 
         if getattr(obj.target, 'is_retracted', False):
             raise Gone(detail='The requested file is no longer available.')
@@ -85,9 +82,6 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     view_category = 'files'
     view_name = 'file-detail'
 
-    def get_serializer_class(self):
-        return FileDetailSerializer
-
     def get_target(self):
         return self.get_file().target
 
@@ -97,8 +91,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
         file = self.get_file()
 
         if self.request.GET.get('create_guid', False):
-            # allows quickfiles to be given guids when another user wants a permanent link to it
-            if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)) or getattr(file.target, 'is_quickfiles', False):
+            if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)):
                 file.get_guid(create=True)
 
         # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
