@@ -802,7 +802,10 @@ def request_export(auth):
     NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
         user=user,
         event_context={
-            'can_change_preferences': False
+            'user_username': user.username,
+            'user_absolute_url': user.absolute_url,
+            'user__id': user._id,
+            'can_change_preferences': False,
         }
     )
     user.email_last_sent = timezone.now()

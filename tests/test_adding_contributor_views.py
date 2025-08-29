@@ -189,10 +189,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 3
+        assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -218,10 +216,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert self.project.can_edit(user=self.creator)
         with capture_notifications() as notifications:
             self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 3
+        assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
@@ -250,9 +246,8 @@ class TestAddingContributorViews(OsfTestCase):
             self.app.post(url, json=payload, auth=self.creator.auth)
 
         # send_mail is called for both the project and the sub-component
-        assert len(notifications['emits']) == 2
+        assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')

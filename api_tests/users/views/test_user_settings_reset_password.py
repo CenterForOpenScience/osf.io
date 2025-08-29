@@ -9,14 +9,13 @@ from osf_tests.factories import (
 )
 from django.middleware import csrf
 
-from tests.utils import capture_notifications
-
-
 class TestResetPassword:
 
     @pytest.fixture()
     def throttle_user(self):
         user = UserFactory()
+        from tests.utils import capture_notifications
+
         with capture_notifications():
             user.set_password('password1')
         user.auth = (user.username, 'password1')
@@ -26,6 +25,8 @@ class TestResetPassword:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
+        from tests.utils import capture_notifications
+
         with capture_notifications():
             user.set_password('password1')
         user.auth = (user.username, 'password1')
@@ -43,6 +44,8 @@ class TestResetPassword:
     def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
+        from tests.utils import capture_notifications
+
         with capture_notifications() as notifications:
             res = app.get(url)
         assert len(notifications['emits']) == 1
@@ -59,7 +62,10 @@ class TestResetPassword:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        res = app.get(url)
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            res = app.get(url)
         user_one.reload()
         payload = {
             'data': {
@@ -70,8 +76,8 @@ class TestResetPassword:
                 }
             }
         }
-
-        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        with capture_notifications():
+            res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         user_one.reload()
         assert res.status_code == 200
         assert user_one.check_password('password2')
@@ -105,7 +111,10 @@ class TestResetPassword:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        res = app.get(url)
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            res = app.get(url)
         user_one.reload()
         payload = {
             'data': {
@@ -124,7 +133,10 @@ class TestResetPassword:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         encoded_email = urllib.parse.quote(throttle_user.email)
         url = f'{url}?email={encoded_email}'
-        app.get(url)
+        from tests.utils import capture_notifications
+
+        with capture_notifications():
+            app.get(url)
         throttle_user.reload()
         res = app.get(url, expect_errors=True)
         assert res.status_code == 429

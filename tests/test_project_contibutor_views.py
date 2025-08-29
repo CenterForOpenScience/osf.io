@@ -189,16 +189,17 @@ class TestProjectContributorViews(OsfTestCase):
             }
         )
 
-        self.app.post(
-            f'/api/v1/project/{project._id}/contributors/',
-            json={
-                'users': [dict2, dict3],
-                'node_ids': [project._id],
-            },
-            content_type='application/json',
-            auth=self.auth,
-            follow_redirects=True,
-        )
+        with capture_notifications():
+            self.app.post(
+                f'/api/v1/project/{project._id}/contributors/',
+                json={
+                    'users': [dict2, dict3],
+                    'node_ids': [project._id],
+                },
+                content_type='application/json',
+                auth=self.auth,
+                follow_redirects=True,
+            )
         project.reload()
         assert user2 in project.contributors
         # A log event was added

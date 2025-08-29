@@ -1415,9 +1415,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         self.preprint.reload()
         assert not self.preprint.is_published
-        with capture_notifications():
-            with pytest.raises(ValueError):
-                self.preprint.set_published(True, auth=self.auth, save=True)
+        with pytest.raises(ValueError):
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
@@ -1463,6 +1462,7 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
         assert not self.preprint.is_public
+        with captur
         self.preprint.set_published(True, auth=self.auth, save=True)
         self.project.reload()
         assert self.preprint.is_public

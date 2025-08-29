@@ -13,6 +13,7 @@ from osf_tests.factories import (
 from tests.base import (
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website.util import api_url_for, web_url_for
 
 @pytest.mark.enable_implicit_clean
@@ -249,5 +250,6 @@ class TestProjectCreation(OsfTestCase):
         project.save()
 
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth=contributor.auth)
+        with capture_notifications():
+            res = self.app.post(url, auth=contributor.auth)
         assert res.status_code == 201
