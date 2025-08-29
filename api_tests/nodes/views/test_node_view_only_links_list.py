@@ -5,7 +5,8 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    PrivateLinkFactory
+    PrivateLinkFactory,
+    NodeRelationFactory
 )
 
 
@@ -227,3 +228,77 @@ class TestViewOnlyLinksCreate:
         }
         res = app.post_json_api(url, {'data': payload}, expect_errors=True)
         assert res.status_code == 401
+
+    def test_create_vol_with_components(
+            self, app, user, url, public_project, view_only_link):
+        component1 = ProjectFactory(creator=user)
+        component2 = ProjectFactory(creator=user)
+        component3 = ProjectFactory(creator=user)
+        NodeRelationFactory(parent=public_project, child=component1)
+        NodeRelationFactory(parent=public_project, child=component2)
+        NodeRelationFactory(parent=public_project, child=component3)
+
+        url = f'{url}?embed=creator&embed=nodes'
+        payload = {
+            'attributes': {
+                'name': 'testmultiplenodes',
+                'anonymous': False,
+            },
+            'relationships': {
+                'nodes': {
+                    'data': [
+                        {
+                            'id': component1._id,
+                            'type': 'nodes'
+                        },
+                        {
+                            'id': component2._id,
+                            'type': 'nodes'
+                        },
+                        {
+                            'id': component3._id,
+                            'type': 'nodes'
+                        }
+                    ]
+                }
+            }
+        }
+        res = app.post_json_api(url, {'data': payload}, auth=user.auth)
+        assert res.status_code == 201
+        data = res.json['data']
+        assert len(data['embeds']['nodes']['data']) == 4
+
+    def test_create_vol_no_duplicated_components(
+            self, app, user, url, public_project, view_only_link):
+        component1 = ProjectFactory(creator=user)
+        NodeRelationFactory(parent=public_project, child=component1)
+
+        url = f'{url}?embed=creator&embed=nodes'
+        payload = {
+            'attributes': {
+                'name': 'testmultiplenodes',
+                'anonymous': False,
+            },
+            'relationships': {
+                'nodes': {
+                    'data': [
+                        {
+                            'id': component1._id,
+                            'type': 'nodes'
+                        },
+                        {
+                            'id': component1._id,
+                            'type': 'nodes'
+                        },
+                        {
+                            'id': component1._id,
+                            'type': 'nodes'
+                        },
+                    ]
+                }
+            }
+        }
+        res = app.post_json_api(url, {'data': payload}, auth=user.auth)
+        assert res.status_code == 201
+        data = res.json['data']
+        assert len(data['embeds']['nodes']['data']) == 2
