@@ -48,6 +48,7 @@ from osf.models.admin_log_entry import (
     UNFLAG_SPAM,
 )
 from osf.utils.workflows import DefaultStates
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from website import search
 from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
@@ -76,10 +77,11 @@ class PreprintView(PreprintMixin, GuidView):
         return super().get_context_data(**{
             'preprint': preprint,
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
-            'annotated_contributors': preprint.contributors.annotate(guid=F('guids___id')),
+            'annotated_contributors': preprint.preprintcontributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'SPAM_STATUS': SpamStatus,
             'change_provider_form': ChangeProviderForm(instance=preprint),
             'change_machine_state_form': MachineStateForm(instance=preprint),
+            'permissions': API_CONTRIBUTOR_PERMISSIONS,
         }, **kwargs)
 
 
