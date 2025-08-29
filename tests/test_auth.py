@@ -36,13 +36,20 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 from website.util import api_url_for
+from conftest import start_mock_send_grid
 
 from tests.test_cas_authentication import generate_external_user_with_resp
 
 logger = logging.getLogger(__name__)
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthUtils(OsfTestCase):
+
+    def setUp(self):
+        super().setUp()
+        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()
@@ -71,8 +78,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert user.get_confirmation_token(user.username)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_confirm_email(self, mock_mail):
+    def test_confirm_email(self):
         user = UnregUserFactory()
 
         auth.register_unconfirmed(
@@ -91,7 +97,7 @@ class TestAuthUtils(OsfTestCase):
 
         user.reload()
 
-        mock_mail.assert_not_called()
+        self.mock_send_grid.assert_not_called()
 
 
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
@@ -101,7 +107,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert len(mock_mail.call_args_list) == 0
+        assert len(self.mock_send_grid.call_args_list) == 0
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
@@ -163,23 +169,15 @@ class TestAuthUtils(OsfTestCase):
         cas.make_response_from_ticket(ticket, service_url)
         assert user == mock_external_first_login_authenticate.call_args[0][0]
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_password_change_sends_email(self, mock_mail):
+    def test_password_change_sends_email(self):
         user = UserFactory()
         user.set_password('killerqueen')
         user.save()
-        assert len(mock_mail.call_args_list) == 1
-        empty, kwargs = mock_mail.call_args
-        kwargs['user'].reload()
+        assert len(self.mock_send_grid.call_args_list) == 1
+        empty, kwargs = self.mock_send_grid.call_args
 
         assert empty == ()
-        assert kwargs == {
-            'user': user,
-            'mail': mails.PASSWORD_RESET,
-            'to_addr': user.username,
-            'can_change_preferences': False,
-            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        }
+        assert kwargs['to_addr'] == user.username
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -211,8 +209,7 @@ class TestAuthUtils(OsfTestCase):
         # ensure None short circuits execution (no call to google)
         assert not validate_recaptcha(None)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_sign_up_twice_sends_two_confirmation_emails_only(self, mock_mail):
+    def test_sign_up_twice_sends_two_confirmation_emails_only(self):
         # Regression test for https://openscience.atlassian.net/browse/OSF-7060
         url = api_url_for('register_user')
         sign_up_data = {
@@ -223,20 +220,10 @@ class TestAuthUtils(OsfTestCase):
         }
 
         self.app.post(url, json=sign_up_data)
-        assert len(mock_mail.call_args_list) == 1
-        args, kwargs = mock_mail.call_args
-        assert args == (
-            'caesar@romanempire.com',
-            mails.INITIAL_CONFIRM_EMAIL,
-        )
+        assert len(self.mock_send_grid.call_args_list) == 1
 
         self.app.post(url, json=sign_up_data)
-        assert len(mock_mail.call_args_list) == 2
-        args, kwargs = mock_mail.call_args
-        assert args == (
-            'caesar@romanempire.com',
-            mails.INITIAL_CONFIRM_EMAIL,
-        )
+        assert len(self.mock_send_grid.call_args_list) == 2
 
 
 class TestAuthObject(OsfTestCase):

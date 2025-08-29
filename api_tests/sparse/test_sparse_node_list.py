@@ -3,14 +3,12 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
 from osf.models import AbstractNode
-from osf.utils import permissions
 from osf_tests.factories import (
     CollectionFactory,
     ProjectFactory,
     AuthUserFactory,
     PreprintFactory,
     InstitutionFactory,
-    OSFGroupFactory,
     DraftNodeFactory,
 )
 from website.views import find_bookmark_collection
@@ -110,14 +108,6 @@ class TestNodeList:
         assert public_project._id in ids
         assert private_project._id not in ids
         assert draft_node._id not in ids
-
-        #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
-        group = OSFGroupFactory(creator=user)
-        another_project = ProjectFactory()
-        another_project.add_osf_group(group, permissions.READ)
-        res = app.get(sparse_url, auth=user.auth)
-        ids = [each['id'] for each in res.json['data']]
-        assert another_project._id in ids
 
     def test_node_list_has_proper_root(self, app, user, sparse_url):
         project_one = ProjectFactory(title='Project One', is_public=True)

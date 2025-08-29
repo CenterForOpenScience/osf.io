@@ -30,7 +30,6 @@ urlpatterns = [
             re_path(r'^maintenance/', include('admin.maintenance.urls', namespace='maintenance')),
             re_path(r'^meetings/', include('admin.meetings.urls', namespace='meetings')),
             re_path(r'^metrics/', include('admin.metrics.urls', namespace='metrics')),
-            re_path(r'^osf_groups/', include('admin.osf_groups.urls', namespace='osf_groups')),
             re_path(r'^management/', include('admin.management.urls', namespace='management')),
             re_path(r'^internet_archive/', include('admin.internet_archive.urls', namespace='internet_archive')),
             re_path(r'^schema_responses/', include('admin.schema_responses.urls', namespace='schema_responses')),

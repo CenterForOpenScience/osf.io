@@ -2,12 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf_tests.factories import (
-    AuthUserFactory,
-    OSFGroupFactory,
-    RegistrationFactory,
-    NodeRelationFactory,
-)
+from osf_tests.factories import RegistrationFactory, NodeRelationFactory
 from osf.utils.permissions import READ
 from rest_framework import exceptions
 from .utils import LinkedRegistrationsTestCase
@@ -115,25 +110,6 @@ class TestNodeLinkedRegistrationsRelationshipCreate(LinkedRegistrationsTestCase)
         )
         assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == exceptions.PermissionDenied.default_detail
-
-    def test_read_osf_group_mem_cannot_create_linked_registrations_relationship(
-            self,
-            app,
-            user_non_contrib,
-            node_private,
-    ):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        node_private.add_osf_group(group, READ)
-        registration = RegistrationFactory(is_public=True)
-        res = self.make_request(
-            app,
-            node_id=node_private._id,
-            reg_id=registration._id,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
 
     def test_unauthenticated_user_cannot_create_linked_registrations_relationship(
             self,
