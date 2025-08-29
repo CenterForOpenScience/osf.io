@@ -47,7 +47,7 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 
 from scripts.approve_registrations import approve_past_pendings
 
@@ -110,8 +110,9 @@ class NodeView(NodeMixin, GuidView):
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
-            'annotated_contributors': node.contributors.annotate(guid=F('guids___id')),
+            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
+            'permissions': API_CONTRIBUTOR_PERMISSIONS,
         })
 
         return context
