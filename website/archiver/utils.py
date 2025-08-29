@@ -107,6 +107,7 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,
+            'user_id': user._id,
             'user_username': user.username,
             'src_title': src.title,
             'src__id': src._id,
@@ -121,6 +122,7 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'user_fullname': user.fullname,
+            'user_id': user._id,
             'src_title': src.title,
             'src__id': src._id,
             'src': src._id,

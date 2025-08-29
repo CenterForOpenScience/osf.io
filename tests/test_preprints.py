@@ -577,15 +577,13 @@ class TestPreprintAddContributorRegisteredOrNot:
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
-        with capture_notifications():
-            with pytest.raises(ValidationError) as excinfo:
-                preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
+        with pytest.raises(ValidationError) as excinfo:
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
-        with capture_notifications():
-            with pytest.raises(ValueError) as excinfo:
-                preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
+        with pytest.raises(ValueError) as excinfo:
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
@@ -1278,14 +1276,13 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        with capture_notifications():
-            preprint.add_contributors(
-                [
-                    {'user': user1, 'permissions': WRITE, 'visible': True},
-                    {'user': user2, 'permissions': WRITE, 'visible': True}
-                ],
-                auth=auth
-            )
+        preprint.add_contributors(
+            [
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
         user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id
@@ -1418,8 +1415,9 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
         self.preprint.reload()
         assert not self.preprint.is_published
-        with pytest.raises(ValueError):
-            self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            with pytest.raises(ValueError):
+                self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         self.preprint.provider = PreprintProviderFactory()
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
@@ -2510,8 +2508,7 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        with capture_notifications():
-            unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
+        unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.REJECTED.value
         assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
@@ -2581,8 +2578,7 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        with capture_notifications():
-            new_version.run_reject(moderator, 'comment')
+        new_version.run_reject(moderator, 'comment')
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.REJECTED.value
         assert new_version.versioned_guids.first().is_rejected is True
@@ -2603,8 +2599,7 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        with capture_notifications():
-            unpublished_preprint_post_mod.run_accept(moderator, 'comment')
+        unpublished_preprint_post_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_post_mod.get_guid()

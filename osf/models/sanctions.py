@@ -544,6 +544,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             registration = self._get_registration()
 
             context.update({
+                'domain': settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -1040,6 +1041,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'reviewable_title': registration.title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider_name': self._get_registration().provider.name,
+                'reviewable_provider__id': registration.provider._id,
                 'reviewable_absolute_url': registration.absolute_url,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -1061,6 +1063,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': registration.absolute_url,
                 'reviewable_provider_name': self.target_registration.provider.name,
+                'reviewable_provider__id': self.target_registration.provider._id,
                 'approval_time_span': approval_time_span,
                 'user_fullname': user.fullname,
             })

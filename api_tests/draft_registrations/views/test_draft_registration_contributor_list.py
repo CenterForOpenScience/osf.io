@@ -505,8 +505,7 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
 class TestDraftRegistrationContributorFiltering(DraftRegistrationCRUDTestCase, TestNodeContributorFiltering):
     @pytest.fixture()
     def project(self, user):
-        with capture_notifications():
-            return DraftRegistrationFactory(initiator=user)
+        return DraftRegistrationFactory(initiator=user)
 
     @pytest.fixture()
     def url(self, project):
