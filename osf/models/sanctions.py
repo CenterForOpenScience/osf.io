@@ -870,11 +870,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
-<<<<<<< HEAD
-=======
                 'reviewable_branched_from_node': self._get_registration().branched_from_node,
                 'reviewable_provider_name': self._get_registration().provider.name,
->>>>>>> 679982475879e5d249dd5c9a9e1c00c78b0679ce
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'registration_link': registration_link,

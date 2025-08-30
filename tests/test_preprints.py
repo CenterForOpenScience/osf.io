@@ -1462,8 +1462,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
         assert not self.preprint.is_public
-        with captur
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.project.reload()
         assert self.preprint.is_public
 

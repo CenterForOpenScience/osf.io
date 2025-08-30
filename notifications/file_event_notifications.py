@@ -1,4 +1,8 @@
-"""Event system + File events
+"""
+This system was adapted from the highly extendable Event system to only incorporate file notifications
+as 
+
+Event system + File events
 
 - Provides a simple event registry (`event_registry`) and `@register` decorator.
 - Defines the abstract `Event` base class.
@@ -20,10 +24,6 @@ from osf.models import (
 )
 from addons.base.signals import file_updated as signal
 
-
-# -----------------------------
-# Registry + base Event class
-# -----------------------------
 
 event_registry = {}
 
