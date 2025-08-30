@@ -1036,12 +1036,14 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
 
             context.update({
+                'domain': osf_settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': registration.title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider_name': self._get_registration().provider.name,
                 'reviewable_absolute_url': registration.absolute_url,
+                'reviewable_provider__id': registration.provider._id,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
@@ -1060,6 +1062,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'is_moderated': self.is_moderated,
                 'reviewable_title': registration.title,
                 'reviewable__id': self._get_registration()._id,
+                'reviewable_provider__id': registration.provider._id,
                 'reviewable_absolute_url': registration.absolute_url,
                 'reviewable_provider_name': self.target_registration.provider.name,
                 'approval_time_span': approval_time_span,

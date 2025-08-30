@@ -211,7 +211,8 @@ class TestProjectCreation(OsfTestCase):
             'title': 'Im a real title',
             'template': other_node._id
         }
-        res = self.app.post(self.url, json=payload, auth=self.creator.auth)
+        with capture_notifications():
+            res = self.app.post(self.url, json=payload, auth=self.creator.auth)
         assert res.status_code == 201
         node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert node
@@ -240,7 +241,8 @@ class TestProjectCreation(OsfTestCase):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth=non_contributor.auth)
+        with capture_notifications():
+            res = self.app.post(url, auth=non_contributor.auth)
         assert res.status_code == 201
 
     def test_project_new_from_template_contributor(self):

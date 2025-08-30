@@ -16,9 +16,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
-        ).emit(
+        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
             user=recipient,
             subscribed_object=provider,
             event_context=context,
@@ -41,9 +39,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
-        ).emit(
+        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
             user=recipient,
             event_context=context,
             subscribed_object=preprint.provider,

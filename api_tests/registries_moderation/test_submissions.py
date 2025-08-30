@@ -362,8 +362,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         actions_payload_base['data']['attributes']['comment'] = 'Looks good! (Embargo)'
         actions_payload_base['data']['relationships']['target']['data']['id'] = embargo_registration._id
-        with capture_notifications():
-            resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=moderator.auth)
+        resp = app.post_json_api(embargo_registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         embargo_registration.refresh_from_db()
@@ -519,8 +518,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['comment'] = 'Bye bye'
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
 
-        with capture_notifications():
-            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=reg_creator.auth, expect_errors=True)
         assert resp.status_code == 403
 
     @pytest.mark.parametrize(
@@ -559,13 +557,15 @@ class TestRegistriesModerationSubmissions:
         assert registration.actions.count() == 0
         registration.is_public = True
         registration.retract_registration(user=registration.creator)
-        registration.retraction.accept()
+        with capture_notifications():
+            registration.retraction.accept()
 
         moderator_comment = 'inane comment'
         actions_payload_base['data']['attributes']['trigger'] = moderator_trigger.db_name
         actions_payload_base['data']['attributes']['comment'] = moderator_comment
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
-        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        with capture_notifications():
+            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.json['data']['attributes']['comment'] == moderator_comment
 
         persisted_action = registration.actions.get(trigger=moderator_trigger.db_name)
@@ -656,7 +656,8 @@ class TestRegistriesModerationSubmissions:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        registration.sanction.accept()
+        with capture_notifications():
+            registration.sanction.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -665,8 +666,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
 
-        with capture_notifications():
-            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()
@@ -740,7 +740,8 @@ class TestRegistriesModerationSubmissions:
 
         # approve the project
         registration.require_approval(user=registration.creator)
-        registration.registration_approval.accept()
+        with capture_notifications():
+            registration.registration_approval.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -748,8 +749,7 @@ class TestRegistriesModerationSubmissions:
         actions_payload_base['data']['attributes']['trigger'] = RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         actions_payload_base['data']['attributes']['comment'] = 'The best registration Ive ever seen'
         actions_payload_base['data']['relationships']['target']['data']['id'] = registration._id
-        with capture_notifications():
-            resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
+        resp = app.post_json_api(registration_actions_url, actions_payload_base, auth=moderator.auth)
         assert resp.status_code == 201
         assert resp.json['data']['attributes']['trigger'] == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name
         registration.refresh_from_db()

@@ -96,8 +96,7 @@ class TestUnmoderatedFlows():
         assert registration.sanction._id == sanction_object._id
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with capture_notifications():
-            sanction_object.approve(user=registration.creator, token=approval_token)
+        sanction_object.approve(user=registration.creator, token=approval_token)
 
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
@@ -132,8 +131,7 @@ class TestUnmoderatedFlows():
         assert registration.sanction._id == sanction_object._id
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with capture_notifications():
-            sanction_object.reject(user=registration.creator, token=rejection_token)
+        sanction_object.reject(user=registration.creator, token=rejection_token)
 
         assert sum([val['has_rejected'] for val in sanction_object.approval_state.values()]) == 1
         registration.refresh_from_db()
@@ -143,8 +141,7 @@ class TestUnmoderatedFlows():
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_approve_after_reject_fails(self, sanction_object):
         sanction_object = sanction_object()
-        with capture_notifications():
-            sanction_object.to_REJECTED()
+        sanction_object.to_REJECTED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
 
@@ -175,8 +172,7 @@ class TestUnmoderatedFlows():
     def test_approve_after_accept_is_noop(self, sanction_object):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
         registration = sanction_object.target_registration
         registration.update_moderation_state()
         registration_accepted_state = registration.moderation_state
@@ -302,8 +298,7 @@ class TestModeratedFlows():
         assert registration.sanction._id == sanction_object._id
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with capture_notifications():
-            sanction_object.reject(user=registration.creator, token=rejection_token)
+        sanction_object.reject(user=registration.creator, token=rejection_token)
 
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
@@ -355,8 +350,7 @@ class TestModeratedFlows():
     def test_admin_cannot_give_moderator_approval(self, sanction_object, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
-        with capture_notifications():
-            sanction_object.to_PENDING_MODERATION()
+        sanction_object.to_PENDING_MODERATION()
         registration = sanction_object.target_registration
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
@@ -387,10 +381,9 @@ class TestModeratedFlows():
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
 
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                # Confirm PermissionError, not InvalidSanctionApprovalToken
-                sanction_object.approve(user=moderator, token=DUMMY_TOKEN)
+        with pytest.raises(PermissionsError):
+            # Confirm PermissionError, not InvalidSanctionApprovalToken
+            sanction_object.approve(user=moderator, token=DUMMY_TOKEN)
 
         with pytest.raises(PermissionsError):
             sanction_object.accept(user=moderator)
@@ -401,17 +394,15 @@ class TestModeratedFlows():
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
 
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                sanction_object.reject(user=moderator)
+        with pytest.raises(PermissionsError):
+            sanction_object.reject(user=moderator)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_admin_approve_after_accepted_is_noop(self, sanction_object, provider):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
         registration = sanction_object.target_registration
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
         registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
@@ -459,8 +450,7 @@ class TestModeratedFlows():
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
         registration = sanction_object.target_registration
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
         registration.refresh_from_db()
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
@@ -549,12 +539,12 @@ class TestModeratedFlows():
             with pytest.raises(MachineError):
                 sanction_object.accept(user=moderator)
 
-
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_provider_admin_can_accept_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        sanction_object.accept()
+        with capture_notifications():
+            sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         sanction_object.accept(user=provider_admin)
@@ -564,7 +554,8 @@ class TestModeratedFlows():
     def test_provider_admin_can_reject_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        sanction_object.accept()
+        with capture_notifications():
+            sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
         with capture_notifications():
             sanction_object.reject(user=provider_admin)
@@ -761,7 +752,8 @@ class TestModerationActions:
         registration = retraction_fixture.target_registration
         assert registration.actions.count() == 0
 
-        retraction_fixture.accept()
+        with capture_notifications():
+            retraction_fixture.accept()
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.REQUEST_WITHDRAWAL.db_name

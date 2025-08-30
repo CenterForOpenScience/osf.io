@@ -1936,8 +1936,7 @@ class TestRegistrationBulkUpdate:
         assert registration_one.is_pending_embargo_termination is False
         assert registration_two.is_pending_embargo_termination is False
 
-        with capture_notifications():
-            res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
         assert ({registration_one._id, registration_two._id} == {
                 res.json['data'][0]['id'], res.json['data'][1]['id']})
@@ -1992,8 +1991,7 @@ class TestRegistrationContributors(ApiTestCase):
                 'type': 'contributors'
             }
         }
-        with capture_notifications():
-            return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
+        return self.app.post_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def remove_contributor_request(self, auth_user, contributor, expect_errors=False):
         url = f'/{API_BASE}registrations/{self.public_registration._id}/contributors/{contributor._id}/'

@@ -187,12 +187,11 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-            NotificationType.objects.get(
-                name=NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED
-            ).emit(
+            NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED.instance.emit(
                 subscribed_object=user,
                 user=user,
                 event_context={
+                    'user_fullname': user.fullname,
                     'new_address': username,
                     'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,

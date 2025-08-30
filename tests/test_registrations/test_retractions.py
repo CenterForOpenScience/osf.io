@@ -836,12 +836,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve(user=self.user, token=approval_token)
         assert self.registration.embargo_end_date
-
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert self.registration.is_pending_retraction
@@ -866,11 +866,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
 
     def test_valid_POST_retraction_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         self.registration.registered_from.reload()
         # Logs: Created, registered, retraction initiated
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1

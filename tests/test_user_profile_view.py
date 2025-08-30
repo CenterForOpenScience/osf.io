@@ -525,9 +525,11 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
+        with capture_notifications():
+            res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
-        res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
+        with capture_notifications():
+            res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert self.user.check_password(new_password)

@@ -360,7 +360,8 @@ class TestProjectViews(OsfTestCase):
         grand_child = NodeFactory(parent=child, creator=user)
         project.save()
 
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         fork.save()
         grand_child_fork = fork.nodes[0].nodes[0]
         assert grand_child_fork.root == fork
