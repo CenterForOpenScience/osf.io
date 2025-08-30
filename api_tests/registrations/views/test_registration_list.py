@@ -2103,12 +2103,12 @@ class TestRegistrationContributors(ApiTestCase):
                 contributor=contributor_to_remove,
                 permission=permission
             )
-
-            res = self.add_contributor_request(
-                auth_user=self.contributor,
-                contributor=contributor_to_add,
-                expect_errors=True
-            )
+            with capture_notifications():
+                res = self.add_contributor_request(
+                    auth_user=self.contributor,
+                    contributor=contributor_to_add,
+                    expect_errors=True
+                )
             assert res.status_code == 403
 
             res = self.remove_contributor_request(
