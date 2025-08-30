@@ -1,5 +1,3 @@
-from unittest import mock
-
 import pytest
 
 from api.providers.workflows import Workflows
@@ -548,8 +546,8 @@ class TestModeratedFlows():
         registration = sanction_object.target_registration
 
         with capture_notifications():
-        with pytest.raises(MachineError):
-            sanction_object.accept(user=moderator)
+            with pytest.raises(MachineError):
+                sanction_object.accept(user=moderator)
 
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])

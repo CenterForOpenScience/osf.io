@@ -27,7 +27,7 @@ from scripts.populate_institutions import main as populate_institutions
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
-from tests.utils import run_celery_tasks
+from tests.utils import run_celery_tasks, capture_notifications
 from osf.utils.workflows import CollectionSubmissionStates
 
 TEST_INDEX = 'test'
@@ -274,7 +274,8 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
     def test_collection_submission_doc_structure(self):
-        self.collection_public.collect_object(self.node_one, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_one, self.user)
         docs = query_collections('Keita')['results']
         assert docs[0]['_source']['title'] == self.node_one.title
         with run_celery_tasks():

@@ -9,7 +9,7 @@
       You have requested final approvals to submit your registration
       titled <a href="${registration_link}">${reviewable_title}</a>.
     % else:
-      ${initiated_by} has requested final approvals to submit your registration
+      ${initiated_by_fullname} has requested final approvals to submit your registration
       titled <a href="${registration_link}">${reviewable_title}</a>.
     % endif
     </p>

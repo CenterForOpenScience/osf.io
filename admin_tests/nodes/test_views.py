@@ -785,14 +785,13 @@ class TestRegistrationRevertToDraft(AdminTestCase):
             self.pre_moderation_registration.require_approval(contributor)
 
         assert self.pre_moderation_registration.sanction.approval_stage is ApprovalStates.UNAPPROVED
-
-        for contributor in contributors:
-            with capture_notifications():
+        with capture_notifications():
+            for contributor in contributors:
                 self.pre_moderation_registration.sanction.approve(
                     user=contributor,
                     token=self.pre_moderation_registration.sanction.approval_state[contributor._id]['approval_token']
                 )
-            assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
+                assert self.pre_moderation_registration.sanction.approval_state[contributor._id]['has_approved'] is True
 
         self.approve_version(self.get_current_version(self.pre_moderation_registration))
 

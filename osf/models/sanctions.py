@@ -544,8 +544,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             registration = self._get_registration()
 
             context.update({
+                'domain': settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'user_fullname': user.fullname,
                 'project_name': registration.title,
@@ -566,7 +567,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         else:
             context.update({
                 'user_fullname': user.fullname,
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'embargo_end_date': str(self.end_date),
                 'approval_time_span': approval_time_span,
@@ -727,7 +728,7 @@ class Retraction(EmailApprovableSanction):
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'project_name': self.registrations.filter().values_list('title', flat=True).get(),
                 'registration_link': registration_link,
                 'approval_link': approval_link,
@@ -739,7 +740,7 @@ class Retraction(EmailApprovableSanction):
         else:
             return {
                 'dpmain': osf_settings.DOMAIN,
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
@@ -863,11 +864,17 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
             context.update({
                 'domain': osf_settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
-                'initiated_by': self.initiated_by.fullname,
+                'user_fullname': user.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
+<<<<<<< HEAD
+=======
+                'reviewable_branched_from_node': self._get_registration().branched_from_node,
+                'reviewable_provider_name': self._get_registration().provider.name,
+>>>>>>> 679982475879e5d249dd5c9a9e1c00c78b0679ce
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'registration_link': registration_link,
@@ -879,11 +886,14 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
         else:
             context.update({
                 'domain': osf_settings.DOMAIN,
-                'initiated_by': self.initiated_by.fullname,
+                'user_fullname': user.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
                 'reviewable_title': self._get_registration().title,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
+                'reviewable_branched_from_node': self._get_registration().branched_from_node,
+                'reviewable_provider_name': self._get_registration().provider.name,
                 'approval_time_span': approval_time_span,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
             })
@@ -1035,7 +1045,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_provider_name': self._get_registration().provider.name,
                 'reviewable_absolute_url': registration.absolute_url,
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
                 'disapproval_link': disapproval_link,
@@ -1046,7 +1056,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             })
         else:
             context.update({
-                'initiated_by': self.initiated_by.fullname,
+                'initiated_by_fullname': self.initiated_by.fullname,
                 'project_name': self.target_registration.title,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,

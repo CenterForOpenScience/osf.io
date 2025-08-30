@@ -82,11 +82,14 @@ class NotificationSubscription(BaseModel):
                 f"\nemail_context={email_context}"
 
             )
+        print('???')
         if self.message_frequency == 'instantly':
+            print('???22', save)
             notification = Notification(
                 subscription=self,
                 event_context=event_context
             )
+            print(notification, save)
             if save:
                 notification.save()
             notification.send(
@@ -95,6 +98,8 @@ class NotificationSubscription(BaseModel):
                 save=save,
             )
         else:
+            print('???2', event_context)
+
             Notification.objects.create(
                 subscription=self,
                 event_context=event_context
