@@ -1276,13 +1276,14 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
         user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id
@@ -1637,7 +1638,8 @@ class TestPreprintPermissions(OsfTestCase):
     def test_admin_cannot_unpublish(self):
         assert not self.preprint.is_published
 
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
         assert self.preprint.is_published
 

@@ -1,4 +1,3 @@
-from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse, reverse_lazy
 from django.http import Http404
 from django.shortcuts import redirect
@@ -9,10 +8,9 @@ from django.views.generic.edit import FormView, UpdateView, CreateView
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
-from osf.models.notification_subscription import NotificationSubscription
 
 from osf.models.user import OSFUser
-from osf.models import AdminProfile, AbstractProvider
+from osf.models import AdminProfile
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -71,29 +69,6 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         # create AdminProfile for this new user
         profile, created = AdminProfile.objects.get_or_create(user=osf_user)
-
-        for group in form.cleaned_data.get('group_perms'):
-            osf_user.groups.add(group)
-            split = group.name.split('_')
-            group_type = split[0]
-            if group_type == 'reviews':
-                provider_id = split[2]
-                provider = AbstractProvider.objects.get(id=provider_id)
-
-                data = {}
-                if subscribed_object := provider:
-                    data = {
-                        'object_id': subscribed_object.id,
-                        'content_type_id': ContentType.objects.get_for_model(subscribed_object).id,
-                    }
-
-                notification, created = NotificationSubscription.objects.get_or_create(
-                    user=osf_user,
-                    notification_type=self,
-                    **data,
-                )
-                return notification
-
         osf_user.save()
 
         if created:

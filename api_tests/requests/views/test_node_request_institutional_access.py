@@ -243,7 +243,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
         project.save()
 
         # Perform the action
-        with capture_notifications():
+        with assert_notification(type=NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST, user=user_with_affiliation):
             res = app.post_json_api(url, create_payload, auth=institutional_admin.auth)
 
         # Ensure response is successful

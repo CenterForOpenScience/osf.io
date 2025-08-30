@@ -1,7 +1,4 @@
 """
-This system was adapted from the highly extendable Event system to only incorporate file notifications
-as 
-
 Event system + File events
 
 - Provides a simple event registry (`event_registry`) and `@register` decorator.

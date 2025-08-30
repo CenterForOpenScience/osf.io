@@ -13,7 +13,7 @@ from tests.base import AdminTestCase
 pytestmark = pytest.mark.django_db
 
 
-class TestNotificationAdmin(AdminTestCase):
+class TestNotificationAdminAppSection(AdminTestCase):
 
     def setUp(self):
         super().setUp()

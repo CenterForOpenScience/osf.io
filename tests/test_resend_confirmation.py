@@ -69,7 +69,8 @@ class TestResendConfirmation(OsfTestCase):
         res = self.app.get(self.get_url)
         form = res.get_form('resendForm')
         form['email'] = self.unconfirmed_user.email
-        form.submit(self.app)
+        with capture_notifications():
+            form.submit(self.app)
         res = form.submit(self.app)
 
         # check request and response
