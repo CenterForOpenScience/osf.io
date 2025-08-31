@@ -1219,7 +1219,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return unclaimed_records.get('name', None)
 
 
-class ResourceContributorsCreateSerializer(NodeContributorsSerializer):
+class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
     """

@@ -13,7 +13,7 @@ from api.nodes.serializers import (
     NodeLicenseSerializer,
     NodeLicenseRelationshipField,
     NodeContributorsSerializer,
-    ResourceContributorsCreateSerializer,
+    NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     RegistrationSchemaRelationshipField,
 )
@@ -233,7 +233,7 @@ class DraftRegistrationContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class DraftRegistrationContributorsCreateSerializer(ResourceContributorsCreateSerializer, DraftRegistrationContributorsSerializer):
+class DraftRegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer, DraftRegistrationContributorsSerializer):
     """
     Overrides DraftRegistrationContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 

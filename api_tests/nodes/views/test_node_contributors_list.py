@@ -4,7 +4,7 @@ import pytest
 import random
 
 from api.base.settings.defaults import API_BASE
-from api.nodes.serializers import ResourceContributorsCreateSerializer
+from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
 from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
@@ -1196,7 +1196,7 @@ class TestNodeContributorCreateValidation(NodeCRUDTestCase):
 
     @pytest.fixture()
     def create_serializer(self):
-        return ResourceContributorsCreateSerializer
+        return NodeContributorsCreateSerializer
 
     @pytest.fixture()
     def validate_data(self, create_serializer):

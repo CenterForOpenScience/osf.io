@@ -29,7 +29,7 @@ from api.nodes.serializers import (
     NodeLicenseSerializer,
     NodeContributorsSerializer,
     NodeStorageProviderSerializer,
-    ResourceContributorsCreateSerializer,
+    NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
@@ -590,7 +590,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class PreprintContributorsCreateSerializer(ResourceContributorsCreateSerializer, PreprintContributorsSerializer):
+class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
     """
     Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 
