@@ -9,7 +9,7 @@
       You submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
       for Admin approval.
     % else:
-      ${initiator} submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
+      ${initiator_fullname} submitted updates for ${resource_type} <a href="${parent_url}">"${title}"</a>
       for Admin approval.
     % endif
     <p>

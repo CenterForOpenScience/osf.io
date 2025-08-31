@@ -8,7 +8,7 @@
     % if is_initiator:
       You did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % else:
-      ${initiator} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
+      ${initiator_fullname} did not accept the updates for ${resource_type} <a href="${parent_url}">"${title}"</a>.
     % endif
     <p>
     % if can_write:
