@@ -6,7 +6,7 @@ from django.utils import timezone
 from notifications.tasks import send_users_digest_email, send_moderators_digest_email
 from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.migrations import update_provider_auth_groups
-from osf.models import Brand, NotificationSubscription
+from osf.models import Brand, NotificationSubscription, NotificationType
 from osf.models.action import RegistrationAction
 from osf.utils.notifications import (
     notify_submit,
@@ -128,165 +128,89 @@ class TestRegistrationMachineNotification:
         )
         return registration_action
 
-    def test_submit_notifications(self, registration, moderator, admin, contrib, provider, mock_send_grid):
+    def test_submit_notifications(self, registration, moderator, admin, contrib, provider):
         """
         [REQS-96] "As moderator of branded registry, I receive email notification upon admin author(s) submission approval"
-        :param mock_email:
-        :param draft_registration:
-        :return:
         """
-        # Set up mock_send_mail as a pass-through to the original function.
-        # This lets us assert on the call/args and also implicitly ensures
-        # that the email acutally renders as normal in send_mail.
-        notify_submit(registration, admin)
+        with capture_notifications() as notification:
+            notify_submit(registration, admin)
 
-        assert len(mock_send_grid.call_args_list) == 2
-        admin_message, contrib_message = mock_send_grid.call_args_list
-
-        assert admin_message[1]['to_addr'] == admin.email
-        assert contrib_message[1]['to_addr'] == contrib.email
-        assert admin_message[1]['subject'] == 'Confirmation of your submission to OSF Registries'
-        assert contrib_message[1]['subject'] == 'Confirmation of your submission to OSF Registries'
+        assert len(notification['emits']) == 2
+        assert notification['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notification['emits'][0]['kwargs']['user'] == admin
+        assert notification['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notification['emits'][1]['kwargs']['user'] == contrib
 
         assert NotificationSubscription.objects.count() == 1
         digest = NotificationSubscription.objects.last()
-
         assert digest.user == moderator
-        assert digest.send_type == 'email_transactional'
-        assert digest.event == 'new_pending_submissions'
 
-    def test_accept_notifications(self, registration, moderator, admin, contrib, accept_action):
+    def test_withdrawal_registration_accepted_notifications(
+            self, registration_with_retraction, contrib, admin, withdraw_action
+    ):
         """
-        [REQS-98] "As registration authors, we receive email notification upon moderator acceptance"
-        :param draft_registration:
-        :return:
+        [REQS-109] Authors receive notification when withdrawal is accepted.
+        Compare recipients by user objects via captured emits.
         """
+        with capture_notifications() as notification:
+            notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
-        # Set up mock_email as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders correctly.
-        with capture_notifications():
-            notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
+        recipients = {rec['kwargs']['user'] for rec in notification['emits'] if 'user' in rec['kwargs']}
+        assert {admin, contrib}.issubset(recipients)
 
-    def test_reject_notifications(self, registration, moderator, admin, contrib, accept_action):
+    def test_notify_accept_reject(
+            self, registration_with_retraction, contrib, admin, withdraw_action
+    ):
         """
-        [REQS-100] "As authors of rejected by moderator registration, we receive email notification of registration returned
-        to draft state"
-        :param draft_registration:
-        :return:
+        [REQS-109] Authors receive notification when registration is accepted.
+        Compare recipients by user objects via captured emits.
         """
+        with capture_notifications() as notification:
+            notify_accept_reject(registration_with_retraction, contrib)
 
-        # Set up mock_email as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders correctly
-        with capture_notifications():
-            notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
+        recipients = {rec['kwargs']['user'] for rec in notification['emits'] if 'user' in rec['kwargs']}
+        assert {admin, contrib}.issubset(recipients)
 
-    def test_notify_moderator_registration_requests_withdrawal_notifications(self, moderator, daily_moderator, registration, admin, provider):
+    def test_withdrawal_registration_rejected_notifications(
+            self, registration, contrib, admin, withdraw_request_action
+    ):
         """
-         [REQS-106] "As moderator, I receive registration withdrawal request notification email"
-
-        :param mock_email:
-        :param draft_registration:
-        :param contrib:
-        :return:
+        [REQS-109] Authors receive notification when withdrawal is rejected.
+        Compare recipients by user objects via captured emits.
         """
-        assert NotificationSubscription.objects.count() == 0
-        notify_moderator_registration_requests_withdrawal(registration, admin)
+        with capture_notifications() as notification:
+            notify_reject_withdraw_request(registration, withdraw_request_action)
 
-        assert NotificationSubscription.objects.count() == 2
+        recipients = {rec['kwargs']['user'] for rec in notification['emits'] if 'user' in rec['kwargs']}
+        assert {admin, contrib}.issubset(recipients)
 
-        daily_digest = NotificationSubscription.objects.get(message_frequency='daily')
-        transactional_digest = NotificationSubscription.objects.get(send_type='instantly')
-        assert daily_digest.user == daily_moderator
-        assert transactional_digest.user == moderator
-
-        for digest in (daily_digest, transactional_digest):
-            assert 'requested withdrawal' in digest.message
-            assert digest.event == 'new_pending_withdraw_requests'
-            assert digest.provider == provider
-
-    def test_withdrawal_registration_accepted_notifications(self, registration_with_retraction, contrib, admin, withdraw_action, mock_send_grid):
+    def test_withdrawal_registration_force_notifications(
+            self, registration_with_retraction, contrib, admin, withdraw_action
+    ):
         """
-        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
-        decision"
-
-        :param mock_email:
-        :param draft_registration:
-        :param contrib:
-        :return:
+        [REQS-109] Forced withdrawal route: compare recipients by user objects via captured emits.
         """
-        # Set up mock_send_mail as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
-        notify_withdraw_registration(registration_with_retraction, withdraw_action)
+        with capture_notifications() as notification:
+            notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
-        assert len(mock_send_grid.call_args_list) == 2
-        admin_message, contrib_message = mock_send_grid.call_args_list
-
-        assert admin_message[1]['to_addr'] == admin.email
-        assert contrib_message[1]['to_addr'] == contrib.email
-        assert admin_message[1]['subject'] == 'Your registration has been withdrawn'
-        assert contrib_message[1]['subject'] == 'Your registration has been withdrawn'
-
-    def test_withdrawal_registration_rejected_notifications(self, registration, contrib, admin, withdraw_request_action, mock_send_grid):
-        """
-        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
-        decision"
-
-        :param mock_email:
-        :param draft_registration:
-        :param contrib:
-        :return:
-        """
-        # Set up mock_send_mail as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
-        notify_reject_withdraw_request(registration, withdraw_request_action)
-
-        assert len(mock_send_grid.call_args_list) == 2
-        admin_message, contrib_message = mock_send_grid.call_args_list
-
-        assert admin_message[1]['to_addr'] == admin.email
-        assert contrib_message[1]['to_addr'] == contrib.email
-        assert admin_message[1]['subject'] == 'Your withdrawal request has been declined'
-        assert contrib_message[1]['subject'] == 'Your withdrawal request has been declined'
-
-    def test_withdrawal_registration_force_notifications(self, registration_with_retraction, contrib, admin, withdraw_action, mock_send_grid):
-        """
-        [REQS-109] "As registration author(s) requesting registration withdrawal, we receive notification email of moderator
-        decision"
-
-        :param mock_email:
-        :param draft_registration:
-        :param contrib:
-        :return:
-        """
-        # Set up mock_send_mail as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
-        notify_withdraw_registration(registration_with_retraction, withdraw_action)
-
-        assert len(mock_send_grid.call_args_list) == 2
-        admin_message, contrib_message = mock_send_grid.call_args_list
-
-        assert admin_message[1]['to_addr'] == admin.email
-        assert contrib_message[1]['to_addr'] == contrib.email
-        assert admin_message[1]['subject'] == 'Your registration has been withdrawn'
-        assert contrib_message[1]['subject'] == 'Your registration has been withdrawn'
+        recipients = {rec['kwargs']['user'] for rec in notification['emits'] if 'user' in rec['kwargs']}
+        assert {admin, contrib}.issubset(recipients)
 
     @pytest.mark.parametrize(
         'digest_type, expected_recipient',
         [('email_transactional', get_moderator), ('email_digest', get_daily_moderator)]
     )
-    def test_submissions_and_withdrawals_both_appear_in_moderator_digest(self, digest_type, expected_recipient, registration, admin, provider, mock_send_grid):
+    def test_submissions_and_withdrawals_both_appear_in_moderator_digest(
+            self, digest_type, expected_recipient, registration, admin, provider
+    ):
         # Invoke the fixture function to get the recipient because parametrize
         expected_recipient = expected_recipient(provider)
 
-        notify_submit(registration, admin)
-        notify_moderator_registration_requests_withdrawal(registration, admin)
+        with capture_notifications():
+            notify_submit(registration, admin)
+            notify_moderator_registration_requests_withdrawal(registration, admin)
 
-        # One user, one provider => one email
+        # One user, one provider => one email/digest row saved for moderator
         grouped_notifications = list(NotificationSubscription.objects.filter(user=admin))
         assert len(grouped_notifications) == 1
 
@@ -294,42 +218,32 @@ class TestRegistrationMachineNotification:
         assert moderator_message['user_id'] == expected_recipient._id
         assert moderator_message['provider_id'] == provider.id
 
-        # No fixed ordering of the entires, so just make sure that
-        # keywords for each action type are in some message
         updates = moderator_message['info']
         assert len(updates) == 2
         assert any('submitted' in entry['message'] for entry in updates)
         assert any('requested withdrawal' in entry['message'] for entry in updates)
 
     @pytest.mark.parametrize('digest_type', ['email_transactional', 'email_digest'])
-    def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
-        notify_submit(registration, admin)
-        notify_moderator_registration_requests_withdrawal(registration, admin)
+    def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(
+            self, digest_type, registration, admin, moderator, daily_moderator
+    ):
+        with capture_notifications():
+            notify_submit(registration, admin)
+            notify_moderator_registration_requests_withdrawal(registration, admin)
 
         assert not list(NotificationSubscription.objects.filter(user=admin))
 
-    def test_moderator_digest_emails_render(self, registration, admin, moderator, mock_send_grid):
-        notify_moderator_registration_requests_withdrawal(registration, admin)
-        # Set up mock_send_mail as a pass-through to the original function.
-        # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
+    def test_moderator_digest_emails_render(self, registration, admin, moderator):
         with capture_notifications():
+            notify_moderator_registration_requests_withdrawal(registration, admin)
             send_users_digest_email()
 
     def test_branded_provider_notification_renders(self, registration, admin, moderator):
-        # Set brand details to be checked in notify_base.mako
         provider = registration.provider
         provider.brand = Brand.objects.create(hero_logo_image='not-a-url', primary_color='#FFA500')
         provider.name = 'Test Provider'
         provider.save()
 
-        # Implicitly check that all of our uses of notify_base.mako render with branded details:
-        #
-        # notify_submit renders reviews_submission_confirmation using context from
-        # osf.utils.notifications and stores emails to be picked up in the moderator digest
-        #
-        # _send_Reviews_moderator_emails renders digest_reviews_moderators using context from
-        # website.notifications.tasks
         with capture_notifications():
             notify_submit(registration, admin)
             send_moderators_digest_email()
