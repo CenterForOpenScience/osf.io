@@ -387,7 +387,8 @@ class TestUserProfile(OsfTestCase):
             {'address': self.user.username, 'primary': False, 'confirmed': True},
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
-        self.app.put(url, json=payload, auth=self.user.auth)
+        with capture_notifications():
+            self.app.put(url, json=payload, auth=self.user.auth)
         # the test app doesn't have celery handlers attached, so we need to call this manually.
         handlers.celery_teardown_request()
 
@@ -665,7 +666,8 @@ class TestUserAccount(OsfTestCase):
         assert res.status_code == 200
 
         # Make a second request that successfully changes password
-        res = self.app.post(url, data=correct_post_data, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, data=correct_post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 0

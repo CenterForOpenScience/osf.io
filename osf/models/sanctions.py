@@ -394,10 +394,8 @@ class EmailApprovableSanction(TokenApprovableSanction):
     def _rejection_url_context(self, user_id):
         return None
 
-    def _send_approval_request_email(self, user, template, context):
-        NotificationType.objects.get(
-            name=template
-        ).emit(
+    def _send_approval_request_email(self, user, notification_type, context):
+        notification_type.instance.emit(
             user=user,
             event_context=context
         )

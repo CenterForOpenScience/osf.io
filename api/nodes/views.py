@@ -110,7 +110,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
     NodeInstitutionsRelationshipSerializer,
-    ResourceContributorsCreateSerializer,
+    NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
     NodeViewOnlyLinkUpdateSerializer,
     NodeSettingsSerializer,
@@ -152,7 +152,9 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint, Collection, NotificationType,
+    Preprint,
+    Collection,
+    NotificationType,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -442,7 +444,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             return NodeContributorDetailSerializer
         elif self.request.method == 'POST':
-            return ResourceContributorsCreateSerializer
+            return NodeContributorsCreateSerializer
         else:
             return NodeContributorsSerializer
 

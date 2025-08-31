@@ -21,7 +21,7 @@ class TestNotificationTypeDBTransaction:
     def test_notification_type(self):
         return NotificationTypeFactory(
             name='test_notification_type',
-            template='Test template for {notifications}',
+            template='Test template for ${notifications}',
             subject='Test notification subject',
         )
 

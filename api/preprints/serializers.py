@@ -29,7 +29,7 @@ from api.nodes.serializers import (
     NodeLicenseSerializer,
     NodeContributorsSerializer,
     NodeStorageProviderSerializer,
-    ResourceContributorsCreateSerializer,
+    NodeContributorsCreateSerializer,
     NodeContributorDetailSerializer,
     get_license_details,
     NodeTagField,
@@ -48,7 +48,8 @@ from osf.models import (
     Preprint,
     PreprintProvider,
     Node,
-    NodeLicense, NotificationType,
+    NodeLicense,
+    NotificationType,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
@@ -507,7 +508,6 @@ class PreprintCreateSerializer(PreprintSerializer):
     manual_doi = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     def create(self, validated_data):
-
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:
@@ -590,7 +590,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
         )
 
 
-class PreprintContributorsCreateSerializer(ResourceContributorsCreateSerializer, PreprintContributorsSerializer):
+class PreprintContributorsCreateSerializer(NodeContributorsCreateSerializer, PreprintContributorsSerializer):
     """
     Overrides PreprintContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
 

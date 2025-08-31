@@ -63,6 +63,7 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         assert 'contributors' in relationships
 
     def test_detail_view_returns_editable_fields_no_specified_node(self, app, user):
+
         draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
         url = f'{API_DOMAIN}{API_BASE}draft_registrations/{draft_registration._id}/'
 

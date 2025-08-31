@@ -266,9 +266,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
-                    NotificationType.objects.get(
-                        name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
-                    ).emit(
+                    NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                         user=moderator,
                         event_context={
                             **event_context_base,
@@ -276,9 +274,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         },
                     )
             for contributor in node.contributors.all():
-                NotificationType.objects.get(
-                    name=NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
-                ).emit(
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,

@@ -14,7 +14,8 @@ from osf.models import (
     NodeRequest,
     PreprintRequest,
     Institution,
-    OSFUser, NotificationType,
+    OSFUser,
+    NotificationType,
 )
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
