@@ -351,15 +351,11 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True,
-            save=True
-        )
+            visible=True, save=True)
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True,
-            save=True
-        )
+            visible=True, save=True)
         return project_public
 
     @pytest.fixture()
@@ -428,15 +424,11 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True,
-            save=True
-        )
+            visible=True, save=True)
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True,
-            save=True
-        )
+            visible=True, save=True)
         return project_private
 
     @pytest.fixture()

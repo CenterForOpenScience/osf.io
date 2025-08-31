@@ -31,7 +31,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         project_private.add_contributor(
             user_two,
             permissions=permissions.ADMIN,
-            auth=Auth(project_private.creator),
+            auth=Auth(project_private.creator)
         )
         affiliated_institutions = {
             'affiliated_institutions':

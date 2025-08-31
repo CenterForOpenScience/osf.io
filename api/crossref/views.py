@@ -76,8 +76,8 @@ class ParseCrossRefConfirmation(APIView):
 
         if dois_processed != record_count or status != 'completed':
             if unexpected_errors:
-                email_error_text = request.POST['body-plain']
                 batch_id = crossref_email_content.find('batch_id').text
+                email_error_text = request.POST['body-plain']
                 NotificationType.Type.DESK_OSF_SUPPORT_EMAIL.instance.emit(
                     destination_address=settings.OSF_SUPPORT_EMAIL,
                     event_context={

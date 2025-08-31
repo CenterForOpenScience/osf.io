@@ -450,8 +450,9 @@ class TestNodeForkCreate:
     def test_read_only_contributor_can_fork_private_registration(
             self, app, private_project, fork_data, private_project_url):
         read_contrib = AuthUserFactory()
-        private_project.add_contributor(read_contrib, permissions='read', save=True)
-
+        private_project.add_contributor(
+            read_contrib,
+            permissions=permissions.READ, save=True)
         with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=read_contrib):
             res = app.post_json_api(
                 private_project_url,

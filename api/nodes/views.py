@@ -152,7 +152,9 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint, Collection, NotificationType,
+    Preprint,
+    Collection,
+    NotificationType,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE

@@ -530,7 +530,6 @@ class TestInstitutionStorageRegion:
         username = 'user_with_region_3@osf.edu'
         user = make_user(username, 'Foo Bar')
         user.save()
-
         res = app.post(url_auth_institution, make_payload(institution_without_user_default_region, username))
         assert res.status_code == 204
         user.reload()

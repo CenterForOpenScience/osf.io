@@ -10,7 +10,6 @@ from osf_tests.factories import (
 )
 from osf.utils import permissions
 
-
 def make_payload(*node_ids):
     data = [
         {'type': 'nodes', 'id': id_} for id_ in node_ids

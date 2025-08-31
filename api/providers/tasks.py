@@ -26,7 +26,8 @@ from osf.models import (
     RegistrationBulkUploadRow,
     RegistrationProvider,
     RegistrationSchema,
-    Subject, NotificationType,
+    Subject,
+    NotificationType,
 )
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
@@ -136,9 +137,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     # Cancel the preparation task if duplicates are found in the CSV and/or in DB
     if draft_error_list:
         upload.delete()
-        NotificationType.objects.get(
-            name=NotificationType.Type.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES,
-        ).emit(
+        NotificationType.Type.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES.instance.emit(
             user=initiator,
             event_context={
                 'user_fullname': initiator.fullname,
@@ -639,7 +638,6 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
     approval_errors.sort()
     if not dry_run:
         upload.save()
-
         if upload.state == JobState.DONE_FULL:
             notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL
         elif upload.state == JobState.DONE_PARTIAL:
@@ -679,16 +677,17 @@ def handle_internal_error(initiator=None, provider=None, message=None, dry_run=T
     logger.error(message)
     sentry.log_message(message)
 
-    if not dry_run and initiator:
-        NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE.instance.emit(
-            user=initiator,
-            event_context={
-                'initiator_fullname': initiator.fullname,
-                'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-                'message': message,
-            },
-        )
-    inform_product_of_errors(initiator=initiator, provider=provider, message=message)
+    if not dry_run:
+        if initiator:
+            NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE.instance.emit(
+                user=initiator,
+                event_context={
+                    'initiator_fullname': initiator.fullname,
+                    'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                    'message': message,
+                },
+            )
+        inform_product_of_errors(initiator=initiator, provider=provider, message=message)
 
 def inform_product_of_errors(initiator=None, provider=None, message=None):
     """Inform product owner of internal errors via notifications."""

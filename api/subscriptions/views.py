@@ -22,7 +22,10 @@ from osf.models import (
     CollectionProvider,
     PreprintProvider,
     RegistrationProvider,
-    AbstractProvider, AbstractNode, Preprint, OSFUser,
+    AbstractProvider,
+    AbstractNode,
+    Preprint,
+    OSFUser,
 )
 from osf.models.notification_type import NotificationType
 from osf.models.notification_subscription import NotificationSubscription
