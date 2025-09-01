@@ -92,6 +92,7 @@ class PreprintLicenseRelationshipField(RelationshipField):
 class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
+        'title',
         'date_created',
         'date_modified',
         'date_published',
@@ -101,6 +102,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         'subjects',
         'reviews_state',
         'node_is_public',
+        'tags',
     ])
     available_metrics = frozenset([
         'downloads',
@@ -505,7 +507,6 @@ class PreprintCreateSerializer(PreprintSerializer):
     manual_doi = ser.CharField(write_only=True, required=False, allow_null=True, allow_blank=True)
 
     def create(self, validated_data):
-
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:

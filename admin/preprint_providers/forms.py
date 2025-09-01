@@ -116,10 +116,10 @@ class PreprintProviderRegisterModeratorOrAdminForm(forms.Form):
         super().__init__(*args, **kwargs)
 
         provider_groups = provider_groups or Group.objects.none()
-        self.fields['group_perms'] = forms.ModelMultipleChoiceField(
+        self.fields['group_perms'] = forms.ModelChoiceField(
             queryset=provider_groups,
             required=False,
-            widget=forms.CheckboxSelectMultiple
+            widget=forms.RadioSelect
         )
 
     user_id = forms.CharField(required=True, max_length=5, min_length=5)

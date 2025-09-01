@@ -51,7 +51,6 @@ class TestSanctionResponse:
             auth=user.auth,
             expect_errors=True
         )
-        print(res.json)
         assert res.json['errors'] == [
             {
                 'source': {

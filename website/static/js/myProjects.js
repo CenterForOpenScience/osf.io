@@ -532,7 +532,7 @@ var MyProjects = {
                 if(!item.data.attributes.retracted){
                     var urlPrefix = item.data.attributes.registration ? 'registrations' : 'nodes';
                     // TODO assess sparse field usage (some already implemented)
-                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node', 'group',], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
+                    var url = $osf.apiV2Url(urlPrefix + '/' + id + '/logs/', { query : { 'page[size]' : 6, 'embed' : ['original_node', 'user', 'linked_node', 'linked_registration', 'template_node'], 'profile_image_size': PROFILE_IMAGE_SIZE, 'fields[users]' : sparseUserFields}});
                     var promise = self.getLogs(url);
                     return promise;
                 }

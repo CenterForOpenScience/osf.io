@@ -2,6 +2,7 @@ from rest_framework import permissions
 from rest_framework import exceptions
 
 from api.base.utils import get_user_auth, assert_resource_type
+from api.base.exceptions import Conflict
 from api.nodes.permissions import (
     AdminOrPublic as NodeAdminOrPublic,
 )
@@ -164,3 +165,25 @@ class PreprintInstitutionPermissionList(permissions.BasePermission):
             return False
         else:
             return obj.has_permission(auth.user, osf_permissions.READ)
+
+
+class CanSubmitPreprintToProvider(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        if request.method != 'POST':
+            return True
+
+        provider_id = request.data.get('provider', None)
+        if not provider_id:
+            return False
+
+        from osf.models import PreprintProvider
+        try:
+            provider = PreprintProvider.objects.get(_id=provider_id)
+        except PreprintProvider.DoesNotExist:
+            return False
+
+        if not provider.allow_submissions:
+            raise Conflict(f"Provider {provider.name} doesn't allow new submissions.")
+
+        return True

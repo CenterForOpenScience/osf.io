@@ -68,17 +68,6 @@ class TestDraftRegistrations:
         draft.register(auth)
         assert draft.registered_node
 
-        # group member with admin access cannot register
-        member = factories.AuthUserFactory()
-        osf_group = factories.OSFGroupFactory(creator=user)
-        osf_group.make_member(member, auth=auth)
-        project.add_osf_group(osf_group, ADMIN)
-        draft_2 = factories.DraftRegistrationFactory(branched_from=project)
-        assert project.has_permission(member, ADMIN)
-        with pytest.raises(PermissionsError):
-            draft_2.register(Auth(member))
-        assert not draft_2.registered_node
-
     @mock.patch('website.settings.ENABLE_ARCHIVER', False)
     def test_register_no_title_fails(self):
         user = factories.UserFactory()
@@ -198,9 +187,7 @@ class TestDraftRegistrations:
         node = factories.ProjectFactory(creator=user)
 
         member = factories.AuthUserFactory()
-        osf_group = factories.OSFGroupFactory(creator=user)
-        osf_group.make_member(member, auth=Auth(user))
-        node.add_osf_group(osf_group, ADMIN)
+        node.add_contributor(member, permissions=ADMIN)
 
         write_contrib = factories.AuthUserFactory()
         subject = factories.SubjectFactory()
@@ -246,8 +233,6 @@ class TestDraftRegistrations:
         assert draft.category == category
         assert user in draft.contributors.all()
         assert write_contrib in draft.contributors.all()
-        assert member not in draft.contributors.all()
-        assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]

@@ -18,37 +18,28 @@
             {% for child in children %}
                 <tr>
                     <td>
-                        <a href="{{ child | reverse_node }}">
-                            {{ child.id }}
-                        </a>
+                        <a href="{{ child | reverse_node }}">{{ child.guid }}</a>
                     </td>
                     <td>{{ child.title }}</td>
-                    <td>{{ child.public }}</td>
+                    <td>{{ child.is_public }}</td>
                     <td>{{ child.contributors|length }}</td>
                     {%  if perms.osf.delete_node %}
                     <td>
                         {% if not child.is_registration %}
                             {% if child.deleted %}
-                                <form method="post"
-                                      action="{% url 'nodes:restore' guid=child.id %}">
+                                <form method="post" action="{% url 'nodes:restore' guid=child.guid %}">
                                     {% csrf_token %}
                                     <input class="btn btn-success"
                                            type="submit"
                                            value="Restore Node" />
                                 </form>
                             {% else %}
-                            <a href="{% url 'nodes:remove' guid=child.id %}"
-                               data-toggle="modal"
-                               data-target="#deleteModal{{ child.id }}"
-                               class="btn btn-danger">
-                                Delete Node
-                            </a>
-                            <div class="modal" id="deleteModal{{ child.id }}">
-                                <div class="modal-dialog">
-                                    <div class="modal-content">
-                                    </div>
-                                </div>
-                            </div>
+                                <form method="post" action="{% url 'nodes:remove' guid=child.guid %}">
+                                    {% csrf_token %}
+                                    <input class="btn btn-danger"
+                                           type="submit"
+                                           value="Delete Node" />
+                                </form>
                             {% endif %}
                         {% endif %}
                     </td>

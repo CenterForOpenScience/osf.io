@@ -67,22 +67,6 @@ def serialize_contributors_for_summary(node, max_count=3):
         'others_count': others_count,
     }
 
-def serialize_groups_for_summary(node):
-    groups = node.osf_groups
-    n_groups = len(groups)
-    group_string = ''
-    for index, group in enumerate(groups):
-        if index == n_groups - 1:
-            separator = ''
-        elif index == n_groups - 2:
-            separator = ' & '
-        else:
-            separator = ', '
-
-        group_string = group_string + group.name + separator
-
-    return group_string
-
 
 def serialize_node_summary(node, auth, primary=True, show_path=False):
     is_registration = node.is_registration
@@ -140,7 +124,6 @@ def serialize_node_summary(node, auth, primary=True, show_path=False):
             'show_path': show_path,
             'contributors': contributor_data['contributors'],
             'others_count': contributor_data['others_count'],
-            'groups': serialize_groups_for_summary(node),
             'description': node.description if len(node.description) <= 150 else node.description[0:150] + '...',
         })
     else:
@@ -342,6 +325,9 @@ def resolve_guid(guid, suffix=None):
     elif isinstance(resource, Node) and clean_suffix and (clean_suffix.startswith('metadata') or clean_suffix.startswith('components') or clean_suffix.startswith('links')):
         return use_ember_app()
 
+    elif isinstance(resource, OsfStorageFile) and isinstance(resource.target, DraftNode):
+        return use_ember_app()
+
     elif isinstance(resource, BaseFileNode) and resource.is_file and not isinstance(resource.target, Preprint):
         if isinstance(resource.target, Registration) and flag_is_active(request, features.EMBER_FILE_REGISTRATION_DETAIL):
             return use_ember_app()
@@ -431,3 +417,9 @@ def guid_metadata_download(guid, resource, metadata_format):
                 'Content-Disposition': f'attachment; filename={result.filename}',
             },
         )
+
+
+def metadata_download(guid):
+    format_arg = request.args.get('format', 'datacite-json')
+    resource = Guid.load(guid)
+    return guid_metadata_download(guid, resource, format_arg)

@@ -25,18 +25,6 @@
 				"minimum": 1900
 			},
 			"ongoing": {
-				"oneOf": [{
-						"enum": [false],
-						"required": ["startYear", "endYear"]
-					},
-					{
-						"enum": [true],
-						"required": ["startYear"],
-						"not": {
-							"required": ["endYear"]
-						}
-					}
-				],
 				"type": "boolean"
 			},
 			"department": {
@@ -56,7 +44,25 @@
 			"startMonth": ["startYear"],
 			"startYear": ["ongoing"],
 			"endYear": ["ongoing"],
-			"endYear": ["startYear"]
+			"endYear": ["startYear"],
+			"ongoing": {
+				"if": {
+					"properties": {
+						"ongoing": {
+							"const": false
+						}
+					}
+				},
+				"then": {
+					"required": ["startYear", "endYear"]
+				},
+				"else": {
+					"required": ["startYear"],
+					"not": {
+						"required": ["endYear"]
+					}
+				}
+			}
 		}
 	}
 }

@@ -433,7 +433,10 @@
                            visible: visible()
                        })}"
                 ><i class="fa fa-plus"></i> Add</button>
-                <span data-bind="click: function() {respondToAccessRequest('reject')}, visible: !$root.collapsed()"><i class="fa fa-times fa-2x remove-or-reject"></i></span>
+                <span data-bind="click: function() {respondToAccessRequest('reject', {
+                        visible: !$root.collapsed()
+                    })}"
+                ><i class="fa fa-times fa-2x remove-or-reject"></i></span>
                 <button class="btn btn-default btn-sm m-l-md" data-bind="click: function() {respondToAccessRequest('reject')}, visible: $root.collapsed()"><i class="fa fa-times"></i> Remove</button>
             </div>
         </td>

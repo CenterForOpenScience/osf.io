@@ -9,7 +9,7 @@ from website.app import setup_django
 setup_django()
 from osf.models import OSFUser
 from scripts import utils as script_utils
-from website.mailchimp_utils import subscribe_mailchimp
+from website.mailchimp_utils import subscribe_mailchimp_async
 from website import settings
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ def main():
         for user in users:
             if settings.MAILCHIMP_GENERAL_LIST not in user.mailchimp_mailing_lists:
                 if not dry:
-                    subscribe_mailchimp(settings.MAILCHIMP_GENERAL_LIST, user._id)
+                    subscribe_mailchimp_async(settings.MAILCHIMP_GENERAL_LIST, user._id)
                     logger.info(f'User {user._id} has been subscribed to OSF general mailing list')
                 count += 1
 
