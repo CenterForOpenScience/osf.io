@@ -292,7 +292,8 @@ class TestCollectionsSearch(OsfTestCase):
         assert docs[0]['_source']['category'] == 'collectionSubmission'
 
     def test_search_updated_after_id_change(self):
-        self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
+        with capture_notifications():
+            self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
         with run_celery_tasks():
             self.node_one.save()
         term = f'provider:{self.provider._id}'
@@ -501,7 +502,8 @@ class TestPreprint(OsfTestCase):
     def test_publish_preprint(self):
         title = 'Date'
         self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
-        self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
         assert self.preprint.title == title
         docs = query(title)['results']
         # Both preprint and primary_file showing up in Elastic
@@ -1344,7 +1346,9 @@ class TestSearchMigration(OsfTestCase):
         collection_one = factories.CollectionFactory(is_public=True, provider=provider)
         collection_two = factories.CollectionFactory(is_public=True, provider=provider)
         node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
-        collection_one.collect_object(node, self.user)
+
+        with capture_notifications():
+            collection_one.collect_object(node, self.user)
         collection_two.collect_object(node, self.user)
         assert node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED

@@ -20,6 +20,7 @@ from osf_tests.factories import (
 )
 from tests.base import OsfTestCase
 from tests.test_websitefiles import TestFile
+from tests.utils import capture_notifications
 from website.settings import MFR_SERVER_URL, WATERBUTLER_URL
 
 
@@ -312,7 +313,8 @@ class TestResolveGuid(OsfTestCase):
         # test_provider_submitter_can_download_unpublished
         submitter = AuthUserFactory()
         pp = PreprintFactory(finish=True, provider=provider, is_published=False, creator=submitter)
-        pp.run_submit(submitter)
+        with capture_notifications():
+            pp.run_submit(submitter)
         pp_branded = PreprintFactory(finish=True, provider=branded_provider, is_published=False, filename='preprint_file_two.txt', creator=submitter)
         pp_branded.run_submit(submitter)
 
