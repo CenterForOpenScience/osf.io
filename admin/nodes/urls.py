@@ -46,4 +46,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/update_moderation_state/$', views.NodeUpdateModerationStateView.as_view(), name='node-update-mod-state'),
     re_path(r'^(?P<guid>[a-z0-9]+)/resync_datacite/$', views.NodeResyncDataCiteView.as_view(), name='resync-datacite'),
     re_path(r'^(?P<guid>[a-z0-9]+)/revert/$', views.NodeRevertToDraft.as_view(), name='revert-to-draft'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/update_permissions/$', views.NodeUpdatePermissionsView.as_view(), name='update-permissions'),
 ]

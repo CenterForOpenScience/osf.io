@@ -201,6 +201,47 @@ class NodeRemoveContributorView(NodeMixin, View):
         ).save()
 
 
+class NodeUpdatePermissionsView(NodeMixin, View):
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    redirect_view = NodeRemoveContributorView
+
+    def post(self, request, *args, **kwargs):
+        data = dict(request.POST)
+        permissions = data['permissions']
+        user_id_to_remove = data.get('remove-user')
+        resource = self.get_object()
+        if user_id_to_remove:
+            user_id = user_id_to_remove[0]
+            # html renders form into form incorrectly,
+            # so this view handles contributors deletion and permissions update
+            return self.redirect_view(request=request, kwargs={'guid': resource.guid, 'user_id': user_id}).post(request, user_id=user_id)
+
+        has_admin = False
+        for contributor_permission in permissions:
+            guid, permission = contributor_permission.split('-')
+            if permission == ADMIN:
+                has_admin = True
+                break
+
+        if not has_admin:
+            messages.error(self.request, 'Must be at least one admin on this node.')
+            return redirect(self.get_success_url())
+
+        for contributor_permission in permissions:
+            guid, permission = contributor_permission.split('-')
+            user = OSFUser.load(guid)
+            resource.update_contributor(
+                user,
+                permission,
+                resource.get_visible(user),
+                request,
+                save=True
+            )
+
+        return redirect(self.get_success_url())
+
+
 class NodeDeleteView(NodeMixin, View):
     """ Allows authorized users to mark nodes as deleted.
     """
