@@ -1,5 +1,4 @@
 from collections import Counter
-import contextlib
 import datetime
 import functools
 from unittest import mock
@@ -9,6 +8,8 @@ import waffle
 from django.apps import apps
 from django.http import HttpRequest
 from django.utils import timezone
+import contextlib
+from typing import Any, Optional
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
@@ -411,7 +412,7 @@ def assert_emails(mailhog_messages, notifications):
     for item in notifications['emits']:
         expected_reciver.append(item['kwargs']['user'].username)
         expected = _render_email_html(
-            item['notification_type'].template,
+            NotificationType.objects.get(name=item['type']),
             item['context']
         )
 
@@ -423,9 +424,6 @@ def assert_emails(mailhog_messages, notifications):
         actual_html.append(normalize(actual).rstrip('\n'))
     assert Counter(expected_html) == Counter(actual_html)
     assert Counter(expected_reciver) == Counter(actual_reciver)
-
-import contextlib
-from typing import Any, Optional
 
 def _notif_type_name(t: Any) -> str:
     """
