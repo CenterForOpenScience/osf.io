@@ -254,8 +254,7 @@ class InstitutionAuthentication(BaseAuthentication):
             message = f'Institution SSO Error: multiple SSO email [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
             sentry.log_message(message)
             logger.error(message)
-            # TODO: this requires a CAS hotfix to handle `detail='InstitutionMultipleSSOEmails'`
-            raise PermissionDenied(detail='InstitutionMultipleSSOEmails')
+            raise PermissionDenied(detail='InstitutionSsoMultipleEmailsNotSupported')
         # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
         # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
         # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
