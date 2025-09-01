@@ -138,14 +138,14 @@ notification_types:
     template: 'website/templates/pending_invite.html.mako'
 
   - name: user_forward_invite_registered
-    subject: 'Please forward to ${user_fullname}'
+    subject: 'Please forward to {user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/forward_invite_registered.html.mako'
     tests: ['api_tests/users/views/test_user_claim.py', 'tests/test_claim_views.py']
 
   - name: user_forward_invite
-    subject: 'Please forward to ${user_fullname}'
+    subject: 'Please forward to {user_fullname}'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/forward_invite.html.mako'
@@ -278,21 +278,21 @@ notification_types:
     tests: ['tests/test_spam_mixin.py']
 
   - name: user_file_updated
-    subject: 'Your ${action} has finished'
+    subject: 'Your {action} has finished'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/file_operation_success.html.mako'
     tests: ['api_tests/subscriptions/views/test_subscriptions_list.py', 'tests/test_events.py']
 
   - name: user_file_operation_success
-    subject: 'Your ${action} has finished'
+    subject: 'Your {action} has finished'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/file_operation_success.html.mako'
     tests: []
 
   - name: user_file_operation_failed
-    subject: 'Your ${action} has failed'
+    subject: 'Your {action} has failed'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/file_operation_failed.html.mako'
@@ -369,7 +369,7 @@ notification_types:
     tests: []
 
   - name: user_crossref_doi_pending
-    subject: 'There are ${pending_doi_count} preprints with crossref DOI pending.'
+    subject: 'There are {pending_doi_count} preprints with crossref DOI pending.'
     object_content_type_model_name: osfuser
     template: 'website/templates/crossref_doi_pending.html.mako'
     tests: []
@@ -415,7 +415,7 @@ notification_types:
     tests: []
 
   - name: provider_confirm_email_moderation
-    subject: 'OSF Account Verification, {provider.name}'
+    subject: 'OSF Account Verification, {provider_name}'
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/confirm_moderation.html.mako'
@@ -606,7 +606,7 @@ notification_types:
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_archive_file_not_found_desk
-    subject: 'Problem registering ${src_title}'
+    subject: 'Problem registering {src_title}'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_file_not_found_desk.html.mako'
@@ -619,7 +619,7 @@ notification_types:
     tests: []
 
   - name: node_archive_uncaught_error_desk
-    subject: 'Problem registering ${src_title}'
+    subject: 'Problem registering {src_title}'
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_uncaught_error_desk.html.mako'
     tests: []
@@ -631,7 +631,7 @@ notification_types:
     tests: []
 
   - name: node_archive_success
-    subject: 'Registration of ${src_title} complete'
+    subject: 'Registration of {src_title} complete'
     object_content_type_model_name: abstractnode
     template: 'website/templates/archive_success.html.mako'
     tests: []
@@ -674,7 +674,7 @@ notification_types:
     tests: ['api_tests/preprints/views/test_preprint_contributors_list.py']
 
   - name: preprint_withdrawal_request_granted
-    subject: 'Your ${document_type} has been withdrawn'
+    subject: 'Your {document_type} has been withdrawn'
     object_content_type_model_name: preprint
     template: 'website/templates/withdrawal_request_granted.html.mako'
     tests: []

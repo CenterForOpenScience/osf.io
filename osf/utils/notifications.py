@@ -41,6 +41,7 @@ def get_email_template_context(resource):
 def notify_submit(resource, user, *args, **kwargs):
     context = get_email_template_context(resource)
     recipients = list(resource.contributors)
+    context['requester_fullname'] = user.fullname
     context['referrer_fullname'] = user.fullname
     context['user_fullname'] = user.fullname
     reviews_signals.reviews_email_submit.send(
