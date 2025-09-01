@@ -409,7 +409,7 @@ def assert_emails(mailhog_messages, notifications):
     normalize = lambda s: s.replace('\r\n', '\n').replace('\r', '\n')
 
     for item in notifications['emits']:
-        expected_reciver.append(item['to'])
+        expected_reciver.append(item['kwargs']['user'].username)
         expected = _render_email_html(
             item['notification_type'].template,
             item['context']
