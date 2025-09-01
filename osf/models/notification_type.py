@@ -156,30 +156,6 @@ class NotificationType(models.Model):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
 
-        @classmethod
-        def user_types(cls):
-            return [member for member in cls if member.name.startswith('USER_')]
-
-        @classmethod
-        def node_types(cls):
-            return [member for member in cls if member.name.startswith('NODE_')]
-
-        @classmethod
-        def preprint_types(cls):
-            return [member for member in cls if member.name.startswith('PREPRINT_')]
-
-        @classmethod
-        def provider_types(cls):
-            return [member for member in cls if member.name.startswith('PROVIDER_')]
-
-        @classmethod
-        def schema_response_types(cls):
-            return [member for member in cls if member.name.startswith('SCHEMA_RESPONSE_')]
-
-        @classmethod
-        def desk_types(cls):
-            return [member for member in cls if member.name.startswith('DESK_')]
-
     notification_interval_choices = ArrayField(
         base_field=models.CharField(max_length=32),
         default=get_default_frequency_choices,

@@ -1,5 +1,4 @@
 <%inherit file="notify_base.mako" />
-%>
 <%def name="content()">
 <tr>
   <td style="border-collapse: collapse;">

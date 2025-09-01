@@ -429,7 +429,8 @@ class TestUserProfile(OsfTestCase):
             {'address': self.user.username, 'primary': False, 'confirmed': True},
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
-        self.app.put(url, json=payload, auth=self.user.auth)
+        with capture_notifications():
+            self.app.put(url, json=payload, auth=self.user.auth)
 
         assert mock_client.lists.members.delete.call_count == 0
         assert mock_client.lists.members.create_or_update.call_count == 0
@@ -529,8 +530,7 @@ class TestUserAccount(OsfTestCase):
         with capture_notifications():
             res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
-        with capture_notifications():
-            res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
+        res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
         assert res.status_code == 200
         self.user.reload()
         assert self.user.check_password(new_password)
@@ -730,10 +730,8 @@ class TestUserAccount(OsfTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
 
-        with capture_notifications() as notifications:
-            res = self.app.post(url, auth=self.user.auth)
+        res = self.app.post(url, auth=self.user.auth)
         assert res.status_code == 400
-        assert len(notifications) == 0
 
     def test_get_unconfirmed_emails_exclude_external_identity(self):
         external_identity = {
