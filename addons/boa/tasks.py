@@ -183,9 +183,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
 
     logger.info('Successfully uploaded query output to OSF.')
     logger.debug('Task ends <<<<<<<<')
-    NotificationType.objects.get(
-        name=NotificationType.Type.ADDONS_BOA_JOB_COMPLETE
-    ).emit(
+    NotificationType.Type.ADDONS_BOA_JOB_COMPLETE.instance.emit(
         user=user,
         event_context={
             'fullname': user.fullname,

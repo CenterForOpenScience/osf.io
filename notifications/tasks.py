@@ -52,8 +52,11 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
             'can_change_preferences': False
         }
 
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_DIGEST)
-        notification_type.emit(user=user, event_context=event_context, is_digest=True)
+        NotificationType.Type.USER_DIGEST.instance.emit(
+            user=user,
+            event_context=event_context,
+            is_digest=True
+        )
 
         notifications_qs.update(sent=timezone.now())
 
@@ -149,8 +152,11 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
             'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
         }
 
-        notification_type = NotificationType.objects.get(name=NotificationType.Type.DIGEST_REVIEWS_MODERATORS)
-        notification_type.emit(user=user, event_context=event_context, is_digest=True)
+        NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
+            user=user,
+            event_context=event_context,
+            is_digest=True
+        )
 
         notifications_qs.update(sent=timezone.now())
 

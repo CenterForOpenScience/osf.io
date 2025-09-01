@@ -30,9 +30,7 @@ def deactivate_requested_accounts(dry_run=True):
             if not dry_run:
                 user.deactivate_account()
                 user.is_registered = False
-                NotificationType.objects.get(
-                    name=NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE
-                ).emit(
+                NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
                     user=user,
                     event_context={
                         'can_change_preferences': False,

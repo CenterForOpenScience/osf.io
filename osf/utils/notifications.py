@@ -113,16 +113,20 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
     context = get_email_template_context(resource)
     context['requester_fullname'] = action.creator.fullname
     context['referrer_fullname'] = action.creator.fullname
+    context['force_withdrawal'] = False
     context['notify_comment'] = not resource.provider.reviews_comments_private
+    context['reviewable_withdrawal_justification'] = resource.withdrawal_justification
 
     for contributor in resource.contributors.all():
         context['user_fullname'] = contributor.fullname
         context['contributor_fullname'] = contributor.fullname
         context['is_requester'] = action.creator == contributor
+        context['comment'] = action.comment
         NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
             user=contributor,
             event_context={
                 'is_requester': contributor == action.creator,
+                'ever_public': getattr(resource, 'ever_public', resource.is_public),
                 **context
             },
         )
@@ -143,13 +147,16 @@ def notify_withdraw_registration(resource, action, *args, **kwargs):
     context['force_withdrawal'] = action.trigger == RegistrationModerationTriggers.FORCE_WITHDRAW.db_name
     context['requester_fullname'] = resource.retraction.initiated_by.fullname
     context['comment'] = action.comment
+    context['force_withdrawal'] = False
     context['notify_comment'] = not resource.provider.reviews_comments_private
     context['reviewable_withdrawal_justification'] = resource.withdrawal_justification
+    context['ever_public'] = getattr(resource, 'ever_public', resource.is_public)
 
     for contributor in resource.contributors.all():
         context['contributor_fullname'] = contributor.fullname
         context['user_fullname'] = contributor.fullname
         context['is_requester'] = resource.retraction.initiated_by == contributor
+
         NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
             user=contributor,
             event_context=context

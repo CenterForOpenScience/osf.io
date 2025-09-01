@@ -256,8 +256,7 @@ class TestModeratedFlows():
         registration.refresh_from_db()
         assert registration.moderation_state == intermediate_state.db_name
 
-        with capture_notifications():
-            sanction_object.accept(user=moderator)
+        sanction_object.accept(user=moderator)
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
 
@@ -347,8 +346,7 @@ class TestModeratedFlows():
         registration = sanction_object.target_registration
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with capture_notifications():
-            sanction_object.approve(user=registration.creator, token=approval_token)
+        sanction_object.approve(user=registration.creator, token=approval_token)
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         with capture_notifications():
@@ -364,9 +362,8 @@ class TestModeratedFlows():
         registration = sanction_object.target_registration
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                sanction_object.reject(user=registration.creator, token=rejection_token)
+        with pytest.raises(PermissionsError):
+            sanction_object.reject(user=registration.creator, token=rejection_token)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_moderator_cannot_accept_before_admin_approval(
@@ -710,7 +707,8 @@ class TestModerationActions:
         registration = sanction_object.target_registration
         assert registration.actions.count() == 0
 
-        sanction_object.accept()
+        with capture_notifications():
+            sanction_object.accept()
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.SUBMIT.db_name
@@ -722,7 +720,8 @@ class TestModerationActions:
         registration = sanction_object.target_registration
         assert registration.actions.count() == 0
 
-        sanction_object.accept()
+        with capture_notifications():
+            sanction_object.accept()
         sanction_object.accept(user=moderator)
         registration.refresh_from_db()
         latest_action = registration.actions.last()
@@ -757,8 +756,9 @@ class TestModerationActions:
         registration = retraction_fixture.target_registration
         assert registration.actions.count() == 0
 
-        retraction_fixture.accept()
-        retraction_fixture.accept(user=moderator)
+        with capture_notifications():
+            retraction_fixture.accept()
+            retraction_fixture.accept(user=moderator)
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_WITHDRAWAL.db_name
@@ -790,8 +790,7 @@ class TestModerationActions:
         registration = sanction_object.target_registration
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with capture_notifications():
-            sanction_object.reject(user=registration.creator, token=rejection_token)
+        sanction_object.reject(user=registration.creator, token=rejection_token)
         registration.refresh_from_db()
         assert sanction_object.approval_stage is ApprovalStates.REJECTED
         assert registration.actions.count() == 0

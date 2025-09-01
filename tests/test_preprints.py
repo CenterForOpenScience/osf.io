@@ -1276,14 +1276,13 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        with capture_notifications():
-            preprint.add_contributors(
-                [
-                    {'user': user1, 'permissions': WRITE, 'visible': True},
-                    {'user': user2, 'permissions': WRITE, 'visible': True}
-                ],
-                auth=auth
-            )
+        preprint.add_contributors(
+            [
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
         user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id

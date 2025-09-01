@@ -405,7 +405,7 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractprovider
     template: 'website/templates/new_pending_withdraw_requests.html.mako'
-    tests: []
+    tests: ['tests/test_registrations/test_review_flows.py']
 
   - name: provider_contributor_added_preprint
     subject: 'Contributor Added to Preprint'
@@ -638,11 +638,15 @@ notification_types:
 
   - name: node_withdraw_registration_approved
     object_content_type_model_name: abstractnode
-    template: 'website/templates/project/retract_registration.mako'
+    template: 'website/templates/withdrawal_request_granted.html.mako'
+
+  - name: node_withdrawal_request_approved
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/withdrawal_request_granted.html.mako'
 
   - name: node_withdraw_registration_declined
     object_content_type_model_name: abstractnode
-    template: 'website/templates/project/retract_registration.mako'
+    template: 'website/templates/withdrawal_request_declined.html.mako'
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf

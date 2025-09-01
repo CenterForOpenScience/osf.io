@@ -28,9 +28,7 @@ class TestMailHog:
     def test_mailhog_received_mail(self):
         delete_mailhog_messages()
 
-        NotificationType.objects.get(
-            name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
-        ).emit(
+        NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL.instance.emit(
             message_frequency='instantly',
             destination_address='to_addr@mail.com',
             event_context={
