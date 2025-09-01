@@ -8,68 +8,68 @@
                 <button type="button" class="close" data-dismiss="modal">x</button>
                 <h3>Edit Contributors</h3>
             </div>
-            <table class="table table-bordered table-hover">
-                <thead>
-                    <tr>
-                        <td>Email</td>
-                        <td>Name</td>
-                        <td>Permission</td>
-                        <td></td>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for contributor in contributors %}
+            <form action="{% url 'nodes:update-permissions' guid=node.guid %}" method="post">
+                {% csrf_token %}
+                <table class="table table-bordered table-hover">
+                    <thead>
                         <tr>
-                            <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.user.email }}</a></td>
-                            <td>{{ contributor.user.fullname }}</td>
-                            <td>
-                                <select name="category">
-                                    {% for permission in permissions %}
-                                        {% if contributor.permission == permission %}
-                                            <option value="{{ permission }}" selected>{{ permission }}</option>
-                                        {% else %}
-                                            <option value="{{ permission }}">{{ permission }}</option>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                            </td>
-                            {% if perms.osf.change_node %}
-                                <td style="text-align: center;">
-                                    <a data-toggle="modal" data-target="#{{ contributor.user.id }}Modal" class="btn btn-danger">Remove</a>
-                                    <div class="modal" id="{{ contributor.user.id }}Modal">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <form class="well" method="post" action="{% url 'nodes:remove-user' guid=node.guid user_id=contributor.user.id  %}">
+                            <td>Email</td>
+                            <td>Name</td>
+                            <td>Permission</td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contributor in contributors %}
+                            <tr>
+                                <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.user.email }}</a></td>
+                                <td>{{ contributor.user.fullname }}</td>
+                                <td>
+                                    <select name="permissions">
+                                        {% for permission in permissions %}
+                                            {% if contributor.permission == permission %}
+                                                <option value="{{ contributor.guid }}-{{ permission }}" selected>{{ permission }}</option>
+                                            {% else %}
+                                                <option value="{{ contributor.guid }}-{{ permission }}">{{ permission }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                {% if perms.osf.change_node %}
+                                    <td style="text-align: center;">
+                                        <a data-toggle="modal" data-target="#{{ contributor.user.id }}Modal" class="btn btn-danger">Remove</a>
+                                        <div class="modal" id="{{ contributor.user.id }}Modal">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
                                                     <div class="modal-header">
                                                         <button type="button" class="close" data-dismiss="modal">x</button>
                                                         <h3>Removing contributor: {{ contributor.user.username }}</h3>
                                                     </div>
                                                     <div class="modal-body">
                                                         User will be removed. Currently only an admin on this node type will be able to add them back.
-                                                        {% csrf_token %}
                                                     </div>
                                                     <div class="modal-footer">
-                                                        <input class="btn btn-danger" type="submit" value="Confirm" />
-                                                        <button type="button" class="btn btn-default" data-dismiss="modal">
+                                                        <button type="submit" name="remove-user" value="{{ contributor.user.id }}" class="btn btn-danger">Delete</button>
+                                                        <button type="button" name="{{ contributor.user.id }}" class="btn btn-default" data-dismiss="modal">
                                                             Cancel
                                                         </button>
                                                     </div>
-                                                </form>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                </td>
-                            {% endif %}
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">
-                    Cancel
-                </button>
-                <input class="btn btn-success" type="submit" value="Save" />
-            </div>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                    <input class="btn btn-success" type="submit" value="Save" />
+                </div>
+            </form>
         </div>
     </div>
 </div>

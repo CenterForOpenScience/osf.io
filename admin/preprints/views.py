@@ -15,7 +15,7 @@ from django.urls import NoReverseMatch, reverse_lazy
 
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.nodes.views import NodeRemoveContributorView
+from admin.nodes.views import NodeRemoveContributorView, NodeUpdatePermissionsView
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
@@ -274,6 +274,12 @@ class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
             },
             should_hide=True,
         ).save()
+
+
+class PreprintUpdatePermissionsView(PreprintMixin, NodeUpdatePermissionsView):
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    redirect_view = PreprintRemoveContributorView
 
 
 class PreprintDeleteView(PreprintMixin, View):
