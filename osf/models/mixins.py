@@ -1088,9 +1088,7 @@ class ReviewProviderMixin(GuardianMixin):
             user=user,
             content_type=ContentType.objects.get_for_model(self),
             object_id=self.id,
-            notification_type=NotificationType.objects.get(
-                name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-            )
+            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance
         )
 
     def remove_from_group(self, user, group, unsubscribe=True):

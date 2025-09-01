@@ -499,8 +499,11 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
             'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
+            'requester_contributor_names': self.parent.contributors.values_list(
+                'fullname',
+                flat=True
+            )
         }
-
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             event_context.update(
                 {

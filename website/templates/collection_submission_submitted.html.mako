@@ -5,7 +5,7 @@
         Hello ${user_fullname},<br>
         <br>
         <p>
-            % if is_initator:
+            % if is_initiator:
                 You just started a request to add <a href="${node_absolute_url}">${node_title}</a>
                 to <a href="${collections_link}">${collection_provider_name}</a>.
                 All admins and contributors will be notified via email.

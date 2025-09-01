@@ -161,16 +161,15 @@ class TestNotificationSubscriptionMigration:
             assert nt_objs.exists()
         # Verify subscriptions belong to correct objects
         for provider in providers:
-            nt_name = NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
             content_type = ContentType.objects.get_for_model(provider.__class__)
             assert NotificationSubscription.objects.filter(
-                notification_type__name=nt_name,
+                notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
                 content_type=content_type,
                 object_id=provider.id
             ).exists()
         node_ct = ContentType.objects.get_for_model(node.__class__)
         assert NotificationSubscription.objects.filter(
-            notification_type__name=NotificationType.Type.NODE_FILE_UPDATED,
+            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
             content_type=node_ct,
             object_id=node.id
         ).exists()
