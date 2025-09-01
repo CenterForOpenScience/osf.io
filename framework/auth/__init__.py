@@ -2,11 +2,11 @@ import uuid
 
 from django.utils import timezone
 
-from framework import bcrypt
+from framework import bcrypt, sentry
 from framework.auth import signals
 from framework.auth.core import Auth
 from framework.auth.core import get_user, generate_verification_key
-from framework.auth.exceptions import DuplicateEmailError
+from framework.auth.exceptions import DuplicateEmailError, MultipleSSOEmailError
 from framework.auth.tasks import update_user_from_activity
 from framework.auth.utils import LogLevel, print_cas_log
 from framework.celery_tasks.handlers import enqueue_task
@@ -154,9 +154,24 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     # CASE 5/5: If no user is found, create a confirmed user and return the user and sso identity.
     # Note: Institution users are created as confirmed with a strong and random password. Users don't need the
     # password since they sign in via SSO. They can reset their password to enable email/password login.
-    user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
+    # user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
+    user = OSFUser.create_confirmed(sso_email, 'abCD12#$', fullname)
     user.add_system_tag(institution_source_tag(primary_institution._id))
     return user, True, None, None, sso_identity
+
+
+def deduplicate_sso_attributes(institution, sso_identity, attr_name, attr_value, delimiter=';', ignore_errors=True):
+    if delimiter not in attr_value:
+        return attr_value
+    value_set = set(attr_value.split(delimiter))
+    if len(value_set) != 1:
+        message = (f'Multiple values {attr_value} found for SSO attribute {attr_name}: '
+                   f'[institution_id={institution._id}, sso_identity={sso_identity}]')
+        if ignore_errors:
+            sentry.log_message(message)
+            return attr_value
+        raise MultipleSSOEmailError(message)
+    return value_set.pop()
 
 
 def get_or_create_user(fullname, address, reset_password=True, is_spam=False):

@@ -16,7 +16,8 @@ from api.base import exceptions, settings
 from api.waffle.utils import flag_is_active
 
 from framework import sentry
-from framework.auth import get_or_create_institutional_user
+from framework.auth import get_or_create_institutional_user, deduplicate_sso_attributes
+from framework.auth.exceptions import MultipleSSOEmailError
 
 from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
@@ -223,8 +224,13 @@ class InstitutionAuthentication(BaseAuthentication):
                     f'sso_email={sso_email}, sso_identity={sso_identity}]',
                 )
 
+        # Deduplicate full name first if it is provided
+        if fullname:
+            fullname = deduplicate_sso_attributes(institution, sso_identity, 'fullname', fullname)
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
+            given_name = deduplicate_sso_attributes(institution, sso_identity, 'given_name', given_name)
+            family_name = deduplicate_sso_attributes(institution, sso_identity, 'family_name', family_name)
             fullname = given_name + ' ' + family_name
 
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
@@ -235,6 +241,21 @@ class InstitutionAuthentication(BaseAuthentication):
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
 
+        # Deduplicate sso email, currently we only handle duplicate sso email instead of multiple sso email
+        try:
+            sso_email = deduplicate_sso_attributes(
+                institution,
+                sso_identity,
+                'sso_email',
+                sso_email,
+                ignore_errors=False,
+            )
+        except MultipleSSOEmailError:
+            message = f'Institution SSO Error: multiple SSO email [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
+            sentry.log_message(message)
+            logger.error(message)
+            # TODO: this requires a CAS hotfix to handle `detail='InstitutionMultipleSSOEmails'`
+            raise PermissionDenied(detail='InstitutionMultipleSSOEmails')
         # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
         # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
         # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
