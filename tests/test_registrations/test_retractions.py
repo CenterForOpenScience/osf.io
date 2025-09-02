@@ -877,16 +877,17 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1
 
     def test_valid_POST_retraction_when_pending_retraction_raises_400(self):
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == 400
 
     def test_valid_POST_calls_send_mail_with_username(self):

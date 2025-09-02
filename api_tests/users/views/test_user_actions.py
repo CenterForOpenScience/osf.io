@@ -260,10 +260,12 @@ class TestReviewActionCreateRelated:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                with capture_notifications():
+                if trigger == 'submit':
+                    with capture_notifications():
+                        res = app.post_json_api(url, payload, auth=moderator.auth)
+                else:
                     res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
-
                 action = preprint.actions.order_by('-created').first()
                 assert action.trigger == trigger
 
