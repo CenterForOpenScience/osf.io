@@ -1556,7 +1556,6 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         )
         assert res.status_code == 201
 
-
 @pytest.mark.django_db
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
 

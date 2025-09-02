@@ -718,6 +718,8 @@ class TestArchiverTasks(ArchiverTestCase):
                     assert child_reg._id in question['extra'][0]['viewUrl']
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverUtils(ArchiverTestCase):
 
     def test_handle_archive_fail(self):
@@ -1066,6 +1068,8 @@ class TestArchiverScripts(ArchiverTestCase):
             assert pk not in failed
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverBehavior(OsfTestCase):
 
     @mock.patch('osf.models.AbstractNode.update_search')

@@ -34,6 +34,8 @@ from website.project.views.contributor import (
 )
 
 @pytest.mark.enable_implicit_clean
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
@@ -219,7 +221,6 @@ class TestAddingContributorViews(OsfTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 
-
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
         # Project has a component with a sub-component
         component = NodeFactory(creator=self.creator, parent=self.project)
@@ -248,7 +249,6 @@ class TestAddingContributorViews(OsfTestCase):
         # send_mail is called for both the project and the sub-component
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
-
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -443,6 +443,8 @@ class TestAddingContributorViews(OsfTestCase):
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):
@@ -532,7 +534,6 @@ class TestUserInviteViews(OsfTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
-
     def test_send_claim_email_to_referrer(self):
         project = ProjectFactory()
         referrer = project.creator
@@ -565,5 +566,3 @@ class TestUserInviteViews(OsfTestCase):
 
         with pytest.raises(HTTPError):
             send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-
-

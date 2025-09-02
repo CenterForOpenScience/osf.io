@@ -56,6 +56,10 @@ MAILHOG_HOST = 'localhost'
 MAILHOG_PORT = 1025
 MAILHOG_API_HOST = 'http://localhost:8025'
 
+MAILHOG_HOST = 'localhost'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://localhost:8025'
+
 # Session
 COOKIE_NAME = 'osf'
 SECRET_KEY = 'CHANGEME'

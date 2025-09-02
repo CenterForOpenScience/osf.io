@@ -42,10 +42,9 @@ from tests.test_cas_authentication import generate_external_user_with_resp
 logger = logging.getLogger(__name__)
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthUtils(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()

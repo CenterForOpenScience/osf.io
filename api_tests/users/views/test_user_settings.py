@@ -11,7 +11,6 @@ from osf.models import Email, NotableDomain, NotificationType
 from framework.auth.views import auth_email_logout
 from tests.utils import capture_notifications
 
-
 @pytest.fixture()
 def user_one():
     return AuthUserFactory()
@@ -127,7 +126,8 @@ class TestUserChangePassword:
         assert res.status_code == 403
 
         # Logged in
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
         user_one.reload()
         assert user_one.check_password('password2')

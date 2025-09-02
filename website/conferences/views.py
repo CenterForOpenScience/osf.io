@@ -82,7 +82,6 @@ def add_poster_by_email(conference, message):
 
     utils.upload_attachments(user, node, message.attachments)
 
-
 def conference_data(meeting):
     try:
         conf = Conference.objects.get(endpoint__iexact=meeting)

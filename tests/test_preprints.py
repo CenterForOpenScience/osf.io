@@ -1996,6 +1996,8 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
+@mock.patch('website.mails.settings.USE_EMAIL', True)
+@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -2016,7 +2018,6 @@ class TestPreprintConfirmationEmails(OsfTestCase):
             self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
-
 
 class TestPreprintOsfStorage(OsfTestCase):
     def setUp(self):
