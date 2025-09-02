@@ -376,8 +376,7 @@ class TestPreprintCreate(ApiTestCase):
     def test_fail_create_prerprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 400
-        print(res.status_code)
+        assert res.status_code == 403
 
     def test_create_preprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
@@ -513,7 +512,7 @@ class TestPreprintCreate(ApiTestCase):
         no_providers_payload = build_preprint_create_payload()
         res = self.app.post_json_api(self.url, no_providers_payload, auth=self.user.auth, expect_errors=True)
 
-        assert res.status_code == 400
+        assert res.status_code == 403
         assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
 
     def test_invalid_provider_given(self):

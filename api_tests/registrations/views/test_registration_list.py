@@ -1936,7 +1936,8 @@ class TestRegistrationBulkUpdate:
         assert registration_one.is_pending_embargo_termination is False
         assert registration_two.is_pending_embargo_termination is False
 
-        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        with capture_notifications():
+            res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
         assert ({registration_one._id, registration_two._id} == {
                 res.json['data'][0]['id'], res.json['data'][1]['id']})
@@ -2025,7 +2026,8 @@ class TestRegistrationContributors(ApiTestCase):
         return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def test_add_contributor(self):
-        res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
+        with capture_notifications():
+            res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
         assert res.status_code == 201
         assert res.json['data']['embeds']['users']['data']['id'] == self.contributor._id
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
@@ -2051,7 +2053,8 @@ class TestRegistrationContributors(ApiTestCase):
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
 
     def test_remove_contributor(self):
-        self.add_contributor_request(self.user, self.contributor)
+        with capture_notifications():
+            self.add_contributor_request(self.user, self.contributor)
         res = self.remove_contributor_request(self.user, self.contributor)
         assert res.status_code == 204
         assert self.contributor.groups.exists() is False
@@ -2063,11 +2066,12 @@ class TestRegistrationContributors(ApiTestCase):
 
     def test_contributor_can_edit_title_if_has_permission(self):
         TITLE = 'New Title'
-        self.add_contributor_request(
-            auth_user=self.user,
-            contributor=self.contributor,
-            permission='read'
-        )
+        with capture_notifications():
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=self.contributor,
+                permission='read'
+            )
         res = self.update_registration_attribute_request(
             auth_user=self.contributor,
             expect_errors=True,
@@ -2091,17 +2095,17 @@ class TestRegistrationContributors(ApiTestCase):
         for permission in ['read', 'write']:
             contributor_to_add = AuthUserFactory()
             contributor_to_remove = AuthUserFactory()
-            self.add_contributor_request(
-                auth_user=self.user,
-                contributor=self.contributor,
-                permission=permission
-            )
-            self.add_contributor_request(
-                auth_user=self.user,
-                contributor=contributor_to_remove,
-                permission=permission
-            )
             with capture_notifications():
+                self.add_contributor_request(
+                    auth_user=self.user,
+                    contributor=self.contributor,
+                    permission=permission
+                )
+                self.add_contributor_request(
+                    auth_user=self.user,
+                    contributor=contributor_to_remove,
+                    permission=permission
+                )
                 res = self.add_contributor_request(
                     auth_user=self.contributor,
                     contributor=contributor_to_add,
@@ -2120,11 +2124,12 @@ class TestRegistrationContributors(ApiTestCase):
             self.remove_contributor_request(self.user, contributor_to_remove)
 
     def test_only_admin_can_update_permissions_and_bibliographic_status(self):
-        self.add_contributor_request(
-            auth_user=self.user,
-            contributor=self.contributor,
-            permission='read'
-        )
+        with capture_notifications():
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=self.contributor,
+                permission='read'
+            )
         res = self.update_contributor_attribute_request(
             self.user,
             self.contributor,

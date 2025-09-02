@@ -108,7 +108,8 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        self.collection_public.collect_object(self.node_private, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_private, self.user)
         self.reg_collection.collect_object(self.reg_private, self.user)
 
         docs = query_collections('Salif Keita')['results']
@@ -149,8 +150,9 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        self.collection_public.collect_object(self.node_one, self.user)
-        self.collection_one.collect_object(self.node_one, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_one, self.user)
+            self.collection_one.collect_object(self.node_one, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 2
@@ -163,7 +165,8 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
         # test_submissions_turned_public_are_added_to_index
-        self.collection_public.collect_object(self.node_private, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_private, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
@@ -180,10 +183,11 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        self.collection_public.collect_object(self.node_one, self.user)
-        self.collection_public.collect_object(self.node_two, self.user)
-        self.collection_public.collect_object(self.node_public, self.user)
-        self.reg_collection.collect_object(self.reg_public, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_one, self.user)
+            self.collection_public.collect_object(self.node_two, self.user)
+            self.collection_public.collect_object(self.node_public, self.user)
+            self.reg_collection.collect_object(self.reg_public, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 4
@@ -232,10 +236,11 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        self.collection_public.collect_object(self.node_one, self.user)
-        self.collection_public.collect_object(self.node_two, self.user)
-        self.collection_public.collect_object(self.node_public, self.user)
-        self.reg_collection.collect_object(self.reg_public, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_one, self.user)
+            self.collection_public.collect_object(self.node_two, self.user)
+            self.collection_public.collect_object(self.node_public, self.user)
+            self.reg_collection.collect_object(self.reg_public, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 4
@@ -249,8 +254,9 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
     def test_removed_submission_are_removed_from_index(self):
-        self.collection_public.collect_object(self.node_one, self.user)
-        self.reg_collection.collect_object(self.reg_public, self.user)
+        with capture_notifications():
+            self.collection_public.collect_object(self.node_one, self.user)
+            self.reg_collection.collect_object(self.reg_public, self.user)
         assert self.node_one.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()

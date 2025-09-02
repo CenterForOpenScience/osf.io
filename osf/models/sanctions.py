@@ -557,6 +557,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_provider_name': self._get_registration().provider.name,
+                'reviewable_provider': self._get_registration().provider.name,
                 'reviewable_provider__id': self._get_registration().provider._id,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
