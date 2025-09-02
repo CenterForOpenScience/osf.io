@@ -79,7 +79,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
             context['message'] = f'submitted "{resource.title}".'
 
     from osf.models import NotificationType
-    context['requester_contributor_names'] = resource.contributors.values_list('fullname', flat=True)
+    context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
     context['localized_timestamp'] = str(timezone.now())
 
     for recipient in resource.provider.get_group('moderator').user_set.all():

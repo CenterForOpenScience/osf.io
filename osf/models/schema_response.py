@@ -474,6 +474,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
+            email_context['requester_contributor_names'] = ''.join(
+                self.guid.referent.contributors.values_list('fullname', flat=True)),
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(),
                 context=email_context,
@@ -499,10 +501,8 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
             'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
-            'requester_contributor_names': self.parent.contributors.values_list(
-                'fullname',
-                flat=True
-            )
+            'requester_contributor_names': ''.join(
+                self.guid.referent.contributors.values_list('fullname', flat=True)),
         }
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
             event_context.update(

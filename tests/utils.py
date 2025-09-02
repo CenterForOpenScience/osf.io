@@ -413,7 +413,7 @@ def assert_emails(mailhog_messages, notifications):
         expected_reciver.append(item['kwargs']['user'].username)
         expected = _render_email_html(
             NotificationType.objects.get(name=item['type']),
-            item['context']
+            item['kwargs']['event_context']
         )
 
         expected_html.append(normalize(expected).rstrip('\n'))
