@@ -55,6 +55,11 @@ def view_only_link(public_project):
     return view_only_link
 
 
+@pytest.fixture()
+def components_factory():
+    return ProjectFactory
+
+
 @pytest.mark.django_db
 class TestViewOnlyLinksList:
 
@@ -230,10 +235,10 @@ class TestViewOnlyLinksCreate:
         assert res.status_code == 401
 
     def test_create_vol_with_components(
-            self, app, user, url, public_project, view_only_link):
-        component1 = ProjectFactory(creator=user)
-        component2 = ProjectFactory(creator=user)
-        component3 = ProjectFactory(creator=user)
+            self, app, user, url, public_project, view_only_link, components_factory):
+        component1 = components_factory(creator=user)
+        component2 = components_factory(creator=user)
+        component3 = components_factory(creator=user)
         NodeRelationFactory(parent=public_project, child=component1)
         NodeRelationFactory(parent=public_project, child=component2)
         NodeRelationFactory(parent=public_project, child=component3)
@@ -269,8 +274,8 @@ class TestViewOnlyLinksCreate:
         assert len(data['embeds']['nodes']['data']) == 4
 
     def test_create_vol_no_duplicated_components(
-            self, app, user, url, public_project, view_only_link):
-        component1 = ProjectFactory(creator=user)
+            self, app, user, url, public_project, view_only_link, components_factory):
+        component1 = components_factory(creator=user)
         NodeRelationFactory(parent=public_project, child=component1)
 
         url = f'{url}?embed=creator&embed=nodes'

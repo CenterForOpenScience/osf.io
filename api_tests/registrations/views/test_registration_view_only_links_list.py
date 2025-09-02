@@ -58,6 +58,11 @@ def view_only_link(public_project):
     return view_only_link
 
 
+@pytest.fixture
+def components_factory():
+    return RegistrationFactory
+
+
 class TestRegistrationViewOnlyLinksList(TestViewOnlyLinksList):
     pass
 
