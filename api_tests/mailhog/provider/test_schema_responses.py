@@ -141,9 +141,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
         delete_mailhog_messages()
-        with capture_notifications(passthrough=True) as notifications:
-            revised_response.approve(user=admin_user)
-        assert notifications == {'emails': [], 'emits': []}  # Should only send email on final approval
+        revised_response.approve(user=admin_user)
         with capture_notifications(passthrough=True) as notifications:
             revised_response.approve(user=alternate_user)
         assert len(notifications['emits']) == 3

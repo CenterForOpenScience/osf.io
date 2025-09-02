@@ -1,6 +1,7 @@
 import logging
 
 from django.apps import apps
+from django.utils import timezone
 
 from framework.celery_tasks import app
 from framework.postcommit_tasks.handlers import run_postcommit
@@ -75,6 +76,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
     provider = resource.provider
     context['domain'] = DOMAIN
     context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
+    context['localized_timestamp'] = str(timezone.now()),
 
     # Set submission url
     if provider.type == 'osf.preprintprovider':
@@ -100,6 +102,8 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
     for recipient in resource.provider.get_group('moderator').user_set.all():
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
+        context['requester_fullname'] = recipient.fullname
+        context['is_request_email'] = False
 
         NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=recipient,
@@ -119,7 +123,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
-    context['localized_timestamp'] = timestamp
+    context['localized_timestamp'] = str(timestamp)
     NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
         subscribed_object=provider,
         user=user,

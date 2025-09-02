@@ -66,17 +66,17 @@
                                             <tr>
                                                 <td>
                                                         <a href="https://twitter.com/home?status=Read%20my%20${document_type}%2C%20%E2%80%9C${reviewable_title}%E2%80%9D%20on%20${reviewable_provider_name}%20${reviewable_absolute_url}" target="_blank">
-                                                        <img src="${'{}static/img/fa-twitter-blue.png'.format(settings.DOMAIN)}" alt="twitter" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
+                                                        <img src="${'{}static/img/fa-twitter-blue.png'.format(domain)}" alt="twitter" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
                                                 <td>
                                                     <a href="${u'https://www.facebook.com/sharer/sharer.php?u={link}%3Futm_source%3Dnotification%26utm_medium%3Demail%26utm_campaign%3Dpreprint_review_status'.format(link=reviewable_absolute_url)}" target="_blank">
-                                                        <img src="${'{}static/img/fa-facebook-blue.png'.format(settings.DOMAIN)}" alt="facebook" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
+                                                        <img src="${'{}static/img/fa-facebook-blue.png'.format(domain)}" alt="facebook" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
                                                 <td>
                                                         <a href="https://www.linkedin.com/shareArticle?mini=true&url=${reviewable_absolute_url}&summary=Read%20my%20${document_type}%2C%20%E2%80%9C${reviewable_title}%E2%80%9D%20on%20${reviewable_provider_name}%20${reviewable_absolute_url}&title=I%20just%20posted%20a%20${document_type}&source=" target="_blank">
-                                                        <img src="${'{}static/img/fa-linkedin-blue.png'.format(settings.DOMAIN)}" alt="LinkedIn" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
+                                                        <img src="${'{}static/img/fa-linkedin-blue.png'.format(domain)}" alt="LinkedIn" style="display: block; border: 0;outline: none;text-decoration: none; text-align: center;vertical-align: bottom;" width="14">
                                                     </a>
                                                 </td>
                                             </tr>

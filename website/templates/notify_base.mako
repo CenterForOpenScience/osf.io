@@ -12,7 +12,7 @@
     provider_name='OSF',
     logo='osf',
     logo_url=None,
-    OSF_LOGO_LIST=(),
+    osf_logo_list=(),
     can_change_preferences=True,
     can_change_node_preferences=False,
     is_reviews_moderator_notification=False,
@@ -41,7 +41,7 @@
                                             % if logo_url:
                                                 <img src="${logo_url}" alt="${provider_name} logo"
                                                      style="border:0;height:auto;line-height:100%;outline:none;text-decoration:none;max-height:100px;">
-                                            % elif OSF_LOGO_LIST and logo not in OSF_LOGO_LIST:
+                                            % elif osf_logo_list and logo not in osf_logo_list:
                                                 <img src="https://raw.githubusercontent.com/CenterForOpenScience/osf-assets/master/files/preprints-assets/${logo}/wide_white.png"
                                                      alt="${provider_name} logo"
                                                      style="border:0;height:auto;line-height:100%;outline:none;text-decoration:none;max-height:100px;">

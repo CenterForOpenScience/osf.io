@@ -19,7 +19,11 @@ from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
 from website.reviews.signals import reviews_email_submit_moderators_notifications
-from website.settings import DOMAIN, REGISTRATION_UPDATE_APPROVAL_TIME
+from website.settings import (
+    DOMAIN,
+    REGISTRATION_UPDATE_APPROVAL_TIME,
+    REGISTRATION_APPROVAL_TIME,
+)
 
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
@@ -474,8 +478,9 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
+
             email_context['requester_contributor_names'] = ''.join(
-                self.guid.referent.contributors.values_list('fullname', flat=True)),
+                self.parent.contributors.values_list('fullname', flat=True)),
             reviews_email_submit_moderators_notifications.send(
                 timestamp=timezone.now(),
                 context=email_context,
@@ -494,6 +499,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         event_context = {
             'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
+            'registration_approval_time': int(REGISTRATION_APPROVAL_TIME.total_seconds() / 3600),
             'registration_update_approval_time': int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600),
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,

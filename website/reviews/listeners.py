@@ -85,6 +85,8 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     for recipient in resource.provider.get_group('moderator').user_set.all():
         context['recipient_fullname'] = recipient.fullname
         context['user_fullname'] = recipient.fullname
+        context['requester_fullname'] = recipient.fullname
+        context['is_request_email'] = False
 
         NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=recipient,

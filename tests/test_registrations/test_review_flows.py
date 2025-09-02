@@ -332,8 +332,7 @@ class TestModeratedFlows():
         registration.refresh_from_db()
         assert registration.moderation_state == intermediate_state.db_name
 
-        with capture_notifications():
-            sanction_object.reject(user=moderator)
+        sanction_object.reject(user=moderator)
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
 
@@ -349,9 +348,8 @@ class TestModeratedFlows():
         sanction_object.approve(user=registration.creator, token=approval_token)
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                sanction_object.accept(user=registration.creator)
+        with pytest.raises(PermissionsError):
+            sanction_object.accept(user=registration.creator)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_admin_cannot_reject_after_admin_approval_granted(self, sanction_object, provider):
@@ -397,8 +395,7 @@ class TestModeratedFlows():
         registration_accepted_state = registration.moderation_state
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with capture_notifications():
-            sanction_object.approve(user=registration.creator, token=approval_token)
+        sanction_object.approve(user=registration.creator, token=approval_token)
         registration.refresh_from_db()
         assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.moderation_state == registration_accepted_state
@@ -408,8 +405,7 @@ class TestModeratedFlows():
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
         registration = sanction_object.target_registration
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
         registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
@@ -424,13 +420,11 @@ class TestModeratedFlows():
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
         registration = sanction_object.target_registration
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
         registration.refresh_from_db()
         registration_accepted_state = registration.moderation_state
 
-        with capture_notifications():
-            sanction_object.accept(user=moderator)
+        sanction_object.accept(user=moderator)
         registration.refresh_from_db()
         assert sanction_object.approval_stage is ApprovalStates.APPROVED
         assert registration.moderation_state == registration_accepted_state
@@ -445,21 +439,18 @@ class TestModeratedFlows():
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
 
-        with capture_notifications():
-            with pytest.raises(MachineError):
-                sanction_object.reject(user=registration.creator, token=rejection_token)
+        with pytest.raises(MachineError):
+            sanction_object.reject(user=registration.creator, token=rejection_token)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_moderator_reject_after_accepted_raises_machine_error(
         self, sanction_object, provider, moderator):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object(provider)
-        with capture_notifications():
-            sanction_object.to_APPROVED()
+        sanction_object.to_APPROVED()
 
-        with capture_notifications():
-            with pytest.raises(MachineError):
-                sanction_object.reject(user=moderator)
+        with pytest.raises(MachineError):
+            sanction_object.reject(user=moderator)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize('rejection_state', [ApprovalStates.REJECTED, ApprovalStates.MODERATOR_REJECTED])
@@ -473,8 +464,7 @@ class TestModeratedFlows():
         registration_rejected_state = registration.moderation_state
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        with capture_notifications():
-            sanction_object.reject(user=registration.creator, token=rejection_token)
+        sanction_object.reject(user=registration.creator, token=rejection_token)
         registration.refresh_from_db()
         assert sanction_object.approval_stage is rejection_state
         assert registration.moderation_state == registration_rejected_state
@@ -494,8 +484,7 @@ class TestModeratedFlows():
         registration.refresh_from_db()
         registration_rejected_state = registration.moderation_state
 
-        with capture_notifications():
-            sanction_object.reject(user=moderator)
+        sanction_object.reject(user=moderator)
         registration.refresh_from_db()
         assert sanction_object.approval_stage is rejection_state
         assert registration.moderation_state == registration_rejected_state
@@ -511,9 +500,8 @@ class TestModeratedFlows():
         registration = sanction_object.target_registration
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        with capture_notifications():
-            with pytest.raises(MachineError):
-                sanction_object.approve(user=registration.creator, token=approval_token)
+        with pytest.raises(MachineError):
+            sanction_object.approve(user=registration.creator, token=approval_token)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     @pytest.mark.parametrize(
@@ -525,16 +513,14 @@ class TestModeratedFlows():
         sanction_object.approval_stage = rejection_state
         registration = sanction_object.target_registration
 
-        with capture_notifications():
-            with pytest.raises(MachineError):
-                sanction_object.accept(user=moderator)
+        with pytest.raises(MachineError):
+            sanction_object.accept(user=moderator)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
     def test_provider_admin_can_accept_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        with capture_notifications():
-            sanction_object.accept()
+        sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
         sanction_object.accept(user=provider_admin)
@@ -544,11 +530,9 @@ class TestModeratedFlows():
     def test_provider_admin_can_reject_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        with capture_notifications():
-            sanction_object.accept()
+        sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
-        with capture_notifications():
-            sanction_object.reject(user=provider_admin)
+        sanction_object.reject(user=provider_admin)
         assert sanction_object.approval_stage is ApprovalStates.MODERATOR_REJECTED
 
 @pytest.mark.enable_bookmark_creation
@@ -562,8 +546,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         moderator = AuthUserFactory()
         provider = RegistrationProviderFactory()
 
-        with capture_notifications():
-            embargo.to_APPROVED()
+        embargo.to_APPROVED()
         embargo.save()
         update_provider_auth_groups()
         provider.get_group('moderator').user_set.add(moderator)
@@ -587,8 +570,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         assert self.registration.moderation_state == pending_embargo_termination_state.db_name
 
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
-        with capture_notifications():
-            embargo_termination.approve(user=self.user, token=approval_token)
+        embargo_termination.approve(user=self.user, token=approval_token)
         self.registration.refresh_from_db()
         assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
         assert self.embargo.approval_stage is ApprovalStates.COMPLETED
@@ -600,8 +582,7 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         assert self.registration.moderation_state == RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name
 
         rejection_token = embargo_termination.token_for_user(self.user, 'rejection')
-        with capture_notifications():
-            embargo_termination.reject(user=self.user, token=rejection_token)
+        embargo_termination.reject(user=self.user, token=rejection_token)
         self.registration.refresh_from_db()
         assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
@@ -621,19 +602,16 @@ class TestEmbargoTerminationFlows(OsfTestCase):
 
     def test_moderator_cannot_reject_embargo_termination(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                embargo_termination.reject(user=self.moderator)
+        with pytest.raises(PermissionsError):
+            embargo_termination.reject(user=self.moderator)
 
     def test_approve_after_approve_is_noop(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
 
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
-        with capture_notifications():
-            embargo_termination.approve(user=self.user, token=approval_token)
+        embargo_termination.approve(user=self.user, token=approval_token)
 
-        with capture_notifications():
-            embargo_termination.approve(user=self.user, token=approval_token)
+        embargo_termination.approve(user=self.user, token=approval_token)
         assert embargo_termination.approval_stage is ApprovalStates.APPROVED
         assert self.embargo.approval_stage is ApprovalStates.COMPLETED
         assert self.registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
@@ -642,11 +620,9 @@ class TestEmbargoTerminationFlows(OsfTestCase):
         embargo_termination = self.registration.request_embargo_termination(self.user)
 
         rejection_token = embargo_termination.token_for_user(self.user, 'rejection')
-        with capture_notifications():
-            embargo_termination.reject(user=self.user, token=rejection_token)
+        embargo_termination.reject(user=self.user, token=rejection_token)
 
-        with capture_notifications():
-            embargo_termination.reject(user=self.user, token=rejection_token)
+        embargo_termination.reject(user=self.user, token=rejection_token)
         assert embargo_termination.approval_stage is ApprovalStates.REJECTED
         assert self.embargo.approval_stage is ApprovalStates.APPROVED
         assert self.registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
@@ -654,13 +630,11 @@ class TestEmbargoTerminationFlows(OsfTestCase):
     def test_reject_after_accept_raises_machine_error(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
         approval_token = embargo_termination.token_for_user(self.user, 'approval')
-        with capture_notifications():
-            embargo_termination.approve(user=self.user, token=approval_token)
+        embargo_termination.approve(user=self.user, token=approval_token)
 
         rejection_token = embargo_termination.token_for_user(self.user, 'rejection')
-        with capture_notifications():
-            with pytest.raises(MachineError):
-                embargo_termination.reject(user=self.user, token=rejection_token)
+        with pytest.raises(MachineError):
+            embargo_termination.reject(user=self.user, token=rejection_token)
 
     def test_accept_after_reject_raises_machine_error(self):
         embargo_termination = self.registration.request_embargo_termination(self.user)
@@ -822,8 +796,7 @@ class TestNestedFlows():
 
     def test_approval(self, pending_registration, child_registration, grandchild_registration):
         #Ensure underlying sanction requires approval; implicitly updates moderation_states
-        with capture_notifications():
-            pending_registration.sanction.to_UNAPPROVED()
+        pending_registration.sanction.to_UNAPPROVED()
         for reg in [pending_registration, child_registration, grandchild_registration]:
             reg.refresh_from_db()
         initial_state = pending_registration.moderation_state
@@ -841,8 +814,7 @@ class TestNestedFlows():
 
     def test_rejection(self, pending_registration, child_registration, grandchild_registration):
         #Ensure underlying sanction requires approval; implicitly updates moderation_states
-        with capture_notifications():
-            pending_registration.sanction.to_UNAPPROVED()
+        pending_registration.sanction.to_UNAPPROVED()
         for reg in [pending_registration, child_registration, grandchild_registration]:
             reg.refresh_from_db()
         initial_state = pending_registration.moderation_state
@@ -851,8 +823,7 @@ class TestNestedFlows():
 
         user = pending_registration.creator
         rejection_token = pending_registration.sanction.token_for_user(user, 'rejection')
-        with capture_notifications():
-            pending_registration.sanction.reject(user=user, token=rejection_token)
+        pending_registration.sanction.reject(user=user, token=rejection_token)
 
         # verify that all registrations have updated state
         for reg in [pending_registration, child_registration, grandchild_registration]:

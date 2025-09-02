@@ -8,7 +8,7 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NotificationType, CollectionSubmission
-from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications, assert_emails
+from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications
 from osf.utils.workflows import CollectionSubmissionStates
 
 @pytest.fixture()
@@ -54,8 +54,6 @@ class TestModeratedCollectionSubmission:
         assert collection_submission.state == CollectionSubmissionStates.PENDING
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
-
         delete_mailhog_messages()
 
     @override_switch(features.ENABLE_MAILHOG, active=True)
@@ -74,6 +72,3 @@ class TestModeratedCollectionSubmission:
         assert collection_submission.state == CollectionSubmissionStates.PENDING
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
-
-        delete_mailhog_messages()

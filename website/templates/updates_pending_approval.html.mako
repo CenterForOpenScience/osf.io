@@ -19,7 +19,7 @@
       ${registration_approval_time} hours.
     % else:
       <a href="${update_url}">Click here</a> to review the submited updates.
-      Admins have up to ${int(settings.REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)} hours
+      Admins have up to ${registration_update_approval_time} hours
       to make their decision.
     % endif
     <p>
