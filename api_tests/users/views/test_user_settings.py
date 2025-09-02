@@ -205,7 +205,7 @@ class TestResetPassword:
             mock_send_mail.assert_called_with(
                 to_addr=user_one.username,
                 mail=mails.FORGOT_PASSWORD,
-                reset_link=f'{settings.RESET_PASSWORD_URL}{user_one._id}/{user_one.verification_key_v2['token']}/',
+                reset_link=f'{settings.DOMAIN}resetpassword/{user_one._id}/{user_one.verification_key_v2['token']}',
                 can_change_preferences=False,
             )
 

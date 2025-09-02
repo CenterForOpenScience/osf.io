@@ -12,7 +12,6 @@ from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
 from django.core.exceptions import PermissionDenied
-from django.core.mail import send_mail
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
@@ -47,7 +46,8 @@ from admin.users.forms import (
     AddSystemTagForm
 )
 from admin.base.views import GuidView
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
+from api.users.services import send_password_reset_email
+from website.settings import DOMAIN
 from django.urls import reverse_lazy
 
 
@@ -523,17 +523,9 @@ class ResetPasswordView(UserMixin, View):
     def post(self, request, *args, **kwargs):
         email = self.request.POST['emails']
         user = get_user(email)
-        url = furl(DOMAIN)
 
-        user.verification_key_v2 = generate_verification_key(verification_type='password_admin')
-        user.save()
-        url.add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}')
-        send_mail(
-            subject='Reset OSF Password',
-            message=f'Follow this link to reset your password: {url.url}\n Note: this link will expire in 12 hours',
-            from_email=OSF_SUPPORT_EMAIL,
-            recipient_list=[email]
-        )
+        send_password_reset_email(user, email, institutional=False, verification_type='password_admin')
+
         update_admin_log(
             user_id=self.request.user.id,
             object_id=user.pk,
