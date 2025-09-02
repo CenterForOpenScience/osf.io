@@ -43,8 +43,6 @@ from website.util import api_url_for, web_url_for
 
 pytestmark = pytest.mark.django_db
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):

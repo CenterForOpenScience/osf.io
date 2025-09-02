@@ -1060,8 +1060,6 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
 
 
 @pytest.mark.enable_bookmark_creation
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()

@@ -853,8 +853,6 @@ class TestSendEmails(NotificationTestCase):
         assert emails.localize_timestamp(timestamp, self.user) == formatted_datetime
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestSendDigest(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1000,8 +998,6 @@ class TestSendDigest(OsfTestCase):
             NotificationDigest.objects.get(_id=digest_id)
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestNotificationsReviews(OsfTestCase):
     def setUp(self):
         super().setUp()

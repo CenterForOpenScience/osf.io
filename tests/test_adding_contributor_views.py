@@ -34,8 +34,6 @@ from website.project.views.contributor import (
 )
 
 @pytest.mark.enable_implicit_clean
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAddingContributorViews(OsfTestCase):
 
     def setUp(self):
@@ -443,8 +441,6 @@ class TestAddingContributorViews(OsfTestCase):
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestUserInviteViews(OsfTestCase):
 
     def setUp(self):

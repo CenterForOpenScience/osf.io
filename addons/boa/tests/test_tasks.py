@@ -53,8 +53,6 @@ class TestBoaErrorHandling(OsfTestCase):
         assert BoaErrorCode.FILE_TOO_LARGE_ERROR == 6
         assert BoaErrorCode.JOB_TIME_OUT_ERROR == 7
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    @mock.patch('website.mails.settings.USE_CELERY', False)
     def test_handle_boa_error(self):
         with mock.patch('addons.boa.tasks.sentry.log_message', return_value=None) as mock_sentry_log_message:
             with mock.patch('addons.boa.tasks.logger.error', return_value=None) as mock_logger_error:
@@ -153,8 +151,6 @@ class TestSubmitToBoaAsync(OsfTestCase):
         boa_settings.REFRESH_JOB_INTERVAL = DEFAULT_REFRESH_JOB_INTERVAL
         boa_settings.MAX_JOB_WAITING_TIME = DEFAULT_MAX_JOB_WAITING_TIME
 
-    @mock.patch('website.mails.settings.USE_EMAIL', True)
-    @mock.patch('website.mails.settings.USE_CELERY', False)
     async def test_submit_success(self):
         with mock.patch('osf.models.user.OSFUser.objects.get', return_value=self.user), \
                 mock.patch('osf.models.user.OSFUser.get_or_create_cookie', return_value=self.user_cookie), \

@@ -752,8 +752,6 @@ class ComponentRegistrationRetractionViewsTestCase(OsfTestCase):
 
 @pytest.mark.enable_bookmark_creation
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class RegistrationRetractionViewsTestCase(OsfTestCase):
     def setUp(self):
         super().setUp()

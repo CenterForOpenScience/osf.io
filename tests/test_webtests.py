@@ -618,6 +618,7 @@ class TestPreprintBannerView(OsfTestCase):
         res = self.app.get(url, auth=self.admin.auth)
         assert f'{self.preprint.provider.name}' in res.text
         assert 'Pending\n' in res.text
+        print('res.text', res.text)
         assert 'This preprint is publicly available and searchable but is subject to removal by a moderator.' in res.text
 
         # Write - preprint
