@@ -565,6 +565,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             })
         else:
             context.update({
+                'domain': osf_settings.DOMAIN,
                 'user_fullname': user.fullname,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'registration_link': registration_link,
@@ -574,7 +575,9 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_title': self._get_registration().title,
                 'reviewable__id': self._get_registration()._id,
                 'reviewable_absolute_url': self._get_registration().absolute_url,
-
+                'reviewable_provider_name': self._get_registration().provider.name,
+                'reviewable_provider__id': self._get_registration().provider._id,
+                'reviewable_provider': self._get_registration().provider.name,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
                 'reviewable_withdrawal_justification': self._get_registration().withdrawal_justification,
                 'reviewable_branched_from_node': self._get_registration().branched_from_node
@@ -890,6 +893,7 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
                 'reviewable_absolute_url': self._get_registration().absolute_url,
                 'reviewable_branched_from_node': self._get_registration().branched_from_node,
                 'reviewable_provider_name': self._get_registration().provider.name,
+                'reviewable_provider__id': self._get_registration().provider._id,
                 'approval_time_span': approval_time_span,
                 'reviewable_registered_from_absolute_url': self._get_registration().registered_from.absolute_url,
             })
@@ -1054,6 +1058,7 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
             })
         else:
             context.update({
+                'domain': osf_settings.DOMAIN,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'project_name': self.target_registration.title,
                 'registration_link': registration_link,

@@ -214,7 +214,8 @@ class TestDOICreation:
         provider.get_group('moderator').user_set.add(moderator)
 
         # Admin approval
-        registration.sanction.accept()
+        with capture_notifications():
+            registration.sanction.accept()
         assert not registration.get_identifier(category='doi')
 
         # Moderator approval

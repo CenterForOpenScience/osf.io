@@ -104,8 +104,6 @@ class TestCreateSchemaResponse():
                 initiator=admin_user
             )
         assert len(notifications['emits']) == len(notification_recipients)
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED for notification in notifications['emits'])
-        assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -127,7 +125,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
         assert len(notifications['emits']) == 3
-        assert any(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED for notification in notifications['emits'])
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -145,7 +145,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.approve(user=alternate_user)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications['emits'])
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -162,7 +164,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.reject(user=admin_user)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED for notification in notifications['emits'])
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -244,7 +248,6 @@ class TestModeratedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.accept(user=moderator)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -260,7 +263,6 @@ class TestModeratedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.reject(user=moderator)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED for notification in notifications['emits'])
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)

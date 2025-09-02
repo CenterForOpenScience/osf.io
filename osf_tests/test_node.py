@@ -421,7 +421,8 @@ class TestParentNode:
         assert template.parent_node is None
 
     def test_template_has_correct_affiliations(self, user, auth, project_with_affiliations):
-        template = project_with_affiliations.use_as_template(auth=auth)
+        with capture_notifications():
+            template = project_with_affiliations.use_as_template(auth=auth)
         user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         template_affiliations = template.affiliated_institutions.values_list('id', flat=True)
@@ -4187,7 +4188,8 @@ class TestTemplateNode:
         visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
-        new = project.use_as_template(auth=other_user_auth)
+        with capture_notifications():
+            new = project.use_as_template(auth=other_user_auth)
 
         assert new.title == self._default_title(project)
 
