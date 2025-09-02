@@ -585,15 +585,15 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     ))
 
     def get_default_search(self):
-        _yearmonth = InstitutionalUserReport.most_recent_yearmonth()
-        if _yearmonth is None:
-            return None
-        return (
-            InstitutionalUserReport.search()
-            .filter('term', report_yearmonth=str(_yearmonth))
-            .filter('term', institution_id=self.get_institution()._id)
-            .exclude('term', user_name='Deleted user')
+        base_search = InstitutionalUserReport.search().filter(
+            'term',
+            institution_id=self.get_institution()._id,
         )
+        yearmonth = InstitutionalUserReport.most_recent_yearmonth(base_search=base_search)
+        if yearmonth is None:
+            return None
+
+        return base_search.filter('term', report_yearmonth=str(yearmonth))
 
 
 class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
