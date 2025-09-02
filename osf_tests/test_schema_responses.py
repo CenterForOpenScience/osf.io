@@ -280,10 +280,11 @@ class TestCreateSchemaResponse():
         # Making a valid revised response, then pushing the initial response into an
         # invalid state to ensure that `create_from_previous_response` fails if
         # *any* schema_response on the parent is unapproved
-        intermediate_response = schema_response.SchemaResponse.create_from_previous_response(
-            initiator=initial_response.initiator,
-            previous_response=initial_response
-        )
+        with capture_notifications():
+            intermediate_response = schema_response.SchemaResponse.create_from_previous_response(
+                initiator=initial_response.initiator,
+                previous_response=initial_response
+            )
         intermediate_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         intermediate_response.save()
 
@@ -587,7 +588,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
         assert len(notifications['emits']) == 3
-        assert any(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED for notification in notifications)
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -684,7 +687,6 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.approve(user=alternate_user)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED for notification in notifications)
 
     def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -751,7 +753,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
             revised_response.reject(user=admin_user)
         assert len(notifications['emits']) == 3
         assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
-                   for notification in notifications)
+                   for notification in notifications['emits'])
 
     def test_no_reject_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -860,10 +862,10 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['kwargs']['user'] == moderator
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications[1]['kwargs']['user'] == moderator
+        assert notifications['emits'][1]['kwargs']['user'] == moderator
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications[2]['kwargs']['user'] == admin_user
-        assert notifications[2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['kwargs']['user'] == admin_user
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -875,10 +877,10 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert len(notifications['emits']) == 3
         assert notifications['emits'][0]['kwargs']['user'] == moderator
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications[1]['kwargs']['user'] == moderator
+        assert notifications['emits'][1]['kwargs']['user'] == moderator
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications[2]['kwargs']['user'] == admin_user
-        assert notifications[2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['kwargs']['user'] == admin_user
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(
             self, initial_response, admin_user):
@@ -916,8 +918,9 @@ class TestModeratedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.accept(user=moderator)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
-                   for notification in notifications)
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_no_moderator_accept_notification_on_initial_response(
             self, initial_response, moderator):
@@ -955,8 +958,9 @@ class TestModeratedSchemaResponseApprovalFlows():
         with capture_notifications() as notifications:
             revised_response.reject(user=moderator)
         assert len(notifications['emits']) == 3
-        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
-                   for notification in notifications)
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
 
     def test_no_moderator_reject_notification_on_initial_response(
             self, initial_response, moderator):
