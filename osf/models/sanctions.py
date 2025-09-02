@@ -542,7 +542,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
             registration = self._get_registration()
 
             context.update({
-                'domain': settings.DOMAIN,
+                'domain': osf_settings.DOMAIN,
                 'is_initiator': self.initiated_by == user,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'approval_link': approval_link,
@@ -738,7 +738,7 @@ class Retraction(EmailApprovableSanction):
             }
         else:
             return {
-                'dpmain': osf_settings.DOMAIN,
+                'domain': osf_settings.DOMAIN,
                 'initiated_by_fullname': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'is_moderated': self.is_moderated,
