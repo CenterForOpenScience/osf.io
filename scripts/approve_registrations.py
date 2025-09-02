@@ -72,6 +72,10 @@ def main(dry_run=True):
     approvals_past_pending = models.RegistrationApproval.objects.filter(
         state=models.RegistrationApproval.UNAPPROVED,
         initiation_date__lt=timezone.now() - settings.REGISTRATION_APPROVAL_TIME
+    ).exclude(
+        registrations__spam_status__in=[
+            models.SpamStatus.FLAGGED, models.SpamStatus.SPAM
+        ]
     )
     approve_past_pendings(approvals_past_pending, dry_run)
 

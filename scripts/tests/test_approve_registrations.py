@@ -1,9 +1,9 @@
 from datetime import timedelta
-
+from unittest import mock
 from django.utils import timezone
 
 from tests.base import OsfTestCase
-from osf.models import NodeLog
+from osf.models import NodeLog, SpamStatus
 from osf_tests.factories import RegistrationFactory, UserFactory
 
 from scripts.approve_registrations import main
@@ -73,3 +73,20 @@ class TestApproveRegistrations(OsfTestCase):
         assert self.registration.registered_from.logs.filter(
                 action=NodeLog.PROJECT_REGISTERED
             ).exists()
+
+    def test_no_sentry_log_for_spammy_registration(self):
+        self.spammy_registration = RegistrationFactory(creator=self.user, archive=False, spam_status=SpamStatus.SPAM)
+        self.spammy_registration.is_public = True
+        self.spammy_registration.require_approval(self.user)
+
+        assert self.spammy_registration.registration_approval.state  # sanity check
+        self.spammy_registration.registration_approval.initiation_date = timezone.now() - timedelta(hours=48)
+        self.spammy_registration.registration_approval.save()
+        assert not self.spammy_registration.is_registration_approved
+
+        with mock.patch('framework.sentry.log_message', return_value=None) as mock_sentry_log_message:
+            main(dry_run=False)
+            assert not mock_sentry_log_message.called
+
+        self.spammy_registration.registration_approval.reload()
+        assert not self.spammy_registration.is_registration_approved
