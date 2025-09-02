@@ -1502,22 +1502,21 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         url = f'/{API_BASE}preprints/{preprint_unpublished._id}/'
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
-        with capture_notifications():
-            with capture_signals() as mock_signal:
-                with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
-                    res = app.patch_json_api(
-                        url,
-                        {
-                            'data': {
-                                'id': preprint_unpublished._id,
-                                'type': 'preprints',
-                                'attributes': {
-                                    'is_published': True
-                                }
+        with capture_signals() as mock_signal:
+            with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+                res = app.patch_json_api(
+                    url,
+                    {
+                        'data': {
+                            'id': preprint_unpublished._id,
+                            'type': 'preprints',
+                            'attributes': {
+                                'is_published': True
                             }
-                        },
-                        auth=user.auth
-                    )
+                        }
+                    },
+                    auth=user.auth
+                )
         assert res.status_code == 200
         assert contributor_added in mock_signal.signals_sent()
         assert mock_update.called

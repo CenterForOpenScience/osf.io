@@ -74,6 +74,7 @@ def reviews_submit_notification_moderators(self, timestamp, context, resource):
 
     provider = resource.provider
     context['domain'] = DOMAIN
+    context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
 
     # Set submission url
     if provider.type == 'osf.preprintprovider':
