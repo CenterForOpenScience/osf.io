@@ -93,7 +93,7 @@ class NodeView(NodeMixin, GuidView):
     """ Allows authorized users to view node info.
     """
     template_name = 'nodes/node.html'
-    permission_required = 'osf.view_node'
+    permission_required = ('osf.view_preprint', 'osf.change_preprint',)
     raise_exception = True
 
     def get_context_data(self, **kwargs):
@@ -119,6 +119,7 @@ class NodeView(NodeMixin, GuidView):
         })
 
         return context
+    
 
 class NodeRemoveNotificationView(View):
     def post(self, request, *args, **kwargs):
@@ -208,16 +209,38 @@ class NodeUpdatePermissionsView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         data = dict(request.POST)
-        permissions = data['permissions']
-        user_id_to_remove = data.get('remove-user')
+        contributor_id_to_remove = data.get('remove-user')
         resource = self.get_object()
-        if user_id_to_remove:
-            user_id = user_id_to_remove[0]
+        if contributor_id_to_remove:
+            contributor_id = contributor_id_to_remove[0]
             # html renders form into form incorrectly,
             # so this view handles contributors deletion and permissions update
-            return self.redirect_view(request=request, kwargs={'guid': resource.guid, 'user_id': user_id}).post(request, user_id=user_id)
+            return self.redirect_view(
+                request=request,
+                kwargs={'guid': resource.guid, 'user_id': contributor_id}
+            ).post(request, user_id=contributor_id)
+
+        contributor_email_to_add = data.get('new_email')
+        if contributor_email_to_add:
+            email = contributor_email_to_add[0]
+            contributor_user = OSFUser.objects.filter(emails__address=email.lower()).first()
+            if not contributor_user:
+                messages.error(self.request, f'Email {email} is not registered in OSF.')
+                return redirect(self.get_success_url())
+            if resource.is_contributor(contributor_user):
+                messages.error(self.request, f'User with email {email} is already a contributor')
+                return redirect(self.get_success_url())
+
+            resource.add_contributor_registered_or_not(
+                auth=request,
+                user_id=contributor_user._id,
+                permissions=data['new-permissions'][0],
+                save=True
+            )
+            return redirect(self.get_success_url())
 
         has_admin = False
+        permissions = data['permissions']
         for contributor_permission in permissions:
             guid, permission = contributor_permission.split('-')
             if permission == ADMIN:
