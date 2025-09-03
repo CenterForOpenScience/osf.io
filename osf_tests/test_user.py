@@ -934,10 +934,12 @@ class TestChangePassword:
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
                                      error_message='Old password is invalid'):
         user = UserFactory()
-        user.set_password('password')
+        with capture_notifications():
+            user.set_password('password')
         user.save()
         with pytest.raises(ChangePasswordError, match=error_message):
-            user.change_password(old_password, new_password, confirm_password)
+            with capture_notifications():
+                user.change_password(old_password, new_password, confirm_password)
             user.save()
 
         assert bool(user.check_password(new_password)) is False
