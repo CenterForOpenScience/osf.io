@@ -102,6 +102,7 @@ class TestNodeView(AdminTestCase):
         node = ProjectFactory()
         guid = node._id
         request = RequestFactory().get('/fake_path')
+        request.user = AuthUserFactory()
         view = NodeView()
         view = setup_view(view, request, guid=guid)
         temp_object = view.get_object()
