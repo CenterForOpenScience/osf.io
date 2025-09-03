@@ -259,10 +259,14 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'remover_fullname': user.fullname,
             'remover_absolute_url': user.get_absolute_url(),
             'requester_fullname': user.fullname,
+            'collections_link': DOMAIN + 'collections/' + self.collection.provider._id if self.collection.provider else None,
             'collection_id': self.collection.id,
             'collection_title': self.collection.title,
             'collection_provider': self.collection.provider.name if self.collection.provider else None,
+            'collection_provider_name': self.collection.provider.name if self.collection.provider else None,
+            'collection_provider__id': self.collection.provider._id if self.collection.provider else None,
             'node_title': node.title,
+            'node_absolute_url': node.absolute_url,
             'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
@@ -275,6 +279,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         user=moderator,
                         event_context={
                             **event_context_base,
+                            'user_fullname': moderator.fullname,
                             'is_admin': node.has_permission(moderator, ADMIN),
                         },
                     )
@@ -283,6 +288,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     user=contributor,
                     event_context={
                         **event_context_base,
+                        'user_fullname': contributor.fullname,
                         'is_admin': node.has_permission(contributor, ADMIN),
                     },
                 )
