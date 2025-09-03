@@ -3993,9 +3993,10 @@ class TestTemplateNode:
     def test_simple_template(self, project, auth):
         """Create a templated node, with no changes"""
         # created templated node
-        new = project.use_as_template(
-            auth=auth
-        )
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth
+            )
 
         assert new.title == self._default_title(project)
         assert new.created != project.created
@@ -4006,23 +4007,25 @@ class TestTemplateNode:
         changed_title = 'Made from template'
 
         # create templated node
-        new = project.use_as_template(
-            auth=auth,
-            changes={
-                project._primary_key: {
-                    'title': changed_title,
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth,
+                changes={
+                    project._primary_key: {
+                        'title': changed_title,
+                    }
                 }
-            }
-        )
+            )
 
         assert new.title == changed_title
         assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):
-        new = project.use_as_template(
-            auth=auth
-        )
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth
+            )
 
         assert new.has_addon('wiki')
         assert new.has_addon('osfstorage')
@@ -4031,21 +4034,24 @@ class TestTemplateNode:
         license = NodeLicenseRecordFactory()
         project.node_license = license
         project.save()
-        new = project.use_as_template(
-            auth=auth
-        )
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth
+            )
 
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
 
     def test_can_template_a_registration(self, user, auth):
         registration = RegistrationFactory(creator=user)
-        new = registration.use_as_template(auth=auth)
+        with capture_notifications():
+            new = registration.use_as_template(auth=auth)
         assert new.is_registration is False
 
     def test_cannot_template_deleted_registration(self, project, auth):
         registration = RegistrationFactory(project=project, is_deleted=True)
-        new = registration.use_as_template(auth=auth)
+        with capture_notifications():
+            new = registration.use_as_template(auth=auth)
         assert not new.nodes
 
     @pytest.fixture()
@@ -4075,7 +4081,8 @@ class TestTemplateNode:
         project1 = ProjectFactory(creator=user)
         ProjectFactory(creator=user, parent=project1)
 
-        new = project1.use_as_template(auth=auth)
+        with capture_notifications():
+            new = project1.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project1)
         assert len(list(new.nodes)) == len(list(project1.nodes))
@@ -4093,7 +4100,8 @@ class TestTemplateNode:
         """Create a templated node from a node with children"""
 
         # create templated node
-        new = project.use_as_template(auth=auth)
+        with capture_notifications():
+            new = project.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project)
         assert len(list(new.nodes)) == len(list(project.nodes)) - 1
@@ -4117,10 +4125,11 @@ class TestTemplateNode:
         }
 
         # create templated node
-        new = project.use_as_template(
-            auth=auth,
-            changes=changes
-        )
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth,
+                changes=changes
+            )
         old_nodes = [x for x in project.nodes if x not in project.linked_nodes]
 
         for old_node, new_node in zip(old_nodes, new.nodes):
@@ -4137,9 +4146,10 @@ class TestTemplateNode:
 
     def test_template_wiki_pages_not_copied(self, project, auth):
         WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
-        new = project.use_as_template(
-            auth=auth
-        )
+        with capture_notifications():
+            new = project.use_as_template(
+                auth=auth
+            )
         assert WikiPage.objects.get_for_node(project, 'template').page_name == 'template'
         latest_version = WikiVersion.objects.get_for_node(project, 'template')
         assert latest_version.identifier == 1
@@ -4153,7 +4163,8 @@ class TestTemplateNode:
         user = UserFactory()
         auth = Auth(user)
 
-        templated = project.use_as_template(auth)
+        with capture_notifications():
+            templated = project.use_as_template(auth)
 
         assert set(templated.get_permissions(user)) == {permissions.READ, permissions.WRITE, permissions.ADMIN}
 

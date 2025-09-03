@@ -1099,11 +1099,11 @@ class TestArchiverBehavior(OsfTestCase):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj, archive=True)
         reg.save()
-        with nested(
+        with capture_notifications():
+            with nested(
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
-        ) as (mock_finished, mock_success):
-            with capture_notifications():
+            ) as (mock_finished, mock_success):
                 listeners.archive_callback(reg)
 
     @mock.patch('osf.models.AbstractNode.update_search')
