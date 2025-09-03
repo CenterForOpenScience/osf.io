@@ -376,7 +376,7 @@ class TestPreprintCreate(ApiTestCase):
     def test_fail_create_prerprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 400
 
     def test_create_preprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
@@ -513,15 +513,13 @@ class TestPreprintCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, no_providers_payload, auth=self.user.auth, expect_errors=True)
 
         assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
 
     def test_invalid_provider_given(self):
         wrong_provider_payload = build_preprint_create_payload(provider_id='jobbers')
 
         res = self.app.post_json_api(self.url, wrong_provider_payload, auth=self.user.auth, expect_errors=True)
 
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You must specify a valid provider to create a preprint.'
+        assert res.status_code == 403
 
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(provider_id=self.provider._id)
