@@ -93,7 +93,7 @@ class NodeView(NodeMixin, GuidView):
     """ Allows authorized users to view node info.
     """
     template_name = 'nodes/node.html'
-    permission_required = ('osf.view_preprint', 'osf.change_preprint',)
+    permission_required = 'osf.view_node'
     raise_exception = True
 
     def get_context_data(self, **kwargs):
