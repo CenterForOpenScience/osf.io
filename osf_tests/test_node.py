@@ -121,7 +121,8 @@ class TestParentNode:
 
     @pytest.fixture()
     def template(self, project, auth):
-        return project.use_as_template(auth=auth)
+        with capture_notifications():
+            return project.use_as_template(auth=auth)
 
     @pytest.fixture()
     def project_with_affiliations(self, user):
@@ -442,7 +443,8 @@ class TestParentNode:
         child = NodeFactory(parent=project)
         NodeFactory(parent=child)
 
-        template_root = project.use_as_template(auth=auth)
+        with capture_notifications():
+            template_root = project.use_as_template(auth=auth)
         template_child = template_root._nodes.first()
         template_grandchild = template_child._nodes.first()
 
