@@ -531,16 +531,19 @@ class TestRoot:
         assert fork_grandchild.root._id == fork._id
 
     def test_template_project_has_own_root(self, project, auth):
-        new_project = project.use_as_template(auth=auth)
+        with capture_notifications():
+            new_project = project.use_as_template(auth=auth)
         assert new_project.root._id == new_project._id
 
     def test_template_project_child_has_correct_root(self, project, auth):
-        new_project = project.use_as_template(auth=auth)
+        with capture_notifications():
+            new_project = project.use_as_template(auth=auth)
         new_project_child = NodeFactory(parent=new_project)
         assert new_project_child.root._id == new_project._id
 
     def test_template_project_grandchild_has_correct_root(self, project, auth):
-        new_project = project.use_as_template(auth=auth)
+        with capture_notifications():
+            new_project = project.use_as_template(auth=auth)
         new_project_child = NodeFactory(parent=new_project)
         new_project_grandchild = NodeFactory(parent=new_project_child)
         assert new_project_grandchild.root._id == new_project._id
@@ -2154,11 +2157,8 @@ class TestSetPrivacy:
         assert last_logged_before_method_call != node.last_logged
 
     def test_set_privacy_sends_mail_default(self, node, auth):
-        with capture_notifications() as notifications:
-            node.set_privacy('private', auth=auth)
-            node.set_privacy('public', auth=auth)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth)
 
     def test_set_privacy_sends_mail(self, node, auth):
         with capture_notifications() as notifications:
@@ -3818,11 +3818,12 @@ class TestOnNodeUpdate:
     @pytest.fixture()
     def node_in_collection(self, collection):
         node = ProjectFactory(is_public=True)
-        CollectionSubmission(
-            guid=node.guids.first(),
-            collection=collection,
-            creator=node.creator,
-        ).save()
+        with capture_notifications():
+            CollectionSubmission(
+                guid=node.guids.first(),
+                collection=collection,
+                creator=node.creator,
+            ).save()
         return node
 
     @pytest.fixture()

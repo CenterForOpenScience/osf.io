@@ -147,7 +147,8 @@ class TestDraftNode:
 
     def test_draft_registration_fields_are_copied_back_to_draft_node(self, user, institution,
             subject, write_contrib, title, description, category, license, make_complex_draft_registration):
-        draft_registration = make_complex_draft_registration()
+        with capture_notifications():
+            draft_registration = make_complex_draft_registration()
         draft_node = draft_registration.branched_from
 
         with disconnected_from_listeners(after_create_registration):

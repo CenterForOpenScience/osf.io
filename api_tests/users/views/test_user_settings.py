@@ -74,10 +74,12 @@ class TestUserRequestExport:
 
     def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
 
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)

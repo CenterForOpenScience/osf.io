@@ -16,7 +16,8 @@ class TestReviewable:
         preprint = PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
         assert preprint.machine_state == DefaultStates.INITIAL.value
 
-        preprint.run_submit(user)
+        with capture_notifications():
+            preprint.run_submit(user)
         assert preprint.machine_state == DefaultStates.PENDING.value
 
         preprint.run_accept(user, 'comment')

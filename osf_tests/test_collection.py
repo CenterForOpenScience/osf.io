@@ -111,7 +111,8 @@ class TestImplicitRemoval:
         node = ProjectFactory(creator=bookmark_collection.creator, is_public=True)
         bookmark_collection.collect_object(node, bookmark_collection.creator)
         alternate_bookmark_collection.collect_object(node, alternate_bookmark_collection.creator)
-        provider_collection.collect_object(node, provider_collection.creator)
+        with capture_notifications():
+            provider_collection.collect_object(node, provider_collection.creator)
         return node
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits

@@ -261,6 +261,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'requester_fullname': user.fullname,
             'collection_id': self.collection.id,
             'collection_title': self.collection.title,
+            'collection_provider': self.collection.provider.name if self.collection.provider else None,
             'node_title': node.title,
             'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
