@@ -49,12 +49,13 @@ class TestApprovePendingSchemaResponses:
         [(False, ApprovalStates.APPROVED), (True, ApprovalStates.PENDING_MODERATION)]
     )
     def test_auto_approval(self, control_response, is_moderated, expected_state):
-        with mock.patch(
-            'osf.models.schema_response.SchemaResponse.is_moderated',
-            new_callaoble=mock.PropertyMock
-        ) as mock_is_moderated:
-            mock_is_moderated.return_value = is_moderated
-            count = approve_pending_schema_responses()
+        with capture_notifications():
+            with mock.patch(
+                'osf.models.schema_response.SchemaResponse.is_moderated',
+                new_callaoble=mock.PropertyMock
+            ) as mock_is_moderated:
+                mock_is_moderated.return_value = is_moderated
+                count = approve_pending_schema_responses()
 
         assert count == 1
 
@@ -67,7 +68,8 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
 
-        count = approve_pending_schema_responses()
+        with capture_notifications():
+            count = approve_pending_schema_responses()
         assert count == 2
 
         control_response.refresh_from_db()
@@ -82,7 +84,8 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
 
-        count = approve_pending_schema_responses()
+        with capture_notifications():
+            count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()
@@ -96,7 +99,8 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = timezone.now()
         test_response.save()
 
-        count = approve_pending_schema_responses()
+        with capture_notifications():
+            count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()
@@ -111,7 +115,8 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = timezone.now()
         test_response.save()
 
-        count = approve_pending_schema_responses()
+        with capture_notifications():
+            count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()
