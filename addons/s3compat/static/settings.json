@@ -46,7 +46,7 @@
                              "us-east-1": {"name": "us-east-1", "host": "sp8-s3gw.spring8.or.jp:443"},
                              "": {"name": "us-east-1"}},
                            "serverSideEncryption": false},
-                          {"name": "ONION-object @ CMC Osaka University",
+                          {"name": "ONION-object @ D3C The University of Osaka",
                            "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443",
                            "bucketLocations": {
                              "osakau": {"name": "osakau", "host": "s3-osakau.oniongw.hpc.cmc.osaka-u.ac.jp:443"},
