@@ -119,24 +119,23 @@ class FileEvent(Event):
     @property
     def html_message(self):
         f_type, action = self.action.split('_')
-        print(self.payload)
-        if self.payload['metadata']['path'].endswith('/'):
+        if self.payload['metadata']['materialized'].endswith('/'):
             f_type = 'folder'
         return '{action} {f_type} "<b>{name}</b>".'.format(
             action=markupsafe.escape(action),
             f_type=markupsafe.escape(f_type),
-            name=markupsafe.escape(self.payload['metadata']['path'].lstrip('/'))
+            name=markupsafe.escape(self.payload['metadata']['materialized'].lstrip('/'))
         )
 
     @property
     def text_message(self):
         f_type, action = self.action.split('_')
-        if self.payload['metadata']['path'].endswith('/'):
+        if self.payload['metadata']['materialized'].endswith('/'):
             f_type = 'folder'
         return '{action} {f_type} "{name}".'.format(
             action=action,
             f_type=f_type,
-            name=self.payload['metadata']['path'].lstrip('/')
+            name=self.payload['metadata']['materialized'].lstrip('/')
         )
 
     @property

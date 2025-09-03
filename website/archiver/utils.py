@@ -139,6 +139,7 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
             'user__id': user._id,
             'src_title': src.title,
             'src__id': src._id,
+            'src_url': src.url,
             'src': src._id,
             'results': [str(error) for error in results],
             'can_change_preferences': False,

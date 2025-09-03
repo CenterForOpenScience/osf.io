@@ -353,7 +353,12 @@ class TestAddonLogs(OsfTestCase):
 
     def test_add_log(self):
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={'nid': self.node._id, 'path': 'pizza'})
+        payload = self.build_payload(metadata={
+                'nid': self.node._id,
+                'materialized': '/pizza',
+                'path': 'pizza'
+            }
+        )
         nlogs = self.node.logs.count()
         with capture_notifications():
             self.app.put(url, json=payload)

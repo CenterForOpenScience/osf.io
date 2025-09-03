@@ -142,7 +142,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                 make_curator=False,
             )
 
@@ -168,7 +168,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                 make_curator=False,
             )
 
@@ -194,6 +194,6 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
                 make_curator=False,
             )

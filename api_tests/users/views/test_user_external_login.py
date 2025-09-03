@@ -81,7 +81,8 @@ class TestExternalLogin:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         app.set_cookie(settings.COOKIE_NAME, str(session_data))
         payload['data']['attributes']['email'] = user_one.username
-        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        with capture_notifications():
+            res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
         assert res.json == {'external_id_provider': 'orcid', 'auth_user_fullname': 'external login'}
         user_one.reload()
