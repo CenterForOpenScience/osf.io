@@ -114,7 +114,10 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
 
     context['no_future_emails'] = resource.provider.allow_submissions
     context['is_request_email'] = False
-    context['requester_fullname'] = resource.actions.last().creator.fullname
+    if resource.actions.last():
+        context['requester_fullname'] = resource.actions.last().creator.fullname
+    else:
+        context['requester_fullname'] = ''
 
     for recipient in recipients:
         context['is_creator'] = recipient == resource.creator

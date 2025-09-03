@@ -10,7 +10,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      User: ${user_fullname} (${user_username}) [${user__id}]
+      User: ${user_fullname} [${user__id}]
 
       Tried to register ${src_title} (${url}) [${src__id}], but the archive task failed when copying files.
 

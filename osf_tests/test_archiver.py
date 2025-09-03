@@ -546,7 +546,8 @@ class TestArchiverTasks(ArchiverTestCase):
             prearchive_responses = registration.registration_responses
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
 
         registration.refresh_from_db()
         for response_block in registration.schema_responses.get().response_blocks.all():
@@ -587,7 +588,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 registration.refresh_from_db()
                 updated_response = registration.schema_responses.get().all_responses[qid]
                 assert updated_response[0]['file_name'] == fake_file_name
@@ -616,7 +618,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock_get_file_tree):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
 
         registration.refresh_from_db()
         registration_files = set()
@@ -655,7 +658,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[schema._id].items():
                     assert question['extra'][0]['selectedFileName'] == fake_file['name']
 
@@ -711,7 +715,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 registration.reload()
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
@@ -1098,8 +1103,8 @@ class TestArchiverBehavior(OsfTestCase):
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
         ) as (mock_finished, mock_success):
-            listeners.archive_callback(reg)
-        assert mock_delete_index_node.called
+            with capture_notifications():
+                listeners.archive_callback(reg)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_update_search):

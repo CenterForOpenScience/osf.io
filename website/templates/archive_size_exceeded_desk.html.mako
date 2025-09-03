@@ -8,9 +8,9 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    User: ${user_fullname} (${user_username}) [${user__id}]
+    User: ${user_fullname} [${user__id}]
 
-    Tried to register ${src_title} (${url}), but the resulting archive would have exceeded our caps for disk usage (${MAX_ARCHIVE_SIZE / 1024 ** 3}GB).
+    Tried to register ${src_title} (${url}), but the resulting archive would have exceeded our caps for disk usage (${max_archive_size}GB).
     <br />
 
     A report is included below:

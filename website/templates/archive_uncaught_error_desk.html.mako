@@ -9,9 +9,9 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    User: ${user_fullname} (${user_username}) [${user__id}]
+    User: ${user_fullname} [${user__id}]
 
-    Tried to register ${src_title} (${url}) [${src_id}], but the archive task failed unexpectedly.
+    Tried to register ${src_title} (${url}) [${src__id}], but the archive task failed unexpectedly.
 
     <br />
     A report is included below:

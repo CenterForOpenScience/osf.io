@@ -14,6 +14,7 @@ from website.archiver import (
     ARCHIVER_FILE_NOT_FOUND,
     ARCHIVER_FORCED_FAILURE,
 )
+from website.settings import MAX_ARCHIVE_SIZE
 
 FILE_HTML_LINK_TEMPLATE = settings.DOMAIN + 'project/{registration_guid}/files/osfstorage/{file_id}'
 FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
@@ -30,21 +31,28 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
 
     NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
         user=user,
+        subscribed_object=src,
         event_context={
-            'user': user.id,
-            'src': src._id,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
             'stat_result': stat_result,
             'url': url,
+            'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
             'can_change_preferences': False,
         }
     )
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED,
-    ).emit(
+    NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED.instance.emit(
         user=user,
+        subscribed_object=user,
         event_context={
-            'user': user.fullname,
-            'src': src.title,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src_title': src.title,
+            'src_url': src.url,
+            'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
             'can_change_preferences': False,
         }
     )
@@ -56,20 +64,26 @@ def send_archiver_copy_error_mails(src, user, results, url):
     NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         user=user,
         event_context={
-            'user': user.id,
-            'src': src._id,
+            'domain': settings.DOMAIN,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
             'results': results,
             'url': url,
             'can_change_preferences': False,
         }
     )
-    NotificationType.objects.get(
-        name=NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
-    ).emit(
+    NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         user=user,
         event_context={
-            'user': user.id,
-            'src': src._id,
+            'domain': settings.DOMAIN,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
             'results': results,
             'can_change_preferences': False,
         }
