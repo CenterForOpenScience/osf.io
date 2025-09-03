@@ -67,9 +67,9 @@ services:
       - elasticsearch_data_vol:/usr/share/elasticsearch/data
     stdin_open: true
 
+  # Temporary: Remove when we've upgraded to ES6
   elasticsearch6:
-    image: quay.io/centerforopenscience/elasticsearch:es6-arm-6.3.1
-    platform: linux/arm64
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.1
     ports:
       - 9201:9200
     volumes:
@@ -416,16 +416,26 @@ services:
       - .docker-compose.sharejs.env
     stdin_open: true
 
+#  beat:
+#    image: quay.io/centerforopenscience/osf:develop
+#    command: invoke celery_beat
+#    depends_on:
+#      - postgres
+#      - rabbitmq
+#    environment:
+#      C_FORCE_ROOT: 1
+#      DJANGO_SETTINGS_MODULE: api.base.settings
+#    env_file:
+#      - .docker-compose.env
+#    volumes:
+#      - ./:/code
+#      - osf_requirements_3_12_vol:/usr/local/lib/python3.12
+#      - osf_bower_components_vol:/code/website/static/vendor/bower_components
+#      - osf_node_modules_vol:/code/node_modules
+
   worker:
     image: quay.io/centerforopenscience/osf:develop
-    # Run worker in background; keep beat in foreground as the main PID
-    command:
-      - /bin/bash
-      - -lc
-      - |
-        set -e
-        python3 -m invoke celery-worker &
-        invoke beat
+    command: python3 -m invoke celery-worker
     restart: unless-stopped
     depends_on:
       - postgres
@@ -434,6 +444,7 @@ services:
     environment:
       C_FORCE_ROOT: 1
       DJANGO_SETTINGS_MODULE: api.base.settings
+#      BROKER_URL: amqp://guest:guest@192.168.168.167:5671/
     env_file:
       - .docker-compose.env
     volumes:
@@ -441,6 +452,9 @@ services:
       - osf_requirements_3_12_vol:/usr/local/lib/python3.12/
       - osf_bower_components_vol:/code/website/static/vendor/bower_components
       - osf_node_modules_vol:/code/node_modules
+#      - ./ssl/ca-chain.cert.pem:/etc/ssl/certs/ca-chain.cert.pem:ro
+#      - ./ssl/celery-client.cert.pem:/etc/ssl/certs/worker.pem:ro
+#      - ./ssl/celery-client.key.pem:/etc/ssl/private/worker.key:ro
     stdin_open: true
 
   admin:
