@@ -47,7 +47,6 @@ from website.oauth import views as oauth_views
 from addons.osfstorage import views as osfstorage_views
 from website.profile.utils import get_profile_image_url
 from website.profile import views as profile_views
-from website.notifications import views as notification_views
 from website.project import views as project_views
 from addons.base import views as addon_views
 from website.discovery import views as discovery_views
@@ -57,6 +56,7 @@ from website.preprints import views as preprint_views
 from website.registries import views as registries_views
 from website.reviews import views as reviews_views
 from website.institutions import views as institution_views
+from website.notifications import views as notification_views
 from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
@@ -1711,6 +1711,7 @@ def make_url_map(app):
             profile_views.user_choose_mailing_lists,
             json_renderer,
         ),
+
         Rule(
             '/subscriptions/',
             'get',
@@ -1727,12 +1728,6 @@ def make_url_map(app):
             notification_views.get_node_subscriptions,
             json_renderer,
         ),
-        Rule(
-            '/subscriptions/',
-            'post',
-            notification_views.configure_subscription,
-            json_renderer,
-        ),
 
         Rule(
             [
@@ -1743,6 +1738,14 @@ def make_url_map(app):
             project_views.node.get_node_tree,
             json_renderer,
         ),
+
+        Rule(
+            '/subscriptions/',
+            'post',
+            notification_views.configure_subscription,
+            json_renderer,
+        ),
+
         Rule(
             [
                 '/project/<pid>/settings/addons/',

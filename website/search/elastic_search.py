@@ -715,7 +715,6 @@ def update_file(file_, index=None, delete=False):
         'category': 'file',
         'node_url': node_url,
         'node_title': getattr(target, 'title', None),
-        'node__id': getattr(target, '_id', None),
         'parent_id': target.parent_node._id if getattr(target, 'parent_node', None) else None,
         'is_registration': getattr(target, 'is_registration', False),
         'is_retracted': getattr(target, 'is_retracted', False),

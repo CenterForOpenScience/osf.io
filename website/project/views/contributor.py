@@ -210,7 +210,12 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
 
 
 @unreg_contributor_added.connect
-def finalize_invitation(node, contributor, auth, notification_type='default'):
+def finalize_invitation(
+        node,
+        contributor,
+        auth,
+        notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+):
     try:
         record = contributor.get_unclaimed_record(node._primary_key)
     except ValueError:
@@ -473,7 +478,7 @@ def send_claim_email(
     node,
     notify=True,
     throttle=24 * 3600,
-    notification_type='default'
+    notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 ):
     """
     Send a claim email to an unregistered contributor or the referrer, depending on the scenario.

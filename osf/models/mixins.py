@@ -1424,7 +1424,7 @@ class ContributorMixin(models.Model):
         """
         # If user is merged into another account, use master account
         contrib_to_add = contributor.merged_by if contributor.is_merged else contributor
-        if notification_type in ('default', None):
+        if notification_type in None:
             from osf.models import AbstractNode, Preprint, DraftRegistration
 
             if isinstance(self, AbstractNode):
