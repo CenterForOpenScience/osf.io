@@ -1,6 +1,5 @@
 import pytest
 
-from tests.utils import capture_notifications
 from website.project import new_private_link
 
 from .factories import PrivateLinkFactory, NodeFactory
@@ -51,13 +50,12 @@ class TestPrivateLink:
         user = proj.creator
         schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
-        with capture_notifications():
-            draft = DraftRegistration.create_from_node(
-                node=proj,
-                user=user,
-                schema=schema,
-                data=data,
-            )
+        draft = DraftRegistration.create_from_node(
+            node=proj,
+            user=user,
+            schema=schema,
+            data=data,
+        )
         assert user == draft.initiator
         assert schema == draft.registration_schema
         assert data == draft.registration_metadata

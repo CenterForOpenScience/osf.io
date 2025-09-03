@@ -2633,8 +2633,7 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        with capture_notifications():
-            new_version.run_accept(moderator, 'comment')
+        new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()

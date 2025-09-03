@@ -815,11 +815,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_embargo
 
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert self.registration.is_pending_retraction
@@ -853,11 +854,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.retraction is None
 
     def test_POST_retraction_without_justification_returns_HTTPOK(self):
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert not self.registration.is_retracted
