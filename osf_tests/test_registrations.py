@@ -706,7 +706,8 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        embargo.to_PENDING_MODERATION()
+        with capture_notifications():
+            embargo.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
@@ -737,27 +738,23 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-        with capture_notifications():
-            registration_approval.to_APPROVED()
+        registration_approval.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-        with capture_notifications():
-            registration_approval.to_MODERATOR_REJECTED()
+        registration_approval.to_MODERATOR_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REJECTED.db_name
 
-        with capture_notifications():
-            registration_approval.to_REJECTED()
+        registration_approval.to_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.REVERTED.db_name
 
     def test_retraction_states_over_registration_approval(self, registration_approval, withdraw_action):
         registration = registration_approval.target_registration
         registration.is_public = True
-        with capture_notifications():
-            retraction = registration.retract_registration(registration.creator, justification='test')
-            registration_approval.to_APPROVED()
+        retraction = registration.retract_registration(registration.creator, justification='test')
+        registration_approval.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
@@ -771,21 +768,18 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
-        with capture_notifications():
-            retraction.to_MODERATOR_REJECTED()
+        retraction.to_MODERATOR_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-        with capture_notifications():
-            retraction.to_REJECTED()
+        retraction.to_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
     def test_retraction_states_over_embargo(self, embargo):
         registration = embargo.target_registration
         retraction = registration.retract_registration(user=registration.creator, justification='test')
-        with capture_notifications():
-            embargo.to_APPROVED()
+        embargo.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
@@ -799,23 +793,19 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
-        with capture_notifications():
-            retraction.to_MODERATOR_REJECTED()
+        retraction.to_MODERATOR_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
-        with capture_notifications():
-            retraction.to_REJECTED()
+        retraction.to_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
-        with capture_notifications():
-            embargo.to_COMPLETED()
+        embargo.to_COMPLETED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-        with capture_notifications():
-            retraction.to_MODERATOR_REJECTED()
+        retraction.to_MODERATOR_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
@@ -823,20 +813,17 @@ class TestRegistationModerationStates:
         registration = embargo_termination.target_registration
         assert registration.moderation_state == RegistrationModerationStates.PENDING_EMBARGO_TERMINATION.db_name
 
-        with capture_notifications():
-            embargo_termination.to_REJECTED()
+        embargo_termination.to_REJECTED()
         registration.update_moderation_state()
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
-        with capture_notifications():
-            embargo_termination.to_APPROVED()
+        embargo_termination.to_APPROVED()
         registration.update_moderation_state()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
     def test_retraction_states_over_embargo_termination(self, embargo_termination):
         registration = embargo_termination.target_registration
-        with capture_notifications():
-            embargo_termination.accept()
+        embargo_termination.accept()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
@@ -854,13 +841,11 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
-        with capture_notifications():
-            retraction.to_MODERATOR_REJECTED()
+        retraction.to_MODERATOR_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
-        with capture_notifications():
-            retraction.to_REJECTED()
+        retraction.to_REJECTED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 

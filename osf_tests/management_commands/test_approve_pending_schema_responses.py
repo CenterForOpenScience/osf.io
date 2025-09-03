@@ -67,7 +67,6 @@ class TestApprovePendingSchemaResponses:
         test_response.state = ApprovalStates.UNAPPROVED
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
-
         with capture_notifications():
             count = approve_pending_schema_responses()
         assert count == 2
@@ -83,7 +82,6 @@ class TestApprovePendingSchemaResponses:
         test_response.state = revision_state
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
-
         with capture_notifications():
             count = approve_pending_schema_responses()
         assert count == 1
