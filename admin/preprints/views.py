@@ -77,11 +77,12 @@ class PreprintView(PreprintMixin, GuidView):
         return super().get_context_data(**{
             'preprint': preprint,
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
-            'annotated_contributors': preprint.preprintcontributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
+            'annotated_contributors': preprint.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'SPAM_STATUS': SpamStatus,
             'change_provider_form': ChangeProviderForm(instance=preprint),
             'change_machine_state_form': MachineStateForm(instance=preprint),
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
+            'has_update_permission': preprint.is_admin_contributor(self.request.user)
         }, **kwargs)
 
 
