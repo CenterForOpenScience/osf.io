@@ -278,7 +278,7 @@ class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
 
 
 class PreprintUpdatePermissionsView(PreprintMixin, NodeUpdatePermissionsView):
-    permission_required = ('osf.view_node', 'osf.change_node')
+    permission_required = ('osf.view_preprint', 'osf.change_preprint')
     raise_exception = True
     redirect_view = PreprintRemoveContributorView
 
