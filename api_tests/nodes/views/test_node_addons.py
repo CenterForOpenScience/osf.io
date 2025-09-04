@@ -1279,7 +1279,8 @@ class TestNodeForwardAddon(
         assert self.node.logs.latest().action != 'forward_url_changed'
 
     def test_settings_detail_noncontrib_public_can_view(self):
-        self.node.set_privacy('public', auth=self.auth)
+        with capture_notifications():
+            self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_detail_url,
@@ -1300,7 +1301,8 @@ class TestNodeForwardAddon(
         assert self.node_settings.label == addon_data['label']
 
     def test_settings_list_noncontrib_public_can_view(self):
-        self.node.set_privacy('public', auth=self.auth)
+        with capture_notifications():
+            self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_list_url,

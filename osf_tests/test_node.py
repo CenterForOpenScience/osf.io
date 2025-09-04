@@ -3254,9 +3254,8 @@ class TestForkNode:
     def test_cannot_fork_private_node(self, node):
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        with capture_notifications():
-            with pytest.raises(PermissionsError):
-                node.fork_node(user2_auth)
+        with pytest.raises(PermissionsError):
+            node.fork_node(user2_auth)
 
     def test_can_fork_public_node(self, node):
         node.set_privacy('public')
