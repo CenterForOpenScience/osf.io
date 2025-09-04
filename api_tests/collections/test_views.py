@@ -4485,8 +4485,8 @@ class TestCollectionSubmissionSubjectsList(SubjectsListMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
-        project.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()
@@ -4527,8 +4527,8 @@ class TestUpdateCollectedMetaSubjects(UpdateSubjectsMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
-        project.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()
@@ -4555,8 +4555,8 @@ class TestCollectedMetaSubjectsRelationship(SubjectsRelationshipMixin):
     @pytest.fixture()
     def project_one(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
-        project.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         return project
 
     @pytest.fixture()

@@ -13,8 +13,8 @@ class TestNodeRelationshipSubjects(SubjectsRelationshipMixin):
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         project = ProjectFactory(is_public=False, creator=user_admin_contrib)
-        project.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
-        project.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
+        project.add_contributor(user_write_contrib, permissions=WRITE)
+        project.add_contributor(user_read_contrib, permissions=READ)
         project.save()
         return project
 

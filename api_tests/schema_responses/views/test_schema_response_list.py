@@ -51,7 +51,7 @@ def configure_auth(registration, role):
     if role == 'moderator' and registration.provider is not None:
         registration.provider.get_group('moderator').user_set.add(user)
     else:
-        registration.add_contributor(user, role, notification_type=False)
+        registration.add_contributor(user, role)
 
     return user.auth
 
