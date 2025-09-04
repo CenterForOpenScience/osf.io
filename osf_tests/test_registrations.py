@@ -373,7 +373,8 @@ class TestRegisterNode:
 
     def test_legacy_private_registrations_can_be_made_public(self, registration, auth):
         registration.is_public = False
-        registration.set_privacy(Node.PUBLIC, auth=auth)
+        with capture_notifications():
+            registration.set_privacy(Node.PUBLIC, auth=auth)
         assert registration.is_public
 
 

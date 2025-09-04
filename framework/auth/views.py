@@ -276,9 +276,7 @@ def _forgot_password_post(notificaton_type, reset_route, institutional=False):
                         token=user_obj.verification_key_v2['token']
                     )
                 )
-                NotificationType.objects.get(
-                    name=notificaton_type,
-                ).emit(
+                notificaton_type.instance.emit(
                     user=user_obj,
                     event_context={
                         'reset_link': reset_link,

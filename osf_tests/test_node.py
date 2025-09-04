@@ -2120,7 +2120,8 @@ class TestSetPrivacy:
         with pytest.raises(PermissionsError):
             project.set_privacy('public', Auth(non_contrib))
 
-        project.set_privacy('public', Auth(project.creator))
+        with capture_notifications():
+            project.set_privacy('public', Auth(project.creator))
         project.save()
 
         # Non-contrib can't make project private
@@ -2145,7 +2146,8 @@ class TestSetPrivacy:
 
     def test_set_privacy(self, node, auth):
         last_logged_before_method_call = node.last_logged
-        node.set_privacy('public', auth=auth)
+        with capture_notifications():
+            node.set_privacy('public', auth=auth)
         assert node.logs.first().action == NodeLog.MADE_PUBLIC
         assert last_logged_before_method_call != node.last_logged
         node.save()
@@ -2157,8 +2159,9 @@ class TestSetPrivacy:
         assert last_logged_before_method_call != node.last_logged
 
     def test_set_privacy_sends_mail_default(self, node, auth):
-        node.set_privacy('private', auth=auth)
-        node.set_privacy('public', auth=auth)
+        with capture_notifications():
+            node.set_privacy('private', auth=auth)
+            node.set_privacy('public', auth=auth)
 
     def test_set_privacy_sends_mail(self, node, auth):
         with capture_notifications() as notifications:
@@ -2245,7 +2248,8 @@ class TestNodeSpam:
 
         with mock.patch.object(Node, 'do_check_spam') as mock_do_check_spam:
             mock_do_check_spam.return_value = False
-            project.set_privacy('public', auth=Auth(user))
+            with capture_notifications():
+                project.set_privacy('public', auth=Auth(user))
 
             mock_do_check_spam.assert_called_once()
             args = mock_do_check_spam.call_args[0]
@@ -3746,7 +3750,8 @@ class TestNodeUpdate:
         assert node2.category_display == 'Methods and Measures'
 
     def test_update_is_public(self, node, user, auth):
-        node.update({'is_public': True}, auth=auth, save=True)
+        with capture_notifications():
+            node.update({'is_public': True}, auth=auth, save=True)
         assert node.is_public
 
         last_log = node.logs.latest()
@@ -4424,7 +4429,8 @@ class TestAddonCallbacks:
             )
 
     def test_set_privacy_callback(self, node, auth):
-        node.set_privacy('public', auth)
+        with capture_notifications():
+            node.set_privacy('public', auth)
         for addon in node.addons:
             callback = addon.after_set_privacy
             callback.assert_called_with(

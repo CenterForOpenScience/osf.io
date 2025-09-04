@@ -1250,15 +1250,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         if auth and permissions == 'public':
             project_signals.privacy_set_public.send(auth.user, node=self)
-            from osf.models import NotificationSubscription, NotificationType
-            from django.contrib.contenttypes.models import ContentType
-
-            subscription, create = NotificationSubscription.objects.get_or_create(
-                notification_type=NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance,
-                object_id=auth.user.id,
-                content_type=ContentType.objects.get_for_model(auth.user),
-            )
-            subscription.emit(
+            NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance.emit(
+                user=auth.user,
+                subscribed_object=auth.user,
                 event_context={
                     'user_fullname': auth.user.fullname,
                     'domain': settings.DOMAIN,
