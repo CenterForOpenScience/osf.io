@@ -1258,15 +1258,14 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 object_id=auth.user.id,
                 content_type=ContentType.objects.get_for_model(auth.user),
             )
-            if create:
-                subscription.emit(
-                    event_context={
-                        'user_fullname': auth.user.fullname,
-                        'domain': settings.DOMAIN,
-                        'nid': self._id,
-                        'project_title': self.title,
-                    }
-                )
+            subscription.emit(
+                event_context={
+                    'user_fullname': auth.user.fullname,
+                    'domain': settings.DOMAIN,
+                    'nid': self._id,
+                    'project_title': self.title,
+                }
+            )
         return True
 
     @property

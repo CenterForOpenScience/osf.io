@@ -3042,7 +3042,8 @@ class TestPointerMethods:
     def test_cannot_template_deleted_node(self, node, auth):
         child = NodeFactory(parent=node, is_deleted=True)
         child.save()
-        template = node.use_as_template(auth=auth, top_level=False)
+        with capture_notifications():
+            template = node.use_as_template(auth=auth, top_level=False)
         assert not template.nodes
 
     def _fork_pointer(self, node, content, auth):
