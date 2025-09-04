@@ -884,8 +884,12 @@ class TestForcedWithdrawal:
         return registration
 
     def test_force_retraction_changes_state(self, moderated_registration, moderator):
-        moderated_registration.retract_registration(
-            user=moderator, justification='because', moderator_initiated=True)
+        with capture_notifications():
+            moderated_registration.retract_registration(
+                user=moderator,
+                justification='because',
+                moderator_initiated=True
+            )
 
         moderated_registration.refresh_from_db()
         assert moderated_registration.is_retracted
@@ -894,8 +898,12 @@ class TestForcedWithdrawal:
 
     def test_force_retraction_writes_action(self, moderated_registration, moderator):
         justification = 'because power'
-        moderated_registration.retract_registration(
-            user=moderator, justification=justification, moderator_initiated=True)
+        with capture_notifications():
+            moderated_registration.retract_registration(
+                user=moderator,
+                justification=justification,
+                moderator_initiated=True
+            )
 
         expected_justification = 'Force withdrawn by moderator: ' + justification
         assert moderated_registration.retraction.justification == expected_justification

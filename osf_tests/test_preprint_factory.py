@@ -165,9 +165,11 @@ class TestPreprintFactory:
 
     def test_create_version_unpublished(self):
         original_preprint = PreprintFactory(is_published=True)
-        with capture_notifications():
-            new_preprint = PreprintFactory.create_version(
-                create_from=original_preprint, is_published=False, set_doi=False, final_machine_state='pending'
-            )
+        new_preprint = PreprintFactory.create_version(
+            create_from=original_preprint,
+            is_published=False,
+            set_doi=False,
+            final_machine_state='pending'
+        )
         assert new_preprint.is_published is False
         assert new_preprint.machine_state == 'pending'
