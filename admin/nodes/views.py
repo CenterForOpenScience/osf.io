@@ -208,6 +208,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
         data = dict(request.POST)
         contributor_id_to_remove = data.get('remove-user')
         resource = self.get_object()
+
         if contributor_id_to_remove:
             contributor_id = contributor_id_to_remove[0]
             # html renders form into form incorrectly,
@@ -217,38 +218,43 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 kwargs={'guid': resource.guid, 'user_id': contributor_id}
             ).post(request, user_id=contributor_id)
 
-        contributor_email_to_add = data.get('new_email')
-        if contributor_email_to_add:
-            email = contributor_email_to_add[0]
+        new_emails_to_add = data.get('new-emails', [])
+        new_permissions_to_add = data.get('new-permissions', [])
+
+        new_permission_indexes_to_remove = []
+        for email, permission in zip(new_emails_to_add, new_permissions_to_add):
             contributor_user = OSFUser.objects.filter(emails__address=email.lower()).first()
             if not contributor_user:
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
                 messages.error(self.request, f'Email {email} is not registered in OSF.')
-                return redirect(self.get_success_url())
-            if resource.is_contributor(contributor_user):
-                messages.error(self.request, f'User with email {email} is already a contributor')
-                return redirect(self.get_success_url())
+                continue
+            elif resource.is_contributor(contributor_user):
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
+                messages.error(self.request, f'User with email {email} is already a contributor.')
+                continue
 
             resource.add_contributor_registered_or_not(
                 auth=request,
                 user_id=contributor_user._id,
-                permissions=data['new-permissions'][0],
+                permissions=permission,
                 save=True
             )
-            return redirect(self.get_success_url())
+            messages.success(self.request, f'User with email {email} was successfully added.')
 
-        has_admin = False
-        permissions = data['permissions']
-        for contributor_permission in permissions:
-            guid, permission = contributor_permission.split('-')
-            if permission == ADMIN:
-                has_admin = True
-                break
+        # should remove permissions of invalid emails because
+        # admin can make all existing contributors non admins
+        # and enter an invalid email with the only admin permission
+        for permission_index in new_permission_indexes_to_remove:
+            new_permissions_to_add.pop(permission_index)
 
+        updated_permissions = data.get('updated-permissions', [])
+        all_permissions = updated_permissions + new_permissions_to_add
+        has_admin = bool(list(filter(lambda permission: ADMIN in permission, all_permissions)))
         if not has_admin:
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
 
-        for contributor_permission in permissions:
+        for contributor_permission in updated_permissions:
             guid, permission = contributor_permission.split('-')
             user = OSFUser.load(guid)
             resource.update_contributor(
