@@ -691,6 +691,24 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         return self.machine_state != DefaultStates.INITIAL.value
 
     @property
+    def is_pending_moderation(self):
+        if self.machine_state == DefaultStates.INITIAL.value:
+            return False
+
+        if not self.provider or not self.provider.reviews_workflow:
+            return False
+
+        from api.providers.workflows import PUBLIC_STATES
+
+        workflow = self.provider.reviews_workflow
+        public_states = PUBLIC_STATES.get(workflow, [])
+
+        if self.machine_state not in public_states:
+            return True
+
+        return False
+
+    @property
     def deep_url(self):
         # Required for GUID routing
         return f'/preprints/{self._id}/'
