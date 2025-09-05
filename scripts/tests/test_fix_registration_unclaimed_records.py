@@ -30,8 +30,7 @@ class TestFixRegistrationUnclaimedRecords:
         ret = project.add_unregistered_contributor(
             fullname='Jason Kelece',
             email='burds@eagles.com',
-            auth=auth,
-            notification_type=False
+            auth=auth
         )
         project.save()
         return ret
@@ -41,8 +40,7 @@ class TestFixRegistrationUnclaimedRecords:
         ret = project.add_unregistered_contributor(
             fullname='Big Play Slay',
             email='',
-            auth=auth,
-            notification_type=False
+            auth=auth
         )
         project.save()
         return ret

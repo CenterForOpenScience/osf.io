@@ -148,8 +148,7 @@ class TestNodeDetail:
         project_private.add_contributor(
             contributor=user_two,
             auth=Auth(user),
-            save=True,
-            notification_type=False
+            save=True
         )
         res = app.get(url_private, auth=user_two.auth)
         assert res.status_code == 200
@@ -519,8 +518,7 @@ class TestNodeDetail:
         project_public.add_contributor(
             new_user,
             permissions=permissions.WRITE,
-            auth=Auth(project_public.creator),
-            notification_type=False
+            auth=Auth(project_public.creator)
         )
         res = app.get(url, auth=new_user.auth)
         assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]

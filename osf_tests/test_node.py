@@ -1734,8 +1734,7 @@ class TestPermissionMethods:
         project.add_unregistered_contributor(
             fullname='David Davidson',
             email=unreg.username,
-            auth=auth,
-            notification_type=False
+            auth=auth
         )
         project.save()
         assert project.is_contributor(unreg) is True

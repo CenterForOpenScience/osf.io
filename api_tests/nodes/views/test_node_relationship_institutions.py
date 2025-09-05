@@ -70,8 +70,7 @@ class RelationshipInstitutionsTestMixin:
         admin.save()
         node.add_contributor(
             admin,
-            permissions=permissions.ADMIN,
-            notification_type=False
+            permissions=permissions.ADMIN
         )
 
         return admin
@@ -85,13 +84,11 @@ class RelationshipInstitutionsTestMixin:
         project = NodeFactory(creator=user)
         project.add_contributor(
             write_contrib,
-            permissions=permissions.WRITE,
-            notification_type=False
+            permissions=permissions.WRITE
         )
         project.add_contributor(
             read_contrib,
-            permissions=permissions.READ,
-            notification_type=False
+            permissions=permissions.READ
         )
         project.save()
         return project

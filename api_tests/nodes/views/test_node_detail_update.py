@@ -92,8 +92,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         project_private.add_contributor(
             non_admin,
             permissions=permissions.WRITE,
-            auth=Auth(project_private.creator),
-            notification_type=False
+            auth=Auth(project_private.creator)
         )
         project_private.save()
         res = app.patch_json(
@@ -113,8 +112,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             project_private.add_contributor(
                 admin_user,
                 permissions=permissions.ADMIN,
-                auth=Auth(project_private.creator),
-                notification_type=False
+                auth=Auth(project_private.creator)
             )
             project_private.save()
             with capture_notifications():

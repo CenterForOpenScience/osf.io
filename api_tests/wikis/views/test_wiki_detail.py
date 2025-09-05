@@ -76,8 +76,7 @@ class WikiCRUDTestCase:
         user = AuthUserFactory()
         project_public.add_contributor(
             user,
-            permissions=permissions.WRITE,
-            notification_type=False
+            permissions=permissions.WRITE
         )
         project_private.add_contributor(
             user,

@@ -135,8 +135,7 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True,
-            notification_type=False
+            save=True
         )
         return pre
 
@@ -151,7 +150,6 @@ class PreprintRequestTestMixin:
             contributor=write_contrib,
             permissions=permissions.WRITE,
             save=True,
-            notification_type=False
         )
         return post
 
@@ -165,8 +163,7 @@ class PreprintRequestTestMixin:
         preprint.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True,
-            notification_type=False
+            save=True
         )
         return preprint
 

@@ -54,20 +54,17 @@ class TestClaimViews(OsfTestCase):
         self.project_with_source_tag.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         self.preprint_with_source_tag.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         self.user = self.project.add_unregistered_contributor(
             fullname=self.given_name,
             email=self.given_email,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         self.project.save()
 
@@ -79,8 +76,7 @@ class TestClaimViews(OsfTestCase):
         unregistered_user = self.project.add_unregistered_contributor(
             fullname=name,
             email=None,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         assert unregistered_user in self.project.contributors
 
@@ -128,8 +124,7 @@ class TestClaimViews(OsfTestCase):
         unregistered_user = self.project.add_unregistered_contributor(
             fullname=name,
             email=None,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         assert unregistered_user in self.project.contributors
 
@@ -175,8 +170,7 @@ class TestClaimViews(OsfTestCase):
         invited_user = self.project.add_unregistered_contributor(
             fullname=given_name,
             email=None,
-            auth=Auth(user=self.referrer),
-            notification_type=False
+            auth=Auth(user=self.referrer)
         )
         self.project.save()
 

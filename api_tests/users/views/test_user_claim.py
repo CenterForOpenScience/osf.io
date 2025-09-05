@@ -37,8 +37,7 @@ class TestClaimUser:
         return project.add_unregistered_contributor(
             'David Davidson',
             'david@david.son',
-            auth=Auth(referrer),
-            notification_type=False
+            auth=Auth(referrer)
         )
 
     @pytest.fixture()

@@ -16,13 +16,11 @@ class TestPreprintSubjectsList(SubjectsListMixin):
         preprint.subjects.clear()
         preprint.add_contributor(
             user_write_contrib,
-            permissions=WRITE,
-            notification_type=False
+            permissions=WRITE
         )
         preprint.add_contributor(
             user_read_contrib,
-            permissions=READ,
-            notification_type=False
+            permissions=READ
         )
         preprint.save()
         return preprint

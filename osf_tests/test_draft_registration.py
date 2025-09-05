@@ -384,8 +384,7 @@ class TestDraftRegistrationContributorMethods():
         new_user = draft_registration.add_unregistered_contributor(
             fullname='David Davidson',
             email='david@davidson.com',
-            auth=auth,
-            notification_type=False
+            auth=auth
         )
         draft_registration.save()
         assert draft_registration.is_contributor(new_user)  # sanity check

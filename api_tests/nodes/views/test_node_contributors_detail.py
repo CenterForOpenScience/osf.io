@@ -182,7 +182,10 @@ class TestNodeContributorDetail(TestContributorDetail):
 
         other_contributor = AuthUserFactory()
         project_public.add_contributor(
-            other_contributor, auth=Auth(user), save=True)
+            other_contributor,
+            auth=Auth(user),
+            save=True
+        )
 
         other_contributor_detail = self.make_resource_url(project_public._id, other_contributor._id)
 
@@ -191,7 +194,12 @@ class TestNodeContributorDetail(TestContributorDetail):
 
         curator_contributor = AuthUserFactory()
         project_public.add_contributor(
-            curator_contributor, auth=Auth(user), save=True, make_curator=True, visible=False)
+            curator_contributor,
+            auth=Auth(user),
+            save=True,
+            make_curator=True,
+            visible=False
+        )
 
         curator_contributor_detail = self.make_resource_url(project_public._id, curator_contributor._id)
 

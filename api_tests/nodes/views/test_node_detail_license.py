@@ -77,14 +77,12 @@ class TestNodeLicense:
         project_private.add_contributor(
             user_admin,
             permissions=permissions.CREATOR_PERMISSIONS,
-            save=True,
-            notification_type=False
+            save=True
         )
         project_private.add_contributor(
             user,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True,
-            notification_type=False
+            save=True
         )
         project_private.node_license = NodeLicenseRecordFactory(
             node_license=node_license,

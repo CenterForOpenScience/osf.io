@@ -51,14 +51,12 @@ class TestNodeTags:
         project_private.add_contributor(
             user_admin,
             permissions=permissions.CREATOR_PERMISSIONS,
-            save=True,
-            notification_type=False
+            save=True
         )
         project_private.add_contributor(
             user,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True,
-            notification_type=False
+            save=True
         )
         # Sets private project storage cache to avoid need for retries in tests updating public status
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_private._id)

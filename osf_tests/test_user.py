@@ -742,8 +742,7 @@ class TestOSFUser:
         project.add_unregistered_contributor(
             fullname=name,
             email=u.username,
-            auth=Auth(project.creator),
-            notification_type=False
+            auth=Auth(project.creator)
         )
         project.save()
         u.reload()
@@ -756,8 +755,7 @@ class TestOSFUser:
         project.add_unregistered_contributor(
             fullname=old_name,
             email=unreg_user.username,
-            auth=Auth(project.creator),
-            notification_type=False
+            auth=Auth(project.creator)
         )
         project.save()
         unreg_user.reload()
@@ -771,8 +769,7 @@ class TestOSFUser:
         project.add_unregistered_contributor(
             fullname=new_name,
             email=unreg_user.username,
-            auth=Auth(project.creator),
-            notification_type=False
+            auth=Auth(project.creator)
         )
         project.save()
         unreg_user.reload()
@@ -2103,8 +2100,7 @@ class TestUserGdprDelete:
             'lisa',
             'lisafrank@cos.io',
             permissions=permissions.ADMIN,
-            auth=Auth(user),
-            notification_type=False
+            auth=Auth(user)
         )
         project.save()
         return project

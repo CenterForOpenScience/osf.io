@@ -3001,8 +3001,7 @@ class TestPreprintContributorFiltering:
         non_bibliographic_contrib = UserFactory()
         preprint.add_contributor(
             non_bibliographic_contrib,
-            visible=False,
-            notification_type=False
+            visible=False
         )
         preprint.save()
 
