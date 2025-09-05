@@ -68,4 +68,5 @@ class MergeConflictError(EmailConfirmTokenError):
 
 
 class MultipleSSOEmailError(AuthError):
+    """Raised if institution SSO provides multiple emails which OSF cannot deduplicate."""
     pass

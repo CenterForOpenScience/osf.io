@@ -159,17 +159,16 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     return user, True, None, None, sso_identity
 
 
-def deduplicate_sso_attributes(institution, sso_identity, attr_name, attr_value, delimiter=';', ignore_errors=True):
+def deduplicate_sso_attributes(attr_name, attr_value, delimiter=';'):
     if delimiter not in attr_value:
         return attr_value
     value_set = set(attr_value.split(delimiter))
     if len(value_set) != 1:
-        message = (f'Multiple values {attr_value} found for SSO attribute {attr_name}: '
-                   f'[institution_id={institution._id}, sso_identity={sso_identity}]')
-        if ignore_errors:
-            sentry.log_message(message)
-            return attr_value
-        raise MultipleSSOEmailError(message)
+        message = f'Multiple values found for SSO attribute: [{attr_name}={attr_value}]'
+        sentry.log_message(message)
+        if attr_name == 'sso_email':
+            raise MultipleSSOEmailError(message)
+        return attr_value
     return value_set.pop()
 
 

@@ -226,11 +226,11 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Deduplicate full name first if it is provided
         if fullname:
-            fullname = deduplicate_sso_attributes(institution, sso_identity, 'fullname', fullname)
+            fullname = deduplicate_sso_attributes('fullname', fullname)
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
-            given_name = deduplicate_sso_attributes(institution, sso_identity, 'given_name', given_name)
-            family_name = deduplicate_sso_attributes(institution, sso_identity, 'family_name', family_name)
+            given_name = deduplicate_sso_attributes('given_name', given_name)
+            family_name = deduplicate_sso_attributes('family_name', family_name)
             fullname = given_name + ' ' + family_name
 
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
@@ -243,13 +243,7 @@ class InstitutionAuthentication(BaseAuthentication):
 
         # Deduplicate sso email, currently we only handle duplicate sso email instead of multiple sso email
         try:
-            sso_email = deduplicate_sso_attributes(
-                institution,
-                sso_identity,
-                'sso_email',
-                sso_email,
-                ignore_errors=False,
-            )
+            sso_email = deduplicate_sso_attributes('sso_email', sso_email)
         except MultipleSSOEmailError:
             message = f'Institution SSO Error: multiple SSO email [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
             sentry.log_message(message)
