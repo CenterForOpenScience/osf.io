@@ -79,7 +79,11 @@
                                                              </div>
                                                              <div class="col-md-7">
                                                                  % if addon.get('default'):
-                                                                    <div class="text-muted">${_("(This is a default addon)")}</div>
+                                                                    % if addon['short_name'] == 'metadata' and not addon.get('enabled'):
+                                                                        <a>${_("Enable")}</a>
+                                                                    % else:
+                                                                        <div class="text-muted">${_("(This is a default addon)")}</div>
+                                                                    % endif
                                                                  % elif addon.get('enabled'):
                                                                     <a class="text-danger">${_("Disable")}</a>
                                                                  % else:
