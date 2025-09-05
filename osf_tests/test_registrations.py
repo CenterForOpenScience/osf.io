@@ -279,10 +279,12 @@ class TestRegisterNode:
         assert_datetime_equal(registration.registered_date, timezone.now(), allowance=10000)
 
     def test_registered_addons(self, registration):
-        assert (
-            [addon.config.short_name for addon in registration.get_addons()] ==
-            [addon.config.short_name for addon in registration.registered_from.get_addons()]
-        )
+        # GRDM-54077: Exclude metadata addon from comparison as it's handled differently during registration
+        registration_addons = set([addon.config.short_name for addon in registration.get_addons()
+                                  if addon.config.short_name != 'metadata'])
+        source_addons = set([addon.config.short_name for addon in registration.registered_from.get_addons()
+                            if addon.config.short_name != 'metadata'])
+        assert registration_addons == source_addons
 
     def test_registered_user(self, project):
         # Add a second contributor

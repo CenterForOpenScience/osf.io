@@ -779,7 +779,7 @@ class TestExportAndImport(OsfTestCase):
                 '#action#0',
                 '#action#1',
                 '#action#2',
-                '#action#3',
+                # GRDM-54077: metadata addon is enabled by default, no addon_added action
                 '#creator0'
             ],
         )
@@ -1123,7 +1123,10 @@ class TestExportAndImport(OsfTestCase):
             [e['@id'] for e in json_entities['@graph']],
             [
                 './', 'ro-crate-metadata.json',
-                '#node1-osfstorage', 'node1/wiki/test', '#node1-wiki',
+                '#node1-osfstorage',
+                # GRDM-54077: metadata addon is enabled by default, included automatically
+                '#node1-metadata',
+                'node1/wiki/test', '#node1-wiki',
                 '#root-osfstorage', '#root-metadata', '#root-wiki', '#root',
                 '#node1', '#creator0',
             ],
@@ -1271,7 +1274,8 @@ class TestExportAndImport(OsfTestCase):
         assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 3)
         assert_equals(
             [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            ['metadata_file_added', 'metadata_file_added', 'addon_added', 'project_created'],
+            # GRDM-54077: metadata addon is enabled by default, no addon_added event
+            ['metadata_file_added', 'metadata_file_added', 'project_created'],
         )
 
         zip_buf = io.BytesIO()
@@ -1370,7 +1374,8 @@ class TestExportAndImport(OsfTestCase):
         assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 1)
         assert_equals(
             [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            ['metadata_file_added', 'addon_added', 'project_created', 'project_created'],
+            # GRDM-54077: metadata addon is enabled by default, no addon_added event
+            ['metadata_file_added', 'project_created', 'project_created'],
         )
         assert_equals(
             sorted([e['description'] for e in json_entities['@graph'] if e['@type'] == 'RDMProject']),
@@ -1473,7 +1478,8 @@ class TestExportAndImport(OsfTestCase):
         assert_equals(len([e for e in json_entities['@graph'] if e['@type'] == 'Comment']), 3)
         assert_equals(
             [e['name'] for e in json_entities['@graph'] if e['@type'] == 'Action'],
-            ['metadata_file_added', 'metadata_file_added', 'addon_added', 'project_created'],
+            # GRDM-54077: metadata addon is enabled by default, no addon_added event
+            ['metadata_file_added', 'metadata_file_added', 'project_created'],
         )
 
         zip_buf = io.BytesIO()

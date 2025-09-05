@@ -27,13 +27,15 @@ class TestNodeSettings(unittest.TestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
 
-        self.node_settings = self._NodeSettingsFactory(owner=self.node)
-        self.node_settings.save()
+        # GRDM-54077: metadata addon is enabled by default, use existing NodeSettings
+        self.node_settings = self.node.get_addon('metadata')
+        assert self.node_settings is not None
 
         self.node_without_metadata = ProjectFactory()
         self.node_with_metadata = ProjectFactory()
-        self.node_with_metadata_settings = NodeSettingsFactory(owner=self.node_with_metadata)
-        self.node_with_metadata_settings.save()
+        # GRDM-54077: metadata addon is enabled by default, use existing NodeSettings
+        self.node_with_metadata_settings = self.node_with_metadata.get_addon('metadata')
+        assert self.node_with_metadata_settings is not None
 
     def tearDown(self):
         super(TestNodeSettings, self).tearDown()
@@ -833,7 +835,9 @@ class TestFileMetadata(unittest.TestCase):
         self.mock_fetch_metadata_asset_files = mock.patch('addons.metadata.models.fetch_metadata_asset_files')
         self.mock_fetch_metadata_asset_files.start()
         self.node = ProjectFactory()
-        self.node_settings = NodeSettingsFactory(owner=self.node)
+        # GRDM-54077: metadata addon is enabled by default, use existing NodeSettings
+        self.node_settings = self.node.get_addon('metadata')
+        assert self.node_settings is not None
 
     def tearDown(self):
         self.mock_fetch_metadata_asset_files.stop()
