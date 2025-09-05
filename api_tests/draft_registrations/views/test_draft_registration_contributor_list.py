@@ -49,12 +49,13 @@ class DraftRegistrationCRUDTestCase(NodeCRUDTestCase):
 
     @pytest.fixture()
     def project_private(self, user, title, description, category):
-        return DraftRegistrationFactory(
-            title=title,
-            description=description,
-            category=category,
-            initiator=user
-        )
+        with capture_notifications():
+            return DraftRegistrationFactory(
+                title=title,
+                description=description,
+                category=category,
+                initiator=user
+            )
 
 
 class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNodeContributorList):
@@ -338,9 +339,10 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
     def project_public(
             self, user, user_two, user_three, title,
             description, category):
-        project_public = DraftRegistrationFactory(
-            initiator=user
-        )
+        with capture_notifications():
+            project_public = DraftRegistrationFactory(
+                initiator=user
+            )
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -355,9 +357,13 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
     def project_private(
             self, user, user_two, user_three,
             title, description, category):
-        project_private = DraftRegistrationFactory(
-            initiator=user
-        )
+
+        try:
+            with capture_notifications():
+                project_private = DraftRegistrationFactory(initiator=user)
+        except AssertionError:  # No message sent
+            project_private = DraftRegistrationFactory(initiator=user)
+
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -382,9 +388,10 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
     def project_public(
             self, user, user_two, user_three, title,
             description, category):
-        project_public = DraftRegistrationFactory(
-            initiator=user
-        )
+        with capture_notifications():
+            project_public = DraftRegistrationFactory(
+                initiator=user
+            )
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -399,9 +406,11 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
     def project_private(
             self, user, user_two, user_three,
             title, description, category):
-        project_private = DraftRegistrationFactory(
-            initiator=user
-        )
+        try:
+            with capture_notifications():
+                project_private = DraftRegistrationFactory(initiator=user)
+        except AssertionError:  # No message sent
+            project_private = DraftRegistrationFactory(initiator=user)
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -436,9 +445,10 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
     def project_public(
             self, user, user_two, user_three, title,
             description, category):
-        project_public = DraftRegistrationFactory(
-            initiator=user
-        )
+        with capture_notifications():
+            project_public = DraftRegistrationFactory(
+                initiator=user
+            )
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -453,9 +463,11 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
     def project_private(
             self, user, user_two, user_three,
             title, description, category):
-        project_private = DraftRegistrationFactory(
-            initiator=user
-        )
+        try:
+            with capture_notifications():
+                project_private = DraftRegistrationFactory(initiator=user)
+        except AssertionError:  # No message sent
+            project_private = DraftRegistrationFactory(initiator=user)
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
@@ -472,7 +484,8 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
 class TestDraftRegistrationContributorFiltering(DraftRegistrationCRUDTestCase, TestNodeContributorFiltering):
     @pytest.fixture()
     def project(self, user):
-        return DraftRegistrationFactory(initiator=user)
+        with capture_notifications():
+            return DraftRegistrationFactory(initiator=user)
 
     @pytest.fixture()
     def url(self, project):

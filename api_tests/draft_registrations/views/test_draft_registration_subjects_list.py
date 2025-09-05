@@ -6,12 +6,15 @@ from osf.utils.permissions import WRITE, READ
 from osf_tests.factories import (
     DraftRegistrationFactory,
 )
+from tests.utils import capture_notifications
+
 
 class TestDraftRegistrationSubjectsList(SubjectsListMixin):
     @pytest.fixture()
     def resource(self, user_admin_contrib, user_write_contrib, user_read_contrib):
         # Overrides SubjectsListMixin
-        draft = DraftRegistrationFactory(initiator=user_admin_contrib)
+        with capture_notifications():
+            draft = DraftRegistrationFactory(initiator=user_admin_contrib)
         draft.add_contributor(user_write_contrib, permissions=WRITE)
         draft.add_contributor(user_read_contrib, permissions=READ)
         draft.save()

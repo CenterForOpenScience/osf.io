@@ -38,13 +38,15 @@ def draft_registration(project):
 class TestDraftRegistrations:
     # copied from tests/test_registrations/test_models.py
     def test_factory(self):
-        draft = factories.DraftRegistrationFactory()
+        with capture_notifications():
+            draft = factories.DraftRegistrationFactory()
         assert draft.branched_from is not None
         assert draft.initiator is not None
         assert draft.registration_schema is not None
 
         user = factories.UserFactory()
-        draft = factories.DraftRegistrationFactory(initiator=user)
+        with capture_notifications():
+            draft = factories.DraftRegistrationFactory(initiator=user)
         assert draft.initiator == user
 
         node = factories.ProjectFactory()
@@ -55,7 +57,8 @@ class TestDraftRegistrations:
         # Pick an arbitrary v2 schema
         schema = RegistrationSchema.objects.filter(schema_version=2).first()
         data = {'some': 'data'}
-        draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        with capture_notifications():
+            draft = factories.DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
         assert draft.registration_schema == schema
         assert draft.registration_metadata == data
 

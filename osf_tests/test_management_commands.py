@@ -28,6 +28,7 @@ from tests.base import DbTestCase
 from osf.management.commands.data_storage_usage import (
     process_usages,
 )
+from tests.utils import capture_notifications
 
 
 # Using powers of two so that any combination of file sizes will give a unique total
@@ -409,7 +410,8 @@ class TestProjectDraftRegContributorSync:
 
     @pytest.fixture()
     def no_project_draft_registration(self, initiator):
-        return DraftRegistrationFactory()
+        with capture_notifications():
+            return DraftRegistrationFactory()
 
     def test_draft_reg_to_sync_retrieval(
             self, app, active_draft_registration, inactive_draft_registration, active_draft_registration_multiple_contributor, no_project_draft_registration):

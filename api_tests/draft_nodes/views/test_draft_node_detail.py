@@ -7,6 +7,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory
 )
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -21,7 +22,8 @@ class TestDraftNodeDetail:
         return AuthUserFactory()
 
     def test_detail_response(self, app, user, user_two):
-        draft_reg = DraftRegistrationFactory(initiator=user)
+        with capture_notifications():
+            draft_reg = DraftRegistrationFactory(initiator=user)
         draft_reg.add_contributor(user_two)
         draft_reg.save()
 

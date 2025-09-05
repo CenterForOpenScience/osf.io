@@ -300,7 +300,7 @@ def serialize_event(user, subscription=None, node=None, event_description=None):
         'event': {
             'title': event_description,
             'description': {}[event_type],
-            'notificationType': notification_type,
+            'notificationType': notification_type.name.title(),
             'parent_notification_type': get_parent_notification_type(node, event_type, user)
         },
         'kind': 'event',
@@ -318,14 +318,14 @@ def get_parent_notification_type(node, event, user):
     :return: str notification type (e.g. 'email_transactional')
     """
     AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscriptionLegacy = apps.get_model('osf.NotificationSubscriptionLegacy')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
     if node and isinstance(node, AbstractNode) and node.parent_node and node.parent_node.has_permission(user, READ):
         parent = node.parent_node
         key = to_subscription_key(parent._id, event)
         try:
-            subscription = NotificationSubscriptionLegacy.objects.get(_id=key)
-        except NotificationSubscriptionLegacy.DoesNotExist:
+            subscription = NotificationSubscription.objects.get(_id=key)
+        except NotificationSubscription.DoesNotExist:
             return get_parent_notification_type(parent, event, user)
 
         for notification_type in NOTIFICATION_TYPES:

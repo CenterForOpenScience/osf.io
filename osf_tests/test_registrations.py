@@ -595,17 +595,19 @@ class TestDOIValidation:
 class TestRegistrationMixin:
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
-        return factories.DraftRegistrationFactory(
-            registration_schema=prereg_schema,
-            registration_metadata={},
-        )
+        with capture_notifications():
+            return factories.DraftRegistrationFactory(
+                registration_schema=prereg_schema,
+                registration_metadata={},
+            )
 
     @pytest.fixture()
     def draft_veer(self, veer_schema):
-        return factories.DraftRegistrationFactory(
-            registration_schema=veer_schema,
-            registration_metadata={},
-        )
+        with capture_notifications():
+            return factories.DraftRegistrationFactory(
+                registration_schema=veer_schema,
+                registration_metadata={},
+            )
 
     @pytest.fixture()
     def prereg_schema(self):

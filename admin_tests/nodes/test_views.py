@@ -602,14 +602,14 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         self.contr1 = UserFactory()
         self.contr2 = UserFactory()
         self.contr3 = UserFactory()
-
-        pre_moderation_draft = DraftRegistrationFactory(
-            title='pre-moderation-registration',
-            description='some description',
-            registration_schema=get_default_metaschema(),
-            provider=RegistrationProviderFactory(reviews_workflow='pre-moderation'),
-            creator=self.user
-        )
+        with capture_notifications():
+            pre_moderation_draft = DraftRegistrationFactory(
+                title='pre-moderation-registration',
+                description='some description',
+                registration_schema=get_default_metaschema(),
+                provider=RegistrationProviderFactory(reviews_workflow='pre-moderation'),
+                creator=self.user
+            )
         self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr1)
         self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr2)
         self._add_contributor(pre_moderation_draft, permissions.ADMIN, self.contr3)

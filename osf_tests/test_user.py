@@ -376,18 +376,21 @@ class TestOSFUser:
     def test_merge_drafts(self, user):
         user2 = AuthUserFactory()
 
-        draft_one = DraftRegistrationFactory(creator=user, title='draft_one')
-
-        draft_two = DraftRegistrationFactory(title='draft_two')
+        with capture_notifications():
+            draft_one = DraftRegistrationFactory(creator=user, title='draft_one')
+            draft_two = DraftRegistrationFactory(title='draft_two')
         draft_two.add_contributor(user2)
 
-        draft_three = DraftRegistrationFactory(title='draft_three', creator=user2)
+        with capture_notifications():
+            draft_three = DraftRegistrationFactory(title='draft_three', creator=user2)
         draft_three.add_contributor(user, visible=False)
 
-        draft_four = DraftRegistrationFactory(title='draft_four')
+        with capture_notifications():
+            draft_four = DraftRegistrationFactory(title='draft_four')
         draft_four.add_contributor(user2, permissions=permissions.READ, visible=False)
 
-        draft_five = DraftRegistrationFactory(title='draft_five')
+        with capture_notifications():
+            draft_five = DraftRegistrationFactory(title='draft_five')
         draft_five.add_contributor(user2, permissions=permissions.READ, visible=False)
         draft_five.add_contributor(user, permissions=permissions.WRITE, visible=True)
 

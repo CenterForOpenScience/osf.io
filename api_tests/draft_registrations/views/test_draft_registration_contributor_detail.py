@@ -14,6 +14,7 @@ from osf_tests.factories import (
     AuthUserFactory
 )
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -41,9 +42,10 @@ class TestDraftContributorDetail(ContributorDetailMixin):
     @pytest.fixture()
     def project_private(self, user, title, description, category):
         # Defining "private project" as a draft reg, overriding TestContributorDetail
-        draft = DraftRegistrationFactory(
-            initiator=user,
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                initiator=user,
+            )
         return draft
 
     @pytest.fixture()
@@ -108,7 +110,8 @@ class TestDraftContributorOrdering(TestNodeContributorOrdering):
     @pytest.fixture()
     def project(self, user, contribs):
         # Overrides TestNodeContributorOrdering
-        project = DraftRegistrationFactory(initiator=user, title='hey')
+        with capture_notifications():
+            project = DraftRegistrationFactory(initiator=user, title='hey')
         for contrib in contribs:
             if contrib._id != user._id:
                 project.add_contributor(
@@ -145,7 +148,8 @@ class TestDraftRegistrationContributorUpdate(TestNodeContributorUpdate):
     @pytest.fixture()
     def project(self, user, contrib):
         # Overrides TestNodeContributorUpdate
-        draft = DraftRegistrationFactory(creator=user)
+        with capture_notifications():
+            draft = DraftRegistrationFactory(creator=user)
         draft.add_contributor(
             contrib,
             permissions=permissions.WRITE,
@@ -175,12 +179,14 @@ class TestDraftRegistrationContributorPartialUpdate(TestNodeContributorPartialUp
     @pytest.fixture()
     def project(self, user, contrib):
         # Overrides TestNodeContributorPartialUpdate
-        project = DraftRegistrationFactory(creator=user)
-        project.add_contributor(
-            contrib,
-            permissions=permissions.WRITE,
-            visible=True,
-            save=True)
+        with capture_notifications():
+            project = DraftRegistrationFactory(creator=user)
+            project.add_contributor(
+                contrib,
+                permissions=permissions.WRITE,
+                visible=True,
+                save=True
+            )
         return project
 
     @pytest.fixture()
@@ -226,7 +232,8 @@ class TestDraftContributorDelete(TestNodeContributorDelete):
     @pytest.fixture()
     def project(self, user, user_write_contrib):
         # Overrides TestNodeContributorDelete
-        project = DraftRegistrationFactory(creator=user)
+        with capture_notifications():
+            project = DraftRegistrationFactory(creator=user)
         project.add_contributor(
             user_write_contrib,
             permissions=permissions.WRITE,
@@ -265,7 +272,8 @@ class TestDraftBibliographicContributorDetail():
     @pytest.fixture()
     def draft_registration(self, user, user_non_biblio_contrib):
         # Overrides TestNodeContributorDelete
-        project = DraftRegistrationFactory(creator=user)
+        with capture_notifications():
+            project = DraftRegistrationFactory(creator=user)
         project.add_contributor(
             user,
             permissions=permissions.ADMIN,

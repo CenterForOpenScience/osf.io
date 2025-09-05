@@ -16,6 +16,7 @@ from osf_tests.factories import (
     SubjectFactory,
     ProjectFactory,
 )
+from tests.utils import capture_notifications
 from website.settings import API_DOMAIN
 
 
@@ -63,8 +64,8 @@ class TestDraftRegistrationDetailEndpoint(AbstractDraftRegistrationTestCase):
         assert 'contributors' in relationships
 
     def test_detail_view_returns_editable_fields_no_specified_node(self, app, user):
-
-        draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
+        with capture_notifications():
+            draft_registration = DraftRegistrationFactory(initiator=user, branched_from=None)
         url = f'{API_DOMAIN}{API_BASE}draft_registrations/{draft_registration._id}/'
 
         res = app.get(url, auth=user.auth, expect_errors=True)
@@ -271,11 +272,12 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
     @pytest.fixture()
     def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
-        draft_registration = DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistrationFactory(
+                initiator=user,
+                registration_schema=schema,
+                branched_from=None
+            )
         draft_registration.add_contributor(
             user_write_contrib,
             permissions=WRITE)
@@ -293,11 +295,12 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
 
     @pytest.fixture
     def draft_registration_open_ended(self, user, schema_open_ended):
-        return DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema_open_ended,
-            branched_from=None
-        )
+        with capture_notifications():
+            return DraftRegistrationFactory(
+                initiator=user,
+                registration_schema=schema_open_ended,
+                branched_from=None
+            )
 
     @pytest.fixture()
     def url_draft_registration_open_ended(self, draft_registration_open_ended):
@@ -498,11 +501,12 @@ class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
 
     @pytest.fixture()
     def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
-        draft_registration = DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistrationFactory(
+                initiator=user,
+                registration_schema=schema,
+                branched_from=None
+            )
         draft_registration.add_contributor(
             user_write_contrib,
             permissions=WRITE)
@@ -540,11 +544,12 @@ class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
 
     @pytest.fixture()
     def draft_registration(self, user, user_read_contrib, user_write_contrib, project_public, schema):
-        draft_registration = DraftRegistrationFactory(
-            initiator=user,
-            registration_schema=schema,
-            branched_from=None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistrationFactory(
+                initiator=user,
+                registration_schema=schema,
+                branched_from=None
+            )
         draft_registration.add_contributor(
             user_write_contrib,
             permissions=WRITE)

@@ -25,13 +25,12 @@ class SubscriptionSerializer(JSONAPISerializer):
         source='message_frequency',
         required=True,
     )
-
-    class Meta:
-        type_ = 'subscription'
-
     links = LinksField({
         'self': 'get_absolute_url',
     })
+
+    class Meta:
+        type_ = 'subscription'
 
     def get_absolute_url(self, obj):
         return obj.absolute_api_v2_url

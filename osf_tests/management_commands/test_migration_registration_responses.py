@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 from osf.models import RegistrationSchema
 from osf_tests.factories import DraftRegistrationFactory, RegistrationFactory
+from tests.utils import capture_notifications
 
 from osf.management.commands.migrate_registration_responses import (
     migrate_draft_registrations,
@@ -1603,36 +1604,38 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def draft_osf_standard(self, osf_standard_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=osf_standard_schema,
-            registration_metadata={
-                'looked': {
-                    'comments': [],
-                    'value': 'Yes',
-                    'extra': []
-                },
-                'datacompletion': {
-                    'comments': [],
-                    'value': 'No, data collection has not begun',
-                    'extra': []
-                },
-                'comments': {
-                    'comments': [],
-                    'value': 'more comments',
-                    'extra': []
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=osf_standard_schema,
+                registration_metadata={
+                    'looked': {
+                        'comments': [],
+                        'value': 'Yes',
+                        'extra': []
+                    },
+                    'datacompletion': {
+                        'comments': [],
+                        'value': 'No, data collection has not begun',
+                        'extra': []
+                    },
+                    'comments': {
+                        'comments': [],
+                        'value': 'more comments',
+                        'extra': []
+                    }
                 }
-            }
-        )
+            )
         draft.registration_responses = {}
         draft.save()
         return draft
 
     @pytest.fixture()
     def empty_draft_osf_standard(self, osf_standard_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=osf_standard_schema,
-            registration_metadata={}
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=osf_standard_schema,
+                registration_metadata={}
+            )
         draft.registration_responses = {}
         draft.registration_responses_migrated = False
         draft.save()
@@ -1640,10 +1643,11 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def draft_prereg(self, prereg_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=prereg_schema,
-            registration_metadata=prereg_registration_metadata
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=prereg_schema,
+                registration_metadata=prereg_registration_metadata
+            )
         draft.registration_responses = {}
         draft.registration_responses_migrated = False
         draft.save()
@@ -1651,10 +1655,11 @@ class TestMigrateDraftRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def draft_veer(self, veer_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=veer_schema,
-            registration_metadata=veer_registration_metadata
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=veer_schema,
+                registration_metadata=veer_registration_metadata
+            )
         draft.registration_responses = {}
         draft.registration_responses_migrated = False
         draft.save()
@@ -1856,26 +1861,27 @@ class TestMigrateRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def reg_osf_standard(self, osf_standard_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=osf_standard_schema,
-            registration_metadata={
-                'looked': {
-                    'comments': [],
-                    'value': 'Yes',
-                    'extra': []
-                },
-                'datacompletion': {
-                    'comments': [],
-                    'value': 'No, data collection has not begun',
-                    'extra': []
-                },
-                'comments': {
-                    'comments': [],
-                    'value': 'more comments',
-                    'extra': []
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=osf_standard_schema,
+                registration_metadata={
+                    'looked': {
+                        'comments': [],
+                        'value': 'Yes',
+                        'extra': []
+                    },
+                    'datacompletion': {
+                        'comments': [],
+                        'value': 'No, data collection has not begun',
+                        'extra': []
+                    },
+                    'comments': {
+                        'comments': [],
+                        'value': 'more comments',
+                        'extra': []
+                    }
                 }
-            }
-        )
+            )
         return RegistrationFactory(
             schema=osf_standard_schema,
             draft_registration=draft,
@@ -1884,10 +1890,11 @@ class TestMigrateRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def reg_prereg(self, prereg_schema):
-        draft = DraftRegistrationFactory(
-            registration_schema=prereg_schema,
-            registration_metadata=prereg_registration_metadata
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_schema=prereg_schema,
+                registration_metadata=prereg_registration_metadata
+            )
         return RegistrationFactory(
             schema=prereg_schema,
             draft_registration=draft,
@@ -1896,10 +1903,11 @@ class TestMigrateRegistrationRegistrationResponses:
 
     @pytest.fixture()
     def reg_veer(self, veer_schema):
-        draft = DraftRegistrationFactory(
-            registration_metadata=veer_registration_metadata,
-            registration_schema=veer_schema,
-        )
+        with capture_notifications():
+            draft = DraftRegistrationFactory(
+                registration_metadata=veer_registration_metadata,
+                registration_schema=veer_schema,
+            )
         return RegistrationFactory(
             schema=veer_schema,
             draft_registration=draft,

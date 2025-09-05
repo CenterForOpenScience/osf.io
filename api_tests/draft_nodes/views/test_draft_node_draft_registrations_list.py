@@ -6,6 +6,7 @@ from osf_tests.factories import (
     AuthUserFactory,
 )
 from osf.utils.permissions import WRITE
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -21,9 +22,10 @@ class TestDraftNodeDraftRegistrationsList:
 
     @pytest.fixture()
     def draft_registration(self, user, user_write_contrib):
-        draft_reg = DraftRegistrationFactory(
-            initiator=user
-        )
+        with capture_notifications():
+            draft_reg = DraftRegistrationFactory(
+                initiator=user
+            )
         draft_reg.add_contributor(
             user_write_contrib,
             permissions=WRITE)

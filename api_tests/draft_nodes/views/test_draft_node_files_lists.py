@@ -18,6 +18,7 @@ from addons.github.models import GithubFolder
 from addons.github.tests.factories import GitHubAccountFactory
 from api.base.utils import waterbutler_api_url_for
 from api_tests import utils as api_utils
+from tests.utils import capture_notifications
 from website import settings
 
 
@@ -25,7 +26,8 @@ class TestDraftNodeProvidersList(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.draft_reg = DraftRegistrationFactory(creator=self.user)
+        with capture_notifications():
+            self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
         self.url = f'/{API_BASE}draft_nodes/{self.draft_node._id}/files/'
 
@@ -149,7 +151,8 @@ class TestNodeFilesList(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.draft_reg = DraftRegistrationFactory(creator=self.user)
+        with capture_notifications():
+            self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
         self.private_url = '/{}draft_nodes/{}/files/'.format(
             API_BASE, self.draft_node._id)
@@ -489,7 +492,8 @@ class TestNodeFilesListFiltering(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.draft_reg = DraftRegistrationFactory(creator=self.user)
+        with capture_notifications():
+            self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
         # Prep HTTP mocks
         prepare_mock_wb_response(
@@ -631,7 +635,8 @@ class TestNodeFilesListPagination(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.draft_reg = DraftRegistrationFactory(creator=self.user)
+        with capture_notifications():
+            self.draft_reg = DraftRegistrationFactory(creator=self.user)
         self.draft_node = self.draft_reg.branched_from
 
     def add_github(self):
@@ -703,7 +708,8 @@ class TestDraftNodeStorageProviderDetail(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.draft_reg = DraftRegistrationFactory(initiator=self.user)
+        with capture_notifications():
+            self.draft_reg = DraftRegistrationFactory(initiator=self.user)
         self.draft_node = self.draft_reg.branched_from
         self.private_url = '/{}draft_nodes/{}/files/providers/osfstorage/'.format(
             API_BASE, self.draft_node._id)
