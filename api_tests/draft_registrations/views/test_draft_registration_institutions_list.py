@@ -4,6 +4,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.nodes.views.test_node_institutions_list import TestNodeInstitutionList
 from osf_tests.factories import DraftRegistrationFactory, AuthUserFactory
 from tests.utils import capture_notifications
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -23,6 +24,8 @@ class TestDraftRegistrationInstitutionList(TestNodeInstitutionList):
         # Overrides TestNodeInstitutionList
         with capture_notifications():
             draft = DraftRegistrationFactory(initiator=user)
+        with capture_notifications():
+            draft = DraftRegistrationFactory(initiator=user)
         draft.affiliated_institutions.add(institution)
         draft.save()
         return draft
@@ -30,10 +33,7 @@ class TestDraftRegistrationInstitutionList(TestNodeInstitutionList):
     @pytest.fixture()
     def node_two(self, user):
         # Overrides TestNodeInstitutionList
-        try:
-            with capture_notifications():
-                return DraftRegistrationFactory(initiator=user)
-        except AssertionError:
+        with capture_notifications():
             return DraftRegistrationFactory(initiator=user)
 
     @pytest.fixture()
