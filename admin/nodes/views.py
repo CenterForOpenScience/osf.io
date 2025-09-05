@@ -252,7 +252,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
 
         updated_permissions = data.get('updated-permissions', [])
         all_permissions = updated_permissions + new_permissions_to_add
-        has_admin = bool(list(filter(lambda permission: ADMIN in permission, all_permissions)))
+        has_admin = list(filter(lambda permission: ADMIN in permission, all_permissions))
         if not has_admin:
             messages.error(self.request, 'Must be at least one admin on this node.')
             return redirect(self.get_success_url())
