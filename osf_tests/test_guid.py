@@ -316,7 +316,8 @@ class TestResolveGuid(OsfTestCase):
         with capture_notifications():
             pp.run_submit(submitter)
         pp_branded = PreprintFactory(finish=True, provider=branded_provider, is_published=False, filename='preprint_file_two.txt', creator=submitter)
-        pp_branded.run_submit(submitter)
+        with capture_notifications():
+            pp_branded.run_submit(submitter)
 
         res = self.app.get(f'{pp.url}download', auth=submitter.auth)
         assert res.status_code == 302

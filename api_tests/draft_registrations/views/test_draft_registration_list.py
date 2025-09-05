@@ -68,9 +68,9 @@ class TestDraftRegistrationListTopLevelEndpoint:
             registration_schema=schema,
             branched_from=project
         )
-        draft.add_contributor(user_read_contrib, permissions=READ, notification_type=False)
-        draft.add_contributor(user_write_contrib, permissions=WRITE, notification_type=False)
-        draft.add_contributor(user_admin_contrib, permissions=ADMIN, notification_type=False)
+        draft.add_contributor(user_read_contrib, permissions=READ)
+        draft.add_contributor(user_write_contrib, permissions=WRITE)
+        draft.add_contributor(user_admin_contrib, permissions=ADMIN)
         return draft
 
     def test_read_only_contributor_can_view_draft_list(

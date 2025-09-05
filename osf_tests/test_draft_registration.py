@@ -374,9 +374,9 @@ class TestDraftRegistrationContributorMethods():
 
     def test_cant_add_same_contributor_twice(self, draft_registration):
         contrib = factories.UserFactory()
-        draft_registration.add_contributor(contributor=contrib, notification_type=False)
+        draft_registration.add_contributor(contributor=contrib)
         draft_registration.save()
-        draft_registration.add_contributor(contributor=contrib, notification_type=False)
+        draft_registration.add_contributor(contributor=contrib)
         draft_registration.save()
         assert len(draft_registration.contributors) == 2
 

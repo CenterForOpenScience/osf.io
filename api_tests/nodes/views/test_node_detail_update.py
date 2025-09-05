@@ -19,7 +19,7 @@ from osf_tests.factories import (
     IdentifierFactory,
 )
 from tests.base import fake
-from tests.utils import assert_latest_log, assert_latest_log_not, assert_notification
+from tests.utils import assert_latest_log, assert_latest_log_not, assert_notification, capture_notifications
 from website import settings
 
 
@@ -117,11 +117,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 notification_type=False
             )
             project_private.save()
-            res = app.patch_json_api(
-                url_private,
-                make_node_payload(project_private, {'public': True}),
-                auth=admin_user.auth  # self.user is creator/admin
-            )
+            with capture_notifications():
+                res = app.patch_json_api(
+                    url_private,
+                    make_node_payload(project_private, {'public': True}),
+                    auth=admin_user.auth  # self.user is creator/admin
+                )
             assert res.status_code == 200
             project_private.reload()
             assert project_private.is_public

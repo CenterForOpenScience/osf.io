@@ -9,7 +9,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
-from tests.utils import assert_latest_log
+from tests.utils import assert_latest_log, capture_notifications
 from website import settings
 
 
@@ -165,10 +165,11 @@ class TestNodeTags:
                 }
             }
         }
-        res = app.patch_json_api(
-            url_private,
-            new_payload,
-            auth=user_admin.auth)
+        with capture_notifications():
+            res = app.patch_json_api(
+                url_private,
+                new_payload,
+                auth=user_admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
         new_payload['data']['attributes']['public'] = False

@@ -342,6 +342,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     'user_fullname': user.fullname,
                     'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
                 },
+                save=False,
             )
 
         # Add the email to the user's account if it is identified by the eppn
@@ -357,6 +358,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     'osf_support_email': OSF_SUPPORT_EMAIL,
                     'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
                 },
+                save=False,
             )
 
         # Inform the user that a potential duplicate account is found

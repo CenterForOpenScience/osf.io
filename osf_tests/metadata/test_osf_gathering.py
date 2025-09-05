@@ -64,9 +64,9 @@ class TestOsfGathering(TestCase):
         cls.project = factories.ProjectFactory(creator=cls.user__admin, is_public=True)
         cls.project.add_addon('box', auth=None)
         cls.project.add_addon('gitlab', auth=None)
-        cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE, notification_type=False)
-        cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ, notification_type=False)
-        cls.project.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False, notification_type=False)
+        cls.project.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
+        cls.project.add_contributor(cls.user__readonly, permissions=permissions.READ)
+        cls.project.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False)
         cls.component = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.sibcomponent = factories.ProjectFactory(parent=cls.project, creator=cls.user__admin, is_public=True)
         cls.subcomponent = factories.ProjectFactory(parent=cls.component, creator=cls.user__admin, is_public=True)
@@ -102,9 +102,9 @@ class TestOsfGathering(TestCase):
             creator=cls.user__admin,
             is_public=True,
         )
-        cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE, notification_type=False)
-        cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ, notification_type=False)
-        cls.preprint.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False, notification_type=False)
+        cls.preprint.add_contributor(cls.user__readwrite, permissions=permissions.WRITE)
+        cls.preprint.add_contributor(cls.user__readonly, permissions=permissions.READ)
+        cls.preprint.add_contributor(cls.user__invisible, permissions=permissions.WRITE, visible=False)
         cls.registration_cedar_record = factories.CedarMetadataRecordFactory(
             template=cls.cedar_template,
             is_published=True,

@@ -353,10 +353,11 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.status_code == 401
 
     #   test_update_private_registration_logged_in_admin
-        res = app.put_json_api(
-            private_url,
-            private_registration_payload,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(
+                private_url,
+                private_registration_payload,
+                auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
 
@@ -464,10 +465,11 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
                 ]
             }
         }
-        res = app.put_json_api(
-            private_url,
-            verbose_private_payload,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(
+                private_url,
+                verbose_private_payload,
+                auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'instrumentation'
@@ -553,7 +555,8 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         private_to_public_payload = make_payload(id=private_registration._id)
 
         url = f'/{API_BASE}registrations/{private_registration._id}/'
-        res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
+        with capture_notifications():
+            res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
         assert res.json['data']['attributes']['public'] is True
         private_registration.reload()
         assert private_registration.is_public
@@ -987,10 +990,12 @@ class TestRegistrationTags:
                 }
             }
         }
-        res = app.patch_json_api(
-            url_registration_private,
-            new_payload,
-            auth=user_admin.auth)
+        with capture_notifications():
+            res = app.patch_json_api(
+                url_registration_private,
+                new_payload,
+                auth=user_admin.auth
+            )
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
 

@@ -95,6 +95,7 @@ class AppTestCase(unittest.TestCase):
     PUSH_CONTEXT = True
 
     def setUp(self):
+        super().setUp()
         self.app = test_app.test_client()
         self.app.response_wrapper = FormsTestResponse
         self.app.application.config.update({'TESTING': True, })

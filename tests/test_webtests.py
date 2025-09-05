@@ -256,7 +256,8 @@ class TestComponents(OsfTestCase):
             parent=self.project,
         )
         self.component.save()
-        self.component.set_privacy('public', self.consolidate_auth)
+        with capture_notifications():
+            self.component.set_privacy('public', self.consolidate_auth)
         self.component.set_privacy('private', self.consolidate_auth)
         self.project.save()
         self.project_url = self.project.web_url_for('view_project')
@@ -423,7 +424,8 @@ class TestShortUrls(OsfTestCase):
         self.component = NodeFactory(parent=self.project, category='hypothesis', creator=self.user)
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
-        self.component.set_privacy('public', auth=self.consolidate_auth)
+        with capture_notifications():
+            self.component.set_privacy('public', auth=self.consolidate_auth)
         self.component.set_privacy('private', auth=self.consolidate_auth)
         self.wiki = WikiFactory(
             user=self.user,

@@ -93,7 +93,7 @@ class TestDraftContributorDetail(ContributorDetailMixin):
     # Overrides TestContributorDetail
     def test_node_contributor_detail_serializes_contributor_perms(self, app, user, make_resource_url, project_public):
         user_two = AuthUserFactory()
-        project_public.add_contributor(user_two, permissions=permissions.WRITE)
+        project_public.add_contributor(user_two, permissions.WRITE)
         project_public.save()
 
         url = make_resource_url(project_public._id, user_two._id)

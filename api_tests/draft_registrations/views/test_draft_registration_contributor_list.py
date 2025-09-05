@@ -99,7 +99,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_return_public_contributor_list_logged_out(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True, notification_type=False)
+        project_public.add_contributor(user_two, save=True)
 
         res = app.get(url_public, expect_errors=True)
         assert res.status_code == 401
@@ -107,7 +107,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
     # Overrides TestNodeContributorList
     def test_disabled_contributors_contain_names_under_meta(
             self, app, user, user_two, project_public, url_public, make_contrib_id):
-        project_public.add_contributor(user_two, save=True, notification_type=False)
+        project_public.add_contributor(user_two, save=True)
 
         user_two.is_disabled = True
         user_two.save()
@@ -131,7 +131,6 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             non_bibliographic_user,
             visible=False,
             auth=Auth(project_public.creator),
-            notification_type=False
         )
         project_public.save()
         res = app.get(url_public, auth=user.auth)
@@ -184,7 +183,6 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             project_private.add_contributor(
                 user,
                 permissions=perm,
-                notification_type=False
             )
             users[perm].append(user._id)
 
@@ -370,14 +368,12 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         return project_private
 
@@ -403,14 +399,12 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         return project_public
 
@@ -480,14 +474,12 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
             visible=True,
             save=True,
-            notification_type=False
         )
         return project_private
 

@@ -203,7 +203,7 @@ class TestNodeContributorList(NodeCRUDTestCase):
     def test_return_private_contributor_list_logged_in_contributor(
         self, app, user, user_two, project_private, url_private, make_contrib_id
     ):
-        project_private.add_contributor(user_two, notification_type=False)
+        project_private.add_contributor(user_two)
         project_private.save()
 
         res = app.get(url_private, auth=user.auth)
@@ -1124,9 +1124,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self, app, user, user_two, project_public, url_public
     ):
         user_contrib_one = UserFactory()
-        project_public.add_contributor(user_contrib_one, save=True, notification_type=False)
+        project_public.add_contributor(user_contrib_one, save=True)
         user_contrib_two = UserFactory()
-        project_public.add_contributor(user_contrib_two, save=True, notification_type=False)
+        project_public.add_contributor(user_contrib_two, save=True)
         payload = {
             'data': {
                 'type': 'contributors',
@@ -2981,8 +2981,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
-        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
 
         # test_filtering_permission_field_admin
         filter_url = f'{url}?filter[permission]=admin'
@@ -3002,8 +3002,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
-        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
 
         # test_filtering_permission_field_write
         filter_url = f'{url}?filter[permission]=write'
@@ -3022,8 +3022,8 @@ class TestNodeContributorFiltering:
 
         user_two = AuthUserFactory()
         user_three = AuthUserFactory()
-        project.add_contributor(user_two, permissions.WRITE, notification_type=False)
-        project.add_contributor(user_three, permissions.READ, visible=False, notification_type=False)
+        project.add_contributor(user_two, permissions.WRITE)
+        project.add_contributor(user_three, permissions.READ, visible=False)
 
         # test_filtering_permission_field_read
         filter_url = f'{url}?filter[permission]=read'

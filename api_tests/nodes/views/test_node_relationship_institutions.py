@@ -277,7 +277,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         user = AuthUserFactory()
         user.add_or_update_affiliated_institution(institution_one)
         user.save()
-        node.add_contributor(user, notification_type=False)
+        node.add_contributor(user)
         node.save()
 
         with capture_notifications() as notifications:
@@ -461,7 +461,7 @@ class TestNodeRelationshipInstitutions(RelationshipInstitutionsTestMixin):
         user_auth = AuthUserFactory()
         user_auth.add_or_update_affiliated_institution(institution_one)
         user_auth.save()
-        node.add_contributor(user_auth, permissions=permissions.READ, notification_type=False)
+        node.add_contributor(user_auth, permissions=permissions.READ)
         node.affiliated_institutions.add(institution_one)
         node.save()
 
