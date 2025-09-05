@@ -154,8 +154,7 @@ def get_or_create_institutional_user(fullname, sso_email, sso_identity, primary_
     # CASE 5/5: If no user is found, create a confirmed user and return the user and sso identity.
     # Note: Institution users are created as confirmed with a strong and random password. Users don't need the
     # password since they sign in via SSO. They can reset their password to enable email/password login.
-    # user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
-    user = OSFUser.create_confirmed(sso_email, 'abCD12#$', fullname)
+    user = OSFUser.create_confirmed(sso_email, str(uuid.uuid4()), fullname)
     user.add_system_tag(institution_source_tag(primary_institution._id))
     return user, True, None, None, sso_identity
 
