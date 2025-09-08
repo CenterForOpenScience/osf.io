@@ -1,3 +1,4 @@
+{% if node.is_registration and node.archived %}
 <a data-toggle="modal" data-target="#confirmDeleteFileModal" class="btn btn-danger">
     Delete File
 </a>
@@ -32,3 +33,4 @@
         </div>
     </div>
 </div>
+{% endif %}
