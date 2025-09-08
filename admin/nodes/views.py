@@ -6,6 +6,7 @@ from framework import status
 from django.utils import timezone
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.urls import NoReverseMatch
+from django.db import transaction
 from django.db.models import F, Case, When, IntegerField
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -708,12 +709,26 @@ class NodeRemoveFileView(NodeMixin, View):
     permission_required = 'osf.change_node'
 
     def post(self, request, *args, **kwargs):
+        def _remove_file_from_schema_response_blocks(registration, removed_file_id):
+            file_input_keys = registration.registration_schema.schema_blocks.filter(
+                block_type='file-input'
+            ).values_list('registration_response_key', flat=True)
+            for schema_response in registration.schema_responses.all():
+                for block in schema_response.response_blocks.filter(schema_key__in=file_input_keys):
+                    if not block.response:
+                        continue
+                    block.response = [entry for entry in block.response if entry.get('file_id') != removed_file_id]
+                    block.save()
+
         node = self.get_object()
         guid_id = request.POST.get('remove-file-guid', '').strip()
         guid = Guid.load(guid_id)
-        if guid and (file := guid.referent) and (node.registered_from == file.target) and not isinstance(file, TrashedFile):
-            file.delete()
-            _update_schema_meta(file.target)
+
+        if guid and (file := guid.referent) and (file.target == node.registered_from) and not isinstance(file, TrashedFile):
+            with transaction.atomic():
+                file.delete()
+                _update_schema_meta(file.target)
+                _remove_file_from_schema_response_blocks(node, file._id)
         return redirect(self.get_success_url())
 
 
