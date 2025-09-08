@@ -592,14 +592,14 @@ def check_email_throttle(
     from osf.models import NotificationSubscription
     from datetime import timedelta
     # Check for an active subscription for this contributor and this node
-    subscription, created = NotificationSubscription.objects.get_or_create(
+    subscription = NotificationSubscription.objects.filter(
         user=user,
         notification_type=notification_type.instance,
     )
-    if created:
+    if not subscription:
         return False  # No subscription means no previous notifications, so no throttling
     # Check the most recent Notification for this subscription
-    return subscription.created > timezone.now() - timedelta(seconds=throttle)
+    return subscription.modified > timezone.now() - timedelta(seconds=throttle)
 
 
 @contributor_added.connect
