@@ -139,14 +139,15 @@ class TestDraftRegistrationRelationshipInstitutions():
     # Overrides TestNodeRelationshipInstitutions
     def test_read_write_contributor_can_add_affiliated_institution(
             self, app, write_contrib, write_contrib_institution, node, node_institutions_url):
+        payload = {
+            'data': [{
+                'type': 'institutions',
+                'id': write_contrib_institution._id
+            }]
+        }
         res = app.post_json_api(
             node_institutions_url,
-            {
-                'data': [{
-                    'type': 'institutions',
-                    'id': write_contrib_institution._id
-                }]
-            },
+            payload,
             auth=write_contrib.auth,
             expect_errors=True
         )

@@ -1606,13 +1606,7 @@ class TestNodeCreate:
     def test_create_component_inherit_contributors_with_blocked_email(
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
-        parent_project.add_unregistered_contributor(
-            fullname='far',
-            email='foo@bar.baz',
-            permissions=permissions.READ,
-            auth=Auth(user=user_one),
-            notification_type=False
-        )
+        parent_project.add_unregistered_contributor(fullname='far', email='foo@bar.baz', permissions=permissions.READ, auth=Auth(user=user_one))
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
         contributor.save()
