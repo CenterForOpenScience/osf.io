@@ -2081,11 +2081,12 @@ class TestRegistrationContributors(ApiTestCase):
         assert self.public_registration.title != TITLE
 
         self.remove_contributor_request(auth_user=self.user, contributor=self.contributor)
-        self.add_contributor_request(
-            auth_user=self.user,
-            contributor=self.contributor,
-            permission='write'
-        )
+        with capture_notifications():
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=self.contributor,
+                permission='write'
+            )
         res = self.update_registration_attribute_request(auth_user=self.contributor, title=TITLE)
         assert res.status_code == 200
         assert res.json['data']['attributes']['title'] == TITLE

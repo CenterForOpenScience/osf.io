@@ -865,6 +865,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             'can_change_preferences': False,
             'external_id_provider': external_id_provider,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'osf_support_email': settings.OSF_SUPPORT_EMAIL,
         },
     )
 
