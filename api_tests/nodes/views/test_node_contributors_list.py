@@ -331,7 +331,8 @@ class TestNodeContributorList(NodeCRUDTestCase):
         self, app, user, project_public, url_public
     ):
         project_public.add_unregistered_contributor(
-            'Robert Jackson', 'robert@gmail.com', auth=Auth(user))
+            'Robert Jackson', 'robert@gmail.com', auth=Auth(user)
+        )
 
         for i in range(0, 10):
             new_user = AuthUserFactory()
