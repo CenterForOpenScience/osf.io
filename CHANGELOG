@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.15.1 (2025-09-04)
+====================
+
+- Notification refactor project phase 1 migration fix
+
 25.15.0 (2025-08-29)
 ====================
 

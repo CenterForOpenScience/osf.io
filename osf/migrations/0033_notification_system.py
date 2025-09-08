@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('contenttypes', '0002_remove_content_type_name'),
-        ('osf', '0032_alter_osfgroupgroupobjectpermission_unique_together_and_more'),
+        ('osf', '0032_remove_osfgroup_creator_and_more'),
     ]
 
     operations = [
