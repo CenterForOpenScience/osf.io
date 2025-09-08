@@ -27,14 +27,17 @@ from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
 
 from osf.exceptions import NodeStateError, RegistrationStuckError
+from osf.management.commands.change_node_region import _update_schema_meta
 from osf.models import (
+    Guid,
     OSFUser,
     NodeLog,
     AbstractNode,
     Registration,
     RegistrationProvider,
     RegistrationApproval,
-    SpamStatus
+    SpamStatus,
+    TrashedFile
 )
 from osf.models.admin_log_entry import (
     update_admin_log,
@@ -696,6 +699,21 @@ class NodeMakePublic(NodeMixin, View):
             node.set_privacy('public')
         except NodeStateError as e:
             messages.error(request, str(e))
+        return redirect(self.get_success_url())
+
+
+class NodeRemoveFileView(NodeMixin, View):
+    """ Allows an authorized user to remove file from node.
+    """
+    permission_required = 'osf.change_node'
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        guid_id = request.POST.get('remove-file-guid', '').strip()
+        guid = Guid.load(guid_id)
+        if guid and (file := guid.referent) and (node.registered_from == file.target) and not isinstance(file, TrashedFile):
+            file.delete()
+            _update_schema_meta(file.target)
         return redirect(self.get_success_url())
 
 

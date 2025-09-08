@@ -1,0 +1,34 @@
+<a data-toggle="modal" data-target="#confirmDeleteFileModal" class="btn btn-danger">
+    Delete File
+</a>
+<div id="confirmDeleteFileModal" class="modal fade well" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <form class="well" method="post" action="{% url 'nodes:remove-file' guid=node.guid %}">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">x</button>
+                    <h3>Enter file to delete</h3>
+                </div>
+                 {% csrf_token %}
+
+                <div class="modal-body">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                    <label for="file-guid" style="margin:0; white-space:nowrap;">File guid:</label>
+                    <input id="file-guid"
+                           type="text"
+                           name="remove-file-guid"
+                           class="form-control"
+                           required
+                           style="flex:1; min-width:0;">
+                  </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-danger"  name="action" value="ham" type="submit">Confirm</button>
+                    <button type="button" class="btn btn-default" data-dismiss="modal">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
