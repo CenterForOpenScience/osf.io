@@ -124,8 +124,7 @@ class TestContributorDetail(ContributorDetailMixin):
         project_public.add_unregistered_contributor(
             'Rheisen Dennis',
             'reason@gmail.com',
-            auth=Auth(user),
-        )
+            auth=Auth(user))
         unregistered_contributor = project_public.contributors[1]
         url = self.make_resource_url(project_public._id, unregistered_contributor._id)
 
@@ -137,7 +136,7 @@ class TestContributorDetail(ContributorDetailMixin):
         project_private.add_unregistered_contributor(
             'Nesiehr Sinned',
             'reason@gmail.com',
-            auth=Auth(user),
+            auth=Auth(user)
         )
         url = self.make_resource_url(project_private._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth)
@@ -183,11 +182,7 @@ class TestNodeContributorDetail(TestContributorDetail):
 
         other_contributor = AuthUserFactory()
         project_public.add_contributor(
-            other_contributor,
-            auth=Auth(user),
-            save=True,
-            notification_type=False
-        )
+            other_contributor, auth=Auth(user), save=True)
 
         other_contributor_detail = self.make_resource_url(project_public._id, other_contributor._id)
 
@@ -196,13 +191,7 @@ class TestNodeContributorDetail(TestContributorDetail):
 
         curator_contributor = AuthUserFactory()
         project_public.add_contributor(
-            curator_contributor,
-            auth=Auth(user),
-            save=True,
-            make_curator=True,
-            visible=False,
-            notification_type=False
-        )
+            curator_contributor, auth=Auth(user), save=True, make_curator=True, visible=False)
 
         curator_contributor_detail = self.make_resource_url(project_public._id, curator_contributor._id)
 

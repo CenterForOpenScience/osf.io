@@ -130,8 +130,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_contributor(
             non_bibliographic_user,
             visible=False,
-            auth=Auth(project_public.creator),
-        )
+            auth=Auth(project_public.creator))
         project_public.save()
         res = app.get(url_public, auth=user.auth)
         assert res.status_code == 200
@@ -144,8 +143,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
         project_public.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user),
-        )
+            auth=Auth(user))
 
         for i in range(0, 10):
             new_user = AuthUserFactory()
@@ -180,10 +178,7 @@ class TestDraftRegistrationContributorList(DraftRegistrationCRUDTestCase, TestNo
             perm = random.choice(list(users.keys()))
             user = AuthUserFactory()
 
-            project_private.add_contributor(
-                user,
-                permissions=perm,
-            )
+            project_private.add_contributor(user, permissions=perm)
             users[perm].append(user._id)
 
         res = app.get(url_private, auth=user.auth)
@@ -366,15 +361,11 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         return project_private
 
     @pytest.fixture()
@@ -397,15 +388,11 @@ class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTes
         project_public.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         project_public.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         return project_public
 
     @pytest.fixture()
@@ -472,15 +459,11 @@ class TestDraftRegistrationContributorBulkDelete(DraftRegistrationCRUDTestCase, 
         project_private.add_contributor(
             user_two,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         project_private.add_contributor(
             user_three,
             permissions=permissions.READ,
-            visible=True,
-            save=True,
-        )
+            visible=True, save=True)
         return project_private
 
 
