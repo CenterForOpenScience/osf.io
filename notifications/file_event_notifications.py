@@ -100,6 +100,7 @@ def file_updated(self, target=None, user=None, payload=None):
         'move': NotificationType.Type.ADDON_FILE_MOVED,
         'delete': NotificationType.Type.FILE_REMOVED,
         'update': NotificationType.Type.FILE_UPDATED,
+        'create_folder': NotificationType.Type.FILE_UPDATED,
     }[payload.get('action')]
 
     if event not in event_registry:
