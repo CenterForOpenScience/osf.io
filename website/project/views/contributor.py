@@ -273,6 +273,7 @@ def project_contributors_post(auth, node, **kwargs):
         child.add_contributors(
             contributors=child_contribs,
             auth=auth,
+            notification_type=False
         )
         child.save()
     # Reconnect listeners

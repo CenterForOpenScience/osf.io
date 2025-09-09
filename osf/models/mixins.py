@@ -309,7 +309,6 @@ class AffiliatedInstitutionMixin(models.Model):
         if not self.is_affiliated_with_institution(inst):
             self.affiliated_institutions.add(inst)
             self.update_search()
-            from osf.models.notification_type import NotificationType
 
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
@@ -353,8 +352,6 @@ class AffiliatedInstitutionMixin(models.Model):
             if save:
                 self.save()
             self.update_search()
-            from osf.models.notification_type import NotificationType
-
             if notify and getattr(self, 'type', False) == 'osf.node':
                 for user, _ in self.get_admin_contributors_recursive(unique_users=True):
                     NotificationType.Type.NODE_AFFILIATION_CHANGED.instance.emit(
@@ -1500,7 +1497,14 @@ class ContributorMixin(models.Model):
                 self.update_or_enqueue_on_resource_updated(user_id, first_save=False, saved_fields=['contributors'])
             return contrib_to_add
 
-    def add_contributors(self, contributors, auth=None, log=True, save=False):
+    def add_contributors(
+            self,
+            contributors,
+            auth=None,
+            log=True,
+            save=False,
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+    ):
         """Add multiple contributors
 
         :param list contributors: A list of dictionaries of the form:
@@ -1521,7 +1525,7 @@ class ContributorMixin(models.Model):
                 auth=auth,
                 log=False,
                 save=False,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+                notification_type=notification_type
             )
         if log and contributors:
             params = self.log_params
