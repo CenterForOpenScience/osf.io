@@ -305,7 +305,8 @@ class TestEditModerators:
         assert res.status_code == 302
         assert not provider.get_group('moderator').user_set.all()
 
-    def test_post_add(self, add_moderator_view, req, user, provider):
+    @mock.patch('osf.models.notification_type.NotificationType.emit')
+    def test_post_add(self, emit, add_moderator_view, req, user, provider):
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
             'add-moderators-form': [user._id],
@@ -332,3 +333,4 @@ class TestEditModerators:
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
         assert user not in provider.get_group('admin').user_set.all()
+        assert emit.call_count == 1
