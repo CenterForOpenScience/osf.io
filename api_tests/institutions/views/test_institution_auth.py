@@ -494,6 +494,135 @@ class TestInstitutionAuth:
         assert accepted_terms_of_service == user.accepted_terms_of_service
         assert not user.has_usable_password()
 
+    def test_duplicate_emails_and_names_success_existing_user(self, app, institution, url_auth_institution):
+        username, fullname, password = 'user_deanseu@user.edu', 'Foo Bar', 'FuAsKeEr'
+        exiting_user = make_user(username, fullname)
+        exiting_user.set_password(password)
+        exiting_user.save()
+        sso_email = f'{username};{username}'
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    sso_email,
+                    family_name='User;User',
+                    given_name='Fake;Fake',
+                    fullname='Fake User;Fake User',
+                )
+            )
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.fullname == fullname
+        affiliation = user.get_institution_affiliation(institution._id)
+        assert affiliation.sso_mail == username
+        assert user.has_usable_password()
+        assert user.check_password(password)
+        assert institution in user.get_affiliated_institutions()
+
+    def test_duplicate_emails_and_names_success_new_user(self, app, institution, url_auth_institution):
+        username, fullname, family_name, given_name = 'user_deansnu@user.edu', 'Fake User', 'User', 'Fake'
+        sso_email = f'{username};{username}'
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    sso_email,
+                    family_name=f'{family_name};{family_name}',
+                    given_name=f'{given_name};{given_name}',
+                    fullname=f'{fullname};{fullname}',
+                )
+            )
+        assert res.status_code == 204
+        assert mock_signals.signals_sent()
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.fullname == fullname
+        assert user.family_name == family_name
+        assert user.given_name == given_name
+        affiliation = user.get_institution_affiliation(institution._id)
+        assert affiliation.sso_mail == username
+        assert user.has_usable_password()
+        assert institution in user.get_affiliated_institutions()
+
+    def test_multiple_names_warning_exiting_user(self, app, institution, url_auth_institution):
+        username, fullname, password = 'user_mnweu@user.edu', 'Foo Bar', 'FuAsKeEr'
+        exiting_user = make_user(username, fullname)
+        exiting_user.set_password(password)
+        exiting_user.save()
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(
+                    institution,
+                    username,
+                    family_name='User1;User2',
+                    given_name='Fake1;Fake2',
+                    fullname='Fake1 User1;Fake2 User2',
+                )
+            )
+        assert res.status_code == 204
+        assert not mock_signals.signals_sent()
+        user = OSFUser.objects.filter(username=username).first()
+        assert user
+        assert user.fullname == fullname
+        affiliation = user.get_institution_affiliation(institution._id)
+        assert affiliation.sso_mail == username
+        assert user.has_usable_password()
+        assert user.check_password(password)
+        assert institution in user.get_affiliated_institutions()
+
+    def test_multiple_names_warning_new_user(self, app, institution, url_auth_institution):
+        sso_email, fullname, family_name, given_name = 'user_deansnu@user.edu', 'Fake User;Foo Bar', 'User;Bar', 'Fake;Foo'
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, sso_email, family_name=family_name, given_name=given_name, fullname=fullname),
+            )
+        assert res.status_code == 204
+        assert mock_signals.signals_sent()
+        user = OSFUser.objects.filter(username=sso_email).first()
+        assert user
+        assert user.fullname == fullname
+        assert user.family_name == family_name
+        assert user.given_name == given_name
+        affiliation = user.get_institution_affiliation(institution._id)
+        assert affiliation.sso_mail == sso_email
+        assert user.has_usable_password()
+        assert institution in user.get_affiliated_institutions()
+
+    def test_multiple_emails_failure_existing_user(self, app, institution, url_auth_institution):
+        username, second_email, fullname, password = 'user_mefeu_a', 'user_mefeu_b@user.edu', 'Fake User', 'FuAsKeEr'
+        existing_uesr = make_user(username, fullname)
+        existing_uesr.set_password(password)
+        existing_uesr.save()
+        sso_email = f'{username};{second_email}'
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, sso_email=sso_email, fullname=fullname),
+                expect_errors=True,
+            )
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'InstitutionSsoMultipleEmailsNotSupported'
+        assert not mock_signals.signals_sent()
+
+    def test_multiple_emails_failure_new_user(self, app, institution, url_auth_institution):
+        first_email, second_email, family_name, given_name = 'user_mefeu_a', 'user_mefeu_b@user.edu', 'User', 'Fake'
+        sso_email = f'{first_email};{second_email}'
+        with capture_signals() as mock_signals:
+            res = app.post(
+                url_auth_institution,
+                make_payload(institution, sso_email, family_name=family_name, given_name=given_name),
+                expect_errors=True,
+            )
+        assert res.status_code == 403
+        assert res.json['errors'][0]['detail'] == 'InstitutionSsoMultipleEmailsNotSupported'
+        assert not mock_signals.signals_sent()
+
 
 @pytest.mark.django_db
 class TestInstitutionStorageRegion:
