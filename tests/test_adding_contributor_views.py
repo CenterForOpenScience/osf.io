@@ -315,13 +315,14 @@ class TestAddingContributorViews(OsfTestCase):
         contributor = UserFactory()
         project = ProjectFactory()
         auth = Auth(project.creator)
-        with capture_notifications() as notifications:
-            notify_added_contributor(
-                project,
-                contributor,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
-                auth=auth
-            )
+        with mock.patch('osf.email.send_email_with_send_grid', return_value=None):
+            with capture_notifications(passthrough=True) as notifications:
+                notify_added_contributor(
+                    project,
+                    contributor,
+                    notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+                    auth=auth
+                )
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 

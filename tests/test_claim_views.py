@@ -228,15 +228,16 @@ class TestClaimViews(OsfTestCase):
 
     def test_send_claim_registered_email_before_throttle_expires(self):
         reg_user = UserFactory()
-        with capture_notifications() as notifications:
-            send_claim_registered_email(
-                claimer=reg_user,
-                unclaimed_user=self.user,
-                node=self.project,
-            )
-            assert len(notifications['emits']) == 2
-            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        with mock.patch('osf.email.send_email_with_send_grid', return_value=None):
+            with capture_notifications(passthrough=True) as notifications:
+                send_claim_registered_email(
+                    claimer=reg_user,
+                    unclaimed_user=self.user,
+                    node=self.project,
+                )
+                assert len(notifications['emits']) == 2
+                assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+                assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         # second call raises error because it was called before throttle period
         with pytest.raises(HTTPError):
                 send_claim_registered_email(

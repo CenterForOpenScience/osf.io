@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -217,16 +219,17 @@ class TestClaimUser:
         assert res.status_code == 403
 
     def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project):
-        with capture_notifications() as notifications:
-            app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(id=project._id),
-                auth=claimer.auth,
-                expect_errors=True
-            )
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        with mock.patch('osf.email.send_email_with_send_grid', return_value=None):
+            with capture_notifications(passthrough=True) as notifications:
+                app.post_json_api(
+                    url.format(unreg_user._id),
+                    self.payload(id=project._id),
+                    auth=claimer.auth,
+                    expect_errors=True
+                )
+            assert len(notifications['emits']) == 2
+            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
