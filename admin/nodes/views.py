@@ -717,18 +717,19 @@ class NodeRemoveFileView(NodeMixin, View):
                 for block in schema_response.response_blocks.filter(schema_key__in=file_input_keys):
                     if not block.response:
                         continue
-                    block.response = [entry for entry in block.response if entry.get('file_id') != removed_file_id]
+                    block.response = [entry for entry in block.response if entry.get('file_id') not in removed_file_id]
                     block.save()
 
         node = self.get_object()
         guid_id = request.POST.get('remove-file-guid', '').strip()
         guid = Guid.load(guid_id)
 
-        if guid and (file := guid.referent) and (file.target == node.registered_from) and not isinstance(file, TrashedFile):
+        # delete file from registration and metadata and keep it for original project
+        if guid and (file := guid.referent) and (file.target == node) and not isinstance(file, TrashedFile):
             with transaction.atomic():
                 file.delete()
                 _update_schema_meta(file.target)
-                _remove_file_from_schema_response_blocks(node, file._id)
+                _remove_file_from_schema_response_blocks(node, [file._id, file.copied_from._id])
         return redirect(self.get_success_url())
 
 
