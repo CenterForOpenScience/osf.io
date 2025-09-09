@@ -1,7 +1,8 @@
 from django.shortcuts import redirect
 from django.views.generic import TemplateView
 from django.contrib import messages
-from osf.models import RegistrationProvider, OSFUser
+from osf.models import RegistrationProvider, OSFUser, NotificationType
+from website.settings import DOMAIN
 
 
 class AddAdminOrModerator(TemplateView):
@@ -33,12 +34,28 @@ class AddAdminOrModerator(TemplateView):
             messages.error(request, f'User with guid: {data["add-moderators-form"][0]} is already a moderator or admin')
             return redirect(f'{self.url_namespace}:add_admin_or_moderator', provider_id=provider.id)
 
+        context = {}
+        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
+        context['provider_name'] = provider.name
+        context['provider__id'] = provider._id
+        context['is_reviews_moderator_notification'] = True
+        context['referrer_fullname'] = target_user.fullname
+        context['user_fullname'] = target_user.fullname
+        context['is_reviews_moderator_notification'] = True
         if 'admin' in data:
             provider.add_to_group(target_user, 'admin')
             target_type = 'admin'
+            context['is_admin'] = True
         else:
             provider.add_to_group(target_user, 'moderator')
             target_type = 'moderator'
+            context['is_admin'] = False
+
+        notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        notification_type.instance.emit(
+            user=target_user,
+            event_context=context,
+        )
 
         messages.success(request, f'The following {target_type} was successfully added: {target_user.fullname} ({target_user.username})')
 
