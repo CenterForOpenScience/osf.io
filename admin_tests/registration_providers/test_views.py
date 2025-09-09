@@ -9,7 +9,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
     ProviderAssetFileFactory
 )
-from osf.models import RegistrationProvider, RegistrationSchema
+from osf.models import RegistrationProvider, RegistrationSchema, NotificationType
 from admin_tests.utilities import setup_view, setup_form_view
 from admin.registration_providers import views
 from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
@@ -26,6 +26,7 @@ from website import settings
 
 from django.contrib.messages.storage.fallback import FallbackStorage
 from osf.migrations import update_provider_auth_groups
+from tests.utils import assert_notification
 
 pytestmark = pytest.mark.django_db
 
@@ -305,8 +306,7 @@ class TestEditModerators:
         assert res.status_code == 302
         assert not provider.get_group('moderator').user_set.all()
 
-    @mock.patch('osf.models.notification_type.NotificationType.emit')
-    def test_post_add(self, emit, add_moderator_view, req, user, provider):
+    def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
             'csrfmiddlewaretoken': 'fake csfr',
             'add-moderators-form': [user._id],
@@ -319,7 +319,8 @@ class TestEditModerators:
         messages = FallbackStorage(req)
         setattr(req, '_messages', messages)
 
-        res = add_moderator_view.post(req)
+        with assert_notification(type=NotificationType.Type.PROVIDER_MODERATOR_ADDED, user=user):
+            res = add_moderator_view.post(req)
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
 
@@ -333,4 +334,3 @@ class TestEditModerators:
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
         assert user not in provider.get_group('admin').user_set.all()
-        assert emit.call_count == 1
