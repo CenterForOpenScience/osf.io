@@ -224,15 +224,16 @@ class InstitutionAuthentication(BaseAuthentication):
                     f'sso_email={sso_email}, sso_identity={sso_identity}]',
                 )
 
-        # Deduplicate full name first if it is provided
+        # Deduplicate names first if it is provided
         if fullname:
             fullname = deduplicate_sso_attributes('fullname', fullname)
+        if given_name:
+            given_name = deduplicate_sso_attributes('given_name', given_name)
+        if family_name:
+            family_name = deduplicate_sso_attributes('family_name', family_name)
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
-            given_name = deduplicate_sso_attributes('given_name', given_name)
-            family_name = deduplicate_sso_attributes('family_name', family_name)
             fullname = given_name + ' ' + family_name
-
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
             message = f'Institution SSO Error: missing full name ' \
