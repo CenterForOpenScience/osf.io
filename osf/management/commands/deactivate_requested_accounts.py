@@ -21,6 +21,7 @@ def deactivate_requested_accounts(dry_run=True):
             logger.info(f'OSF support is being emailed about deactivating the account of user {user._id}.')
             if not dry_run:
                 NotificationType.Type.DESK_REQUEST_DEACTIVATION.instance.emit(
+                    destination_address=OSF_SUPPORT_EMAIL,
                     user=user,
                     event_context={
                         'user__id': user._id,
