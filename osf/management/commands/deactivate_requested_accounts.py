@@ -7,6 +7,7 @@ from website.app import setup_django
 setup_django()
 from osf.models import OSFUser, NotificationType
 from django.core.management.base import BaseCommand
+from website.settings import OSF_SUPPORT_EMAIL
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,9 @@ def deactivate_requested_accounts(dry_run=True):
                 NotificationType.Type.DESK_REQUEST_DEACTIVATION.instance.emit(
                     user=user,
                     event_context={
+                        'user__id': user._id,
+                        'user_absolute_url': user.absolute_url,
+                        'user_username': user.username,
                         'can_change_preferences': False,
                     }
                 )
@@ -33,6 +37,8 @@ def deactivate_requested_accounts(dry_run=True):
                 NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
                     user=user,
                     event_context={
+                        'user_fullname': user.fullname,
+                        'contact_email': OSF_SUPPORT_EMAIL,
                         'can_change_preferences': False,
                     }
                 )
