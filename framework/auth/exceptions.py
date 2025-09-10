@@ -65,3 +65,8 @@ class MergeConflictError(EmailConfirmTokenError):
     """Raised if a merge is not possible due to a conflict"""
     message_short = language.CANNOT_MERGE_ACCOUNTS_SHORT
     message_long = language.CANNOT_MERGE_ACCOUNTS_LONG
+
+
+class MultipleSSOEmailError(AuthError):
+    """Raised if institution SSO provides multiple emails which OSF cannot deduplicate."""
+    pass

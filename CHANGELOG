@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.15.2 (2025-09-10)
+====================
+
+- Handle duplicate SSO emails during institution SSO
+
 25.15.1 (2025-09-04)
 ====================
 
