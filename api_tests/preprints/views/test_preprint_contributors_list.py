@@ -1420,6 +1420,32 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
+    def test_add_contributor_signal_no_query_param(
+            self, app, user, user_two, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_preprint_contribs,
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                        },
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'type': 'users',
+                                    'id': user_two._id
+                                }
+                            }
+                        }
+                    }
+                },
+                auth=user.auth
+            )
+        assert res.status_code == 201
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+
     def test_add_unregistered_contributor_sends_email(
             self, app, user, url_preprint_contribs):
         with capture_notifications() as notifications:

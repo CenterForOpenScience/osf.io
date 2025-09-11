@@ -1265,11 +1265,12 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         if email_pref not in self.email_preferences:
             raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
 
+        is_published = getattr(resource, 'is_published', False)
         notification_type = {
             'false': False,
             'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
             'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
-            'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
+            'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
         }.get(email_pref, False)
         contributor = OSFUser.load(user_id)
         notification_type = notification_type if email or (contributor and contributor.is_registered) else False
