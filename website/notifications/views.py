@@ -7,7 +7,8 @@ from framework import sentry
 from framework.auth.decorators import must_be_logged_in
 from framework.exceptions import HTTPError
 
-from osf.models import AbstractNode, Registration
+from osf.models import AbstractNode, Registration, Node
+
 NOTIFICATION_TYPES = {}
 USER_SUBSCRIPTIONS_AVAILABLE = {}
 NODE_SUBSCRIPTIONS_AVAILABLE = {}
@@ -136,18 +137,15 @@ def get_configured_projects(user):
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
-        node = subscription.owner
+        node = subscription.subscribed_object
 
-        if (
-            (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured
-        ):
+        if subscription.message_frequency == 'none':
             continue
+        if isinstance(node, Node):
+            root = node.root
 
-        root = node.root
-
-        if not root.is_deleted:
-            configured_projects.add(root)
+            if not root.is_deleted:
+                configured_projects.add(root)
 
     return sorted(configured_projects, key=lambda n: n.title.lower())
 
@@ -167,10 +165,9 @@ def check_project_subscriptions_are_all_none(user, node):
 def get_all_user_subscriptions(user, extra=None):
     """ Get all Subscription objects that the user is subscribed to"""
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    queryset = NotificationSubscription.objects.filter(
+    return NotificationSubscription.objects.filter(
         user=user,
     )
-    return queryset.filter(extra) if extra else queryset
 
 
 def get_all_node_subscriptions(user, node, user_subscriptions=None):
@@ -213,7 +210,13 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+            subscriptions = get_all_node_subscriptions(
+                user,
+                node,
+                user_subscriptions=user_subscriptions
+            ).filter(
+                notification_type__name__in=node_sub_available
+            )
 
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
@@ -254,7 +257,7 @@ def format_user_subscriptions(user):
             event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
         )
         for subscription in get_all_user_subscriptions(user)
-        if subscription is not None and getattr(subscription, 'event_name') in user_subs_available
+        if subscription is not None in user_subs_available
     ]
     subscriptions.extend([serialize_event(user, event_description=sub) for sub in user_subs_available])
     return subscriptions
@@ -532,12 +535,6 @@ def configure_subscription(auth):
         user=user,
         notification_type__name=event
     )
-    subscription.save()
-
-    if node and node._id not in user.notifications_configured:
-        user.notifications_configured[node._id] = True
-        user.save()
-
     subscription.save()
 
     return {'message': f'Successfully subscribed to {notification_type} list on {event_id}'}

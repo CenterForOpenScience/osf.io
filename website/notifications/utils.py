@@ -168,12 +168,9 @@ def get_configured_projects(user):
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
-        node = subscription.owner
+        node = subscription.subscribed_object
 
-        if (
-            (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured
-        ):
+        if subscription.message_frequency == 'none':
             continue
 
         root = node.root
@@ -240,7 +237,10 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+            subscriptions = get_all_node_subscriptions(
+                user,
+                node,
+                user_subscriptions=user_subscriptions).filter(notification_type__name__in=node_sub_available)
 
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))
