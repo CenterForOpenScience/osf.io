@@ -780,7 +780,7 @@ msgstr "削除"
 
 #: wiki/templates/edit.mako:2
 msgid "Wiki"
-msgstr "Wik"
+msgstr "Wiki"
 
 #: wiki/templates/edit.mako:42
 msgid "Menu"
@@ -828,7 +828,7 @@ msgstr "ブラウザは間もなく更新されます"
 
 #: wiki/templates/edit.mako:273
 msgid "Renaming wiki..."
-msgstr "ウィキの名前を変更しています..."
+msgstr "Wikiの名前を変更しています..."
 
 #: wiki/templates/edit.mako:283
 msgid "Wiki page deleted"
@@ -844,7 +844,7 @@ msgstr "確認"
 
 #: wiki/templates/edit.mako:300
 msgid "Connected to the collaborative wiki"
-msgstr "共同ウィキに接続しました"
+msgstr "共同Wikiに接続しました"
 
 #: wiki/templates/edit.mako:304
 msgid ""
@@ -853,7 +853,7 @@ msgid ""
 "real time. Changes will be stored            but not published until you "
 "click the \"Save\" button."
 msgstr ""
-"このページは現在、共同ウィキに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
+"このページは現在、共同Wikiに接続されています。 行われたすべての編集は、書き込み許可を持つ投稿者にリアルタイムで表示されます。 "
 "変更は保存されますが、[保存]ボタンをクリックするまで公開されません。"
 
 #: wiki/templates/edit.mako:310 wiki/templates/wiki-bar-modal-help.mako:14
@@ -862,7 +862,7 @@ msgstr "閉じる"
 
 #: wiki/templates/edit.mako:321
 msgid "Connecting to the collaborative wiki"
-msgstr "共同ウィキへの接続"
+msgstr "共同Wikiへの接続"
 
 #: wiki/templates/edit.mako:325
 msgid ""

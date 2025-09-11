@@ -276,3 +276,7 @@ li.addon-categories a{
     margin: 0;
     padding: 2px 3px;
 }
+
+#markdownRender ul li {
+    list-style-type: none;
+}

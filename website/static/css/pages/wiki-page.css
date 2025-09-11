@@ -345,3 +345,179 @@ select.form-control {
     display: inherit;
     overflow-y: hidden;
 }
+
+.menu-item {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: #4B5563;
+}
+
+.wiki-radio-group {
+    display:flex;
+}
+
+.wiki-radio-item {
+    margin-right: 10px;
+}
+
+.menuItem:hover{
+    background: #d1d5db;
+}
+
+.table-dropdown-item {
+  padding: 2px 8px 2px 4px;
+}
+
+.milkdown .editor img.emoji {
+    width: 1em;
+    height: 1em;
+}
+
+.mFrame {
+    overflow: auto;
+    height: 400px;
+}
+
+.wiki-editor-modal-label {
+    margin-bottom: 0;
+    width: 130px;
+    display: inline-block;
+    text-align: left;
+}
+
+.wiki-editor-modal-input{
+    width: calc(100% - 136px);
+    display: inline-block;
+}
+
+#mMenuBar {
+    border-bottom: 1px solid;
+    border-bottom-color: #d1d5db;
+}
+
+.m-menu-color-item {
+    position: relative;
+    display: inline-block;
+}
+
+.m-menu-color-input {
+    position: absolute;
+    top:0;
+    left:0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+#arrowDropDown {
+    margin-left: -7px;
+}
+
+#tableMenu {
+    border: 1px solid #aaa;
+    padding: 2px;
+    font-size: 90%;
+    background: white;
+    z-index: 15;
+    white-space: nowrap;
+    position: absolute;
+}
+
+.table-dropdown-item:hover {
+    background-color: #337AB7;
+}
+
+.heading-dropdown-item:hover {
+    background-color: #337AB7;
+}
+
+.milkdown .editor table {
+    width: 80%;
+}
+
+.milkdown .editor ul li {
+    list-style-type: none;
+}
+
+.milkdown .editor ul li:has(>p) {
+    list-style-type: disc;
+}
+
+.milkdown .editor ul li:has(>p >a) {
+    list-style-type: disc;
+}
+
+.milkdown .editor li[data-list-type="ordered"] {
+    list-style-type: decimal;
+}
+
+.sort-item {
+    padding: 5px;
+}
+
+.ko_container li {
+    list-style: none;
+}
+
+.sort-children:empty {
+    min-height: 7px;
+  }
+
+.importOperationItem{
+    display: inline-block;
+    margin-right: 10px;
+}
+
+div[name="WikiImportOperationPer"] {
+    display: inline-block;
+    margin-left: 10px;
+}
+
+div[name="WikiImportOperationPerName"] {
+    display: list-item;
+    position: absolute;
+    left: 55px;
+    max-width: 410px;
+}
+
+li[name="WikiImportOperationPerItem"] {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.sort-modal-dialog {
+    width: 70%
+}
+
+.sort-modal-body {
+    height: 550px;
+    overflow: auto;
+}
+
+.sort-modal-footer {
+    border-top: 1px solid #e5e5e5;
+}
+
+.sort-title {
+    padding: 10px;
+    border-bottom: 2px solid #ddd;
+}
+
+.sort-tree {
+    margin-top: 25px;
+}
+
+.sort-item {
+    border-bottom: 1px solid #ddd;
+}
+
+.sort-expand-collapse-icon {
+    margin-right: 2px;
+}
+
+.sort-bars {
+    color: #ddd;
+    margin-right: 1px;
+}

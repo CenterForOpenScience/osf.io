@@ -1,21 +1,21 @@
 # Translations template for PROJECT.
-# Copyright (C) 2022 ORGANIZATION
+# Copyright (C) 2024 ORGANIZATION
 # This file is distributed under the same license as the PROJECT project.
-# FIRST AUTHOR <EMAIL@ADDRESS>, 2022.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2024.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2022-05-04 06:30+0000\n"
+"POT-Creation-Date: 2024-09-25 10:20+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.7.0\n"
 
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:6
 msgid "Connect an Azure Blob Storage Account"
@@ -32,9 +32,10 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:36
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:77
 #: addons/binderhub/templates/binderhub_node_settings.mako:39
-#: addons/binderhub/templates/hosts_modal.mako:64
+#: addons/binderhub/templates/hosts_modal.mako:85
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:75
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:55
+#: addons/googledrive/templates/googledrive_node_settings.mako:80
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:99
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:71
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:72
@@ -49,8 +50,10 @@ msgstr ""
 #: addons/swift/templates/swift_credentials_modal.mako:56
 #: addons/swift/templates/swift_node_settings.mako:77
 #: addons/weko/templates/weko_credentials_modal.mako:57
-#: addons/wiki/templates/add_wiki_page.mako:17
+#: addons/wiki/templates/abort_wiki_import.mako:14
+#: addons/wiki/templates/add_wiki_page.mako:33
 #: addons/wiki/templates/delete_wiki_page.mako:13
+#: addons/wiki/templates/edit.mako:405 addons/wiki/templates/edit.mako:447
 #: addons/zotero/templates/zotero_node_settings.mako:83
 #: addons/zotero/templates/zotero_node_settings.mako:127
 #: website/templates/include/comment_pane_template.mako:32
@@ -69,8 +72,8 @@ msgstr ""
 #: website/templates/project/modal_remove_contributor.mako:122
 #: website/templates/project/nodes_delete.mako:89
 #: website/templates/project/nodes_privacy.mako:104
-#: website/templates/project/project.mako:572
-#: website/templates/project/settings.mako:131
+#: website/templates/project/project.mako:574
+#: website/templates/project/settings.mako:133
 #: website/templates/project/timestamp.mako:71
 #: website/templates/util/render_addon_widget.mako:98
 msgid "Cancel"
@@ -79,13 +82,14 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_credentials_modal.mako:39
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:79
 #: addons/binderhub/templates/binderhub_node_settings.mako:42
-#: addons/binderhub/templates/hosts_modal.mako:67
+#: addons/binderhub/templates/hosts_modal.mako:88
 #: addons/dataverse/templates/dataverse_credentials_modal.mako:78
 #: addons/dataverse/templates/dataverse_node_settings.mako:118
 #: addons/forward/templates/forward_node_settings.mako:36
 #: addons/github/templates/github_node_settings.mako:54
 #: addons/gitlab/templates/gitlab_credentials_modal.mako:57
 #: addons/gitlab/templates/gitlab_node_settings.mako:64
+#: addons/googledrive/templates/googledrive_node_settings.mako:82
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:18
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:74
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:74
@@ -100,25 +104,27 @@ msgstr ""
 #: addons/swift/templates/swift_credentials_modal.mako:59
 #: addons/swift/templates/swift_node_settings.mako:79
 #: addons/weko/templates/weko_node_settings.mako:83
-#: addons/wiki/templates/edit.mako:189
+#: addons/wiki/templates/edit.mako:207
+#: addons/wiki/templates/sort_wiki_page.mako:18
 #: addons/zotero/templates/zotero_node_settings.mako:85
 #: addons/zotero/templates/zotero_node_settings.mako:129
 #: website/templates/claim_account.mako:112
 #: website/templates/include/comment_template.mako:93
-#: website/templates/include/profile/jobs.mako:117
-#: website/templates/include/profile/jobs.mako:120
-#: website/templates/include/profile/names.mako:76
-#: website/templates/include/profile/names.mako:79
+#: website/templates/include/profile/jobs.mako:133
+#: website/templates/include/profile/jobs.mako:136
+#: website/templates/include/profile/names.mako:102
+#: website/templates/include/profile/names.mako:105
 #: website/templates/include/profile/schools.mako:117
 #: website/templates/include/profile/schools.mako:120
-#: website/templates/include/profile/social.mako:143
-#: website/templates/include/profile/social.mako:146
+#: website/templates/include/profile/social.mako:150
+#: website/templates/include/profile/social.mako:153
+#: website/templates/profile/add_email.mako:211
 #: website/templates/profile/oauth_app_detail.mako:88
 #: website/templates/profile/personal_tokens_detail.mako:55
 #: website/templates/project/addon/node_settings_default.mako:74
 #: website/templates/project/addon/user_settings.mako:13
-#: website/templates/project/project.mako:574
-#: website/templates/project/settings.mako:338
+#: website/templates/project/project.mako:576
+#: website/templates/project/settings.mako:341
 msgid "Save"
 msgstr ""
 
@@ -130,6 +136,8 @@ msgstr ""
 #: addons/github/templates/github_node_settings.mako:15
 #: addons/gitlab/templates/gitlab_node_settings.mako:18
 #: addons/gitlab/templates/gitlab_user_settings.mako:18
+#: addons/googledrive/templates/googledrive_node_settings.mako:10
+#: addons/googledrive/templates/googledrive_user_settings.mako:24
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:15
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:18
 #: addons/owncloud/templates/owncloud_node_settings.mako:15
@@ -155,6 +163,7 @@ msgstr ""
 #: addons/dataverse/templates/dataverse_node_settings.mako:22
 #: addons/github/templates/github_node_settings.mako:21
 #: addons/gitlab/templates/gitlab_node_settings.mako:24
+#: addons/googledrive/templates/googledrive_node_settings.mako:17
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:22
 #: addons/owncloud/templates/owncloud_node_settings.mako:22
 #: addons/s3/templates/s3_node_settings.mako:21
@@ -168,6 +177,7 @@ msgid "Import Account from Profile"
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:28
+#: addons/googledrive/templates/googledrive_node_settings.mako:24
 #: addons/s3/templates/s3_node_settings.mako:28
 #: addons/s3compat/templates/s3compat_node_settings.mako:28
 #: addons/s3compatb3/templates/s3compatb3_node_settings.mako:28
@@ -193,6 +203,7 @@ msgstr ""
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:65
 #: addons/github/templates/github_node_settings.mako:62
 #: addons/gitlab/templates/gitlab_node_settings.mako:71
+#: addons/googledrive/templates/googledrive_node_settings.mako:54
 #: addons/owncloud/templates/owncloud_node_settings.mako:47
 #: addons/s3/templates/s3_node_settings.mako:50
 #: addons/s3compat/templates/s3compat_node_settings.mako:50
@@ -202,7 +213,7 @@ msgstr ""
 #: addons/zotero/templates/zotero_node_settings.mako:46
 #: addons/zotero/templates/zotero_node_settings.mako:101
 #: website/templates/project/addon/node_settings_default.mako:46
-#: website/templates/project/project.mako:202
+#: website/templates/project/project.mako:203
 msgid "None"
 msgstr ""
 
@@ -217,6 +228,7 @@ msgid "Loading containers..."
 msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_node_settings.mako:72
+#: addons/googledrive/templates/googledrive_node_settings.mako:75
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:67
 #: addons/owncloud/templates/owncloud_node_settings.mako:67
 #: addons/s3/templates/s3_node_settings.mako:72
@@ -232,6 +244,7 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:12
 #: addons/dataverse/templates/dataverse_user_settings.mako:12
 #: addons/gitlab/templates/gitlab_user_settings.mako:12
+#: addons/googledrive/templates/googledrive_user_settings.mako:17
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:12
 #: addons/owncloud/templates/owncloud_user_settings.mako:12
 #: addons/s3/templates/s3_user_settings.mako:12
@@ -251,6 +264,7 @@ msgstr ""
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:32
 #: addons/dataverse/templates/dataverse_user_settings.mako:31
 #: addons/gitlab/templates/gitlab_user_settings.mako:31
+#: addons/googledrive/templates/googledrive_user_settings.mako:38
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:31
 #: addons/owncloud/templates/owncloud_user_settings.mako:31
 #: addons/s3/templates/s3_user_settings.mako:32
@@ -264,6 +278,7 @@ msgstr ""
 
 #: addons/azureblobstorage/templates/azureblobstorage_user_settings.mako:36
 #: addons/binderhub/templates/binderhub_user_settings.mako:41
+#: addons/googledrive/templates/googledrive_user_settings.mako:42
 #: addons/s3/templates/s3_user_settings.mako:36
 #: addons/s3compat/templates/s3compat_user_settings.mako:36
 #: addons/s3compatb3/templates/s3compatb3_user_settings.mako:36
@@ -271,6 +286,28 @@ msgstr ""
 #: addons/weko/templates/weko_user_settings.mako:35
 #: website/templates/profile/user_settings_default.mako:32
 msgid "disconnect Project"
+msgstr ""
+
+#: addons/base/models.py:475
+msgid ""
+"Because you have not configured the {addon} add-on, your authentication "
+"will not be transferred to the forked {category}. You may authorize and "
+"configure the {addon} add-on in the new fork on the settings page."
+msgstr ""
+
+#: addons/base/models.py:483
+msgid ""
+"Because you have authorized the {addon} add-on for this {category}, "
+"forking it will also transfer your authentication to the forked "
+"{category}."
+msgstr ""
+
+#: addons/base/models.py:490
+msgid ""
+"Because the {addon} add-on has been authorized by a different user, "
+"forking it will not transfer authentication to the forked {category}. You"
+" may authorize and configure the {addon} add-on in the new fork on the "
+"settings page."
 msgstr ""
 
 #: addons/binderhub/templates/binderhub_node_settings.mako:14
@@ -380,6 +417,7 @@ msgstr ""
 #: addons/bitbucket/templates/bitbucket_node_settings.mako:25
 #: addons/github/templates/github_node_settings.mako:25
 #: addons/gitlab/templates/gitlab_node_settings.mako:28
+#: addons/googledrive/templates/googledrive_node_settings.mako:38
 #: addons/zotero/templates/zotero_node_settings.mako:31
 #: website/templates/project/addon/node_settings_default.mako:31
 msgid "Connect Account"
@@ -479,7 +517,7 @@ msgstr ""
 
 #: addons/forward/templates/forward_node_settings.mako:24
 #: website/templates/profile/oauth_app_detail.mako:67
-#: website/templates/project/settings.mako:108
+#: website/templates/project/settings.mako:110
 msgid "Optional"
 msgstr ""
 
@@ -542,8 +580,38 @@ msgid ""
 "%(authOsfName)s to verify."
 msgstr ""
 
+#: addons/googledrive/templates/googledrive_node_settings.mako:7
+#: website/templates/project/addon/node_settings_default.mako:7
+#, python-format
+msgid "authorized by %(ownerName)s"
+msgstr ""
+
+#: addons/googledrive/templates/googledrive_node_settings.mako:49
+#: addons/owncloud/templates/owncloud_node_settings.mako:42
+#: website/templates/project/addon/node_settings_default.mako:41
+msgid "Current Folder:"
+msgstr ""
+
+#: addons/googledrive/templates/googledrive_node_settings.mako:66
+#: addons/nextcloud/templates/nextcloud_node_settings.mako:58
+#: addons/owncloud/templates/owncloud_node_settings.mako:58
+#: addons/zotero/templates/zotero_node_settings.mako:113
+#: website/templates/project/addon/node_settings_default.mako:58
+msgid "Loading folders..."
+msgstr ""
+
+#: addons/googledrive/templates/googledrive_user_settings.mako:30
+#: addons/s3/templates/s3_user_settings.mako:24
+#: addons/s3compat/templates/s3compat_user_settings.mako:24
+#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:24
+#: addons/swift/templates/swift_user_settings.mako:24
+#: addons/weko/templates/weko_user_settings.mako:23
+#: website/templates/profile/user_settings_default.mako:20
+msgid "Authorized by "
+msgstr ""
+
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:13
-#: addons/wiki/templates/edit.mako:34
+#: addons/wiki/templates/edit.mako:44
 msgid "New"
 msgstr ""
 
@@ -569,6 +637,7 @@ msgid "Service Base URL"
 msgstr ""
 
 #: addons/jupyterhub/templates/jupyterhub_node_settings.mako:102
+#: addons/wiki/templates/import_wiki_page.mako:91
 #: addons/metadata/templates/metadata_node_settings.mako:92
 msgid "OK"
 msgstr ""
@@ -687,7 +756,7 @@ msgstr ""
 
 #: addons/nextcloud/templates/nextcloud_credentials_modal.mako:48
 #: addons/owncloud/templates/owncloud_credentials_modal.mako:48
-#: website/templates/include/profile/social.mako:66
+#: website/templates/include/profile/social.mako:73
 msgid "username"
 msgstr ""
 
@@ -708,13 +777,6 @@ msgstr ""
 #: addons/nextcloud/templates/nextcloud_node_settings.mako:53
 #: addons/owncloud/templates/owncloud_node_settings.mako:53
 msgid "Change"
-msgstr ""
-
-#: addons/nextcloud/templates/nextcloud_node_settings.mako:58
-#: addons/owncloud/templates/owncloud_node_settings.mako:58
-#: addons/zotero/templates/zotero_node_settings.mako:113
-#: website/templates/project/addon/node_settings_default.mako:58
-msgid "Loading folders..."
 msgstr ""
 
 #: addons/nextcloud/templates/nextcloud_user_settings.mako:23
@@ -751,11 +813,6 @@ msgid ""
 "Password</a>."
 msgstr ""
 
-#: addons/owncloud/templates/owncloud_node_settings.mako:42
-#: website/templates/project/addon/node_settings_default.mako:41
-msgid "Current Folder:"
-msgstr ""
-
 #: addons/s3/templates/s3_credentials_modal.mako:6
 msgid "Connect an Amazon S3 Account"
 msgstr ""
@@ -779,15 +836,6 @@ msgstr ""
 
 #: addons/s3/templates/s3_node_settings.mako:63
 msgid "Loading buckets..."
-msgstr ""
-
-#: addons/s3/templates/s3_user_settings.mako:24
-#: addons/s3compat/templates/s3compat_user_settings.mako:24
-#: addons/s3compatb3/templates/s3compatb3_user_settings.mako:24
-#: addons/swift/templates/swift_user_settings.mako:24
-#: addons/weko/templates/weko_user_settings.mako:23
-#: website/templates/profile/user_settings_default.mako:20
-msgid "Authorized by "
 msgstr ""
 
 #: addons/s3compat/templates/s3compat_credentials_modal.mako:6
@@ -927,64 +975,109 @@ msgstr ""
 msgid "There are no indices associated with the connected account."
 msgstr ""
 
+#: addons/wiki/templates/abort_wiki_import.mako:7
+msgid "Abort wiki import"
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:10
+msgid "Any wiki imports in process will be aborted. This action is irreversible."
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:15
+#: addons/wiki/templates/edit.mako:58
+msgid "Abort"
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:29
+msgid "Aborting"
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:53
+msgid "Error occurred when abort wiki import."
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:78
+msgid ""
+"The import process may have encountered an unexpected error and been "
+"interrupted. To check the latest status, please reload the page. If the "
+"issue persists, please contact support."
+msgstr ""
+
+#: addons/wiki/templates/abort_wiki_import.mako:93
+msgid "abort error"
+msgstr ""
+
 #: addons/wiki/templates/add_wiki_page.mako:8
 msgid "Add new wiki page"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:12
+#: addons/wiki/templates/add_wiki_page.mako:15
+msgid "Add to same hierarchy"
+msgstr ""
+
+#: addons/wiki/templates/add_wiki_page.mako:22
+msgid "Add to child hierarchy"
+msgstr ""
+
+#: addons/wiki/templates/add_wiki_page.mako:27
 msgid "New Wiki Name"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:18
-#: addons/wiki/templates/add_wiki_page.mako:44
-#: addons/wiki/templates/add_wiki_page.mako:49
-#: addons/wiki/templates/add_wiki_page.mako:55
-#: addons/wiki/templates/add_wiki_page.mako:94
+#: addons/wiki/templates/add_wiki_page.mako:34
+#: addons/wiki/templates/add_wiki_page.mako:61
+#: addons/wiki/templates/add_wiki_page.mako:66
+#: addons/wiki/templates/add_wiki_page.mako:72
+#: addons/wiki/templates/add_wiki_page.mako:127
+#: addons/wiki/templates/edit.mako:409 addons/wiki/templates/edit.mako:452
 #: website/templates/project/contributors.mako:57
 #: website/templates/project/contributors.mako:164
-#: website/templates/project/contributors.mako:337
-#: website/templates/project/contributors.mako:385
+#: website/templates/project/contributors.mako:347
+#: website/templates/project/contributors.mako:395
 #: website/templates/project/modal_add_contributor.mako:346
 #: website/templates/project/modal_add_contributor.mako:350
 #: website/templates/project/modal_add_contributor.mako:356
-#: website/templates/project/settings.mako:209
-#: website/templates/project/settings.mako:522
+#: website/templates/project/settings.mako:211
+#: website/templates/project/settings.mako:526
 msgid "Add"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:38
+#: addons/wiki/templates/add_wiki_page.mako:55
 msgid "Creating new wiki page"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:41
+#: addons/wiki/templates/add_wiki_page.mako:58
 msgid "The new wiki page name cannot be empty"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:46
+#: addons/wiki/templates/add_wiki_page.mako:63
 msgid "The new wiki page name cannot be more than 100 characters."
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:52
+#: addons/wiki/templates/add_wiki_page.mako:69
 msgid "The new wiki page name cannot contain forward slashes."
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:70
+#: addons/wiki/templates/add_wiki_page.mako:100
 msgid "A wiki page with that name already exists."
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:73
+#: addons/wiki/templates/add_wiki_page.mako:103
+msgid "The parent wiki page does not exist."
+msgstr ""
+
+#: addons/wiki/templates/add_wiki_page.mako:106
 msgid "You do not have permission to perform this action."
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:74
+#: addons/wiki/templates/add_wiki_page.mako:107
 msgid "Unauthorized user can view wiki add button"
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:83
+#: addons/wiki/templates/add_wiki_page.mako:116
 msgid "Could not validate wiki page. Please try again."
 msgstr ""
 
-#: addons/wiki/templates/add_wiki_page.mako:84
+#: addons/wiki/templates/add_wiki_page.mako:117
 msgid "Error occurred while validating page"
 msgstr ""
 
@@ -993,11 +1086,13 @@ msgid "Delete wiki page"
 msgstr ""
 
 #: addons/wiki/templates/delete_wiki_page.mako:10
-msgid "Are you sure you want to delete this wiki page?"
+msgid ""
+"This wiki page and all content under it will be deleted. This action is "
+"irreversible."
 msgstr ""
 
 #: addons/wiki/templates/delete_wiki_page.mako:14
-#: addons/wiki/templates/edit.mako:38
+#: addons/wiki/templates/edit.mako:69
 #: website/templates/include/comment_template.mako:149
 #: website/templates/profile/personal_tokens_detail.mako:53
 #: website/templates/project/nodes_delete.mako:91
@@ -1008,98 +1103,145 @@ msgstr ""
 #: addons/wiki/templates/edit.mako:2
 #: website/templates/include/comment_pane_template.mako:19
 #: website/templates/project/settings.mako:36
-#: website/templates/project/settings.mako:257
+#: website/templates/project/settings.mako:259
 #: website/templates/search.mako:278 website/templates/search.mako:370
 #: website/templates/search_grdm.mako:397
-#: website/templates/search_grdm.mako:574
 msgid "Wiki"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:42
+#: addons/wiki/templates/edit.mako:48
+msgid "Reorder"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:55
+msgid "Importing"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:62
+#: addons/wiki/templates/import_wiki_page.mako:23
+#: addons/wiki/templates/import_wiki_page.mako:136
+#: addons/wiki/templates/import_wiki_page.mako:452
+#: addons/wiki/templates/import_wiki_page.mako:463
+#: addons/wiki/templates/import_wiki_page.mako:485
+#: addons/wiki/templates/import_wiki_page.mako:486
+msgid "Import"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:73
 msgid "Menu"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:53
+#: addons/wiki/templates/edit.mako:84
 msgid "Loading wiki pages..."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:75 addons/wiki/templates/edit.mako:82
+#: addons/wiki/templates/edit.mako:106
 msgid "View"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:88
+#: addons/wiki/templates/edit.mako:115
+#: website/templates/include/profile/schools.mako:180
+#: website/templates/include/profile/social.mako:191
+#: website/templates/project/project.mako:545
+msgid "Edit"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:132
 msgid "Wiki Version:"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:92
+#: addons/wiki/templates/edit.mako:136
 msgid "Preview"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:95 addons/wiki/templates/edit.mako:218
+#: addons/wiki/templates/edit.mako:139 addons/wiki/templates/edit.mako:231
 msgid "(Current)"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:97 addons/wiki/templates/edit.mako:220
+#: addons/wiki/templates/edit.mako:141 addons/wiki/templates/edit.mako:233
 msgid "Current"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:117
+#: addons/wiki/templates/edit.mako:177
+msgid "Insert column before"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:178
+msgid "Insert column after"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:179
+msgid "Insert row before"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:180
+msgid "Insert row after"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:181
+msgid "delete cell"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:182
+msgid "delete table"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:193
 #: website/templates/util/render_addon_widget.mako:24
 msgid "Add important information, links, or images here to describe your project."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:126 addons/wiki/templates/edit.mako:134
-#: website/templates/include/profile/schools.mako:180
-#: website/templates/include/profile/social.mako:184
-#: website/templates/project/project.mako:543
-msgid "Edit"
+#: addons/wiki/templates/edit.mako:204 addons/wiki/templates/edit.mako:326
+#: addons/wiki/templates/import_wiki_page.mako:21
+#: addons/wiki/templates/import_wiki_page.mako:70
+#: addons/wiki/templates/sort_wiki_page.mako:17
+#: addons/wiki/templates/wiki-bar-modal-help.mako:14
+#: website/templates/profile/modal_change_avatar.mako:20
+#: website/templates/project/view_file.mako:113
+#: website/templates/project/view_file.mako:133
+#: website/templates/project/view_file.mako:153
+#: website/templates/project/view_file.mako:173
+#: website/templates/search_bar_help_modal.mako:18
+msgid "Close"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:174
-msgid "Loading. . ."
-msgstr ""
-
-#: addons/wiki/templates/edit.mako:186
-msgid "Revert"
-msgstr ""
-
-#: addons/wiki/templates/edit.mako:205 addons/wiki/templates/edit.mako:212
+#: addons/wiki/templates/edit.mako:218 addons/wiki/templates/edit.mako:225
 msgid "Compare"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:215
+#: addons/wiki/templates/edit.mako:228
 msgid " to"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:257
+#: addons/wiki/templates/edit.mako:273
 msgid "Page permissions have changed"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:260
+#: addons/wiki/templates/edit.mako:276
 msgid "Your browser should refresh shortly"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:273
+#: addons/wiki/templates/edit.mako:289
 msgid "Renaming wiki..."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:283
+#: addons/wiki/templates/edit.mako:299
 msgid "Wiki page deleted"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:286
+#: addons/wiki/templates/edit.mako:302
 msgid "Press Confirm to return to the project wiki home page."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:289
+#: addons/wiki/templates/edit.mako:305
 msgid "Confirm"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:300
+#: addons/wiki/templates/edit.mako:316
 msgid "Connected to the collaborative wiki"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:304
+#: addons/wiki/templates/edit.mako:320
 msgid ""
 "This page is currently connected to the collaborative wiki. All edits "
 "made will be visible to            contributors with write permission in "
@@ -1107,62 +1249,240 @@ msgid ""
 "click the \"Save\" button."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:310
-#: addons/wiki/templates/wiki-bar-modal-help.mako:14
-#: website/templates/profile/modal_change_avatar.mako:20
-#: website/templates/project/view_file.mako:112
-#: website/templates/project/view_file.mako:132
-#: website/templates/project/view_file.mako:152
-#: website/templates/project/view_file.mako:172
-#: website/templates/search_bar_help_modal.mako:18
-msgid "Close"
-msgstr ""
-
-#: addons/wiki/templates/edit.mako:321
+#: addons/wiki/templates/edit.mako:337
 msgid "Connecting to the collaborative wiki"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:325
+#: addons/wiki/templates/edit.mako:341
 msgid ""
 "This page is currently attempting to connect to the collaborative wiki. "
 "You may continue to make edits."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:326 addons/wiki/templates/edit.mako:343
-#: addons/wiki/templates/edit.mako:360
-#: website/templates/project/view_file.mako:128
-#: website/templates/project/view_file.mako:148
-#: website/templates/project/view_file.mako:168
+#: addons/wiki/templates/edit.mako:342 addons/wiki/templates/edit.mako:359
+#: addons/wiki/templates/edit.mako:376
+#: website/templates/project/view_file.mako:129
+#: website/templates/project/view_file.mako:149
+#: website/templates/project/view_file.mako:169
 msgid "Changes will not be saved until you press the \"Save\" button."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:338
+#: addons/wiki/templates/edit.mako:354
 msgid "Collaborative wiki is unavailable"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:342
+#: addons/wiki/templates/edit.mako:358
 msgid ""
 "The collaborative wiki is currently unavailable. You may continue to make"
 " edits."
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:355
-#: website/templates/project/view_file.mako:163
+#: addons/wiki/templates/edit.mako:371
+#: website/templates/project/view_file.mako:164
 msgid "Browser unsupported"
 msgstr ""
 
-#: addons/wiki/templates/edit.mako:359
-#: website/templates/project/view_file.mako:167
+#: addons/wiki/templates/edit.mako:375
+#: website/templates/project/view_file.mako:168
 msgid ""
 "Your browser does not support collaborative editing. You may continue to "
 "make edits."
 msgstr ""
 
-#: addons/wiki/templates/status.mako:7
+#: addons/wiki/templates/edit.mako:388
+msgid "Add Hyperlink"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:392
+msgid "Link URL:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:393
+msgid "Enter link URL"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:396
+msgid "Link Tooltip:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:397
+msgid "Enter link Tooltip"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:421
+msgid "Add Image"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:425
+msgid "Image URL:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:426
+msgid "Enter image URL"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:429
+msgid "Image Title:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:430
+msgid "Enter image Title"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:433
+msgid "Alternative Text:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:434
+msgid "Enter Alternative Text"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:437
+msgid "Image Size:"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:438
+#, python-format
+msgid "Enter image size (e.g., 300 for pixels, or 50% for percentage)"
+msgstr ""
+
+#: addons/wiki/templates/edit.mako:439
+msgid "Invalid size format. Use pixels or percentage."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:8
+msgid "Import wiki page"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:22
+#: addons/wiki/templates/import_wiki_page.mako:68
+msgid "Stop import"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:36
+msgid "Duplicate wiki name"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:40
+msgid ""
+"The following wiki page already exists. Please select the process when "
+"importing. When creating a new wiki, the wiki name will be created with a"
+" sequential number like [Wiki name](1). If you dismiss this alert, the "
+"import will be aborted."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:44
+msgid "Skip All"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:45
+msgid "Overwrite All"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:46
+msgid "Create New All"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:52
+msgid ""
+"Duplicate wiki page name. The following pages will be registered as the "
+"Wiki page name listed."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:61
+msgid "The following folder are duplicated in the import directory."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:69
+#: website/templates/project/modal_add_contributor.mako:343
+#: website/templates/project/modal_add_contributor.mako:355
+#: website/templates/project/modal_remove_contributor.mako:112
+#: website/templates/project/nodes_delete.mako:87
+msgid "Back"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:71
+msgid "Continue import"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:72
+msgid "Per-file definition"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:84
+msgid "Import Result"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:103
+msgid "Skip"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:103
+msgid "Overwrite"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:103
+msgid "Create New"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:127
+msgid "Validating wiki pages"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:171
+msgid "No page to import"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:188
+msgid "Importing Wiki..."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:196
+msgid "Import Complete"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:372
+msgid "Wiki import aborted."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:386
+msgid ""
+"The request has timed out, but the process is still ongoing. Processing "
+"may take longer if there are many pages. Please reload the page to check "
+"the import result. If the process takes too long, we recommend contacting"
+" support or trying again later."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:388
+msgid ""
+"The response has timed out. High server load may cause delays in "
+"processing. Please try again. If the issue persists, please contact "
+"support."
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:408
+#: addons/wiki/templates/import_wiki_page.mako:411
+msgid "import error"
+msgstr ""
+
+#: addons/wiki/templates/import_wiki_page.mako:440
+#: addons/wiki/templates/import_wiki_page.mako:444
+msgid "Aborting..."
+msgstr ""
+
+#: addons/wiki/templates/sort_wiki_page.mako:8
+msgid "Reorder Wiki Tree"
+msgstr ""
+
+#: addons/wiki/templates/sort_wiki_page.mako:11
+msgid "Wiki Tree"
+msgstr ""
+
+#: addons/wiki/templates/status.mako:16
 msgid "Note: Home page cannot be renamed."
 msgstr ""
 
-#: addons/wiki/templates/status.mako:9
+#: addons/wiki/templates/status.mako:18
 msgid "Home"
 msgstr ""
 
@@ -1193,62 +1513,66 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: website/templates/base.mako:110
+#: website/templates/base.mako:111
 msgid "Title"
 msgstr ""
 
-#: website/templates/base.mako:111
+#: website/templates/base.mako:112
 msgid "Date Merged"
 msgstr ""
 
-#: website/templates/base.mako:134
+#: website/templates/base.mako:135
 msgid "<strong>WARNING</strong>: This site is running in development mode."
 msgstr ""
 
-#: website/templates/base.mako:145
+#: website/templates/base.mako:146
 msgid ""
 "OSF does not support the use of Internet Explorer. For optimal "
 "performance, please switch to another browser."
 msgstr ""
 
-#: website/templates/base.mako:148 website/templates/base.mako:161
+#: website/templates/base.mako:149 website/templates/base.mako:164
 msgid "Accept"
 msgstr ""
 
-#: website/templates/base.mako:154
-#, python-format
+#: website/templates/base.mako:155
 msgid ""
-"The National Institute of Informatics (NII) uses cookies to operate the "
-"NII Research Data Cloud service and to improve your user experience."
-"                  If you intend to use the GakuNin RDM, please read our "
-"<a %(meatwikiUrl)s>Privacy Policy</a> and information on <a "
-"%(meatwikiUrl)s>NII use of cookies</a>.                  By clicking "
-"Accept or continuing to use our website, you consent to the cookies use "
-"on this site.                  If you do not agree with the cookies use, "
-"please change your browser settings to disable cookies or stop using our "
-"website.                  Please be aware that you may not be able to use"
-" some functions on our website when you have cookies disabled."
+"GakuNin RDM is a service provided by National Institute of Informatics "
+"(NII) with its user organizations’ consent,                  and the "
+"rules set by each user organization shall apply to the individual users."
+"                  GakuNin RDM uses cookies to operate its services and "
+"improve the user experience. Users of GakuNin RDM are requested to read "
+"the information on our <a "
+"href='https://support.rdm.nii.ac.jp/terms/'>privacy policy</a>."
+"                  By clicking \"I agree\" button on the right or "
+"continuing to use this site, you agree to our use of cookies. If you do "
+"not agree,                  please disable cookies in your browser "
+"settings or discontinue using this site. Please note that by not using "
+"cookies, you may not be able to use some of the functions of this site."
+"                  Please refer to <a target='_blank' "
+"href='https://support.rdm.nii.ac.jp/terms'>the Terms of Use</a> for the "
+"details on the agreement between the user organizations and NII."
 msgstr ""
 
-#: website/templates/base.mako:172
+#: website/templates/base.mako:175
 msgid "Start managing your projects on the GakuNin RDM today."
 msgstr ""
 
-#: website/templates/base.mako:173
+#: website/templates/base.mako:176
 msgid ""
 "Free and easy to use, the GakuNin RDM supports the entire research "
 "lifecycle: planning, execution, reporting, archiving, and discovery."
 msgstr ""
 
-#: website/templates/base.mako:175
+#: website/templates/base.mako:178
 msgid "Create an Account"
 msgstr ""
 
-#: website/templates/base.mako:177
+#: website/templates/base.mako:180
 msgid "Learn More"
 msgstr ""
 
-#: website/templates/base.mako:178
+#: website/templates/base.mako:181
 msgid "Hide this message"
 msgstr ""
 
@@ -1285,6 +1609,22 @@ msgid ""
 "email <a href=%(mailtoOsfContactEmail)s>%(osfContactEmail)s</a>"
 msgstr ""
 
+#: website/templates/claim_account_activate.mako:2
+#: website/templates/claim_account_activate.mako:4
+#: website/templates/claim_account_activate.mako:12
+msgid "Activate code"
+msgstr ""
+
+#: website/templates/claim_account_activate.mako:8
+msgid "The Invitation Code has expired..."
+msgstr ""
+
+#: website/templates/claim_account_activate.mako:9
+msgid ""
+"Please click the button below if you would like to receive an invitation "
+"to the project again."
+msgstr ""
+
 #: website/templates/claim_account_eppn.mako:2
 #: website/templates/claim_account_eppn.mako:4
 #: website/templates/claim_account_registered.mako:2
@@ -1315,7 +1655,7 @@ msgstr ""
 
 #: website/templates/claim_account_eppn.mako:29
 #: website/templates/claim_account_registered.mako:25
-#: website/templates/prereg_landing_page.mako:24
+#: website/templates/prereg_landing_page.mako:20
 #: website/templates/project/modal_remove_contributor.mako:97
 msgid "Continue"
 msgstr ""
@@ -1371,7 +1711,7 @@ msgid "/static/img/footer_logo_EN.png"
 msgstr ""
 
 #: website/templates/institution.mako:8
-#: website/templates/project/project_header.mako:200
+#: website/templates/project/project_header.mako:224
 msgid ""
 "<strong>NOTICE: </strong>Forks, registrations, and uploads will be "
 "temporarily disabled while the GakuNin RDM undergoes a hardware upgrade. "
@@ -1468,10 +1808,9 @@ msgid ""
 "<div style=\"text-align: center\">\n"
 "<div>\n"
 "<h4>We've updated our <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms\">Terms"
-" of Use</a> and <a target=\"_blank\" "
-"href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy"
-" Policy</a>. Please read them carefully.</h4>"
+"href=\"https://support.rdm.nii.ac.jp/terms\">Terms of Use</a> and <a "
+"target=\"_blank\" href=\"https://support.rdm.nii.ac.jp/terms/\">Privacy "
+"Policy</a>. Please read them carefully.</h4>"
 msgstr ""
 
 #: website/templates/messages.mako:26
@@ -1527,7 +1866,7 @@ msgstr ""
 msgid "My Quick Files"
 msgstr ""
 
-#: website/templates/nav.mako:54
+#: website/templates/nav.mako:53
 #: website/templates/project/modal_add_contributor.mako:22
 #: website/templates/search.mako:2 website/templates/search_grdm.mako:2
 msgid "Search"
@@ -1553,8 +1892,8 @@ msgstr ""
 #: website/templates/profile/personal_tokens_detail.mako:5
 #: website/templates/profile/personal_tokens_list.mako:4
 #: website/templates/profile/settings.mako:2
-#: website/templates/profile/settings.mako:9
-#: website/templates/project/project_header.mako:80
+#: website/templates/profile/settings.mako:19
+#: website/templates/project/project_header.mako:102
 #: website/templates/project/settings.mako:2
 #: website/templates/project/settings.mako:5
 #: website/templates/util/render_node.mako:67
@@ -1595,34 +1934,30 @@ msgstr ""
 msgid "Thank you for your patience."
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:5
+#: website/templates/prereg_landing_page.mako:4
 msgid "GakuNin RDM Preregistration"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:7
-msgid "GakuNin RDM Prereg Challenge"
-msgstr ""
-
-#: website/templates/prereg_landing_page.mako:22
+#: website/templates/prereg_landing_page.mako:18
 msgid "Please provide a title for your project:"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:30
+#: website/templates/prereg_landing_page.mako:26
 msgid "Go to an existing preregistration:"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:32
-#: website/templates/prereg_landing_page.mako:41
-#: website/templates/prereg_landing_page.mako:71
-#: website/templates/prereg_landing_page.mako:115
+#: website/templates/prereg_landing_page.mako:28
+#: website/templates/prereg_landing_page.mako:37
+#: website/templates/prereg_landing_page.mako:58
+#: website/templates/prereg_landing_page.mako:102
 msgid "Preregister"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:39
+#: website/templates/prereg_landing_page.mako:35
 msgid "Preregister an existing project:"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:55
+#: website/templates/prereg_landing_page.mako:46
 #, python-format
 msgid ""
 "<p>Improve your research with <a %(cosPreregUrl)s>preregistration</a>. By"
@@ -1632,45 +1967,25 @@ msgid ""
 "biases that occur once the data are in front of you.</p>"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:56
+#: website/templates/prereg_landing_page.mako:47
 #, python-format
 msgid ""
 "<p>Use <a %(osfRegistriesUrl)s>OSF Registries</a> to discover previously "
 "registered work.</p>"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:58
-#, python-format
-msgid ""
-"<p><strong> Articles must be published by an <a "
-"%(preregMoreInfoUrl)s>approved</a> journal by December 31, 2018, to be "
-"eligible for a prize. Please use this this helpful workflow to "
-"preregister, even if you are not seeking a prize. </strong></p>"
-msgstr ""
-
-#: website/templates/prereg_landing_page.mako:59
-#, python-format
-msgid ""
-"<p> Improve your research with preregistration. The process of creating a"
-" <a %(cosPreregUrl)s> preregistration</a> is beneficial to both the "
-"scientific field and to you, the scientist. By writing out detailed data "
-"collection methods, analysis plans, and rules for excluding or missing "
-"data, you can make important decisions that affect your workflow earlier,"
-" without the biases that occur once the data are in front of you.</p>"
-msgstr ""
-
-#: website/templates/prereg_landing_page.mako:64
-#: website/templates/prereg_landing_page.mako:110
+#: website/templates/prereg_landing_page.mako:51
+#: website/templates/prereg_landing_page.mako:97
 msgid "Start a new preregistration"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:76
-#: website/templates/prereg_landing_page.mako:121
+#: website/templates/prereg_landing_page.mako:63
+#: website/templates/prereg_landing_page.mako:108
 msgid "Continue working on an existing draft preregistration"
 msgstr ""
 
-#: website/templates/prereg_landing_page.mako:84
-#: website/templates/prereg_landing_page.mako:126
+#: website/templates/prereg_landing_page.mako:71
+#: website/templates/prereg_landing_page.mako:113
 msgid "Preregister a project you already have on the GakuNin RDM"
 msgstr ""
 
@@ -1717,19 +2032,15 @@ msgstr[1] ""
 msgid "Usage of storage"
 msgstr ""
 
-#: website/templates/profile.mako:82 website/templates/profile/settings.mako:39
+#: website/templates/profile.mako:82 website/templates/profile/settings.mako:51
 msgid "Employment"
 msgstr ""
 
-#: website/templates/profile.mako:83 website/templates/profile/settings.mako:40
+#: website/templates/profile.mako:83 website/templates/profile/settings.mako:52
 msgid "Education"
 msgstr ""
 
-#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
-msgid "Social"
-msgstr ""
-
-#: website/templates/profile.mako:84 website/templates/profile/settings.mako:41
+#: website/templates/profile.mako:84 website/templates/profile/settings.mako:53
 msgid "ID"
 msgstr ""
 
@@ -1792,8 +2103,8 @@ msgid "Next Page"
 msgstr ""
 
 #: website/templates/search.mako:123 website/templates/search.mako:341
-#: website/templates/search.mako:344 website/templates/search_grdm.mako:545
-#: website/templates/search_grdm.mako:548
+#: website/templates/search.mako:344 website/templates/search_grdm.mako:573
+#: website/templates/search_grdm.mako:576
 msgid "Withdrawn "
 msgstr ""
 
@@ -1832,13 +2143,11 @@ msgstr ""
 
 #: website/templates/search.mako:276 website/templates/search.mako:368
 #: website/templates/search_grdm.mako:395
-#: website/templates/search_grdm.mako:572
 msgid "<p><strong>Jump to:</strong>"
 msgstr ""
 
 #: website/templates/search.mako:280 website/templates/search.mako:372
 #: website/templates/search_grdm.mako:399
-#: website/templates/search_grdm.mako:576
 msgid "Files</a>"
 msgstr ""
 
@@ -1849,19 +2158,19 @@ msgstr ""
 #: website/templates/search.mako:292 website/templates/search.mako:348
 #: website/templates/search_grdm.mako:432
 #: website/templates/search_grdm.mako:496
-#: website/templates/search_grdm.mako:552
+#: website/templates/search_grdm.mako:582
 msgid "Description"
 msgstr ""
 
 #: website/templates/project/contributors.mako:2
 #: website/templates/project/contributors.mako:8
 #: website/templates/project/contributors.mako:54
-#: website/templates/project/project.mako:163
-#: website/templates/project/project_header.mako:72
+#: website/templates/project/project.mako:164
+#: website/templates/project/project_header.mako:94
 #: website/templates/search.mako:295 website/templates/search.mako:352
 #: website/templates/search_grdm.mako:438
 #: website/templates/search_grdm.mako:499
-#: website/templates/search_grdm.mako:556
+#: website/templates/search_grdm.mako:586
 msgid "Contributors"
 msgstr ""
 
@@ -1874,15 +2183,13 @@ msgid "Members"
 msgstr ""
 
 #: website/templates/search.mako:341 website/templates/search.mako:344
-#: website/templates/search_grdm.mako:545
-#: website/templates/search_grdm.mako:548
 msgid "Registration"
 msgstr ""
 
-#: website/templates/project/project.mako:591
-#: website/templates/project/view_file.mako:71
+#: website/templates/project/project.mako:593
+#: website/templates/project/view_file.mako:72
 #: website/templates/search.mako:377 website/templates/search_grdm.mako:472
-#: website/templates/search_grdm.mako:581
+#: website/templates/search_grdm.mako:604
 msgid "Tags"
 msgstr ""
 
@@ -1919,6 +2226,7 @@ msgstr ""
 #: website/templates/project/project_header.mako:16
 #: website/templates/search_grdm.mako:143
 #: website/templates/search_grdm.mako:313
+#: website/templates/search_grdm.mako:560
 msgid "Project"
 msgstr ""
 
@@ -1964,14 +2272,14 @@ msgid "Page"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:3
-#: website/templates/project/project_header.mako:86
+#: website/templates/project/project_header.mako:108
 msgid "Comments"
 msgstr ""
 
 #: website/templates/include/comment_pane_template.mako:18
-#: website/templates/project/files.mako:2
-#: website/templates/project/files.mako:5
-#: website/templates/project/project.mako:441
+#: website/templates/project/files.mako:3
+#: website/templates/project/files.mako:6
+#: website/templates/project/project.mako:442
 #: website/templates/project/project_header.mako:40
 msgid "Files"
 msgstr ""
@@ -2030,14 +2338,14 @@ msgstr ""
 
 #: website/templates/include/profile/jobs.mako:26
 #: website/templates/include/profile/schools.mako:26
-#: website/templates/project/contributors.mako:332
-#: website/templates/project/contributors.mako:387
+#: website/templates/project/contributors.mako:342
+#: website/templates/project/contributors.mako:397
 #: website/templates/project/modal_remove_contributor.mako:96
 #: website/templates/project/modal_remove_contributor.mako:105
 #: website/templates/project/modal_remove_contributor.mako:114
-#: website/templates/project/project.mako:573
-#: website/templates/project/settings.mako:498
-#: website/templates/project/settings.mako:501
+#: website/templates/project/project.mako:575
+#: website/templates/project/settings.mako:502
+#: website/templates/project/settings.mako:505
 msgid "Remove"
 msgstr ""
 
@@ -2046,18 +2354,16 @@ msgstr ""
 msgid "Read IdP Profile"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:35
-msgid "Institution / Employer"
-msgstr ""
-
+#: website/templates/include/profile/jobs.mako:36
+#: website/templates/profile/add_email.mako:177
 msgid "Affiliation"
 msgstr ""
 
-msgid "Affiliation (English)"
-msgstr ""
-
-#: website/templates/include/profile/jobs.mako:37
+#: website/templates/include/profile/jobs.mako:38
+#: website/templates/include/profile/jobs.mako:53
 #: website/templates/include/profile/schools.mako:37
+#: website/templates/profile/add_email.mako:179
+#: website/templates/profile/add_email.mako:194
 #: website/templates/profile/oauth_app_detail.mako:55
 #: website/templates/profile/oauth_app_detail.mako:61
 #: website/templates/profile/oauth_app_detail.mako:73
@@ -2069,14 +2375,20 @@ msgstr ""
 msgid "Department / Institute"
 msgstr ""
 
+#: website/templates/include/profile/jobs.mako:51
+#: website/templates/profile/add_email.mako:192
+msgid "Affiliation (English)"
+msgstr ""
+
+#: website/templates/include/profile/jobs.mako:59
 msgid "Department / Institute (English)"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:49
+#: website/templates/include/profile/jobs.mako:65
 msgid "Job title"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:54
+#: website/templates/include/profile/jobs.mako:70
 #: website/templates/include/profile/schools.mako:54
 msgid "Start date"
 msgstr ""
@@ -2085,21 +2397,21 @@ msgstr ""
 msgid "Start time"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:58
-#: website/templates/include/profile/jobs.mako:73
+#: website/templates/include/profile/jobs.mako:74
+#: website/templates/include/profile/jobs.mako:89
 #: website/templates/include/profile/schools.mako:58
 #: website/templates/include/profile/schools.mako:73
 msgid "-- Month --"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:63
-#: website/templates/include/profile/jobs.mako:78
+#: website/templates/include/profile/jobs.mako:79
+#: website/templates/include/profile/jobs.mako:94
 #: website/templates/include/profile/schools.mako:63
 #: website/templates/include/profile/schools.mako:78
 msgid "Year"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:69
+#: website/templates/include/profile/jobs.mako:85
 #: website/templates/include/profile/schools.mako:69
 msgid "End date"
 msgstr ""
@@ -2109,36 +2421,38 @@ msgid "End time"
 msgstr ""
 
 #: website/templates/include/profile/jobs.mako:85
+#: website/templates/project/project.mako:619
 #: website/templates/include/profile/schools.mako:85
 msgid "Ongoing"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:104
+#: website/templates/include/profile/jobs.mako:120
 msgid "Add another Employment"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:114
-#: website/templates/include/profile/names.mako:73
+#: website/templates/include/profile/jobs.mako:130
+#: website/templates/include/profile/names.mako:99
 #: website/templates/include/profile/schools.mako:114
-#: website/templates/include/profile/social.mako:140
+#: website/templates/include/profile/social.mako:147
 msgid "Discard changes"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:117
-#: website/templates/include/profile/names.mako:76
+#: website/templates/include/profile/jobs.mako:133
+#: website/templates/include/profile/names.mako:102
 #: website/templates/include/profile/schools.mako:117
-#: website/templates/include/profile/social.mako:143
+#: website/templates/include/profile/social.mako:150
+#: website/templates/profile/add_email.mako:211
 msgid "Saving"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:136
+#: website/templates/include/profile/jobs.mako:152
 #: website/templates/include/profile/schools.mako:136
-#: website/templates/include/profile/social.mako:180
+#: website/templates/include/profile/social.mako:187
 msgid "Not provided"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:149
-#: website/templates/include/profile/jobs.mako:159
+#: website/templates/include/profile/jobs.mako:165
+#: website/templates/include/profile/jobs.mako:175
 #: website/templates/include/profile/schools.mako:148
 #: website/templates/include/profile/schools.mako:158
 msgid ""
@@ -2146,16 +2460,16 @@ msgid ""
 "startYear\"></span>"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:156
+#: website/templates/include/profile/jobs.mako:172
 msgid "Department / Institute:"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:157
-#: website/templates/project/settings.mako:101
+#: website/templates/include/profile/jobs.mako:173
+#: website/templates/project/settings.mako:103
 msgid "Title:"
 msgstr ""
 
-#: website/templates/include/profile/jobs.mako:158
+#: website/templates/include/profile/jobs.mako:174
 #: website/templates/include/profile/schools.mako:157
 msgid "Dates:"
 msgstr ""
@@ -2178,30 +2492,48 @@ msgid "Auto-fill"
 msgstr ""
 
 #: website/templates/include/profile/names.mako:26
-msgid "Given name (e.g. Rosalind)"
+#: website/templates/profile/add_email.mako:135
+msgid "Family name"
 msgstr ""
 
-#: website/templates/include/profile/names.mako:31
-msgid "Middle name(s) (e.g. Elsie)"
+#: website/templates/include/profile/names.mako:33
+#: website/templates/profile/add_email.mako:142
+msgid "Middle name(s)"
 msgstr ""
 
-#: website/templates/include/profile/names.mako:36
-msgid "Family name (e.g. Franklin)"
-msgstr ""
-
-#: website/templates/include/profile/names.mako:41
-msgid "Suffix"
+#: website/templates/include/profile/names.mako:37
+#: website/templates/profile/add_email.mako:146
+msgid "Given name"
 msgstr ""
 
 #: website/templates/include/profile/names.mako:47
+#: website/templates/profile/add_email.mako:156
+msgid "Family name (EN)"
+msgstr ""
+
+#: website/templates/include/profile/names.mako:54
+#: website/templates/profile/add_email.mako:163
+msgid "Middle name(s) (EN)"
+msgstr ""
+
+#: website/templates/include/profile/names.mako:58
+#: website/templates/profile/add_email.mako:167
+msgid "Given name (EN)"
+msgstr ""
+
+#: website/templates/include/profile/names.mako:67
+msgid "Suffix"
+msgstr ""
+
+#: website/templates/include/profile/names.mako:73
 msgid "Citation preview"
 msgstr ""
 
-#: website/templates/include/profile/names.mako:51
+#: website/templates/include/profile/names.mako:77
 msgid "Style"
 msgstr ""
 
-#: website/templates/include/profile/names.mako:52
+#: website/templates/include/profile/names.mako:78
 msgid "Citation format"
 msgstr ""
 
@@ -2209,14 +2541,9 @@ msgstr ""
 msgid "Institution"
 msgstr ""
 
-msgid "Institution (English)"
-msgstr ""
-
 #: website/templates/include/profile/schools.mako:44
+#: website/templates/profile/add_email.mako:185
 msgid "Department"
-msgstr ""
-
-msgid "Department (English)"
 msgstr ""
 
 #: website/templates/include/profile/schools.mako:49
@@ -2261,27 +2588,31 @@ msgid "Personal access tokens"
 msgstr ""
 
 #: website/templates/include/profile/social.mako:10
+msgid "Your e-Rad number"
+msgstr ""
+
+#: website/templates/include/profile/social.mako:17
 msgid "Your websites"
 msgstr ""
 
-#: website/templates/include/profile/social.mako:31
+#: website/templates/include/profile/social.mako:38
 msgid "Please enter a valid website"
 msgstr ""
 
-#: website/templates/include/profile/social.mako:34
+#: website/templates/include/profile/social.mako:41
 msgid "Add website"
 msgstr ""
 
-#: website/templates/include/profile/social.mako:88
-#: website/templates/include/profile/social.mako:96
-#: website/templates/include/profile/social.mako:104
-#: website/templates/include/profile/social.mako:114
-#: website/templates/include/profile/social.mako:122
-#: website/templates/include/profile/social.mako:130
+#: website/templates/include/profile/social.mako:95
+#: website/templates/include/profile/social.mako:103
+#: website/templates/include/profile/social.mako:111
+#: website/templates/include/profile/social.mako:121
+#: website/templates/include/profile/social.mako:129
+#: website/templates/include/profile/social.mako:137
 msgid "profileID"
 msgstr ""
 
-#: website/templates/include/profile/social.mako:112
+#: website/templates/include/profile/social.mako:119
 msgid "institution"
 msgstr ""
 
@@ -2291,44 +2622,52 @@ msgid "Account Settings"
 msgstr ""
 
 #: website/templates/profile/account.mako:15
-#: website/templates/profile/add_email.mako:21
+#: website/templates/profile/add_email.mako:25
+#: website/templates/profile/add_email.mako:219
 msgid "Connected Emails"
 msgstr ""
 
 #: website/templates/profile/account.mako:20
-#: website/templates/profile/add_email.mako:27
+#: website/templates/profile/add_email.mako:31
+#: website/templates/profile/add_email.mako:225
 msgid "Primary Email"
 msgstr ""
 
 #: website/templates/profile/account.mako:34
-#: website/templates/profile/add_email.mako:57
+#: website/templates/profile/add_email.mako:61
+#: website/templates/profile/add_email.mako:255
 msgid "Alternate Emails"
 msgstr ""
 
 #: website/templates/profile/account.mako:40
-#: website/templates/profile/add_email.mako:63
+#: website/templates/profile/add_email.mako:67
+#: website/templates/profile/add_email.mako:261
 msgid "make&nbsp;primary"
 msgstr ""
 
 #: website/templates/profile/account.mako:48
-#: website/templates/profile/add_email.mako:72
+#: website/templates/profile/add_email.mako:76
+#: website/templates/profile/add_email.mako:270
 msgid "Unconfirmed Emails"
 msgstr ""
 
 #: website/templates/profile/account.mako:55
-#: website/templates/profile/add_email.mako:79
+#: website/templates/profile/add_email.mako:83
+#: website/templates/profile/add_email.mako:277
 msgid "resend&nbsp;confirmation"
 msgstr ""
 
 #: website/templates/profile/account.mako:64
-#: website/templates/profile/add_email.mako:88
+#: website/templates/profile/add_email.mako:92
+#: website/templates/profile/add_email.mako:286
 msgid ""
 "To merge an existing account with this one or to log in with multiple "
 "email addresses, add an alternate email address below."
 msgstr ""
 
 #: website/templates/profile/account.mako:65
-#: website/templates/profile/add_email.mako:89
+#: website/templates/profile/add_email.mako:93
+#: website/templates/profile/add_email.mako:287
 msgid ""
 "Merging accounts will move all projects and components associated with "
 "two emails into one account. All projects and components will be "
@@ -2342,12 +2681,14 @@ msgid ""
 msgstr ""
 
 #: website/templates/profile/account.mako:73
-#: website/templates/profile/add_email.mako:98
+#: website/templates/profile/add_email.mako:102
+#: website/templates/profile/add_email.mako:296
 msgid "Email address"
 msgstr ""
 
 #: website/templates/profile/account.mako:75
-#: website/templates/profile/add_email.mako:100
+#: website/templates/profile/add_email.mako:104
+#: website/templates/profile/add_email.mako:298
 msgid "Add email"
 msgstr ""
 
@@ -2365,92 +2706,92 @@ msgstr ""
 msgid "Update location"
 msgstr ""
 
-#: website/templates/profile/account.mako:109
-#: website/templates/profile/add_email.mako:117
+#: website/templates/profile/account.mako:110
+#: website/templates/profile/add_email.mako:315
 msgid "Connected Identities"
 msgstr ""
 
-#: website/templates/profile/account.mako:111
-#: website/templates/profile/add_email.mako:119
+#: website/templates/profile/account.mako:112
+#: website/templates/profile/add_email.mako:317
 msgid ""
 "Connected identities allow you to log in to the GakuNin RDM via a third-"
 "party service."
 msgstr ""
 
-#: website/templates/profile/account.mako:112
-#: website/templates/profile/add_email.mako:120
+#: website/templates/profile/account.mako:113
+#: website/templates/profile/add_email.mako:318
 msgid "You can revoke these authorizations here."
 msgstr ""
 
-#: website/templates/profile/account.mako:115
-#: website/templates/profile/add_email.mako:123
+#: website/templates/profile/account.mako:116
+#: website/templates/profile/add_email.mako:321
 msgid ""
 "You have not authorized any external services to log in to the GakuNin "
 "RDM."
 msgstr ""
 
-#: website/templates/profile/account.mako:125
-#: website/templates/profile/add_email.mako:133
+#: website/templates/profile/account.mako:126
+#: website/templates/profile/add_email.mako:331
 msgid "Verified"
 msgstr ""
 
-#: website/templates/profile/account.mako:127
-#: website/templates/profile/add_email.mako:135
+#: website/templates/profile/account.mako:128
+#: website/templates/profile/add_email.mako:333
 msgid "Pending"
 msgstr ""
 
-#: website/templates/profile/account.mako:145
-#: website/templates/profile/add_email.mako:155
+#: website/templates/profile/account.mako:148
+#: website/templates/profile/add_email.mako:353
 msgid "Change Password"
 msgstr ""
 
-#: website/templates/profile/account.mako:149
-#: website/templates/profile/add_email.mako:159
+#: website/templates/profile/account.mako:152
+#: website/templates/profile/add_email.mako:357
 msgid "Old password"
 msgstr ""
 
-#: website/templates/profile/account.mako:154
-#: website/templates/profile/add_email.mako:164
+#: website/templates/profile/account.mako:157
+#: website/templates/profile/add_email.mako:362
 msgid "Old Password"
 msgstr ""
 
-#: website/templates/profile/account.mako:166
-#: website/templates/profile/add_email.mako:176
+#: website/templates/profile/account.mako:169
+#: website/templates/profile/add_email.mako:374
 msgid "New password"
 msgstr ""
 
-#: website/templates/profile/account.mako:171
-#: website/templates/profile/add_email.mako:181
+#: website/templates/profile/account.mako:174
+#: website/templates/profile/add_email.mako:379
 msgid "New Password"
 msgstr ""
 
-#: website/templates/profile/account.mako:201
-#: website/templates/profile/add_email.mako:211
+#: website/templates/profile/account.mako:204
+#: website/templates/profile/add_email.mako:409
 msgid "Confirm new password"
 msgstr ""
 
-#: website/templates/profile/account.mako:206
-#: website/templates/profile/add_email.mako:216
+#: website/templates/profile/account.mako:209
+#: website/templates/profile/add_email.mako:414
 msgid "Verify Password"
 msgstr ""
 
-#: website/templates/profile/account.mako:217
-#: website/templates/profile/add_email.mako:227
+#: website/templates/profile/account.mako:220
+#: website/templates/profile/add_email.mako:425
 msgid "Update password"
 msgstr ""
 
-#: website/templates/profile/account.mako:223
-#: website/templates/profile/add_email.mako:232
+#: website/templates/profile/account.mako:227
+#: website/templates/profile/add_email.mako:430
 msgid "Security Settings"
 msgstr ""
 
-#: website/templates/profile/account.mako:235
-#: website/templates/profile/add_email.mako:245
+#: website/templates/profile/account.mako:239
+#: website/templates/profile/add_email.mako:443
 msgid "Export Account Data"
 msgstr ""
 
-#: website/templates/profile/account.mako:237
-#: website/templates/profile/add_email.mako:247
+#: website/templates/profile/account.mako:241
+#: website/templates/profile/add_email.mako:445
 msgid ""
 "Exporting your account data allows you to keep a permanent copy of the "
 "current state of your account. Keeping a copy of your account data can "
@@ -2458,24 +2799,24 @@ msgid ""
 "another provider."
 msgstr ""
 
-#: website/templates/profile/account.mako:238
-#: website/templates/profile/add_email.mako:248
+#: website/templates/profile/account.mako:242
+#: website/templates/profile/add_email.mako:446
 msgid "Request export"
 msgstr ""
 
-#: website/templates/profile/account.mako:242
-#: website/templates/profile/add_email.mako:254
+#: website/templates/profile/account.mako:246
+#: website/templates/profile/add_email.mako:452
 msgid "Deactivate Account"
 msgstr ""
 
-#: website/templates/profile/account.mako:244
+#: website/templates/profile/account.mako:248
 msgid ""
 "<strong>Warning:</strong> Once your deactivation has been approved the "
 "effects are irreversible."
 msgstr ""
 
-#: website/templates/profile/account.mako:245
-#: website/templates/profile/add_email.mako:259
+#: website/templates/profile/account.mako:249
+#: website/templates/profile/add_email.mako:457
 msgid ""
 "Deactivating your account will remove you from all public projects to "
 "which you are a contributor. Your account will no longer be associated "
@@ -2483,29 +2824,53 @@ msgid ""
 "inaccessible."
 msgstr ""
 
-#: website/templates/profile/account.mako:246
-#: website/templates/profile/add_email.mako:263
+#: website/templates/profile/account.mako:250
+#: website/templates/profile/add_email.mako:461
 msgid "Your account is currently pending deactivation."
 msgstr ""
 
-#: website/templates/profile/account.mako:247
-#: website/templates/profile/add_email.mako:261
+#: website/templates/profile/account.mako:251
+#: website/templates/profile/add_email.mako:459
 msgid "Request deactivation"
 msgstr ""
 
-#: website/templates/profile/account.mako:248
+#: website/templates/profile/account.mako:252
 msgid "Cancel deactivation request"
 msgstr ""
 
-#: website/templates/profile/add_email.mako:42
+#: website/templates/profile/add_email.mako:21
+msgid ""
+"If you do not have an email address registered, please enter or add your "
+"email address in the \"Registered email address\" entry field first."
+msgstr ""
+
+#: website/templates/profile/add_email.mako:46
+#: website/templates/profile/add_email.mako:240
 msgid "eduPersonPrincipalName (ePPN)"
 msgstr ""
 
-#: website/templates/profile/add_email.mako:92
+#: website/templates/profile/add_email.mako:96
+#: website/templates/profile/add_email.mako:290
 msgid "Add an email address below."
 msgstr ""
 
-#: website/templates/profile/add_email.mako:257
+#: website/templates/profile/add_email.mako:120
+msgid "Account Information"
+msgstr ""
+
+#: website/templates/profile/add_email.mako:125
+msgid "Display name"
+msgstr ""
+
+#: website/templates/profile/add_email.mako:200
+msgid "Department (English)"
+msgstr ""
+
+#: website/templates/profile/add_email.mako:206
+msgid "e-Rad number"
+msgstr ""
+
+#: website/templates/profile/add_email.mako:455
 msgid "<strong>Warning:</strong> This action is irreversible."
 msgstr ""
 
@@ -2565,7 +2930,7 @@ msgid ""
 msgstr ""
 
 #: website/templates/profile/notifications.mako:64
-#: website/templates/project/settings.mako:371
+#: website/templates/project/settings.mako:375
 msgid "Loading notification settings..."
 msgstr ""
 
@@ -2738,13 +3103,20 @@ msgstr ""
 msgid "You have generated the following personal access tokens:"
 msgstr ""
 
-#: website/templates/profile/settings.mako:11
+#: website/templates/profile/settings.mako:21
 msgid "View your profile"
 msgstr ""
 
-#: website/templates/profile/settings.mako:38
+#: website/templates/profile/settings.mako:47
+msgid ""
+"\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", "
+"\"Given name (EN)\" on the Name tab, and \"Affiliation\" and "
+"\"Affiliation (English)\" on the Employment tab is required."
+msgstr ""
+
+#: website/templates/profile/settings.mako:50
 #: website/templates/project/contributors.mako:182
-#: website/templates/project/contributors.mako:229
+#: website/templates/project/contributors.mako:230
 #: website/templates/project/modal_add_contributor.mako:216
 msgid "Name"
 msgstr ""
@@ -2817,14 +3189,14 @@ msgstr ""
 
 #: website/templates/project/contributors.mako:14
 #: website/templates/project/contributors.mako:186
-#: website/templates/project/contributors.mako:232
+#: website/templates/project/contributors.mako:233
 #: website/templates/project/modal_add_contributor.mako:227
 msgid "Permissions"
 msgstr ""
 
 #: website/templates/project/contributors.mako:17
 #: website/templates/project/contributors.mako:189
-#: website/templates/project/contributors.mako:235
+#: website/templates/project/contributors.mako:236
 #: website/templates/project/modal_add_contributor.mako:230
 msgid "Permission Information"
 msgstr ""
@@ -2846,14 +3218,14 @@ msgstr ""
 
 #: website/templates/project/contributors.mako:33
 #: website/templates/project/contributors.mako:196
-#: website/templates/project/contributors.mako:242
+#: website/templates/project/contributors.mako:243
 #: website/templates/project/modal_add_contributor.mako:218
 msgid "Bibliographic Contributor"
 msgstr ""
 
 #: website/templates/project/contributors.mako:36
 #: website/templates/project/contributors.mako:199
-#: website/templates/project/contributors.mako:245
+#: website/templates/project/contributors.mako:246
 #: website/templates/project/modal_add_contributor.mako:221
 msgid "Bibliographic Contributor Information"
 msgstr ""
@@ -2892,27 +3264,31 @@ msgstr ""
 
 #: website/templates/project/contributors.mako:162
 #: website/templates/project/settings.mako:29
-#: website/templates/project/settings.mako:202
+#: website/templates/project/settings.mako:204
 msgid "View-only Links"
 msgstr ""
 
 #: website/templates/project/contributors.mako:167
-#: website/templates/project/settings.mako:206
+#: website/templates/project/settings.mako:208
 msgid ""
 "Create a link to share this project so those who have the link can "
 "view&mdash;but not edit&mdash;the project."
 msgstr ""
 
-#: website/templates/project/contributors.mako:396
+#: website/templates/project/contributors.mako:329
+msgid "Invitation Code"
+msgstr ""
+
+#: website/templates/project/contributors.mako:406
 msgid "Discard Changes"
 msgstr ""
 
-#: website/templates/project/contributors.mako:397
+#: website/templates/project/contributors.mako:407
 msgid "Save Changes"
 msgstr ""
 
-#: website/templates/project/files.mako:8
-#: website/templates/project/project.mako:449
+#: website/templates/project/files.mako:9
+#: website/templates/project/project.mako:450
 msgid "Click on a storage provider or drag and drop to upload"
 msgstr ""
 
@@ -2975,13 +3351,6 @@ msgid ""
 "unregistered contributor</a>."
 msgstr ""
 
-#: website/templates/project/modal_add_contributor.mako:200
-msgid ""
-"It looks like you are trying to search by email address. Please try your "
-"search again using your collaborator's name. You will be able to add "
-"users without GakuNin RDM accounts as unregistered contributors."
-msgstr ""
-
 #: website/templates/project/modal_add_contributor.mako:207
 msgid "Adding"
 msgstr ""
@@ -3032,13 +3401,6 @@ msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:330
 msgid "We will notify the user that they have been added to your project."
-msgstr ""
-
-#: website/templates/project/modal_add_contributor.mako:343
-#: website/templates/project/modal_add_contributor.mako:355
-#: website/templates/project/modal_remove_contributor.mako:112
-#: website/templates/project/nodes_delete.mako:87
-msgid "Back"
 msgstr ""
 
 #: website/templates/project/modal_add_contributor.mako:351
@@ -3189,226 +3551,238 @@ msgstr ""
 msgid "Type the following to continue:"
 msgstr ""
 
-#: website/templates/project/project.mako:22
+#: website/templates/project/project.mako:23
 msgid "Private Project"
 msgstr ""
 
-#: website/templates/project/project.mako:45
+#: website/templates/project/project.mako:46
 msgid "Private"
 msgstr ""
 
-#: website/templates/project/project.mako:49
+#: website/templates/project/project.mako:50
 msgid "Make Public"
 msgstr ""
 
-#: website/templates/project/project.mako:58
+#: website/templates/project/project.mako:59
 msgid "Make Private"
 msgstr ""
 
-#: website/templates/project/project.mako:60
+#: website/templates/project/project.mako:61
 msgid "Public"
 msgstr ""
 
-#: website/templates/project/project.mako:65
+#: website/templates/project/project.mako:66
 msgid "Log in or create an account to duplicate this project"
 msgstr ""
 
-#: website/templates/project/project.mako:100
+#: website/templates/project/project.mako:101
 #, python-format
 msgid "View Forks (%(forkCount)s)"
 msgstr ""
 
-#: website/templates/project/project.mako:115
+#: website/templates/project/project.mako:116
 msgid "Bookmark"
 msgstr ""
 
-#: website/templates/project/project.mako:118
+#: website/templates/project/project.mako:119
 msgid "Remove from bookmarks"
 msgstr ""
 
-#: website/templates/project/project.mako:127
+#: website/templates/project/project.mako:128
 msgid "Create view-only link"
 msgstr ""
 
-#: website/templates/project/project.mako:137
+#: website/templates/project/project.mako:138
 msgid "Share"
 msgstr ""
 
-#: website/templates/project/project.mako:150
+#: website/templates/project/project.mako:151
 msgid "Log in to request access"
 msgstr ""
 
-#: website/templates/project/project.mako:165
+#: website/templates/project/project.mako:166
 msgid "Contributors:"
 msgstr ""
 
-#: website/templates/project/project.mako:169
+#: website/templates/project/project.mako:170
 msgid "Anonymous Contributors"
 msgstr ""
 
-#: website/templates/project/project.mako:192
-#: website/templates/project/settings.mako:488
+#: website/templates/project/project.mako:193
+#: website/templates/project/settings.mako:492
 msgid "Affiliated Institutions:"
 msgstr ""
 
-#: website/templates/project/project.mako:218
+#: website/templates/project/project.mako:219
 #, python-format
 msgid ""
 "Forked from <a %(forkedFromId)s>%(forkedFromDisplayAbsoluteUrl)s</a> on"
 "                    <span %(dateForked)s></span>"
 msgstr ""
 
-#: website/templates/project/project.mako:225
+#: website/templates/project/project.mako:226
 msgid "Date registered:"
 msgstr ""
 
-#: website/templates/project/project.mako:230
+#: website/templates/project/project.mako:231
 msgid "Date created:"
 msgstr ""
 
-#: website/templates/project/project.mako:233
+#: website/templates/project/project.mako:234
 msgid "| Last Updated:"
 msgstr ""
 
-#: website/templates/project/project.mako:248
+#: website/templates/project/project.mako:249
 msgid "Creating DOI. Please wait..."
 msgstr ""
 
-#: website/templates/project/project.mako:254
+#: website/templates/project/project.mako:255
 msgid "Create DOI"
 msgstr ""
 
-#: website/templates/project/project.mako:259
-#: website/templates/project/settings.mako:81
+#: website/templates/project/project.mako:260
+#: website/templates/project/settings.mako:83
 msgid "Category:"
 msgstr ""
 
-#: website/templates/project/project.mako:260
+#: website/templates/project/project.mako:261
 msgid "category"
 msgstr ""
 
-#: website/templates/project/project.mako:265
-#: website/templates/project/settings.mako:107
+#: website/templates/project/project.mako:266
+#: website/templates/project/settings.mako:109
 msgid "Description:"
 msgstr ""
 
-#: website/templates/project/project.mako:282
+#: website/templates/project/project.mako:283
 msgid "License:"
 msgstr ""
 
-#: website/templates/project/project.mako:283
+#: website/templates/project/project.mako:284
 msgid "license"
 msgstr ""
 
-#: website/templates/project/project.mako:291
+#: website/templates/project/project.mako:292
 msgid "View Registration Form"
 msgstr ""
 
-#: website/templates/project/project.mako:296
+#: website/templates/project/project.mako:297
 msgid "View Registration Forms"
 msgstr ""
 
-#: website/templates/project/project.mako:341
+#: website/templates/project/project.mako:342
 msgid "Type:"
 msgstr ""
 
-#: website/templates/project/project.mako:345
-#: website/templates/project/project.mako:396
+#: website/templates/project/project.mako:346
+#: website/templates/project/project.mako:397
 msgid "Status:"
 msgstr ""
 
-#: website/templates/project/project.mako:349
+#: website/templates/project/project.mako:350
 msgid "Volume:"
 msgstr ""
 
-#: website/templates/project/project.mako:353
+#: website/templates/project/project.mako:354
 msgid "Issue:"
 msgstr ""
 
-#: website/templates/project/project.mako:357
+#: website/templates/project/project.mako:358
 msgid "Program Area:"
 msgstr ""
 
-#: website/templates/project/project.mako:363
+#: website/templates/project/project.mako:364
 msgid "Subjects:"
 msgstr ""
 
-#: website/templates/project/project.mako:399
+#: website/templates/project/project.mako:400
 msgid "Withdrawn"
 msgstr ""
 
-#: website/templates/project/project.mako:408
+#: website/templates/project/project.mako:409
 msgid ""
 "This {preprint_word} is publicly available and searchable but is subject "
 "to removal by a moderator."
 msgstr ""
 
-#: website/templates/project/project.mako:411
+#: website/templates/project/project.mako:412
 msgid ""
 "This {preprint_word} is not publicly available or searchable until "
 "approved by a moderator."
 msgstr ""
 
-#: website/templates/project/project.mako:415
+#: website/templates/project/project.mako:416
 msgid "This {preprint_word} is publicly available and searchable."
 msgstr ""
 
-#: website/templates/project/project.mako:417
+#: website/templates/project/project.mako:418
 msgid "This {preprint_word} is not publicly available or searchable."
 msgstr ""
 
-#: website/templates/project/project.mako:465
-#: website/templates/project/view_file.mako:52
+#: website/templates/project/project.mako:467
+#: website/templates/project/view_file.mako:53
 msgid "Loading files..."
 msgstr ""
 
-#: website/templates/project/project.mako:506
+#: website/templates/project/project.mako:508
 #: website/templates/util/render_addon_widget.mako:70
 msgid "Citation"
 msgstr ""
 
 #: website/templates/project/addon/citations_widget.mako:16
-#: website/templates/project/project.mako:518
+#: website/templates/project/project.mako:520
 #: website/templates/util/render_addon_widget.mako:136
 msgid "Loading citations..."
 msgstr ""
 
-#: website/templates/project/project.mako:523
+#: website/templates/project/project.mako:525
 msgid "Customize"
 msgstr ""
 
-#: website/templates/project/project.mako:531
+#: website/templates/project/project.mako:533
 msgid "Chicago"
 msgstr ""
 
-#: website/templates/project/project.mako:535
+#: website/templates/project/project.mako:537
 msgid "Get more citations"
 msgstr ""
 
-#: website/templates/project/project.mako:553
+#: website/templates/project/project.mako:555
 #, python-format
 msgid ""
 "<div %(f_x_xl)s>Cite as:</div>                                         "
 "<span %(textCustomCitation)s></span>"
 msgstr ""
 
-#: website/templates/project/project.mako:564
+#: website/templates/project/project.mako:566
 msgid "Enter custom citation"
 msgstr ""
 
-#: website/templates/project/project.mako:605
+#: website/templates/project/project.mako:607
 msgid "Recent Activity"
 msgstr ""
 
-#: website/templates/project/project.mako:606
+#: website/templates/project/project.mako:608
 msgid "Clear Filters"
 msgstr ""
 
-#: website/templates/project/project.mako:607
+
+#: website/templates/project/project.mako:609
+msgid "Update"
+
+#: website/templates/project/project.mako:609
 msgid "Update"
 msgstr ""
 
-#: website/templates/project/project.mako:639
+#: website/templates/project/project.mako:616
+msgid "Start time"
+msgstr ""
+
+#: website/templates/project/project.mako:619
+msgid "End time"
+msgstr ""
+
+#: website/templates/project/project.mako:641
 msgid "Loading logs..."
 msgstr ""
 
@@ -3416,24 +3790,24 @@ msgstr ""
 msgid "Download as file for 0 logs"
 msgstr ""
 
-#: website/templates/project/project.mako:646
+#: website/templates/project/project.mako:649
 #: website/templates/project/timestamp.mako:206
 msgid "Download"
 msgstr ""
 
-#: website/templates/project/project.mako:659
+#: website/templates/project/project.mako:662
 msgid "Components"
 msgstr ""
 
-#: website/templates/project/project.mako:663
+#: website/templates/project/project.mako:666
 msgid "Add Component"
 msgstr ""
 
-#: website/templates/project/project.mako:665
+#: website/templates/project/project.mako:668
 msgid "Link Projects"
 msgstr ""
 
-#: website/templates/project/project.mako:675
+#: website/templates/project/project.mako:678
 msgid "Add components to organize your project."
 msgstr ""
 
@@ -3495,26 +3869,12 @@ msgid ""
 "%(registeredFromUrl)s>this %(nodeType)s</a>"
 msgstr ""
 
-#: website/templates/project/project_header.mako:135
-#, python-format
-msgid ""
-"This is a pending registration of <a %(registeredFromUrl)s>this "
-"%(nodeType)s</a>, awaiting approval from project administrators. This "
-"registration will be final when all project administrators approve the "
-"registration or 48 hours pass, whichever comes first."
-msgstr ""
-
-#: website/templates/project/project_header.mako:141
-#: website/templates/project/project_header.mako:173
-msgid "Cancel registration"
-msgstr ""
-
-#: website/templates/project/project_header.mako:159
+#: website/templates/project/project_header.mako:182
 #, python-format
 msgid "This %(nodeType)s is currently pending withdrawal."
 msgstr ""
 
-#: website/templates/project/project_header.mako:163
+#: website/templates/project/project_header.mako:186
 #, python-format
 msgid ""
 "This %(nodeType)s is a withdrawn registration of <a "
@@ -3522,24 +3882,14 @@ msgid ""
 "%(nodeType)s has been taken down for the reason(s) stated below."
 msgstr ""
 
-#: website/templates/project/project_header.mako:168
-#, python-format
-msgid ""
-"This %(nodeType)s is currently pending registration, awaiting approval "
-"from project administrators. This registration will be final and enter "
-"the embargo period when all project administrators approve the "
-"registration or 48 hours pass, whichever comes first. The embargo will "
-"keep the registration private until the embargo period ends."
-msgstr ""
-
-#: website/templates/project/project_header.mako:182
+#: website/templates/project/project_header.mako:206
 #, python-format
 msgid ""
 "This registration is currently embargoed. It will remain private until "
 "its embargo end date, %(embargoEndDate)s."
 msgstr ""
 
-#: website/templates/project/project_header.mako:188
+#: website/templates/project/project_header.mako:212
 #, python-format
 msgid ""
 "This %(nodeType)s contains supplemental materials for a preprint, but has"
@@ -3547,7 +3897,7 @@ msgid ""
 "making this %(nodeType)s Public."
 msgstr ""
 
-#: website/templates/project/project_header.mako:192
+#: website/templates/project/project_header.mako:216
 #, python-format
 msgid ""
 "This %(nodeType)s is being viewed through an anonymized, view-only link. "
@@ -3555,7 +3905,7 @@ msgid ""
 "%(redirectUrl)s>here</a>."
 msgstr ""
 
-#: website/templates/project/project_header.mako:196
+#: website/templates/project/project_header.mako:220
 #, python-format
 msgid ""
 "This %(nodeType)s is being viewed through a private, view-only link. "
@@ -3563,69 +3913,69 @@ msgid ""
 msgstr ""
 
 #: website/templates/project/settings.mako:17
-#: website/templates/project/settings.mako:76
-#: website/templates/project/settings.mako:150
-#: website/templates/project/settings.mako:163
+#: website/templates/project/settings.mako:78
+#: website/templates/project/settings.mako:152
+#: website/templates/project/settings.mako:165
 #: website/templates/util/render_node.mako:18
 msgid "node_type"
 msgstr ""
 
 #: website/templates/project/settings.mako:21
-#: website/templates/project/settings.mako:178
+#: website/templates/project/settings.mako:180
 msgid "Storage Location"
 msgstr ""
 
 #: website/templates/project/settings.mako:33
-#: website/templates/project/settings.mako:225
+#: website/templates/project/settings.mako:227
 msgid "Access Requests"
 msgstr ""
 
-#: website/templates/project/settings.mako:39
-#: website/templates/project/settings.mako:318
+#: website/templates/project/settings.mako:40
+#: website/templates/project/settings.mako:321
 msgid "Commenting"
 msgstr ""
 
-#: website/templates/project/settings.mako:42
-#: website/templates/project/settings.mako:359
+#: website/templates/project/settings.mako:44
+#: website/templates/project/settings.mako:363
 msgid "Email Notifications"
 msgstr ""
 
-#: website/templates/project/settings.mako:44
-#: website/templates/project/settings.mako:391
+#: website/templates/project/settings.mako:46
+#: website/templates/project/settings.mako:395
 msgid "Redirect Link"
 msgstr ""
 
-#: website/templates/project/settings.mako:51
+#: website/templates/project/settings.mako:53
 msgid "Withdraw Public Registration"
 msgstr ""
 
-#: website/templates/project/settings.mako:57
-#: website/templates/project/settings.mako:469
+#: website/templates/project/settings.mako:59
+#: website/templates/project/settings.mako:473
 msgid "Project Affiliation / Branding"
 msgstr ""
 
-#: website/templates/project/settings.mako:82
+#: website/templates/project/settings.mako:84
 msgid "(For descriptive purposes)"
 msgstr ""
 
-#: website/templates/project/settings.mako:87
+#: website/templates/project/settings.mako:89
 msgid "Uncategorized"
 msgstr ""
 
-#: website/templates/project/settings.mako:114
+#: website/templates/project/settings.mako:116
 msgid "Select Timestamp Function:"
 msgstr ""
 
-#: website/templates/project/settings.mako:117
-#: website/templates/project/settings.mako:122
+#: website/templates/project/settings.mako:119
+#: website/templates/project/settings.mako:124
 msgid "Timestamp only"
 msgstr ""
 
-#: website/templates/project/settings.mako:133
+#: website/templates/project/settings.mako:135
 msgid "Save changes"
 msgstr ""
 
-#: website/templates/project/settings.mako:141
+#: website/templates/project/settings.mako:143
 msgid ""
 "A project cannot be deleted if it has any components within it."
 "                                To delete a parent project, you must "
@@ -3633,76 +3983,74 @@ msgid ""
 "visiting their settings pages."
 msgstr ""
 
-#: website/templates/project/settings.mako:150
-#: website/templates/project/settings.mako:163
+#: website/templates/project/settings.mako:152
+#: website/templates/project/settings.mako:165
 #, python-format
 msgid "Delete %(nodeType)s"
 msgstr ""
 
-#: website/templates/project/settings.mako:156
+#: website/templates/project/settings.mako:158
 #, python-format
 msgid ""
 "A project which is related to a external group (%(group)s) cannot be "
 "deleted."
 msgstr ""
 
-#: website/templates/project/settings.mako:185
+#: website/templates/project/settings.mako:187
 msgid "Storage location cannot be changed after project is created."
 msgstr ""
 
-#: website/templates/project/settings.mako:237
+#: website/templates/project/settings.mako:239
 msgid "Allow users to request access to this project."
 msgstr ""
 
-#: website/templates/project/settings.mako:270
+#: website/templates/project/settings.mako:272
 #, python-format
 msgid "Enable the wiki in <b>%(title)s</b>."
 msgstr ""
 
-#: website/templates/project/settings.mako:283
+#: website/templates/project/settings.mako:285
 msgid "Configure"
-msgstr ""
-
-#: website/templates/project/settings.mako:286
-#, python-format
-msgid "Control who can edit the wiki of <b>%(title)s</b>"
 msgstr ""
 
 #: website/templates/project/settings.mako:288
 #, python-format
-msgid ""
-"Control who can edit your wiki"
+msgid "Control who can edit the wiki of <b>%(title)s</b>"
 msgstr ""
 
-#: website/templates/project/settings.mako:298
+#: website/templates/project/settings.mako:290
+msgid "Control who can edit your wiki"
+msgstr ""
+
+#: website/templates/project/settings.mako:300
 msgid "Loading wiki settings..."
 msgstr ""
 
-#: website/templates/project/settings.mako:328
+#: website/templates/project/settings.mako:331
 msgid "Only contributors can post comments"
 msgstr ""
 
-#: website/templates/project/settings.mako:334
+#: website/templates/project/settings.mako:337
 #, python-format
 msgid "When the %(nodeType)s is public, any GakuNin RDM user can post comments"
 msgstr ""
 
-#: website/templates/project/settings.mako:363
+#: website/templates/project/settings.mako:367
 msgid ""
 "These notification settings only apply to you. They do NOT affect any "
 "other contributor on this project."
 msgstr ""
 
-#: website/templates/project/settings.mako:402
+#: website/templates/project/settings.mako:406
 msgid "Redirect visitors from your project page to an external webpage"
 msgstr ""
 
-#: website/templates/project/settings.mako:427
-#: website/templates/project/settings.mako:449
+#: website/templates/project/settings.mako:431
+#: website/templates/project/settings.mako:453
 msgid "Withdraw Registration"
 msgstr ""
 
-#: website/templates/project/settings.mako:435
+#: website/templates/project/settings.mako:439
 #, python-format
 msgid ""
 "Withdrawing children components of a registration is not allowed. Should "
@@ -3710,7 +4058,7 @@ msgid ""
 "please withdraw its parent registration <a %(webUrlFor)s>here</a>."
 msgstr ""
 
-#: website/templates/project/settings.mako:442
+#: website/templates/project/settings.mako:446
 msgid ""
 "Withdrawing a registration will remove its content from the GakuNin RDM, "
 "but leave basic metadata                                    behind. The "
@@ -3721,43 +4069,43 @@ msgid ""
 "<strong>withdrawn</strong> tag."
 msgstr ""
 
-#: website/templates/project/settings.mako:451
+#: website/templates/project/settings.mako:455
 msgid "This registration is already pending withdrawal."
 msgstr ""
 
-#: website/templates/project/settings.mako:474
+#: website/templates/project/settings.mako:478
 msgid ""
 "Contributors with read-only permissions to this project cannot add or "
 "remove institutional affiliations."
 msgstr ""
 
-#: website/templates/project/settings.mako:477
+#: website/templates/project/settings.mako:481
 msgid ""
 "Projects can be affiliated with institutions that have created GakuNin "
 "RDM for Institutions accounts."
 msgstr ""
 
-#: website/templates/project/settings.mako:478
+#: website/templates/project/settings.mako:482
 msgid "This allows:"
 msgstr ""
 
-#: website/templates/project/settings.mako:480
+#: website/templates/project/settings.mako:484
 msgid "institutional logos to be displayed on public projects"
 msgstr ""
 
-#: website/templates/project/settings.mako:481
+#: website/templates/project/settings.mako:485
 msgid "public projects to be discoverable on specific institutional landing pages"
 msgstr ""
 
-#: website/templates/project/settings.mako:482
+#: website/templates/project/settings.mako:486
 msgid "single sign-on to the GakuNin RDM with institutional credentials"
 msgstr ""
 
-#: website/templates/project/settings.mako:483
+#: website/templates/project/settings.mako:487
 msgid "FAQ"
 msgstr ""
 
-#: website/templates/project/settings.mako:511
+#: website/templates/project/settings.mako:515
 msgid "Available Institutions:"
 msgstr ""
 
@@ -3821,23 +4169,23 @@ msgstr ""
 msgid "Timestamp Verification"
 msgstr ""
 
-#: website/templates/project/view_file.mako:19
+#: website/templates/project/view_file.mako:20
 msgid "Version:"
 msgstr ""
 
-#: website/templates/project/view_file.mako:32
+#: website/templates/project/view_file.mako:33
 msgid "Timestamp verification is in progress ..."
 msgstr ""
 
-#: website/templates/project/view_file.mako:47
+#: website/templates/project/view_file.mako:48
 msgid "No files"
 msgstr ""
 
-#: website/templates/project/view_file.mako:102
+#: website/templates/project/view_file.mako:103
 msgid "Connected to collaborative file editing"
 msgstr ""
 
-#: website/templates/project/view_file.mako:106
+#: website/templates/project/view_file.mako:107
 msgid ""
 "This page is currently connected to collaborative file editing. All edits"
 " made will be visible to          contributors with write permission in "
@@ -3845,21 +4193,21 @@ msgid ""
 "click the \"Save\" button."
 msgstr ""
 
-#: website/templates/project/view_file.mako:123
+#: website/templates/project/view_file.mako:124
 msgid "Connecting to collaborative file editing"
 msgstr ""
 
-#: website/templates/project/view_file.mako:127
+#: website/templates/project/view_file.mako:128
 msgid ""
 "This page is currently attempting to connect to collaborative file "
 "editing. You may continue to make edits."
 msgstr ""
 
-#: website/templates/project/view_file.mako:143
+#: website/templates/project/view_file.mako:144
 msgid "Collaborative file editing is unavailable"
 msgstr ""
 
-#: website/templates/project/view_file.mako:147
+#: website/templates/project/view_file.mako:148
 msgid ""
 "Collaborative file editing is currently unavailable. You may continue to "
 "make edits."
@@ -3867,11 +4215,6 @@ msgstr ""
 
 #: website/templates/project/addon/node_settings.mako:15
 msgid "Submit"
-msgstr ""
-
-#: website/templates/project/addon/node_settings_default.mako:7
-#, python-format
-msgid "authorized by %(ownerName)s"
 msgstr ""
 
 #: website/templates/project/addon/page.mako:4
@@ -4002,47 +4345,3 @@ msgstr ""
 msgid "Manage Contributors"
 msgstr ""
 
-msgid "Display name"
-msgstr ""
-
-msgid "Family name"
-msgstr ""
-
-msgid "Middle name(s)"
-msgstr ""
-
-msgid "Given name"
-msgstr ""
-
-msgid "Given name (EN)"
-msgstr ""
-
-msgid "Middle name(s) (EN)"
-msgstr ""
-
-msgid "Family name (EN)"
-msgstr ""
-
-msgid "e-Rad number"
-msgstr ""
-
-msgid "Your e-Rad number"
-msgstr ""
-
-msgid "Account Information"
-msgstr ""
-
-msgid "Invitation Code"
-msgstr ""
-
-msgid "Activate code"
-msgstr ""
-
-msgid "The Invitation Code has expired..."
-msgstr ""
-
-msgid "Please click the button below if you would like to receive an invitation to the project again."
-msgstr ""
-
-msgid "\"Full name\", \"Family name\", \"Given name\", \"Family name (EN)\", \"Given name (EN)\" on the Name tab, and \"Affiliation\" and \"Affiliation (English)\" on the Employment tab is required."
-msgstr ""
