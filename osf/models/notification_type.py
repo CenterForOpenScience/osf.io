@@ -29,6 +29,7 @@ class NotificationType(models.Model):
         DESK_ARCHIVE_JOB_COPY_ERROR = 'desk_archive_job_copy_error'
         DESK_ARCHIVE_JOB_FILE_NOT_FOUND = 'desk_archive_job_file_not_found'
         DESK_ARCHIVE_JOB_UNCAUGHT_ERROR = 'desk_archive_job_uncaught_error'
+        DESK_CROSSREF_ERROR = 'desk_crossref_error'
 
         # User notifications
         USER_PENDING_VERIFICATION = 'user_pending_verification'

@@ -78,7 +78,7 @@ class ParseCrossRefConfirmation(APIView):
             if unexpected_errors:
                 batch_id = crossref_email_content.find('batch_id').text
                 email_error_text = request.POST['body-plain']
-                NotificationType.Type.DESK_OSF_SUPPORT_EMAIL.instance.emit(
+                NotificationType.Type.DESK_CROSSREF_ERROR.instance.emit(
                     destination_address=settings.OSF_SUPPORT_EMAIL,
                     event_context={
                         'batch_id': batch_id,

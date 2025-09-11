@@ -3,7 +3,6 @@ import logging
 from django.apps import apps
 from django.utils import timezone
 
-from notifications.tasks import remove_subscription_task, remove_supplemental_node_from_preprints
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
 from website.reviews import signals as reviews_signals
 
@@ -162,8 +161,11 @@ def remove_contributor_from_subscriptions(node, user):
 
 @node_deleted.connect
 def remove_subscription(node):
+    from notifications.tasks import remove_subscription_task
     remove_subscription_task(node._id)
 
 @node_deleted.connect
 def remove_supplemental_node(node):
+    from notifications.tasks import remove_supplemental_node_from_preprints
+
     remove_supplemental_node_from_preprints(node._id)

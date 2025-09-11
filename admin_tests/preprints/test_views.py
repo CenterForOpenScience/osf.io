@@ -709,7 +709,6 @@ class TestPreprintWithdrawalRequests:
     def test_approve_reject_on_list_view(self, withdrawal_request, admin, action, final_state):
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         original_comment = withdrawal_request.comment
-
         request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin
 

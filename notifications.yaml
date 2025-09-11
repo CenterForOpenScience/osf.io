@@ -690,13 +690,6 @@ notification_types:
     tests: []
 
   #### SUPPORT
-  - name: crossref_error
-    subject: 'Crossref Error Notification'
-    __docs__: ...
-    object_content_type_model_name: abstractnode
-    template: 'website/templates/crossref_doi_error.html.mako'
-    tests: []
-
   #### Collection Submissions
   - name: collection_submission_removed_moderator
     subject: '{node_title} was removed from {collection_title}'
@@ -810,6 +803,15 @@ notification_types:
     object_content_type_model_name: desk
     template: 'website/templates/support_request.html.mako'
     tests: ['api_tests/users/views/test_user_settings.py', 'tests/test_user_profile_view.py']
+
+  - name: desk_crossref_error
+    subject: 'Crossref Error Notification'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/crossref_doi_error.html.mako'
+    tests: []
+
+
 
   ### Draft Registration
   - name: draft_registration_contributor_added_default
