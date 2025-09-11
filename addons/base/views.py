@@ -225,8 +225,6 @@ def get_auth(auth, **kwargs):
     _check_resource_permissions(resource, auth, action)
 
     provider_name = waterbutler_data['provider']
-    waterbutler_settings = None
-    waterbutler_credentials = None
     file_version = file_node = None
     if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
         file_version, file_node = _get_osfstorage_file_version_and_node(

@@ -122,7 +122,7 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
     for recipient in recipients:
         context['is_creator'] = recipient == resource.creator
         context['provider_name'] = resource.provider.name
-        context['user_username'] = recipient.username
+        context['user_fullname'] = recipient.username
         notification_type.instance.emit(
             user=recipient,
             subscribed_object=provider,

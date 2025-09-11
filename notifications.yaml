@@ -320,7 +320,7 @@ notification_types:
     tests: []
 
   - name: user_new_public_project
-    subject: 'Problem Registering'
+    subject: 'Now, public. Next, impact.'
     __docs__: ...
     object_content_type_model_name: osfuser
     template: 'website/templates/new_public_project.html.mako'

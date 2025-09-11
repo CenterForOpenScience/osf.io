@@ -3,15 +3,10 @@ import collections
 from django.apps import apps
 from django.db.models import Q
 
-from framework.postcommit_tasks.handlers import run_postcommit
-from notifications.tasks import remove_supplemental_node_from_preprints
 from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
-
-from framework.celery_tasks import app
-
 
 class NotificationsDict(dict):
     def __init__(self):
@@ -78,25 +73,6 @@ def remove_contributor_from_subscriptions(node, user):
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
             subscription.remove_user_from_subscription(user)
-
-
-@signals.node_deleted.connect
-def remove_subscription(node):
-    remove_subscription_task(node._id)
-
-@signals.node_deleted.connect
-def remove_supplemental_node(node):
-    remove_supplemental_node_from_preprints(node._id)
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_subscription_task(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-
-    node = AbstractNode.load(node_id)
-    children = node.get_children(include_root=True)
-    NotificationSubscription.objects.filter(node__id__in=[child.id for child in children]).delete()
 
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.
