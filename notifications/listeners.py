@@ -3,8 +3,7 @@ import logging
 from django.apps import apps
 from django.utils import timezone
 
-from framework.celery_tasks import app
-from framework.postcommit_tasks.handlers import run_postcommit
+from notifications.tasks import remove_subscription_task, remove_supplemental_node_from_preprints
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
 from website.reviews import signals as reviews_signals
 
@@ -168,27 +167,3 @@ def remove_subscription(node):
 @node_deleted.connect
 def remove_supplemental_node(node):
     remove_supplemental_node_from_preprints(node._id)
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_subscription_task(node_id):
-    from django.contrib.contenttypes.models import ContentType
-    AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(
-        object_id=node.id,
-        content_type=ContentType.objects.get_for_model(node),
-    ).delete()
-
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_supplemental_node_from_preprints(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-
-    node = AbstractNode.load(node_id)
-    for preprint in node.preprints.all():
-        if preprint.node is not None:
-            preprint.node = None
-            preprint.save()

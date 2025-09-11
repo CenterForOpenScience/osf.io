@@ -4,6 +4,7 @@ from django.apps import apps
 from django.db.models import Q
 
 from framework.postcommit_tasks.handlers import run_postcommit
+from notifications.tasks import remove_supplemental_node_from_preprints
 from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
@@ -94,27 +95,8 @@ def remove_subscription_task(node_id):
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
 
     node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(node=node).delete()
-    parent = node.parent_node
-
-    if parent and parent.child_node_subscriptions:
-        for user_id in parent.child_node_subscriptions:
-            if node._id in parent.child_node_subscriptions[user_id]:
-                parent.child_node_subscriptions[user_id].remove(node._id)
-        parent.save()
-
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_supplemental_node_from_preprints(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-
-    node = AbstractNode.load(node_id)
-    for preprint in node.preprints.all():
-        if preprint.node is not None:
-            preprint.node = None
-            preprint.save()
-
+    children = node.get_children(include_root=True)
+    NotificationSubscription.objects.filter(node__id__in=[child.id for child in children]).delete()
 
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.

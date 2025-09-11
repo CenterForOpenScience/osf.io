@@ -132,6 +132,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         subscription_obj = AbstractNode.load(guid_id) or Preprint.load(guid_id) or OSFUser.load(guid_id)
 
         if event != 'global':
+            if subscription_obj is None:
+                subscription_obj = AbstractProvider.objects.get(_id=guid_id)
             obj_filter = Q(
                 object_id=getattr(subscription_obj, 'id', None),
                 content_type=ContentType.objects.get_for_model(subscription_obj.__class__),

@@ -7,12 +7,15 @@ from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
 from celery.utils.log import get_task_logger
+
+from framework.postcommit_tasks.handlers import run_postcommit
 from osf.models import OSFUser, Notification, NotificationType, EmailTask, AbstractProvider, RegistrationProvider, \
     CollectionProvider
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
 from website import settings
+from django.apps import apps
 
 logger = get_task_logger(__name__)
 
@@ -285,3 +288,28 @@ def get_users_emails(message_freq):
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(max_retries=5, default_retry_delay=60)
+def remove_supplemental_node_from_preprints(node_id):
+    AbstractNode = apps.get_model('osf.AbstractNode')
+
+    node = AbstractNode.load(node_id)
+    for preprint in node.preprints.all():
+        if preprint.node is not None:
+            preprint.node = None
+            preprint.save()
+
+
+@run_postcommit(once_per_request=False, celery=True)
+@celery_app.task(max_retries=5, default_retry_delay=60)
+def remove_subscription_task(node_id):
+    from django.contrib.contenttypes.models import ContentType
+    AbstractNode = apps.get_model('osf.AbstractNode')
+    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
+    node = AbstractNode.load(node_id)
+    NotificationSubscription.objects.filter(
+        object_id=node.id,
+        content_type=ContentType.objects.get_for_model(node),
+    ).delete()
