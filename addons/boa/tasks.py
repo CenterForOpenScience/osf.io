@@ -14,10 +14,9 @@ from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils.fields import ensure_str, ensure_bytes
 from website import settings as osf_settings
-from website.mails import send_mail, ADDONS_BOA_JOB_COMPLETE, ADDONS_BOA_JOB_FAILURE
 
 logger = logging.getLogger(__name__)
 
@@ -184,18 +183,19 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
 
     logger.info('Successfully uploaded query output to OSF.')
     logger.debug('Task ends <<<<<<<<')
-    await sync_to_async(send_mail)(
-        to_addr=user.username,
-        mail=ADDONS_BOA_JOB_COMPLETE,
-        fullname=user.fullname,
-        query_file_name=query_file_name,
-        query_file_full_path=file_full_path,
-        output_file_name=output_file_name,
-        job_id=boa_job.id,
-        project_url=project_url,
-        boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
-        boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
-        osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+    NotificationType.Type.ADDONS_BOA_JOB_COMPLETE.instance.emit(
+        user=user,
+        event_context={
+            'fullname': user.fullname,
+            'query_file_name': query_file_name,
+            'query_file_full_path': file_full_path,
+            'output_file_name': output_file_name,
+            'job_id': boa_job.id,
+            'project_url': project_url,
+            'boa_job_list_url': boa_settings.BOA_JOB_LIST_URL,
+            'boa_support_email': boa_settings.BOA_SUPPORT_EMAIL,
+            'osf_support_email': osf_settings.OSF_SUPPORT_EMAIL,
+        }
     )
     return BoaErrorCode.NO_ERROR
 
@@ -209,22 +209,24 @@ def handle_boa_error(message, code, username, fullname, project_url, query_file_
         sentry.log_message(message, skip_session=True)
     except Exception:
         pass
-    send_mail(
-        to_addr=username,
-        mail=ADDONS_BOA_JOB_FAILURE,
-        fullname=fullname,
-        code=code,
-        message=message,
-        query_file_name=query_file_name,
-        file_size=file_size,
-        max_file_size=boa_settings.MAX_SUBMISSION_SIZE,
-        query_file_full_path=query_file_full_path,
-        output_file_name=output_file_name,
-        job_id=job_id,
-        max_job_wait_hours=boa_settings.MAX_JOB_WAITING_TIME / 3600,
-        project_url=project_url,
-        boa_job_list_url=boa_settings.BOA_JOB_LIST_URL,
-        boa_support_email=boa_settings.BOA_SUPPORT_EMAIL,
-        osf_support_email=osf_settings.OSF_SUPPORT_EMAIL,
+    NotificationType.Type.ADDONS_BOA_JOB_FAILURE.instance.emit(
+        destination_address=username,
+        event_context={
+            'user_fullname': fullname,
+            'code': code,
+            'query_file_name': query_file_name,
+            'file_size': file_size,
+            'message': message,
+            'max_file_size': boa_settings.MAX_SUBMISSION_SIZE,
+            'query_file_full_path': query_file_full_path,
+            'output_file_name': output_file_name,
+            'job_id': job_id,
+            'max_job_wait_hours': boa_settings.MAX_JOB_WAITING_TIME / 3600,
+            'project_url': project_url,
+            'boa_job_list_url': boa_settings.BOA_JOB_LIST_URL,
+            'boa_support_email': boa_settings.BOA_SUPPORT_EMAIL,
+            'osf_support_email': osf_settings.OSF_SUPPORT_EMAIL,
+
+        }
     )
     return code

@@ -21,6 +21,7 @@ from osf_tests.factories import (
     WithdrawnRegistrationFactory,
     DraftNodeFactory,
 )
+from tests.utils import capture_notifications
 
 
 @pytest.fixture()
@@ -145,7 +146,11 @@ class TestNodeDetail:
     def test_return_private_project_details_logged_in_write_contributor(
             self, app, user, user_two, project_private, url_private, permissions_write):
         project_private.add_contributor(
-            contributor=user_two, auth=Auth(user), save=True)
+            contributor=user_two,
+            auth=Auth(user),
+            save=True,
+            notification_type=False
+        )
         res = app.get(url_private, auth=user_two.auth)
         assert res.status_code == 200
         assert res.content_type == 'application/vnd.api+json'
@@ -476,7 +481,8 @@ class TestNodeDetail:
         res = app.get(forks_url, auth=user.auth)
         assert len(res.json['data']) == 0
 
-        ForkFactory(project=project_private, user=user_two)
+        with capture_notifications():
+            ForkFactory(project=project_private, user=user_two)
         project_private.reload()
 
         res = app.get(url, auth=user.auth)
@@ -485,7 +491,8 @@ class TestNodeDetail:
         res = app.get(forks_url, auth=user.auth)
         assert len(res.json['data']) == 0
 
-        ForkFactory(project=project_private, user=user)
+        with capture_notifications():
+            ForkFactory(project=project_private, user=user)
         project_private.reload()
 
         res = app.get(url, auth=user.auth)
@@ -512,7 +519,8 @@ class TestNodeDetail:
         project_public.add_contributor(
             new_user,
             permissions=permissions.WRITE,
-            auth=Auth(project_public.creator)
+            auth=Auth(project_public.creator),
+            notification_type=False
         )
         res = app.get(url, auth=new_user.auth)
         assert res.json['data']['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]

@@ -29,6 +29,7 @@ from addons.wiki.utils import (
 from framework.auth import Auth
 from django.utils import timezone
 from addons.wiki.utils import to_mongo_key
+from tests.utils import capture_notifications
 
 from .config import EXAMPLE_DOCS, EXAMPLE_OPS
 
@@ -818,7 +819,8 @@ class TestWikiUuid(OsfTestCase):
         assert project_res.status_code == 200
         self.project.reload()
 
-        fork = self.project.fork_node(Auth(self.user))
+        with capture_notifications():
+            fork = self.project.fork_node(Auth(self.user))
         assert fork.is_fork_of(self.project)
         fork_url = fork.web_url_for('project_wiki_view', wname=self.wname)
         fork_res = self.app.get(fork_url, auth=self.user.auth)
@@ -1084,7 +1086,8 @@ class TestWikiUtils(OsfTestCase):
         # Differs across projects and forks
         project = ProjectFactory()
         assert sharejs_uuid != get_sharejs_uuid(project, wname)
-        fork = self.project.fork_node(Auth(self.project.creator))
+        with capture_notifications():
+            fork = self.project.fork_node(Auth(self.project.creator))
         assert sharejs_uuid != get_sharejs_uuid(fork, wname)
 
     def test_generate_share_uuid(self):

@@ -7,6 +7,7 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NodeLicense, RegistrationProvider
+from tests.utils import capture_notifications
 
 
 class ProviderMixinBase:
@@ -768,7 +769,8 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
     @pytest.fixture(autouse=True)
     def primary_collection(self, submission_provider, user_one, submission_one):
         c = submission_provider.primary_collection
-        c.collect_object(submission_one, user_one, status='fdsa')
+        with capture_notifications():
+            c.collect_object(submission_one, user_one, status='fdsa')
         return c
 
     @pytest.fixture()
@@ -839,11 +841,13 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
 
         submission_three = self.submission_class(creator=user_two)  # has referent perm
 
-        res = app.post_json_api(
-            url,
-            payload(creator=user_two._id, guid=submission_three._id, status='asdf'),
-            auth=user_two.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url,
+                payload(creator=user_two._id, guid=submission_three._id, status='asdf'),
+                auth=user_two.auth,
+                expect_errors=True
+            )
         assert res.status_code == 201
 
         assert not (collection_with_provider.guid_links.all() | collection_without_provider.guid_links.all()).filter(_id=submission_three._id).exists()
@@ -854,18 +858,22 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert len(res.json['data']) == 1
         assert res.status_code == 200
 
-        res = app.post_json_api(
-            url,
-            payload(guid=submission_two._id, status='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url,
+                payload(guid=submission_two._id, status='asdf', subjects=[[subject_one._id]]),
+                auth=user_one.auth
+            )
         assert res.status_code == 201
 
         submission_three = self.submission_class(creator=user_two)  # user_one does not have referent perm
 
-        res = app.post_json_api(
-            url,
-            payload(guid=submission_three._id, status='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url,
+                payload(guid=submission_three._id, status='asdf', subjects=[[subject_one._id]]),
+                auth=user_one.auth
+            )
         assert res.status_code == 201
 
         res = app.get(url, auth=user_one.auth)
@@ -917,10 +925,12 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert 'not an acceptable "type"' in res.json['errors'][0]['detail']
 
         # Valid
-        res = app.post_json_api(
-            url,
-            payload(guid=submission_two._id, collected_type='asdf', status='two', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url,
+                payload(guid=submission_two._id, collected_type='asdf', status='two', subjects=[[subject_one._id]]),
+                auth=user_one.auth
+            )
         assert res.status_code == 201
 
     def test_filters(self, app, submission_provider, collection_with_provider, collection_without_provider, user_one, user_two, submission_one, submission_two, subject_one, url, payload):
@@ -943,10 +953,12 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert len(res.json['data']) == 0
 
         # Add one with a subject to filter for it
-        res = app.post_json_api(
-            url,
-            payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url,
+                payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
+                auth=user_one.auth
+            )
         assert res.status_code == 201
 
         res = app.get(f'{url}?filter[subjects]={subject_one._id}', auth=user_one.auth)
