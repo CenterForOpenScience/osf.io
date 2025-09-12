@@ -48,6 +48,7 @@ class NotificationType(models.Model):
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = 'user_registration_bulk_upload_success_partial'
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = 'user_registration_bulk_upload_success_all'
         USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'
+        USER_WELCOME = 'user_welcome'
         USER_WELCOME_OSF4I = 'user_welcome_osf4i'
         USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'

@@ -733,12 +733,23 @@ def confirm_email_get(token, auth=None, **kwargs):
         })
 
     if is_initial_confirmation:
+        notification_type = NotificationType.Type.USER_WELCOME
+        notification_type.instance.emit(
+            user=user,
+            subscribed_object=user,
+            event_context={
+                'user_fullname': user.fullname,
+                'storage_flag_is_active': getattr(user, 'storage_flag_is_active', False),
+                'domain': settings.DOMAIN,
+            },
+        )
         user.update_date_last_login()
         user.save()
 
     # new random verification key, allows CAS to authenticate the user w/o password one-time only.
     user.verification_key = generate_verification_key()
     user.save()
+
     # redirect to CAS and authenticate the user with a verification key.
     return redirect(cas.get_login_url(
         request.url,
