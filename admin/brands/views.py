@@ -60,6 +60,14 @@ class BrandChangeForm(PermissionRequiredMixin, UpdateView):
     raise_exception = True
     model = Brand
     form_class = BrandForm
+    template_name = 'brands/detail.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['change_form'] = context.get('form')
+        brand_obj = self.get_object()
+        context['brand'] = model_to_dict(brand_obj)
+        return context
 
     def get_object(self, queryset=None):
         brand_id = self.kwargs.get('brand_id')
