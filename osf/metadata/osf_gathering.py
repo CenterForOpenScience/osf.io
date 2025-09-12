@@ -1020,6 +1020,8 @@ def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
         yield (RDF.type, FOAF.Person)  # note: assumes osf user accounts represent people
         yield (FOAF.name, focus.dbmodel.fullname)
+        yield (FOAF.givenName, focus.dbmodel.given_name)
+        yield (FOAF.familyName, focus.dbmodel.family_name)
         _social_links = focus.dbmodel.social_links
         # special cases abound! do these one-by-one (based on OSFUser.SOCIAL_FIELDS)
         yield (DCTERMS.identifier, _social_links.get('github'))
