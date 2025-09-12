@@ -75,9 +75,8 @@
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    foaf:givenName "Person" ;
-    foaf:familyName "McNamington" ;
-    foaf:name "Person McNamington" .
+    foaf:givenName "PersonMcNamington" ;
+    foaf:name "PersonMcNamington" .
 
 <http://localhost:8000/v2/providers/preprints/preprovi/subjects/> a skos:ConceptScheme ;
     dcterms:title "preprovi" .

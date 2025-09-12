@@ -3,7 +3,7 @@
   <identifier identifierType="DOI">10.70102/FK2osf.io/w2ibb</identifier>
   <creators>
     <creator>
-      <creatorName nameType="Personal">Person McNamington</creatorName>
+      <creatorName nameType="Personal">PersonMcNamington</creatorName>
       <nameIdentifier nameIdentifierScheme="URL">http://localhost:5000/w1ibb</nameIdentifier>
     </creator>
   </creators>
