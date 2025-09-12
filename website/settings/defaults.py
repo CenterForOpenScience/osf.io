@@ -453,7 +453,6 @@ class CeleryConfig:
     }
 
     med_pri_modules = {
-        'framework.email.tasks',
         'scripts.triggered_mails',
         'website.mailchimp_utils',
         'notifications.tasks',
