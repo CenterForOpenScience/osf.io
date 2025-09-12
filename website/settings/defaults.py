@@ -622,6 +622,16 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
+        '5-minute-user-emails': {
+            'task': 'notifications.tasks.send_moderators_instant_digest_email',
+            'schedule': crontab(minute='*/5'),
+            'kwargs': {'dry_run': False},
+        },
+        '5-minute-moderator-emails': {
+            'task': 'notifications.tasks.send_moderators_instant_digest_email',
+            'schedule': crontab(minute='*/5'),
+            'kwargs': {'dry_run': False},
+        },
         'send_moderators_digest_email': {
             'task': 'notifications.tasks.send_moderators_digest_email',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m

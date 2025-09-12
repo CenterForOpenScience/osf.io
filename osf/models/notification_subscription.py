@@ -89,11 +89,12 @@ class NotificationSubscription(BaseModel):
             )
             if save:
                 notification.save()
-            notification.send(
-                destination_address=destination_address,
-                email_context=email_context,
-                save=save,
-            )
+            if not self._is_digest:  # instant digests are sent every 5 minutes.
+                notification.send(
+                    destination_address=destination_address,
+                    email_context=email_context,
+                    save=save,
+                )
         else:
             Notification.objects.create(
                 subscription=self,

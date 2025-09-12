@@ -313,3 +313,29 @@ def remove_subscription_task(node_id):
         object_id=node.id,
         content_type=ContentType.objects.get_for_model(node),
     ).delete()
+
+
+@celery_app.task(bind=True, name='notifications.tasks.send_users_instant_digest_email')
+def send_users_instant_digest_email(dry_run):
+    """Send pending "instant' digest emails.
+    :return:
+    """
+    grouped_emails = get_users_emails('instantly')
+    for group in grouped_emails:
+        user_id = group['user_id']
+        notification_ids = [msg['notification_id'] for msg in group['info']]
+        if not dry_run:
+            send_user_email_task.delay(user_id, notification_ids, 'instantly')
+
+@celery_app.task(bind=True, name='notifications.tasks.send_moderators_instant_digest_email')
+def send_moderators_instant_digest_email(dry_run=False):
+    """Send pending "instant' digest emails.
+    :return:
+    """
+    grouped_emails = get_moderators_emails('instantly')
+    for group in grouped_emails:
+        user_id = group['user_id']
+        provider_id = group['provider_id']
+        notification_ids = [msg['notification_id'] for msg in group['info']]
+        if not dry_run:
+            send_moderator_email_task.delay(user_id, provider_id, notification_ids, 'instantly')
