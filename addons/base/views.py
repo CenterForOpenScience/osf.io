@@ -584,12 +584,18 @@ def create_waterbutler_log(payload, **kwargs):
                     event_context={
                         'user_fullname': user.fullname,
                         'action': payload['action'],
-                        'source_node': source_node,
-                        'destination_node': destination_node,
+                        'source_node': source_node._id,
+                        'source_node_title': source_node.title,
+                        'destination_node': destination_node._id,
+                        'destination_node_title': destination_node.title,
+                        'destination_node_parent_node_title': destination_node.parent_node.title if destination_node.parent_node else None,
                         'source_path': payload['source']['materialized'],
                         'source_addon': payload['source']['addon'],
                         'destination_addon': payload['destination']['addon'],
-                        'osf_support_email': settings.OSF_SUPPORT_EMAIL
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                        'logo': settings.OSF_LOGO,
+                        'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
+                        'OSF_LOGO': settings.OSF_LOGO,
                     }
                 )
             if payload.get('errors'):
