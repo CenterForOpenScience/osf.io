@@ -212,9 +212,9 @@ class TestModeratedSchemaResponseApprovalFlows:
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications['emits'][2]['kwargs']['user'] == admin_user
         assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == 1
+        assert messages['items'][0]['Content']['Headers']['To'][0] == admin_user.username
 
         delete_mailhog_messages()
 
@@ -233,9 +233,9 @@ class TestModeratedSchemaResponseApprovalFlows:
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications['emits'][2]['kwargs']['user'] == admin_user
         assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == 1
+        assert messages['items'][0]['Content']['Headers']['To'][0] == admin_user.username
 
         delete_mailhog_messages()
 
@@ -248,9 +248,9 @@ class TestModeratedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.accept(user=moderator)
         assert len(notifications['emits']) == 3
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == len(notifications['emails'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
 
@@ -263,8 +263,8 @@ class TestModeratedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.reject(user=moderator)
         assert len(notifications['emits']) == 3
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == len(notifications['emails'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()

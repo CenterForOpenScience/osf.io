@@ -18,21 +18,22 @@ class TestReviewable:
             is_published=False
         )
         assert preprint.machine_state == DefaultStates.INITIAL.value
-        delete_mailhog_messages()
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_submit(user)
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
+        delete_mailhog_messages()
 
         assert not user.notification_subscriptions.exists()
         preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
-        send_moderators_instant_digest_email.delay()
-        send_users_instant_digest_email.delay()
+        with capture_notifications(passthrough=True) as notifications:
+            send_moderators_instant_digest_email.delay()
+            send_users_instant_digest_email.delay()
 
         messages = get_mailhog_messages()
-        assert messages['count'] == len(notifications['emails'])
+        assert messages['count'] == len(notifications['emits'])
         assert_emails(messages, notifications)
 
         delete_mailhog_messages()
@@ -41,8 +42,14 @@ class TestReviewable:
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert not messages['items']
+        with capture_notifications(passthrough=True) as notifications:
+            send_moderators_instant_digest_email.delay()
+            send_users_instant_digest_email.delay()
+        messages = get_mailhog_messages()
+
+        assert messages['count'] == len(notifications['emits'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
