@@ -1049,6 +1049,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                 'document_type': self.provider.preprint_word,
                 'notify_comment': not self.provider.reviews_comments_private
             },
+            is_digest=True
         )
 
     # FOLLOWING BEHAVIOR NOT SPECIFIC TO PREPRINTS

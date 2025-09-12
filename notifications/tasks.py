@@ -21,6 +21,7 @@ logger = get_task_logger(__name__)
 
 @celery_app.task(bind=True)
 def send_user_email_task(self, user_id, notification_ids, message_freq):
+    print(self, user_id, notification_ids, message_freq)
     try:
         user = OSFUser.objects.get(
             guids___id=user_id,
@@ -174,7 +175,7 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         raise self.retry(exc=e)
 
 @celery_app.task(bind=True, name='notifications.tasks.send_users_digest_email')
-def send_users_digest_email(dry_run=False):
+def send_users_digest_email(self, dry_run=False):
     today = date.today()
 
     frequencies = ['daily']
@@ -192,7 +193,7 @@ def send_users_digest_email(dry_run=False):
                 send_user_email_task.delay(user_id, notification_ids, freq)
 
 @celery_app.task(bind=True, name='notifications.tasks.send_moderators_digest_email')
-def send_moderators_digest_email(dry_run=False):
+def send_moderators_digest_email(self, dry_run=False):
     today = date.today()
 
     frequencies = ['daily']
@@ -316,7 +317,7 @@ def remove_subscription_task(node_id):
 
 
 @celery_app.task(bind=True, name='notifications.tasks.send_users_instant_digest_email')
-def send_users_instant_digest_email(dry_run):
+def send_users_instant_digest_email(self, dry_run=False):
     """Send pending "instant' digest emails.
     :return:
     """
@@ -328,7 +329,7 @@ def send_users_instant_digest_email(dry_run):
             send_user_email_task.delay(user_id, notification_ids, 'instantly')
 
 @celery_app.task(bind=True, name='notifications.tasks.send_moderators_instant_digest_email')
-def send_moderators_instant_digest_email(dry_run=False):
+def send_moderators_instant_digest_email(self, dry_run=False):
     """Send pending "instant' digest emails.
     :return:
     """

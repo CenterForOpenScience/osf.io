@@ -5,7 +5,7 @@ from osf.models import NotificationType
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications, assert_emails
-
+from notifications.tasks import send_moderators_instant_digest_email, send_users_instant_digest_email
 
 @pytest.mark.django_db
 class TestReviewable:
@@ -28,10 +28,12 @@ class TestReviewable:
         assert not user.notification_subscriptions.exists()
         preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
+        send_moderators_instant_digest_email.delay()
+        send_users_instant_digest_email.delay()
 
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == len(notifications['emails'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
         with capture_notifications(passthrough=True) as notifications:
