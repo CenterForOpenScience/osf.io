@@ -103,6 +103,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         'reviews_state',
         'node_is_public',
         'tags',
+        'description',
     ])
     available_metrics = frozenset([
         'downloads',
