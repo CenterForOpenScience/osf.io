@@ -65,7 +65,7 @@ def populate_notification_types(*args, **kwargs):
             defaults=notification_type,
         )
         nt.object_content_type = content_type
-        if not nt.template:
+        if not nt.template or settings.DEV_MODE:
             nt.template = template
         nt.save()
 
