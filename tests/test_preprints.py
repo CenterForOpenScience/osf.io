@@ -2369,10 +2369,12 @@ class TestWithdrawnPreprint:
             unpublished_preprint_pre_mod.run_submit(user)
 
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_reject(user, 'it')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_reject(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_accept(user, 'it')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_accept(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert unpublished_preprint_pre_mod.ever_public
 
@@ -2487,7 +2489,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_pre_mod.run_accept(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is True
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2508,7 +2511,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.REJECTED.value
         assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
@@ -2543,7 +2547,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()
@@ -2578,7 +2583,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_reject(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_reject(moderator, 'comment')
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.REJECTED.value
         assert new_version.versioned_guids.first().is_rejected is True
@@ -2599,7 +2605,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_post_mod.run_accept(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_post_mod.get_guid()
@@ -2632,8 +2639,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.object_id == new_version.pk
         assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
-
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()

@@ -565,10 +565,8 @@ class TestModeratedFlows():
             with capture_notifications():
                 sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
-        if isinstance(sanction_object, Retraction):
-            with capture_notifications():
-                sanction_object.reject(user=provider_admin)
-        else:
+
+        with capture_notifications():
             sanction_object.reject(user=provider_admin)
         assert sanction_object.approval_stage is ApprovalStates.MODERATOR_REJECTED
 
@@ -739,7 +737,7 @@ class TestModerationActions:
 
         with capture_notifications():
             sanction_object.accept()
-        sanction_object.accept(user=moderator)
+            sanction_object.accept(user=moderator)
         registration.refresh_from_db()
         latest_action = registration.actions.last()
         assert latest_action.trigger == RegistrationModerationTriggers.ACCEPT_SUBMISSION.db_name

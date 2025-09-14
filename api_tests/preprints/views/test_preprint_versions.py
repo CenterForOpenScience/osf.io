@@ -244,7 +244,8 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         with capture_notifications():
             new_version.run_submit(self.moderator)
         assert new_version.is_published is True
-        new_version.run_accept(self.moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(self.moderator, 'comment')
         assert new_version.machine_state == 'accepted'
         res = self.app.patch_json_api(
             self.post_mod_preprint_update_url,
