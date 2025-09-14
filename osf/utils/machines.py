@@ -162,7 +162,7 @@ class ReviewsMachine(BaseMachine):
         notify.notify_accept_reject(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_edit_comment(self, ev):
-        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action)
+        notify.notify_edit_comment(self.machineable, ev.kwargs.get('user'), self.action, self.States)
 
     def notify_withdraw(self, ev):
         context = self.get_context()

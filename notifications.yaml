@@ -3,6 +3,13 @@
 
 notification_types:
   #### User Notifications
+  - name: reviews_submission_status
+    subject: 'Your submission status has been updated'
+    __docs__: 'Handle email notifications including: update comment, accept, and reject of submission, but not initial submission or resubmission.'
+    object_content_type_model_name: osfuser
+    tests: []
+    template: 'website/templates/reviews_submission_status.html.mako'
+
   - name: user_pending_verification_registered
     subject: 'Received request to be a contributor'
     __docs__: This email is sent when a user requests access to a node and has confirm their identity,
