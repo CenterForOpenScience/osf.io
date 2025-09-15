@@ -43,7 +43,8 @@ from osf.models.admin_log_entry import (
 from admin.users.forms import (
     EmailResetForm,
     UserSearchForm,
-    MergeUserForm
+    MergeUserForm,
+    AddEmailForm
 )
 from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
@@ -394,6 +395,35 @@ class UserRemoveSystemTag(UserMixin, NodeRemoveSystemTag):
     """ Allows authorized users to remove system tags from a user.
     """
     permission_required = 'osf.change_osfuser'
+
+
+class UserAddEmail(UserMixin, FormView):
+    """Allows authorized users to add an email to a user's account and trigger confirmation."""
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+    form_class = AddEmailForm
+
+    def form_valid(self, form):
+        from osf.exceptions import BlockedEmailError
+        from django.core.exceptions import ValidationError as DjangoValidationError
+        from framework.auth.views import send_confirm_email_async
+        from django.utils import timezone
+
+        user = self.get_object()
+        address = form.cleaned_data['new_email'].strip().lower()
+        try:
+            user.add_unconfirmed_email(address)
+
+            send_confirm_email_async(user, email=address)
+            user.email_last_sent = timezone.now()
+            user.save()
+            messages.success(self.request, f'Added unconfirmed email {address} and sent confirmation email.')
+        except (DjangoValidationError, ValueError) as e:
+            messages.error(self.request, f'Invalid email: {getattr(e, "message", str(e))}')
+        except BlockedEmailError:
+            messages.error(self.request, 'This email address domain is blocked.')
+
+        return super().form_valid(form)
 
 
 class UserMergeAccounts(UserMixin, FormView):
