@@ -453,25 +453,25 @@ class TestUserEmailDetail:
 
     def test_set_primary_email(self, app, confirmed_url, payload, confirmed_email, user_one, user_two, unconfirmed_url):
         payload['data']['attributes'] = {'primary': True}
+        with capture_notifications():
+            # test_set_email_primary_not_logged_in
+            res = app.patch_json_api(confirmed_url, payload, expect_errors=True)
+            assert res.status_code == 401
 
-        # test_set_email_primary_not_logged_in
-        res = app.patch_json_api(confirmed_url, payload, expect_errors=True)
-        assert res.status_code == 401
+            # test_set_primary_email_current_user
+            res = app.patch_json_api(confirmed_url, payload, auth=user_one.auth)
+            assert res.status_code == 200
+            user_one.reload()
+            assert user_one.username == confirmed_email.address
 
-        # test_set_primary_email_current_user
-        res = app.patch_json_api(confirmed_url, payload, auth=user_one.auth)
-        assert res.status_code == 200
-        user_one.reload()
-        assert user_one.username == confirmed_email.address
+            # test set primary not current user
+            res = app.patch_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
+            assert res.status_code == 403
 
-        # test set primary not current user
-        res = app.patch_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test set primary not confirmed fails
-        res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You cannot set an unconfirmed email address as your primary email address.'
+            # test set primary not confirmed fails
+            res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'You cannot set an unconfirmed email address as your primary email address.'
 
     def test_delete_email(self, app, payload, user_one, user_two, confirmed_email, confirmed_url, unconfirmed_url, unconfirmed_address):
         # test delete email logged in as another user fails
