@@ -1,0 +1,27 @@
+{% if perms.osf.change_osfuser %}
+    <a data-toggle="modal" data-target="#addEmailModal" class="btn btn-default">Add email</a>
+    <div class="modal" id="addEmailModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form class="well" method="post" action="{% url 'users:add-email' guid=user.guid %}">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">x</button>
+                        <h3>Add email to user</h3>
+                    </div>
+                    <div class="modal-body">
+                        <h4>User: {{ user.guid }}</h4>
+                        {% csrf_token %}
+                        <label for="id_new_email">Email address</label>
+                        <input type="email" name="new_email" id="id_new_email" class="form-control" required />
+                    </div>
+                    <div class="modal-footer">
+                        <input class="btn btn-primary" type="submit" value="Add and send confirmation" />
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+
