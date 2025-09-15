@@ -9,7 +9,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from website import settings
 from django.middleware import csrf
 from django.core.cache import cache
 from osf.models import Email, NotableDomain
