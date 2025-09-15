@@ -619,10 +619,12 @@ def create_waterbutler_log(payload, **kwargs):
 
 @file_signals.file_updated.connect
 def emit_notification(self, target, user, payload, *args, **kwargs):
+    if not isinstance(target, Preprint):
+        return
     notification_types = {
         'rename': NotificationType.Type.ADDON_FILE_RENAMED.instance,
         'copy': NotificationType.Type.ADDON_FILE_COPIED.instance,
-        'create': NotificationType.Type.FILE_UPDATED.instance,
+        'create': NotificationType.Type.FILE_ADDED.instance,
         'move': NotificationType.Type.ADDON_FILE_MOVED.instance,
         'delete': NotificationType.Type.FILE_REMOVED.instance,
         'update': NotificationType.Type.FILE_UPDATED.instance,
