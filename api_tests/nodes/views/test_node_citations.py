@@ -7,7 +7,6 @@ from osf.utils.permissions import WRITE, READ
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    OSFGroupFactory
 )
 
 
@@ -118,13 +117,6 @@ class NodeCitationsMixin:
         res = app.get(private_url, expect_errors=True)
         assert res.status_code == 401
         assert res.json['errors'][0]['detail'] == exceptions.NotAuthenticated.default_detail
-
-    #   test_read_group_mem_can_view_private_project_citations
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        private_project.add_osf_group(group, READ)
-        res = app.get(private_url, auth=group_mem.auth)
-        assert res.status_code == 200
 
     #   test_unauthenticated_can_view_public_project_citations
         res = app.get(public_url)

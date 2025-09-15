@@ -62,6 +62,7 @@ from api.preprints.permissions import (
     ContributorDetailPermissions,
     PreprintFilesPermissions,
     PreprintInstitutionPermissionList,
+    CanSubmitPreprintToProvider,
 )
 from api.providers.workflows import Workflows, PUBLIC_STATES
 from api.nodes.permissions import ContributorOrPublic
@@ -169,6 +170,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ContributorOrPublic,
+        CanSubmitPreprintToProvider,
     )
 
     parser_classes = (JSONAPIMultipleRelationshipsParser, JSONAPIMultipleRelationshipsParserForRegularJSON)

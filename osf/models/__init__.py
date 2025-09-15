@@ -68,8 +68,6 @@ from .oauth import (
     ApiOAuth2PersonalToken,
     ApiOAuth2Scope,
 )
-from .osf_group import OSFGroup
-from .osf_grouplog import OSFGroupLog
 from .outcome_artifacts import OutcomeArtifact
 from .outcomes import Outcome
 from .preprint import Preprint
@@ -83,7 +81,6 @@ from .provider import (
     WhitelistedSHAREPreprintProvider,
 )
 from .queued_mail import QueuedMail
-from .quickfiles import QuickFilesNode
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,
@@ -111,4 +108,3 @@ from .user import (
     OSFUser,
 )
 from .user_message import UserMessage
-

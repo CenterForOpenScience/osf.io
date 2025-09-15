@@ -13,7 +13,7 @@ from framework.transactions.handlers import no_auto_transaction
 from osf import features
 from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
-from website.conferences import utils, signals
+from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
@@ -154,8 +154,6 @@ def add_poster_by_email(conference, message):
         can_change_preferences=False,
         logo=settings.OSF_MEETINGS_LOGO
     )
-    if user_created:
-        signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 def conference_data(meeting):
     try:

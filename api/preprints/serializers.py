@@ -532,7 +532,6 @@ class PreprintCreateSerializer(PreprintSerializer):
     )
 
     def create(self, validated_data):
-
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:

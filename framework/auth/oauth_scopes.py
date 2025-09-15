@@ -63,9 +63,6 @@ class CoreScopes:
     NODE_CONTRIBUTORS_READ = 'nodes.contributors_read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors_write'
 
-    OSF_GROUPS_READ = 'osf_groups.groups_read'
-    OSF_GROUPS_WRITE = 'osf_groups.groups_write'
-
     PREPRINT_CONTRIBUTORS_READ = 'preprints.contributors_read'
     PREPRINT_CONTRIBUTORS_WRITE = 'preprints.contributors_write'
 
@@ -89,9 +86,6 @@ class CoreScopes:
 
     NODE_PREPRINTS_READ = 'node.preprints_read'
     NODE_PREPRINTS_WRITE = 'node.preprints_write'
-
-    NODE_OSF_GROUPS_READ = 'node.osf_groups_read'
-    NODE_OSF_GROUPS_WRITE = 'node.osf_groups_write'
 
     PREPRINTS_READ = 'preprint.preprints_read'
     PREPRINTS_WRITE = 'preprint.preprints_write'
@@ -253,10 +247,6 @@ class ComposedScopes:
     DRAFT_READ = (CoreScopes.NODE_DRAFT_REGISTRATIONS_READ, CoreScopes.DRAFT_REGISTRATIONS_READ, CoreScopes.DRAFT_CONTRIBUTORS_READ)
     DRAFT_WRITE = (CoreScopes.NODE_DRAFT_REGISTRATIONS_WRITE, CoreScopes.DRAFT_REGISTRATIONS_WRITE, CoreScopes.DRAFT_CONTRIBUTORS_WRITE)
 
-    # OSF Groups
-    GROUP_READ = (CoreScopes.OSF_GROUPS_READ, )
-    GROUP_WRITE = (CoreScopes.OSF_GROUPS_WRITE, )
-
     # Identifier views
     IDENTIFIERS_READ = (CoreScopes.IDENTIFIERS_READ, )
     IDENTIFIERS_WRITE = (CoreScopes.IDENTIFIERS_WRITE, )
@@ -304,7 +294,7 @@ class ComposedScopes:
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ,
                         CoreScopes.NODE_VIEW_ONLY_LINKS_READ, CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ,
-                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ, CoreScopes.NODE_OSF_GROUPS_READ)
+                        CoreScopes.NODE_REQUESTS_READ, CoreScopes.NODE_SETTINGS_READ)
     NODE_ACCESS_WRITE = NODE_ACCESS_READ + \
                             (
                                 CoreScopes.NODE_CONTRIBUTORS_WRITE,
@@ -313,7 +303,6 @@ class ComposedScopes:
                                 CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE,
                                 CoreScopes.NODE_REQUESTS_WRITE,
                                 CoreScopes.NODE_SETTINGS_WRITE,
-                                CoreScopes.NODE_OSF_GROUPS_WRITE,
                                 CoreScopes.SANCTION_RESPONSE,
                             )
 
@@ -343,7 +332,6 @@ class ComposedScopes:
                 + DRAFT_READ\
                 + REVIEWS_READ\
                 + PREPRINT_ALL_READ\
-                + GROUP_READ\
                 + (
                     CoreScopes.CEDAR_METADATA_RECORD_READ,
                     CoreScopes.MEETINGS_READ,
@@ -366,7 +354,6 @@ class ComposedScopes:
                  + DRAFT_WRITE\
                  + REVIEWS_WRITE\
                  + PREPRINT_ALL_WRITE\
-                 + GROUP_WRITE\
                  + TOKENS_WRITE\
                  + APPLICATIONS_WRITE\
                  + (
