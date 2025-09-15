@@ -35,7 +35,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
 
-    for recipient in preprint.provider.subscribed_object.get_group('moderator').user_set.all():
+    for recipient in preprint.provider.get_group('moderator').user_set.all():
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
 

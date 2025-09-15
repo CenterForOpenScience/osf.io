@@ -16,7 +16,7 @@ from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
 from osf.email import _render_email_html
 from osf_tests.factories import DraftRegistrationFactory
-from osf.models import Sanction, NotificationType
+from osf.models import Sanction, NotificationType, Notification
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
@@ -284,6 +284,7 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
             'type': getattr(self, 'name', None),
             'args': emit_args,
             'kwargs': ek,
+            '_is_digest': ek.get('is_digest'),
         })
         if passthrough:
             return _real_emit(self, *emit_args, **ek)
@@ -409,11 +410,16 @@ def assert_emails(mailhog_messages, notifications):
     """
     # Build expected list [(recipient, html)]
     expected = []
+    expected_digest = []
+
     for item in notifications['emits']:
         to_username = item['kwargs']['user'].username
         nt = NotificationType.objects.get(name=item['type'])
         html = _render_email_html(nt, item['kwargs']['event_context'])
-        expected.append((to_username, _canon_html(html)))
+        if item.get('_is_digest'):
+            expected_digest.append((to_username, nt))
+        else:
+            expected.append((to_username, _canon_html(html)))
 
     # Build actual list [(recipient, html)]
     actual = []
@@ -441,6 +447,13 @@ def assert_emails(mailhog_messages, notifications):
                     f"({exp_to[i]}):\n{diff}"
                 )
     assert exp_to == act_to, 'Recipient lists differ (sorted).'
+
+    digest_notifications_qs = Notification.objects.filter(sent__isnull=True)
+
+    if expected_digest:
+        for to_username, nt in expected_digest:
+            assert digest_notifications_qs.filter(subscription__user__username=to_username, subscription__notification_type=nt).exists()
+
 
 def _notif_type_name(t: Any) -> str:
     """Normalize a NotificationType-ish input to its lowercase name."""

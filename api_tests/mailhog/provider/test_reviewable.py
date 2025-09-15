@@ -25,15 +25,21 @@ class TestReviewable:
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
 
+        massages = get_mailhog_messages()
+        assert massages['count'] == len(notifications['emails'])
+        assert_emails(massages, notifications)
+        delete_mailhog_messages()
+
         assert not user.notification_subscriptions.exists()
         preprint.run_reject(user, 'comment')
+
         assert preprint.machine_state == DefaultStates.REJECTED.value
 
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
-
         delete_mailhog_messages()
+
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_submit(user)  # Resubmission alerts users and moderators
         assert len(notifications['emits']) == 1
