@@ -451,6 +451,7 @@ def assert_emails(mailhog_messages, notifications):
     digest_notifications_qs = Notification.objects.filter(sent__isnull=True)
 
     if expected_digest:
+        assert len(expected_digest) == digest_notifications_qs.count()
         for to_username, nt in expected_digest:
             assert digest_notifications_qs.filter(subscription__user__username=to_username, subscription__notification_type=nt).exists()
 

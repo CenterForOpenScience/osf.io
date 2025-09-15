@@ -1,7 +1,26 @@
 from django.utils import timezone
 
 from website.settings import DOMAIN, OSF_PREPRINTS_LOGO, OSF_REGISTRIES_LOGO
+from osf.utils.permissions import ADMIN
 from website.reviews import signals as reviews_signals
+
+
+@reviews_signals.reviews_email.connect
+def reviews_notification(self, creator, template, context, action):
+    """
+    Handle email notifications including: update comment, accept, and reject of submission, but not initial submission
+    or resubmission.
+    """
+    recipients = list(action.target.contributors)
+    for recipient in recipients:
+        context['recipient_fullname'] = recipient.fullname
+        context['is_creator'] = recipient == creator
+        context['has_psyarxiv_chronos_text'] = action.target.has_permission(recipient, ADMIN) and 'psyarxiv' in action.target.provider.name.lower()
+        template.instance.emit(
+            user=recipient,
+            subscribed_object=action.target,
+            event_context=context,
+        )
 
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
@@ -127,5 +146,4 @@ def reviews_submit_notification(self, recipients, context, resource, notificatio
             user=recipient,
             subscribed_object=provider,
             event_context=context,
-            is_digest=True,
         )

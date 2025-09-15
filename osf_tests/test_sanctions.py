@@ -221,7 +221,8 @@ class TestDOICreation:
         # Moderator approval
 
         with mock.patch('osf.models.node.AbstractNode.update_search'):
-            registration.sanction.accept(user=moderator)
+            with capture_notifications():
+                registration.sanction.accept(user=moderator)
         assert registration.get_identifier(category='doi')
         # No value should be set if the registration was embargoed
         assert bool(registration.get_identifier_value(category='doi')) != embargoed

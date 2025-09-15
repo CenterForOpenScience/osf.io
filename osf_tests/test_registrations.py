@@ -712,7 +712,8 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-        embargo.to_APPROVED()
+        with capture_notifications():
+            embargo.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
@@ -739,7 +740,8 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-        registration_approval.to_APPROVED()
+        with capture_notifications():
+            registration_approval.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 

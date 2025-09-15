@@ -30,6 +30,8 @@ def get_email_template_context(resource):
 
     if document_type == 'registration':
         base_context['draft_registration_absolute_url'] = resource.draft_registration.get().absolute_url
+    else:
+        base_context['draft_registration_absolute_url'] = None
     if document_type == 'registration' and resource.provider.brand:
         brand = resource.provider.brand
         base_context['logo_url'] = brand.hero_logo_image
@@ -97,14 +99,18 @@ def notify_accept_reject(resource, user, action, states, *args, **kwargs):
     )
 
 
-def notify_edit_comment(resource, user, action, *args, **kwargs):
+def notify_edit_comment(resource, user, action, states, *args, **kwargs):
     if not resource.provider.reviews_comments_private and action.comment:
         context = get_email_template_context(resource)
         context['comment'] = action.comment
+        context['requester_fullname'] = action.creator.fullname
+        context['is_rejected'] = action.to_state == states.REJECTED.db_name
+        context['was_pending'] = action.from_state == states.PENDING.db_name
+        context['notify_comment'] = not resource.provider.reviews_comments_private
         reviews_signals.reviews_email.send(
             creator=user,
             context=context,
-            template='reviews_update_comment',
+            template=NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
             action=action
         )
 

@@ -20,17 +20,20 @@ class TestReviewable:
             preprint.run_submit(user)
         assert preprint.machine_state == DefaultStates.PENDING.value
 
-        preprint.run_accept(user, 'comment')
+        with capture_notifications():
+            preprint.run_accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db = Preprint.objects.get(id=preprint.id)
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
-        preprint.run_reject(user, 'comment')
+        with capture_notifications():
+            preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.REJECTED.value
 
-        preprint.run_accept(user, 'comment')
+        with capture_notifications():
+            preprint.run_accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
@@ -49,7 +52,8 @@ class TestReviewable:
         assert preprint.machine_state == DefaultStates.PENDING.value
 
         assert not user.notification_subscriptions.exists()
-        preprint.run_reject(user, 'comment')
+        with capture_notifications():
+            preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
 
         with capture_notifications() as notifications:

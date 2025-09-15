@@ -147,7 +147,8 @@ class TestReviewActionCreateRelated:
         assert not preprint.is_published
 
         # Moderator can accept
-        res = app.post_json_api(url, accept_payload, auth=moderator.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, accept_payload, auth=moderator.auth)
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'accepted'
@@ -260,7 +261,7 @@ class TestReviewActionCreateRelated:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                if trigger == 'submit':
+                if trigger in ['submit', 'reject', 'accept']:
                     with capture_notifications():
                         res = app.post_json_api(url, payload, auth=moderator.auth)
                 else:
