@@ -20,6 +20,7 @@
             <div class="btn-group" role="group">
                 <a href="{% url 'users:search' %}" class="btn btn-default"><i class="fa fa-search"></i></a>
                 {% include "users/reset_password.html" with user=user %}
+                {% include "users/add_email.html" with user=user %}
                 {%  if perms.osf.change_osfuser %}
                     <a href="{% url 'users:get-reset-password' guid=user.guid %}" data-toggle="modal" data-target="#getResetModal" class="btn btn-default">Get password reset link</a>
                     {% if user.confirmed %}
