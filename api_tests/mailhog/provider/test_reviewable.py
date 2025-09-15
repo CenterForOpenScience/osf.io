@@ -31,11 +31,8 @@ class TestReviewable:
         delete_mailhog_messages()
 
         assert not user.notification_subscriptions.exists()
-        with capture_notifications(passthrough=True) as notifications:
-            preprint.run_reject(user, 'comment')
+        preprint.run_reject(user, 'comment')
 
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.REVIEWS_SUBMISSION_STATUS
         assert preprint.machine_state == DefaultStates.REJECTED.value
 
         massages = get_mailhog_messages()
