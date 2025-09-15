@@ -261,6 +261,27 @@ class ComplexFileEvent(FileEvent):
 
 @register(NodeLog.FILE_RENAMED)
 class AddonFileRenamed(ComplexFileEvent):
+    def perform(self):
+        '''
+        Currently, WB sends the "move" action for renamed files.
+        This code will remain useless until the correct action is sent.
+        '''
+        if self.node == self.source_node:
+            super().perform()
+            return
+
+        NotificationType.Type.ADDON_FILE_RENAMED.instance.emit(
+            user=self.user,
+            event_context={
+                'user_fullname': self.user.fullname,
+                'message': self.html_message,
+                'profile_image_url': self.profile_image_url,
+                'localized_timestamp': self.timestamp,
+                'url': self.url,
+            },
+            is_digest=True,
+        )
+
     @property
     def html_message(self):
         return 'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
@@ -306,7 +327,7 @@ class AddonFileCopied(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.Type.ADDON_FILE_MOVED.instance.emit(
+        NotificationType.Type.ADDON_FILE_COPIED.instance.emit(
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,
