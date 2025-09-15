@@ -720,7 +720,7 @@ class UserEmailsSerializer(JSONAPISerializer):
                     'new_address': user.username,
                     'can_change_preferences': False,
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-                }
+                },
             )
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
