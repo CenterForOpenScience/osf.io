@@ -30,7 +30,7 @@ def send_archiver_size_exceeded_mails(src, user, stat_result, url):
     from osf.models.notification_type import NotificationType
 
     NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
-        user=user,
+        destination_address=settings.OSF_SUPPORT_EMAIL,
         subscribed_object=src,
         event_context={
             'user_fullname': user.fullname,
@@ -62,7 +62,7 @@ def send_archiver_copy_error_mails(src, user, results, url):
     from osf.models.notification_type import NotificationType
 
     NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
-        user=user,
+        destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
             'domain': settings.DOMAIN,
             'user_fullname': user.fullname,
@@ -133,7 +133,7 @@ def send_archiver_uncaught_error_mails(src, user, results, url):
         }
     )
     NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
-        destination_address=settings.OSF_SUPPORT_EMAIL,
+        user=user,
         event_context={
             'user_fullname': user.fullname,
             'user__id': user._id,

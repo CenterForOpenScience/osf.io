@@ -737,6 +737,8 @@ class TestArchiverUtils(ArchiverTestCase):
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
         self.dst.reload()
         assert self.dst.is_deleted
 
@@ -752,6 +754,8 @@ class TestArchiverUtils(ArchiverTestCase):
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
 
     def test_handle_archive_fail_size(self):
         with capture_notifications() as notifications:
@@ -765,6 +769,23 @@ class TestArchiverUtils(ArchiverTestCase):
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
+
+    def test_handle_archive_uncaught_error(self):
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_UNCAUGHT_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
