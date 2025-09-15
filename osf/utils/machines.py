@@ -334,7 +334,9 @@ class PreprintRequestMachine(BaseMachine):
     def notify_submit(self, ev):
         context = self.get_context()
         if not self.auto_approval_allowed():
+            context['reviewable'] = self.machineable.target
             reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
+            reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
     def notify_accept_reject(self, ev):
         if ev.event.name == DefaultTriggers.REJECT.value:

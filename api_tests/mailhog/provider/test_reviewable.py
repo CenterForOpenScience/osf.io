@@ -31,6 +31,7 @@ class TestReviewable:
         delete_mailhog_messages()
 
         assert not user.notification_subscriptions.exists()
+
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_reject(user, 'comment')
 
