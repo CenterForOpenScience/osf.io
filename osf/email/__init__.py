@@ -119,7 +119,7 @@ def _read_lookup_uri(uri: str) -> str:
 
 NOTIFY_BASE_DEFAULTS = {
     'logo': settings.OSF_LOGO,  # matches default in notify_base.mako
-    'logo_url': settings.OSF_LOGO,
+    'logo_url': None,
     'node_url': '',
     'ns_url': '',
     'osf_contact_email': settings.OSF_CONTACT_EMAIL,

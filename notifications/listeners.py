@@ -61,7 +61,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
         )
 
 
-@reviews_signals.reviews_email_submit_moderators_notifications.connect
+# @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, timestamp, context, resource):
     """
     Handle email notifications to notify moderators of new submissions or resubmission.
