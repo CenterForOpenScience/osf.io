@@ -261,7 +261,7 @@ def ember_app(path=None):
                             from framework.auth import Auth
                             auth = Auth.from_kwargs(request.args.to_dict(), {})
                             if not preprint.can_view(auth):
-                                if getattr(preprint, 'is_pending_moderation', True):
+                                if preprint.is_pending_moderation:
                                     renderer = OsfWebRenderer('pending_moderation.mako', trust=False)
                                     return renderer({
                                         'resource_type': (preprint.provider.preprint_word or 'preprint') if preprint.provider else 'preprint',
