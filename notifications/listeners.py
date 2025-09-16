@@ -1,7 +1,6 @@
 import logging
 
 from django.apps import apps
-from django.utils import timezone
 
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
 from website.reviews import signals as reviews_signals
@@ -60,55 +59,6 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
             _is_digest=True,
         )
 
-
-# @reviews_signals.reviews_email_submit_moderators_notifications.connect
-def reviews_submit_notification_moderators(self, timestamp, context, resource):
-    """
-    Handle email notifications to notify moderators of new submissions or resubmission.
-    """
-
-    # imports moved here to avoid AppRegistryNotReady error
-    from osf.models import NotificationType
-    from website.settings import DOMAIN
-
-    provider = resource.provider
-    context['domain'] = DOMAIN
-    context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
-    context['localized_timestamp'] = str(timezone.now()),
-
-    # Set submission url
-    if provider.type == 'osf.preprintprovider':
-        context['reviews_submission_url'] = (
-            f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
-        )
-    elif provider.type == 'osf.registrationprovider':
-        context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
-    else:
-        raise NotImplementedError(f'unsupported provider type {provider.type}')
-
-    # Set message
-    revision_id = context.get('revision_id')
-    if revision_id:
-        context['message'] = f'submitted updates to "{resource.title}".'
-        context['reviews_submission_url'] += f'&revisionId={revision_id}'
-    else:
-        if context.get('resubmission'):
-            context['message'] = f'resubmitted "{resource.title}".'
-        else:
-            context['message'] = f'submitted "{resource.title}".'
-
-    for recipient in resource.provider.get_group('moderator').user_set.all():
-        context['user_fullname'] = recipient.fullname
-        context['recipient_fullname'] = recipient.fullname
-        context['requester_fullname'] = recipient.fullname
-        context['is_request_email'] = False
-
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
-            user=recipient,
-            subscribed_object=provider,
-            event_context=context,
-            is_digest=True,
-        )
 
 # Handle email notifications to notify moderators of new submissions.
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
