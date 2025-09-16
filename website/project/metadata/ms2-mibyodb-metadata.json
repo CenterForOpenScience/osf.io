@@ -1895,7 +1895,7 @@
           "type": "choose",
           "format": "multiselect",
           "required": true,
-          "help": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」（以降ガイドライン）はムーンショット目標2（以降MS2）に参画する全ての研究参加者がその内容を理解し、遵守する必要があります。内容について改めて確認したい方は以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|All participants in Moonshot Goal 2 (MS2) are required to understand and comply with the \"Agreement on the Policy of Research Project for the Moonshot Goal 22\" (including supplementary provisions, hereinafter \"Agreement\") and the \"Moonshot Goal 2 Database Guidelines\" (hereinafter \"Guidelines\"). If you would like to review the content, please refer to the following links.\nMS2 Agreement: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "help": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」（以降ガイドライン）はムーンショット目標2（以降MS2）に参画する全ての研究参加者がその内容を理解し、遵守する必要があります。内容について改めて確認したい方は以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/d3y6e/\n協定書付帯事項：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|All participants in Moonshot Goal 2 (MS2) are required to understand and comply with the \"Agreement on the Policy of Research Project for the Moonshot Goal 22\" (including supplementary provisions, hereinafter \"Agreement\") and the \"Moonshot Goal 2 Database Guidelines\" (hereinafter \"Guidelines\"). If you would like to review the content, please refer to the following links.\nMS2 Agreement: https://rdm.nii.ac.jp/d3y6e/\nMS2 Agreement - Supplementary Provisions: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
           "options": [
             {
               "text": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」を全て読み、内容を理解しましたか？|Have you read and understood the Agreement and Guidelines?"
@@ -2056,7 +2056,7 @@
           "type": "choose",
           "format": "multiselect",
           "required": true,
-          "help": "未病DBでは各提供者のオーサーシップや著作権について協定書に規定しています。各データセットにおいて、協定書を参考にデータ利用者との間で事前に取り決めを交わしておくことを推奨しています。提供者の権利については以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|In the Mebyo Database (Mebyo DB), authorship and copyright are stipulated in the agreement. \nIt is recommended that providers make prior arrangements with data users based on the Agreement for each dataset. For details on provider rights, please refer to the following links.\n\nMS2 Agreement: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "help": "未病DBでは各提供者のオーサーシップや著作権について協定書に規定しています。各データセットにおいて、協定書を参考にデータ利用者との間で事前に取り決めを交わしておくことを推奨しています。提供者の権利については以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/d3y6e/\n協定書付帯事項：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|In the Mebyo Database (Mebyo DB), authorship and copyright are stipulated in the agreement. \nIt is recommended that providers make prior arrangements with data users based on the Agreement for each dataset. For details on provider rights, please refer to the following links.\n\nMS2 Agreement: https://rdm.nii.ac.jp/d3y6e/\nMS2 Agreement - Supplementary Provisions: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
           "options": [
             {
               "text": "未病DBが定めるオーサーシップや著作権に関する指針について理解しましたか？|Do you understand the Mebyo DB's authorship and copyright policies?",
