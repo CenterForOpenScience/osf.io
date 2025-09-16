@@ -134,13 +134,12 @@ class TestRegistrationMachineNotification:
         with capture_notifications() as notification:
             notify_submit(registration, admin)
 
-        assert len(notification['emits']) == 4
+        assert len(notification['emits']) == 3
         assert notification['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][0]['kwargs']['user'] == admin
         assert notification['emits'][1]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][1]['kwargs']['user'] == contrib
         assert notification['emits'][2]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notification['emits'][3]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
 
         assert NotificationSubscription.objects.count() == 5
         digest = NotificationSubscription.objects.last()

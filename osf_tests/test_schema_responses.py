@@ -859,13 +859,11 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-        assert len(notifications['emits']) == 3
+        assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == moderator
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications['emits'][1]['kwargs']['user'] == moderator
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications['emits'][2]['kwargs']['user'] == admin_user
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['kwargs']['user'] == admin_user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -874,13 +872,11 @@ class TestModeratedSchemaResponseApprovalFlows():
 
         with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-        assert len(notifications['emits']) == 3
+        assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == moderator
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications['emits'][1]['kwargs']['user'] == moderator
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications['emits'][2]['kwargs']['user'] == admin_user
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['kwargs']['user'] == admin_user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(
             self, initial_response, admin_user):

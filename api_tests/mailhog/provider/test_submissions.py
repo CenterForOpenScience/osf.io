@@ -113,10 +113,9 @@ class TestRegistriesModerationSubmissions:
 
             resp = app.get(provider_actions_url, auth=moderator.auth)
 
-        assert len(notifications['emits']) == 3
+        assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert notifications['emits'][2]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
