@@ -45,3 +45,5 @@ def log_gv_addon(node_url: str, action: str, user_url: str, addon: str):
             'addon': addon
         }
     )
+    if node.is_public:
+        node.update_search()
