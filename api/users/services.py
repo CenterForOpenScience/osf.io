@@ -15,8 +15,10 @@ def send_password_reset_email(user, email, verification_type='password', institu
     user.save()
 
     reset_link = furl(settings.DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}').url
+    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION if institutional \
+        else NotificationType.Type.USER_FORGOT_PASSWORD
 
-    NotificationType.Type.USER_FORGOT_PASSWORD.instance.emit(
+    notification_type.instance.emit(
         destination_address=email,
         event_context={
             'reset_link': reset_link,

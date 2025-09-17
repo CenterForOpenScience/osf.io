@@ -105,7 +105,7 @@ class TestResetPasswordView(AdminTestCase):
             response = views.ResetPasswordView.as_view()(request, guid=guid)
 
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
         self.assertEqual(response.status_code, 302)
 
 
