@@ -5,8 +5,9 @@ from django.db import IntegrityError
 
 from framework.auth import Auth
 
-from osf.models import Collection
+from osf.models import Collection, NotificationType
 from osf.exceptions import NodeStateError
+from tests.utils import capture_notifications
 from website.views import find_bookmark_collection
 from .factories import (
     UserFactory,
@@ -71,7 +72,6 @@ class TestBookmarkCollection:
 
 
 @pytest.mark.enable_bookmark_creation
-@pytest.mark.usefixtures('mock_send_grid')
 class TestImplicitRemoval:
 
     @pytest.fixture
@@ -111,7 +111,8 @@ class TestImplicitRemoval:
         node = ProjectFactory(creator=bookmark_collection.creator, is_public=True)
         bookmark_collection.collect_object(node, bookmark_collection.creator)
         alternate_bookmark_collection.collect_object(node, alternate_bookmark_collection.creator)
-        provider_collection.collect_object(node, provider_collection.creator)
+        with capture_notifications():
+            provider_collection.collect_object(node, provider_collection.creator)
         return node
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
@@ -126,22 +127,21 @@ class TestImplicitRemoval:
         assert associated_collections.filter(collection=bookmark_collection).exists()
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
-    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, provider_collected_node, bookmark_collection, mock_send_grid):
+    def test_node_removed_from_collection_on_privacy_change_notify(self, auth, provider_collected_node, bookmark_collection):
         associated_collections = provider_collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        mock_send_grid.reset_mock()
-        provider_collected_node.set_privacy('private', auth=auth)
-        assert mock_send_grid.called
-        assert len(mock_send_grid.call_args_list) == 1
+        with capture_notifications() as notifications:
+            provider_collected_node.set_privacy('private', auth=auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
-    def test_node_removed_from_collection_on_privacy_change_no_provider(self, auth, collected_node, bookmark_collection, mock_send_grid):
+    def test_node_removed_from_collection_on_privacy_change_no_provider(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
         collected_node.set_privacy('private', auth=auth)
-        assert not mock_send_grid.called
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

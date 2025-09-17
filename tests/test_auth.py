@@ -6,7 +6,7 @@ import pytest
 import logging
 
 from unittest import mock
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from rest_framework import status as http_status
 from flask import Flask
 from werkzeug.wrappers import Response
@@ -24,9 +24,9 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.sessions import get_session
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils import permissions
-from website import mails
+from tests.utils import capture_notifications
 from website import settings
 from website.project.decorators import (
     must_have_permission,
@@ -36,20 +36,13 @@ from website.project.decorators import (
     must_have_addon, must_be_addon_authorizer,
 )
 from website.util import api_url_for
-from conftest import start_mock_send_grid
 
 from tests.test_cas_authentication import generate_external_user_with_resp
 
 logger = logging.getLogger(__name__)
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthUtils(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_citation_with_only_fullname(self):
         user = UserFactory()
@@ -97,9 +90,6 @@ class TestAuthUtils(OsfTestCase):
 
         user.reload()
 
-        self.mock_send_grid.assert_not_called()
-
-
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
         res = self.app.get(f'/confirm/{user._id}/{token}')
 
@@ -107,7 +97,6 @@ class TestAuthUtils(OsfTestCase):
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert len(self.mock_send_grid.call_args_list) == 0
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
@@ -120,7 +109,8 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_with_wrong_password_returns_false(self):
         user = UserFactory.build()
-        user.set_password('killerqueen')
+        with capture_notifications():
+            user.set_password('killerqueen')
         assert not auth.get_user(email=user.username, password='wrong')
 
     def test_get_user_by_external_info(self):
@@ -171,13 +161,11 @@ class TestAuthUtils(OsfTestCase):
 
     def test_password_change_sends_email(self):
         user = UserFactory()
-        user.set_password('killerqueen')
-        user.save()
-        assert len(self.mock_send_grid.call_args_list) == 1
-        empty, kwargs = self.mock_send_grid.call_args
-
-        assert empty == ()
-        assert kwargs['to_addr'] == user.username
+        with capture_notifications() as notifications:
+            user.set_password('killerqueen')
+            user.save()
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -219,11 +207,15 @@ class TestAuthUtils(OsfTestCase):
             'password': 'brutusisajerk'
         }
 
-        self.app.post(url, json=sign_up_data)
-        assert len(self.mock_send_grid.call_args_list) == 1
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-        self.app.post(url, json=sign_up_data)
-        assert len(self.mock_send_grid.call_args_list) == 2
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
 
 class TestAuthObject(OsfTestCase):

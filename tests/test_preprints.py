@@ -26,7 +26,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from admin_tests.utilities import setup_view
 from api.preprints.views import PreprintContributorDetail
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, NotificationType
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf_tests.factories import (
     ProjectFactory,
@@ -43,8 +43,8 @@ from osf_tests.factories import (
 from osf.utils.permissions import READ, WRITE, ADMIN
 from osf.utils.workflows import DefaultStates, RequestTypes, ReviewStates
 from tests.base import assert_datetime_equal, OsfTestCase
-from tests.utils import assert_preprint_logs
-from website import settings, mails
+from tests.utils import assert_preprint_logs, capture_notifications
+from website import settings
 from website.identifiers.clients import CrossRefClient, ECSArXivCrossRefClient, crossref
 from website.identifiers.utils import request_identifiers
 from website.preprints.tasks import (
@@ -53,8 +53,6 @@ from website.preprints.tasks import (
     update_or_enqueue_on_preprint_updated,
     should_update_preprint_identifiers
 )
-from conftest import start_mock_send_grid
-
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
 
@@ -332,13 +330,14 @@ class TestContributorMethods:
     def test_add_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth,
+            )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -467,13 +466,14 @@ class TestContributorMethods:
     def test_remove_contributors(self, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in preprint.contributors
         assert user2 in preprint.contributors
         assert preprint.has_permission(user1, WRITE)
@@ -570,36 +570,40 @@ class TestPreprintAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
 
     def test_add_contributor_user_id_already_contributor(self, user, preprint):
         with pytest.raises(ValidationError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
         assert 'is already a contributor' in excinfo.value.message
 
     def test_add_contributor_invalid_user_id(self, user, preprint):
         with pytest.raises(ValueError) as excinfo:
-            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
+            preprint.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, preprint):
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, preprint):
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, preprint):
         registered_user = UserFactory()
-        contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        with capture_notifications():
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
@@ -971,7 +975,7 @@ class TestPreprintSpam:
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @pytest.mark.skip('Technically still true, but skipping because mocking is outdated')
-    def test_check_spam_on_private_preprint_bans_new_spam_user(self, mock_send_mail, preprint, user):
+    def test_check_spam_on_private_preprint_bans_new_spam_user(self, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -998,10 +1002,10 @@ class TestPreprintSpam:
                 preprint3.reload()
                 assert preprint3.is_public is True
 
-    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
-    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_send_mail, preprint, user):
+    @mock.patch('website.mailchimp_utils.unsubscribe_mailchimp')
+    def test_check_spam_on_private_preprint_does_not_ban_existing_user(self, mock_mailchimp, preprint, user):
         preprint.is_public = False
         preprint.save()
         with mock.patch('osf.models.Preprint._get_spam_content', mock.Mock(return_value='some content!')):
@@ -1066,13 +1070,13 @@ class TestManageContributors:
 
     def test_contributor_set_visibility_validation(self, preprint, user, auth):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
-                {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-            ]
-        )
-        print(preprint.visible_contributor_ids)
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
+                ]
+            )
         with pytest.raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
             preprint.set_visible(user=user, visible=False, auth=None)
@@ -1272,13 +1276,14 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, preprint, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        preprint.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            preprint.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
         user1_contrib_id = preprint.preprintcontributor_set.get(user=user1).id
@@ -1417,7 +1422,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
         assert not self.preprint.is_published
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.reload()
         assert self.preprint.is_published
 
@@ -1456,7 +1462,8 @@ class TestSetPreprintFile(OsfTestCase):
         self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
         self.preprint.reload()
         assert not self.preprint.is_public
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.project.reload()
         assert self.preprint.is_public
 
@@ -1492,18 +1499,20 @@ class TestSetPreprintFile(OsfTestCase):
         assert self.project.created != self.preprint.created
 
     def test_cant_save_without_file(self):
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
-        self.preprint.set_published(True, auth=self.auth, save=False)
+        with capture_notifications():
+            self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+            self.preprint.set_published(True, auth=self.auth, save=False)
         self.preprint.primary_file = None
 
         with pytest.raises(ValidationError):
             self.preprint.save()
 
     def test_cant_update_without_file(self):
-        self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
-        self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
-        self.preprint.set_published(True, auth=self.auth, save=True)
+        with capture_notifications():
+            self.preprint.set_primary_file(self.file, auth=self.auth, save=True)
+            self.preprint.set_subjects([[SubjectFactory()._id]], auth=self.auth)
+            self.preprint.set_published(True, auth=self.auth, save=True)
         self.preprint.primary_file = None
         with pytest.raises(ValidationError):
             self.preprint.save()
@@ -1620,14 +1629,16 @@ class TestPreprintPermissions(OsfTestCase):
     def test_admin_can_publish(self):
         assert not self.preprint.is_published
 
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
         assert self.preprint.is_published
 
     def test_admin_cannot_unpublish(self):
         assert not self.preprint.is_published
 
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        with capture_notifications():
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
 
         assert self.preprint.is_published
 
@@ -1985,8 +1996,6 @@ class TestOnPreprintUpdatedTask(OsfTestCase):
         assert should_update_preprint_identifiers(self.private_preprint, {})
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestPreprintConfirmationEmails(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -1996,17 +2005,17 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         self.preprint = PreprintFactory(creator=self.user, project=self.project, provider=PreprintProviderFactory(_id='osf'), is_published=False)
         self.preprint.add_contributor(self.write_contrib, permissions=WRITE)
         self.preprint_branded = PreprintFactory(creator=self.user, is_published=False)
-        self.mock_send_grid = start_mock_send_grid(self)
 
     def test_creator_gets_email(self):
-        self.preprint.set_published(True, auth=Auth(self.user), save=True)
-        domain = self.preprint.provider.domain or settings.DOMAIN
-        self.mock_send_grid.assert_called()
-        assert self.mock_send_grid.call_count == 1
+        with capture_notifications() as notifications:
+            self.preprint.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
-        self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
-        assert self.mock_send_grid.call_count == 2
-
+        with capture_notifications() as notifications:
+            self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
 class TestPreprintOsfStorage(OsfTestCase):
     def setUp(self):
@@ -2239,7 +2248,6 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
             json=payload,
         )
         self.preprint.reload()
-
         assert self.preprint.logs.latest().action == 'osf_storage_addon_file_renamed'
 
     def test_action_downloads_contrib(self):
@@ -2352,18 +2360,22 @@ class TestWithdrawnPreprint:
         assert preprint.ever_public
 
         # pre-mod
-        unpublished_preprint_pre_mod.run_submit(user)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(user)
 
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_reject(user, 'it')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_reject(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert not unpublished_preprint_pre_mod.ever_public
-        unpublished_preprint_pre_mod.run_accept(user, 'it')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_accept(user, 'it')
         unpublished_preprint_pre_mod.reload()
         assert unpublished_preprint_pre_mod.ever_public
 
         # post-mod
-        unpublished_preprint_post_mod.run_submit(user)
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_submit(user)
         assert unpublished_preprint_post_mod.ever_public
 
         # test_cannot_set_ever_public_to_False
@@ -2383,7 +2395,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint)
-        withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.is_retracted
         assert preprint.verified_publishable
@@ -2394,7 +2407,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_post_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_post_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_post_mod.is_retracted
         assert preprint_post_mod.verified_publishable
@@ -2405,7 +2419,8 @@ class TestWithdrawnPreprint:
         assert crossref_client.get_status(preprint_pre_mod) == 'public'
 
         withdrawal_request = make_withdrawal_request(preprint_pre_mod)
-        withdrawal_request.run_accept(moderator, withdrawal_request.comment)
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, withdrawal_request.comment)
 
         assert preprint_pre_mod.is_retracted
         assert preprint_pre_mod.verified_publishable
@@ -2460,7 +2475,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_pre_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(creator)
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2468,7 +2484,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_pre_mod.run_accept(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is True
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2480,7 +2497,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_pre_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_submit(creator)
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_pre_mod.get_guid()
@@ -2488,7 +2506,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_pre_mod.run_reject(moderator, 'comment')
         assert unpublished_preprint_pre_mod.is_published is False
         assert unpublished_preprint_pre_mod.machine_state == ReviewStates.REJECTED.value
         assert unpublished_preprint_pre_mod.versioned_guids.first().is_rejected is True
@@ -2514,7 +2533,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
@@ -2522,7 +2542,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()
@@ -2548,7 +2569,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
@@ -2556,7 +2578,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_pre_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_reject(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_reject(moderator, 'comment')
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.REJECTED.value
         assert new_version.versioned_guids.first().is_rejected is True
@@ -2568,7 +2591,8 @@ class TestPreprintVersionWithModeration:
         assert unpublished_preprint_post_mod.is_published is False
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.INITIAL.value
 
-        unpublished_preprint_post_mod.run_submit(creator)
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_submit(creator)
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.PENDING.value
         guid_obj = unpublished_preprint_post_mod.get_guid()
@@ -2576,7 +2600,8 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == unpublished_preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        unpublished_preprint_post_mod.run_accept(moderator, 'comment')
+        with capture_notifications():
+            unpublished_preprint_post_mod.run_accept(moderator, 'comment')
         assert unpublished_preprint_post_mod.is_published is True
         assert unpublished_preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = unpublished_preprint_post_mod.get_guid()
@@ -2601,15 +2626,16 @@ class TestPreprintVersionWithModeration:
         assert guid_obj.referent == preprint_post_mod
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
-        new_version.run_submit(creator)
+        with capture_notifications():
+            new_version.run_submit(creator)
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
         assert guid_obj.object_id == new_version.pk
         assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
-
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_accept(moderator, 'comment')
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
         guid_obj = new_version.get_guid()
@@ -2625,7 +2651,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert preprint_pre_mod.is_published is True
         assert preprint_pre_mod.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         preprint_pre_mod.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2641,7 +2668,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert preprint_post_mod.is_published is True
         assert preprint_post_mod.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         preprint_post_mod.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2657,8 +2685,9 @@ class TestPreprintVersionWithModeration:
             is_published=False,
             set_doi=False
         )
-        new_version.run_submit(creator)
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_submit(creator)
+            new_version.run_accept(moderator, 'comment')
         new_version.reload()
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
@@ -2667,7 +2696,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         new_version.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`
@@ -2683,8 +2713,9 @@ class TestPreprintVersionWithModeration:
             is_published=False,
             set_doi=False
         )
-        new_version.run_submit(creator)
-        new_version.run_accept(moderator, 'comment')
+        with capture_notifications():
+            new_version.run_submit(creator)
+            new_version.run_accept(moderator, 'comment')
         new_version.reload()
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
@@ -2693,7 +2724,8 @@ class TestPreprintVersionWithModeration:
         assert withdrawal_request.machine_state == DefaultStates.PENDING.value
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.ACCEPTED.value
-        withdrawal_request.run_accept(moderator, 'comment')
+        with capture_notifications():
+            withdrawal_request.run_accept(moderator, 'comment')
         new_version.reload()
         assert withdrawal_request.machine_state == DefaultStates.ACCEPTED.value
         # In model, `is_published` remains True; this is different than API where `is_published` uses `NoneIfWithdrawal`

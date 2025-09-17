@@ -1,9 +1,11 @@
 import logging
 
 from django.db import models
+from django.utils import timezone
 from django.utils.functional import cached_property
 from framework import sentry
 from framework.exceptions import PermissionsError
+from website.settings import DOMAIN
 
 from .base import BaseModel
 from .mixins import TaxonomizableMixin
@@ -11,13 +13,12 @@ from osf.utils.permissions import ADMIN
 from website.util import api_v2_url
 from website.search.exceptions import SearchUnavailableError
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
-from website.filters import profile_image_url
 
-from website import mails, settings
+from website import settings
 from osf.utils.machines import CollectionSubmissionMachine
+from osf.models.notification_type import NotificationType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -102,72 +103,53 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
                 claim_url = None
 
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
+            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.instance.emit(
+                is_digest=True,
                 user=contributor,
-                submitter=user,
-                is_initator=self.creator == contributor,
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                is_registered_contrib=contributor.is_registered,
-                collection=self.collection,
-                claim_url=claim_url,
-                node=self.guid.referent,
-                domain=settings.DOMAIN,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                subscribed_object=self,
+                event_context={
+                    'requester_contributor_names': ''.join(
+                        self.guid.referent.contributors.values_list('fullname', flat=True)),
+                    'localized_timestamp': str(timezone.now()),
+                    'user_fullname': contributor.fullname,
+                    'submitter_fullname': user.fullname,
+                    'requester_fullname': self.creator.fullname,
+                    'profile_image_url': user.profile_image_url(),
+                    'submitter_absolute_url': user.get_absolute_url(),
+                    'collections_link': settings.DOMAIN + 'collections/' + self.collection.provider._id,
+                    'collections_title': self.collection.title,
+                    'collection_provider_name': self.collection.provider.name,
+                    'is_initiator': self.creator == contributor,
+                    'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                    'is_registered_contrib': contributor.is_registered,
+                    'claim_url': claim_url,
+                    'node_title': self.guid.referent.title,
+                    'node_absolute_url': self.guid.referent.get_absolute_url(),
+                    'domain': settings.DOMAIN,
+                    'is_request_email': True,
+                    'message': f'submitted "{self.guid.referent.title}".',
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}'
+                },
             )
 
     def _notify_moderators_pending(self, event_data):
-        context = {
-            'reviewable': self.guid.referent,
-            'abstract_provider': self.collection.provider,
-            'reviews_submission_url': f'{settings.DOMAIN}{self.guid.referent._id}?mode=moderator',
-            'profile_image_url': profile_image_url(
-                settings.PROFILE_IMAGE_PROVIDER,
-                self.creator,
-                use_ssl=True,
-                size=settings.PROFILE_IMAGE_MEDIUM
-            ),
-            'message': f'submitted "{self.guid.referent.title}".',
-            'allow_submissions': True,
-        }
-
-        from .notifications import NotificationSubscription
-        from website.notifications.emails import store_emails
-
-        provider_subscription, created = NotificationSubscription.objects.get_or_create(
-            _id=f'{self.collection.provider._id}_new_pending_submissions',
-            provider=self.collection.provider
-        )
-        email_transactors_ids = list(
-            provider_subscription.email_transactional.all().values_list(
-                'guids___id',
-                flat=True
-            )
-        )
-        store_emails(
-            email_transactors_ids,
-            'email_transactional',
-            'new_pending_submissions',
-            self.creator,
-            self.guid.referent,
-            timezone.now(),
-            **context
-        )
-        email_digester_ids = list(
-            provider_subscription.email_digest.all().values_list(
-                'guids___id',
-                flat=True
-            )
-        )
-        store_emails(
-            email_digester_ids,
-            'email_digest',
-            'new_pending_submissions',
-            self.creator,
-            self.guid.referent,
-            timezone.now(),
-            **context
+        user = event_data.kwargs.get('user', None)
+        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+            user=user,
+            subscribed_object=self.guid.referent,
+            event_context={
+                'submitter_fullname': self.creator.fullname,
+                'requester_fullname': event_data.kwargs.get('user').fullname,
+                'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True)),
+                'localized_timestamp': str(timezone.now()),
+                'message': f'submitted "{self.guid.referent.title}".',
+                'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                'is_request_email': False,
+                'is_initiator': self.creator == user,
+                'profile_image_url': user.profile_image_url()
+            },
+            is_digest=True,
         )
 
     def _validate_accept(self, event_data):
@@ -182,16 +164,31 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_accepted(self, event_data):
         if self.collection.provider:
             for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_ACCEPTED(self.collection, self.guid.referent),
+                NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED.instance.emit(
                     user=contributor,
-                    submitter=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    domain=settings.DOMAIN,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    subscribed_object=self,
+                    event_context={
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+                        'localized_timestamp': str(timezone.now()),
+                        'user_fullname': contributor.fullname,
+                        'requester_fullname': event_data.kwargs.get('user').fullname,
+                        'submitter_fullname': event_data.kwargs.get('user').fullname,
+                        'profile_image_url': contributor.profile_image_url(),
+                        'is_request_email': False,
+                        'reviews_submission_url': f'{DOMAIN}reviews/preprints/{self.guid.referent.provider._id}/'
+                                                  f'{self.guid.referent._id}' if self.guid.referent.provider else '',
+                        'message': f'accepted "{self.guid.referent.title}".',
+                        'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                        'collection_title': self.collection.title,
+                        'collection_provider_name': self.collection.provider.name,
+                        'collection_provider__id': self.collection.provider._id,
+                        'node_title': self.guid.referent.title,
+                        'node_absolute_url': self.guid.referent.get_absolute_url(),
+                        'domain': settings.DOMAIN,
+                        'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                        'is_initiator': self.creator == contributor,
+                    },
                 )
 
     def _validate_reject(self, event_data):
@@ -209,15 +206,28 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderated_rejected(self, event_data):
         for contributor in self.guid.referent.contributors:
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_REJECTED(self.collection, self.guid.referent),
+            NotificationType.Type.COLLECTION_SUBMISSION_REJECTED.instance.emit(
                 user=contributor,
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                collection=self.collection,
-                node=self.guid.referent,
-                rejection_justification=event_data.kwargs.get('comment'),
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                subscribed_object=self,
+                event_context={
+                    'requester_contributor_names': ''.join(
+                        self.guid.referent.contributors.values_list('fullname', flat=True)),
+                    'localized_timestamp': str(timezone.now()),
+                    'user_fullname': contributor.fullname,
+                    'requester_fullname': event_data.kwargs.get('user').fullname,
+                    'is_admin': self.guid.referent.has_permission(contributor, ADMIN),
+                    'collection_title': self.collection.title,
+                    'collection_provider_name': self.collection.provider.name,
+                    'collections_link': DOMAIN + 'collections/' + self.collection.provider._id,
+                    'node_absolute_url': self.guid.referent.get_absolute_url(),
+                    'profile_image_url': contributor.profile_image_url(),
+                    'message': f'submission of "{self.collection.title} was rejected',
+                    'node_title': self.guid.referent.title,
+                    'is_request_email': True,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                    'rejection_justification': event_data.kwargs.get('comment'),
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                },
             )
 
     def _validate_remove(self, event_data):
@@ -243,56 +253,92 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         removed_due_to_privacy = event_data.kwargs.get('removed_due_to_privacy')
         is_moderator = user.has_perm('withdraw_submissions', self.collection.provider)
         is_admin = self.guid.referent.has_permission(user, ADMIN)
+        node = self.guid.referent
+
+        event_context_base = {
+            'remover_fullname': user.fullname,
+            'remover_absolute_url': user.get_absolute_url(),
+            'requester_fullname': user.fullname,
+            'collections_link': DOMAIN + 'collections/' + self.collection.provider._id if self.collection.provider else None,
+            'collection_id': self.collection.id,
+            'collection_title': self.collection.title,
+            'collection_provider': self.collection.provider.name if self.collection.provider else None,
+            'collection_provider_name': self.collection.provider.name if self.collection.provider else None,
+            'collection_provider__id': self.collection.provider._id if self.collection.provider else None,
+            'node_title': node.title,
+            'node_absolute_url': node.absolute_url,
+            'profile_image_url': user.profile_image_url(),
+            'domain': settings.DOMAIN,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+        }
+
         if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
-                    mails.send_mail(
-                        to_addr=moderator.username,
-                        mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
+                    NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                         user=moderator,
-                        remover=user,
-                        is_admin=self.guid.referent.has_permission(moderator, ADMIN),
-                        collection=self.collection,
-                        node=self.guid.referent,
-                        domain=settings.DOMAIN,
-                        osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                        event_context={
+                            **event_context_base,
+                            'user_fullname': moderator.fullname,
+                            'is_admin': node.has_permission(moderator, ADMIN),
+                        },
                     )
-            for contributor in self.guid.referent.contributors.all():
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                     user=contributor,
-                    remover=user,
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    domain=settings.DOMAIN,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'user_fullname': contributor.fullname,
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                    },
                 )
         elif is_moderator and self.collection.provider:
-            for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_MODERATOR(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR.instance.emit(
                     user=contributor,
-                    rejection_justification=event_data.kwargs.get('comment'),
-                    remover=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                        'rejection_justification': event_data.kwargs.get('comment'),
+                        'collections_title': self.collection.title,
+                        'collection_provider_name': self.collection.provider.name,
+                        'collection_provider__id': self.collection.provider._id,
+                        'remover_absolute_url': user.get_absolute_url() if user is not None else None,
+                        'node_absolute_url': node.absolute_url,
+                        'collection_provider': self.collection.provider.name,
+                        'collections_link': DOMAIN + 'collections/' + self.collection.provider._id,
+                        'user_fullname': contributor.fullname,
+                        'is_request_email': False,
+                        'message': '',
+                        'localized_timestamp': str(timezone.now()),
+                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                    },
                 )
         elif is_admin and self.collection.provider:
-            for contributor in self.guid.referent.contributors:
-                mails.send_mail(
-                    to_addr=contributor.username,
-                    mail=mails.COLLECTION_SUBMISSION_REMOVED_ADMIN(self.collection, self.guid.referent),
+            for contributor in node.contributors.all():
+                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN.instance.emit(
                     user=contributor,
-                    remover=event_data.kwargs.get('user'),
-                    is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                    collection=self.collection,
-                    node=self.guid.referent,
-                    osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                    event_context={
+                        **event_context_base,
+                        'requester_contributor_names': ''.join(
+                            self.guid.referent.contributors.values_list('fullname', flat=True)),
+                        'localized_timestamp': str(timezone.now()),
+                        'user_fullname': contributor.fullname,
+                        'collections_title': self.collection.title,
+                        'collection_provider_name': self.collection.provider.name,
+                        'collection_provider__id': self.collection.provider._id,
+                        'collection_provider': self.collection.provider.name,
+                        'collections_link': DOMAIN + 'collections/' + self.collection.provider._id,
+                        'node_absolute_url': node.get_absolute_url(),
+                        'is_request_email': False,
+                        'message': '',
+                        'is_admin': node.has_permission(contributor, ADMIN),
+                        'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+
+                    },
                 )
 
     def _validate_resubmit(self, event_data):
@@ -321,16 +367,44 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if force:
             return
 
-        for contributor in self.guid.referent.contributors:
-            mails.send_mail(
-                to_addr=contributor.username,
-                mail=mails.COLLECTION_SUBMISSION_CANCEL(self.collection, self.guid.referent),
+        user = event_data.kwargs.get('user')  # the remover
+        node = self.guid.referent
+
+        provider = getattr(self.collection, 'provider', None)
+        if provider:
+            collections_link = settings.DOMAIN + 'collections/' + provider._id
+            collection_provider_name = provider.name
+        else:
+            collections_link = None  # not used in the else branch of the template
+            collection_provider_name = self.collection.title
+
+        for contributor in node.contributors.all():
+            NotificationType.Type.COLLECTION_SUBMISSION_CANCEL.instance.emit(
                 user=contributor,
-                remover=event_data.kwargs.get('user'),
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                collection=self.collection,
-                node=self.guid.referent,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
+                subscribed_object=self.collection,
+                event_context={
+                    'requester_contributor_names': ''.join(
+                        node.contributors.values_list('fullname', flat=True)),
+                    'profile_image_url': user.profile_image_url(),
+                    'user_fullname': contributor.fullname,
+                    'requester_fullname': self.creator.fullname,
+                    'is_admin': node.has_permission(contributor, ADMIN),
+                    'node_title': node.title,
+                    'node_absolute_url': node.get_absolute_url(),
+                    'remover_fullname': user.fullname if user else '',
+                    'remover_absolute_url': user.get_absolute_url() if user else '',
+                    'localized_timestamp': str(timezone.now()),
+                    'collections_link': collections_link,
+                    'collection_title': self.collection.title,
+                    'collection_provider_name': collection_provider_name,
+                    'node_absolute_url"': node.get_absolute_url(),
+                    'collection_provider': collection_provider_name,
+                    'domain': settings.DOMAIN,
+                    'is_request_email': False,
+                    'message': '',
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                },
             )
 
     def _make_public(self, event_data):
