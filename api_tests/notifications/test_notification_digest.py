@@ -184,6 +184,6 @@ def test_send_moderators_digest_email_end_to_end(fake):
         sent=None,
         event_context={'provider_id': provider.id},
     )
-    send_moderators_digest_email()
+    send_moderators_digest_email.delay()
     email_task = EmailTask.objects.filter(user_id=user.id).first()
     assert email_task.status == 'SUCCESS'

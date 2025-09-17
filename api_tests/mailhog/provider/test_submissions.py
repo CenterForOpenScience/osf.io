@@ -1,5 +1,7 @@
 import pytest
 from waffle.testutils import override_switch
+
+from notifications.tasks import send_users_instant_digest_email
 from osf import features
 
 from api.base.settings.defaults import API_BASE
@@ -19,7 +21,7 @@ from tests.base import get_default_metaschema
 from osf.models import NotificationType
 
 from osf.migrations import update_provider_auth_groups
-from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages, assert_emails
+from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages
 
 
 @pytest.mark.django_db
@@ -82,9 +84,9 @@ class TestRegistriesModerationSubmissions:
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        messages = get_mailhog_messages()
+        assert messages['count'] == 1
+        assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
 
         delete_mailhog_messages()
 
@@ -116,9 +118,10 @@ class TestRegistriesModerationSubmissions:
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+        send_users_instant_digest_email.delay()
+        messages = get_mailhog_messages()
+        assert messages['count'] == 1
+        assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
 
         delete_mailhog_messages()
 

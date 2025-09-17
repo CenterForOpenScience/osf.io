@@ -1085,7 +1085,8 @@ class ReviewProviderMixin(GuardianMixin):
             user=user,
             content_type=ContentType.objects.get_for_model(self),
             object_id=self.id,
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance
+            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            _is_digest=True
         )
 
     def remove_from_group(self, user, group, unsubscribe=True):
@@ -1096,20 +1097,12 @@ class ReviewProviderMixin(GuardianMixin):
         if unsubscribe:
             # remove notification subscription
             for subscription in self.DEFAULT_SUBSCRIPTIONS:
-                self.remove_user_from_subscription(user, subscription)
+                NotificationSubscription.objects.filter(
+                    notification_type=subscription.instance,
+                    user=user,
+                ).delete()
 
         return _group.user_set.remove(user)
-
-    def remove_user_from_subscription(self, user, subscription):
-        notification_type = NotificationType.objects.get(
-            name=subscription,
-        )
-        subscriptions = NotificationSubscription.objects.filter(
-            notification_type=notification_type,
-            user=user
-        )
-        if subscriptions:
-            subscriptions.get().delete()
 
 
 class TaxonomizableMixin(models.Model):

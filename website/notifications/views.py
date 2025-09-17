@@ -528,7 +528,7 @@ def configure_subscription(auth):
             if not subscription:
                 return {}  # We're done here
 
-            subscription.remove_user_from_subscription(user)
+            subscription.delete()
             return {}
 
     subscription, _ = NotificationSubscription.objects.get_or_create(

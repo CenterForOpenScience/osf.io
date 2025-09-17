@@ -1569,7 +1569,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/Test'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert not GithubFileNode.load(file_node._id)
         assert TrashedFileNode.load(file_node._id)
 
@@ -1590,7 +1590,7 @@ class TestAddonFileViews(OsfTestCase):
                 'materialized': '/test/'
             }
         }
-        views.addon_delete_file_node(self=None, target=self.project, user=self.user, payload=payload)
+        views.addon_delete_file_node(self=None, target=self.project, user=self.user, event_type='file_removed', payload=payload)
         assert not GithubFileNode.load(subfolder._id)
         assert TrashedFileNode.load(file_node._id)
 

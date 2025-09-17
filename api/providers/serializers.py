@@ -364,7 +364,6 @@ class ModeratorSerializer(JSONAPISerializer):
         context['provider__id'] = provider._id
         context['is_reviews_moderator_notification'] = True
         context['referrer_fullname'] = user.fullname
-        context['user_fullname'] = user.fullname
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
 

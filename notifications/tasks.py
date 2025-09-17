@@ -20,7 +20,7 @@ from django.apps import apps
 logger = get_task_logger(__name__)
 
 @celery_app.task(bind=True)
-def send_user_email_task(self, user_id, notification_ids, message_freq):
+def send_user_email_task(self, user_id, notification_ids, **kwargs):
     try:
         user = OSFUser.objects.get(
             guids___id=user_id,
@@ -89,7 +89,7 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
         raise self.retry(exc=e)
 
 @celery_app.task(bind=True)
-def send_moderator_email_task(self, user_id, provider_id, notification_ids, message_freq):
+def send_moderator_email_task(self, user_id, provider_id, notification_ids, **kwargs):
     try:
         user = OSFUser.objects.get(
             guids___id=user_id,
@@ -165,7 +165,6 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
             user=user,
             event_context=event_context,
-            is_digest=True
         )
 
         notifications_qs.update(sent=timezone.now())
@@ -196,7 +195,7 @@ def send_users_digest_email(dry_run=False):
             user_id = group['user_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
-                send_user_email_task.delay(user_id, notification_ids, freq)
+                send_user_email_task.delay(user_id, notification_ids)
 
 @celery_app.task(name='notifications.tasks.send_moderators_digest_email')
 def send_moderators_digest_email(dry_run=False):
@@ -215,7 +214,7 @@ def send_moderators_digest_email(dry_run=False):
             provider_id = group['provider_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
-                send_moderator_email_task.delay(user_id, provider_id, notification_ids, freq)
+                send_moderator_email_task.delay(user_id, provider_id, notification_ids)
 
 def get_moderators_emails(message_freq: str):
     """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.
@@ -322,8 +321,8 @@ def remove_subscription_task(node_id):
     ).delete()
 
 
-@celery_app.task(name='notifications.tasks.send_users_instant_digest_email')
-def send_users_instant_digest_email(dry_run):
+@celery_app.task(bind=True, name='notifications.tasks.send_users_instant_digest_email')
+def send_users_instant_digest_email(self, dry_run=False, **kwargs):
     """Send pending "instant' digest emails.
     :return:
     """
@@ -332,10 +331,10 @@ def send_users_instant_digest_email(dry_run):
         user_id = group['user_id']
         notification_ids = [msg['notification_id'] for msg in group['info']]
         if not dry_run:
-            send_user_email_task.delay(user_id, notification_ids, 'instantly')
+            send_user_email_task.delay(user_id, notification_ids)
 
-@celery_app.task(name='notifications.tasks.send_moderators_instant_digest_email')
-def send_moderators_instant_digest_email(dry_run=False):
+@celery_app.task(bind=True, name='notifications.tasks.send_moderators_instant_digest_email')
+def send_moderators_instant_digest_email(self, dry_run=False, **kwargs):
     """Send pending "instant' digest emails.
     :return:
     """
@@ -345,4 +344,4 @@ def send_moderators_instant_digest_email(dry_run=False):
         provider_id = group['provider_id']
         notification_ids = [msg['notification_id'] for msg in group['info']]
         if not dry_run:
-            send_moderator_email_task.delay(user_id, provider_id, notification_ids, 'instantly')
+            send_moderator_email_task.delay(user_id, provider_id, notification_ids)

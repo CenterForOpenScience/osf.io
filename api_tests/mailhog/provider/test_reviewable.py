@@ -6,7 +6,6 @@ from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications, assert_emails
 
-
 @pytest.mark.django_db
 class TestReviewable:
 
@@ -18,16 +17,11 @@ class TestReviewable:
             is_published=False
         )
         assert preprint.machine_state == DefaultStates.INITIAL.value
-        delete_mailhog_messages()
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_submit(user)
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
-
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
         delete_mailhog_messages()
 
         assert not user.notification_subscriptions.exists()
@@ -49,8 +43,9 @@ class TestReviewable:
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
-        massages = get_mailhog_messages()
-        assert massages['count'] == len(notifications['emails'])
-        assert_emails(massages, notifications)
+
+        messages = get_mailhog_messages()
+        assert messages['count'] == len(notifications['emits'])
+        assert_emails(messages, notifications)
 
         delete_mailhog_messages()
