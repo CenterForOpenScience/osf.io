@@ -62,7 +62,8 @@ class Event:
                 'url': self.url,
                 'message': self.html_message,
                 'localized_timestamp': str(self.timestamp),
-            }
+            },
+            is_digest=True,
         )
 
     @property
@@ -88,20 +89,20 @@ class Event:
 # -----------------------------
 
 @signal.connect
-def file_updated(self, target=None, user=None, payload=None):
+def file_updated(self, target=None, user=None, event_type=None, payload=None):
     """Signal receiver for addon file updates."""
     if isinstance(target, Preprint):
         return
 
     event = {
-        'rename': NotificationType.Type.ADDON_FILE_RENAMED,
-        'copy': NotificationType.Type.ADDON_FILE_COPIED,
-        'create': NotificationType.Type.FILE_UPDATED,
-        'move': NotificationType.Type.ADDON_FILE_MOVED,
-        'delete': NotificationType.Type.FILE_REMOVED,
-        'update': NotificationType.Type.FILE_UPDATED,
-        'create_folder': NotificationType.Type.FILE_UPDATED,
-    }[payload.get('action')]
+        NodeLog.FILE_RENAMED: NotificationType.Type.ADDON_FILE_RENAMED,
+        NodeLog.FILE_COPIED: NotificationType.Type.ADDON_FILE_COPIED,
+        NodeLog.FILE_ADDED: NotificationType.Type.FILE_ADDED,
+        NodeLog.FILE_MOVED: NotificationType.Type.ADDON_FILE_MOVED,
+        NodeLog.FILE_REMOVED: NotificationType.Type.FILE_REMOVED,
+        NodeLog.FILE_UPDATED: NotificationType.Type.FILE_UPDATED,
+        NodeLog.FOLDER_CREATED: NotificationType.Type.FOLDER_CREATED,
+    }[event_type]
 
     if event not in event_registry:
         raise NotImplementedError(f'{event} not in {event_registry}')
@@ -262,10 +263,6 @@ class ComplexFileEvent(FileEvent):
 @register(NodeLog.FILE_RENAMED)
 class AddonFileRenamed(ComplexFileEvent):
     def perform(self):
-        '''
-        Currently, WB sends the "move" action for renamed files.
-        This code will remain useless until the correct action is sent.
-        '''
         if self.node == self.source_node:
             super().perform()
             return

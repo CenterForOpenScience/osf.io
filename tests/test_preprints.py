@@ -2174,8 +2174,7 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        with capture_notifications():
-            self.app.put(url, json=payload)
+        self.app.put(url, json=payload)
         self.preprint.reload()
         assert self.preprint.logs.count() == nlogs + 1
 
@@ -2244,14 +2243,11 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        with capture_notifications() as notifications:
-            self.app.put(
-                url,
-                json=payload,
-            )
+        self.app.put(
+            url,
+            json=payload,
+        )
         self.preprint.reload()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.ADDON_FILE_RENAMED
         assert self.preprint.logs.latest().action == 'osf_storage_addon_file_renamed'
 
     def test_action_downloads_contrib(self):
@@ -2279,11 +2275,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.preprint.logs.count()
-        with capture_notifications() as notifications:
-            self.app.put(url, json=payload)
+        self.app.put(url, json=payload)
         self.preprint.reload()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.FILE_ADDED
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 
@@ -2292,11 +2285,8 @@ class TestPreprintOsfStorageLogs(OsfTestCase):
         url = self.preprint.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'nid': self.preprint._id, 'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.preprint.logs.count()
-        with capture_notifications() as notifications:
-            self.app.put(url, json=payload)
+        self.app.put(url, json=payload)
         self.preprint.reload()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.FILE_ADDED
         assert self.preprint.logs.count() == nlogs + 1
         assert ('urls' not in self.preprint.logs.filter(action='osf_storage_file_added')[0].params)
 

@@ -28,13 +28,16 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
         )
     except OSFUser.DoesNotExist:
         logger.error(f'OSFUser with id {user_id} does not exist')
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, status='NO_USER_FOUND')
+        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task.status = 'NO_USER_FOUND'
         email_task.error_message = 'User not found or disabled'
         email_task.save()
         return
 
     try:
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, user=user, status='STARTED')
+        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task.user = user
+        email_task.status = 'STARTED'
         if user.is_disabled:
             email_task.status = 'USER_DISABLED'
             email_task.error_message = 'User not found or disabled'
@@ -58,7 +61,6 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
         NotificationType.Type.USER_DIGEST.instance.emit(
             user=user,
             event_context=event_context,
-            is_digest=True
         )
 
         notifications_qs.update(sent=timezone.now())
@@ -73,11 +75,13 @@ def send_user_email_task(self, user_id, notification_ids, message_freq):
             )
         except OSFUser.DoesNotExist:
             logger.error(f'OSFUser with id {user_id} does not exist')
-            email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, status='NO_USER_FOUND')
+            email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+            email_task.status = 'NO_USER_FOUND'
             email_task.error_message = 'User not found or disabled'
             email_task.save()
             return
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, user=user, status='RETRY')
+        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task.user = user
         email_task.status = 'RETRY'
         email_task.error_message = str(e)
         email_task.save()
@@ -93,13 +97,16 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         )
     except OSFUser.DoesNotExist:
         logger.error(f'OSFUser with id {user_id} does not exist')
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, status='NO_USER_FOUND')
+        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task.status = 'NO_USER_FOUND'
         email_task.error_message = 'User not found or disabled'
         email_task.save()
         return
 
     try:
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id, user=user, status='STARTED')
+        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task.user = user
+        email_task.status = 'STARTED'
         if user.is_disabled:
             email_task.status = 'USER_DISABLED'
             email_task.error_message = 'User not found or disabled'
@@ -173,7 +180,7 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, mess
         logger.exception('Retrying send_moderator_email_task due to exception')
         raise self.retry(exc=e)
 
-@celery_app.task(bind=True, name='notifications.tasks.send_users_digest_email')
+@celery_app.task(name='notifications.tasks.send_users_digest_email')
 def send_users_digest_email(dry_run=False):
     today = date.today()
 
@@ -191,7 +198,7 @@ def send_users_digest_email(dry_run=False):
             if not dry_run:
                 send_user_email_task.delay(user_id, notification_ids, freq)
 
-@celery_app.task(bind=True, name='notifications.tasks.send_moderators_digest_email')
+@celery_app.task(name='notifications.tasks.send_moderators_digest_email')
 def send_moderators_digest_email(dry_run=False):
     today = date.today()
 
@@ -315,7 +322,7 @@ def remove_subscription_task(node_id):
     ).delete()
 
 
-@celery_app.task(bind=True, name='notifications.tasks.send_users_instant_digest_email')
+@celery_app.task(name='notifications.tasks.send_users_instant_digest_email')
 def send_users_instant_digest_email(dry_run):
     """Send pending "instant' digest emails.
     :return:
@@ -327,7 +334,7 @@ def send_users_instant_digest_email(dry_run):
         if not dry_run:
             send_user_email_task.delay(user_id, notification_ids, 'instantly')
 
-@celery_app.task(bind=True, name='notifications.tasks.send_moderators_instant_digest_email')
+@celery_app.task(name='notifications.tasks.send_moderators_instant_digest_email')
 def send_moderators_instant_digest_email(dry_run=False):
     """Send pending "instant' digest emails.
     :return:
