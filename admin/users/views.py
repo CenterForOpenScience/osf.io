@@ -48,7 +48,7 @@ from admin.users.forms import (
 )
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
 from django.urls import reverse_lazy
 
 
