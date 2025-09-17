@@ -263,10 +263,6 @@ class ComplexFileEvent(FileEvent):
 @register(NodeLog.FILE_RENAMED)
 class AddonFileRenamed(ComplexFileEvent):
     def perform(self):
-        '''
-        Currently, WB sends the "move" action for renamed files.
-        This code will remain useless until the correct action is sent.
-        '''
         if self.node == self.source_node:
             super().perform()
             return
