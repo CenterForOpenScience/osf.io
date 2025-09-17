@@ -1,0 +1,19 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "creator": [],
+  "dateCreated": "2123-05-04",
+  "dateModified": "2123-05-04",
+  "description": "No description was included in this Dataset collected from the OSF",
+  "identifier": [
+    "http://localhost:5000/w3ibb"
+  ],
+  "keywords": [],
+  "license": [],
+  "name": "my-file.blarg",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Center For Open Science"
+  },
+  "url": "http://localhost:5000/w3ibb"
+}

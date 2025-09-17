@@ -45,6 +45,7 @@ from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
 
+from api.users.services import send_password_reset_email
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -822,10 +823,12 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
 
     def get(self, request, *args, **kwargs):
+        institutional = bool(request.query_params.get('institutional', None))
         email = request.query_params.get('email', None)
         if not email:
             raise ValidationError('Request must include email in query params.')
 
+<<<<<<< HEAD
         status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         # check if the user exists
         user_obj = get_user(email=email)
@@ -860,17 +863,32 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                         'reset_link': reset_link,
                     },
                 )
+=======
+        # check if the user exists
+        user_obj = get_user(email=email)
+        if user_obj and user_obj.is_active:
+            # rate limit forgot_password_post
+            if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                status_message = 'You have recently requested to change your password. ' \
+                    'Please wait a few minutes before trying again.'
+                return Response({'message': status_message, 'kind': 'error'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            send_password_reset_email(user_obj, email, institutional=institutional)
+>>>>>>> upstream/develop
 
         return Response(
             status=status.HTTP_200_OK,
             data={
+<<<<<<< HEAD
                 'message': status_message,
+=======
+                'message': language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email),
+>>>>>>> upstream/develop
                 'kind': 'success',
                 'institutional': institutional,
             },
         )
 
-    @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

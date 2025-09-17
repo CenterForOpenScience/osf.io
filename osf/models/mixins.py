@@ -141,7 +141,7 @@ class Loggable(models.Model):
             last_logged = log_date.replace(tzinfo=pytz.utc)
         else:
             recent_log = self.logs.latest('created')
-            log_date = recent_log.date if hasattr(log, 'date') else recent_log.created
+            log_date = recent_log.date if hasattr(recent_log, 'date') else recent_log.created
             last_logged = log_date
 
         if not log.should_hide:
