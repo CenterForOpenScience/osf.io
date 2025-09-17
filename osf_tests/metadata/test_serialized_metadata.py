@@ -194,7 +194,7 @@ class TestSerializers(OsfTestCase):
             self.enterContext(patcher)
         # build test objects
         self.user = factories.AuthUserFactory(
-            fullname='PersonMcNamington',  # note: will be copied to given_name, family_name left blank
+            fullname='Person McNamington',
         )
         self.project = factories.ProjectFactory(
             is_public=True,
@@ -305,10 +305,6 @@ class TestSerializers(OsfTestCase):
         }
 
     def _setUp_full(self):
-        self.user.fullname = 'Person McNamington'
-        self.user.given_name = 'Person'
-        self.user.family_name = 'McNamington'
-        self.user.save()
         self.metadata_record = osfdb.GuidMetadataRecord.objects.for_guid(self.project._id)
         self.metadata_record.update({
             'language': 'en',
@@ -393,8 +389,7 @@ class TestSerializers(OsfTestCase):
             # TODO: stable turtle serializer (or another primitive rdf serialization)
             self._assert_equivalent_turtle(actual_metadata, _expected_metadata, filename)
         else:
-            # note: ignore trailing spaces
-            self.assertEqual(actual_metadata.rstrip(), _expected_metadata.rstrip())
+            self.assertEqual(actual_metadata, _expected_metadata)
 
     def _assert_equivalent_turtle(self, actual_turtle, expected_turtle, filename):
         _actual = rdflib.Graph()

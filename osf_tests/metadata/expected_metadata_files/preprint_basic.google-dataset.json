@@ -4,9 +4,9 @@
   "creator": [
     {
       "@type": "Person",
-      "familyName": null,
-      "givenName": "PersonMcNamington",
-      "name": "PersonMcNamington"
+      "familyName": "McNamington",
+      "givenName": "Person",
+      "name": "Person McNamington"
     }
   ],
   "dateCreated": "2123-05-04",
