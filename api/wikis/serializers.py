@@ -102,7 +102,7 @@ class NodeWikiSerializer(WikiSerializer):
     comments = RelationshipField(
         related_view='nodes:node-comments',
         related_view_kwargs={'node_id': '<node._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
         filter={'target': '<_id>'},
     )
 
@@ -158,7 +158,7 @@ class RegistrationWikiSerializer(WikiSerializer):
     comments = RelationshipField(
         related_view='registrations:registration-comments',
         related_view_kwargs={'node_id': '<node._id>'},
-        related_meta={'unread': 'get_unread_comments_count'},
+        related_meta={'unread': 'get_unread_comments_count', 'comment_count': 'get_comments_count'},
         filter={'target': '<_id>'},
     )
 
