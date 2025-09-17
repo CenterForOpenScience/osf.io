@@ -3,7 +3,7 @@ from unittest import mock
 
 from django.utils import timezone
 
-from notifications.tasks import send_users_digest_email, send_moderators_digest_email
+from notifications.tasks import send_users_digest_email
 from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.migrations import update_provider_auth_groups
 from osf.models import Brand, NotificationSubscription, NotificationType
@@ -196,4 +196,3 @@ class TestRegistrationMachineNotification:
 
         with capture_notifications():
             notify_submit(registration, admin)
-            send_moderators_digest_email()

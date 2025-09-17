@@ -11,6 +11,7 @@ class Migration(migrations.Migration):
         migrations.RunSQL(
             [
                 """
+                CREATE UNIQUE INDEX one_quickfiles_per_user ON public.osf_abstractnode USING btree (creator_id, type, is_deleted) WHERE (((type)::text = 'osf.quickfilesnode'::text) AND (is_deleted = false));
                 CREATE INDEX osf_abstractnode_collection_pub_del_type_index ON public.osf_abstractnode USING btree (is_public, is_deleted, type) WHERE ((is_public = true) AND (is_deleted = false) AND ((type)::text = 'osf.collection'::text));
                 CREATE INDEX osf_abstractnode_date_modified_ef1e2ad8 ON public.osf_abstractnode USING btree (last_logged);
                 CREATE INDEX osf_abstractnode_node_pub_del_type_index ON public.osf_abstractnode USING btree (is_public, is_deleted, type) WHERE ((is_public = true) AND (is_deleted = false) AND ((type)::text = 'osf.node'::text));

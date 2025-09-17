@@ -822,6 +822,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
     throttle_classes = (NonCookieAuthThrottle, BurstRateThrottle, RootAnonThrottle, SendEmailThrottle)
 
     def get(self, request, *args, **kwargs):
+        institutional = bool(request.query_params.get('institutional', None))
         email = request.query_params.get('email', None)
         if not email:
             raise ValidationError('Request must include email in query params.')
@@ -865,12 +866,12 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
             status=status.HTTP_200_OK,
             data={
                 'message': status_message,
+
                 'kind': 'success',
                 'institutional': institutional,
             },
         )
 
-    @method_decorator(csrf_protect)
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)

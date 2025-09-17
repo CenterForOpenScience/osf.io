@@ -9,6 +9,10 @@ from osf.tasks import log_gv_addon
 @pytest.mark.django_db
 class TestGVAddonLogs:
 
+    @pytest.fixture(autouse=True)
+    def _patch_update_search(self):
+        return patch('osf.models.AbstractNode.update_search')
+
     @pytest.fixture()
     def user(self):
         return UserFactory()

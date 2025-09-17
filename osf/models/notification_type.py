@@ -229,15 +229,6 @@ class NotificationType(models.Model):
             save=save,
         )
 
-    def remove_user_from_subscription(self, user):
-        """
-        """
-        from osf.models.notification_subscription import NotificationSubscription
-        notification, _ = NotificationSubscription.objects.filter(
-            user=user,
-            notification_type=self,
-        ).delete()
-
     def __str__(self) -> str:
         return self.name
 

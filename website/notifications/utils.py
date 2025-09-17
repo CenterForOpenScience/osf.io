@@ -72,7 +72,9 @@ def remove_contributor_from_subscriptions(node, user):
     if not (node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(user)
+            subscription.objects.filter(
+                user=user,
+            ).delete()
 
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.
@@ -131,7 +133,6 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    OSFUser = apps.get_model('osf.OSFUser')
     if source_node == new_node:
         return
     old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
@@ -150,8 +151,7 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
                 related_manager = getattr(new_sub, notification_type, None)
                 subscriptions = related_manager.all() if related_manager else []
                 if user_id in subscriptions:
-                    user = OSFUser.load(user_id)
-                    new_sub.remove_user_from_subscription(user)
+                    new_sub.delete()
 
 
 def get_configured_projects(user):
