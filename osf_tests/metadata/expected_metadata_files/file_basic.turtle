@@ -41,8 +41,9 @@
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
-    foaf:givenName "PersonMcNamington" ;
-    foaf:name "PersonMcNamington" .
+    foaf:givenName "Person" ;
+    foaf:familyName "McNamington" ;
+    foaf:name "Person McNamington" .
 
 <http://localhost:5000> a dcterms:Agent,
         foaf:Organization ;
