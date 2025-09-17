@@ -574,6 +574,7 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
                     instance._id,
                     username=instance.username,
                 )
+            instance.reload()
         else:
             raise exceptions.ValidationError(detail='Invalid email preference.')
 
@@ -617,7 +618,6 @@ class UserSettingsUpdateSerializer(UserSettingsSerializer):
         return UserSettingsSerializer(instance=instance, context=context).data
 
     def update(self, instance, validated_data):
-
         for attr, value in validated_data.items():
             if 'two_factor_enabled' == attr:
                 two_factor_addon = instance.get_addon('twofactor')

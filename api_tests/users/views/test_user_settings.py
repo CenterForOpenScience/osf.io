@@ -9,10 +9,11 @@ from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from website import settings
 from django.middleware import csrf
+from django.core.cache import cache
 from osf.models import Email, NotableDomain
 from framework.auth.views import auth_email_logout
+from website import mails, settings
 
 @pytest.fixture()
 def user_one():
@@ -189,14 +190,24 @@ class TestResetPassword:
     def csrf_token(self):
         return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
 
-    def test_get(self, mock_send_grid, app, url, user_one):
+    @pytest.fixture(autouse=True)
+    def clear_throttle_cache(self):
+        cache.clear()
+
+    def test_get(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
-        res = app.get(url)
-        assert res.status_code == 200
+        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
+            res = app.get(url)
+            assert res.status_code == 200
 
-        user_one.reload()
-        assert mock_send_grid.call_args[1]['to_addr'] == user_one.username
+            user_one.reload()
+            mock_send_mail.assert_called_with(
+                to_addr=user_one.username,
+                mail=mails.FORGOT_PASSWORD,
+                reset_link=f'{settings.DOMAIN}resetpassword/{user_one._id}/{user_one.verification_key_v2['token']}',
+                can_change_preferences=False,
+            )
 
     def test_get_invalid_email(self, mock_send_grid, app, url):
         url = f'{url}?email={'invalid_email'}'
@@ -204,8 +215,7 @@ class TestResetPassword:
         assert res.status_code == 200
         assert not mock_send_grid.called
 
-    def test_post(self, app, url, user_one, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
+    def test_post(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         res = app.get(url)
@@ -220,7 +230,7 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        res = app.post_json_api(url, payload)
         user_one.reload()
         assert res.status_code == 200
         assert user_one.check_password('password2')
@@ -269,7 +279,7 @@ class TestResetPassword:
         res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
         assert res.status_code == 400
 
-    def test_throttle(self, app, url, user_one, csrf_token):
+    def test_throttle(self, app, url, user_one):
         encoded_email = urllib.parse.quote(user_one.email)
         url = f'{url}?email={encoded_email}'
         app.get(url)
@@ -284,21 +294,11 @@ class TestResetPassword:
             }
         }
 
-        res = app.post_json_api(
-            url,
-            payload,
-            headers={'X-CSRFToken': csrf_token},
-            expect_errors=True
-        )
-        res = app.post_json_api(
-            url,
-            payload,
-            headers={'X-CSRFToken': csrf_token},
-            expect_errors=True
-        )
-        assert res.status_code == 429
+        res = app.post_json_api(url, payload, expect_errors=False)
+        assert res.status_code == 200
 
         res = app.get(url, expect_errors=True)
+        assert res.status_code == 429
         assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'
 
 

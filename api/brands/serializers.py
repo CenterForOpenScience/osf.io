@@ -15,6 +15,7 @@ class BrandSerializer(JSONAPISerializer):
 
     primary_color = ser.CharField(read_only=True, max_length=7)
     secondary_color = ser.CharField(read_only=True, max_length=7)
+    background_color = ser.CharField(read_only=True, allow_null=True, max_length=7)
 
     links = LinksField({
         'self': 'get_absolute_url',
