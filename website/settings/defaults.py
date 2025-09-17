@@ -623,7 +623,7 @@ class CeleryConfig:
             'kwargs': {'dry_run': False},
         },
         '5-minute-user-emails': {
-            'task': 'notifications.tasks.send_moderators_instant_digest_email',
+            'task': 'notifications.tasks.send_users_instant_digest_email',
             'schedule': crontab(minute='*/5'),
             'kwargs': {'dry_run': False},
         },

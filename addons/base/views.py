@@ -613,46 +613,17 @@ def create_waterbutler_log(payload, **kwargs):
         update_storage_usage_with_size(payload)
 
     with transaction.atomic():
-        file_signals.file_updated.send(target=node, user=user, payload=payload)
+        file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
     return {'status': 'success'}
 
 
 @file_signals.file_updated.connect
-def emit_notification(self, target, user, payload, *args, **kwargs):
-    if not isinstance(target, Preprint):
-        return
-    notification_types = {
-        'rename': NotificationType.Type.ADDON_FILE_RENAMED.instance,
-        'copy': NotificationType.Type.ADDON_FILE_COPIED.instance,
-        'create': NotificationType.Type.FILE_ADDED.instance,
-        'move': NotificationType.Type.ADDON_FILE_MOVED.instance,
-        'delete': NotificationType.Type.FILE_REMOVED.instance,
-        'update': NotificationType.Type.FILE_UPDATED.instance,
-        'create_folder': NotificationType.Type.FOLDER_CREATED.instance,
-    }
-    notification_type = notification_types[payload.get('action')]
-    if notification_type not in notification_types.values():
-        raise NotImplementedError(f'Notification type {notification_type} is not supported')
-    notification_type.emit(
-        user=user,
-        subscribed_object=target,
-        event_context={
-            'profile_image_url': user.profile_image_url(),
-            'localized_timestamp': str(timezone.now()),
-            'message': payload.get('message'),
-            'user_fullname': user.fullname,
-            'url': target.absolute_url,
-        }
-    )
-
-@file_signals.file_updated.connect
-def addon_delete_file_node(self, target, user, payload):
+def addon_delete_file_node(self, target, user, event_type, payload):
     """ Get addon BaseFileNode(s), move it into the TrashedFileNode collection
     and remove it from StoredFileNode.
     Required so that the guids of deleted addon files are not re-pointed when an
     addon file or folder is moved or renamed.
     """
-    event_type = payload['action']
     if event_type == 'file_removed' and payload.get('provider', None) != 'osfstorage':
         provider = payload['provider']
         path = payload['metadata']['path']

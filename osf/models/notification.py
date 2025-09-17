@@ -70,10 +70,10 @@ class Notification(models.Model):
 
     def render(self) -> str:
         """Render the notification message using the event context."""
-        template = self.subscription.notification_type.template
-        if not template:
+        notification_type = self.subscription.notification_type
+        if not notification_type:
             raise ValueError('Notification type must have a template to render the notification.')
-        notification = email.render_notification(template, self.event_context)
+        notification = email._render_email_html(notification_type, self.event_context)
         return notification
 
     def __str__(self) -> str:
