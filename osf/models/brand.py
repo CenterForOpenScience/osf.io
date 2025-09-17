@@ -23,6 +23,7 @@ class Brand(BaseModel):
 
     primary_color = models.CharField(max_length=7)
     secondary_color = models.CharField(max_length=7)
+    background_color = models.CharField(max_length=7, blank=True, null=True)
 
     def __str__(self):
         return f'{self.name} ({self.id})'

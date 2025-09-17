@@ -36,6 +36,7 @@ from api.collections.serializers import (
     CollectedRegistrationsRelationshipSerializer,
 )
 from api.nodes.serializers import NodeSerializer
+from api.nodes.filters import NodesFilterMixin
 from api.preprints.serializers import PreprintSerializer
 from api.subjects.views import SubjectRelationshipBaseView, BaseResourceSubjectsList
 from api.registrations.serializers import RegistrationSerializer
@@ -506,7 +507,7 @@ class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, 
         return self.get_collection_submission(check_object_permissions)
 
 
-class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, NodeOptimizationMixin):
+class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, NodeOptimizationMixin, NodesFilterMixin):
     """List of nodes linked to this node. *Read-only*.
 
     Linked nodes are the project/component nodes pointed to by node links. This view will probably replace node_links in the near future.
@@ -569,11 +570,14 @@ class LinkedNodesList(JSONAPIBaseView, generics.ListAPIView, CollectionMixin, No
 
     ordering = ('-modified',)
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         node_ids = self.get_collection().active_guids.filter(content_type_id=ContentType.objects.get_for_model(Node).id).values_list('object_id', flat=True)
         nodes = Node.objects.filter(id__in=node_ids, is_deleted=False).can_view(user=auth.user, private_link=auth.private_link).order_by('-modified')
         return self.optimize_node_queryset(nodes)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
     # overrides APIView
     def get_parser_context(self, http_request):

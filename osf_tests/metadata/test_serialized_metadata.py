@@ -30,6 +30,7 @@ BASIC_METADATA_SCENARIO = {
             'turtle': 'project_basic.turtle',
             'datacite-xml': 'project_basic.datacite.xml',
             'datacite-json': 'project_basic.datacite.json',
+            'google-dataset-json-ld': 'project_basic.google-dataset.json',
         },
     },
     OSF.Preprint: {
@@ -37,6 +38,7 @@ BASIC_METADATA_SCENARIO = {
             'turtle': 'preprint_basic.turtle',
             'datacite-xml': 'preprint_basic.datacite.xml',
             'datacite-json': 'preprint_basic.datacite.json',
+            'google-dataset-json-ld': 'preprint_basic.google-dataset.json',
         },
     },
     OSF.Registration: {
@@ -44,6 +46,7 @@ BASIC_METADATA_SCENARIO = {
             'turtle': 'registration_basic.turtle',
             'datacite-xml': 'registration_basic.datacite.xml',
             'datacite-json': 'registration_basic.datacite.json',
+            'google-dataset-json-ld': 'registration_basic.google-dataset.json',
         },
     },
     OSF.File: {
@@ -51,6 +54,7 @@ BASIC_METADATA_SCENARIO = {
             'turtle': 'file_basic.turtle',
             'datacite-xml': 'file_basic.datacite.xml',
             'datacite-json': 'file_basic.datacite.json',
+            'google-dataset-json-ld': 'file_basic.google-dataset.json',
         },
     },
     DCTERMS.Agent: {
@@ -66,6 +70,7 @@ FULL_METADATA_SCENARIO = {
             'turtle': 'project_full.turtle',
             'datacite-xml': 'project_full.datacite.xml',
             'datacite-json': 'project_full.datacite.json',
+            'google-dataset-json-ld': 'project_full.google-dataset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'project_supplement.turtle',
@@ -79,6 +84,7 @@ FULL_METADATA_SCENARIO = {
             'turtle': 'preprint_full.turtle',
             'datacite-xml': 'preprint_full.datacite.xml',
             'datacite-json': 'preprint_full.datacite.json',
+            'google-dataset-json-ld': 'preprint_full.google-dataset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'preprint_supplement.turtle',
@@ -92,6 +98,7 @@ FULL_METADATA_SCENARIO = {
             'turtle': 'registration_full.turtle',
             'datacite-xml': 'registration_full.datacite.xml',
             'datacite-json': 'registration_full.datacite.json',
+            'google-dataset-json-ld': 'registration_full.google-dataset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'registration_supplement.turtle',
@@ -105,6 +112,7 @@ FULL_METADATA_SCENARIO = {
             'turtle': 'file_full.turtle',
             'datacite-xml': 'file_full.datacite.xml',
             'datacite-json': 'file_full.datacite.json',
+            'google-dataset-json-ld': 'file_full.google-dataset.json',
         },
         OsfmapPartition.SUPPLEMENT: {
             'turtle': 'file_supplement.turtle',
@@ -130,6 +138,7 @@ EXPECTED_MEDIATYPE = {
     'turtle': 'text/turtle; charset=utf-8',
     'datacite-xml': 'application/xml',
     'datacite-json': 'application/json',
+    'google-dataset-json-ld': 'application/ld+json',
 }
 
 
@@ -176,6 +185,7 @@ class TestSerializers(OsfTestCase):
             mock.patch('osf.models.base.generate_guid', new=osfguid_sequence),
             mock.patch('osf.models.base.Guid.objects.get_or_create', new=osfguid_sequence.get_or_create),
             mock.patch('django.utils.timezone.now', new=forever_now),
+            mock.patch('osf.models.mixins.timezone.now', new=forever_now),
             mock.patch('osf.models.metaschema.RegistrationSchema.absolute_api_v2_url', new='http://fake.example/schema/for/test'),
             mock.patch('osf.models.node.Node.get_verified_links', return_value=[
                 {'target_url': 'https://foo.bar', 'resource_type': 'Other'}
@@ -190,7 +200,7 @@ class TestSerializers(OsfTestCase):
             is_public=True,
             creator=self.user,
             title='this is a project title!',
-            description='this is a project description!',
+            description='this is a project description! it describes the project and is more than fifty characters long',
             node_license=factories.NodeLicenseRecordFactory(
                 node_license=NodeLicense.objects.get(
                     name='No license',

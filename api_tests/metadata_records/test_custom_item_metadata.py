@@ -342,6 +342,19 @@ class TestCustomItemMetadataRecordDetail:
                 },
             )
 
+            # cannot PUT invalid resource_type_general
+            res = app.put_json_api(
+                self.make_url(osfguid),
+                self.make_payload(
+                    osfguid,
+                    language='en',
+                    resource_type_general='book-chapter',
+                ),
+                auth=anybody_with_write_permission.auth,
+            )
+            assert res.status_code == 400
+            expected.assert_expectations(db_record=db_record, api_record=None)  # db unchanged
+
             # can PATCH
             expected.language = 'nga-CD'
             res = app.patch_json_api(

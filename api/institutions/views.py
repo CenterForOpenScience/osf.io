@@ -592,6 +592,7 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
             InstitutionalUserReport.search()
             .filter('term', report_yearmonth=str(_yearmonth))
             .filter('term', institution_id=self.get_institution()._id)
+            .exclude('term', user_name='Deleted user')
         )
 
 

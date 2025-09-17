@@ -1,0 +1,43 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "creator": [
+    {
+      "@type": "Person",
+      "familyName": "McNamington",
+      "givenName": "Person",
+      "name": "Person McNamington"
+    }
+  ],
+  "dateCreated": "2123-05-04",
+  "dateModified": "2123-05-04",
+  "description": "this is a project description! it describes the project and is more than fifty characters long",
+  "distribution": [
+    {
+      "@type": "DataDownload",
+      "contentUrl": "http://localhost:7777/v1/resources/w5ibb/providers/osfstorage/?zip=",
+      "encodingFormat": "URL"
+    }
+  ],
+  "identifier": [
+    "http://localhost:5000/w5ibb"
+  ],
+  "keywords": [],
+  "license": [
+    {
+      "@type": "CreativeWork",
+      "name": [
+        "CC-By Attribution-NonCommercial-NoDerivatives 4.0 International"
+      ],
+      "url": [
+        "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
+      ]
+    }
+  ],
+  "name": "this is a project title!",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Center For Open Science"
+  },
+  "url": "http://localhost:5000/w5ibb"
+}
