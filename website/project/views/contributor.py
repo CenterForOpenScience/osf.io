@@ -635,7 +635,7 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
         subscribed_object=resource,
         event_context={
             'user_fullname': contributor.fullname,
-            'referrer_text': referrer_name + ' has added you' if referrer_name else 'You have been add',
+            'referrer_text': referrer_name + ' has added you as a contributor on' if referrer_name else 'You have been add',
             'registry_text': resource.provider.name if resource.provider else 'OSF Registry',
             'referrer_name': referrer_name,
             'domain': settings.DOMAIN,
