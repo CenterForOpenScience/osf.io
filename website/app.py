@@ -19,7 +19,8 @@ from framework.postcommit_tasks import handlers as postcommit_handlers
 from framework.transactions import handlers as transaction_handlers
 # Imports necessary to connect signals
 from website.archiver import listeners  # noqa
-from notifications import listeners  # noqa
+from website.mails import listeners  # noqa
+from website.notifications import listeners  # noqa
 from website.identifiers import listeners  # noqa
 from website.reviews import listeners  # noqa
 from werkzeug.middleware.proxy_fix import ProxyFix

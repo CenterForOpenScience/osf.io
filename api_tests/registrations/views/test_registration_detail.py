@@ -12,6 +12,8 @@ from osf.utils import permissions
 from osf.utils.workflows import ApprovalStates
 from osf.models import Registration, NodeLog, NodeLicense, SchemaResponse
 from framework.auth import Auth
+from website.project.signals import contributor_added
+from api_tests.utils import disconnected_from_listeners
 from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 from addons.wiki.tests.factories import WikiFactory, WikiVersionFactory
 from osf.migrations import update_provider_auth_groups
@@ -30,7 +32,7 @@ from osf_tests.factories import (
 from osf_tests.utils import get_default_test_schema
 
 from api_tests.nodes.views.test_node_detail_license import TestNodeUpdateLicense
-from tests.utils import assert_latest_log, capture_notifications
+from tests.utils import assert_latest_log
 from api_tests.utils import create_test_file
 
 
@@ -353,11 +355,10 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         assert res.status_code == 401
 
     #   test_update_private_registration_logged_in_admin
-        with capture_notifications():
-            res = app.put_json_api(
-                private_url,
-                private_registration_payload,
-                auth=user.auth)
+        res = app.put_json_api(
+            private_url,
+            private_registration_payload,
+            auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
 
@@ -465,11 +466,10 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
                 ]
             }
         }
-        with capture_notifications():
-            res = app.put_json_api(
-                private_url,
-                verbose_private_payload,
-                auth=user.auth)
+        res = app.put_json_api(
+            private_url,
+            verbose_private_payload,
+            auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['public'] is True
         assert res.json['data']['attributes']['category'] == 'instrumentation'
@@ -555,8 +555,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
         private_to_public_payload = make_payload(id=private_registration._id)
 
         url = f'/{API_BASE}registrations/{private_registration._id}/'
-        with capture_notifications():
-            res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
+        res = app.put_json_api(url, private_to_public_payload, auth=user.auth)
         assert res.json['data']['attributes']['public'] is True
         private_registration.reload()
         assert private_registration.is_public
@@ -696,6 +695,7 @@ class TestRegistrationUpdate(TestRegistrationUpdateTestCase):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
 
     @pytest.fixture
@@ -754,14 +754,14 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         res = app.put_json_api(public_url, public_payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
 
-    def test_initiate_withdrawal_success(self, app, user, public_registration, public_url, public_payload):
-        with capture_notifications():
-            res = app.put_json_api(public_url, public_payload, auth=user.auth)
+    def test_initiate_withdrawal_success(self, mock_send_grid, app, user, public_registration, public_url, public_payload):
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.refresh_from_db()
         assert public_registration.is_pending_retraction
         assert public_registration.registered_from.logs.first().action == 'retraction_initiated'
+        assert mock_send_grid.called
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_initiate_withdrawal_with_embargo_ends_embargo(
@@ -777,8 +777,8 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         approval_token = public_registration.embargo.approval_state[user._id]['approval_token']
         public_registration.embargo.approve(user, approval_token)
         assert public_registration.embargo_end_date
-        with capture_notifications():
-            res = app.put_json_api(public_url, public_payload, auth=user.auth)
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['pending_withdrawal'] is True
         public_registration.reload()
@@ -786,19 +786,25 @@ class TestRegistrationWithdrawal(TestRegistrationUpdateTestCase):
         assert not public_registration.is_pending_embargo
 
     def test_withdraw_request_does_not_send_email_to_unregistered_admins(
-            self, app, user, public_registration, public_url, public_payload):
+            self, mock_send_grid, app, user, public_registration, public_url, public_payload):
         unreg = UnregUserFactory()
-        public_registration.add_unregistered_contributor(
-            unreg.fullname,
-            unreg.email,
-            auth=Auth(user),
-            permissions=permissions.ADMIN,
-            existing_user=unreg,
-        )
-        # Only the creator gets an email; the unreg user does not get emailed
-        with capture_notifications():
-            res = app.put_json_api(public_url, public_payload, auth=user.auth)
+        with disconnected_from_listeners(contributor_added):
+            public_registration.add_unregistered_contributor(
+                unreg.fullname,
+                unreg.email,
+                auth=Auth(user),
+                permissions=permissions.ADMIN,
+                existing_user=unreg,
+                save=True
+            )
+
+        res = app.put_json_api(public_url, public_payload, auth=user.auth)
         assert res.status_code == 200
+
+        # Only the creator gets an email; the unreg user does not get emailed
+        assert public_registration._contributors.count() == 2
+        assert mock_send_grid.call_count == 3
+
 
 @pytest.mark.django_db
 class TestRegistrationTags:
@@ -990,12 +996,10 @@ class TestRegistrationTags:
                 }
             }
         }
-        with capture_notifications():
-            res = app.patch_json_api(
-                url_registration_private,
-                new_payload,
-                auth=user_admin.auth
-            )
+        res = app.patch_json_api(
+            url_registration_private,
+            new_payload,
+            auth=user_admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
 
@@ -1489,12 +1493,11 @@ class TestRegistrationResponses:
 
     @pytest.fixture
     def revised_schema_response(self, approved_schema_response):
-        with capture_notifications():
-            response = SchemaResponse.create_from_previous_response(
-                previous_response=approved_schema_response,
-                initiator=approved_schema_response.initiator
-            )
-            response.update_responses({'q1': 'updated', 'q2': 'answers'})
+        response = SchemaResponse.create_from_previous_response(
+            previous_response=approved_schema_response,
+            initiator=approved_schema_response.initiator
+        )
+        response.update_responses({'q1': 'updated', 'q2': 'answers'})
         return response
 
     @pytest.fixture

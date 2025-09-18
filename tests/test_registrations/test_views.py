@@ -17,7 +17,6 @@ from framework.exceptions import HTTPError
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
-from tests.utils import capture_notifications
 from website.project.metadata.schemas import _name_to_id
 from website.util import api_url_for
 from website.project.views import drafts as draft_views
@@ -525,8 +524,7 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of the pending registration
         # in order to determine whether to give approval
-        with capture_notifications():
-            embargoed_registration.embargo.accept()
+        embargoed_registration.embargo.accept()
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'pending'
 
@@ -537,9 +535,8 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration
         # to determine if there is a need to withdraw before it becomes public
-        with capture_notifications():
-            embargoed_registration.embargo.accept()
-            embargoed_registration.embargo.accept(user=moderator)
+        embargoed_registration.embargo.accept()
+        embargoed_registration.embargo.accept(user=moderator)
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'embargo'
 

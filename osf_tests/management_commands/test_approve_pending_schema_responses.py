@@ -7,7 +7,6 @@ from osf.management.commands.approve_pending_schema_responses import approve_pen
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import RegistrationFactory
-from tests.utils import capture_notifications
 from website.settings import REGISTRATION_UPDATE_APPROVAL_TIME
 
 
@@ -24,10 +23,10 @@ class TestApprovePendingSchemaResponses:
         initial_response = reg.schema_responses.last()
         initial_response.state = ApprovalStates.APPROVED
         initial_response.save()
-        with capture_notifications():
-            revision = SchemaResponse.create_from_previous_response(
-                previous_response=initial_response, initiator=reg.creator
-            )
+
+        revision = SchemaResponse.create_from_previous_response(
+            previous_response=initial_response, initiator=reg.creator
+        )
         revision.state = ApprovalStates.UNAPPROVED
         revision.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         revision.save()
@@ -39,23 +38,22 @@ class TestApprovePendingSchemaResponses:
         initial_response = reg.schema_responses.last()
         initial_response.state = ApprovalStates.APPROVED
         initial_response.save()
-        with capture_notifications():
-            return SchemaResponse.create_from_previous_response(
-                previous_response=initial_response, initiator=reg.creator
-            )
+
+        return SchemaResponse.create_from_previous_response(
+            previous_response=initial_response, initiator=reg.creator
+        )
 
     @pytest.mark.parametrize(
         'is_moderated, expected_state',
         [(False, ApprovalStates.APPROVED), (True, ApprovalStates.PENDING_MODERATION)]
     )
     def test_auto_approval(self, control_response, is_moderated, expected_state):
-        with capture_notifications():
-            with mock.patch(
-                'osf.models.schema_response.SchemaResponse.is_moderated',
-                new_callaoble=mock.PropertyMock
-            ) as mock_is_moderated:
-                mock_is_moderated.return_value = is_moderated
-                count = approve_pending_schema_responses()
+        with mock.patch(
+            'osf.models.schema_response.SchemaResponse.is_moderated',
+            new_callaoble=mock.PropertyMock
+        ) as mock_is_moderated:
+            mock_is_moderated.return_value = is_moderated
+            count = approve_pending_schema_responses()
 
         assert count == 1
 
@@ -67,8 +65,8 @@ class TestApprovePendingSchemaResponses:
         test_response.state = ApprovalStates.UNAPPROVED
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
-        with capture_notifications():
-            count = approve_pending_schema_responses()
+
+        count = approve_pending_schema_responses()
         assert count == 2
 
         control_response.refresh_from_db()
@@ -82,8 +80,8 @@ class TestApprovePendingSchemaResponses:
         test_response.state = revision_state
         test_response.submitted_timestamp = AUTO_APPROVE_TIMESTAMP
         test_response.save()
-        with capture_notifications():
-            count = approve_pending_schema_responses()
+
+        count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()
@@ -97,8 +95,7 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = timezone.now()
         test_response.save()
 
-        with capture_notifications():
-            count = approve_pending_schema_responses()
+        count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()
@@ -113,8 +110,7 @@ class TestApprovePendingSchemaResponses:
         test_response.submitted_timestamp = timezone.now()
         test_response.save()
 
-        with capture_notifications():
-            count = approve_pending_schema_responses()
+        count = approve_pending_schema_responses()
         assert count == 1
 
         control_response.refresh_from_db()

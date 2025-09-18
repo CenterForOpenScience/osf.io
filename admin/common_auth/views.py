@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.auth import login, REDIRECT_FIELD_NAME, authenticate, logout
 
 from osf.models.user import OSFUser
-from osf.models import AdminProfile
+from osf.models import AdminProfile, AbstractProvider
 from admin.common_auth.forms import LoginForm, UserRegistrationForm, DeskUserForm
 
 
@@ -69,6 +69,16 @@ class RegisterUser(PermissionRequiredMixin, FormView):
 
         # create AdminProfile for this new user
         profile, created = AdminProfile.objects.get_or_create(user=osf_user)
+
+        for group in form.cleaned_data.get('group_perms'):
+            osf_user.groups.add(group)
+            split = group.name.split('_')
+            group_type = split[0]
+            if group_type == 'reviews':
+                provider_id = split[2]
+                provider = AbstractProvider.objects.get(id=provider_id)
+                provider.notification_subscriptions.get(event_name='new_pending_submissions').add_user_to_subscription(osf_user, 'email_transactional')
+
         osf_user.save()
 
         if created:

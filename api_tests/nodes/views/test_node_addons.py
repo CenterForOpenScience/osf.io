@@ -27,7 +27,6 @@ from addons.zotero.tests.factories import (
     ZoteroAccountFactory, ZoteroNodeSettingsFactory
 )
 from osf.utils.permissions import WRITE, READ, ADMIN
-from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 # Varies between addons. Some need to make a call to get the root,
@@ -109,8 +108,7 @@ class NodeAddonListMixin:
         assert res.status_code == 403
 
     def test_settings_list_noncontrib_public_can_view(self):
-        with capture_notifications():
-            self.node.set_privacy('public', auth=self.auth)
+        self.node.set_privacy('public', auth=self.auth)
         wrong_type = self.should_expect_errors()
         noncontrib = AuthUserFactory()
         res = self.app.get(
@@ -449,8 +447,7 @@ class NodeAddonDetailMixin:
         assert res.status_code == 403
 
     def test_settings_detail_noncontrib_public_can_view(self):
-        with capture_notifications():
-            self.node.set_privacy('public', auth=self.auth)
+        self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         wrong_type = self.should_expect_errors()
         res = self.app.get(
@@ -468,8 +465,7 @@ class NodeAddonDetailMixin:
             assert res.status_code == 404
 
     def test_settings_detail_noncontrib_public_cannot_edit(self):
-        with capture_notifications():
-            self.node.set_privacy('public', auth=self.auth)
+        self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.patch_json_api(
             self.setting_detail_url,
@@ -1279,8 +1275,7 @@ class TestNodeForwardAddon(
         assert self.node.logs.latest().action != 'forward_url_changed'
 
     def test_settings_detail_noncontrib_public_can_view(self):
-        with capture_notifications():
-            self.node.set_privacy('public', auth=self.auth)
+        self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_detail_url,
@@ -1301,8 +1296,7 @@ class TestNodeForwardAddon(
         assert self.node_settings.label == addon_data['label']
 
     def test_settings_list_noncontrib_public_can_view(self):
-        with capture_notifications():
-            self.node.set_privacy('public', auth=self.auth)
+        self.node.set_privacy('public', auth=self.auth)
         noncontrib = AuthUserFactory()
         res = self.app.get(
             self.setting_list_url,

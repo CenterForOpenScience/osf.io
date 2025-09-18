@@ -57,12 +57,11 @@ from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
 from website import settings as website_settings
-from website import filters
+from website import filters, mails
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
-from osf.models.notification_type import NotificationType
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -225,6 +224,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
+
+    # Time of last sent notification email to newly added contributors
+    # Format : {
+    #   <project_id>: {
+    #       'last_sent': time.time()
+    #   }
+    #   ...
+    # }
+    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
+
+    # Tracks last email sent where user was added to an OSF Group
+    member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
+    # Tracks last email sent where an OSF Group was connected to a node
+    group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
@@ -1058,16 +1071,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            NotificationType.Type.USER_PASSWORD_RESET.instance.emit(
-                subscribed_object=self,
+            mails.send_mail(
+                to_addr=self.username,
+                mail=mails.PASSWORD_RESET,
                 user=self,
-                message_frequency='instantly',
-                event_context={
-                    'domain': website_settings.DOMAIN,
-                    'user_fullname': self.fullname,
-                    'can_change_preferences': False,
-                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
-                }
+                can_change_preferences=False,
+                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
             )
             remove_sessions_for_user(self)
 

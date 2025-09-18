@@ -11,7 +11,7 @@ from framework.auth.core import Auth
 from osf.models import (
     NodeLicense,
     PreprintContributor,
-    PreprintLog, NotificationType
+    PreprintLog
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.permissions import WRITE
@@ -21,7 +21,6 @@ from osf_tests.factories import (
     ProjectFactory,
     SubjectFactory,
 )
-from tests.utils import assert_notification
 from website.settings import CROSSREF_URL
 
 
@@ -502,29 +501,28 @@ class TestPreprintUpdate:
             self, mock_update_doi_metadata, app, user, preprint, url
     ):
         new_user = AuthUserFactory()
-        with assert_notification(type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT, user=new_user):
-            res = app.post_json_api(
-                url + 'contributors/',
-                {
-                    'data': {
-                        'attributes': {
-                            'bibliographic': True,
-                            'permission': WRITE,
-                            'send_email': False
-                        },
-                        'type': 'contributors',
-                        'relationships': {
-                            'users': {
-                                'data': {
-                                    'id': new_user._id,
-                                    'type': 'users'
-                                }
+        res = app.post_json_api(
+            url + 'contributors/',
+            {
+                'data': {
+                    'attributes': {
+                        'bibliographic': True,
+                        'permission': WRITE,
+                        'send_email': False
+                    },
+                    'type': 'contributors',
+                    'relationships': {
+                        'users': {
+                            'data': {
+                                'id': new_user._id,
+                                'type': 'users'
                             }
                         }
                     }
-                },
-                auth=user.auth
-            )
+                }
+            },
+            auth=user.auth
+        )
 
         assert res.status_code == 201
         assert new_user in preprint.contributors
@@ -602,15 +600,14 @@ class TestPreprintUpdate:
 
     def test_update_published(self, app, user):
         unpublished = PreprintFactory(creator=user, is_published=False)
-        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
-            app.patch_json_api(
-                f'/{API_BASE}preprints/{unpublished._id}/',
-                build_preprint_update_payload(
-                    unpublished._id,
-                    attributes={'is_published': True}
-                ),
-                auth=user.auth
-            )
+        app.patch_json_api(
+            f'/{API_BASE}preprints/{unpublished._id}/',
+            build_preprint_update_payload(
+                unpublished._id,
+                attributes={'is_published': True}
+            ),
+            auth=user.auth
+        )
         unpublished.reload()
         assert unpublished.is_published
 
@@ -622,14 +619,13 @@ class TestPreprintUpdate:
             project=project
         )
         assert not unpublished.node.is_public
-        with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
-            app.patch_json_api(
-                f'/{API_BASE}preprints/{unpublished._id}/',
-                build_preprint_update_payload(
-                    unpublished._id,
-                    attributes={'is_published': True}),
-                auth=user.auth
-            )
+        app.patch_json_api(
+            f'/{API_BASE}preprints/{unpublished._id}/',
+            build_preprint_update_payload(
+                unpublished._id,
+                attributes={'is_published': True}),
+            auth=user.auth
+        )
         unpublished.node.reload()
         unpublished.reload()
 

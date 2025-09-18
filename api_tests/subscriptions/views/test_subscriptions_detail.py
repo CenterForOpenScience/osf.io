@@ -1,10 +1,8 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import (
-    AuthUserFactory,
-    NotificationSubscriptionFactory
-)
+from osf_tests.factories import AuthUserFactory, NotificationSubscriptionFactory
+
 
 @pytest.mark.django_db
 class TestSubscriptionDetail:
@@ -18,16 +16,18 @@ class TestSubscriptionDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def notification(self, user):
-        return NotificationSubscriptionFactory(user=user)
+    def global_user_notification(self, user):
+        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
+        notification.add_user_to_subscription(user, 'email_transactional')
+        return notification
 
     @pytest.fixture()
-    def url(self, notification):
-        return f'/{API_BASE}subscriptions/{notification._id}/'
+    def url(self, global_user_notification):
+        return f'/{API_BASE}subscriptions/{global_user_notification._id}/'
 
     @pytest.fixture()
     def url_invalid(self):
-        return f'/{API_BASE}subscriptions/invalid-notification-id/'
+        return '/{}subscriptions/{}/'.format(API_BASE, 'invalid-notification-id')
 
     @pytest.fixture()
     def payload(self):
@@ -51,99 +51,56 @@ class TestSubscriptionDetail:
             }
         }
 
-    def test_subscription_detail_invalid_user(self, app, user, user_no_auth, notification, url, payload):
-        res = app.get(
-            url,
-            auth=user_no_auth.auth,
-            expect_errors=True
-        )
+    def test_subscription_detail(self, app, user, user_no_auth, global_user_notification, url, url_invalid, payload, payload_invalid):
+        # GET with valid notification_id
+        # Invalid user
+        res = app.get(url, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
-
-    def test_subscription_detail_no_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
-        res = app.get(
-            url,
-            expect_errors=True
-        )
+        # No user
+        res = app.get(url, expect_errors=True)
         assert res.status_code == 401
-
-    def test_subscription_detail_valid_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
-
+        # Valid user
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
         assert notification_id == f'{user._id}_global'
 
-    def test_subscription_detail_invalid_notification_id_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # GET with invalid notification_id
+        # No user
         res = app.get(url_invalid, expect_errors=True)
         assert res.status_code == 404
-
-    def test_subscription_detail_invalid_notification_id_existing_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
-        res = app.get(
-            url_invalid,
-            auth=user.auth,
-            expect_errors=True
-        )
+        # Existing user
+        res = app.get(url_invalid, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_subscription_detail_invalid_payload_403(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # PATCH with valid notification_id and invalid data
+        # Invalid user
         res = app.patch_json_api(url, payload_invalid, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
-
-    def test_subscription_detail_invalid_payload_401(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # No user
         res = app.patch_json_api(url, payload_invalid, expect_errors=True)
         assert res.status_code == 401
-
-    def test_subscription_detail_invalid_payload_400(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
-        res = app.patch_json_api(
-            url,
-            payload_invalid,
-            auth=user.auth,
-            expect_errors=True
-        )
+        # Valid user
+        res = app.patch_json_api(url, payload_invalid, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == ('"invalid-frequency" is not a valid choice.')
+        assert res.json['errors'][0]['detail'] == 'Invalid frequency "invalid-frequency"'
 
-    def test_subscription_detail_patch_invalid_notification_id_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # PATCH with invalid notification_id
+        # No user
         res = app.patch_json_api(url_invalid, payload, expect_errors=True)
         assert res.status_code == 404
-
-    def test_subscription_detail_patch_invalid_notification_id_existing_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # Existing user
         res = app.patch_json_api(url_invalid, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_subscription_detail_patch_invalid_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # PATCH with valid notification_id and valid data
+        # Invalid user
         res = app.patch_json_api(url, payload, auth=user_no_auth.auth, expect_errors=True)
         assert res.status_code == 403
-
-    def test_subscription_detail_patch_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # No user
         res = app.patch_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
-
-    def test_subscription_detail_patch(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
-    ):
+        # Valid user
         res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['frequency'] == 'none'
