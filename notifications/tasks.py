@@ -155,8 +155,8 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, **kw
             'user_fullname': user.fullname,
             'can_change_preferences': False,
             'notification_settings_url': notification_settings_url,
-            'withdrawals_url': withdrawals_url,
-            'submissions_url': submissions_url,
+            'reviews_withdrawal_url': withdrawals_url,
+            'reviews_submissions_url': submissions_url,
             'provider_type': provider_type,
             'additional_context': additional_context,
             'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
