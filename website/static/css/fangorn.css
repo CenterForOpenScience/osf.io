@@ -360,13 +360,3 @@ a.fangorn-toolbar-icon {
 .replace-file {
     margin-left: 8px;
 }
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-table, th, td {
-  border: 1px solid #ccc;
-  padding: 8px;
-}
