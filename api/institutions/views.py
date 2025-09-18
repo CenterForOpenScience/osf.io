@@ -593,7 +593,11 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
         if yearmonth is None:
             return None
 
-        return base_search.filter('term', report_yearmonth=str(yearmonth))
+        return (
+            base_search
+            .filter('term', report_yearmonth=str(yearmonth))
+            .exclude('term', user_name='Deleted user')
+        )
 
 
 class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
