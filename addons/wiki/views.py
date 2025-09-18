@@ -358,7 +358,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
 def _get_import_folder(node):
     # Get import folder
     root_dir = BaseFileNode.objects.filter(target_object_id=node.id, is_root=True).values('id').first()
-    # parent_dirs = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=root_dir['id'], deleted__isnull=True)
     parent_dirs = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefolder', parent=root_dir['id'], deleted__isnull=True).order_by('name')
     import_dirs = []
     for parent_dir in parent_dirs:

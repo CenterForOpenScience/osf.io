@@ -39,7 +39,7 @@
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
                     <h3 class="modal-title">${_("Duplicate wiki name")}</h3>
                 </div><!-- end modal-header -->
-                <div class="modal-body" style="height: 550px;overflow: auto;">
+                <div class="modal-body" style="height: 250px;overflow: auto;">
                     <p id="attentionValidateInfo" class="partOperationAll" style="display: none">
                         ${_('The following wiki page already exists. Please select the process when importing. When creating a new wiki, the wiki name will be created with a sequential number like [Wiki name](1). If you dismiss this alert, the import will be aborted.')}
                     </p>
