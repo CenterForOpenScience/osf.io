@@ -22,6 +22,7 @@ from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
+from admin.nodes.forms import RegistrationDateForm
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -89,6 +90,24 @@ class NodeMixin(PermissionRequiredMixin):
         return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
 
 
+class RegistrationUpdateDateView(NodeMixin, View):
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        form = RegistrationDateForm(request.POST)
+        if form.is_valid():
+            new_date = form.cleaned_data['registered_date']
+            node.registered_date = new_date
+            node.created = new_date
+            node.save()
+            messages.success(request, 'Registration date updated successfully.')
+        else:
+            messages.error(request, 'Please enter a valid date.')
+        return redirect(self.get_success_url())
+
+
 class NodeView(NodeMixin, GuidView):
     """ Allows authorized users to view node info.
     """
@@ -101,6 +120,9 @@ class NodeView(NodeMixin, GuidView):
         node = self.get_object()
 
         detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
+        if isinstance(node, Registration):
+            context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
+
         children = node.get_nodes(is_node_link=False)
         # Annotate guid because django templates prohibit accessing attributes that start with underscores
         children = AbstractNode.objects.filter(
