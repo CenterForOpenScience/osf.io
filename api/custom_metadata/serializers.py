@@ -2,6 +2,7 @@ from rest_framework.fields import empty
 import rest_framework.serializers as ser
 
 from framework.auth.core import Auth
+from osf.metadata.definitions.datacite import DATACITE_RESOURCE_TYPES_GENERAL
 from api.base.serializers import (
     IDField,
     JSONAPISerializer,
@@ -80,10 +81,10 @@ class CustomItemMetadataSerializer(JSONAPISerializer):
         allow_blank=True,
         max_length=REASONABLE_MAX_LENGTH,
     )
-    resource_type_general = ser.CharField(
+    resource_type_general = ser.ChoiceField(
         required=False,
         allow_blank=True,
-        max_length=REASONABLE_MAX_LENGTH,
+        choices=sorted(DATACITE_RESOURCE_TYPES_GENERAL),
     )
     funders = FundingInfoSerializer(
         many=True,

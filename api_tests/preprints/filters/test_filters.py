@@ -56,7 +56,9 @@ class PreprintsListFilteringMixin:
             creator=user,
             project=project_one,
             provider=provider_one,
-            subjects=[[subject_one._id]])
+            subjects=[[subject_one._id]],
+            description='test1'
+        )
         preprint_one.original_publication_date = '2013-12-25 10:09:08.070605+00:00'
         preprint_one.save()
         return preprint_one
@@ -68,7 +70,9 @@ class PreprintsListFilteringMixin:
             project=project_two,
             filename='howto_reason.txt',
             provider=provider_two,
-            subjects=[[subject_two._id]])
+            subjects=[[subject_two._id]],
+            description='2test'
+        )
         preprint_two.created = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.date_published = '2013-12-11 10:09:08.070605+00:00'
         preprint_two.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
@@ -84,7 +88,9 @@ class PreprintsListFilteringMixin:
             project=project_three,
             filename='darn_reason.txt',
             provider=provider_three,
-            subjects=[[subject_one._id], [subject_two._id]])
+            subjects=[[subject_one._id], [subject_two._id]],
+            description='new preprint'
+        )
         preprint_three.created = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.date_published = '2013-12-11 10:09:08.070605+00:00'
         preprint_three.original_publication_date = '2013-12-11 10:09:08.070605+00:00'
@@ -128,6 +134,10 @@ class PreprintsListFilteringMixin:
     @pytest.fixture()
     def node_is_public_url(self, url):
         return f'{url}filter[node_is_public]='
+
+    @pytest.fixture()
+    def description_url(self, url):
+        return f'{url}filter[description]='
 
     def test_provider_filter_null(self, app, user, provider_url):
         expected = []
@@ -351,3 +361,14 @@ class PreprintsListFilteringMixin:
             expected.update(
                 [p._id for p in preprints if p.provider_id == preprint.provider_id])
             assert expected == actual()
+
+    def test_description_filter(
+            self, app, user, description_url, preprint_one, preprint_two, preprint_three):
+        expected = {preprint_one._id, preprint_two._id}
+        res = app.get(
+            description_url + 'tes',
+            auth=user.auth
+        )
+        actual = {preprint['id'] for preprint in res.json['data']}
+        assert expected == actual
+        assert preprint_three._id not in res.json['data']

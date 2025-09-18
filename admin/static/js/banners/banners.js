@@ -26,6 +26,9 @@ $(document).ready(function() {
         }
     });
 
-    $(".colorpicker").colorpicker();
+    $(".colorpicker").colorpicker({
+        format: 'hex',
+        useAlpha: false
+    });
 
 });

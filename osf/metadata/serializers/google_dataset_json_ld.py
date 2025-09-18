@@ -76,12 +76,12 @@ class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
 
 def format_creators(basket):
     creator_data = []
-    for creator in basket.focus.dbmodel.contributors.all():
+    for creator_iri in basket[DCTERMS.creator]:
         creator_data.append({
             '@type': 'Person',
-            'name': creator.fullname,
-            'givenName': creator.given_name,
-            'familyName': creator.family_name
+            'name': next(basket[creator_iri:FOAF.name]),
+            'givenName': next(basket[creator_iri:FOAF.givenName]),
+            'familyName': next(basket[creator_iri:FOAF.familyName]),
         })
     return creator_data
 

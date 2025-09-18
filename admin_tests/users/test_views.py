@@ -26,7 +26,7 @@ from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 from admin.users import views
 from admin.users.forms import UserSearchForm, MergeUserForm
 from osf.models.admin_log_entry import AdminLogEntry
-from tests.utils import assert_notification
+from tests.utils import assert_notification, capture_notifications
 from osf.models.notification_type import NotificationType
 
 pytestmark = pytest.mark.django_db
@@ -101,7 +101,11 @@ class TestResetPasswordView(AdminTestCase):
         request.POST = {'emails': ', '.join(user.emails.all().values_list('address', flat=True))}
         request.user = user
 
-        response = views.ResetPasswordView.as_view()(request, guid=guid)
+        with capture_notifications() as notifications:
+            response = views.ResetPasswordView.as_view()(request, guid=guid)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
         self.assertEqual(response.status_code, 302)
 
 

@@ -5,6 +5,9 @@ require('bootstrap-colorpicker/dist/css/bootstrap-colorpicker.min.css');
 
 $(document).ready(function() {
 
-    $(".colorpicker").colorpicker();
+    $(".colorpicker").colorpicker({
+        format: 'hex',
+        useAlpha: false
+    });
 
 });

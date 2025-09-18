@@ -32,7 +32,7 @@
     <rights rightsURI="https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode">CC-By Attribution-NonCommercial-NoDerivatives 4.0 International</rights>
   </rightsList>
   <descriptions>
-    <description descriptionType="Abstract">this is a project description!</description>
+    <description descriptionType="Abstract">this is a project description! it describes the project and is more than fifty characters long</description>
   </descriptions>
   <fundingReferences/>
   <relatedIdentifiers>

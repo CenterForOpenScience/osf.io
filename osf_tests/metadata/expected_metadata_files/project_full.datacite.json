@@ -42,7 +42,7 @@
   ],
   "descriptions": [
     {
-      "description": "this is a project description!",
+      "description": "this is a project description! it describes the project and is more than fifty characters long",
       "descriptionType": "Abstract",
       "lang": "en"
     }

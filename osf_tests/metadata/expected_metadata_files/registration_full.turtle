@@ -13,7 +13,7 @@
     dcterms:created "2123-05-04" ;
     dcterms:creator <http://localhost:5000/w1ibb> ;
     dcterms:dateCopyrighted "2250-2254" ;
-    dcterms:description "this is a project description!" ;
+    dcterms:description "this is a project description! it describes the project and is more than fifty characters long" ;
     dcterms:identifier "http://localhost:5000/w5ibb" ;
     dcterms:isVersionOf <http://localhost:5000/w2ibb> ;
     dcterms:modified "2123-05-04" ;
@@ -105,6 +105,8 @@
 <http://localhost:5000/w1ibb> a dcterms:Agent,
         foaf:Person ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:givenName "Person" ;
+    foaf:familyName "McNamington" ;
     foaf:name "Person McNamington" .
 
 <http://localhost:5000> a dcterms:Agent,

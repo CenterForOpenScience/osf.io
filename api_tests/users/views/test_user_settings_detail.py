@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
 )
-from website.settings import OSF_HELP_LIST
+from website.settings import OSF_HELP_LIST, MAILCHIMP_GENERAL_LIST
 
 
 @pytest.fixture()
@@ -208,6 +208,9 @@ class TestUserSettingsUpdateMailingList:
         user_one.refresh_from_db()
         assert res.json['data']['attributes']['subscribe_osf_help_email'] is False
         assert user_one.osf_mailing_lists[OSF_HELP_LIST] is False
+
+        assert res.json['data']['attributes']['subscribe_osf_general_email'] is True
+        assert user_one.mailchimp_mailing_lists[MAILCHIMP_GENERAL_LIST] is True
         mock_mailchimp_client.assert_called_with()
 
     def test_bad_payload_patch_400(self, app, user_one, bad_payload, url):

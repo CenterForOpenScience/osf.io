@@ -6,4 +6,6 @@
         foaf:Person ;
     dcat:accessService <http://localhost:5000> ;
     dcterms:identifier "http://localhost:5000/w1ibb" ;
+    foaf:givenName "Person" ;
+    foaf:familyName "McNamington" ;
     foaf:name "Person McNamington" .

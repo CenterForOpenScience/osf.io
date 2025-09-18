@@ -17,6 +17,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # This renames the legacy data so we have overwrite it later with migrate notifications management command
         migrations.RunSQL(
             """
             DO $$

@@ -1,0 +1,35 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Dataset",
+  "creator": [
+    {
+      "@type": "Person",
+      "familyName": "McNamington",
+      "givenName": "Person",
+      "name": "Person McNamington"
+    }
+  ],
+  "dateCreated": "2123-05-04",
+  "dateModified": "2123-05-04",
+  "description": "this is a project description! it describes the project and is more than fifty characters long",
+  "identifier": [
+    "http://localhost:5000/w2ibb",
+    "https://doi.org/10.70102/FK2osf.io/w2ibb"
+  ],
+  "keywords": [],
+  "license": [
+    {
+      "@type": "CreativeWork",
+      "name": [
+        "No license"
+      ],
+      "url": []
+    }
+  ],
+  "name": "this is a project title!",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Center For Open Science"
+  },
+  "url": "http://localhost:5000/w2ibb"
+}

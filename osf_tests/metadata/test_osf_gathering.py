@@ -670,11 +670,15 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__admin), {
             (self.userfocus__admin.iri, RDF.type, FOAF.Person),
             (self.userfocus__admin.iri, FOAF.name, Literal(self.user__admin.fullname)),
+            (self.userfocus__admin.iri, FOAF.givenName, Literal(self.user__admin.given_name)),
+            (self.userfocus__admin.iri, FOAF.familyName, Literal(self.user__admin.family_name)),
         })
         # focus: readwrite user
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__readwrite), {
             (self.userfocus__readwrite.iri, RDF.type, FOAF.Person),
             (self.userfocus__readwrite.iri, FOAF.name, Literal(self.user__readwrite.fullname)),
+            (self.userfocus__readwrite.iri, FOAF.givenName, Literal(self.user__readwrite.given_name)),
+            (self.userfocus__readwrite.iri, FOAF.familyName, Literal(self.user__readwrite.family_name)),
             (self.userfocus__readwrite.iri, DCTERMS.identifier, Literal('https://orcid.org/1234-4321-5678-8765')),
             (self.userfocus__readwrite.iri, OWL.sameAs, URIRef('https://orcid.org/1234-4321-5678-8765')),
         })
@@ -682,6 +686,8 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__readonly), {
             (self.userfocus__readonly.iri, RDF.type, FOAF.Person),
             (self.userfocus__readonly.iri, FOAF.name, Literal(self.user__readonly.fullname)),
+            (self.userfocus__readonly.iri, FOAF.givenName, Literal(self.user__readonly.given_name)),
+            (self.userfocus__readonly.iri, FOAF.familyName, Literal(self.user__readonly.family_name)),
             # orcid not verified, should be excluded
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://mysite.example')),
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://myothersite.example/foo')),

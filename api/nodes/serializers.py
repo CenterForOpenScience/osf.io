@@ -1698,12 +1698,15 @@ class NodeViewOnlyLinkSerializer(JSONAPISerializer):
         user = get_user_auth(self.context['request']).user
         anonymous = validated_data.pop('anonymous')
         node = self.context['view'].get_node()
+        children = self.context['request'].data.pop('target_type', [])
+        if children:
+            children = [AbstractNode.load(id) for id in children if id != 'nodes']
 
         try:
             view_only_link = new_private_link(
                 name=name,
                 user=user,
-                nodes=[node],
+                nodes=[node, *children],
                 anonymous=anonymous,
             )
         except ValidationError:
