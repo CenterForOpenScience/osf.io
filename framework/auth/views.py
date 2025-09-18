@@ -847,7 +847,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         # Merge account confirmation
         merge_account_data = {
             'merge_target_fullname': merge_target.fullname or merge_target.username,
-            'user_username': user.fullname,
+            'user_username': user.username,
             'email': merge_target.email,
         }
         notification_type = NotificationType.Type.USER_CONFIRM_MERGE
@@ -862,8 +862,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
     notification_type.instance.emit(
-        user=user,
-        subscribed_object=user,
+        destination_address=email,
         event_context={
             'user_fullname': user.fullname,
             'confirmation_url': confirmation_url,
@@ -873,6 +872,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             'osf_support_email': settings.OSF_SUPPORT_EMAIL,
             **merge_account_data,
         },
+        save=False
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
