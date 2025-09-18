@@ -522,12 +522,14 @@ li[name="WikiImportOperationPerItem"] {
     margin-right: 1px;
 }
 
-table {
+.milkdown table {
   border-collapse: collapse;
   width: 100%;
 }
 
-table, th, td {
+.milkdown table,
+.milkdown th,
+.milkdown td {
   border: 1px solid #ccc;
   padding: 8px;
 }
