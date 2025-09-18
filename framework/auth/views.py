@@ -832,6 +832,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         merge_target = OSFUser.objects.get(emails__address=email)
     except OSFUser.DoesNotExist:
         merge_target = None
+    merge_account_data = {}
     campaign = campaigns.campaign_for_user(user)
     # Choose the appropriate email template to use and add existing_user flag if a merge or adding an email.
     if external_id_provider and external_id:
@@ -844,6 +845,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={})
     elif merge_target:
         # Merge account confirmation
+        merge_account_data = {
+            'merge_target_fullname': merge_target.fullname or merge_target.username,
+            'user_username': user.username,
+            'email': merge_target.email,
+        }
         notification_type = NotificationType.Type.USER_CONFIRM_MERGE
     elif user.is_active:
         # Add email confirmation
@@ -856,19 +862,17 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
     notification_type.instance.emit(
-        user=user,
-        subscribed_object=user,
+        destination_address=merge_target.address or user.username,
         event_context={
             'user_fullname': user.fullname,
-            'user_username': user.username,
             'confirmation_url': confirmation_url,
             'can_change_preferences': False,
             'external_id_provider': external_id_provider,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-            'merge_target_fullname': merge_target.fullname or merge_target.username,
-            'email': merge_target.email,
+            **merge_account_data,
         },
+        save=False
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
