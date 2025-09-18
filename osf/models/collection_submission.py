@@ -139,6 +139,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             user=user,
             subscribed_object=self.guid.referent,
             event_context={
+                'provider_id': self.guid.referent.provider.id,
                 'submitter_fullname': self.creator.fullname,
                 'requester_fullname': event_data.kwargs.get('user').fullname,
                 'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True)),

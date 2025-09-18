@@ -67,6 +67,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     from osf.models import NotificationType
 
     provider = resource.provider
+    context['provider_id'] = provider.id
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
