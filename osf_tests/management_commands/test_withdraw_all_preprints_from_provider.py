@@ -2,8 +2,6 @@ import pytest
 
 from osf.management.commands.withdraw_all_preprints_from_provider import withdraw_all_preprints
 from osf_tests.factories import PreprintProviderFactory, PreprintFactory, AuthUserFactory
-from tests.utils import capture_notifications
-
 
 @pytest.mark.django_db
 class TestWithdrawAllPreprint:
@@ -25,8 +23,7 @@ class TestWithdrawAllPreprint:
         return AuthUserFactory()
 
     def test_withdraw_all_preprints(self, preprint_provider, provider_preprint, withdrawing_user):
-        with capture_notifications():
-            withdraw_all_preprints(preprint_provider._id, 10, withdrawing_user._id, 'test_comment')
+        withdraw_all_preprints(preprint_provider._id, 10, withdrawing_user._id, 'test_comment')
         provider_preprint.reload()
 
         assert provider_preprint.is_retracted

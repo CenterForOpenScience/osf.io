@@ -10,7 +10,7 @@ from osf_tests.factories import (
 )
 from osf.models import SchemaResponse
 from osf.utils.workflows import ApprovalStates, RegistrationModerationStates
-from tests.utils import capture_notifications
+
 
 USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthenticated']
 CONTRIBUTOR_ROLES = ['read', 'write', 'admin']
@@ -334,8 +334,7 @@ class TestSchemaResponseListPOSTBehavior:
 
     def test_POST_with_previous_approved_response(
             self, app, url, registration, schema_response, payload, admin_user):
-        with capture_notifications():
-            resp = app.post_json_api(url, payload, auth=admin_user.auth)
+        resp = app.post_json_api(url, payload, auth=admin_user.auth)
 
         new_response = SchemaResponse.objects.get(_id=resp.json['data']['id'])
         assert new_response.previous_response == schema_response

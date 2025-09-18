@@ -14,16 +14,8 @@ class TestPreprintSubjectsList(SubjectsListMixin):
         # unpublished preprint in initial state - only creator can view
         preprint = PreprintFactory(creator=user_admin_contrib, is_published=False)
         preprint.subjects.clear()
-        preprint.add_contributor(
-            user_write_contrib,
-            permissions=WRITE,
-            notification_type=False
-        )
-        preprint.add_contributor(
-            user_read_contrib,
-            permissions=READ,
-            notification_type=False
-        )
+        preprint.add_contributor(user_write_contrib, permissions=WRITE)
+        preprint.add_contributor(user_read_contrib, permissions=READ)
         preprint.save()
         return preprint
 

@@ -6,7 +6,6 @@ from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProvid
 from osf.migrations import update_provider_auth_groups
 from osf.models import CollectionSubmission
 from osf.utils.workflows import CollectionSubmissionStates, CollectionSubmissionsTriggers
-from tests.utils import capture_notifications
 
 GET_URL = '/v2/collection_submission_actions/{}/'
 
@@ -29,8 +28,7 @@ def node(collection_provider):
 def collection(collection_provider):
     collection = CollectionFactory(is_public=True)
     collection.provider = collection_provider
-    with capture_notifications():
-        collection.save()
+    collection.save()
     return collection
 
 
@@ -41,9 +39,8 @@ def collection_submission(node, collection):
         collection=collection,
         creator=node.creator,
     )
-    with capture_notifications():
-        collection_submission.save()
-        return collection_submission
+    collection_submission.save()
+    return collection_submission
 
 
 @pytest.fixture()

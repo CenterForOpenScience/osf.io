@@ -12,7 +12,6 @@ from osf_tests.factories import (
 from scripts.embargo_registrations import main as approve_embargos
 from django.utils import timezone
 from osf.utils.workflows import RegistrationModerationStates
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -36,8 +35,8 @@ class TestDraftRegistrations:
         This is for an edge case test for where embargos are frozen and never expire when the user requests they be
         terminated with embargo with less then 48 hours before it would expire anyway.
         """
-        with capture_notifications():
-            registration.request_embargo_termination(user)
+
+        registration.request_embargo_termination(user)
         mock_now = timezone.now() + datetime.timedelta(days=6)
         with mock.patch.object(timezone, 'now', return_value=mock_now):
             approve_embargos(dry_run=False)

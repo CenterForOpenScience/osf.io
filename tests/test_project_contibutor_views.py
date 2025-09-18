@@ -25,7 +25,6 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
-from tests.utils import capture_notifications
 from website import language
 from website.profile.utils import add_contributor_json
 
@@ -189,17 +188,16 @@ class TestProjectContributorViews(OsfTestCase):
             }
         )
 
-        with capture_notifications():
-            self.app.post(
-                f'/api/v1/project/{project._id}/contributors/',
-                json={
-                    'users': [dict2, dict3],
-                    'node_ids': [project._id],
-                },
-                content_type='application/json',
-                auth=self.auth,
-                follow_redirects=True,
-            )
+        self.app.post(
+            f'/api/v1/project/{project._id}/contributors/',
+            json={
+                'users': [dict2, dict3],
+                'node_ids': [project._id],
+            },
+            content_type='application/json',
+            auth=self.auth,
+            follow_redirects=True,
+        )
         project.reload()
         assert user2 in project.contributors
         # A log event was added
@@ -320,18 +318,17 @@ class TestProjectContributorViews(OsfTestCase):
         # Two users are added as a contributor via a POST request
         project = ProjectFactory(creator=self.user1, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        with capture_notifications():
-            project.add_contributors(
-                [
-                    {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
-                    {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': False},
-                ]
-            )
+        project.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': False},
+            ]
+        )
         # Add a non-registered user
         unregistered_user = project.add_unregistered_contributor(
-            fullname=fake.name(),
-            email=fake_email(),
+            fullname=fake.name(), email=fake_email(),
             auth=self.consolidate_auth1,
+            save=True,
         )
 
         url = project.api_url + 'contributors/manage/'
@@ -537,27 +534,27 @@ class TestProjectContributorViews(OsfTestCase):
         # create a project with 3 registered contributors
         project = ProjectFactory(creator=self.user1, is_public=True)
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        with capture_notifications():
-            project.add_contributors(
-                [
-                    {
-                        'user': reg_user1,
-                        'permissions': permissions.ADMIN,
-                        'visible': True
-                    },
-                    {
-                        'user': reg_user2,
-                        'permissions': permissions.ADMIN,
-                        'visible': True
-                    },
-                ]
-            )
+        project.add_contributors(
+            [
+                {
+                    'user': reg_user1,
+                    'permissions': permissions.ADMIN,
+                    'visible': True
+                },
+                {
+                    'user': reg_user2,
+                    'permissions': permissions.ADMIN,
+                    'visible': True
+                },
+            ]
+        )
 
         # add an unregistered contributor
         project.add_unregistered_contributor(
             fullname='Jalen Hurts',
             email='gobirds@eagle.fly',
             auth=self.consolidate_auth1,
+            save=True,
         )
 
         res = self.app.get(

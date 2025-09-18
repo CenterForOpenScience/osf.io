@@ -1,8 +1,6 @@
 import itsdangerous
 from django.middleware import csrf
 import pytest
-
-from tests.utils import capture_notifications
 from website import settings
 from api.base.settings.defaults import API_BASE
 from api.base.settings import CSRF_COOKIE_NAME
@@ -20,8 +18,7 @@ class TestExternalLogin:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        with capture_notifications():
-            user.set_password('password1')
+        user.set_password('password1')
         user.auth = (user.username, 'password1')
         user.save()
         return user
@@ -59,8 +56,7 @@ class TestExternalLogin:
     def test_external_login(self, app, payload, url, session_data, csrf_token):
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         app.set_cookie(settings.COOKIE_NAME, str(session_data))
-        with capture_notifications():
-            res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
         assert res.json == {'external_id_provider': 'orcid', 'auth_user_fullname': 'external login'}
         assert not OSFUser.objects.get(username='freddie@mercury.com').is_confirmed
@@ -81,8 +77,7 @@ class TestExternalLogin:
         app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
         app.set_cookie(settings.COOKIE_NAME, str(session_data))
         payload['data']['attributes']['email'] = user_one.username
-        with capture_notifications():
-            res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
+        res = app.post_json_api(url, payload, headers={'X-CSRFToken': csrf_token})
         assert res.status_code == 200
         assert res.json == {'external_id_provider': 'orcid', 'auth_user_fullname': 'external login'}
         user_one.reload()

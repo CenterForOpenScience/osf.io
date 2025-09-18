@@ -2,7 +2,7 @@ import pytest
 from unittest import mock
 
 
-from osf.models import Contributor, NotificationType
+from osf.models import Contributor
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
@@ -142,7 +142,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                send_email='access_request',
                 make_curator=False,
             )
 
@@ -168,7 +168,7 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                send_email='access_request',
                 make_curator=False,
             )
 
@@ -194,6 +194,6 @@ class TestContributorModel:
                 auth=mock.ANY,
                 permissions=permissions.ADMIN,  # `requested_permissions` should take precedence
                 visible=True,
-                notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST,
+                send_email='access_request',
                 make_curator=False,
             )

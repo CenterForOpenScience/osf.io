@@ -9,7 +9,7 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
 )
-from tests.utils import assert_latest_log, capture_notifications
+from tests.utils import assert_latest_log
 from website import settings
 
 
@@ -49,17 +49,9 @@ class TestNodeTags:
         project_private = ProjectFactory(
             title='Project Two', is_public=False, creator=user)
         project_private.add_contributor(
-            user_admin,
-            permissions=permissions.CREATOR_PERMISSIONS,
-            save=True,
-            notification_type=False
-        )
+            user_admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         project_private.add_contributor(
-            user,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True,
-            notification_type=False
-        )
+            user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         # Sets private project storage cache to avoid need for retries in tests updating public status
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_private._id)
         storage_usage_cache.set(key, 0, settings.STORAGE_USAGE_CACHE_TIMEOUT)
@@ -165,11 +157,10 @@ class TestNodeTags:
                 }
             }
         }
-        with capture_notifications():
-            res = app.patch_json_api(
-                url_private,
-                new_payload,
-                auth=user_admin.auth)
+        res = app.patch_json_api(
+            url_private,
+            new_payload,
+            auth=user_admin.auth)
         assert res.status_code == 200
         assert len(res.json['data']['attributes']['tags']) == 1
         new_payload['data']['attributes']['public'] = False

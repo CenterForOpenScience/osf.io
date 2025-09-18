@@ -222,9 +222,6 @@ RESET_PASSWORD_SUCCESS_STATUS_MESSAGE = (
     'you should have, please contact OSF Support. '
 )
 
-THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE = \
-    'You have recently requested to change your password. Please wait a few minutes before trying again.'
-
 SANCTION_STATUS_MESSAGES = {
     'registration': {
         'approve': 'Your registration approval has been accepted.',

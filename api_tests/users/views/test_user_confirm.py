@@ -1,9 +1,8 @@
 import pytest
+from unittest import mock
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
 from osf_tests.factories import AuthUserFactory
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -114,7 +113,8 @@ class TestConfirmEmail:
         assert res.status_code == 400
         assert 'provider mismatch' in res.json['errors'][0]['detail'].lower()
 
-    def test_post_success_create(self, app, confirm_url, user_with_email_verification):
+    @mock.patch('website.mails.send_mail')
+    def test_post_success_create(self, mock_send_mail, app, confirm_url, user_with_email_verification):
         user, token, email = user_with_email_verification
         user.is_registered = False
         user.save()
@@ -132,6 +132,7 @@ class TestConfirmEmail:
             expect_errors=True
         )
         assert res.status_code == 201
+        assert not mock_send_mail.called
         assert res.json == {
             'redirect_url': f'http://localhost:80/v2/users/{user._id}/confirm/&new=true',
             'meta': {
@@ -146,35 +147,35 @@ class TestConfirmEmail:
         assert user.external_identity == {'ORCID': {'0002-0001-0001-0001': 'VERIFIED'}}
         assert user.emails.filter(address=email.lower()).exists()
 
-    def test_post_success_link(self, app, confirm_url, user_with_email_verification):
+    @mock.patch('website.mails.send_mail')
+    def test_post_success_link(self, mock_send_mail, app, confirm_url, user_with_email_verification):
         user, token, email = user_with_email_verification
         user.external_identity['ORCID']['0000-0000-0000-0000'] = 'LINK'
         user.save()
 
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                confirm_url,
-                {
-                    'data': {
-                        'attributes': {
-                            'uid': user._id,
-                            'token': token,
-                            'destination': 'doesnotmatter'
-                        }
+        res = app.post_json_api(
+            confirm_url,
+            {
+                'data': {
+                    'attributes': {
+                        'uid': user._id,
+                        'token': token,
+                        'destination': 'doesnotmatter'
                     }
-                },
-                expect_errors=True
-            )
-            assert res.status_code == 201
+                }
+            },
+            expect_errors=True
+        )
+        assert res.status_code == 201
 
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
+        assert mock_send_mail.called
 
         user.reload()
         assert user.external_identity['ORCID']['0000-0000-0000-0000'] == 'VERIFIED'
 
+    @mock.patch('website.mails.send_mail')
     def test_post_success_link_with_email_verification_none(
-            self, app, confirm_url, user_with_none_identity
+            self, mock_send_mail, app, confirm_url, user_with_none_identity
     ):
         user, token, email = user_with_none_identity
         user.save()
@@ -194,11 +195,15 @@ class TestConfirmEmail:
         )
         assert res.status_code == 201
 
+        assert not mock_send_mail.called  # no orcid sso message
+
         user.reload()
         assert not user.external_identity
 
+    @mock.patch('website.mails.send_mail')
     def test_post_success_link_with_email_already_exists(
             self,
+            mock_send_mail,
             app,
             confirm_url,
             user_with_email_verification

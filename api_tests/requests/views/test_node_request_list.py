@@ -2,14 +2,13 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
-from osf.models import NotificationType
 
 from osf_tests.factories import NodeFactory, NodeRequestFactory, InstitutionFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
-from tests.utils import capture_notifications, assert_notification
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeRequestListCreate(NodeRequestTestMixin):
     @pytest.fixture()
     def url(self, project):
@@ -30,14 +29,12 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
     def test_noncontrib_can_submit_to_public_node(self, app, project, noncontrib, url, create_payload):
         project.is_public = True
         project.save()
-        with capture_notifications():
-            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
 
     def test_noncontrib_can_submit_to_private_node(self, app, project, noncontrib, url, create_payload):
         assert not project.is_public
-        with capture_notifications():
-            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
 
     def test_must_be_logged_in_to_create(self, app, url, create_payload):
@@ -83,36 +80,28 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         res = app.get(url, create_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 403
 
-    def test_email_sent_to_all_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_sent_to_all_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
         project.is_public = True
         project.save()
-        with capture_notifications() as notifications:
-            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
-
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
+        assert mock_send_grid.call_count == 2
 
-    def test_email_not_sent_to_parent_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
+    def test_email_not_sent_to_parent_admins_on_submit(self, mock_send_grid, app, project, noncontrib, url, create_payload, second_admin):
         component = NodeFactory(parent=project, creator=second_admin)
         component.is_public = True
         project.save()
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'/{API_BASE}nodes/{component._id}/requests/',
-                create_payload,
-                auth=noncontrib.auth
-            )
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        url = f'/{API_BASE}nodes/{component._id}/requests/'
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
+        assert mock_send_grid.call_count == 1
 
     def test_request_followed_by_added_as_contrib(elf, app, project, noncontrib, admin, url, create_payload):
-        with capture_notifications():
-            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         assert project.requests.filter(creator=noncontrib, machine_state='pending').exists()
 
@@ -156,8 +145,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         # Create the first request a basic request_type == `institutional_request` request
         app.post_json_api(url, create_payload, auth=noncontrib.auth)
         node_request = project.requests.get()
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST, user=node_request.creator):
-            node_request.run_accept(project.creator, 'test comment2')
+        node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
         assert node_request.machine_state == 'accepted'
         assert node_request.request_type == 'institutional_request'
@@ -166,8 +154,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         create_payload['data']['attributes']['request_type'] = NodeRequestTypes.ACCESS.value
 
         # Attempt to create a second request, refresh and update as institutional
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED, user=project.creator):
-            res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
+        res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         node_request.refresh_from_db()
         assert node_request.machine_state == 'accepted'

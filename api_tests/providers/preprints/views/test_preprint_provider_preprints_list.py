@@ -14,7 +14,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from osf.utils import permissions
-from tests.utils import capture_notifications
 
 
 class TestPreprintProviderPreprintsListFiltering(PreprintsListFilteringMixin):
@@ -152,11 +151,10 @@ class TestPreprintProviderPreprintListFilteringByReviewableFields(
                     is_published=False,
                     provider=provider,
                     project=ProjectFactory(is_public=True)), ]
-            with capture_notifications():
-                preprints[0].run_submit(user)
-                preprints[0].run_accept(user, 'comment')
-                preprints[1].run_submit(user)
-                preprints[2].run_submit(user)
+            preprints[0].run_submit(user)
+            preprints[0].run_accept(user, 'comment')
+            preprints[1].run_submit(user)
+            preprints[2].run_submit(user)
             return preprints
 
     @pytest.fixture
