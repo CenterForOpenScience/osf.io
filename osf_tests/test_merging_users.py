@@ -6,10 +6,9 @@ from tests.base import OsfTestCase
 
 from framework.celery_tasks import handlers
 from website import settings
-from website.project.signals import contributor_added
-from website.project.views.contributor import notify_added_contributor
 from website.util.metrics import OsfSourceTags
 from framework.auth import Auth
+from framework.auth.views import send_confirm_email
 
 from osf_tests.factories import (
     UserFactory,
@@ -20,8 +19,8 @@ from osf_tests.factories import (
 )
 from importlib import import_module
 from django.conf import settings as django_conf_settings
-from osf.models import UserSessionMap
-from tests.utils import run_celery_tasks
+from osf.models import UserSessionMap, NotificationType
+from tests.utils import run_celery_tasks, capture_notifications
 from waffle.testutils import override_flag
 from osf.features import ENABLE_GV
 
@@ -139,7 +138,6 @@ class TestUserMerging(OsfTestCase):
             'username',
             'verification_key',
             'verification_key_v2',
-            'contributor_added_email_records',
             'requested_deactivation',
         ]
 
@@ -286,12 +284,20 @@ class TestUserMerging(OsfTestCase):
         assert self.user.is_invited is True
         assert self.user in self.project_with_unreg_contrib.contributors
 
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_merge_doesnt_send_signal(self, mock_notify):
-        #Explictly reconnect signal as it is disconnected by default for test
-        contributor_added.connect(notify_added_contributor)
+    def test_merge_doesnt_send_signal(self):
         other_user = UserFactory()
         with override_flag(ENABLE_GV, active=True):
             self.user.merge_user(other_user)
         assert other_user.merged_by._id == self.user._id
-        assert mock_notify.called is False
+
+    def test_send_confirm_email_emits_merge_notification(self):
+        merger = UserFactory()
+        merge_target = UserFactory()
+        target_email = merge_target.username
+
+        merger.add_unconfirmed_email(target_email)
+        merger.save()
+        with capture_notifications() as notifications:
+            send_confirm_email(merger, target_email)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_MERGE

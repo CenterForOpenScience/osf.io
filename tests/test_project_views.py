@@ -20,6 +20,7 @@ from osf_tests.factories import (
     RegistrationFactory,
 )
 from tests.base import OsfTestCase
+from tests.utils import capture_notifications
 
 
 @pytest.mark.enable_bookmark_creation
@@ -359,7 +360,8 @@ class TestProjectViews(OsfTestCase):
         grand_child = NodeFactory(parent=child, creator=user)
         project.save()
 
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         fork.save()
         grand_child_fork = fork.nodes[0].nodes[0]
         assert grand_child_fork.root == fork
@@ -368,7 +370,8 @@ class TestProjectViews(OsfTestCase):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         project.save()
         fork.remove_node(auth)
 
@@ -381,7 +384,8 @@ class TestProjectViews(OsfTestCase):
         user = AuthUserFactory()
         project = ProjectFactory(creator=user)
         auth = Auth(project.creator)
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         project.save()
         registration = RegistrationFactory(project=fork)
 

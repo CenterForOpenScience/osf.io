@@ -1,7 +1,6 @@
 import lxml
 import pytest
 import responses
-from unittest import mock
 
 from datacite import schema40
 from django.utils import timezone
@@ -29,7 +28,6 @@ def _assert_unordered_list_of_dicts_equal(actual_list_of_dicts, expected_list_of
 
 @pytest.mark.django_db
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-@mock.patch('website.mails.settings.USE_EMAIL', False)
 class TestDataCiteClient:
 
     @pytest.fixture()
@@ -155,7 +153,7 @@ class TestDataCiteClient:
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='publication')
+        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='10.31219/FK2osf.io/test!')
         outcome = Outcome.objects.for_registration(registration, create=True)
         data_artifact = outcome.artifact_metadata.create(
             identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
@@ -179,7 +177,7 @@ class TestDataCiteClient:
                 'relationType': 'References',
             },
             {
-                'relatedIdentifier': 'publication',
+                'relatedIdentifier': '10.31219/FK2osf.io/test!',
                 'relatedIdentifierType': 'DOI',
                 'relationType': 'References',
             },

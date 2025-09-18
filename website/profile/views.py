@@ -26,10 +26,9 @@ from framework.status import push_status_message
 from framework.utils import throttle_period_expired
 
 from osf import features
-from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser
+from osf.models import ApiOAuth2Application, ApiOAuth2PersonalToken, OSFUser, NotificationType
 from osf.exceptions import BlockedEmailError, OSFError
 from osf.utils.requests import string_type_request_headers
-from website import mails
 from website import mailchimp_utils
 from website import settings
 from website import language
@@ -188,16 +187,16 @@ def update_user(auth):
 
         # make sure the new username has already been confirmed
         if username and username != user.username and user.emails.filter(address=username).exists():
-
-            mails.send_mail(
-                user.username,
-                mails.PRIMARY_EMAIL_CHANGED,
+            NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED.instance.emit(
+                subscribed_object=user,
                 user=user,
-                new_address=username,
-                can_change_preferences=False,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL
+                event_context={
+                    'user_fullname': user.fullname,
+                    'new_address': username,
+                    'can_change_preferences': False,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                }
             )
-
             # Remove old primary email from subscribed mailing lists
             for list_name, subscription in user.mailchimp_mailing_lists.items():
                 if subscription:
@@ -799,11 +798,14 @@ def request_export(auth):
                         data={'message_long': 'Too many requests. Please wait a while before sending another account export request.',
                               'error_type': 'throttle_error'})
 
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.REQUEST_EXPORT,
-        user=auth.user,
-        can_change_preferences=False,
+    NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
+        user=user,
+        event_context={
+            'user_username': user.username,
+            'user_absolute_url': user.absolute_url,
+            'user__id': user._id,
+            'can_change_preferences': False,
+        }
     )
     user.email_last_sent = timezone.now()
     user.save()

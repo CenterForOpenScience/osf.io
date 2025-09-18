@@ -24,6 +24,7 @@ import datetime
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
+from tests.utils import capture_notifications
 from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -745,7 +746,8 @@ class TestNodeSettingsModel:
             version = factories.FileVersionFactory()
             record.add_version(version)
 
-        fork = node.fork_node(auth_obj)
+        with capture_notifications():
+            fork = node.fork_node(auth_obj)
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
 
@@ -757,7 +759,8 @@ class TestNodeSettingsModel:
         """
         Despite different user regions defaults, the forked node always stay in the same region as it's orginal node.
         """
-        fork = node.fork_node(Auth(user2))
+        with capture_notifications():
+            fork = node.fork_node(Auth(user2))
         assert fork.get_addon('osfstorage').region_id == region.id
 
         # don't inherit or override region

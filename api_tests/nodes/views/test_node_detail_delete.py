@@ -71,7 +71,8 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_private_node_logged_in_read_only_contributor(self, app, user_two, project_private, url_private):
         project_private.add_contributor(
             user_two,
-            permissions=permissions.READ
+            permissions=permissions.READ,
+            notification_type=False
         )
         project_private.save()
         res = app.delete(
@@ -87,7 +88,8 @@ class TestNodeDelete(NodeCRUDTestCase):
     def test_deletes_private_node_logged_in_write_contributor(self, app, user_two, project_private, url_private):
         project_private.add_contributor(
             user_two,
-            permissions=permissions.WRITE
+            permissions=permissions.WRITE,
+            notification_type=False
         )
         project_private.save()
         res = app.delete(
