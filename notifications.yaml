@@ -399,6 +399,12 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/user_message_institutional_access_request.html.mako'
 
+  - name: user_no_login
+    subject: 'We miss you at OSF'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/no_login.html.mako'
+
   #### PROVIDER
   - name: provider_new_pending_submissions
     subject: 'New Pending Submissions'
