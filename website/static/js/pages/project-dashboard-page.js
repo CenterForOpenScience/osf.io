@@ -801,6 +801,16 @@ $(document).ready(function () {
             //#47039　Add　End
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
+
+            markdownElement.find('table, th, td').css({
+                'border': '1px solid #ccc',
+                'padding': '8px'
+            });
+            markdownElement.find('table').css({
+                'border-collapse': 'collapse',
+                'width': '100%'
+            });
+
             markdownElement.show();
         });
     }
