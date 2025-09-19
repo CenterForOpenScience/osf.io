@@ -11,6 +11,7 @@ from osf.exceptions import NodeStateError
 from osf_tests import factories
 from osf_tests.utils import mock_archive
 from osf.utils import permissions
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -135,7 +136,6 @@ class TestSanctionEmailRendering:
         registration.save()
         return registration
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_admin_emails(self, registration, reviews_workflow, branched_from_node):
@@ -146,10 +146,10 @@ class TestSanctionEmailRendering:
         registration.branched_from_node = branched_from_node
         registration.save()
 
-        registration.sanction.ask([(registration.creator, registration)])
+        with capture_notifications():
+            registration.sanction.ask([(registration.creator, registration)])
         assert True  # mail rendered successfully
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
     @pytest.mark.parametrize('reviews_workflow', [None, 'pre-moderation'])
     @pytest.mark.parametrize('branched_from_node', [True, False])
     def test_render_non_admin_emails(
@@ -161,7 +161,8 @@ class TestSanctionEmailRendering:
         registration.branched_from_node = branched_from_node
         registration.save()
 
-        registration.sanction.ask([(contributor, registration)])
+        with capture_notifications():
+            registration.sanction.ask([(contributor, registration)])
         assert True  # mail rendered successfully
 
 
@@ -213,13 +214,15 @@ class TestDOICreation:
         provider.get_group('moderator').user_set.add(moderator)
 
         # Admin approval
-        registration.sanction.accept()
+        with capture_notifications():
+            registration.sanction.accept()
         assert not registration.get_identifier(category='doi')
 
         # Moderator approval
 
         with mock.patch('osf.models.node.AbstractNode.update_search'):
-            registration.sanction.accept(user=moderator)
+            with capture_notifications():
+                registration.sanction.accept(user=moderator)
         assert registration.get_identifier(category='doi')
         # No value should be set if the registration was embargoed
         assert bool(registration.get_identifier_value(category='doi')) != embargoed

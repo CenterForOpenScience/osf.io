@@ -10,6 +10,7 @@ from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
 from osf.registrations.utils import get_registration_provider_submissions_url
+from tests.utils import capture_notifications
 
 from website import settings
 
@@ -159,7 +160,8 @@ class TestRegisterNode:
         # A a node that is not a fork
         assert registration.forked_from is None
         # A node that is a fork
-        fork = project.fork_node(auth)
+        with capture_notifications():
+            fork = project.fork_node(auth)
         registration = factories.RegistrationFactory(project=fork)
         assert registration.forked_from == project
 
@@ -326,7 +328,8 @@ class TestRegisterNode:
         user.add_or_update_affiliated_institution(institution)
         user.save()
 
-        node.add_affiliated_institution(institution, user=user)
+        with capture_notifications():
+            node.add_affiliated_institution(institution, user=user)
         node.save()
 
         registration = factories.RegistrationFactory(project=node)
@@ -370,7 +373,8 @@ class TestRegisterNode:
 
     def test_legacy_private_registrations_can_be_made_public(self, registration, auth):
         registration.is_public = False
-        registration.set_privacy(Node.PUBLIC, auth=auth)
+        with capture_notifications():
+            registration.set_privacy(Node.PUBLIC, auth=auth)
         assert registration.is_public
 
 
@@ -703,11 +707,13 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        embargo.to_PENDING_MODERATION()
+        with capture_notifications():
+            embargo.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-        embargo.to_APPROVED()
+        with capture_notifications():
+            embargo.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.EMBARGO.db_name
 
@@ -729,11 +735,13 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.INITIAL.db_name
 
-        registration_approval.to_PENDING_MODERATION()
+        with capture_notifications():
+            registration_approval.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING.db_name
 
-        registration_approval.to_APPROVED()
+        with capture_notifications():
+            registration_approval.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.ACCEPTED.db_name
 
@@ -753,11 +761,13 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATION()
+        with capture_notifications():
+            retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
-        retraction.to_APPROVED()
+        with capture_notifications():
+            retraction.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
@@ -776,11 +786,13 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATION()
+        with capture_notifications():
+            retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
-        retraction.to_APPROVED()
+        with capture_notifications():
+            retraction.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
@@ -822,11 +834,13 @@ class TestRegistationModerationStates:
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW_REQUEST.db_name
 
-        retraction.to_PENDING_MODERATION()
+        with capture_notifications():
+            retraction.to_PENDING_MODERATION()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.PENDING_WITHDRAW.db_name
 
-        retraction.to_APPROVED()
+        with capture_notifications():
+            retraction.to_APPROVED()
         registration.refresh_from_db()
         assert registration.moderation_state == RegistrationModerationStates.WITHDRAWN.db_name
 
@@ -873,8 +887,12 @@ class TestForcedWithdrawal:
         return registration
 
     def test_force_retraction_changes_state(self, moderated_registration, moderator):
-        moderated_registration.retract_registration(
-            user=moderator, justification='because', moderator_initiated=True)
+        with capture_notifications():
+            moderated_registration.retract_registration(
+                user=moderator,
+                justification='because',
+                moderator_initiated=True
+            )
 
         moderated_registration.refresh_from_db()
         assert moderated_registration.is_retracted
@@ -883,8 +901,12 @@ class TestForcedWithdrawal:
 
     def test_force_retraction_writes_action(self, moderated_registration, moderator):
         justification = 'because power'
-        moderated_registration.retract_registration(
-            user=moderator, justification=justification, moderator_initiated=True)
+        with capture_notifications():
+            moderated_registration.retract_registration(
+                user=moderator,
+                justification=justification,
+                moderator_initiated=True
+            )
 
         expected_justification = 'Force withdrawn by moderator: ' + justification
         assert moderated_registration.retraction.justification == expected_justification

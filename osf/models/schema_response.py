@@ -9,6 +9,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 from .metaschema import RegistrationSchemaBlock
 from .schema_response_block import SchemaResponseBlock
@@ -17,17 +18,13 @@ from osf.utils.fields import NonNaiveDateTimeField
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 
-from website.mails import mails
 from website.reviews.signals import reviews_email_submit_moderators_notifications
-from website.settings import DOMAIN
+from website.settings import (
+    DOMAIN,
+    REGISTRATION_UPDATE_APPROVAL_TIME,
+    REGISTRATION_APPROVAL_TIME,
+)
 
-
-EMAIL_TEMPLATES_PER_EVENT = {
-    'create': mails.SCHEMA_RESPONSE_INITIATED,
-    'submit': mails.SCHEMA_RESPONSE_SUBMITTED,
-    'accept': mails.SCHEMA_RESPONSE_APPROVED,
-    'reject': mails.SCHEMA_RESPONSE_REJECTED,
-}
 
 class SchemaResponse(ObjectIDMixin, BaseModel):
     '''Collects responses for a schema associated with a parent object.
@@ -207,6 +204,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         )
         new_response.save()
         new_response.response_blocks.add(*previous_response.response_blocks.all())
+
         new_response._notify_users(event='create', event_initiator=initiator)
         return new_response
 
@@ -480,31 +478,51 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         if self.state is ApprovalStates.PENDING_MODERATION:
             email_context = notifications.get_email_template_context(resource=self.parent)
             email_context['revision_id'] = self._id
-            email_context['referrer'] = self.initiator
+
+            email_context['requester_contributor_names'] = ''.join(
+                self.parent.contributors.values_list('fullname', flat=True)),
             reviews_email_submit_moderators_notifications.send(
-                timestamp=timezone.now(), context=email_context
+                timestamp=timezone.now(),
+                context=email_context,
+                resource=self.parent
             )
 
-        template = EMAIL_TEMPLATES_PER_EVENT.get(event)
-        if not template:
+        notification_type = {
+            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED.instance,
+            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED.instance,
+            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED.instance,
+            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED.instance,
+        }.get(event)
+        if not notification_type:
             return
 
-        email_context = {
+        event_context = {
             'resource_type': self.parent.__class__.__name__.lower(),
             'title': self.parent.title,
+            'registration_approval_time': int(REGISTRATION_APPROVAL_TIME.total_seconds() / 3600),
+            'registration_update_approval_time': int(REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600),
             'parent_url': self.parent.absolute_url,
             'update_url': self.absolute_url,
-            'initiator': event_initiator.fullname if event_initiator else None,
+            'initiator_fullname': event_initiator.fullname if event_initiator else None,
             'pending_moderation': self.state is ApprovalStates.PENDING_MODERATION,
+            'domain': DOMAIN,
             'provider': self.parent.provider.name if self.parent.provider else '',
+            'requester_contributor_names': ''.join(
+                self.parent.contributors.values_list('fullname', flat=True)),
         }
-
         for contributor, _ in self.parent.get_active_contributors_recursive(unique_users=True):
-            email_context['user'] = contributor
-            email_context['can_write'] = self.parent.has_permission(contributor, 'write')
-            email_context['is_approver'] = contributor in self.pending_approvers.all(),
-            email_context['is_initiator'] = contributor == event_initiator
-            mails.send_mail(to_addr=contributor.username, mail=template, **email_context)
+            event_context.update(
+                {
+                    'can_write': self.parent.has_permission(contributor, 'write'),
+                    'is_approver': contributor in self.pending_approvers.all(),
+                    'user_fullname': contributor.fullname,
+                    'is_initiator': contributor == event_initiator,
+                }
+            )
+            notification_type.emit(
+                user=contributor,
+                event_context=event_context
+            )
 
 
 def _is_updated_response(response_block, new_response):

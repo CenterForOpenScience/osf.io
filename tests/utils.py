@@ -1,18 +1,28 @@
-import contextlib
+import copy
+from collections import Counter
 import datetime
 import functools
-from unittest import mock
+from unittest import mock, SkipTest  # added SkipTest import
+import requests
+import waffle
+import contextlib
+from typing import Any, Optional
 
+from django.apps import apps
 from django.http import HttpRequest
 from django.utils import timezone
 
 from framework.auth import Auth
 from framework.celery_tasks.handlers import celery_teardown_request
+from osf.email import _render_email_html
 from osf_tests.factories import DraftRegistrationFactory
-from osf.models import Sanction
+from osf.models import Sanction, NotificationType, Notification
 from tests.base import get_default_metaschema
 from website.archiver import ARCHIVER_SUCCESS
 from website.archiver import listeners as archiver_listeners
+from website import settings as website_settings
+from osf import features
+
 
 def requires_module(module):
     def decorator(fn):
@@ -28,18 +38,7 @@ def requires_module(module):
 
 
 def assert_logs(log_action, node_key, index=-1):
-    """A decorator to ensure a log is added during a unit test.
-    :param str log_action: NodeLog action
-    :param str node_key: key to get Node instance from self
-    :param int index: list index of log to check against
-
-    Example usage:
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'node')
-    def test_update_node(self):
-        self.node.update({'title': 'New Title'}, auth=self.auth)
-
-    TODO: extend this decorator to check log param correctness?
-    """
+    """Ensure a log is added during a unit test."""
     def outer_wrapper(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -54,19 +53,9 @@ def assert_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
+
 def assert_preprint_logs(log_action, preprint_key, index=-1):
-    """A decorator to ensure a log is added during a unit test.
-    :param str log_action: PreprintLog action
-    :param str preprint_key: key to get Preprint instance from self
-    :param int index: list index of log to check against
-
-    Example usage:
-    @assert_logs(PreprintLog.UPDATED_FIELDS, 'preprint')
-    def test_update_preprint(self):
-        self.preprint.update({'title': 'New Title'}, auth=self.auth)
-
-    TODO: extend this decorator to check log param correctness?
-    """
+    """Ensure a preprint log is added during a unit test."""
     def outer_wrapper(func):
         @functools.wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -80,6 +69,7 @@ def assert_preprint_logs(log_action, preprint_key, index=-1):
             preprint.save()
         return wrapper
     return outer_wrapper
+
 
 def assert_not_logs(log_action, node_key, index=-1):
     def outer_wrapper(func):
@@ -96,92 +86,75 @@ def assert_not_logs(log_action, node_key, index=-1):
         return wrapper
     return outer_wrapper
 
+
 def assert_equals(item_one, item_two):
     item_one.sort()
     item_two.sort()
     assert item_one == item_two
 
+
 @contextlib.contextmanager
-def assert_latest_log(log_action, node_key, index=0):
-    node = node_key
+def assert_latest_log(log_action, node, index=0):
+    """Assert the latest log on `node` matches `log_action`."""
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
+    # Prefer `date` if present on last_log, otherwise `created`
+    if hasattr(last_log, 'date'):
+        new_log = node.logs.order_by('-date')[index]
+    else:
+        new_log = node.logs.order_by('-created')[index]
     assert last_log._id != new_log._id
     assert new_log.action == log_action
 
+
 @contextlib.contextmanager
-def assert_latest_log_not(log_action, node_key, index=0):
-    node = node_key
+def assert_latest_log_not(log_action, node, index=0):
+    """Assert the latest log on `node` does NOT match `log_action`."""
     last_log = node.logs.latest()
     node.reload()
     yield
-    new_log = node.logs.order_by('-date')[index] if hasattr(last_log, 'date') else node.logs.order_by('-created')[index]
+    if hasattr(last_log, 'date'):
+        new_log = node.logs.order_by('-date')[index]
+    else:
+        new_log = node.logs.order_by('-created')[index]
     assert new_log.action != log_action
     assert last_log._id == new_log._id
+
 
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, draft_registration=None, parent=None,
                  embargo=False, embargo_end_date=None,
                  retraction=False, justification=None, autoapprove_retraction=False,
                  autocomplete=True, autoapprove=False):
-    """ A context manager for registrations. When you want to call Node#register_node in
-    a test but do not want to deal with any of this side effects of archiver, this
-    helper allows for creating a registration in a safe fashion.
-
-    :param bool embargo: embargo the registration (rather than RegistrationApproval)
-    :param bool autocomplete: automatically finish archival?
-    :param bool autoapprove: automatically approve registration approval?
-    :param bool retraction: retract the registration?
-    :param str justification: a justification for the retraction
-    :param bool autoapprove_retraction: automatically approve retraction?
-
-    Example use:
-
-    project = ProjectFactory()
-    with mock_archive(project) as registration:
-        assert_true(registration.is_registration)
-        assert_true(registration.archiving)
-        assert_true(registration.is_pending_registration)
-
-    with mock_archive(project, autocomplete=True) as registration:
-        assert_true(registration.is_registration)
-        assert_false(registration.archiving)
-        assert_true(registration.is_pending_registration)
-
-    with mock_archive(project, autocomplete=True, autoapprove=True) as registration:
-        assert_true(registration.is_registration)
-        assert_false(registration.archiving)
-        assert_false(registration.is_pending_registration)
+    """
+    Context manager to create a registration without archiver side effects.
     """
     schema = schema or get_default_metaschema()
     auth = auth or Auth(project.creator)
-    draft_registration = draft_registration or DraftRegistrationFactory(branched_from=project, registration_schema=schema)
+    draft_registration = draft_registration or DraftRegistrationFactory(
+        branched_from=project, registration_schema=schema
+    )
 
     with mock.patch('framework.celery_tasks.handlers.enqueue_task'):
         registration = draft_registration.register(auth=auth, save=True)
 
     if embargo:
-        embargo_end_date = embargo_end_date or (
-            timezone.now() + datetime.timedelta(days=20)
-        )
-        registration.root.embargo_registration(
-            project.creator,
-            embargo_end_date
-        )
+        embargo_end_date = embargo_end_date or (timezone.now() + datetime.timedelta(days=20))
+        registration.root.embargo_registration(project.creator, embargo_end_date)
     else:
         registration.root.require_approval(project.creator)
+
     if autocomplete:
         root_job = registration.root.archive_job
         root_job.status = ARCHIVER_SUCCESS
         root_job.sent = False
         root_job.done = True
         root_job.save()
-        sanction = registration.root.sanction
-        mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True))
-        mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock())
-        archiver_listeners.archive_callback(registration)
+        # Ensure patches actually apply:
+        with mock.patch.object(root_job, 'archive_tree_finished', mock.Mock(return_value=True)), \
+             mock.patch('website.archiver.tasks.archive_success.delay', mock.Mock()):
+            archiver_listeners.archive_callback(registration)
 
     if autoapprove:
         sanction = registration.root.sanction
@@ -197,57 +170,426 @@ def mock_archive(project, schema=None, auth=None, draft_registration=None, paren
         registration.save()
     yield registration
 
+
 def make_drf_request(*args, **kwargs):
     from rest_framework.request import Request
     http_request = HttpRequest()
-    # The values here don't matter; they just need
-    # to be present
+    http_request.method = 'GET'
+    http_request.path = '/'
     http_request.META['SERVER_NAME'] = 'localhost'
-    http_request.META['SERVER_PORT'] = 8000
-    # A DRF Request wraps a Django HttpRequest
+    http_request.META['SERVER_PORT'] = '8000'  # ensure string
     return Request(http_request, *args, **kwargs)
+
 
 def make_drf_request_with_version(version='2.0', *args, **kwargs):
     req = make_drf_request(*args, **kwargs)
-    req.parser_context['kwargs'] = {'version': 'v2'}
+    req.parser_context.setdefault('kwargs', {})
+    req.parser_context['kwargs']['version'] = 'v2'
     req.version = version
     return req
 
-class MockAuth:
 
+class MockAuth:
     def __init__(self, user):
         self.user = user
         self.logged_in = True
         self.private_key = None
         self.private_link = None
 
-mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))
+
+mock_auth = lambda user: mock.patch(
+    'framework.auth.Auth.from_kwargs',
+    mock.Mock(return_value=MockAuth(user))
+)
+
 
 def unique(factory):
     """
-    Turns a factory function into a new factory function that guarentees unique return
-    values. Note this uses regular item equivalence to check uniqueness, so this may not
-    behave as expected with factories with complex return values.
-
-    Example use:
-    unique_name_factory = unique(fake.name)
-    unique_name = unique_name_factory()
+    Turn a factory function into one that guarantees unique return values.
     """
     used = []
     @functools.wraps(factory)
     def wrapper():
         item = factory()
-        over = 0
+        attempts = 0
         while item in used:
-            if over > 100:
-                raise RuntimeError('Tried 100 times to generate a unqiue value, stopping.')
+            if attempts > 100:
+                raise RuntimeError('Tried 100 times to generate a unique value, stopping.')
             item = factory()
-            over += 1
+            attempts += 1
         used.append(item)
         return item
     return wrapper
+
 
 @contextlib.contextmanager
 def run_celery_tasks():
     yield
     celery_teardown_request()
+
+import re, html as html_lib, difflib
+
+
+# Matches a wide range of ISO-like datetimes (with optional microseconds and timezone)
+_ISO_DT = re.compile(
+    r'\b\d{4}-\d{2}-\d{2}[ T]'
+    r'\d{2}:\d{2}:\d{2}(?:\.\d+)?'
+    r'(?:Z|[+-]\d{2}:?\d{2}|[+-]\d{4}|(?:\s*UTC)|(?:\s*\+\d{2}:\d{2}))?\b'
+)
+
+# Matches tuple-ish renderings like: ('2025-09-02 11:58:52.741685+00:00',)
+_TUPLE_WRAP = re.compile(r"\(\s*'([^']+)'\s*,?\s*\)")
+
+def _canon_html(s: str) -> str:
+    s = html_lib.unescape(s or '')
+    # normalize newlines/whitespace around tags
+    s = s.replace('\r\n', '\n').replace('\r', '\n')
+    s = re.sub(r'>\s+<', '><', s)
+    s = re.sub(r'\s+', ' ', s).strip()
+
+    # 1) unwrap tuple-like timestamp values: ('…',) -> …
+    s = _TUPLE_WRAP.sub(r'\1', s)
+
+    # 2) normalize any iso-ish datetime to a stable token
+    s = _ISO_DT.sub('<<TS>>', s)
+
+    return s
+
+@contextlib.contextmanager
+def capture_notifications(capture_email: bool = True, passthrough: bool = False):
+    """
+    Capture NotificationType.emit calls and (optionally) email sends.
+    Surfaces helpful template errors if rendering fails.
+    """
+    try:
+        from osf.email import _extract_vars as _extract_template_vars
+    except Exception:
+        _extract_template_vars = None
+
+    NotificationTypeModel = apps.get_model('osf', 'NotificationType')
+    captured = {'emits': [], 'emails': []}
+
+    # Patch the instance method so ALL emit paths are captured
+    _real_emit = NotificationTypeModel.emit
+
+    def _wrapped_emit(self, *emit_args, **emit_kwargs):
+        # deep-copy dict-like contexts so later mutations won’t affect captures
+        ek = dict(emit_kwargs)
+        if isinstance(ek.get('event_context'), dict):
+            ek['event_context'] = copy.deepcopy(ek['event_context'])
+        if isinstance(ek.get('email_context'), dict):
+            ek['email_context'] = copy.deepcopy(ek['email_context'])
+
+        captured['emits'].append({
+            'type': getattr(self, 'name', None),
+            'args': emit_args,
+            'kwargs': ek,
+            '_is_digest': ek.get('is_digest'),
+        })
+        if passthrough:
+            return _real_emit(self, *emit_args, **ek)
+
+    patches = [
+        mock.patch('osf.models.notification_type.NotificationType.emit', new=_wrapped_emit),
+    ]
+
+    if capture_email:
+        from osf import email as _osf_email
+        _real_send_over_smtp = _osf_email.send_email_over_smtp
+        _real_send_with_sendgrid = _osf_email.send_email_with_send_grid
+
+        def _fake_send_over_smtp(to_email, notification_type, context=None, email_context=None):
+            captured['emails'].append({
+                'protocol': 'smtp',
+                'to': to_email,
+                'notification_type': notification_type,
+                'context': context.copy() if isinstance(context, dict) else context,
+                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
+            })
+            if passthrough:
+                return _real_send_over_smtp(to_email, notification_type, context, email_context)
+
+        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None):
+            captured['emails'].append({
+                'protocol': 'sendgrid',
+                'to': user,
+                'notification_type': notification_type,
+                'context': context.copy() if isinstance(context, dict) else context,
+                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
+            })
+            if passthrough:
+                return _real_send_with_sendgrid(user, notification_type, context, email_context)
+
+        patches.extend([
+            mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),
+            mock.patch('osf.email.send_email_with_send_grid', new=_fake_send_with_sendgrid),
+        ])
+
+    with contextlib.ExitStack() as stack:
+        for p in patches:
+            stack.enter_context(p)
+        yield captured
+
+    if not captured['emits']:
+        raise AssertionError(
+            'No notifications were emitted. '
+            'Expected at least one call to NotificationType.emit. '
+            'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
+        )
+
+    # Validate each captured emit renders (to catch missing template vars early)
+    for idx, rec in enumerate(captured.get('emits', []), start=1):
+        nt = NotificationType.objects.get(name=rec.get('type'))
+        template_text = getattr(nt, 'template', '') or ''
+        ctx = rec['kwargs'].get('event_context', {}) or {}
+        try:
+            rendered = _render_email_html(nt, ctx)
+        except Exception as e:
+            # Try to hint at missing variables if possible
+            missing_hint = ''
+            if _extract_template_vars and isinstance(ctx, dict):
+                try:
+                    needed = set(_extract_template_vars(template_text))
+                    missing = sorted(v for v in needed if v not in ctx)
+                    if missing:
+                        missing_hint = f' Missing variables: {missing}.'
+                except Exception:
+                    pass
+            raise AssertionError(
+                f'Email render failed for notification "{getattr(nt, "name", "(unknown)")}" '
+                f'with error: {type(e).__name__}: {e}.{missing_hint}'
+            ) from e
+
+        # Fail if rendering produced nothing
+        if not isinstance(rendered, str) or not rendered.strip():
+            missing_hint = ''
+            if _extract_template_vars and isinstance(ctx, dict):
+                try:
+                    needed = set(_extract_template_vars(template_text))
+                    missing = sorted(v for v in needed if v not in ctx)
+                    if missing:
+                        missing_hint = f' Likely missing variables: {missing}.'
+                except Exception:
+                    pass
+            raise AssertionError(
+                f'Email render produced empty/blank HTML for notification "{getattr(nt, "name", "(unknown)")}".'
+                f'{missing_hint}'
+            )
+
+        # Fail if rendering just echoed the raw template text (Mako likely failed)
+        if template_text and rendered.strip() == template_text.strip():
+            raise AssertionError(
+                f'Email render returned the raw template (no interpolation) for '
+                f'"{getattr(nt, "name", "(unknown)")}"; template rendering likely failed.'
+            )
+
+
+def get_mailhog_messages():
+    """Fetch messages from MailHog API."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return {'count': 0, 'items': []}
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v2/messages'
+    response = requests.get(mailhog_url)
+    if response.status_code == 200:
+        return response.json()
+    return {'count': 0, 'items': []}
+
+
+def delete_mailhog_messages():
+    """Delete all messages from MailHog."""
+    if not waffle.switch_is_active(features.ENABLE_MAILHOG):
+        return
+    mailhog_url = f'{website_settings.MAILHOG_API_HOST}/api/v1/messages'
+    requests.delete(mailhog_url)
+
+
+def assert_emails(mailhog_messages, notifications):
+    """
+    Compare rendered expected HTML vs MailHog actual HTML in a deterministic way.
+    We sort by recipient to avoid flaky ordering differences.
+    """
+    # Build expected list [(recipient, html)]
+    expected = []
+    expected_digest = []
+
+    for item in notifications['emits']:
+        to_username = item['kwargs']['user'].username
+        nt = NotificationType.objects.get(name=item['type'])
+        html = _render_email_html(nt, item['kwargs']['event_context'])
+        if item.get('_is_digest'):
+            expected_digest.append((to_username, nt))
+        else:
+            expected.append((to_username, _canon_html(html)))
+
+    # Build actual list [(recipient, html)]
+    actual = []
+    for msg in mailhog_messages.get('items', []):
+        to_addr = msg['Content']['Headers']['To'][0]
+        body = msg['Content']['Body']
+        actual.append((to_addr, _canon_html(body)))
+
+    # Sort and compare
+    expected_sorted = sorted(expected, key=lambda x: x[0])
+    actual_sorted = sorted(actual, key=lambda x: x[0])
+
+    exp_html = [h for _, h in expected_sorted]
+    act_html = [h for _, h in actual_sorted]
+    exp_to = [r for r, _ in expected_sorted]
+    act_to = [r for r, _ in actual_sorted]
+
+    if exp_html != act_html:
+        # helpful diff for the first mismatch
+        for i, (eh, ah) in enumerate(zip(exp_html, act_html)):
+            if eh != ah:
+                diff = '\n'.join(difflib.unified_diff(eh.split(), ah.split(), lineterm=''))
+                raise AssertionError(
+                    f"Rendered HTML bodies differ (sorted by recipient) at index {i} "
+                    f"({exp_to[i]}):\n{diff}"
+                )
+    assert exp_to == act_to, 'Recipient lists differ (sorted).'
+
+    digest_notifications_qs = Notification.objects.filter(sent__isnull=True)
+
+    if expected_digest:
+        assert len(expected_digest) == digest_notifications_qs.count()
+        for to_username, nt in expected_digest:
+            assert digest_notifications_qs.filter(subscription__user__username=to_username, subscription__notification_type=nt).exists()
+
+
+def _notif_type_name(t: Any) -> str:
+    """Normalize a NotificationType-ish input to its lowercase name."""
+    if t is None:
+        return ''
+    n = getattr(t, 'name', None)
+    if n:
+        return str(n).strip().lower()
+    for attr in ('value', 'NAME', 'name'):
+        if hasattr(t, attr):
+            try:
+                return str(getattr(t, attr)).strip().lower()
+            except Exception:
+                pass
+    return str(t).strip().lower()
+
+
+def _safe_user_id(u: Any) -> Optional[str]:
+    """Normalize user object to stable identifier."""
+    if u is None:
+        return None
+    for attr in ('_id', 'id', 'guids', 'guid', 'pk'):
+        if hasattr(u, attr):
+            try:
+                val = getattr(u, attr)
+                if hasattr(val, 'first'):
+                    g = val.first()
+                    if g and hasattr(g, '_id'):
+                        return g._id
+                if isinstance(val, (str, int)):
+                    return str(val)
+            except Exception:
+                pass
+    return f'obj:{id(u)}'
+
+
+def _safe_obj_id(o: Any) -> Optional[str]:
+    """Normalize object to stable identifier."""
+    if o is None:
+        return None
+    for attr in ('_id', 'id', 'guid', 'guids', 'pk'):
+        if hasattr(o, attr):
+            try:
+                val = getattr(o, attr)
+                if hasattr(val, 'first'):
+                    g = val.first()
+                    if g and hasattr(g, '_id'):
+                        return g._id
+                if isinstance(val, (str, int)):
+                    return str(val)
+            except Exception:
+                pass
+    return f'obj:{id(o)}'
+
+
+@contextlib.contextmanager
+def assert_notification(
+    *,
+    type,                       # NotificationType, NotificationType.Type, or str
+    user: Any = None,           # optional user object to match
+    subscribed_object: Any = None,  # optional object (e.g., node) to match
+    times: int = 1,             # exact number of emits expected
+    at_least: bool = False,     # if True, assert >= times instead of == times
+    assert_email: Optional[bool] = None,  # True: must send email; False: must not; None: ignore
+    passthrough: bool = False   # pass emails through to real senders if desired
+):
+    """
+    Usage:
+        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=self.user):
+            <code that emits>
+    """
+    expected_type = _notif_type_name(type)
+    expected_user_id = _safe_user_id(user) if user is not None else None
+    expected_obj_id = _safe_obj_id(subscribed_object) if subscribed_object is not None else None
+
+    # Capture emits (and optionally email) while the code under test runs
+    with capture_notifications(capture_email=(assert_email is not False), passthrough=passthrough) as cap:
+        yield cap
+
+    # ---- Filter emits by criteria ----
+    def _emit_matches(e) -> bool:
+        if expected_type and str(e.get('type', '')).strip().lower() != expected_type:
+            return False
+        kw = e.get('kwargs', {})
+        if user is not None:
+            u = kw.get('user')
+            if u is None or _safe_user_id(u) != expected_user_id:
+                return False
+        if subscribed_object is not None:
+            so = kw.get('subscribed_object')
+            if so is None or _safe_obj_id(so) != expected_obj_id:
+                return False
+        return True
+
+    matching_emits = [e for e in cap.get('emits', []) if _emit_matches(e)]
+    count = len(matching_emits)
+
+    if at_least:
+        assert count >= times, (
+            f'Expected at least {times} emits of type "{expected_type}"'
+            f'{f" for user {expected_user_id}" if user is not None else ""}'
+            f'{f" and object {expected_obj_id}" if subscribed_object is not None else ""}, '
+            f'but saw {count}. All emits: {cap.get("emits", [])}'
+        )
+    else:
+        assert count == times, (
+            f'Expected exactly {times} emits of type "{expected_type}"'
+            f'{f" for user {expected_user_id}" if user is not None else ""}'
+            f'{f" and object {expected_obj_id}" if subscribed_object is not None else ""}, '
+            f'but saw {count}. All emits: {cap.get("emits", [])}'
+        )
+
+    # ---- Optional email assertions ----
+    if assert_email is not None:
+        def _email_matches(rec) -> bool:
+            nt = rec.get('notification_type')
+            name = getattr(nt, 'name', None)
+            if not name or name.strip().lower() != expected_type:
+                return False
+            if user is not None:
+                to_field = rec.get('to')
+                if hasattr(to_field, '_id') or hasattr(to_field, 'id'):
+                    return _safe_user_id(to_field) == expected_user_id
+            return True
+
+        email_matches = [r for r in cap.get('emails', []) if _email_matches(r)]
+        if assert_email:
+            assert email_matches, (
+                f'Expected an email for notification "{expected_type}"'
+                f'{f" to user {expected_user_id}" if user is not None else ""} '
+                f'but none were captured. All emails: {cap.get("emails", [])}'
+            )
+        else:
+            assert not email_matches, (
+                f'Expected NO email for notification "{expected_type}"'
+                f'{f" to user {expected_user_id}" if user is not None else ""} '
+                f'but captured: {email_matches}'
+            )
