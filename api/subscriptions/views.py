@@ -71,17 +71,17 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 ),
                 When(
                     notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
-                    then=Value('global_file_updated'),
+                    then=Value(f'{user_guid}_global_file_updated'),
                 ),
             ),
             legacy_id=Case(
                 When(
-                    notification_type=NotificationType.Type.NODE_FILES_UPDATED.instance,
+                    notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
                     then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
                 When(
                     notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
-                    then=Value(f'{user_guid}_global'),
+                    then=Value(f'{user_guid}_global_file_updated'),
                 ),
                 When(
                     Q(notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance) &
@@ -140,27 +140,26 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             obj_filter = Q(
                 object_id=getattr(subscription_obj, 'id', None),
                 content_type=ContentType.objects.get_for_model(subscription_obj.__class__),
-                notification_type__name__icontains=event,
+                notification_type__in=[
+                    NotificationType.Type.USER_FILE_UPDATED.instance,
+                    NotificationType.Type.NODE_FILE_UPDATED.instance,
+                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+                ],
             )
         else:
             obj_filter = Q()
 
         try:
             obj = NotificationSubscription.objects.annotate(
-                notification_type__in=[
-                    NotificationType.Type.USER_FILE_UPDATED.instance,
-                    NotificationType.Type.NODE_FILE_UPDATED.instance,
-                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
-                ],
                 legacy_id=Case(
                     When(
-                        notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                        notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                         content_type=node_ct,
                         then=Concat(Subquery(node_subquery), Value('_file_updated')),
                     ),
                     When(
                         notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
-                        then=Value(f'{user_guid}_global'),
+                        then=Value(f'{user_guid}_global_file_updated'),
                     ),
                     When(
                         notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,

@@ -37,7 +37,11 @@ class SubscriptionSerializer(JSONAPISerializer):
         return obj.absolute_api_v2_url
 
     def update(self, instance, validated_data):
-        instance.message_frequency = validated_data.get['frequency']
+        freq = validated_data.get('message_frequency')
+        if freq is None:
+            freq = validated_data.get('frequency')
+        instance.message_frequency = freq
+        instance.save()
         return instance
 
 
