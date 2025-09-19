@@ -2518,8 +2518,8 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
-        assert guid_obj.object_id == preprint_pre_mod.pk
-        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
         new_version.run_accept(moderator, 'comment')
@@ -2552,8 +2552,8 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_published is False
         assert new_version.machine_state == ReviewStates.PENDING.value
         guid_obj = new_version.get_guid()
-        assert guid_obj.object_id == preprint_pre_mod.pk
-        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
         assert guid_obj.content_type == ContentType.objects.get_for_model(Preprint)
 
         new_version.run_reject(moderator, 'comment')
@@ -2561,8 +2561,8 @@ class TestPreprintVersionWithModeration:
         assert new_version.machine_state == ReviewStates.REJECTED.value
         assert new_version.versioned_guids.first().is_rejected is True
         guid_obj = new_version.get_guid()
-        assert guid_obj.object_id == preprint_pre_mod.pk
-        assert guid_obj.referent == preprint_pre_mod
+        assert guid_obj.object_id == new_version.pk
+        assert guid_obj.referent == new_version
 
     def test_unpublished_preprint_post_mod_submit_and_accept(self, unpublished_preprint_post_mod, creator, moderator):
         assert unpublished_preprint_post_mod.is_published is False
