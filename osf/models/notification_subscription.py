@@ -107,7 +107,7 @@ class NotificationSubscription(BaseModel):
     @property
     def absolute_api_v2_url(self):
         from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
+        return absolute_reverse('subscriptions:subscription-detail', kwargs={'subscription_id': self._id, 'version': 'v2'})
 
     @property
     def _id(self):

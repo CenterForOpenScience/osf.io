@@ -1,4 +1,4 @@
-from django.db.models import Value, When, Case, F, Q, OuterRef, Subquery
+from django.db.models import Value, When, Case, Q, OuterRef, Subquery
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
 from django.contrib.contenttypes.models import ContentType
@@ -56,35 +56,38 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        return NotificationSubscription.objects.filter(user=self.request.user).annotate(
+        return NotificationSubscription.objects.filter(
+            notification_type__in=[
+                NotificationType.Type.USER_FILE_UPDATED.instance,
+                NotificationType.Type.NODE_FILE_UPDATED.instance,
+                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            ],
+            user=self.request.user,
+        ).annotate(
             event_name=Case(
                 When(
-                    notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                    notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
                     then=Value('files_updated'),
                 ),
                 When(
-                    notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+                    notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
                     then=Value('global_file_updated'),
                 ),
-                default=F('notification_type__name'),
-                output_field=CharField(),
             ),
             legacy_id=Case(
                 When(
-                    notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                    notification_type=NotificationType.Type.NODE_FILES_UPDATED.instance,
                     then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
                 When(
-                    notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+                    notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
                     then=Value(f'{user_guid}_global'),
                 ),
                 When(
-                    Q(notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value) &
+                    Q(notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance) &
                     Q(content_type=provider_ct),
                     then=Concat(Subquery(provider_subquery), Value('_new_pending_submissions')),
                 ),
-                default=F('notification_type__name'),
-                output_field=CharField(),
             ),
         )
 
@@ -144,6 +147,11 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
         try:
             obj = NotificationSubscription.objects.annotate(
+                notification_type__in=[
+                    NotificationType.Type.USER_FILE_UPDATED.instance,
+                    NotificationType.Type.NODE_FILE_UPDATED.instance,
+                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+                ],
                 legacy_id=Case(
                     When(
                         notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
