@@ -6,6 +6,7 @@ from django.db import transaction
 from django.db.models import Prefetch
 
 from osf.models import GuidVersionsThrough, Guid, Preprint
+from osf.utils.workflows import ReviewStates
 
 logger = logging.getLogger(__name__)
 
@@ -45,20 +46,23 @@ def fix_versioned_guids(dry_run: bool):
         if not guid.versions:
             skipped_count += 1
             continue
-        last_version: GuidVersionsThrough = guid.versions.first()
-        last_version_object_id = last_version.object_id
-        if guid.object_id != last_version_object_id:
+        for version in guid.versions.all():
+            last_version_object_id = version.object_id
+            if guid.object_id == last_version_object_id:
+                skipped_count += 1
+                break
+            if version.referent.machine_state == ReviewStates.INITIAL.value:
+                continue
             try:
                 guid.object_id = last_version_object_id
-                guid.referent = last_version.referent
+                guid.referent = version.referent
                 if not dry_run:
                     guid.save()
                 updated_count += 1
             except Exception as e:
                 logger.error(f"Error occurred during patching {guid._id=}", exc_info=e)
                 errors_count += 1
-        else:
-            skipped_count += 1
+
     if dry_run:
         logger.error(
             f"Processed: {processed_count}, Would update: {updated_count}, Skipped: {skipped_count}, Errors: {errors_count}"
