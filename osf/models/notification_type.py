@@ -203,6 +203,10 @@ class NotificationType(models.Model):
             message_frequency (optional): Initializing message frequency.
             event_context (dict, optional): Context for rendering the notification template.
             email_context (dict, optional): Context for additional email notification information, so as blind cc etc
+            is_digest (bool, optional): is this email part of a larger digest notification?
+            save (bool, optional): save the notification and creates a subscription object if true, otherwise just
+            send the notification with no db transaction, therefore message_frequency should always be 'instantly' when
+            used.
         """
         from osf.models.notification_subscription import NotificationSubscription
         if not save:
