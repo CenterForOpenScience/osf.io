@@ -10,6 +10,7 @@ from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNo
 from osf_tests.test_node_license import TestNodeLicenses
 from django.utils import timezone
 
+from tests.utils import capture_notifications
 from website import settings
 
 from . import factories
@@ -67,17 +68,6 @@ class TestDraftRegistrations:
         assert not draft.registered_node
         draft.register(auth)
         assert draft.registered_node
-
-        # group member with admin access cannot register
-        member = factories.AuthUserFactory()
-        osf_group = factories.OSFGroupFactory(creator=user)
-        osf_group.make_member(member, auth=auth)
-        project.add_osf_group(osf_group, ADMIN)
-        draft_2 = factories.DraftRegistrationFactory(branched_from=project)
-        assert project.has_permission(member, ADMIN)
-        with pytest.raises(PermissionsError):
-            draft_2.register(Auth(member))
-        assert not draft_2.registered_node
 
     @mock.patch('website.settings.ENABLE_ARCHIVER', False)
     def test_register_no_title_fails(self):
@@ -198,9 +188,7 @@ class TestDraftRegistrations:
         node = factories.ProjectFactory(creator=user)
 
         member = factories.AuthUserFactory()
-        osf_group = factories.OSFGroupFactory(creator=user)
-        osf_group.make_member(member, auth=Auth(user))
-        node.add_osf_group(osf_group, ADMIN)
+        node.add_contributor(member, permissions=ADMIN)
 
         write_contrib = factories.AuthUserFactory()
         subject = factories.SubjectFactory()
@@ -246,8 +234,6 @@ class TestDraftRegistrations:
         assert draft.category == category
         assert user in draft.contributors.all()
         assert write_contrib in draft.contributors.all()
-        assert member not in draft.contributors.all()
-        assert not draft.has_permission(member, 'read')
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]
@@ -264,10 +250,11 @@ class TestDraftRegistrations:
         assert draft.branched_from == node
 
     def test_create_from_node_draft_node(self, user):
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         assert draft.title == ''
         assert draft.description == ''
@@ -355,13 +342,14 @@ class TestDraftRegistrationContributorMethods():
     def test_add_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth
+            )
         last_log = draft_registration.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -393,8 +381,12 @@ class TestDraftRegistrationContributorMethods():
         assert len(draft_registration.contributors) == 2
 
     def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
-        new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
+        new_user = draft_registration.add_unregistered_contributor(
+            fullname='David Davidson',
+            email='david@davidson.com',
+            auth=auth,
+            notification_type=False
+        )
         draft_registration.save()
         assert draft_registration.is_contributor(new_user)  # sanity check
         assert draft_registration._primary_key in new_user.unclaimed_records
@@ -425,7 +417,11 @@ class TestDraftRegistrationContributorMethods():
 
     def test_non_visible_initiator(self, project, user):
         invisible_user = factories.UserFactory()
-        project.add_contributor(contributor=invisible_user, permissions=ADMIN, visible=False)
+        project.add_contributor(
+            contributor=invisible_user,
+            permissions=ADMIN,
+            visible=False,
+        )
         invisible_project_contributor = project.contributor_set.get(user=invisible_user)
         assert invisible_project_contributor.visible is False
 
@@ -508,13 +504,14 @@ class TestDraftRegistrationContributorMethods():
     def test_remove_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth
+            )
         assert user1 in draft_registration.contributors
         assert user2 in draft_registration.contributors
         assert draft_registration.has_permission(user1, WRITE)

@@ -8,6 +8,7 @@ from rdflib import Literal, URIRef
 
 from api_tests.utils import create_test_file
 from framework.auth import Auth
+from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.metadata import osf_gathering
 from osf.metadata.rdfutils import (
     FOAF,
@@ -28,6 +29,7 @@ from osf.metrics.reports import PublicItemUsageReport
 from osf.metrics.utils import YearMonth
 from osf.utils import permissions, workflows
 from osf_tests import factories
+from tests.utils import capture_notifications
 from website import settings as website_settings
 from website.project import new_bookmark_collection
 from osf_tests.metadata._utils import assert_triples
@@ -36,6 +38,8 @@ from osf_tests.metadata._utils import assert_triples
 class TestOsfGathering(TestCase):
     @classmethod
     def setUpTestData(cls):
+
+        populate_notification_types()
         # users:
         cls.user__admin = factories.UserFactory()
         cls.user__readwrite = factories.UserFactory(
@@ -559,8 +563,9 @@ class TestOsfGathering(TestCase):
         institution = factories.InstitutionFactory()
         institution_iri = URIRef(institution.ror_uri)
         self.user__admin.add_or_update_affiliated_institution(institution)
-        self.project.add_affiliated_institution(institution, self.user__admin)
-        self.preprint.add_affiliated_institution(institution, self.user__admin)
+        with capture_notifications():
+            self.project.add_affiliated_institution(institution, self.user__admin)
+            self.preprint.add_affiliated_institution(institution, self.user__admin)
         assert_triples(osf_gathering.gather_affiliated_institutions(self.projectfocus), {
             (self.projectfocus.iri, OSF.affiliation, institution_iri),
             (institution_iri, RDF.type, DCTERMS.Agent),
@@ -665,11 +670,15 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__admin), {
             (self.userfocus__admin.iri, RDF.type, FOAF.Person),
             (self.userfocus__admin.iri, FOAF.name, Literal(self.user__admin.fullname)),
+            (self.userfocus__admin.iri, FOAF.givenName, Literal(self.user__admin.given_name)),
+            (self.userfocus__admin.iri, FOAF.familyName, Literal(self.user__admin.family_name)),
         })
         # focus: readwrite user
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__readwrite), {
             (self.userfocus__readwrite.iri, RDF.type, FOAF.Person),
             (self.userfocus__readwrite.iri, FOAF.name, Literal(self.user__readwrite.fullname)),
+            (self.userfocus__readwrite.iri, FOAF.givenName, Literal(self.user__readwrite.given_name)),
+            (self.userfocus__readwrite.iri, FOAF.familyName, Literal(self.user__readwrite.family_name)),
             (self.userfocus__readwrite.iri, DCTERMS.identifier, Literal('https://orcid.org/1234-4321-5678-8765')),
             (self.userfocus__readwrite.iri, OWL.sameAs, URIRef('https://orcid.org/1234-4321-5678-8765')),
         })
@@ -677,6 +686,8 @@ class TestOsfGathering(TestCase):
         assert_triples(osf_gathering.gather_user_basics(self.userfocus__readonly), {
             (self.userfocus__readonly.iri, RDF.type, FOAF.Person),
             (self.userfocus__readonly.iri, FOAF.name, Literal(self.user__readonly.fullname)),
+            (self.userfocus__readonly.iri, FOAF.givenName, Literal(self.user__readonly.given_name)),
+            (self.userfocus__readonly.iri, FOAF.familyName, Literal(self.user__readonly.family_name)),
             # orcid not verified, should be excluded
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://mysite.example')),
             (self.userfocus__readonly.iri, DCTERMS.identifier, Literal('http://myothersite.example/foo')),
@@ -690,11 +701,12 @@ class TestOsfGathering(TestCase):
             reviews_workflow='post-moderation',
         )
         _collection = factories.CollectionFactory(provider=_collection_provider)
-        osfdb.CollectionSubmission.objects.create(
-            guid=self.project.guids.first(),
-            collection=_collection,
-            creator=self.project.creator,
-        )
+        with capture_notifications():
+            osfdb.CollectionSubmission.objects.create(
+                guid=self.project.guids.first(),
+                collection=_collection,
+                creator=self.project.creator,
+            )
         _collection_ref = rdflib.URIRef(
             f'{website_settings.DOMAIN}collections/{_collection_provider._id}',
         )

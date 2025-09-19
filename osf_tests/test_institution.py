@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from addons.osfstorage.models import Region
-from osf.models import Institution, InstitutionStorageRegion
+from osf.models import Institution, InstitutionStorageRegion, NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
@@ -12,7 +12,7 @@ from osf_tests.factories import (
     RegionFactory,
     UserFactory,
 )
-from website import mails, settings
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -146,9 +146,7 @@ class TestInstitutionManager:
         institution.reactivate()
         assert institution.deactivated is None
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_send_deactivation_email_call_count(self, mock_send_mail):
+    def test_send_deactivation_email_call_count(self):
         institution = InstitutionFactory()
         user_1 = UserFactory()
         user_1.add_or_update_affiliated_institution(institution)
@@ -156,25 +154,21 @@ class TestInstitutionManager:
         user_2 = UserFactory()
         user_2.add_or_update_affiliated_institution(institution)
         user_2.save()
-        institution._send_deactivation_email()
-        assert mock_send_mail.call_count == 2
+        with capture_notifications() as notifications:
+            institution._send_deactivation_email()
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
 
-    @mock.patch('website.mails.settings.USE_EMAIL', False)
-    @mock.patch('website.mails.send_mail', return_value=None, side_effect=mails.send_mail)
-    def test_send_deactivation_email_call_args(self, mock_send_mail):
+    def test_send_deactivation_email_call_args(self):
         institution = InstitutionFactory()
         user = UserFactory()
         user.add_or_update_affiliated_institution(institution)
         user.save()
-        institution._send_deactivation_email()
-        forgot_password = 'forgotpassword' if settings.DOMAIN.endswith('/') else '/forgotpassword'
-        mock_send_mail.assert_called_with(
-            to_addr=user.username,
-            mail=mails.INSTITUTION_DEACTIVATION,
-            user=user,
-            forgot_password_link=f'{settings.DOMAIN}{forgot_password}',
-            osf_support_email=settings.OSF_SUPPORT_EMAIL
-        )
+        with capture_notifications() as notifications:
+            institution._send_deactivation_email()
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
 
     def test_deactivate_inactive_institution_noop(self):
         institution = InstitutionFactory()

@@ -14,7 +14,6 @@ import itsdangerous
 import pytz
 from dirtyfields import DirtyFieldsMixin
 
-from django.apps import apps
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.hashers import check_password
@@ -24,7 +23,6 @@ from django.db import models
 from django.db.models import Count, Exists, OuterRef
 from django.db.models.signals import post_save
 from django.utils import timezone
-from guardian.shortcuts import get_objects_for_user
 
 from framework import sentry
 from framework.auth import Auth, signals, utils
@@ -57,19 +55,18 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField, ensure_str
 from osf.utils.names import impute_names
 from osf.utils.requests import check_select_for_update
-from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, MANAGE, ADMIN
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, MANAGER, MEMBER, ADMIN
 from website import settings as website_settings
-from website import filters, mails
+from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
 from osf.utils.requests import get_headers_from_request
+from osf.models.notification_type import NotificationType
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
 logger = logging.getLogger(__name__)
-
-MAX_QUICKFILES_MERGE_RENAME_ATTEMPTS = 1000
 
 
 def get_default_mailing_lists():
@@ -228,20 +225,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #   }
     #   ...
     # }
-
-    # Time of last sent notification email to newly added contributors
-    # Format : {
-    #   <project_id>: {
-    #       'last_sent': time.time()
-    #   }
-    #   ...
-    # }
-    contributor_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-
-    # Tracks last email sent where user was added to an OSF Group
-    member_added_email_records = DateTimeAwareJSONField(default=dict, blank=True)
-    # Tracks last email sent where an OSF Group was connected to a node
-    group_connected_email_records = DateTimeAwareJSONField(default=dict, blank=True)
 
     # The user into which this account was merged
     merged_by = models.ForeignKey('self', null=True, blank=True, related_name='merger', on_delete=models.CASCADE)
@@ -644,14 +627,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def is_anonymous(self):
         return False
 
-    @property
-    def osf_groups(self):
-        """
-        OSFGroups that the user belongs to
-        """
-        OSFGroup = apps.get_model('osf.OSFGroup')
-        return get_objects_for_user(self, 'member_group', OSFGroup, with_superuser=False)
-
     def is_institutional_admin_at(self, institution):
         """
         Checks if user is admin of a specific institution.
@@ -818,9 +793,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         # - projects where the user was a contributor (group member only are not included).
         for node in user.contributed:
-            # Skip quickfiles
-            if node.is_quickfiles:
-                continue
             user_perms = Contributor(node=node, user=user).permission
             # if both accounts are contributor of the same project
             if node.is_contributor(self) and node.is_contributor(user):
@@ -845,10 +817,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.collection_set.exclude(is_bookmark_collection=True).update(creator=self)
 
         from .files import BaseFileNode
-        from .quickfiles import QuickFilesNode
 
         # - projects where the user was the creator
-        user.nodes_created.exclude(type=QuickFilesNode._typedmodels_type).update(creator=self)
+        user.nodes_created.update(creator=self)
 
         # - file that the user has checked_out, import done here to prevent import error
         for file_node in BaseFileNode.files_checked_out(user=user):
@@ -861,17 +832,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # Transfer user's draft registrations
         self._merge_user_draft_registrations(user)
 
-        # transfer group membership
-        for group in user.osf_groups:
-            if not group.is_manager(self):
-                if group.has_permission(user, MANAGE):
-                    group.make_manager(self)
-                else:
-                    group.make_member(self)
-            group.remove_member(user)
-
         # finalize the merge
-
         remove_sessions_for_user(user)
 
         # - username is set to the GUID so the merging user can set it primary
@@ -1059,13 +1020,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self.SEARCH_UPDATE_FIELDS.intersection(dirty_fields) and self.is_confirmed:
             self.update_search()
             self.update_search_nodes_contributors()
-        if 'fullname' in dirty_fields:
-            from .quickfiles import get_quickfiles_project_title, QuickFilesNode
-
-            quickfiles = QuickFilesNode.objects.filter(creator=self).first()
-            if quickfiles:
-                quickfiles.title = get_quickfiles_project_title(self)
-                quickfiles.save()
         if 'username' in dirty_fields:
             for list_name, subscription in self.mailchimp_mailing_lists.items():
                 if subscription:
@@ -1104,12 +1058,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            mails.send_mail(
-                to_addr=self.username,
-                mail=mails.PASSWORD_RESET,
+            NotificationType.Type.USER_PASSWORD_RESET.instance.emit(
+                subscribed_object=self,
                 user=self,
-                can_change_preferences=False,
-                osf_contact_email=website_settings.OSF_CONTACT_EMAIL
+                message_frequency='instantly',
+                event_context={
+                    'domain': website_settings.DOMAIN,
+                    'user_fullname': self.fullname,
+                    'can_change_preferences': False,
+                    'osf_contact_email': website_settings.OSF_CONTACT_EMAIL
+                }
             )
             remove_sessions_for_user(self)
 
@@ -1469,7 +1427,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         super().confirm_spam(domains=domains, save=save, train_spam_services=train_spam_services)
 
         # Don't train on resources merely associated with spam user
-        for node in self.nodes.filter(is_public=True, is_deleted=False).exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter(is_public=True, is_deleted=False):
             node.confirm_spam(train_spam_services=train_spam_services)
         for preprint in self.preprints.filter(is_public=True, deleted__isnull=True):
             preprint.confirm_spam(train_spam_services=train_spam_services)
@@ -1479,7 +1437,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         super().confirm_ham(save=save, train_spam_services=train_spam_services)
 
         # Don't train on resources merely associated with spam user
-        for node in self.nodes.filter().exclude(type='osf.quickfilesnode'):
+        for node in self.nodes.filter():
             node.confirm_ham(save=save, train_spam_services=train_spam_services)
         for preprint in self.preprints.filter():
             preprint.confirm_ham(save=save, train_spam_services=train_spam_services)
@@ -1523,9 +1481,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         # need to update nodes where user has group member perms only
         for node in self.contributor_to:
             node.update_search()
-
-        for group in self.osf_groups:
-            group.update_search()
 
     def update_date_last_login(self, login_time=None):
         self.date_last_login = login_time or timezone.now()
@@ -1673,19 +1628,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         """
 
         from .provider import AbstractProvider
-        from .osf_group import OSFGroup
 
         if not skip_referrer_permissions:
             if isinstance(claim_origin, AbstractProvider):
                 if not bool(get_perms(referrer, claim_origin)):
                     raise PermissionsError(
                         f'Referrer does not have permission to add a moderator to provider {claim_origin._id}'
-                    )
-
-            elif isinstance(claim_origin, OSFGroup):
-                if not claim_origin.has_permission(referrer, MANAGE):
-                    raise PermissionsError(
-                        f'Referrer does not have permission to add a member to {claim_origin._id}'
                     )
             else:
                 if not claim_origin.has_permission(referrer, ADMIN):
@@ -2025,9 +1973,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             hard_delete=True
         )
 
-        # A Potentially out of date check that user isn't a member of a OSFGroup
-        self._validate_osf_groups()
-
         # Finally delete the user's info.
         self._clear_identifying_information()
 
@@ -2084,20 +2029,6 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 logger.info(f'Soft-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
                 entity.remove_node(auth=Auth(self))
 
-    def _validate_osf_groups(self):
-        """
-        This method ensures a user isn't in an OSFGroup before deleting them..
-        """
-        for group in self.osf_groups:
-            if not group.managers.exclude(id=self.id).filter(is_registered=True).exists() and group.members.exclude(
-                    id=self.id).exists():
-                raise UserStateError(
-                    f'You cannot delete this user because they are the only registered manager of OSFGroup {group._id} that contains other members.')
-            elif len(group.managers) == 1 and group.managers[0] == self:
-                group.remove_group()
-            else:
-                group.remove_member(self)
-
     def _clear_identifying_information(self):
         '''
         This method ensures a user's info is deleted during a GDPR delete
@@ -2152,10 +2083,9 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         from osf.models import Preprint
 
         nodes = self.nodes.filter(deleted__isnull=True).exists()
-        groups = self.osf_groups.exists()
         preprints = Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists()
 
-        return groups or nodes or preprints
+        return nodes or preprints
 
     class Meta:
         # custom permissions for use in the OSF Admin App

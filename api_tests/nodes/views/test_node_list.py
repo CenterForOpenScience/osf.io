@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode, Node, NodeLog
+from osf.models import AbstractNode, Node, NodeLog, NotificationType
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
@@ -22,12 +22,11 @@ from osf_tests.factories import (
     PreprintFactory,
     InstitutionFactory,
     RegionFactory,
-    OSFGroupFactory,
     DraftNodeFactory,
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_equals
+from tests.utils import assert_equals, assert_notification, capture_notifications
 from website.views import find_bookmark_collection
 from website import settings
 from osf.utils.workflows import DefaultStates
@@ -128,14 +127,6 @@ class TestNodeList:
         assert private_project._id not in ids
         assert draft_node._id not in ids
 
-    #   test_returns_nodes_through_which_you_have_perms_through_osf_groups
-        group = OSFGroupFactory(creator=user)
-        another_project = ProjectFactory()
-        another_project.add_osf_group(group, permissions.READ)
-        res = app.get(url, auth=user.auth)
-        ids = [each['id'] for each in res.json['data']]
-        assert another_project._id in ids
-
     def test_node_list_does_not_returns_registrations(
             self, app, user, public_project, url):
         registration = RegistrationFactory(
@@ -220,13 +211,6 @@ class TestNodeList:
         ProjectFactory(is_public=True)
         assert default_node_permission_queryset(user_2, Node).count() == 2
 
-        # Node read group member
-        project_3 = ProjectFactory(is_public=False)
-        assert default_node_permission_queryset(user_2, Node).count() == 2
-        group = OSFGroupFactory(creator=user_2)
-        project_3.add_osf_group(group, permissions.READ)
-        assert default_node_permission_queryset(user_2, Node).count() == 3
-
     def test_current_user_permissions(self, app, user, url, public_project, non_contrib):
         # in most recent API version, read isn't implicit for public nodes
         url_public = url + '?version=2.11'
@@ -274,53 +258,6 @@ class TestNodeList:
         superuser.save()
         res = app.get(url_public, auth=superuser.auth)
         assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
-
-    def test_current_user_permissions_group_member(self, app, user, url, public_project):
-        # in most recent API version, read isn't implicit for public nodes
-        url_public = url + '?version=2.11'
-
-        # Read group member has "read" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, permissions.READ)
-        res = app.get(url_public, auth=group_member.auth)
-        assert public_project.has_permission(group_member, permissions.READ)
-        assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
-        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # Write group member has "read" and "write" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, permissions.WRITE)
-        res = app.get(url_public, auth=group_member.auth)
-        assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.WRITE, permissions.READ]
-        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
-        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # Admin group member has "read" and "write" and "admin" permissions
-        group_member = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_member)
-        public_project.add_osf_group(osf_group, permissions.ADMIN)
-        res = app.get(url_public, auth=group_member.auth)
-        assert res.json['data'][0]['attributes']['current_user_permissions'] == [permissions.ADMIN, permissions.WRITE, permissions.READ]
-        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
-        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is True
-
-        # make sure 'read' is there for implicit read group members
-        NodeFactory(parent=public_project, is_public=True)
-        res = app.get(url_public, auth=group_member.auth)
-        assert public_project.has_permission(user, permissions.ADMIN)
-        assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
-        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
-        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is False
-
-        # ensure 'read' is still included with older versions
-        public_project.remove_osf_group(osf_group)
-        res = app.get(url, auth=group_member.auth)
-        assert not public_project.has_permission(group_member, permissions.READ)
-        assert permissions.READ in res.json['data'][0]['attributes']['current_user_permissions']
-        assert res.json['data'][0]['attributes']['current_user_is_contributor'] is False
-        assert res.json['data'][0]['attributes']['current_user_is_contributor_or_group_member'] is False
 
 
 @pytest.mark.django_db
@@ -1481,9 +1418,11 @@ class TestNodeCreate:
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
-        res = app.post_json_api(
-            url, public_project,
-            auth=user_one.auth)
+        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one):
+            res = app.post_json_api(
+                url, public_project,
+                auth=user_one.auth
+            )
         assert res.status_code == 201
         self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
@@ -1565,10 +1504,11 @@ class TestNodeCreate:
                     }
             }
         }
-
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_one.auth
+            )
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1626,7 +1566,8 @@ class TestNodeCreate:
                 }
             }
         }
-        res = app.post_json_api(url, component_data, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, component_data, auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1636,35 +1577,6 @@ class TestNodeCreate:
         assert len(
             new_component.contributors
         ) == len(parent_project.contributors)
-
-    def test_create_component_inherit_groups(
-            self, app, user_one, user_two, title, category):
-        parent_project = ProjectFactory(creator=user_one)
-        group = OSFGroupFactory(creator=user_one)
-        second_group = OSFGroupFactory()
-        third_group = OSFGroupFactory(creator=user_two)
-        third_group.make_member(user_one)
-        parent_project.add_osf_group(group, permissions.WRITE)
-        parent_project.add_osf_group(second_group, permissions.WRITE)
-        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
-            API_BASE, parent_project._id)
-        component_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': title,
-                    'category': category,
-                }
-            }
-        }
-        res = app.post_json_api(url, component_data, auth=user_one.auth)
-        assert res.status_code == 201
-        json_data = res.json['data']
-        new_component_id = json_data['id']
-        new_component = AbstractNode.load(new_component_id)
-        assert group in new_component.osf_groups
-        assert second_group not in new_component.osf_groups
-        assert third_group not in new_component.osf_groups
 
     def test_create_component_with_tags(self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
@@ -1691,49 +1603,10 @@ class TestNodeCreate:
         assert tag1.name == 'test tag 1'
         assert tag2.name == 'test tag 2'
 
-    def test_create_component_inherit_contributors_with_unregistered_contributor(
-            self, app, user_one, title, category):
-        parent_project = ProjectFactory(creator=user_one)
-        parent_project.add_unregistered_contributor(
-            fullname='far', email='foo@bar.baz',
-            permissions=permissions.READ,
-            auth=Auth(user=user_one), save=True)
-        osf_group = OSFGroupFactory(creator=user_one)
-        osf_group.add_unregistered_member(fullname='far', email='foo@bar.baz', auth=Auth(user_one))
-        osf_group.save()
-        parent_project.add_osf_group(osf_group, permissions.ADMIN)
-        url = '/{}nodes/{}/children/?inherit_contributors=true'.format(
-            API_BASE, parent_project._id)
-        component_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes': {
-                    'title': title,
-                    'category': category,
-                }
-            }
-        }
-        res = app.post_json_api(url, component_data, auth=user_one.auth)
-        assert res.status_code == 201
-        json_data = res.json['data']
-
-        new_component_id = json_data['id']
-        new_component = AbstractNode.load(new_component_id)
-        assert len(new_component.contributors) == 2
-        assert len(
-            new_component.contributors
-        ) == len(parent_project.contributors)
-        expected_perms = {permissions.READ, permissions.ADMIN}
-        actual_perms = {contributor.permission for contributor in new_component.contributor_set.all()}
-        assert actual_perms == expected_perms
-
     def test_create_component_inherit_contributors_with_blocked_email(
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
-        parent_project.add_unregistered_contributor(
-            fullname='far', email='foo@bar.baz',
-            permissions=permissions.READ,
-            auth=Auth(user=user_one), save=True)
+        parent_project.add_unregistered_contributor(fullname='far', email='foo@bar.baz', permissions=permissions.READ, auth=Auth(user=user_one))
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
         contributor.save()
@@ -1793,9 +1666,12 @@ class TestNodeCreate:
                 }
             }
         }
-        res = app.post_json_api(
-            url, private_project, auth=user_one.auth
-        )
+        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
+            res = app.post_json_api(
+                url,
+                private_project,
+                auth=user_one.auth
+            )
         assert res.status_code == 201
         region_id = res.json['data']['relationships']['region']['data']['id']
         assert region_id == region._id
@@ -3994,36 +3870,6 @@ class TestNodeBulkDeleteSkipUneditable:
         }
 
         res = app.delete_json_api(url, payload, auth=user_one.auth, bulk=True)
-        assert res.status_code == 200
-        assert res.json['errors'][0]['id'] == public_project_three._id
-        public_project_one.reload()
-        public_project_three.reload()
-
-        assert public_project_one.is_deleted is True
-        assert public_project_three.is_deleted is False
-
-    def test_skip_uneditable_has_admin_permission_for_one_node_group_members(
-            self, app, public_project_one, public_project_three, url):
-        group_member = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_member)
-        public_project_one.add_osf_group(group, permissions.ADMIN)
-        public_project_one.save()
-        public_project_three.add_osf_group(group, permissions.WRITE)
-        public_project_three.save()
-        payload = {
-            'data': [
-                {
-                    'id': public_project_one._id,
-                    'type': 'nodes',
-                },
-                {
-                    'id': public_project_three._id,
-                    'type': 'nodes',
-                }
-            ]
-        }
-
-        res = app.delete_json_api(url, payload, auth=group_member.auth, bulk=True)
         assert res.status_code == 200
         assert res.json['errors'][0]['id'] == public_project_three._id
         public_project_one.reload()

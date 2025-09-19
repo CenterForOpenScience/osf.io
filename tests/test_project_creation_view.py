@@ -7,13 +7,13 @@ from osf.models import (
 from osf.utils import permissions
 from osf_tests.factories import (
     AuthUserFactory,
-    OSFGroupFactory,
     ProjectFactory,
     ProjectWithAddonFactory,
 )
 from tests.base import (
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website.util import api_url_for, web_url_for
 
 @pytest.mark.enable_implicit_clean
@@ -114,10 +114,8 @@ class TestProjectCreation(OsfTestCase):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
         read_user = AuthUserFactory()
-        group = OSFGroupFactory(creator=read_user)
         self.project.add_contributor(non_admin, permissions=permissions.WRITE)
         self.project.add_contributor(read_user, permissions=permissions.READ)
-        self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, data=post_data, auth=non_admin.auth)
@@ -136,8 +134,6 @@ class TestProjectCreation(OsfTestCase):
         assert child.has_permission(read_user, permissions.ADMIN) is False
         assert child.has_permission(read_user, permissions.WRITE) is False
         assert child.has_permission(read_user, permissions.READ) is True
-        # User creating the component was not a manager on the group
-        assert group not in child.osf_groups
         # check redirect url
         assert '/contributors/' in res.location
 
@@ -145,10 +141,8 @@ class TestProjectCreation(OsfTestCase):
         url = web_url_for('project_new_node', pid=self.project._id)
         non_admin = AuthUserFactory()
         write_user = AuthUserFactory()
-        group = OSFGroupFactory(creator=write_user)
         self.project.add_contributor(non_admin, permissions=permissions.WRITE)
         self.project.add_contributor(write_user, permissions=permissions.WRITE)
-        self.project.add_osf_group(group, permissions.ADMIN)
         self.project.save()
         post_data = {'title': 'New Component With Contributors Title', 'category': '', 'inherit_contributors': True}
         res = self.app.post(url, data=post_data, auth=write_user.auth)
@@ -166,8 +160,6 @@ class TestProjectCreation(OsfTestCase):
         assert child.has_permission(write_user, permissions.ADMIN) is True
         assert child.has_permission(write_user, permissions.WRITE) is True
         assert child.has_permission(write_user, permissions.READ) is True
-        # User creating the component was a manager of the group, so group copied
-        assert group in child.osf_groups
         # check redirect url
         assert '/contributors/' in res.location
 
@@ -219,7 +211,8 @@ class TestProjectCreation(OsfTestCase):
             'title': 'Im a real title',
             'template': other_node._id
         }
-        res = self.app.post(self.url, json=payload, auth=self.creator.auth)
+        with capture_notifications():
+            res = self.app.post(self.url, json=payload, auth=self.creator.auth)
         assert res.status_code == 201
         node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert node
@@ -248,7 +241,8 @@ class TestProjectCreation(OsfTestCase):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth=non_contributor.auth)
+        with capture_notifications():
+            res = self.app.post(url, auth=non_contributor.auth)
         assert res.status_code == 201
 
     def test_project_new_from_template_contributor(self):
@@ -258,6 +252,6 @@ class TestProjectCreation(OsfTestCase):
         project.save()
 
         url = api_url_for('project_new_from_template', nid=project._id)
-        res = self.app.post(url, auth=contributor.auth)
+        with capture_notifications():
+            res = self.app.post(url, auth=contributor.auth)
         assert res.status_code == 201
-

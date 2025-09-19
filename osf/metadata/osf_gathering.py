@@ -11,6 +11,7 @@ import rdflib
 from api.caching.tasks import get_storage_usage_total
 from osf import models as osfdb
 from osf.metadata import gather
+from osf.metadata.definitions.datacite import DATACITE_RESOURCE_TYPES_GENERAL
 from osf.metadata.rdfutils import (
     DATACITE,
     DCAT,
@@ -273,38 +274,6 @@ OSF_CONTRIBUTOR_ROLES = {
 BEPRESS_SUBJECT_SCHEME_URI = 'https://bepress.com/reference_guide_dc/disciplines/'
 BEPRESS_SUBJECT_SCHEME_TITLE = 'bepress Digital Commons Three-Tiered Taxonomy'
 
-DATACITE_RESOURCE_TYPES_GENERAL = {
-    'Audiovisual',
-    'Book',
-    'BookChapter',
-    'Collection',
-    'ComputationalNotebook',
-    'ConferencePaper',
-    'ConferenceProceeding',
-    'DataPaper',
-    'Dataset',
-    'Dissertation',
-    'Event',
-    'Image',
-    'Instrument',
-    'InteractiveResource',
-    'Journal',
-    'JournalArticle',
-    'Model',
-    'OutputManagementPlan',
-    'PeerReview',
-    'PhysicalObject',
-    'Preprint',
-    'Report',
-    'Service',
-    'Software',
-    'Sound',
-    'Standard',
-    'StudyRegistration',
-    'Text',
-    'Workflow',
-    'Other',
-}
 DATACITE_RESOURCE_TYPE_BY_OSF_TYPE = {
     OSF.Preprint: 'Preprint',
     OSF.Registration: {
@@ -1020,6 +989,8 @@ def gather_user_basics(focus):
     if isinstance(focus.dbmodel, osfdb.OSFUser):
         yield (RDF.type, FOAF.Person)  # note: assumes osf user accounts represent people
         yield (FOAF.name, focus.dbmodel.fullname)
+        yield (FOAF.givenName, focus.dbmodel.given_name)
+        yield (FOAF.familyName, focus.dbmodel.family_name)
         _social_links = focus.dbmodel.social_links
         # special cases abound! do these one-by-one (based on OSFUser.SOCIAL_FIELDS)
         yield (DCTERMS.identifier, _social_links.get('github'))

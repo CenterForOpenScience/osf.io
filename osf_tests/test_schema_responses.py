@@ -1,17 +1,14 @@
-from unittest import mock
 import pytest
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
-from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock
+from osf.models import RegistrationSchema, RegistrationSchemaBlock, SchemaResponseBlock, NotificationType
 from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates, SchemaResponseTriggers
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
-from osf_tests.utils import get_default_test_schema, assert_notification_correctness, _ensure_subscriptions
-
-from website.mails import mails
-from website.notifications import emails
+from osf_tests.utils import get_default_test_schema
+from tests.utils import capture_notifications
 
 from transitions import MachineError
 
@@ -87,10 +84,11 @@ def initial_response(registration):
 
 @pytest.fixture
 def revised_response(initial_response):
-    revised_response = schema_response.SchemaResponse.create_from_previous_response(
-        previous_response=initial_response,
-        initiator=initial_response.initiator
-    )
+    with capture_notifications():
+        revised_response = schema_response.SchemaResponse.create_from_previous_response(
+            previous_response=initial_response,
+            initiator=initial_response.initiator
+        )
     return revised_response
 
 
@@ -143,11 +141,10 @@ class TestCreateSchemaResponse():
             assert block.response == DEFAULT_SCHEMA_RESPONSE_VALUES[block.schema_key]
 
     def test_create_initial_response_does_not_notify(self, registration, admin_user):
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            schema_response.SchemaResponse.create_initial_response(
-                parent=registration, initiator=admin_user
-            )
-        assert not mock_send.called
+        schema_response.SchemaResponse.create_initial_response(
+            parent=registration,
+            initiator=admin_user
+        )
 
     def test_create_initial_response_fails_if_no_schema_and_no_parent_schema(self, registration):
         registration.registered_schema.clear()
@@ -236,11 +233,12 @@ class TestCreateSchemaResponse():
         ).exists()
 
     def test_create_from_previous_response(self, registration, initial_response):
-        revised_response = schema_response.SchemaResponse.create_from_previous_response(
-            initiator=registration.creator,
-            previous_response=initial_response,
-            justification='Leeeeerooooy Jeeeenkiiiinns'
-        )
+        with capture_notifications():
+            revised_response = schema_response.SchemaResponse.create_from_previous_response(
+                initiator=registration.creator,
+                previous_response=initial_response,
+                justification='Leeeeerooooy Jeeeenkiiiinns'
+            )
 
         assert revised_response.initiator == registration.creator
         assert revised_response.parent == registration
@@ -254,16 +252,16 @@ class TestCreateSchemaResponse():
 
     def test_create_from_previous_response_notification(
             self, initial_response, admin_user, notification_recipients):
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            schema_response.SchemaResponse.create_from_previous_response(
-                previous_response=initial_response, initiator=admin_user
-            )
 
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_INITIATED, notification_recipients
-        )
+        with capture_notifications() as notifications:
+            schema_response.SchemaResponse.create_from_previous_response(
+                previous_response=initial_response,
+                initiator=admin_user
+            )
+        assert len(notifications['emits']) == len(notification_recipients)
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED
+                   for notification in notifications['emits'])
+        assert all(notification['kwargs']['user'].username in notification_recipients for notification in notifications['emits'])
 
     @pytest.mark.parametrize(
         'invalid_response_state',
@@ -282,10 +280,11 @@ class TestCreateSchemaResponse():
         # Making a valid revised response, then pushing the initial response into an
         # invalid state to ensure that `create_from_previous_response` fails if
         # *any* schema_response on the parent is unapproved
-        intermediate_response = schema_response.SchemaResponse.create_from_previous_response(
-            initiator=initial_response.initiator,
-            previous_response=initial_response
-        )
+        with capture_notifications():
+            intermediate_response = schema_response.SchemaResponse.create_from_previous_response(
+                initiator=initial_response.initiator,
+                previous_response=initial_response
+            )
         intermediate_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
         intermediate_response.save()
 
@@ -512,10 +511,12 @@ class TestDeleteSchemaResponse():
         assert not SchemaResponseBlock.objects.exists()
 
     def test_delete_revised_response_only_deletes_updated_blocks(self, initial_response):
-        revised_response = schema_response.SchemaResponse.create_from_previous_response(
-            previous_response=initial_response,
-            initiator=initial_response.initiator
-        )
+
+        with capture_notifications():
+            revised_response = schema_response.SchemaResponse.create_from_previous_response(
+                previous_response=initial_response,
+                initiator=initial_response.initiator
+            )
         revised_response.update_responses({'q1': 'blahblahblah', 'q2': 'whoopdedoo'})
 
         old_blocks = initial_response.response_blocks.all()
@@ -584,23 +585,19 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.revision_justification = 'has for valid revision_justification for submission'
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
+        with capture_notifications() as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_SUBMITTED, notification_recipients
-        )
+        assert len(notifications['emits']) == 3
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
 
     def test_no_submit_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
         initial_response.update_responses({'q1': 'must change one response or can\'t submit'})
         initial_response.revision_justification = 'has for valid revision_justification for submission'
         initial_response.save()
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            initial_response.submit(user=admin_user, required_approvers=[admin_user])
-        assert not mock_send.called
+        initial_response.submit(user=admin_user, required_approvers=[admin_user])
 
     def test_submit_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)
@@ -686,26 +683,17 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user, alternate_user)
-
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            revised_response.approve(user=admin_user)
-            assert not mock_send.called  # Should only send email on final approval
+        revised_response.approve(user=admin_user)  # Should only send email on final approval
+        with capture_notifications() as notifications:
             revised_response.approve(user=alternate_user)
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
-        )
+        assert len(notifications['emits']) == 3
 
     def test_no_approve_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            initial_response.approve(user=admin_user)
-        assert not mock_send.called
+        initial_response.approve(user=admin_user)
 
     def test_approve_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -761,23 +749,18 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
+        with capture_notifications() as notifications:
             revised_response.reject(user=admin_user)
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
-        )
+        assert len(notifications['emits']) == 3
+        assert all(notification['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+                   for notification in notifications['emits'])
 
     def test_no_reject_notification_on_initial_response(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            initial_response.reject(user=admin_user)
-        assert not mock_send.called
+        initial_response.reject(user=admin_user)
 
     def test_reject_response_requires_user(self, initial_response, admin_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
@@ -830,7 +813,6 @@ class TestModeratedSchemaResponseApprovalFlows():
     def provider(self):
         provider = RegistrationProviderFactory()
         provider.update_group_permissions()
-        _ensure_subscriptions(provider)
         provider.reviews_workflow = Workflows.PRE_MODERATION.value
         provider.save()
         return provider
@@ -870,29 +852,31 @@ class TestModeratedSchemaResponseApprovalFlows():
         assert new_action.to_state == ApprovalStates.PENDING_MODERATION.db_name
         assert new_action.trigger == SchemaResponseTriggers.APPROVE.db_name
 
-    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user):
+    def test_accept_notification_sent_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail
+        with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-        assert mock_send.called
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['kwargs']['user'] == moderator
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][1]['kwargs']['user'] == admin_user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_moderators_notified_on_admin_approval(self, revised_response, admin_user, moderator):
         revised_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         revised_response.save()
         revised_response.pending_approvers.add(admin_user)
 
-        store_emails = emails.store_emails
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
-            mock_store.side_effect = store_emails
+        with capture_notifications() as notifications:
             revised_response.approve(user=admin_user)
-
-        assert mock_store.called
-        assert mock_store.call_args[0][0] == [moderator._id]
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['kwargs']['user'] == moderator
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][1]['kwargs']['user'] == admin_user
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_no_moderator_notification_on_admin_approval_of_initial_response(
             self, initial_response, admin_user):
@@ -900,9 +884,7 @@ class TestModeratedSchemaResponseApprovalFlows():
         initial_response.save()
         initial_response.pending_approvers.add(admin_user)
 
-        with mock.patch.object(emails, 'store_emails', autospec=True) as mock_store:
-            initial_response.approve(user=admin_user)
-        assert not mock_store.called
+        initial_response.approve(user=admin_user)
 
     def test_moderator_accept(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -929,23 +911,19 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
+        with capture_notifications() as notifications:
             revised_response.accept(user=moderator)
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_APPROVED, notification_recipients
-        )
+        assert len(notifications['emits']) == 3
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
 
     def test_no_moderator_accept_notification_on_initial_response(
             self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            initial_response.accept(user=moderator)
-        assert not mock_send.called
+        initial_response.accept(user=moderator)
 
     def test_moderator_reject(self, initial_response, admin_user, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
@@ -973,23 +951,19 @@ class TestModeratedSchemaResponseApprovalFlows():
         revised_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         revised_response.save()
 
-        send_mail = mails.send_mail
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
+        with capture_notifications() as notifications:
             revised_response.reject(user=moderator)
-
-        assert_notification_correctness(
-            mock_send, mails.SCHEMA_RESPONSE_REJECTED, notification_recipients
-        )
+        assert len(notifications['emits']) == 3
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
 
     def test_no_moderator_reject_notification_on_initial_response(
             self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.PENDING_MODERATION)
         initial_response.save()
 
-        with mock.patch.object(schema_response.mails, 'send_mail', autospec=True) as mock_send:
-            initial_response.reject(user=moderator)
-        assert not mock_send.called
+        initial_response.reject(user=moderator)
 
     def test_moderator_cannot_submit(self, initial_response, moderator):
         initial_response.approvals_state_machine.set_state(ApprovalStates.IN_PROGRESS)

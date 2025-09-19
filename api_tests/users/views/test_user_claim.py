@@ -1,24 +1,22 @@
 from unittest import mock
+
 import pytest
-from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api.users.views import ClaimUser
 from api_tests.utils import only_supports_methods
 from framework.auth.core import Auth
+from osf.models import NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
 )
+from tests.utils import capture_notifications
+
 
 @pytest.mark.django_db
 class TestClaimUser:
-
-    @pytest.fixture
-    def mock_mail(self):
-        with mock.patch('website.project.views.contributor.mails.send_mail') as patch:
-            yield patch
 
     @pytest.fixture()
     def referrer(self):
@@ -42,7 +40,7 @@ class TestClaimUser:
             'David Davidson',
             'david@david.son',
             auth=Auth(referrer),
-            save=True
+            notification_type=False
         )
 
     @pytest.fixture()
@@ -121,37 +119,47 @@ class TestClaimUser:
         )
         assert res.status_code == 401
 
-    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user, mock_mail):
-        res = app.post_json_api(
-            url.format(unreg_user._id),
-            self.payload(email='david@david.son', id=project._id),
-        )
+    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(email='david@david.son', id=project._id),
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
         assert res.status_code == 204
-        assert mock_mail.call_count == 1
 
-    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer, mock_mail):
-        res = app.post_json_api(
-            url.format(unreg_user._id),
-            self.payload(email=claimer.username, id=project._id)
-        )
+    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(email=claimer.username, id=project._id)
+            )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
 
-    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user, mock_mail):
-        res = app.post_json_api(
-            url.format(unreg_user._id),
-            self.payload(email='asdf@fdsa.com', id=project._id),
-        )
+    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(email='asdf@fdsa.com', id=project._id),
+            )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
 
-    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user, mock_mail):
-        res = app.post_json_api(
-            url.format(unreg_user._id),
-            self.payload(email='david@david.son', id=preprint._id),
-        )
+    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(email='david@david.son', id=preprint._id),
+            )
         assert res.status_code == 204
-        assert mock_mail.call_count == 1
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
     def test_claim_auth_failure(self, app, url, claimer, wrong_preprint, project, unreg_user, referrer):
         _url = url.format(unreg_user._id)
@@ -210,9 +218,18 @@ class TestClaimUser:
         )
         assert res.status_code == 403
 
-    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project, mock_mail):
-        unreg_user.unclaimed_records[project._id]['last_sent'] = timezone.now()
-        unreg_user.save()
+    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project):
+        with mock.patch('osf.email.send_email_with_send_grid', return_value=None):
+            with capture_notifications(passthrough=True) as notifications:
+                app.post_json_api(
+                    url.format(unreg_user._id),
+                    self.payload(id=project._id),
+                    auth=claimer.auth,
+                    expect_errors=True
+                )
+            assert len(notifications['emits']) == 2
+            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
@@ -221,13 +238,15 @@ class TestClaimUser:
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
-        assert mock_mail.call_count == 0
 
-    def test_claim_auth_success(self, app, url, claimer, unreg_user, project, mock_mail):
-        res = app.post_json_api(
-            url.format(unreg_user._id),
-            self.payload(id=project._id),
-            auth=claimer.auth
-        )
+    def test_claim_auth_success(self, app, url, claimer, unreg_user, project):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url.format(unreg_user._id),
+                self.payload(id=project._id),
+                auth=claimer.auth
+            )
         assert res.status_code == 204
-        assert mock_mail.call_count == 2
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED

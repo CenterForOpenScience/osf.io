@@ -6,7 +6,7 @@ import pytest
 import logging
 
 from unittest import mock
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 from rest_framework import status as http_status
 from flask import Flask
 from werkzeug.wrappers import Response
@@ -24,9 +24,9 @@ from osf_tests.factories import (
 from framework.auth import Auth
 from framework.auth.decorators import must_be_logged_in
 from framework.sessions import get_session
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from osf.utils import permissions
-from website import mails
+from tests.utils import capture_notifications
 from website import settings
 from website.project.decorators import (
     must_have_permission,
@@ -71,8 +71,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert user.get_confirmation_token(user.username)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_confirm_email(self, mock_mail):
+    def test_confirm_email(self):
         user = UnregUserFactory()
 
         auth.register_unconfirmed(
@@ -91,9 +90,6 @@ class TestAuthUtils(OsfTestCase):
 
         user.reload()
 
-        mock_mail.assert_not_called()
-
-
         self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie().decode())
         res = self.app.get(f'/confirm/{user._id}/{token}')
 
@@ -101,7 +97,6 @@ class TestAuthUtils(OsfTestCase):
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-        assert len(mock_mail.call_args_list) == 0
         assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
@@ -114,7 +109,8 @@ class TestAuthUtils(OsfTestCase):
 
     def test_get_user_with_wrong_password_returns_false(self):
         user = UserFactory.build()
-        user.set_password('killerqueen')
+        with capture_notifications():
+            user.set_password('killerqueen')
         assert not auth.get_user(email=user.username, password='wrong')
 
     def test_get_user_by_external_info(self):
@@ -163,23 +159,13 @@ class TestAuthUtils(OsfTestCase):
         cas.make_response_from_ticket(ticket, service_url)
         assert user == mock_external_first_login_authenticate.call_args[0][0]
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_password_change_sends_email(self, mock_mail):
+    def test_password_change_sends_email(self):
         user = UserFactory()
-        user.set_password('killerqueen')
-        user.save()
-        assert len(mock_mail.call_args_list) == 1
-        empty, kwargs = mock_mail.call_args
-        kwargs['user'].reload()
-
-        assert empty == ()
-        assert kwargs == {
-            'user': user,
-            'mail': mails.PASSWORD_RESET,
-            'to_addr': user.username,
-            'can_change_preferences': False,
-            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-        }
+        with capture_notifications() as notifications:
+            user.set_password('killerqueen')
+            user.save()
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
 
     @mock.patch('framework.auth.utils.requests.post')
     def test_validate_recaptcha_success(self, req_post):
@@ -211,8 +197,7 @@ class TestAuthUtils(OsfTestCase):
         # ensure None short circuits execution (no call to google)
         assert not validate_recaptcha(None)
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_sign_up_twice_sends_two_confirmation_emails_only(self, mock_mail):
+    def test_sign_up_twice_sends_two_confirmation_emails_only(self):
         # Regression test for https://openscience.atlassian.net/browse/OSF-7060
         url = api_url_for('register_user')
         sign_up_data = {
@@ -222,21 +207,15 @@ class TestAuthUtils(OsfTestCase):
             'password': 'brutusisajerk'
         }
 
-        self.app.post(url, json=sign_up_data)
-        assert len(mock_mail.call_args_list) == 1
-        args, kwargs = mock_mail.call_args
-        assert args == (
-            'caesar@romanempire.com',
-            mails.INITIAL_CONFIRM_EMAIL,
-        )
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
-        self.app.post(url, json=sign_up_data)
-        assert len(mock_mail.call_args_list) == 2
-        args, kwargs = mock_mail.call_args
-        assert args == (
-            'caesar@romanempire.com',
-            mails.INITIAL_CONFIRM_EMAIL,
-        )
+        with capture_notifications() as notifications:
+            self.app.post(url, json=sign_up_data)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
 
 class TestAuthObject(OsfTestCase):

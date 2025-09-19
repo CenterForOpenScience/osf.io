@@ -2,6 +2,31 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.16.0 (2025-09-17)
+====================
+
+- Misc. fixes for Angular migration
+
+25.15.2 (2025-09-10)
+====================
+
+- Handle duplicate SSO emails during institution SSO
+
+25.15.1 (2025-09-04)
+====================
+
+- Notification refactor project phase 1 migration fix
+
+25.15.0 (2025-08-29)
+====================
+
+- Notification Refactor project phase 1 release
+  - Removed OSF Groups
+  - Removed notifications for OSF Meetings
+  - Removed notifications for OSF Comments
+  - Removed OSF Quickfiles code
+  - Added mailhog integration to improve email tests
+
 25.13.0 (2025-08-08)
 ====================
 

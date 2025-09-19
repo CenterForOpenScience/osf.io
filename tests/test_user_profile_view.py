@@ -2,15 +2,14 @@
 """Views tests for the OSF."""
 from hashlib import md5
 from unittest import mock
+
 import pytest
 from rest_framework import status as http_status
 
 from addons.github.tests.factories import GitHubAccountFactory
 from framework.celery_tasks import handlers
 from osf.external.spam import tasks as spam_tasks
-from osf.models import (
-    NotableDomain
-)
+from osf.models import NotableDomain, NotificationType
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -22,6 +21,7 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
+from tests.utils import capture_notifications
 from website import mailchimp_utils
 from website.settings import MAILCHIMP_GENERAL_LIST
 from website.util import api_url_for, web_url_for
@@ -340,8 +340,7 @@ class TestUserProfile(OsfTestCase):
         assert res.status_code == 400
         assert res.json['message_long'] == '"id" is required'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_emails_return_emails(self, send_mail):
+    def test_add_emails_return_emails(self):
         user1 = AuthUserFactory()
         url = api_url_for('update_user')
         email = 'test@cos.io'
@@ -349,27 +348,27 @@ class TestUserProfile(OsfTestCase):
                   'emails': [{'address': user1.username, 'primary': True, 'confirmed': True},
                              {'address': email, 'primary': False, 'confirmed': False}
                   ]}
-        res = self.app.put(url, json=header, auth=user1.auth)
+        with capture_notifications():
+            res = self.app.put(url, json=header, auth=user1.auth)
         assert res.status_code == 200
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_resend_confirmation_return_emails(self, send_mail):
+    def test_resend_confirmation_return_emails(self):
         user1 = AuthUserFactory()
         url = api_url_for('resend_confirmation')
         email = 'test@cos.io'
         header = {'id': user1._id,
                   'email': {'address': email, 'primary': False, 'confirmed': False}
                   }
-        res = self.app.put(url, json=header, auth=user1.auth)
+        with capture_notifications():
+            res = self.app.put(url, json=header, auth=user1.auth)
         assert res.status_code == 200
         assert 'emails' in res.json['profile']
         assert len(res.json['profile']['emails']) == 2
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_update_user_mailing_lists(self, mock_get_mailchimp_api, send_mail):
+    def test_update_user_mailing_lists(self, mock_get_mailchimp_api):
         email = fake_email()
         email_hash = md5(email.lower().encode()).hexdigest()
         self.user.emails.create(address=email)
@@ -388,7 +387,8 @@ class TestUserProfile(OsfTestCase):
             {'address': self.user.username, 'primary': False, 'confirmed': True},
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
-        self.app.put(url, json=payload, auth=self.user.auth)
+        with capture_notifications():
+            self.app.put(url, json=payload, auth=self.user.auth)
         # the test app doesn't have celery handlers attached, so we need to call this manually.
         handlers.celery_teardown_request()
 
@@ -412,9 +412,8 @@ class TestUserProfile(OsfTestCase):
         )
         handlers.celery_teardown_request()
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
-    def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api, send_mail):
+    def test_unsubscribe_mailchimp_not_called_if_user_not_subscribed(self, mock_get_mailchimp_api):
         email = fake_email()
         self.user.emails.create(address=email)
         list_name = MAILCHIMP_GENERAL_LIST
@@ -430,7 +429,8 @@ class TestUserProfile(OsfTestCase):
             {'address': self.user.username, 'primary': False, 'confirmed': True},
             {'address': email, 'primary': True, 'confirmed': True}]
         payload = {'locale': '', 'id': self.user._id, 'emails': emails}
-        self.app.put(url, json=payload, auth=self.user.auth)
+        with capture_notifications():
+            self.app.put(url, json=payload, auth=self.user.auth)
 
         assert mock_client.lists.members.delete.call_count == 0
         assert mock_client.lists.members.create_or_update.call_count == 0
@@ -512,7 +512,8 @@ class TestUserAccount(OsfTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
-        self.user.set_password('password')
+        with capture_notifications():
+            self.user.set_password('password')
         self.user.auth = (self.user.username, 'password')
         self.user.save()
 
@@ -526,7 +527,8 @@ class TestUserAccount(OsfTestCase):
             'new_password': new_password,
             'confirm_password': confirm_password,
         }
-        res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
+        with capture_notifications():
+            res = self.app.post(url, data=post_data, auth=(self.user.username, old_password))
         assert res.status_code == 302
         res = self.app.post(url, data=post_data, auth=(self.user.username, new_password), follow_redirects=True)
         assert res.status_code == 200
@@ -664,7 +666,8 @@ class TestUserAccount(OsfTestCase):
         assert res.status_code == 200
 
         # Make a second request that successfully changes password
-        res = self.app.post(url, data=correct_post_data, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, data=correct_post_data, auth=self.user.auth)
         self.user.reload()
         assert self.user.change_password_last_attempt is not None
         assert self.user.old_password_invalid_attempts == 0
@@ -720,14 +723,15 @@ class TestUserAccount(OsfTestCase):
     def test_password_change_invalid_blank_confirm_password(self):
         self.test_password_change_invalid_blank_password('password', 'new password', '      ')
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_user_cannot_request_account_export_before_throttle_expires(self, send_mail):
+    def test_user_cannot_request_account_export_before_throttle_expires(self):
         url = api_url_for('request_export')
-        self.app.post(url, auth=self.user.auth)
-        assert send_mail.called
+        with capture_notifications() as notifications:
+            self.app.post(url, auth=self.user.auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+
         res = self.app.post(url, auth=self.user.auth)
         assert res.status_code == 400
-        assert send_mail.call_count == 1
 
     def test_get_unconfirmed_emails_exclude_external_identity(self):
         external_identity = {

@@ -34,7 +34,7 @@ from api.base.versioning import get_kebab_snake_case_field
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from framework.auth.views import send_confirm_email_async
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution
+from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution, NotificationType
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
@@ -115,13 +115,6 @@ class UserSerializer(JSONAPISerializer):
                 'projects_in_common': 'get_projects_in_common',
                 'count': 'get_node_count',
             },
-        ),
-    )
-
-    groups = HideIfDisabled(
-        RelationshipField(
-            related_view='users:user-groups',
-            related_view_kwargs={'user_id': '<_id>'},
         ),
     )
 
@@ -718,6 +711,17 @@ class UserEmailsSerializer(JSONAPISerializer):
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
+            notification_type = NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED
+            notification_type.instance.emit(
+                subscribed_object=user,
+                user=user,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'new_address': user.username,
+                    'can_change_preferences': False,
+                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                },
+            )
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
 

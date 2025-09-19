@@ -7,7 +7,7 @@ from django.utils import timezone
 from api.base.settings.defaults import API_BASE
 from api.nodes.serializers import NodeContributorsCreateSerializer
 from framework.auth.core import Auth
-from osf.models import PreprintLog
+from osf.models import PreprintLog, NotificationType
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -20,7 +20,7 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates
 from rest_framework import exceptions
 from tests.base import capture_signals, fake
-from tests.utils import assert_latest_log, assert_equals
+from tests.utils import assert_latest_log, assert_equals, capture_notifications, assert_notification
 from website.project.signals import contributor_added, contributor_removed
 from api_tests.utils import disconnected_from_listeners
 
@@ -77,7 +77,6 @@ class NodeCRUDTestCase:
         def contrib_id(preprint_id, user_id):
             return f'{preprint_id}-{user_id}'
         return contrib_id
-
 
 @pytest.mark.django_db
 @pytest.mark.enable_implicit_clean
@@ -307,7 +306,8 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         preprint.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True)
+            auth=Auth(user)
+        )
         url = f'/{API_BASE}preprints/{preprint._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
@@ -318,7 +318,10 @@ class TestPreprintContributorList(NodeCRUDTestCase):
 
         preprint_two = PreprintFactory(creator=user, is_published=True)
         preprint_two.add_unregistered_contributor(
-            'Bob Jackson', 'robert@gmail.com', auth=Auth(user), save=True)
+            'Bob Jackson',
+            'robert@gmail.com',
+            auth=Auth(user)
+        )
         url = f'/{API_BASE}preprints/{preprint_two._id}/contributors/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 200
@@ -333,7 +336,7 @@ class TestPreprintContributorList(NodeCRUDTestCase):
         preprint_published.add_unregistered_contributor(
             'Robert Jackson',
             'robert@gmail.com',
-            auth=Auth(user), save=True
+            auth=Auth(user)
         )
 
         for i in range(0, 10):
@@ -1058,23 +1061,27 @@ class TestPreprintContributorAdd(NodeCRUDTestCase):
             self, app, user, preprint_published, url_published):
         name, email = fake.name(), fake_email()
         preprint_published.add_unregistered_contributor(
-            auth=Auth(user), fullname=name, email=email)
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Doesn\'t Matter',
-                    'email': email
-                }
-            }
-        }
+            auth=Auth(user),
+            fullname=name,
+            email=email
+        )
         res = app.post_json_api(
-            url_published, payload,
-            auth=user.auth, expect_errors=True)
+            url_published,
+            {
+                'data': {
+                    'type': 'contributors',
+                    'attributes': {
+                        'full_name': 'Doesn\'t Matter',
+                        'email': email
+                    }
+                }
+            },
+            auth=user.auth,
+            expect_errors=True
+        )
         preprint_published.reload()
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '{} is already a contributor.'.format(
-            name)
+        assert res.json['errors'][0]['detail'] == f'{name} is already a contributor.'
 
     def test_add_contributor_user_is_deactivated_registered_payload(
             self, app, user, url_published):
@@ -1351,9 +1358,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
     def url_preprint_contribs(self, preprint_published):
         return f'/{API_BASE}preprints/{preprint_published._id}/contributors/'
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_contributor_no_email_if_false(
-            self, mock_mail, app, user, url_preprint_contribs):
+            self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=false'
         payload = {
             'data': {
@@ -1366,12 +1372,8 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
         }
         res = app.post_json_api(url, payload, auth=user.auth)
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_contributor_needs_preprint_filter_to_send_email(
-            self, mock_mail, app, user, user_two,
-            url_preprint_contribs):
+    def test_add_contributor_needs_preprint_filter_to_send_email(self, app, user, user_two, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=default'
         payload = {
             'data': {
@@ -1388,76 +1390,102 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 }
             }
         }
-
         res = app.post_json_api(url, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'default is not a valid email preference.'
-        assert mock_mail.call_count == 0
 
-    @mock.patch('website.project.signals.contributor_added.send')
     def test_add_contributor_signal_if_preprint(
-            self, mock_send, app, user, user_two, url_preprint_contribs):
-        url = f'{url_preprint_contribs}?send_email=preprint'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                },
-                'relationships': {
-                    'users': {
-                        'data': {
-                            'type': 'users',
-                            'id': user_two._id
+            self, app, user, user_two, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_preprint_contribs}?send_email=preprint',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                        },
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'type': 'users',
+                                    'id': user_two._id
+                                }
+                            }
                         }
                     }
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert mock_send.call_count == 1
-        assert 'preprint' == kwargs['email_template']
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
-    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_add_contributor_signal_no_query_param(
+            self, app, user, user_two, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_preprint_contribs,
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                        },
+                        'relationships': {
+                            'users': {
+                                'data': {
+                                    'type': 'users',
+                                    'id': user_two._id
+                                }
+                            }
+                        }
+                    }
+                },
+                auth=user.auth
+            )
+        assert res.status_code == 201
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+
     def test_add_unregistered_contributor_sends_email(
-            self, mock_mail, app, user, url_preprint_contribs):
-        url = f'{url_preprint_contribs}?send_email=preprint'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
+            self, app, user, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_preprint_contribs}?send_email=preprint',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Kanye West',
+                            'email': 'kanye@west.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
-        assert mock_mail.call_count == 1
 
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_add_unregistered_contributor_signal_if_preprint(
-            self, mock_send, app, user, url_preprint_contribs):
-        url = f'{url_preprint_contribs}?send_email=preprint'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
+    def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                f'{url_preprint_contribs}?send_email=preprint',
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Jason Kelece',
+                            'email': 'best@kelece.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
-        assert mock_send.call_count == 1
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_add_contributor_invalid_send_email_param(
-            self, mock_mail, app, user, url_preprint_contribs):
+    def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
         payload = {
             'data': {
@@ -1469,15 +1497,16 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             }
         }
         res = app.post_json_api(
-            url, payload, auth=user.auth,
-            expect_errors=True)
+            url,
+            payload,
+            auth=user.auth,
+            expect_errors=True
+        )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'true is not a valid email preference.'
-        assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     def test_add_unregistered_contributor_without_email_no_email(
-            self, mock_mail, app, user, url_preprint_contribs):
+            self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=preprint'
         payload = {
             'data': {
@@ -1492,66 +1521,66 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
     @mock.patch('osf.models.preprint.update_or_enqueue_on_preprint_updated')
     def test_publishing_preprint_sends_emails_to_contributors(
-            self, mock_update, mock_mail, app, user, url_preprint_contribs, preprint_unpublished):
+            self, mock_update, app, user, url_preprint_contribs, preprint_unpublished):
         url = f'/{API_BASE}preprints/{preprint_unpublished._id}/'
         user_two = AuthUserFactory()
         preprint_unpublished.add_contributor(user_two, permissions=permissions.WRITE, save=True)
-        payload = {
-            'data': {
-                'id': preprint_unpublished._id,
-                'type': 'preprints',
-                'attributes': {
-                    'is_published': True
-                }
-            }
-        }
         with capture_signals() as mock_signal:
-            res = app.patch_json_api(url, payload, auth=user.auth)
+            with assert_notification(type=NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION, user=user):
+                res = app.patch_json_api(
+                    url,
+                    {
+                        'data': {
+                            'id': preprint_unpublished._id,
+                            'type': 'preprints',
+                            'attributes': {
+                                'is_published': True
+                            }
+                        }
+                    },
+                    auth=user.auth
+                )
         assert res.status_code == 200
         assert contributor_added in mock_signal.signals_sent()
         assert mock_update.called
 
-    @mock.patch('website.project.signals.unreg_contributor_added.send')
-    def test_contributor_added_signal_not_specified(
-            self, mock_send, app, user, url_preprint_contribs):
-
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
-                }
-            }
-        }
-        res = app.post_json_api(url_preprint_contribs, payload, auth=user.auth)
-        args, kwargs = mock_send.call_args
+    def test_contributor_added_signal_not_specified(self, app, user, url_preprint_contribs):
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_preprint_contribs,
+                {
+                    'data': {
+                        'type': 'contributors',
+                        'attributes': {
+                            'full_name': 'Kanye West',
+                            'email': 'kanye@west.com'
+                        }
+                    }
+                },
+                auth=user.auth
+            )
         assert res.status_code == 201
-        assert 'preprint' == kwargs['email_template']
-        assert mock_send.call_count == 1
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_contributor_added_not_sent_if_unpublished(
-            self, mock_mail, app, user, preprint_unpublished):
-        url = f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint'
-        payload = {
-            'data': {
-                'type': 'contributors',
-                'attributes': {
-                    'full_name': 'Kanye West',
-                    'email': 'kanye@west.com'
+    def test_contributor_added_not_sent_if_unpublished(self, app, user, preprint_unpublished):
+        res = app.post_json_api(
+            f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint',
+            {
+                'data': {
+                    'type': 'contributors',
+                    'attributes': {
+                        'full_name': 'Jalen Hurt',
+                        'email': 'one@eagles.com'
+                    }
                 }
-            }
-        }
-        res = app.post_json_api(url, payload, auth=user.auth)
+            },
+            auth=user.auth
+        )
         assert res.status_code == 201
-        assert mock_mail.call_count == 0
-
 
 @pytest.mark.django_db
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):
@@ -2996,7 +3025,11 @@ class TestPreprintContributorFiltering:
     def test_filtering_node_with_non_bibliographic_contributor(
             self, app, user, preprint):
         non_bibliographic_contrib = UserFactory()
-        preprint.add_contributor(non_bibliographic_contrib, visible=False)
+        preprint.add_contributor(
+            non_bibliographic_contrib,
+            visible=False,
+            notification_type=False
+        )
         preprint.save()
 
         base_url = f'/{API_BASE}preprints/{preprint._id}/contributors/'

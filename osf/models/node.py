@@ -4,6 +4,7 @@ import logging
 import re
 from urllib.parse import urljoin
 import warnings
+
 from rest_framework import status as http_status
 
 import bson
@@ -26,7 +27,7 @@ from guardian.models import (
     GroupObjectPermissionBase,
     UserObjectPermissionBase,
 )
-from guardian.shortcuts import get_objects_for_user, get_groups_with_perms
+from guardian.shortcuts import get_objects_for_user
 
 from framework import status
 from framework.auth import oauth_scopes
@@ -34,6 +35,8 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
+from osf.models.notification_type import NotificationType
+from osf.models.notification_subscription import NotificationSubscription
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -91,7 +94,7 @@ class AbstractNodeQuerySet(GuidMixinQuerySet):
 
     def get_roots(self):
         return self.filter(
-            id__in=self.exclude(type__in=['osf.collection', 'osf.quickfilesnode', 'osf.draftnode']).values_list(
+            id__in=self.exclude(type__in=['osf.collection', 'osf.draftnode']).values_list(
                 'root_id', flat=True))
 
     def get_children(self, root, active=False, include_root=False):
@@ -320,10 +323,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     ) SELECT {fields} FROM "{nodelicenserecord}"
     WHERE id = (SELECT node_license_id FROM ascendants WHERE node_license_id IS NOT NULL) LIMIT 1;""")
 
-    # Dictionary field mapping user id to a list of nodes in node.nodes which the user has subscriptions for
-    # {<User.id>: [<Node._id>, <Node2._id>, ...] }
-    # TODO: Can this be a reference instead of data?
-    child_node_subscriptions = DateTimeAwareJSONField(default=dict, blank=True)
     _contributors = models.ManyToManyField(OSFUser,
                                            through=Contributor,
                                            related_name='nodes')
@@ -491,10 +490,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     @property
     def is_registration(self):
         """For v1 compat."""
-        return False
-
-    @property
-    def is_quickfiles(self):
         return False
 
     @property
@@ -801,50 +796,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             is_api_node = False
         return (user and self.has_permission(user, WRITE)) or is_api_node
 
-    def add_osf_group(self, group, permission=WRITE, auth=None):
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to add an OSF Group.')
-        group.add_group_to_node(self, permission, auth)
-
-    def update_osf_group(self, group, permission=WRITE, auth=None):
-        if auth and not self.has_permission(auth.user, ADMIN):
-            raise PermissionsError('Must be an admin to add an OSF Group.')
-        group.update_group_permissions_to_node(self, permission, auth)
-
-    def remove_osf_group(self, group, auth=None):
-        if auth and not (self.has_permission(auth.user, ADMIN) or group.has_permission(auth.user, 'manage')):
-            raise PermissionsError('Must be an admin or an OSF Group manager to remove an OSF Group.')
-        group.remove_group_from_node(self, auth)
-
-    @property
-    def osf_groups(self):
-        """Returns a queryset of OSF Groups whose members have some permission to the node
-        """
-        from .osf_group import OSFGroupGroupObjectPermission, OSFGroup
-
-        member_groups = get_groups_with_perms(self).filter(name__icontains='osfgroup')
-        return OSFGroup.objects.filter(
-            id__in=OSFGroupGroupObjectPermission.objects.filter(group_id__in=member_groups).values_list(
-                'content_object_id'))
-
-    def get_osf_groups_with_perms(self, permission):
-        """Returns a queryset of OSF Groups whose members have the specified permission to the node
-        """
-        from .osf_group import OSFGroup
-        from .node import NodeGroupObjectPermission
-        try:
-            perm_id = Permission.objects.get(codename=permission + '_node').id
-        except Permission.DoesNotExist:
-            raise ValueError('Specified permission does not exist.')
-        member_groups = NodeGroupObjectPermission.objects.filter(
-            permission_id=perm_id, content_object_id=self.id
-        ).filter(
-            group__name__icontains='osfgroup'
-        ).values_list(
-            'group_id', flat=True
-        )
-        return OSFGroup.objects.filter(osfgroupgroupobjectpermission__group_id__in=member_groups)
-
     def get_logs_queryset(self, auth):
         return NodeLog.objects.filter(
             node_id=self.id,
@@ -988,10 +939,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         on the node, or have permission through OSFGroup membership
         """
         return self.get_users_with_perm(READ)
-
-    @property
-    def contributor_email_template(self):
-        return 'default'
 
     @property
     def registrations_all(self):
@@ -1303,7 +1250,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+            project_signals.privacy_set_public.send(auth.user, node=self)
+            existing_sub = NotificationSubscription.objects.filter(
+                user=auth.user,
+                notification_type=NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance,
+            )
+            if not existing_sub:  # This is only ever sent once per user.
+                NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance.emit(
+                    user=auth.user,
+                    subscribed_object=auth.user,
+                    event_context={
+                        'user_fullname': auth.user.fullname,
+                        'domain': settings.DOMAIN,
+                        'nid': self._id,
+                        'project_title': self.title,
+                    },
+                    save=True
+                )
         return True
 
     @property
@@ -1382,18 +1345,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 contribs.append(node_contrib)
                 self.add_permission(contrib.user, permission, save=True)
         Contributor.objects.bulk_create(contribs)
-
-    def subscribe_contributors_to_node(self):
-        """
-        Upon registering a DraftNode, subscribe all registered contributors to notifications -
-        and send emails to users that they have been added to the project.
-        (DraftNodes are hidden until registration).
-        """
-        for user in self.contributors.filter(is_registered=True):
-            perm = self.contributor_set.get(user=user).permission
-            project_signals.contributor_added.send(self,
-                                                   contributor=user,
-                                                   auth=None, email_template='default', permissions=perm)
 
     def register_node(self, schema, auth, draft_registration, parent=None, child_ids=None, provider=None, manual_guid=None):
         """Make a frozen copy of a node.
@@ -1603,8 +1554,13 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         for affiliation in user.get_affiliated_institutions():
             new.affiliated_institutions.add(affiliation)
 
-    # TODO: Optimize me (e.g. use bulk create)
-    def fork_node(self, auth, title=None, parent=None):
+    def fork_node(
+            self,
+            auth,
+            title=None,
+            parent=None,
+            notification_type=None
+    ):
         """Recursively fork a node.
 
         :param Auth auth: Consolidated authorization
@@ -1612,6 +1568,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param Node parent: Sets parent, should only be non-null when recursing
         :return: Forked node
         """
+        if notification_type is None:
+            notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         Registration = apps.get_model('osf.Registration')
         PREFIX = 'Fork of '
         user = auth.user
@@ -1721,7 +1679,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         forked.save()
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            forked,
+            contributor=user,
+            auth=auth,
+            notification_type=notification_type
+        )
 
         return forked
 
@@ -1830,7 +1793,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         new.save(suppress_log=True)
 
         # Need to call this after save for the notifications to be created with the _primary_key
-        project_signals.contributor_added.send(new, contributor=auth.user, auth=auth, email_template='false')
+        project_signals.contributor_added.send(
+            new,
+            contributor=auth.user,
+            auth=auth,
+            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        )
 
         # Log the creation
         new.add_log(
@@ -2167,10 +2135,10 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if not hasattr(self, 'is_bookmark_collection'):
                     self.set_title(title=value, auth=auth, save=False)
                     continue
-                if not self.is_bookmark_collection or not self.is_quickfiles:
+                if not self.is_bookmark_collection:
                     self.set_title(title=value, auth=auth, save=False)
                 else:
-                    raise NodeUpdateError(reason='Bookmark collections or QuickFilesNodes cannot be renamed.', key=key)
+                    raise NodeUpdateError(reason='Bookmark collections cannot be renamed.', key=key)
             elif key == 'description':
                 self.set_description(description=value, auth=auth, save=False)
             elif key == 'category':
@@ -2623,7 +2591,6 @@ def add_default_node_addons(sender, instance, created, **kwargs):
 
 @receiver(post_save, sender=Node)
 @receiver(post_save, sender='osf.Registration')
-@receiver(post_save, sender='osf.QuickFilesNode')
 @receiver(post_save, sender='osf.DraftNode')
 def set_parent_and_root(sender, instance, created, *args, **kwargs):
     if getattr(instance, '_parent', None):

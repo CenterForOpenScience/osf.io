@@ -21,7 +21,6 @@ from api.caching.tasks import update_storage_usage_with_size
 
 from addons.base import exceptions as addon_errors
 from addons.base.models import BaseStorageAddon
-from addons.osfstorage.models import OsfStorageFile
 from addons.osfstorage.models import OsfStorageFileNode
 from addons.osfstorage.utils import enqueue_update_analytics
 
@@ -34,9 +33,7 @@ from framework.auth.decorators import collect_auth, must_be_logged_in, must_be_s
 from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
-from framework.routing import proxy_url
 from framework.transactions.handlers import no_auto_transaction
-from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -54,7 +51,7 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion
+    FileVersion, NotificationType
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -66,7 +63,7 @@ from website.project.utils import serialize_node
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
-from website.notifications.events.files import FileEvent  # noqa
+from notifications.file_event_notifications import FileEvent  # noqa
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>
@@ -228,8 +225,6 @@ def get_auth(auth, **kwargs):
     _check_resource_permissions(resource, auth, action)
 
     provider_name = waterbutler_data['provider']
-    waterbutler_settings = None
-    waterbutler_credentials = None
     file_version = file_node = None
     if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
         file_version, file_node = _get_osfstorage_file_version_and_node(
@@ -483,7 +478,7 @@ DOWNLOAD_ACTIONS = {
 
 @must_be_signed
 @no_auto_transaction
-@must_be_valid_project(quickfiles_valid=True, preprints_valid=True)
+@must_be_valid_project(preprints_valid=True)
 def create_waterbutler_log(payload, **kwargs):
     with transaction.atomic():
         try:
@@ -578,20 +573,31 @@ def create_waterbutler_log(payload, **kwargs):
                     params=payload
                 )
 
-            if payload.get('email') is True or payload.get('errors'):
-                mails.send_mail(
-                    user.username,
-                    mails.FILE_OPERATION_FAILED if payload.get('errors')
-                    else mails.FILE_OPERATION_SUCCESS,
-                    action=payload['action'],
-                    source_node=source_node,
-                    destination_node=destination_node,
-                    source_path=payload['source']['materialized'],
-                    source_addon=payload['source']['addon'],
-                    destination_addon=payload['destination']['addon'],
-                    osf_support_email=settings.OSF_SUPPORT_EMAIL
+            if payload.get('email') or payload.get('errors'):
+                if payload.get('email'):
+                    notification_type = NotificationType.Type.USER_FILE_OPERATION_SUCCESS.instance
+                if payload.get('errors'):
+                    notification_type = NotificationType.Type.USER_FILE_OPERATION_FAILED.instance
+                notification_type.emit(
+                    user=user,
+                    subscribed_object=node,
+                    event_context={
+                        'user_fullname': user.fullname,
+                        'action': payload['action'],
+                        'source_node': source_node._id,
+                        'source_node_title': source_node.title,
+                        'destination_node': destination_node._id,
+                        'destination_node_title': destination_node.title,
+                        'destination_node_parent_node_title': destination_node.parent_node.title if destination_node.parent_node else None,
+                        'source_path': payload['source']['materialized'],
+                        'source_addon': payload['source']['addon'],
+                        'destination_addon': payload['destination']['addon'],
+                        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
+                        'logo': settings.OSF_LOGO,
+                        'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
+                        'OSF_LOGO': settings.OSF_LOGO,
+                    }
                 )
-
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -603,12 +609,10 @@ def create_waterbutler_log(payload, **kwargs):
     metadata = payload.get('metadata') or payload.get('destination')
 
     target_node = AbstractNode.load(metadata.get('nid'))
-    if target_node and not target_node.is_quickfiles and payload['action'] != 'download_file':
+    if target_node and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
-
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
-
     return {'status': 'success'}
 
 
@@ -1035,16 +1039,6 @@ def persistent_file_download(auth, **kwargs):
         code=http_status.HTTP_302_FOUND
     )
 
-
-def addon_view_or_download_quickfile(**kwargs):
-    fid = kwargs.get('fid', 'NOT_AN_FID')
-    file_ = OsfStorageFile.load(fid)
-    if not file_:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND, data={
-            'message_short': 'File Not Found',
-            'message_long': 'The requested file could not be found.'
-        })
-    return proxy_url(f'/project/{file_.target._id}/files/osfstorage/{fid}/')
 
 def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue

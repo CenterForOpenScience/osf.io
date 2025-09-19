@@ -1,23 +1,19 @@
 from rest_framework import status as http_status
 import logging
-from flask import request
-import waffle
 
 from django.db import transaction, connection
 from django.contrib.contenttypes.models import ContentType
 
 from framework.auth import get_or_create_user
-from framework.exceptions import HTTPError, ServiceDiscontinuedError
+from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.transactions.handlers import no_auto_transaction
 from osf import features
 from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
-from website.conferences import utils, signals
+from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.ember_osf_web.decorators import ember_flag_is_active
-from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
-from website.mails import send_mail
 from website.util import web_url_for
 from website.util.metrics import CampaignSourceTags
 
@@ -29,17 +25,6 @@ def meeting_hook():
     """View function for email conference submission.
     """
     message = ConferenceMessage()
-
-    if waffle.flag_is_active(request, features.DISABLE_MEETINGS):
-        send_mail(
-            message.sender_email,
-            CONFERENCE_DEPRECATION,
-            fullname=message.sender_display,
-            support_email=settings.OSF_SUPPORT_EMAIL,
-            can_change_preferences=False,
-            logo=settings.OSF_MEETINGS_LOGO,
-        )
-        raise ServiceDiscontinuedError()
 
     try:
         message.verify()
@@ -54,14 +39,6 @@ def meeting_hook():
         raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     if not conference.active:
-        send_mail(
-            message.sender_email,
-            CONFERENCE_INACTIVE,
-            fullname=message.sender_display,
-            presentations_url=web_url_for('conference_view', _absolute=True),
-            can_change_preferences=False,
-            logo=settings.OSF_MEETINGS_LOGO,
-        )
         raise HTTPError(http_status.HTTP_406_NOT_ACCEPTABLE)
 
     add_poster_by_email(conference=conference, message=message)
@@ -72,16 +49,6 @@ def add_poster_by_email(conference, message):
     :param Conference conference:
     :param ConferenceMessage message:
     """
-    # Fail if no attachments
-    if not message.attachments:
-        return send_mail(
-            message.sender_email,
-            CONFERENCE_FAILED,
-            fullname=message.sender_display,
-            can_change_preferences=False,
-            logo=settings.OSF_MEETINGS_LOGO
-        )
-
     with transaction.atomic():
         user, user_created = get_or_create_user(
             message.sender_display,
@@ -96,16 +63,6 @@ def add_poster_by_email(conference, message):
             user.add_system_tag(CampaignSourceTags.Osf4m.value)
             user.update_date_last_login()
             user.save()
-
-            # must save the user first before accessing user._id
-            set_password_url = web_url_for(
-                'reset_password_get',
-                uid=user._id,
-                token=user.verification_key_v2['token'],
-                _absolute=True,
-            )
-        else:
-            set_password_url = None
 
         # Always create a new meeting node
         node = Node.objects.create(
@@ -124,38 +81,6 @@ def add_poster_by_email(conference, message):
         auth_signals.user_confirmed.send(user)
 
     utils.upload_attachments(user, node, message.attachments)
-
-    download_url = node.web_url_for(
-        'addon_view_or_download_file',
-        path=message.attachments[0].filename,
-        provider='osfstorage',
-        action='download',
-        _absolute=True,
-    )
-
-    # Send confirmation email
-    send_mail(
-        message.sender_email,
-        CONFERENCE_SUBMITTED,
-        conf_full_name=conference.name,
-        conf_view_url=web_url_for(
-            'conference_results',
-            meeting=message.conference_name,
-            _absolute=True,
-        ),
-        fullname=message.sender_display,
-        user_created=user_created,
-        set_password_url=set_password_url,
-        profile_url=user.absolute_url,
-        node_url=node.absolute_url,
-        file_url=download_url,
-        presentation_type=message.conference_category.lower(),
-        is_spam=message.is_spam,
-        can_change_preferences=False,
-        logo=settings.OSF_MEETINGS_LOGO
-    )
-    if user_created:
-        signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 def conference_data(meeting):
     try:

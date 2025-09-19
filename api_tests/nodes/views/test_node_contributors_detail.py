@@ -5,7 +5,6 @@ from framework.auth.core import Auth
 from osf.models import NodeLog
 from osf_tests.factories import (
     ProjectFactory,
-    OSFGroupFactory,
     AuthUserFactory,
 )
 from tests.utils import assert_latest_log
@@ -89,17 +88,6 @@ class TestContributorDetail(ContributorDetailMixin):
         assert res.status_code == 200
         assert res.json['data']['id'] == f'{project_private._id}-{user._id}'
 
-    #   test_get_private_node_osf_group_member
-        group_mem = AuthUserFactory()
-        osf_group = OSFGroupFactory(creator=group_mem)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.get(
-            self.url_private(project_private, user._id),
-            auth=group_mem.auth
-        )
-        assert res.status_code == 200
-        assert res.json['data']['id'] == f'{project_private._id}-{user._id}'
-
     def test_get_private_node_contributor_detail_non_contributor(self, app, user, project_private):
         non_contrib = AuthUserFactory()
         res = app.get(
@@ -136,8 +124,7 @@ class TestContributorDetail(ContributorDetailMixin):
         project_public.add_unregistered_contributor(
             'Rheisen Dennis',
             'reason@gmail.com',
-            auth=Auth(user),
-            save=True)
+            auth=Auth(user))
         unregistered_contributor = project_public.contributors[1]
         url = self.make_resource_url(project_public._id, unregistered_contributor._id)
 
@@ -149,8 +136,7 @@ class TestContributorDetail(ContributorDetailMixin):
         project_private.add_unregistered_contributor(
             'Nesiehr Sinned',
             'reason@gmail.com',
-            auth=Auth(user),
-            save=True
+            auth=Auth(user)
         )
         url = self.make_resource_url(project_private._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth)
@@ -158,22 +144,6 @@ class TestContributorDetail(ContributorDetailMixin):
 
         assert res.json['data']['embeds']['users']['data']['attributes']['full_name'] == 'Rheisen Dennis'
         assert res.json['data']['attributes'].get('unregistered_contributor') == 'Nesiehr Sinned'
-
-    def test_node_contributor_detail_serializes_contributor_perms(self, app, user, project_public):
-        user_two = AuthUserFactory()
-        project_public.add_contributor(user_two, permissions.WRITE)
-        project_public.save()
-
-        osf_group = OSFGroupFactory(creator=user)
-        osf_group.make_member(user_two)
-        project_public.add_osf_group(osf_group, permissions.ADMIN)
-
-        url = self.make_resource_url(project_public._id, user_two._id)
-        res = app.get(url, auth=user.auth)
-        # Even though user_two has admin perms through group membership,
-        # contributor endpoints return contributor permissions
-        assert res.json['data']['attributes']['permission'] == permissions.WRITE
-        assert project_public.has_permission(user_two, permissions.ADMIN) is True
 
     def test_detail_includes_index(self, app, user, project_public, url_public):
         res = app.get(url_public, auth=user.auth)
@@ -390,18 +360,6 @@ class TestNodeContributorDelete:
         assert res.status_code == 400
         assert user in project.contributors
 
-    def test_remove_contributor_osf_group_member_read(self, app, user, user_write_contrib, user_non_contrib,
-            project, url_user, url_user_write_contrib, url_user_non_contrib):
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project.add_osf_group(group, permissions.READ)
-        res = app.delete(
-            url_user_write_contrib,
-            auth=group_mem.auth,
-            expect_errors=True
-        )
-        assert res.status_code == 403
-
     def test_can_not_remove_only_bibliographic_contributor(self, app, user, project, user_write_contrib, url_user):
         project.add_permission(
             user_write_contrib,
@@ -445,20 +403,6 @@ class TestNodeContributorDelete:
             # osf-models
             with disconnected_from_listeners(contributor_removed):
                 res = app.delete(url_user_write_contrib, auth=user.auth)
-            assert res.status_code == 204
-            assert user_write_contrib not in project.contributors
-
-    def test_remove_contributor_osf_group_member_admin(self, app, user, user_write_contrib, project,
-            url_user_write_contrib):
-        with assert_latest_log(NodeLog.CONTRIB_REMOVED, project):
-            # Disconnect contributor_removed so that we don't check in files
-            # We can remove this when StoredFileNode is implemented in
-            # osf-models
-            group_mem = AuthUserFactory()
-            group = OSFGroupFactory(creator=group_mem)
-            project.add_osf_group(group, permissions.ADMIN)
-            with disconnected_from_listeners(contributor_removed):
-                res = app.delete(url_user_write_contrib, auth=group_mem.auth)
             assert res.status_code == 204
             assert user_write_contrib not in project.contributors
 

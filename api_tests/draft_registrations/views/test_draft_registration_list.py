@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from framework.auth.core import Auth
@@ -7,7 +6,7 @@ from api_tests.nodes.views.test_node_draft_registration_list import AbstractDraf
 from api.base.settings.defaults import API_BASE
 
 from osf.migrations import ensure_invisible_and_inactive_schema
-from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider, RegistrationSchema, NotificationType
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
@@ -17,8 +16,9 @@ from osf_tests.factories import (
     DraftRegistrationFactory,
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
+from tests.utils import capture_notifications
 
-from website import mails, settings
+from website import settings
 
 
 @pytest.fixture(autouse=True)
@@ -51,10 +51,6 @@ class TestDraftRegistrationListTopLevelEndpoint:
 
     @pytest.fixture()
     def user_non_contrib(self):
-        return AuthUserFactory()
-
-    @pytest.fixture()
-    def group_mem(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -319,7 +315,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_non_authenticated_user_cannot_create_draft(
-            self, app, user_write_contrib, payload_alt, group, url_draft_registrations
+            self, app, user_write_contrib, payload_alt, url_draft_registrations
     ):
         res = app.post_json_api(
             url_draft_registrations,
@@ -341,10 +337,7 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         assert res.status_code == 403
 
     def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
-            app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
-
-        assert not mock_send_mail.called
+        app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
 
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """
@@ -396,11 +389,12 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         user.add_or_update_affiliated_institution(institution)
 
         del payload['data']['relationships']['branched_from']
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth,
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth,
+            )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert list(draft_registration.affiliated_institutions.all()) == list(user.get_affiliated_institutions())
@@ -416,7 +410,8 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
             self, app, user, url_draft_registrations,
             payload, metaschema_open_ended):
         url = f'{url_draft_registrations}embed=branched_from&embed=initiator'
-        res = app.post_json_api(url, payload, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user.auth)
 
         assert res.status_code == 201
         data = res.json['data']
@@ -433,27 +428,21 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         assert draft.has_permission(user, ADMIN) is True
 
     def test_create_no_project_draft_emails_initiator(self, app, user, url_draft_registrations, payload):
-        # Intercepting the send_mail call from website.project.views.contributor.notify_added_contributor
-        with mock.patch.object(mails, 'send_mail') as mock_send_mail:
-            resp = app.post_json_api(
+        with capture_notifications() as notifications:
+            app.post_json_api(
                 f'{url_draft_registrations}?embed=branched_from&embed=initiator',
                 payload,
                 auth=user.auth
             )
-        assert mock_send_mail.called
-
-        # Python 3.6 does not support mock.call_args.args/kwargs
-        # Instead, mock.call_args[0] is positional args, mock.call_args[1] is kwargs
-        # (note, this is compatible with later versions)
-        mock_send_kwargs = mock_send_mail.call_args[1]
-        assert mock_send_kwargs['mail'] == mails.CONTRIBUTOR_ADDED_DRAFT_REGISTRATION
-        assert mock_send_kwargs['user'] == user
-        assert mock_send_kwargs['node'] == DraftRegistration.load(resp.json['data']['id'])
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['kwargs']['user'] == user
 
     def test_create_draft_with_provider(
             self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider
     ):
-        res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
         assert res.status_code == 201
         data = res.json['data']
         assert data['relationships']['provider']['links']['related']['href'] == \
@@ -466,20 +455,24 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
         """(no node supplied, so any logged in user can create)
         """
         assert user_write_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_write_contrib.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_write_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_read_only(self, app, user, url_draft_registrations, user_read_contrib, project_public, payload):
         '''(no node supplied, so any logged in user can create)
         '''
         assert user_read_contrib in project_public.contributors.all()
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_read_contrib.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_read_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_non_authenticated_user_cannot_create_draft(self, app, user, url_draft_registrations, payload):
@@ -493,11 +486,12 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
     def test_logged_in_non_contributor(self, app, user, url_draft_registrations, user_non_contrib, payload):
         '''(no node supplied, so any logged in user can create)
         '''
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user_non_contrib.auth
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user_non_contrib.auth
+            )
         assert res.status_code == 201
 
     def test_draft_registration_attributes_not_copied_from_node(self, app, project_public,
@@ -514,7 +508,14 @@ class TestDraftRegistrationCreateWithoutNode(AbstractDraftRegistrationTestCase):
             save=True
         )
 
-        res = app.post_json_api(url_draft_registrations, payload, auth=user.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
         assert attributes['title'] == ''

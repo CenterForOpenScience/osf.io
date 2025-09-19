@@ -49,6 +49,7 @@ from osf.models import (
     PreprintProvider,
     Node,
     NodeLicense,
+    NotificationType,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
@@ -103,6 +104,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
         'reviews_state',
         'node_is_public',
         'tags',
+        'description',
     ])
     available_metrics = frozenset([
         'downloads',
@@ -475,7 +477,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         preprint,
                         contributor=author,
                         auth=auth,
-                        email_template='preprint',
+                        notification_type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
                     )
 
         return preprint
@@ -531,7 +533,6 @@ class PreprintCreateSerializer(PreprintSerializer):
     )
 
     def create(self, validated_data):
-
         creator = self.context['request'].user
         provider = validated_data.pop('provider', None)
         if not provider:

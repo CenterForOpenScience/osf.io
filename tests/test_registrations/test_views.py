@@ -17,6 +17,7 @@ from framework.exceptions import HTTPError
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
+from tests.utils import capture_notifications
 from website.project.metadata.schemas import _name_to_id
 from website.util import api_url_for
 from website.project.views import drafts as draft_views
@@ -343,10 +344,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.put(url, json=payload, auth=self.non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
-        # group admin cannot update draft registration
-        res = self.app.put(url, json=payload, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
     def test_delete_draft_registration(self):
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -362,10 +359,6 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         res = self.app.delete(url, auth=self.non_admin.auth)
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert 1 == DraftRegistration.objects.filter(deleted__isnull=True).count()
-
-        # group admin cannot delete draft registration
-        res = self.app.delete(url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
 
     @mock.patch('website.archiver.tasks.archive')
     def test_delete_draft_registration_registered(self, mock_register_draft):
@@ -532,7 +525,8 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of the pending registration
         # in order to determine whether to give approval
-        embargoed_registration.embargo.accept()
+        with capture_notifications():
+            embargoed_registration.embargo.accept()
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'pending'
 
@@ -543,8 +537,9 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration
         # to determine if there is a need to withdraw before it becomes public
-        embargoed_registration.embargo.accept()
-        embargoed_registration.embargo.accept(user=moderator)
+        with capture_notifications():
+            embargoed_registration.embargo.accept()
+            embargoed_registration.embargo.accept(user=moderator)
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'embargo'
 

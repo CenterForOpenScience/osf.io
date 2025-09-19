@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag, CollectionSubmission
+from osf.models import Tag, CollectionSubmission, NotificationType, OSFUser
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -37,7 +37,7 @@ from osf.exceptions import NodeStateError
 from osf.models import (
     Comment, DraftRegistration, ExternalAccount,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
-    RegistrationProvider, OSFGroup, NodeLicense, DraftNode,
+    RegistrationProvider, NodeLicense, DraftNode,
     Registration, Node,
 )
 from website.project import new_private_link
@@ -390,11 +390,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         related_view='nodes:node-forks',
         related_view_kwargs={'node_id': '<_id>'},
         related_meta={'count': 'get_forks_count'},
-    )
-
-    groups = RelationshipField(
-        related_view='nodes:node-groups',
-        related_view_kwargs={'node_id': '<_id>'},
     )
 
     node_links = ShowIfVersion(
@@ -829,9 +824,6 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
                     except ValidationError as e:
                         raise InvalidModelValueError(detail=list(e)[0])
             node.add_contributors(contributors, auth=auth, log=True, save=True)
-            for group in parent.osf_groups:
-                if group.is_manager(user):
-                    node.add_osf_group(group, group.get_permission_to_node(parent), auth=auth)
         if is_truthy(request.GET.get('inherit_subjects')) and validated_data['parent'].has_permission(user, osf_permissions.WRITE):
             parent = validated_data['parent']
             node.subjects.add(parent.subjects.all())
@@ -1249,46 +1241,55 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     def get_proposed_permissions(self, validated_data):
         return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
+    def validate_data(self, resource, user_id=None, full_name=None, email=None, index=None):
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
-        if index is not None and index > len(node.contributors):
-            raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {node._id}')
+        if index is not None and index > len(resource.contributors):
+            raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {resource._id}')
 
     def create(self, validated_data):
-        id = validated_data.get('_id')
-        email = validated_data.get('user', {}).get('email', None)
-        index = None
-        if '_order' in validated_data:
-            index = validated_data.pop('_order')
-        node = self.context['resource']
+        user_id = validated_data.get('_id')
+        email = validated_data.get('user', {}).get('email')
+        index = validated_data.pop('_order', None)
+        resource = self.context['resource']
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+        email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         permissions = self.get_proposed_permissions(validated_data)
 
-        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
+        self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index)
 
-        if send_email not in self.email_preferences:
-            raise exceptions.ValidationError(detail=f'{send_email} is not a valid email preference.')
+        if email_pref not in self.email_preferences:
+            raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
+
+        is_published = getattr(resource, 'is_published', False)
+        notification_type = {
+            'false': False,
+            'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
+            'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
+            'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
+        }.get(email_pref, False)
+        contributor = OSFUser.load(user_id)
+        notification_type = notification_type if email or (contributor and contributor.is_registered) else False
 
         try:
-            contributor_dict = {
-                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
-                'bibliographic': bibliographic, 'index': index, 'save': True,
-            }
-
-            contributor_dict['permissions'] = permissions
-            contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
+            return resource.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=user_id,
+                email=email,
+                full_name=full_name,
+                notification_type=notification_type,
+                bibliographic=bibliographic,
+                index=index,
+                permissions=permissions,
+            )
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
-        return contributor_obj
-
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
@@ -1919,120 +1920,3 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
         if isinstance(addon, bool):
             addon = None
         return addon
-
-
-class NodeGroupsSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'name',
-        'permission',
-        'date_created',
-    ])
-
-    writeable_method_fields = frozenset([
-        'permission',
-    ])
-
-    non_anonymized_fields = [
-        'type',
-        'permission',
-    ]
-
-    id = CompoundIDField(source='_id', read_only=True)
-    type = TypeField()
-    permission = ser.SerializerMethodField()
-    name = ser.CharField(read_only=True)
-    date_created = VersionedDateTimeField(source='created', read_only=True)
-    date_modified = VersionedDateTimeField(source='modified', read_only=True)
-
-    groups = RelationshipField(
-        related_view='groups:group-detail',
-        related_view_kwargs={'group_id': '<_id>'},
-        required=False,
-    )
-
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
-
-    def get_absolute_url(self, obj):
-        node = self.context['node']
-        return absolute_reverse(
-            'nodes:node-group-detail', kwargs={
-                'group_id': obj._id,
-                'node_id': node._id,
-                'version': self.context['request'].parser_context['kwargs']['version'],
-            },
-        )
-
-    def get_permission(self, obj):
-        node = self.context['node']
-        return obj.get_permission_to_node(node)
-
-    class Meta:
-        type_ = 'node-groups'
-
-
-class NodeGroupsCreateSerializer(NodeGroupsSerializer):
-    """
-    Overrides NodeGroupSerializer so groups relationship is properly parsed
-    (JSONAPIParser will flatten groups relationship into {'_id': 'group_id'},
-    so _id field needs to be writeable so it's not dropped from validated_data)
-
-    """
-    id = IDField(source='_id', required=False, allow_null=True)
-
-    groups = RelationshipField(
-        related_view='groups:group-detail',
-        related_view_kwargs={'group_id': '<_id>'},
-        required=False,
-    )
-
-    def load_osf_group(self, _id):
-        if not _id:
-            raise exceptions.ValidationError(detail='Group relationship must be specified.')
-        try:
-            osf_group = OSFGroup.objects.get(_id=_id)
-        except OSFGroup.DoesNotExist:
-            raise exceptions.NotFound(detail=f'Group {_id} is invalid.')
-        return osf_group
-
-    def create(self, validated_data):
-        auth = get_user_auth(self.context['request'])
-        node = self.context['node']
-        permission = validated_data.get('permission', osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS)
-        group = self.load_osf_group(validated_data.get('_id'))
-        if group in node.osf_groups:
-            raise exceptions.ValidationError(
-                f'The group {group._id} has already been added to the node {node._id}',
-            )
-
-        try:
-            node.add_osf_group(group, permission, auth)
-        except PermissionsError as e:
-            raise exceptions.PermissionDenied(detail=str(e))
-        except ValueError as e:
-            # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e))
-        return group
-
-
-class NodeGroupsDetailSerializer(NodeGroupsSerializer):
-    """
-    Overrides NodeGroupsSerializer to make id required.  Adds update method here.
-    """
-    id = CompoundIDField(source='_id', required=True)
-
-    def update(self, obj, validated_data):
-        auth = get_user_auth(self.context['request'])
-        node = self.context['node']
-        permission = validated_data.get('permission')
-        if not permission:
-            return obj
-        try:
-            node.update_osf_group(obj, permission, auth)
-        except PermissionsError as e:
-            raise exceptions.PermissionDenied(detail=str(e.message))
-        except ValueError as e:
-            # permission is in writeable_method_fields, so validation happens on OSF Group model
-            raise exceptions.ValidationError(detail=str(e))
-        return obj

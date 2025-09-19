@@ -10,26 +10,24 @@ from framework.auth import Auth
 
 from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
-from osf.models import NotableDomain, SpamStatus
-from website import settings, mails
+from osf.models import NotableDomain, SpamStatus, NotificationType
+from tests.utils import capture_notifications
+from website import settings
 
 
 @pytest.mark.django_db
-@mock.patch('framework.auth.views.mails.send_mail')
-def test_throttled_autoban(mock_mail):
+def test_throttled_autoban():
     settings.SPAM_THROTTLE_AUTOBAN = True
     user = AuthUserFactory()
     projects = []
-    for _ in range(7):
-        proj = ProjectFactory(creator=user)
-        proj.flag_spam()
-        proj.save()
-        projects.append(proj)
-    mock_mail.assert_called_with(osf_support_email=settings.OSF_SUPPORT_EMAIL,
-            can_change_preferences=False,
-            to_addr=user.username,
-            user=user,
-            mail=mails.SPAM_USER_BANNED)
+    with capture_notifications() as notifications:
+        for _ in range(7):
+            proj = ProjectFactory(creator=user)
+            proj.flag_spam()
+            proj.save()
+            projects.append(proj)
+    assert len(notifications['emits']) == 1
+    assert notifications['emits'][0]['type'] == NotificationType.Type.USER_SPAM_BANNED
     user.reload()
     assert user.is_disabled
     for project in projects:

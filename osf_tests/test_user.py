@@ -6,7 +6,6 @@ import datetime as dt
 from urllib.parse import urlparse, urljoin, parse_qs
 
 from django.db import connection, transaction
-from django.contrib.auth.models import Group
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
 from django.conf import settings as django_conf_settings
@@ -19,6 +18,7 @@ from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, Chan
 from framework.auth.signals import user_account_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
+from tests.utils import capture_notifications
 from website import settings
 from website import filters
 from website.views import find_bookmark_collection
@@ -26,7 +26,6 @@ from website.views import find_bookmark_collection
 from osf.models import (
     AbstractNode,
     OSFUser,
-    OSFGroup,
     Tag,
     Contributor,
     NotableDomain,
@@ -34,7 +33,7 @@ from osf.models import (
     DraftRegistrationContributor,
     DraftRegistration,
     DraftNode,
-    UserSessionMap,
+    UserSessionMap, NotificationType,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
@@ -55,7 +54,6 @@ from .factories import (
     ExternalAccountFactory,
     InstitutionFactory,
     NodeFactory,
-    OSFGroupFactory,
     PreprintProviderFactory,
     ProjectFactory,
     TagFactory,
@@ -234,30 +232,6 @@ class TestOSFUser:
         assert project.has_permission(user, permissions.ADMIN) is True
         assert project.get_visible(user) is True
         assert project.is_contributor(user2) is False
-
-    def test_merged_user_group_member_permissions_are_ignored(self, user):
-        user2 = UserFactory.build()
-        user2.save()
-        group = OSFGroupFactory(creator=user2)
-
-        project = ProjectFactory(is_public=True)
-        project.add_osf_group(group, permissions.ADMIN)
-        assert project.has_permission(user2, permissions.ADMIN)
-        # Both the master and dupe are contributors
-        project.add_contributor(user2, log=False)
-        project.add_contributor(user, log=False)
-        project.set_permissions(user=user, permissions=permissions.READ)
-        project.set_permissions(user=user2, permissions=permissions.WRITE)
-        project.save()
-        user.merge_user(user2)
-        user.save()
-        project.reload()
-
-        assert project.has_permission(user, permissions.ADMIN) is True
-        assert project.is_admin_contributor(user) is False
-        assert project.is_contributor(user2) is False
-        assert group.is_member(user) is True
-        assert group.is_member(user2) is False
 
     def test_merge_projects(self):
         user = AuthUserFactory()
@@ -766,8 +740,10 @@ class TestOSFUser:
         u = UnregUserFactory()
         project = NodeFactory()
         project.add_unregistered_contributor(
-            fullname=name, email=u.username,
-            auth=Auth(project.creator)
+            fullname=name,
+            email=u.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         u.reload()
@@ -778,8 +754,10 @@ class TestOSFUser:
         project = NodeFactory()
         old_name = unreg_user.fullname
         project.add_unregistered_contributor(
-            fullname=old_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=old_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -791,8 +769,10 @@ class TestOSFUser:
         assert unreg_user not in project.contributors
         new_name = fake.name()
         project.add_unregistered_contributor(
-            fullname=new_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=new_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -837,25 +817,6 @@ class TestOSFUser:
 
 class TestProjectsInCommon:
 
-    def test_get_projects_in_common(self, user, auth):
-        user2 = UserFactory()
-        project = NodeFactory(creator=user)
-        project.add_contributor(contributor=user2, auth=auth)
-        project.save()
-
-        group = OSFGroupFactory(creator=user, name='Platform')
-        group.make_member(user2)
-        group_project = ProjectFactory()
-        group_project.add_osf_group(group)
-        group_project.save()
-
-        project_keys = {node._id for node in user.all_nodes}
-        projects = set(user.all_nodes)
-        user2_project_keys = {node._id for node in user2.all_nodes}
-
-        assert {n._id for n in user.get_projects_in_common(user2)} == project_keys.intersection(user2_project_keys)
-        assert user.get_projects_in_common(user2) == projects.intersection(user2.all_nodes)
-
     def test_n_projects_in_common(self, user, auth):
         user2 = UserFactory()
         user3 = UserFactory()
@@ -864,13 +825,11 @@ class TestProjectsInCommon:
         project.add_contributor(contributor=user2, auth=auth)
         project.save()
 
-        group = OSFGroupFactory(name='Platform', creator=user)
-        group.make_member(user3)
-        project.add_osf_group(group)
+        project.add_contributor(contributor=user, auth=auth)
         project.save()
 
         assert user.n_projects_in_common(user2) == 1
-        assert user.n_projects_in_common(user3) == 1
+        assert user.n_projects_in_common(user3) == 0
 
 
 class TestCookieMethods:
@@ -939,27 +898,28 @@ class TestChangePassword:
         old_password = 'password'
         new_password = 'new password'
         confirm_password = new_password
-        user.set_password(old_password)
+        with capture_notifications():
+            user.set_password(old_password)
         user.save()
-        user.change_password(old_password, new_password, confirm_password)
+        with capture_notifications():
+            user.change_password(old_password, new_password, confirm_password)
         assert bool(user.check_password(new_password)) is True
 
-    @mock.patch('website.mails.send_mail')
-    def test_set_password_notify_default(self, mock_send_mail, user):
+    def test_set_password_notify_default(self, user):
         old_password = 'password'
-        user.set_password(old_password)
-        user.save()
-        assert mock_send_mail.called is True
+        with capture_notifications() as notifications:
+            user.set_password(old_password)
+            user.save()
 
-    @mock.patch('website.mails.send_mail')
-    def test_set_password_no_notify(self, mock_send_mail, user):
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+
+    def test_set_password_no_notify(self, user):
         old_password = 'password'
         user.set_password(old_password, notify=False)
         user.save()
-        assert mock_send_mail.called is False
 
-    @mock.patch('website.mails.send_mail')
-    def test_check_password_upgrade_hasher_no_notify(self, mock_send_mail, user, settings):
+    def test_check_password_upgrade_hasher_no_notify(self, user, settings):
         # NOTE: settings fixture comes from pytest-django.
         # changes get reverted after tests run
         settings.PASSWORD_HASHERS = (
@@ -970,15 +930,16 @@ class TestChangePassword:
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
         user.check_password(raw_password)
         assert user.password.startswith('md5$')
-        assert mock_send_mail.called is False
 
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
                                      error_message='Old password is invalid'):
         user = UserFactory()
-        user.set_password('password')
+        with capture_notifications():
+            user.set_password('password')
         user.save()
         with pytest.raises(ChangePasswordError, match=error_message):
-            user.change_password(old_password, new_password, confirm_password)
+            with capture_notifications():
+                user.change_password(old_password, new_password, confirm_password)
             user.save()
 
         assert bool(user.check_password(new_password)) is False
@@ -1045,7 +1006,8 @@ class TestIsActive:
                 is_disabled=False,
                 date_confirmed=timezone.now(),
             )
-            user.set_password('secret')
+            with capture_notifications():
+                user.set_password('secret')
             for attr, value in attrs.items():
                 setattr(user, attr, value)
             return user
@@ -1795,9 +1757,6 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on = ProjectFactory()
         project_to_be_invisible_on.add_contributor(self.user, visible=False)
         project_to_be_invisible_on.save()
-        group = OSFGroupFactory(creator=self.user, name='Platform')
-        group_project = ProjectFactory()
-        group_project.add_osf_group(group, permissions.READ)
 
         contributor_to_nodes = [node._id for node in self.user.contributor_to]
 
@@ -1807,7 +1766,6 @@ class TestUser(OsfTestCase):
         assert deleted_node._id not in contributor_to_nodes
         assert bookmark_collection_node._id not in contributor_to_nodes
         assert collection_node._id not in contributor_to_nodes
-        assert group_project._id not in contributor_to_nodes
 
     def test_contributor_or_group_member_to_property(self):
         normal_node = ProjectFactory(creator=self.user)
@@ -1820,9 +1778,6 @@ class TestUser(OsfTestCase):
         project_to_be_invisible_on = ProjectFactory()
         project_to_be_invisible_on.add_contributor(self.user, visible=False)
         project_to_be_invisible_on.save()
-        group = OSFGroupFactory(creator=self.user, name='Platform')
-        group_project = ProjectFactory()
-        group_project.add_osf_group(group, permissions.READ)
         registration = RegistrationFactory(creator=self.user)
 
         contributor_to_or_group_member_nodes = [node._id for node in self.user.contributor_or_group_member_to]
@@ -1833,24 +1788,17 @@ class TestUser(OsfTestCase):
         assert deleted_node._id not in contributor_to_or_group_member_nodes
         assert bookmark_collection_node._id not in contributor_to_or_group_member_nodes
         assert collection_node._id not in contributor_to_or_group_member_nodes
-        assert group_project._id in contributor_to_or_group_member_nodes
         assert registration._id in contributor_to_or_group_member_nodes
 
     def test_all_nodes_property(self):
         project = ProjectFactory(creator=self.user)
-        project_two = ProjectFactory()
-
-        group = OSFGroupFactory(creator=self.user)
-        project_two.add_osf_group(group)
-        project_two.save()
 
         project_three = ProjectFactory()
         project_three.save()
 
         user_nodes = self.user.all_nodes
-        assert user_nodes.count() == 2
+        assert user_nodes.count() == 1
         assert project in user_nodes
-        assert project_two in user_nodes
         assert project_three not in user_nodes
 
     def test_visible_contributor_to_property(self):
@@ -2151,7 +2099,13 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
-        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions=permissions.ADMIN, auth=Auth(user))
+        project.add_unregistered_contributor(
+            'lisa',
+            'lisafrank@cos.io',
+            permissions=permissions.ADMIN,
+            auth=Auth(user),
+            notification_type=False
+        )
         project.save()
         return project
 
@@ -2237,47 +2191,6 @@ class TestUserGdprDelete:
 
         assert exc_info.value.args[0] == 'You cannot delete Node {} because it would' \
                                          ' be a Node with contributors, but with no admin.'.format(project_user_is_only_admin._id)
-
-    def test_cant_gdpr_delete_osf_group_if_only_manager(self, user):
-        group = OSFGroupFactory(name='My Group', creator=user)
-        osf_group_name = group.name
-        manager_group_name = group.manager_group.name
-        member_group_name = group.member_group.name
-        member = AuthUserFactory()
-        group.make_member(member)
-
-        with pytest.raises(UserStateError) as exc_info:
-            user.gdpr_delete()
-
-        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
-                                        'they are the only registered manager of OSFGroup ' \
-                                        '{} that contains other members.'.format(group._id)
-
-        unregistered = group.add_unregistered_member('fake_user', 'fake_email@cos.io', Auth(user), 'manager')
-        assert len(group.managers) == 2
-
-        with pytest.raises(UserStateError) as exc_info:
-            user.gdpr_delete()
-
-        assert exc_info.value.args[0] == 'You cannot delete this user because ' \
-                                        'they are the only registered manager of OSFGroup ' \
-                                        '{} that contains other members.'.format(group._id)
-
-        group.remove_member(member)
-        member.gdpr_delete()
-        # User is not the last member in the group, so they are just removed
-        assert OSFGroup.objects.filter(name=osf_group_name).exists()
-        assert Group.objects.filter(name=manager_group_name).exists()
-        assert Group.objects.filter(name=member_group_name).exists()
-        assert group.is_member(member) is False
-        assert group.is_manager(member) is False
-
-        group.remove_member(unregistered)
-        user.gdpr_delete()
-        # Group was deleted because user was the only member
-        assert not OSFGroup.objects.filter(name=osf_group_name).exists()
-        assert not Group.objects.filter(name=manager_group_name).exists()
-        assert not Group.objects.filter(name=member_group_name).exists()
 
     def test_cant_gdpr_delete_with_addon_credentials(self, user, project_with_two_admins_and_addon_credentials):
 

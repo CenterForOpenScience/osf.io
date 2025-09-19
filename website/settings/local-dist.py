@@ -57,10 +57,18 @@ SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
 # Email
-USE_EMAIL = False
-MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+MAIL_SERVER = 'localhost'  # For local testing
+MAIL_PORT = 1025  # For local testing
+
+MAILHOG_HOST = 'mailhog'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://mailhog:8025'
+
+MAILHOG_HOST = 'mailhog'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://mailhog:8025'
 
 # Mailchimp email subscriptions
 ENABLE_EMAIL_SUBSCRIPTIONS = False
@@ -104,11 +112,6 @@ class CeleryConfig(defaults.CeleryConfig):
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
-# WARNING: `SENDGRID_WHITELIST_MODE` should always be True in local dev env to prevent unintentional spamming.
-# Add specific email addresses to `SENDGRID_EMAIL_WHITELIST` for testing purposes.
-SENDGRID_WHITELIST_MODE = True
-SENDGRID_EMAIL_WHITELIST = []
-
 # Example of extending default settings
 # defaults.IMG_FMTS += ["pdf"]
 
@@ -140,9 +143,6 @@ DOI_FORMAT = '{prefix}/FK2osf.io/{guid}'
 
 CHRONOS_USE_FAKE_FILE = True
 CHRONOS_FAKE_FILE_URL = 'https://staging2.osf.io/r2t5v/download'
-
-# Show sent emails in console
-logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
 
 SHARE_ENABLED = False
 DATACITE_ENABLED = False

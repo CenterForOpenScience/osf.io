@@ -16,14 +16,14 @@ from api.base import exceptions, settings
 from api.waffle.utils import flag_is_active
 
 from framework import sentry
-from framework.auth import get_or_create_institutional_user
+from framework.auth import get_or_create_institutional_user, deduplicate_sso_attributes
+from framework.auth.exceptions import MultipleSSOEmailError
 
 from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
-from osf.models import Institution
+from osf.models import Institution, NotificationType
 from osf.models.institution import SsoFilterCriteriaAction
 
-from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 from website.util.metrics import institution_source_tag
 
@@ -223,10 +223,16 @@ class InstitutionAuthentication(BaseAuthentication):
                     f'sso_email={sso_email}, sso_identity={sso_identity}]',
                 )
 
+        # Deduplicate names first if it is provided
+        if fullname:
+            fullname = deduplicate_sso_attributes('fullname', fullname)
+        if given_name:
+            given_name = deduplicate_sso_attributes('given_name', given_name)
+        if family_name:
+            family_name = deduplicate_sso_attributes('family_name', family_name)
         # Use given name and family name to build full name if it is not provided
         if given_name and family_name and not fullname:
             fullname = given_name + ' ' + family_name
-
         # Non-empty full name is required. Fail the auth and inform sentry if not provided.
         if not fullname:
             message = f'Institution SSO Error: missing full name ' \
@@ -235,6 +241,14 @@ class InstitutionAuthentication(BaseAuthentication):
             sentry.log_message(message)
             raise PermissionDenied(detail='InstitutionSsoMissingUserNames')
 
+        # Deduplicate sso email, currently we only handle duplicate sso email instead of multiple sso email
+        try:
+            sso_email = deduplicate_sso_attributes('sso_email', sso_email)
+        except MultipleSSOEmailError:
+            message = f'Institution SSO Error: multiple SSO email [sso_email={sso_email}, sso_identity={sso_identity}, institution={institution._id}]'
+            sentry.log_message(message)
+            logger.error(message)
+            raise PermissionDenied(detail='InstitutionSsoMultipleEmailsNotSupported')
         # Attempt to find an existing user that matches the email(s) provided via SSO. Create a new one if not found.
         # If a user is found, it is possible that the user is inactive (e.g. unclaimed, disabled, unconfirmed, etc.).
         # If a new user is created, the user object is confirmed but not registered (i.e. inactive until registered).
@@ -334,26 +348,31 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
-            send_mail(
-                to_addr=user.username,
-                mail=WELCOME_OSF4I,
+            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
                 user=user,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
-                storage_flag_is_active=flag_is_active(request, features.STORAGE_I18N),
+                event_context={
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'user_fullname': user.fullname,
+                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
+                },
+                save=False,
             )
 
         # Add the email to the user's account if it is identified by the eppn
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            send_mail(
-                to_addr=user.username,
-                mail=ADD_SSO_EMAIL_OSF4I,
+            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
                 user=user,
-                email_to_add=email_to_add,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'email_to_add': email_to_add,
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
+                },
+                save=False,
             )
 
         # Inform the user that a potential duplicate account is found
@@ -364,13 +383,19 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
-            send_mail(
-                to_addr=user.username,
-                mail=DUPLICATE_ACCOUNTS_OSF4I,
+            NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I.instance.emit(
                 user=user,
-                duplicate_user=duplicate_user,
-                domain=DOMAIN,
-                osf_support_email=OSF_SUPPORT_EMAIL,
+                subscribed_object=user,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'user_username': user.username,
+                    'user__id': user._id,
+                    'duplicate_user_fullname': duplicate_user.fullname,
+                    'duplicate_user_username': duplicate_user.username,
+                    'duplicate_user__id': duplicate_user._id,
+                    'domain': DOMAIN,
+                    'osf_support_email': OSF_SUPPORT_EMAIL,
+                },
             )
 
         # Affiliate the user to the primary institution if not previously affiliated

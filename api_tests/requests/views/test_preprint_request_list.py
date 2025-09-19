@@ -1,4 +1,3 @@
-from unittest import mock
 import pytest
 
 from api.base.settings.defaults import API_BASE
@@ -63,10 +62,3 @@ class TestPreprintRequestListCreate(PreprintRequestTestMixin):
         res = app.post_json_api(self.url(pre_mod_preprint), create_payload, auth=admin.auth, expect_errors=True)
         assert res.status_code == 409
         assert res.json['errors'][0]['detail'] == 'Users may not have more than one withdrawal request per preprint.'
-
-    @pytest.mark.skip('TODO: IN-284 -- add emails')
-    @mock.patch('website.reviews.listeners.mails.send_mail')
-    def test_email_sent_to_moderators_on_submit(self, mock_mail, app, admin, create_payload, moderator, post_mod_preprint):
-        res = app.post_json_api(self.url(post_mod_preprint), create_payload, auth=admin.auth)
-        assert res.status_code == 201
-        assert mock_mail.call_count == 1

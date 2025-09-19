@@ -5,8 +5,9 @@ from django.db import IntegrityError
 
 from framework.auth import Auth
 
-from osf.models import Collection
+from osf.models import Collection, NotificationType
 from osf.exceptions import NodeStateError
+from tests.utils import capture_notifications
 from website.views import find_bookmark_collection
 from .factories import (
     UserFactory,
@@ -16,8 +17,6 @@ from .factories import (
     CollectionProviderFactory
 )
 from osf.utils.workflows import CollectionSubmissionStates
-from website.mails import mails
-from osf.models.collection_submission import mails as collection_submission_mail
 
 pytestmark = pytest.mark.django_db
 
@@ -112,7 +111,8 @@ class TestImplicitRemoval:
         node = ProjectFactory(creator=bookmark_collection.creator, is_public=True)
         bookmark_collection.collect_object(node, bookmark_collection.creator)
         alternate_bookmark_collection.collect_object(node, alternate_bookmark_collection.creator)
-        provider_collection.collect_object(node, provider_collection.creator)
+        with capture_notifications():
+            provider_collection.collect_object(node, provider_collection.creator)
         return node
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
@@ -131,28 +131,17 @@ class TestImplicitRemoval:
         associated_collections = provider_collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
+        with capture_notifications() as notifications:
             provider_collected_node.set_privacy('private', auth=auth)
-            assert mock_send.called
-            assert len(mock_send.call_args_list) == 1
-            email1 = mock_send.call_args_list[0]
-            _, email1_kwargs = email1
-            assert {email1_kwargs['node'].id} == {provider_collected_node.id}
-            expected_mail = mails.COLLECTION_SUBMISSION_REMOVED_PRIVATE(associated_collections.last().collection, provider_collected_node)
-            assert {email1_kwargs['mail'].tpl_prefix} == {expected_mail.tpl_prefix}
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
     def test_node_removed_from_collection_on_privacy_change_no_provider(self, auth, collected_node, bookmark_collection):
         associated_collections = collected_node.guids.first().collectionsubmission_set
         assert associated_collections.count() == 3
 
-        send_mail = mails.send_mail
-        with mock.patch.object(collection_submission_mail, 'send_mail') as mock_send:
-            mock_send.side_effect = send_mail  # implicitly test rendering
-            collected_node.set_privacy('private', auth=auth)
-            assert not mock_send.called
+        collected_node.set_privacy('private', auth=auth)
 
     def test_node_removed_from_collection_on_delete(self, collected_node, bookmark_collection, auth):
         associated_collections = collected_node.guids.first().collectionsubmission_set

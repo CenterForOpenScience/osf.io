@@ -3,14 +3,10 @@ import collections
 from django.apps import apps
 from django.db.models import Q
 
-from framework.postcommit_tasks.handlers import run_postcommit
 from osf.utils.permissions import READ
 from website.notifications import constants
 from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
-
-from framework.celery_tasks import app
-
 
 class NotificationsDict(dict):
     def __init__(self):
@@ -76,45 +72,9 @@ def remove_contributor_from_subscriptions(node, user):
     if not (node.is_contributor_or_group_member(user)) and user._id not in node.admin_contributor_or_group_member_ids:
         node_subscriptions = get_all_node_subscriptions(user, node)
         for subscription in node_subscriptions:
-            subscription.remove_user_from_subscription(user)
-
-
-@signals.node_deleted.connect
-def remove_subscription(node):
-    remove_subscription_task(node._id)
-
-@signals.node_deleted.connect
-def remove_supplemental_node(node):
-    remove_supplemental_node_from_preprints(node._id)
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_subscription_task(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-
-    node = AbstractNode.load(node_id)
-    NotificationSubscription.objects.filter(node=node).delete()
-    parent = node.parent_node
-
-    if parent and parent.child_node_subscriptions:
-        for user_id in parent.child_node_subscriptions:
-            if node._id in parent.child_node_subscriptions[user_id]:
-                parent.child_node_subscriptions[user_id].remove(node._id)
-        parent.save()
-
-
-@run_postcommit(once_per_request=False, celery=True)
-@app.task(max_retries=5, default_retry_delay=60)
-def remove_supplemental_node_from_preprints(node_id):
-    AbstractNode = apps.get_model('osf.AbstractNode')
-
-    node = AbstractNode.load(node_id)
-    for preprint in node.preprints.all():
-        if preprint.node is not None:
-            preprint.node = None
-            preprint.save()
-
+            subscription.objects.filter(
+                user=user,
+            ).delete()
 
 def separate_users(node, user_ids):
     """Separates users into ones with permissions and ones without given a list.
@@ -173,7 +133,6 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
     :return: Returns a NOTIFICATION_TYPES list of removed users without permissions
     """
     NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    OSFUser = apps.get_model('osf.OSFUser')
     if source_node == new_node:
         return
     old_sub = NotificationSubscription.load(to_subscription_key(source_node._id, source_event))
@@ -192,8 +151,7 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
                 related_manager = getattr(new_sub, notification_type, None)
                 subscriptions = related_manager.all() if related_manager else []
                 if user_id in subscriptions:
-                    user = OSFUser.load(user_id)
-                    new_sub.remove_user_from_subscription(user)
+                    new_sub.delete()
 
 
 def get_configured_projects(user):
@@ -205,18 +163,14 @@ def get_configured_projects(user):
     configured_projects = set()
     user_subscriptions = get_all_user_subscriptions(user, extra=(
         ~Q(node__type='osf.collection') &
-        ~Q(node__type='osf.quickfilesnode') &
         Q(node__is_deleted=False)
     ))
 
     for subscription in user_subscriptions:
         # If the user has opted out of emails skip
-        node = subscription.owner
+        node = subscription.subscribed_object
 
-        if (
-            (subscription.none.filter(id=user.id).exists() and not node.parent_id) or
-            node._id not in user.notifications_configured
-        ):
+        if subscription.message_frequency == 'none':
             continue
 
         root = node.root
@@ -283,7 +237,10 @@ def format_data(user, nodes):
 
         if can_read:
             node_sub_available = list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys())
-            subscriptions = get_all_node_subscriptions(user, node, user_subscriptions=user_subscriptions).filter(event_name__in=node_sub_available)
+            subscriptions = get_all_node_subscriptions(
+                user,
+                node,
+                user_subscriptions=user_subscriptions).filter(notification_type__name__in=node_sub_available)
 
             for subscription in subscriptions:
                 index = node_sub_available.index(getattr(subscription, 'event_name'))

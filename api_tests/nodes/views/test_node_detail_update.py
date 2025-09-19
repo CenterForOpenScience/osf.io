@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.views.utils import NodeCRUDTestCase
 from api_tests.subjects.mixins import UpdateSubjectsMixin
 from framework.auth.core import Auth
-from osf.models import NodeLog
+from osf.models import NodeLog, NotificationType
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
 from osf_tests.factories import (
@@ -17,10 +17,9 @@ from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
     IdentifierFactory,
-    OSFGroupFactory,
 )
 from tests.base import fake
-from tests.utils import assert_latest_log, assert_latest_log_not
+from tests.utils import assert_latest_log, assert_latest_log_not, assert_notification, capture_notifications
 from website import settings
 
 
@@ -48,8 +47,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 ]
                 }
         }
-        payload = make_node_payload(project_private, {'public': False}, relationships=affiliated_institutions)
-        res = app.patch_json_api(url_private, payload, auth=user_two.auth, expect_errors=False)
+        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_two, times=2):
+            res = app.patch_json_api(
+                url_private,
+                make_node_payload(
+                    project_private,
+                    {'public': False},
+                    relationships=affiliated_institutions
+                ),
+                auth=user_two.auth,
+                expect_errors=False
+            )
         assert res.status_code == 200
         institutions = project_private.affiliated_institutions.all()
         assert institution_one in institutions
@@ -106,11 +114,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 permissions=permissions.ADMIN,
                 auth=Auth(project_private.creator))
             project_private.save()
-            res = app.patch_json_api(
-                url_private,
-                make_node_payload(project_private, {'public': True}),
-                auth=admin_user.auth  # self.user is creator/admin
-            )
+            with capture_notifications():
+                res = app.patch_json_api(
+                    url_private,
+                    make_node_payload(project_private, {'public': True}),
+                    auth=admin_user.auth  # self.user is creator/admin
+                )
             assert res.status_code == 200
             project_private.reload()
             assert project_private.is_public
@@ -329,25 +338,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert res.status_code == 403
         assert 'detail' in res.json['errors'][0]
 
-    # test_update_private_project_group_has_read_perms
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_private.add_osf_group(osf_group, permissions.READ)
-        res = app.put_json_api(url_private, {
-            'data': {
-                'id': project_private._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': title_new,
-                    'description': description_new,
-                    'category': category_new,
-                    'public': False
-                }
-            }
-        }, auth=user_two.auth, expect_errors=True)
-        assert project_private.has_permission(user_two, permissions.READ) is True
-        assert res.status_code == 403
-        assert 'detail' in res.json['errors'][0]
-
     def test_update_public_project_logged_in(
             self, app, user, title_new, description_new,
             category_new, project_public, url_public):
@@ -372,32 +362,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert NodeLog.EDITED_TITLE in log_actions
         assert NodeLog.EDITED_DESCRIPTION in log_actions
         assert NodeLog.CATEGORY_UPDATED in log_actions
-
-    def test_update_public_project_osf_group_member(
-        self, app, user_two, title_new, description_new,
-            category_new, project_public, url_public):
-        osf_group = OSFGroupFactory(creator=user_two)
-        project_public.add_osf_group(osf_group, permissions.WRITE)
-        res = app.put_json_api(url_public, {
-            'data': {
-                'id': project_public._id,
-                'type': 'nodes',
-                'attributes': {
-                    'title': title_new,
-                    'description': description_new,
-                    'category': category_new,
-                }
-            }
-        }, auth=user_two.auth)
-        assert res.status_code == 200
-        assert res.content_type == 'application/vnd.api+json'
-        assert res.json['data']['attributes']['title'] == title_new
-        assert res.json['data']['attributes']['description'] == description_new
-        assert res.json['data']['attributes']['category'] == category_new
-        log_actions = project_public.logs.values_list('action', flat=True)
-        assert NodeLog.CATEGORY_UPDATED in log_actions
-        assert NodeLog.EDITED_TITLE in log_actions
-        assert NodeLog.EDITED_DESCRIPTION in log_actions
 
     def test_cannot_update_a_registration(self, app, user, project_public):
         registration = RegistrationFactory(

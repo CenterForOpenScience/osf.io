@@ -1,11 +1,10 @@
 import pytest
-from unittest import mock
 
+from osf.models import NotificationType
 from osf_tests.factories import ProjectFactory, AuthUserFactory
 
 from osf.management.commands.deactivate_requested_accounts import deactivate_requested_accounts
-
-from website import mails, settings
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -26,31 +25,25 @@ class TestDeactivateRequestedAccount:
         user.save()
         return user
 
-    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
-    def test_deactivate_user_with_no_content(self, mock_mail, user_requested_deactivation):
+    def test_deactivate_user_with_no_content(self, user_requested_deactivation):
 
-        deactivate_requested_accounts(dry_run=False)
+        with capture_notifications() as notifications:
+            deactivate_requested_accounts(dry_run=False)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE
         user_requested_deactivation.reload()
 
         assert user_requested_deactivation.requested_deactivation
         assert user_requested_deactivation.contacted_deactivation
         assert user_requested_deactivation.is_disabled
-        mock_mail.assert_called_with(can_change_preferences=False,
-                                     mail=mails.REQUEST_DEACTIVATION_COMPLETE,
-                                     to_addr=user_requested_deactivation.username,
-                                     contact_email=settings.OSF_CONTACT_EMAIL,
-                                     user=user_requested_deactivation)
 
-    @mock.patch('osf.management.commands.deactivate_requested_accounts.mails.send_mail')
-    def test_deactivate_user_with_content(self, mock_mail, user_requested_deactivation_with_node):
+    def test_deactivate_user_with_content(self, user_requested_deactivation_with_node):
 
-        deactivate_requested_accounts(dry_run=False)
+        with capture_notifications() as notifications:
+            deactivate_requested_accounts(dry_run=False)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_DEACTIVATION
         user_requested_deactivation_with_node.reload()
 
         assert user_requested_deactivation_with_node.requested_deactivation
         assert not user_requested_deactivation_with_node.is_disabled
-        mock_mail.assert_called_with(can_change_preferences=False,
-                                     mail=mails.REQUEST_DEACTIVATION,
-                                     to_addr=settings.OSF_SUPPORT_EMAIL,
-                                     user=user_requested_deactivation_with_node)
-

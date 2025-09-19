@@ -1,19 +1,15 @@
 from unittest import mock
 import pytest
-import urllib
 
 from api.base.settings.defaults import API_BASE
-from api.base.settings import CSRF_COOKIE_NAME
 from api.base.utils import hashids
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
 )
-from django.middleware import csrf
-from django.core.cache import cache
-from osf.models import Email, NotableDomain
+from osf.models import Email, NotableDomain, NotificationType
 from framework.auth.views import auth_email_logout
-from website import mails, settings
+from tests.utils import capture_notifications
 
 @pytest.fixture()
 def user_one():
@@ -49,8 +45,7 @@ class TestUserRequestExport:
         res = app.get(url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 405
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post(self, mock_mail, app, user_one, user_two, url, payload):
+    def test_post(self, app, user_one, user_two, url, payload):
         # Logged out
         res = app.post_json_api(url, payload, expect_errors=True)
         assert res.status_code == 401
@@ -61,29 +56,30 @@ class TestUserRequestExport:
 
         # Logged in
         assert user_one.email_last_sent is None
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, payload, auth=user_one.auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
         assert res.status_code == 204
         user_one.reload()
         assert user_one.email_last_sent is not None
-        assert mock_mail.call_count == 1
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_post_invalid_type(self, mock_mail, app, user_one, url, payload):
+    def test_post_invalid_type(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
         payload['data']['type'] = 'Invalid Type'
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 409
         user_one.reload()
         assert user_one.email_last_sent is None
-        assert mock_mail.call_count == 0
 
-    @mock.patch('framework.auth.views.mails.send_mail')
-    def test_exceed_throttle(self, mock_mail, app, user_one, url, payload):
+    def test_exceed_throttle(self, app, user_one, url, payload):
         assert user_one.email_last_sent is None
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
 
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
 
         res = app.post_json_api(url, payload, auth=user_one.auth, expect_errors=True)
@@ -96,7 +92,7 @@ class TestUserChangePassword:
     @pytest.fixture()
     def user_one(self):
         user = UserFactory()
-        user.set_password('password1')
+        user.set_password('password1', notify=False)
         user.auth = (user.username, 'password1')
         user.save()
         return user
@@ -132,7 +128,8 @@ class TestUserChangePassword:
         assert res.status_code == 403
 
         # Logged in
-        res = app.post_json_api(url, payload, auth=user_one.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, payload, auth=user_one.auth)
         assert res.status_code == 204
         user_one.reload()
         assert user_one.check_password('password2')
@@ -169,138 +166,6 @@ class TestUserChangePassword:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Old password is invalid'
         assert res.json['errors'][1]['detail'] == 'Password should be at least eight characters'
-
-
-@pytest.mark.django_db
-class TestResetPassword:
-
-    @pytest.fixture()
-    def user_one(self):
-        user = UserFactory()
-        user.set_password('password1')
-        user.auth = (user.username, 'password1')
-        user.save()
-        return user
-
-    @pytest.fixture()
-    def url(self):
-        return f'/{API_BASE}users/reset_password/'
-
-    @pytest.fixture
-    def csrf_token(self):
-        return csrf._mask_cipher_secret(csrf._get_new_csrf_string())
-
-    @pytest.fixture(autouse=True)
-    def clear_throttle_cache(self):
-        cache.clear()
-
-    def test_get(self, app, url, user_one):
-        encoded_email = urllib.parse.quote(user_one.email)
-        url = f'{url}?email={encoded_email}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-            res = app.get(url)
-            assert res.status_code == 200
-
-            user_one.reload()
-            mock_send_mail.assert_called_with(
-                to_addr=user_one.username,
-                mail=mails.FORGOT_PASSWORD,
-                reset_link=f'{settings.DOMAIN}resetpassword/{user_one._id}/{user_one.verification_key_v2['token']}',
-                can_change_preferences=False,
-            )
-
-    def test_get_invalid_email(self, app, url):
-        url = f'{url}?email={'invalid_email'}'
-        with mock.patch.object(mails, 'send_mail', return_value=None) as mock_send_mail:
-            res = app.get(url)
-            assert res.status_code == 200
-            assert not mock_send_mail.called
-
-    def test_post(self, app, url, user_one):
-        encoded_email = urllib.parse.quote(user_one.email)
-        url = f'{url}?email={encoded_email}'
-        res = app.get(url)
-        user_one.reload()
-        payload = {
-            'data': {
-                'attributes': {
-                    'uid': user_one._id,
-                    'token': user_one.verification_key_v2['token'],
-                    'password': 'password2',
-                }
-            }
-        }
-
-        res = app.post_json_api(url, payload)
-        user_one.reload()
-        assert res.status_code == 200
-        assert user_one.check_password('password2')
-
-    def test_post_empty_payload(self, app, url, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        payload = {
-            'data': {
-                'attributes': {
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-CSRFToken': csrf_token})
-        assert res.status_code == 400
-
-    def test_post_invalid_token(self, app, url, user_one, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        payload = {
-            'data': {
-                'attributes': {
-                    'uid': user_one._id,
-                    'token': 'invalid_token',
-                    'password': 'password2',
-                }
-            }
-        }
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
-        assert res.status_code == 400
-
-    def test_post_invalid_password(self, app, url, user_one, csrf_token):
-        app.set_cookie(CSRF_COOKIE_NAME, csrf_token)
-        encoded_email = urllib.parse.quote(user_one.email)
-        url = f'{url}?email={encoded_email}'
-        res = app.get(url)
-        user_one.reload()
-        payload = {
-            'data': {
-                'attributes': {
-                    'uid': user_one._id,
-                    'token': user_one.verification_key_v2['token'],
-                    'password': user_one.username,
-                }
-            }
-        }
-
-        res = app.post_json_api(url, payload, expect_errors=True, headers={'X-THROTTLE-TOKEN': 'test-token', 'X-CSRFToken': csrf_token})
-        assert res.status_code == 400
-
-    def test_throttle(self, app, url, user_one):
-        encoded_email = urllib.parse.quote(user_one.email)
-        url = f'{url}?email={encoded_email}'
-        res = app.get(url)
-        user_one.reload()
-        payload = {
-            'data': {
-                'attributes': {
-                    'uid': user_one._id,
-                    'token': user_one.verification_key_v2['token'],
-                    'password': '12345',
-                }
-            }
-        }
-
-        res = app.post_json_api(url, payload, expect_errors=False)
-        assert res.status_code == 200
-
-        res = app.get(url, expect_errors=True)
-        assert res.status_code == 429
-        assert res.json['message'] == 'You have recently requested to change your password. Please wait a few minutes before trying again.'
 
 
 @pytest.mark.django_db
@@ -588,25 +453,25 @@ class TestUserEmailDetail:
 
     def test_set_primary_email(self, app, confirmed_url, payload, confirmed_email, user_one, user_two, unconfirmed_url):
         payload['data']['attributes'] = {'primary': True}
+        with capture_notifications():
+            # test_set_email_primary_not_logged_in
+            res = app.patch_json_api(confirmed_url, payload, expect_errors=True)
+            assert res.status_code == 401
 
-        # test_set_email_primary_not_logged_in
-        res = app.patch_json_api(confirmed_url, payload, expect_errors=True)
-        assert res.status_code == 401
+            # test_set_primary_email_current_user
+            res = app.patch_json_api(confirmed_url, payload, auth=user_one.auth)
+            assert res.status_code == 200
+            user_one.reload()
+            assert user_one.username == confirmed_email.address
 
-        # test_set_primary_email_current_user
-        res = app.patch_json_api(confirmed_url, payload, auth=user_one.auth)
-        assert res.status_code == 200
-        user_one.reload()
-        assert user_one.username == confirmed_email.address
+            # test set primary not current user
+            res = app.patch_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
+            assert res.status_code == 403
 
-        # test set primary not current user
-        res = app.patch_json_api(confirmed_url, payload, auth=user_two.auth, expect_errors=True)
-        assert res.status_code == 403
-
-        # test set primary not confirmed fails
-        res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
-        assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == 'You cannot set an unconfirmed email address as your primary email address.'
+            # test set primary not confirmed fails
+            res = app.patch_json_api(unconfirmed_url, payload, auth=user_one.auth, expect_errors=True)
+            assert res.status_code == 400
+            assert res.json['errors'][0]['detail'] == 'You cannot set an unconfirmed email address as your primary email address.'
 
     def test_delete_email(self, app, payload, user_one, user_two, confirmed_email, confirmed_url, unconfirmed_url, unconfirmed_address):
         # test delete email logged in as another user fails

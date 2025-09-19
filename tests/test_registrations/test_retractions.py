@@ -15,16 +15,16 @@ from tests.base import fake, OsfTestCase
 from osf_tests.factories import (
     AuthUserFactory, NodeFactory, ProjectFactory,
     RegistrationFactory, UserFactory, UnconfirmedUserFactory,
-    UnregUserFactory, OSFGroupFactory
+    UnregUserFactory
 )
 from osf.utils import tokens
 from osf.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
-from osf.models import Contributor, Retraction
+from osf.models import Contributor, Retraction, NotificationType
 from osf.utils import permissions
-
+from tests.utils import capture_notifications
 
 
 @pytest.mark.enable_bookmark_creation
@@ -194,15 +194,6 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         with pytest.raises(PermissionsError):
             self.registration.retraction.approve_retraction(non_admin, approval_token)
-        assert self.registration.is_pending_retraction
-        assert not self.registration.is_retracted
-
-        # group admin on node cannot retract registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        self.registration.registered_from.add_osf_group(group, permissions.ADMIN)
-        with pytest.raises(PermissionsError):
-            self.registration.retraction.approve_retraction(group_mem, approval_token)
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
@@ -773,10 +764,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.retraction_get_url = self.registration.web_url_for('node_registration_retraction_get')
         self.justification = fake.sentence()
 
-        self.group_mem = AuthUserFactory()
-        self.group = OSFGroupFactory(creator=self.group_mem)
-        self.registration.registered_from.add_osf_group(self.group, permissions.ADMIN)
-
     def test_GET_retraction_page_when_pending_retraction_returns_HTTPError_BAD_REQUEST(self):
         self.registration.retract_registration(self.user)
         self.registration.save()
@@ -800,8 +787,7 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self, mock_send_mail):
+    def test_POST_retraction_does_not_send_email_to_unregistered_admins(self):
         unreg = UnregUserFactory()
         self.registration.add_unregistered_contributor(
             unreg.fullname,
@@ -811,13 +797,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
             existing_user=unreg
         )
         self.registration.save()
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        # Only the creator gets an email; the unreg user does not get emailed
-        assert mock_send_mail.call_count == 1
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
 
     def test_POST_pending_embargo_returns_HTTPError_HTTPOK(self):
         self.registration.embargo_registration(
@@ -828,11 +815,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.save()
         assert self.registration.is_pending_embargo
 
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert self.registration.is_pending_retraction
@@ -849,12 +837,12 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve(user=self.user, token=approval_token)
         assert self.registration.embargo_end_date
-
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert self.registration.is_pending_retraction
@@ -865,59 +853,54 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.reload()
         assert self.registration.retraction is None
 
-        # group admin POST fails
-        res = self.app.post(self.retraction_post_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
-    @mock.patch('website.mails.send_mail')
-    def test_POST_retraction_without_justification_returns_HTTPOK(self, mock_send):
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+    def test_POST_retraction_without_justification_returns_HTTPOK(self):
+        with capture_notifications():
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == http_status.HTTP_200_OK
         self.registration.reload()
         assert not self.registration.is_retracted
         assert self.registration.is_pending_retraction
         assert self.registration.retraction.justification is None
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_adds_to_parent_projects_log(self, mock_send):
+    def test_valid_POST_retraction_adds_to_parent_projects_log(self):
         initial_project_logs = self.registration.registered_from.logs.count()
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+        with capture_notifications():
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         self.registration.registered_from.reload()
         # Logs: Created, registered, retraction initiated
         assert self.registration.registered_from.logs.count() == initial_project_logs + 1
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_retraction_when_pending_retraction_raises_400(self, mock_send):
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        res = self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
+    def test_valid_POST_retraction_when_pending_retraction_raises_400(self):
+        with capture_notifications():
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+            res = self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
         assert res.status_code == 400
 
-    @mock.patch('website.mails.send_mail')
-    def test_valid_POST_calls_send_mail_with_username(self, mock_send):
-        self.app.post(
-            self.retraction_post_url,
-            json={'justification': ''},
-            auth=self.user.auth,
-        )
-        assert mock_send.called
-        args, kwargs = mock_send.call_args
-        assert self.user.username in args
+    def test_valid_POST_calls_send_mail_with_username(self):
+        with capture_notifications() as notifications:
+            self.app.post(
+                self.retraction_post_url,
+                json={'justification': ''},
+                auth=self.user.auth,
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
 
     def test_non_contributor_GET_approval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
@@ -930,10 +913,6 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
 
-        # group admin on node fails disapproval GET
-        res = self.app.get(approval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
-
     def test_non_contributor_GET_disapproval_returns_HTTPError_FORBIDDEN(self):
         non_contributor = AuthUserFactory()
         self.registration.retract_registration(self.user)
@@ -944,7 +923,3 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert res.status_code == http_status.HTTP_403_FORBIDDEN
         assert self.registration.is_pending_retraction
         assert not self.registration.is_retracted
-
-        # group admin on node fails disapproval GET
-        res = self.app.get(disapproval_url, auth=self.group_mem.auth)
-        assert res.status_code == http_status.HTTP_403_FORBIDDEN
