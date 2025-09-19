@@ -71,6 +71,9 @@ class NotificationSubscription(BaseModel):
             destination_address (optional): overides the user's email address for the notification. Good for sending
             to a test address or OSF desk support'
             email_context (dict, optional): Context for sending the email bcc, reply_to header etc
+            save (bool, optional): save the notification and creates a subscription object if true, otherwise just
+            send the notification with no db transaction, therefore message_frequency should always be 'instantly' when
+            used.
         """
         if not settings.CI_ENV:
             logging.info(
