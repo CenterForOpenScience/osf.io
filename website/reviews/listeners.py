@@ -31,6 +31,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
+    context['provider_id'] = provider.id
     for recipient in provider.get_group('moderator').user_set.all():
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
@@ -54,6 +55,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
 
+    context['provider_id'] = preprint.provider.id
     for recipient in preprint.provider.get_group('moderator').user_set.all():
         context['user_fullname'] = recipient.fullname
         context['recipient_fullname'] = recipient.fullname
@@ -73,6 +75,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     # imports moved here to avoid AppRegistryNotReady error
 
     provider = resource.provider
+    context['provider_id'] = provider.id
     context['reviews_submission_url'] = (
         f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
     )
