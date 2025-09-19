@@ -1,17 +1,16 @@
 import logging
 import uuid
 
-from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from website.app import init_app
 from website import settings
 
-from osf.models import EmailTask  # <-- new
+from osf.models import EmailTask
 
 from scripts.utils import add_file_logger
 
@@ -27,7 +26,7 @@ def main(dry_run: bool = True):
         logger.info('No users matched inactivity criteria.')
         return
 
-    for user in users.iterator():
+    for user in users:
         if dry_run:
             logger.warning('Dry run mode')
             logger.warning(f'[DRY RUN] Would enqueue no_login email for {user.username}')
@@ -110,38 +109,13 @@ def send_no_login_email(email_task_id: int):
             EmailTask.objects.filter(id=email_task.id).update(status='USER_DISABLED')
             logger.warning(f'EmailTask {email_task.id}: user {user.id} is not active')
             return
-
-        # --- Send the email ---
-        # Replace this with your real templated email system if desired.
-        subject = 'We miss you at OSF'
-        message = (
-            f'Hello {user.fullname},\n\n'
-            'We noticed you haven’t logged into OSF in a while. '
-            'Your projects, registrations, and files are still here whenever you need them.\n\n'
-            f'If you need help, contact us at {settings.OSF_SUPPORT_EMAIL}.\n\n'
-            '— OSF Team'
+        NotificationType.Type.USER_NO_LOGIN.instance.emit(
+            user=user,
+            event_context={
+                'user_fullname': user.fullname,
+                'domain': settings.DOMAIN,
+            }
         )
-        from_email = settings.OSF_SUPPORT_EMAIL
-        recipient_list = [user.username]  # assuming username is the email address
-
-        # If you want HTML email or a template, swap in EmailMultiAlternatives and render_to_string.
-        sent_count = send_mail(
-            subject=subject,
-            message=message,
-            from_email=from_email,
-            recipient_list=recipient_list,
-            fail_silently=False,
-        )
-
-        if sent_count > 0:
-            EmailTask.objects.filter(id=email_task.id).update(status='SUCCESS')
-            logger.info(f'EmailTask {email_task.id}: email sent to {user.username}')
-        else:
-            EmailTask.objects.filter(id=email_task.id).update(
-                status='FAILURE',
-                error_message='send_mail returned 0'
-            )
-            logger.error(f'EmailTask {email_task.id}: send_mail returned 0')
 
     except Exception as exc:  # noqa: BLE001
         logger.exception(f'EmailTask {email_task.id}: error while sending')

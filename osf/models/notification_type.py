@@ -80,6 +80,7 @@ class NotificationType(models.Model):
         USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
         USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
         USER_DIGEST = 'user_digest'
+        USER_NO_LOGIN = 'user_no_login'
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
 
         # Node notifications
