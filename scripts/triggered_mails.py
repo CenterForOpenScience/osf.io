@@ -26,7 +26,7 @@ def main(dry_run: bool = True):
         logger.info('No users matched inactivity criteria.')
         return
 
-    for user in users.all():
+    for user in users:
         if dry_run:
             logger.warning('Dry run mode')
             logger.warning(f'[DRY RUN] Would enqueue no_login email for {user.username}')
