@@ -18,6 +18,7 @@
                        class="btn btn-primary">
                         <i class="fa fa-search"></i>
                     </a>
+                    {% include "preprints/hard_delete_preprint.html" with preprint=preprint %}
                     {% include "preprints/remove_preprint.html" with preprint=preprint %}
                     {% include "preprints/mark_spam.html" with preprint=preprint %}
                     {% include "preprints/reindex_preprint_share.html" with preprint=preprint %}
