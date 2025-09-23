@@ -18,6 +18,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(), name='node-logs'),
     re_path(r'^(?P<guid>[a-z0-9]+)/schema_responses/$', views.AdminNodeSchemaResponseView.as_view(),
         name='schema-responses'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/update_registration_date/$', views.RegistrationUpdateDateView.as_view(), name='update-registration-date'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_embargo/$', views.RegistrationUpdateEmbargoView.as_view(), name='update-embargo'),
     re_path(r'^(?P<guid>[a-z0-9]+)/change_provider/$', views.RegistrationChangeProviderView.as_view(), name='change-provider'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(), name='remove'),

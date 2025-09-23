@@ -86,6 +86,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
 
     CATEGORY_UPDATED = 'category_updated'
     ARTICLE_DOI_UPDATED = 'article_doi_updated'
+    REGISTRATION_DATE_UPDATED = 'registration_date_updated'
 
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
