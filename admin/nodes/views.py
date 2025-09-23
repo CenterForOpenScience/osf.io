@@ -98,10 +98,22 @@ class RegistrationUpdateDateView(NodeMixin, View):
         node = self.get_object()
         form = RegistrationDateForm(request.POST)
         if form.is_valid():
+            last_date = node.registered_date
             new_date = form.cleaned_data['registered_date']
             node.registered_date = new_date
             node.created = new_date
             node.save()
+
+            node.add_log(
+                action=NodeLog.REGISTRATION_DATE_UPDATED,
+                auth=request,
+                params={
+                    'last_date': str(last_date),
+                    'new_date': str(new_date)
+                },
+                log_date=timezone.now(),
+                should_hide=True,
+            )
             messages.success(request, 'Registration date updated successfully.')
         else:
             messages.error(request, 'Please enter a valid date.')
