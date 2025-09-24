@@ -112,7 +112,7 @@ class RegistrationUpdateDateView(NodeMixin, View):
                     'new_date': str(new_date)
                 },
                 log_date=timezone.now(),
-                should_hide=True,
+                should_hide=False,
             )
             messages.success(request, 'Registration date updated successfully.')
         else:
