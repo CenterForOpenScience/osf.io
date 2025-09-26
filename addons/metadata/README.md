@@ -43,6 +43,10 @@ This addon provides researcher/project suggestions sourced from ERAD and KAKEN. 
 - Owner: current user first, then other contributors in `node.contributors` order.
 - Year: within each owner, sort by fiscal year (`nendo`) descending.
 - Key priority: then apply `key_list` priority (place `contributor:*` earlier if you want it prioritized).
+- Researcher/Project ordering flow (e.g. for KAKEN suggestions):
+  1. Seed with the current user's e-Rad researcher number, query Elasticsearch for matching projects, sort the projects by fiscal year (descending), and enumerate collaborators (`work:project.member`) exactly as stored. For collaborators with an e-Rad number but no English name, fetch the English name from Elasticsearch keyed by that number.
+  2. For each remaining project member, follow their contributor order, query Elasticsearch for their projects, and reuse the collaborator enumeration from step 1. Ensure the project member themselves appears immediately after the current user in the combined results.
+  3. Deduplicate the consolidated list. A researcher entry is considered a duplicate when the e-Rad number, Japanese/English names, and Japanese/English affiliation names all match; keep the first occurrence. A project entry is considered a duplicate if the project number matches; keep the first occurrence.
 
 ### Deduplication
 
