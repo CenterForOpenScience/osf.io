@@ -37,7 +37,7 @@ ERAD_COLUMNS = [
     'JAPAN_GRANT_NUMBER', 'PROGRAM_NAME_JA', 'PROGRAM_NAME_EN', 'FUNDING_STREAM_CODE',
 ]
 
-ROR_URL = 'https://api.ror.org/organizations'
+ROR_URL = 'https://api.ror.org/v2/organizations'
 
 
 def valid_suggestion_key(key):
@@ -446,8 +446,12 @@ def suggestion_ror(key, keyword):
     response.raise_for_status()
     res = []
     for item in response.json()['items']:
-        labels = item.get('labels', [])
-        name_ja = next((l['label'] for l in labels if l['iso639'] == 'ja'), item['name'])
+        names = item.get('names', [])
+        display_name = next((n['value'] for n in names if 'ror_display' in n.get('types', [])),
+                           next((n['value'] for n in names if n.get('lang') == 'en'), ''))
+        name_ja = next((n['value'] for n in names if n.get('lang') == 'ja' and 'label' in n.get('types', [])),
+                      next((n['value'] for n in names if n.get('lang') == 'ja'), display_name))
+        item['name'] = display_name
         res.append({
             'key': key,
             'value': {
