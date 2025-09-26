@@ -1723,7 +1723,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         """Reset main guid to resolve to last versioned guid which is not withdrawn/rejected if there is one.
         """
         guid = None
-        for version in self.versioned_guids[1:]:  # skip first guid as it refers to current version
+        for version in self.versioned_guids.all()[1:]:  # skip first guid as it refers to current version
             guid = version.guid
             if guid.referent.machine_state not in (ReviewStates.REJECTED, ReviewStates.WITHDRAWN):
                 break
