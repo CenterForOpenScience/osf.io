@@ -1,5 +1,5 @@
 /**
-* Module that controls the WEKO user settings. Includes Knockout view-model
+* Module that controls the JAIRO Cloud user settings. Includes Knockout view-model
 * for syncing data.
 */
 
@@ -26,7 +26,7 @@ var sprintf = require('agh.sprintf').sprintf;
 function ViewModel(configUrl, accountsUrl) {
     var self = this;
 
-    self.properName = 'WEKO';
+    self.properName = 'JAIRO Cloud';
     self.selectedRepo = ko.observable();
     self.repositories = ko.observableArray();
     self.account_url = '/api/v1/settings/weko/accounts/';
@@ -34,7 +34,7 @@ function ViewModel(configUrl, accountsUrl) {
 
     ChangeMessageMixin.call(self);
 
-    /** Reset all fields from WEKO credentials input modal */
+    /** Reset all fields from JAIRO Cloud credentials input modal */
     self.clearModal = function() {
         self.message('');
         self.messageClass('text-info');
@@ -47,12 +47,12 @@ function ViewModel(configUrl, accountsUrl) {
         self.messageClass(cls || 'text-info');
     };
 
-    /** Send POST request to authorize WEKO */
+    /** Send POST request to authorize JAIRO Cloud */
     self.connectOAuth = function() {
         var self = this;
         // Selection should not be empty
         if(!self.selectedRepo()) {
-            self.changeMessage('Please select WEKO repository.', 'text-danger');
+            self.changeMessage(_('Please select JAIRO Cloud repository.'), 'text-danger');
             return;
         }
         window.oauthComplete = function() {
@@ -154,7 +154,7 @@ function ViewModel(configUrl, accountsUrl) {
             self.updateAccounts();
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
-            Raven.captureMessage('Could not GET WEKO settings', {
+            Raven.captureMessage('Could not GET JAIRO Cloud settings', {
                 extra: {
                     url: configUrl,
                     textStatus: textStatus,

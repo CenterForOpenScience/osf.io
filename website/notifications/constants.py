@@ -41,7 +41,7 @@ PROVIDERS = {
     's3': 'Amazon S3',
     'swift': 'OpenStack Swift',
     'azureblobstorage': 'Azure Blob Storage',
-    'weko': 'WEKO',
+    'weko': 'JAIRO Cloud',
     'dropboxbusiness': 'Dropbox Business',
     'nextcloudinstitutions': 'Nextcloud for Institutions',
     's3compatinstitutions': 'S3 Compatible Storage for Institutions',

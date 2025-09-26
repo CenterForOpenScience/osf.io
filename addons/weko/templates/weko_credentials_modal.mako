@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>${_("Connect a WEKO Account")}</h3>
+                <h3>${_("Connect a JAIRO Cloud Account")}</h3>
             </div>
 
             <form>
@@ -13,14 +13,14 @@
 
                         <div class="col-sm-6">
 
-                            <!-- Select WEKO installation -->
+                            <!-- Select JAIRO Cloud installation -->
                             <div class="form-group">
-                                <label for="hostSelect">${_("WEKO Repository")}</label>
+                                <label for="hostSelect">${_("JAIRO Cloud Repository")}</label>
                                 <select class="form-control"
                                         id="hostSelect"
                                         data-bind="options: repositories,
                                                    optionsText: 'name',
-                                                   optionsCaption: '${_("Select a WEKO repository")}',
+                                                   optionsCaption: '${_("Select a JAIRO Cloud repository")}',
                                                    value: selectedRepo,
                                                    event: { change: selectionChanged }">
                                 </select>

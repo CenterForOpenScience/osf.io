@@ -55,7 +55,7 @@ def find_repository(repoid):
 class WEKOProvider(ExternalProvider):
     """An alternative to `ExternalProvider` not tied to OAuth"""
 
-    name = 'WEKO'
+    name = 'JAIRO Cloud'
     short_name = 'weko'
     serializer = WEKOSerializer
 

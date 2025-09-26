@@ -34,7 +34,7 @@ function parseDisplayName(displayName) {
 
 const ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
     constructor: function(url, institutionId) {
-        this.super.constructor.call(this, 'weko', 'WEKO', institutionId);
+        this.super.constructor.call(this, 'weko', 'JAIRO Cloud', institutionId);
         WEKOHostSettingsMixin.call(this);
 
         this.url = url;
@@ -88,7 +88,7 @@ const ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
             callback();
         }).fail(function(xhr, textStatus, error) {
             self.changeMessage(language.accountsError, 'text-danger');
-            Raven.captureMessage(_('Could not set accounts for WEKO'), {
+            Raven.captureMessage(_('Could not set accounts for JAIRO Cloud'), {
                 extra: {
                     url: self.url,
                     textStatus: textStatus,
@@ -104,9 +104,9 @@ const ViewModel = oop.extend(OAuthAddonSettingsViewModel, {
     askDisconnect: function(account) {
         var self = this;
         bootbox.confirm({
-            title: _('Delete WEKO Application?'),
+            title: _('Delete JAIRO Cloud Application?'),
             message: '<p class="overflow">' +
-                sprintf(_('Are you sure you want to delete the WEKO application <strong>%1$s</strong>? WEKO add-on connections already set up for the projects will be preserved.'),osfHelpers.htmlEscape(account.name)) +
+                sprintf(_('Are you sure you want to delete the JAIRO Cloud application <strong>%1$s</strong>? JAIRO Cloud add-on connections already set up for the projects will be preserved.'),osfHelpers.htmlEscape(account.name)) +
                 '</p>',
             callback: function (confirm) {
                 if (confirm) {

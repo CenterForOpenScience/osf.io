@@ -427,8 +427,8 @@ msgstr "エラーが発生しました: "
 #: addons/weko/static/wekoFangornConfig.js:564
 msgid ""
 "No file metadata is defined for the schema available for depositting to "
-"WEKO."
-msgstr "WEKOに登録可能なスキーマに関するファイルメタデータが定義されていません。"
+"JAIRO Cloud."
+msgstr "JAIRO Cloudに登録可能なスキーマに関するファイルメタデータが定義されていません。"
 
 #: addons/weko/static/wekoFangornConfig.js:584
 msgid "Schema"
@@ -450,9 +450,9 @@ msgstr "送信するプロジェクトメタデータを選択してください
 
 #: addons/weko/static/wekoFangornConfig.js:617
 msgid ""
-"Do you want to deposit the file/folder \"%1$s\" to WEKO? This operation "
+"Do you want to deposit the file/folder \"%1$s\" to JAIRO Cloud? This operation "
 "is irreversible."
-msgstr "ファイル(フォルダ) \"%1$s\" をWEKOに登録しますか？この操作は元に戻せません。"
+msgstr "ファイル(フォルダ) \"%1$s\" をJAIRO Cloudに登録しますか？この操作は元に戻せません。"
 
 #: addons/weko/static/wekoFangornConfig.js:627
 msgid "OK"
@@ -463,8 +463,8 @@ msgid "Deposit files"
 msgstr "ファイルの登録"
 
 #: addons/weko/static/wekoFangornConfig.js:837
-msgid "Save and Deposit to WEKO"
-msgstr "保存してWEKOに登録"
+msgid "Save and Deposit to JAIRO Cloud"
+msgstr "保存してJAIRO Cloudに登録"
 
 #: addons/weko/static/wekoNodeConfig.js:86
 #: addons/weko/static/wekoNodeConfig.js:115
@@ -528,8 +528,8 @@ msgid ""
 msgstr "このインデックスに接続できませんでした。 問題が解決しない場合は、ページを更新するか、%1$sにお問い合わせください。"
 
 #: addons/weko/static/wekoNodeConfig.js:270
-msgid "Please select WEKO repository."
-msgstr "WEKOリポジトリを選択してください。"
+msgid "Please select JAIRO Cloud repository."
+msgstr "JAIRO Cloudリポジトリを選択してください。"
 
 #: addons/weko/static/wekoNodeConfig.js:373
 #: website/static/js/citationsNodeConfig.js:147
@@ -961,21 +961,21 @@ msgid "Error while retrieving addon account"
 msgstr "アドオン情報の取得に失敗しました"
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:91
-msgid "Could not set accounts for WEKO"
-msgstr "WEKOのアカウント設定に失敗しました"
+msgid "Could not set accounts for JAIRO Cloud"
+msgstr "JAIRO Cloudのアカウント設定に失敗しました"
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:107
-msgid "Delete WEKO Application?"
-msgstr "WEKOアプリケーションを削除しますか？"
+msgid "Delete JAIRO Cloud Application?"
+msgstr "JAIRO Cloudアプリケーションを削除しますか？"
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:109
 msgid ""
-"Are you sure you want to delete the WEKO application "
-"<strong>%1$s</strong>? WEKO add-on connections already set up for the "
+"Are you sure you want to delete the JAIRO Cloud application "
+"<strong>%1$s</strong>? JAIRO Cloud add-on connections already set up for the "
 "projects will be preserved."
 msgstr ""
-"本当にWEKOアプリケーション <strong>%1$s</strong> "
-"を削除してもよろしいですか？すでにプロジェクトに設定されているWEKOアドオンの接続は維持されます。"
+"本当にJAIRO Cloudアプリケーション <strong>%1$s</strong> "
+"を削除してもよろしいですか？すでにプロジェクトに設定されているJAIRO Cloudアドオンの接続は維持されます。"
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:92
 msgid "Are you sure you want to change institutional storage?"
@@ -2863,7 +2863,7 @@ msgstr ""
 msgid ""
 "\n"
 "\n"
-"<h3>WEKO Add-on Terms</h3>\n"
+"<h3>JAIRO Cloud Add-on Terms</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
 "\n"
@@ -2878,19 +2878,19 @@ msgid ""
 "            <tr class=\"warning\">\n"
 "                <td>Add / update files</td>\n"
 "                <td>Deposit files to the index in the project via GakuNin"
-" RDM will be reflected in WEKO.</td>\n"
+" RDM will be reflected in JAIRO Cloud.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Logs</td>\n"
 "                <td>The GakuNin RDM keeps track of changes you make to "
-"your WEKO index through the GakuNin RDM, but not for changes made using "
-"WEKO directly.</td>\n"
+"your JAIRO Cloud index through the GakuNin RDM, but not for changes made using "
+"JAIRO Cloud directly.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Forking</td>\n"
-"                <td>Forking a project or component does not copy WEKO "
+"                <td>Forking a project or component does not copy JAIRO Cloud "
 "authorization unless the user forking the project is the same user who "
-"authorized the WEKO add-on in the source project being forked.</td>\n"
+"authorized the JAIRO Cloud add-on in the source project being forked.</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -2908,7 +2908,7 @@ msgid ""
 msgstr ""
 "\n"
 "\n"
-"<h3>WEKO アドオン規約</h3>\n"
+"<h3>JAIRO Cloud アドオン規約</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
 "\n"
@@ -2923,17 +2923,17 @@ msgstr ""
 "            <tr class=\"warning\">\n"
 "                <td>ファイルの追加/更新</td>\n"
 "                <td>GakuNin "
-"RDMからファイルをプロジェクトのインデックスに登録すると、WEKOに反映されます。</td>\n"
+"RDMからファイルをプロジェクトのインデックスに登録すると、JAIRO Cloudに反映されます。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>ログ</td>\n"
 "                <td>GakuNin RDMは、GakuNin "
-"RDMからWEKOのインデックスに行った変更を追跡しますが、WEKOを使って直接行った変更については追跡しません。</td>\n"
+"RDMからJAIRO Cloudのインデックスに行った変更を追跡しますが、JAIRO Cloudを使って直接行った変更については追跡しません。</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>フォーク</td>\n"
 "                "
-"<td>プロジェクトやコンポーネントのフォーク時、WEKOの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでWEKOアドオンを承認したユーザーと同一である場合はコピーされます。</td>"
+"<td>プロジェクトやコンポーネントのフォーク時、JAIRO Cloudの認証はコピーされません。ただし、プロジェクトをフォークするユーザーが、フォーク元のプロジェクトでJAIRO Cloudアドオンを承認したユーザーと同一である場合はコピーされます。</td>"
 "\n"
 "            </tr>\n"
 "    </tbody>\n"
@@ -5209,35 +5209,35 @@ msgid "Azure Blob Storage addon for a project deauthorized"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:203
-msgid "A user added a draft file to a WEKO index in a project"
+msgid "A user added a draft file to a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:204
-msgid "A user removed a draft file from a WEKO index in a project"
+msgid "A user removed a draft file from a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:205
-msgid "A user linked a WEKO index to a project"
+msgid "A user linked a JAIRO Cloud index to a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:206
-msgid "A user created a draft folder in WEKO in a project"
+msgid "A user created a draft folder in JAIRO Cloud in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:207
-msgid "A user deposit item in a WEKO index in a project"
+msgid "A user deposit item in a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:208
-msgid "A user authorized the WEKO addon for a project"
+msgid "A user authorized the JAIRO Cloud addon for a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:209
-msgid "A user deauthorized the WEKO addon for a project"
+msgid "A user deauthorized the JAIRO Cloud addon for a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:210
-msgid "WEKO addon for a project deauthorized"
+msgid "JAIRO Cloud addon for a project deauthorized"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:211
@@ -8100,40 +8100,40 @@ msgid "Azure Blob Storage addon for ${node} deauthorized"
 msgstr "${node}のAzure Blob Storageアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:229
-msgid "${user} added draft file ${filename} to WEKO index ${dataset} in ${node}"
-msgstr "${user}が${node}のWEKOインデックス(${dataset})にドラフトファイル(${filename})を追加しました"
+msgid "${user} added draft file ${filename} to JAIRO Cloud index ${dataset} in ${node}"
+msgstr "${user}が${node}のJAIRO Cloudインデックス(${dataset})にドラフトファイル(${filename})を追加しました"
 
 #: website/static/js/logActionsList_extract.js:230
 msgid ""
-"${user} removed draft file ${filename} from WEKO index ${dataset} in "
+"${user} removed draft file ${filename} from JAIRO Cloud index ${dataset} in "
 "${node}"
-msgstr "${user}が${node}のWEKOインデックス(${dataset})からドラフトファイル(${filename})を削除しました"
+msgstr "${user}が${node}のJAIRO Cloudインデックス(${dataset})からドラフトファイル(${filename})を削除しました"
 
 #: website/static/js/logActionsList_extract.js:231
-msgid "${user} linked WEKO index ${dataset} to ${node}"
-msgstr "${user}がWEKOインデックス(${dataset})を${node}にリンクしました"
+msgid "${user} linked JAIRO Cloud index ${dataset} to ${node}"
+msgstr "${user}がJAIRO Cloudインデックス(${dataset})を${node}にリンクしました"
 
 #: website/static/js/logActionsList_extract.js:232
 msgid ""
-"${user} created draft folder ${filename} in WEKO index ${dataset} in "
+"${user} created draft folder ${filename} in JAIRO Cloud index ${dataset} in "
 "${node}"
-msgstr "${user}が${node}のWEKOインデックス(${dataset})にドラフトフォルダ(${filename})を作成しました"
+msgstr "${user}が${node}のJAIRO Cloudインデックス(${dataset})にドラフトフォルダ(${filename})を作成しました"
 
 #: website/static/js/logActionsList_extract.js:233
-msgid "${user} deposit item ${path} in WEKO index ${dataset} in ${node}"
-msgstr "${user}が${node}のWEKOインデックス(${dataset})にアイテムを登録しました"
+msgid "${user} deposit item ${path} in JAIRO Cloud index ${dataset} in ${node}"
+msgstr "${user}が${node}のJAIRO Cloudインデックス(${dataset})にアイテムを登録しました"
 
 #: website/static/js/logActionsList_extract.js:234
-msgid "${user} authorized the WEKO addon for ${node}"
-msgstr "${user}が${node}のWEKOアドオンを承認しました"
+msgid "${user} authorized the JAIRO Cloud addon for ${node}"
+msgstr "${user}が${node}のJAIRO Cloudアドオンを承認しました"
 
 #: website/static/js/logActionsList_extract.js:235
-msgid "${user} deauthorized the WEKO addon for ${node}"
-msgstr "${user}が${node}のWEKOアドオンの認証を解除しました"
+msgid "${user} deauthorized the JAIRO Cloud addon for ${node}"
+msgstr "${user}が${node}のJAIRO Cloudアドオンの認証を解除しました"
 
 #: website/static/js/logActionsList_extract.js:236
-msgid "WEKO addon for ${node} deauthorized"
-msgstr "${node}のWEKOアドオンの認証が解除されました"
+msgid "JAIRO Cloud addon for ${node} deauthorized"
+msgstr "${node}のJAIRO Cloudアドオンの認証が解除されました"
 
 #: website/static/js/logActionsList_extract.js:237
 msgid "${user} linked the S3 Compatible Storage bucket ${bucket} to ${node}"
