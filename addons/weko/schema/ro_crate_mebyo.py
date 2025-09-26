@@ -53,7 +53,7 @@ MAPPING: Dict[Tuple[str, Union[Type[str], Type[int], Type[float]]], List[str]] =
     ('ams:isTemporalMeasurementData', str):['d-txt-temporal-measurement-data', 'd-exl-temporal-measurement-data', 'd-img-temporal-measurement-data', 'd-abt-temporal-measurement-data'],
     ('ams:numberOfRows', int):['d-txt-number-of-rows', 'd-exl-number-of-rows', 'd-abt-number-of-rows'],
     ('ams:numberOfColumns', int):['d-txt-number-of-columns', 'd-exl-number-of-columns', 'd-abt-number-of-columns'],
-    ('ams:approximateNumberOfSimilarFiles ', str):['d-txt-approximate-number-of-similar-files', 'd-exl-approximate-number-of-similar-files', 'd-img-approximate-number-of-similar-files', 'd-abt-approximate-number-of-similar-files'],
+    ('ams:approximateNumberOfSimilarFiles', str):['d-txt-approximate-number-of-similar-files', 'd-exl-approximate-number-of-similar-files', 'd-img-approximate-number-of-similar-files', 'd-abt-approximate-number-of-similar-files'],
     ('ams:delimiter', str):['t-txt-delimiter','t-abt-delimiter'],
     ('ams:characterCode', str):['t-txt-character-code', 't-abt-character-code'],
     ('ams:remarks', 'ja'):['t-txt-remarks-jp', 't-exl-remarks-jp', 't-img-remarks-jp', 't-abt-remarks-jp'],
