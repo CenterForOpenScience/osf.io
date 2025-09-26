@@ -1711,9 +1711,38 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             comment: Text describing why.
         """
         ret = super().run_reject(user=user, comment=comment)
-        versioned_guid = self.versioned_guids.first()
-        versioned_guid.is_rejected = True
-        versioned_guid.save()
+        current_version_guid = self.versioned_guids.first()
+        current_version_guid.is_rejected = True
+        current_version_guid.save()
+
+        self.rollback_main_guid()
+
+        return ret
+
+    def rollback_main_guid(self):
+        """Reset main guid to resolve to last versioned guid which is not withdrawn/rejected if there is one.
+        """
+        guid = None
+        for version in self.versioned_guids[1:]:  # skip first guid as it refers to current version
+            guid = version.guid
+            if guid.referent.machine_state not in (ReviewStates.REJECTED, ReviewStates.WITHDRAWN):
+                break
+        if guid:
+            guid.referent = self
+            guid.object_id = self.pk
+            guid.content_type = ContentType.objects.get_for_model(self)
+            guid.save()
+
+    def run_withdraw(self, user, comment):
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_withdraw(user=user, comment=comment)
+        self.rollback_main_guid()
         return ret
 
 @receiver(post_save, sender=Preprint)

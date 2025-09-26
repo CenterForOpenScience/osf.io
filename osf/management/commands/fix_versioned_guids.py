@@ -51,7 +51,7 @@ def fix_versioned_guids(dry_run: bool):
             if guid.object_id == last_version_object_id:
                 skipped_count += 1
                 break
-            if version.referent.machine_state == ReviewStates.INITIAL.value:
+            if version.referent.machine_state not in (ReviewStates.INITIAL.value, ReviewStates.REJECTED.value, ReviewStates.WITHDRAWN.value):
                 continue
             try:
                 guid.object_id = last_version_object_id
