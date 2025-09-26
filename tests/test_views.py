@@ -5328,7 +5328,9 @@ class TestProjectCreation(OsfTestCase):
     def test_project_before_template_no_addons(self):
         project = ProjectFactory()
         res = self.app.get(project.api_url_for('project_before_template'), auth=project.creator.auth)
-        assert_equal(res.json['prompts'], [])
+        # GRDM-54077: metadata addon is enabled by default, so we expect 1 prompt
+        assert_equal(len(res.json['prompts']), 1)
+        assert_in('Metadata', res.json['prompts'])
 
     def test_project_before_template_with_addons(self):
         project = ProjectWithAddonFactory(addon='box')

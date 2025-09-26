@@ -39,7 +39,8 @@
         "nextcloudinstitutions",
         "dropboxbusiness",
         "onedrivebusiness",
-        "onlyoffice"
+        "onlyoffice",
+        "metadata"
     ],
     "addons_archivable": {
         "osfstorage": "full",

@@ -513,6 +513,17 @@ class TestRestoreDataFunction(AdminTestCase):
             'task_always_eager': False,
             'task_eager_propagates': False,
         })
+
+        # GRDM-54077: Remove 'node' from metadata addon's added_default to avoid Celery task scheduling
+        # when task_always_eager is False (would hang in CI without Celery workers)
+        from website import settings
+        for addon in settings.ADDONS_AVAILABLE:
+            if addon.short_name == 'metadata':
+                self._original_metadata_added_default = addon.added_default[:]
+                if 'node' in addon.added_default:
+                    addon.added_default.remove('node')
+                break
+
         self.export_data = ExportDataFactory()
         self.export_data_restore = ExportDataRestoreFactory()
         self.region = RegionFactory()
@@ -562,6 +573,15 @@ class TestRestoreDataFunction(AdminTestCase):
         bulkmount_region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
         self.bulk_mount_data_restore = ExportDataRestoreFactory.create(destination=bulkmount_region)
         self.user = UserFactory()
+
+    def tearDown(self):
+        # GRDM-54077: Restore original metadata addon settings
+        if hasattr(self, '_original_metadata_added_default'):
+            from website import settings
+            for addon in settings.ADDONS_AVAILABLE:
+                if addon.short_name == 'metadata':
+                    addon.added_default = self._original_metadata_added_default
+                    break
 
     # check_before_restore_export_data
     @mock.patch(f'{EXPORT_DATA_UTIL_PATH}.get_file_data')

@@ -3225,7 +3225,7 @@ msgstr "すべて"
 
 #: website/templates/project/addons.mako:82
 msgid "(This is a default addon)"
-msgstr "(これは標準ストレージです)"
+msgstr "(これは標準機能です)"
 
 #: website/templates/project/addons.mako:84
 msgid "Disable"
