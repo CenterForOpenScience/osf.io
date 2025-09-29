@@ -36,7 +36,7 @@ KAKEN_ELASTIC_KWARGS = {
 KAKEN_RESOURCESYNC_URL = 'https://nrid.nii.ac.jp/.well-known/resourcesync'
 
 # Batch processing control
-KAKEN_SYNC_MAX_DOCUMENTS_PER_EXECUTION = 1000  # Maximum documents to process per execution
+KAKEN_SYNC_MAX_DOCUMENTS_PER_EXECUTION = 10000  # Maximum documents to process per execution
 
 # Elasticsearch analyzer configuration for KAKEN
 # Note: Using standard analyzer since kuromoji plugin is not available in this environment
