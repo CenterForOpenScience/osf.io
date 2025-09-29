@@ -256,7 +256,7 @@ def _canon_html(s: str) -> str:
     return s
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True, passthrough: bool = False):
+def capture_notifications(capture_email: bool = True, passthrough: bool = False, expect_none: bool = False):
     """
     Capture NotificationType.emit calls and (optionally) email sends.
     Surfaces helpful template errors if rendering fails.
@@ -330,6 +330,13 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
             stack.enter_context(p)
         yield captured
 
+    if expect_none:
+        if captured['emits']:
+            raise AssertionError(
+                f'{len(captured['emails'])} notifications were emitted. '
+                'Expected at 0'
+            )
+        return
     if not captured['emits']:
         raise AssertionError(
             'No notifications were emitted. '
