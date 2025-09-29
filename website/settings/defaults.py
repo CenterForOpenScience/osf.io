@@ -678,11 +678,11 @@ class CeleryConfig:
             },
             'sync_kaken_data': {
                 'task': 'addons.metadata.tasks.sync_kaken_data',
-                'schedule': crontab(minute=0, hour=2),  # Daily at 2:00 a.m. UTC (11:00 a.m. JST)
+                'schedule': crontab(minute=0, hour=17),  # Daily at 5:00 p.m. UTC (2:00 a.m. JST)
             },
             'cleanup_old_sync_logs': {
                 'task': 'addons.metadata.tasks.cleanup_old_sync_logs',
-                'schedule': crontab(minute=0, hour=3, day_of_week=0),  # Weekly on Sunday at 3:00 a.m. UTC
+                'schedule': crontab(minute=0, hour=18, day_of_week=6),  # Weekly on Saturday at 6:00 p.m. UTC (Sunday 3:00 a.m. JST)
             },
         }
 
