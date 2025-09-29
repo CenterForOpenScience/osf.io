@@ -1,5 +1,6 @@
 from unittest import mock
 from datetime import timedelta
+import pytest
 
 from django.utils import timezone
 
@@ -56,6 +57,7 @@ class TestApproveEmbargoTerminations(OsfTestCase):
         assert targets.count() == 1
         assert targets.first()._id == self.registration2.embargo_termination_approval._id
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_main_auto_approves_embargo_termination_request(self):
         for node in self.registration2.node_and_primary_descendants():
             assert not node.is_public

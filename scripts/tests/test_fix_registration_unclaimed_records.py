@@ -52,6 +52,7 @@ class TestFixRegistrationUnclaimedRecords:
         with mock_archive(project, autoapprove=True) as registration:
             return registration
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_migrate_bad_data(self, user, project, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()
