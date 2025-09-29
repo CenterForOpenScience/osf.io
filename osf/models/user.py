@@ -1979,13 +1979,34 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def _validate_no_public_entities(self):
         """
         Ensure that the user doesn't have any public facing resources like Registrations or Preprints
-        """
-        from osf.models import Preprint
+        that would be left with other contributors after this deletion.
 
-        if self.nodes.filter(deleted__isnull=True, type='osf.registration').exists():
+        Allow GDPR deletion if the user is the sole contributor on a public Registration or Preprint.
+        """
+        from osf.models import Preprint, AbstractNode
+
+        registrations_with_others = AbstractNode.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            deleted__isnull=True,
+            type='osf.registration',
+            contrib_count__gt=1
+        ).exists()
+
+        if registrations_with_others:
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
+        preprints_with_others = Preprint.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            ever_public=True,
+            deleted__isnull=True,
+            contrib_count__gt=1
+        ).exists()
+
+        if preprints_with_others:
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):

@@ -31,8 +31,6 @@ from osf.models import (
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
-    DraftRegistration,
-    DraftNode,
     UserSessionMap, NotificationType,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
@@ -2134,26 +2132,6 @@ class TestUserGdprDelete:
         user.gdpr_delete()
         assert user.nodes.exclude(is_deleted=True).count() == 0
 
-    def test_can_gdpr_delete_personal_registrations(self, user, registration_with_draft_node):
-        assert DraftRegistration.objects.all().count() == 1
-        assert DraftNode.objects.all().count() == 1
-
-        with pytest.raises(UserStateError) as exc_info:
-            user.gdpr_delete()
-
-        assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
-        assert DraftRegistration.objects.all().count() == 1
-        assert DraftNode.objects.all().count() == 1
-
-        registration_with_draft_node.remove_node(Auth(user))
-        assert DraftRegistration.objects.all().count() == 1
-        assert DraftNode.objects.all().count() == 1
-        user.gdpr_delete()
-
-        # DraftNodes soft-deleted, DraftRegistions hard-deleted
-        assert user.nodes.exclude(is_deleted=True).count() == 0
-        assert DraftRegistration.objects.all().count() == 0
-
     def test_can_gdpr_delete_shared_nodes_with_multiple_admins(self, user, project_with_two_admins):
 
         user.gdpr_delete()
@@ -2162,7 +2140,7 @@ class TestUserGdprDelete:
     def test_can_gdpr_delete_shared_draft_registration_with_multiple_admins(self, user, registration):
         other_admin = AuthUserFactory()
         draft_registrations = user.draft_registrations.get()
-        draft_registrations.add_contributor(other_admin, permissions='admin')
+        draft_registrations.add_contributor(other_admin, auth=Auth(user), permissions='admin')
         assert draft_registrations.contributors.all().count() == 2
         registration.delete_registration_tree(save=True)
 
@@ -2170,19 +2148,52 @@ class TestUserGdprDelete:
         assert draft_registrations.contributors.get() == other_admin
         assert user.nodes.filter(deleted__isnull=True).count() == 0
 
-    def test_cant_gdpr_delete_registrations(self, user, registration):
+    def test_cant_gdpr_delete_multiple_contributors_registrations(self, user, registration):
+        registration.is_public = True
+        other_user = AuthUserFactory()
+        registration.add_contributor(other_user, auth=Auth(user), permissions='admin')
+        registration.save()
+
+        assert registration.contributors.count() == 2
 
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more registrations.'
 
-    def test_cant_gdpr_delete_preprints(self, user, preprint):
+    def test_cant_gdpr_delete_multiple_contributors_preprints(self, user, preprint):
+        other_user = AuthUserFactory()
+        preprint.add_contributor(other_user, auth=Auth(user), permissions='admin')
+        preprint.save()
 
         with pytest.raises(UserStateError) as exc_info:
             user.gdpr_delete()
 
         assert exc_info.value.args[0] == 'You cannot delete this user because they have one or more preprints.'
+
+    def test_can_gdpr_delete_sole_contributor_registration(self, user):
+        registration = RegistrationFactory(creator=user)
+        registration.save()
+
+        assert registration.contributors.count() == 1
+        assert registration.contributors.first() == user
+
+        user.gdpr_delete()
+
+        assert user.fullname == 'Deleted user'
+        assert user.deleted is not None
+
+    def test_can_gdpr_delete_sole_contributor_preprint(self, user):
+        preprint = PreprintFactory(creator=user)
+        preprint.save()
+
+        assert preprint.contributors.count() == 1
+        assert preprint.contributors.first() == user
+
+        user.gdpr_delete()
+
+        assert user.fullname == 'Deleted user'
+        assert user.deleted is not None
 
     def test_cant_gdpr_delete_shared_node_if_only_admin(self, user, project_user_is_only_admin):
 
