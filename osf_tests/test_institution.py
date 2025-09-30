@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 
 from addons.osfstorage.models import Region
-from osf.models import Institution, InstitutionStorageRegion, NotificationType
+from osf.models import Institution, InstitutionStorageRegion
 from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
@@ -12,7 +12,6 @@ from osf_tests.factories import (
     RegionFactory,
     UserFactory,
 )
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -110,6 +109,7 @@ class TestInstitutionPermissions:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestInstitutionManager:
 
     def test_deactivated_institution_not_in_default_queryset(self):
@@ -146,7 +146,7 @@ class TestInstitutionManager:
         institution.reactivate()
         assert institution.deactivated is None
 
-    def test_send_deactivation_email_call_count(self):
+    def test_send_deactivation_email_call_count(self, mock_send_grid):
         institution = InstitutionFactory()
         user_1 = UserFactory()
         user_1.add_or_update_affiliated_institution(institution)
@@ -154,21 +154,16 @@ class TestInstitutionManager:
         user_2 = UserFactory()
         user_2.add_or_update_affiliated_institution(institution)
         user_2.save()
-        with capture_notifications() as notifications:
-            institution._send_deactivation_email()
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        institution._send_deactivation_email()
+        assert mock_send_grid.call_count == 2
 
-    def test_send_deactivation_email_call_args(self):
+    def test_send_deactivation_email_call_args(self, mock_send_grid):
         institution = InstitutionFactory()
         user = UserFactory()
         user.add_or_update_affiliated_institution(institution)
         user.save()
-        with capture_notifications() as notifications:
-            institution._send_deactivation_email()
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTION_DEACTIVATION
+        institution._send_deactivation_email()
+        mock_send_grid.assert_called()
 
     def test_deactivate_inactive_institution_noop(self):
         institution = InstitutionFactory()

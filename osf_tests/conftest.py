@@ -4,6 +4,8 @@ from framework.celery_tasks.handlers import handlers as celery_handlers
 from framework.django.handlers import handlers as django_handlers
 from framework.flask import rm_handlers
 from website.app import init_app
+from website.project.signals import contributor_added
+from website.project.views.contributor import notify_added_contributor
 
 
 # NOTE: autouse so that ADDONS_REQUESTED gets set on website.settings
@@ -35,3 +37,13 @@ def request_context(app):
     context.push()
     yield context
     context.pop()
+
+DISCONNECTED_SIGNALS = {
+    # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+    contributor_added: [notify_added_contributor]
+}
+@pytest.fixture(autouse=True)
+def disconnected_signals():
+    for signal in DISCONNECTED_SIGNALS:
+        for receiver in DISCONNECTED_SIGNALS[signal]:
+            signal.disconnect(receiver)

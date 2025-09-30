@@ -34,6 +34,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from framework.sentry import log_exception
 from framework.transactions.handlers import no_auto_transaction
+from website import mails
 from website import settings
 from addons.base import signals as file_signals
 from addons.base.utils import format_last_known_metadata, get_mfr_url
@@ -51,7 +52,7 @@ from osf.models import (
     DraftRegistration,
     Guid,
     FileVersionUserMetadata,
-    FileVersion, NotificationType
+    FileVersion
 )
 from osf.metrics import PreprintView, PreprintDownload
 from osf.utils import permissions
@@ -63,7 +64,7 @@ from website.project.utils import serialize_node
 from website.util import rubeus
 
 # import so that associated listener is instantiated and gets emails
-from notifications.file_event_notifications import FileEvent  # noqa
+from website.notifications.events.files import FileEvent  # noqa
 
 ERROR_MESSAGES = {'FILE_GONE': """
 <style>
@@ -225,6 +226,8 @@ def get_auth(auth, **kwargs):
     _check_resource_permissions(resource, auth, action)
 
     provider_name = waterbutler_data['provider']
+    waterbutler_settings = None
+    waterbutler_credentials = None
     file_version = file_node = None
     if provider_name == 'osfstorage' or (not flag_is_active(request, features.ENABLE_GV)):
         file_version, file_node = _get_osfstorage_file_version_and_node(
@@ -573,31 +576,20 @@ def create_waterbutler_log(payload, **kwargs):
                     params=payload
                 )
 
-            if payload.get('email') or payload.get('errors'):
-                if payload.get('email'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_SUCCESS.instance
-                if payload.get('errors'):
-                    notification_type = NotificationType.Type.USER_FILE_OPERATION_FAILED.instance
-                notification_type.emit(
-                    user=user,
-                    subscribed_object=node,
-                    event_context={
-                        'user_fullname': user.fullname,
-                        'action': payload['action'],
-                        'source_node': source_node._id,
-                        'source_node_title': source_node.title,
-                        'destination_node': destination_node._id,
-                        'destination_node_title': destination_node.title,
-                        'destination_node_parent_node_title': destination_node.parent_node.title if destination_node.parent_node else None,
-                        'source_path': payload['source']['materialized'],
-                        'source_addon': payload['source']['addon'],
-                        'destination_addon': payload['destination']['addon'],
-                        'osf_support_email': settings.OSF_SUPPORT_EMAIL,
-                        'logo': settings.OSF_LOGO,
-                        'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
-                        'OSF_LOGO': settings.OSF_LOGO,
-                    }
+            if payload.get('email') is True or payload.get('errors'):
+                mails.send_mail(
+                    user.username,
+                    mails.FILE_OPERATION_FAILED if payload.get('errors')
+                    else mails.FILE_OPERATION_SUCCESS,
+                    action=payload['action'],
+                    source_node=source_node,
+                    destination_node=destination_node,
+                    source_path=payload['source']['materialized'],
+                    source_addon=payload['source']['addon'],
+                    destination_addon=payload['destination']['addon'],
+                    osf_support_email=settings.OSF_SUPPORT_EMAIL
                 )
+
             if payload.get('errors'):
                 # Action failed but our function succeeded
                 # Bail out to avoid file_signals
@@ -611,8 +603,10 @@ def create_waterbutler_log(payload, **kwargs):
     target_node = AbstractNode.load(metadata.get('nid'))
     if target_node and payload['action'] != 'download_file':
         update_storage_usage_with_size(payload)
+
     with transaction.atomic():
         file_signals.file_updated.send(target=node, user=user, event_type=action, payload=payload)
+
     return {'status': 'success'}
 
 

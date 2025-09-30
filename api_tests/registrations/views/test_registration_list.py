@@ -32,7 +32,6 @@ from osf_tests.utils import get_default_test_schema
 from osf_tests.test_registrations import prereg_registration_responses
 from rest_framework import exceptions
 from tests.base import ApiTestCase
-from tests.utils import capture_notifications
 from website import settings
 from website.views import find_bookmark_collection
 from website.project.metadata.schemas import from_json
@@ -1936,8 +1935,7 @@ class TestRegistrationBulkUpdate:
         assert registration_one.is_pending_embargo_termination is False
         assert registration_two.is_pending_embargo_termination is False
 
-        with capture_notifications():
-            res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
+        res = app.put_json_api(url, public_payload, auth=user.auth, bulk=True)
         assert res.status_code == 200
         assert ({registration_one._id, registration_two._id} == {
                 res.json['data'][0]['id'], res.json['data'][1]['id']})
@@ -2026,8 +2024,7 @@ class TestRegistrationContributors(ApiTestCase):
         return self.app.patch_json_api(url, payload, auth=auth_user.auth, expect_errors=expect_errors)
 
     def test_add_contributor(self):
-        with capture_notifications():
-            res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
+        res = self.add_contributor_request(auth_user=self.user, contributor=self.contributor)
         assert res.status_code == 201
         assert res.json['data']['embeds']['users']['data']['id'] == self.contributor._id
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_write').exists()
@@ -2053,8 +2050,7 @@ class TestRegistrationContributors(ApiTestCase):
         assert self.contributor.groups.filter(name__icontains=f'{self.public_registration.id}_read').exists() is False
 
     def test_remove_contributor(self):
-        with capture_notifications():
-            self.add_contributor_request(self.user, self.contributor)
+        self.add_contributor_request(self.user, self.contributor)
         res = self.remove_contributor_request(self.user, self.contributor)
         assert res.status_code == 204
         assert self.contributor.groups.exists() is False
@@ -2066,12 +2062,11 @@ class TestRegistrationContributors(ApiTestCase):
 
     def test_contributor_can_edit_title_if_has_permission(self):
         TITLE = 'New Title'
-        with capture_notifications():
-            self.add_contributor_request(
-                auth_user=self.user,
-                contributor=self.contributor,
-                permission='read'
-            )
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='read'
+        )
         res = self.update_registration_attribute_request(
             auth_user=self.contributor,
             expect_errors=True,
@@ -2081,12 +2076,11 @@ class TestRegistrationContributors(ApiTestCase):
         assert self.public_registration.title != TITLE
 
         self.remove_contributor_request(auth_user=self.user, contributor=self.contributor)
-        with capture_notifications():
-            self.add_contributor_request(
-                auth_user=self.user,
-                contributor=self.contributor,
-                permission='write'
-            )
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='write'
+        )
         res = self.update_registration_attribute_request(auth_user=self.contributor, title=TITLE)
         assert res.status_code == 200
         assert res.json['data']['attributes']['title'] == TITLE
@@ -2096,22 +2090,22 @@ class TestRegistrationContributors(ApiTestCase):
         for permission in ['read', 'write']:
             contributor_to_add = AuthUserFactory()
             contributor_to_remove = AuthUserFactory()
-            with capture_notifications():
-                self.add_contributor_request(
-                    auth_user=self.user,
-                    contributor=self.contributor,
-                    permission=permission
-                )
-                self.add_contributor_request(
-                    auth_user=self.user,
-                    contributor=contributor_to_remove,
-                    permission=permission
-                )
-                res = self.add_contributor_request(
-                    auth_user=self.contributor,
-                    contributor=contributor_to_add,
-                    expect_errors=True
-                )
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=self.contributor,
+                permission=permission
+            )
+            self.add_contributor_request(
+                auth_user=self.user,
+                contributor=contributor_to_remove,
+                permission=permission
+            )
+
+            res = self.add_contributor_request(
+                auth_user=self.contributor,
+                contributor=contributor_to_add,
+                expect_errors=True
+            )
             assert res.status_code == 403
 
             res = self.remove_contributor_request(
@@ -2125,12 +2119,11 @@ class TestRegistrationContributors(ApiTestCase):
             self.remove_contributor_request(self.user, contributor_to_remove)
 
     def test_only_admin_can_update_permissions_and_bibliographic_status(self):
-        with capture_notifications():
-            self.add_contributor_request(
-                auth_user=self.user,
-                contributor=self.contributor,
-                permission='read'
-            )
+        self.add_contributor_request(
+            auth_user=self.user,
+            contributor=self.contributor,
+            permission='read'
+        )
         res = self.update_contributor_attribute_request(
             self.user,
             self.contributor,

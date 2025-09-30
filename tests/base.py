@@ -21,6 +21,10 @@ from framework.flask import rm_handlers
 from osf.models import RegistrationSchema
 from website import settings
 from website.app import init_app
+from website.notifications.listeners import (subscribe_contributor,
+                                             subscribe_creator)
+from website.project.signals import contributor_added, project_created
+from website.project.views.contributor import notify_added_contributor
 from website.signals import ALL_SIGNALS
 
 from .json_api_test_app import JSONAPITestApp
@@ -53,6 +57,8 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.app',
     'website.archiver.tasks',
+    'website.mails',
+    'website.notifications.listeners',
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
@@ -65,6 +71,7 @@ for logger_name in SILENT_LOGGERS:
 
 # Fake factory
 fake = Factory.create()
+
 
 @pytest.mark.django_db
 class DbTestCase(unittest.TestCase):
@@ -87,12 +94,15 @@ class DbTestCase(unittest.TestCase):
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
-
 class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
     PUSH_CONTEXT = True
+    DISCONNECTED_SIGNALS = {
+        # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor]
+    }
 
     def setUp(self):
         super().setUp()
@@ -112,6 +122,9 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             celery_before_request()
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.disconnect(receiver)
 
     def tearDown(self):
         super().tearDown()
@@ -119,6 +132,9 @@ class AppTestCase(unittest.TestCase):
             return
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.connect(receiver)
 
 
 class ApiAppTestCase(unittest.TestCase):
@@ -161,7 +177,7 @@ class OsfTestCase(DbTestCase, AppTestCase, SearchTestCase):
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-
+    pass
 
 
 class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
@@ -169,6 +185,9 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, SearchTestCase):
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
+    def setUp(self):
+        super().setUp()
+        settings.USE_EMAIL = False
 
 class ApiAddonTestCase(ApiTestCase):
     """Base `TestCase` for tests that require interaction with addons.
@@ -252,6 +271,24 @@ class ApiAddonTestCase(ApiTestCase):
 @override_settings(ROOT_URLCONF='admin.base.urls')
 class AdminTestCase(DbTestCase, DjangoTestCase, SearchTestCase):
     pass
+
+
+class NotificationTestCase(OsfTestCase):
+    """An `OsfTestCase` to use when testing specific subscription behavior.
+    Use when you'd like to manually create all Node subscriptions and subscriptions
+    for added contributors yourself, and not rely on automatically added ones.
+    """
+    DISCONNECTED_SIGNALS = {
+        # disconnect signals so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor, subscribe_contributor],
+        project_created: [subscribe_creator]
+    }
+
+    def setUp(self):
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
 
 
 class ApiWikiTestCase(ApiTestCase):

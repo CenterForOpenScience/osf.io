@@ -15,7 +15,7 @@ from osf_tests.factories import (
     ProjectFactory
 )
 from tests.base import assert_datetime_equal
-from tests.utils import make_drf_request_with_version, capture_notifications
+from tests.utils import make_drf_request_with_version
 
 
 @pytest.fixture()
@@ -66,8 +66,7 @@ class TestNodeSerializer:
 
     #   test_fork_serialization
         node = NodeFactory(creator=user)
-        with capture_notifications():
-            fork = node.fork_node(auth=Auth(user))
+        fork = node.fork_node(auth=Auth(user))
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(fork, context={'request': req}).data
         data = result['data']
@@ -80,8 +79,7 @@ class TestNodeSerializer:
 
     #   test_template_serialization
         node = NodeFactory(creator=user)
-        with capture_notifications():
-            fork = node.use_as_template(auth=Auth(user))
+        fork = node.use_as_template(auth=Auth(user))
         req = make_drf_request_with_version(version='2.0')
         result = NodeSerializer(fork, context={'request': req}).data
         data = result['data']

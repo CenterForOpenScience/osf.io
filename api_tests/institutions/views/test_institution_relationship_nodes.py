@@ -1,7 +1,6 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
 from osf_tests.factories import (
     RegistrationFactory,
     InstitutionFactory,
@@ -9,7 +8,6 @@ from osf_tests.factories import (
     NodeFactory,
 )
 from osf.utils import permissions
-from tests.utils import capture_notifications
 
 
 def make_payload(*node_ids):
@@ -27,6 +25,7 @@ def make_registration_payload(*node_ids):
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestInstitutionRelationshipNodes:
 
     @pytest.fixture()
@@ -132,12 +131,11 @@ class TestInstitutionRelationshipNodes:
             self, user, app, node_without_institution,
             url_institution_nodes, institution
     ):
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_nodes,
-                make_payload(node_without_institution._id),
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            url_institution_nodes,
+            make_payload(node_without_institution._id),
+            auth=user.auth
+        )
 
         assert res.status_code == 201
         node_ids = [node_['id'] for node_ in res.json['data']]
@@ -158,27 +156,25 @@ class TestInstitutionRelationshipNodes:
         assert institution not in node.affiliated_institutions.all()
 
     def test_user_is_admin(self, app, node_without_institution, url_institution_nodes, user, institution):
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_nodes,
-                make_payload(node_without_institution._id),
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            url_institution_nodes,
+            make_payload(node_without_institution._id),
+            auth=user.auth
+        )
         assert res.status_code == 201
         node_without_institution.reload()
         assert institution in node_without_institution.affiliated_institutions.all()
 
     def test_user_is_read_write(self, app, node, url_institution_nodes, institution, user):
         user = AuthUserFactory()
-        with capture_notifications():
-            user.add_or_update_affiliated_institution(institution)
-            node.add_contributor(user)
-            node.save()
-            res = app.post_json_api(
-                url_institution_nodes,
-                make_payload(node._id),
-                auth=user.auth
-            )
+        user.add_or_update_affiliated_institution(institution)
+        node.add_contributor(user)
+        node.save()
+        res = app.post_json_api(
+            url_institution_nodes,
+            make_payload(node._id),
+            auth=user.auth
+        )
 
         assert res.status_code == 201
         node.reload()
@@ -216,13 +212,11 @@ class TestInstitutionRelationshipNodes:
 
     def test_add_some_with_permissions_others_without(
             self, user, node, node_without_institution, app, url_institution_nodes, institution):
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_nodes,
-                make_payload(node_without_institution._id, node._id),
-                expect_errors=True,
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            url_institution_nodes,
+            make_payload(node_without_institution._id, node._id),
+            expect_errors=True, auth=user.auth
+        )
 
         assert res.status_code == 403
         node_without_institution.reload()
@@ -236,12 +230,11 @@ class TestInstitutionRelationshipNodes:
     ):
         assert institution in node_one.affiliated_institutions.all()
 
-        with capture_notifications():
-            res = app.post_json_api(
-                url_institution_nodes,
-                make_payload(node_without_institution._id, node_one._id),
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            url_institution_nodes,
+            make_payload(node_without_institution._id, node_one._id),
+            auth=user.auth
+        )
 
         assert res.status_code == 201
         node_one.reload()
@@ -287,12 +280,11 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
 
     def test_delete_user_is_admin(self, app, url_institution_nodes, node_one, user, institution):
-        with capture_notifications():
-            res = app.delete_json_api(
-                url_institution_nodes,
-                make_payload(node_one._id),
-                auth=user.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            make_payload(node_one._id),
+            auth=user.auth
+        )
         node_one.reload()
         assert res.status_code == 204
         assert institution not in node_one.affiliated_institutions.all()
@@ -301,12 +293,11 @@ class TestInstitutionRelationshipNodes:
         node_private.add_contributor(user)
         node_private.save()
 
-        with capture_notifications():
-            res = app.delete_json_api(
-                url_institution_nodes,
-                make_payload(node_private._id),
-                auth=user.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            make_payload(node_private._id),
+            auth=user.auth
+        )
         node_private.reload()
 
         assert res.status_code == 204
@@ -330,12 +321,11 @@ class TestInstitutionRelationshipNodes:
             self, institution, node_one, app, url_institution_nodes, user):
         assert institution in node_one.affiliated_institutions.all()
 
-        with capture_notifications():
-            res = app.delete_json_api(
-                url_institution_nodes,
-                make_payload(node_one._id),
-                auth=user.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            make_payload(node_one._id),
+            auth=user.auth
+        )
 
         assert res.status_code == 204
         node_one.reload()
@@ -349,12 +339,11 @@ class TestInstitutionRelationshipNodes:
         node.save()
         assert institution in node.affiliated_institutions.all()
 
-        with capture_notifications():
-            res = app.delete_json_api(
-                url_institution_nodes,
-                make_payload(node._id),
-                auth=user.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            make_payload(node._id),
+            auth=user.auth
+        )
 
         assert res.status_code == 204
         node.reload()
@@ -383,56 +372,45 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 404
 
-    def test_email_sent_on_affiliation_addition(
-            self,
-            app,
-            user,
-            institution,
-            node_without_institution,
-            url_institution_nodes,
-    ):
+    def test_email_sent_on_affiliation_addition(self, app, user, institution, node_without_institution,
+                                                url_institution_nodes, mock_send_grid):
         node_without_institution.add_contributor(user, permissions='admin')
         current_institution = InstitutionFactory()
         node_without_institution.affiliated_institutions.add(current_institution)
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url_institution_nodes,
-                {
-                    'data': [
-                        {
-                            'type': 'nodes', 'id': node_without_institution._id
-                        }
-                    ]
-                },
-                auth=user.auth
-            )
+
+        res = app.post_json_api(
+            url_institution_nodes,
+            {
+                'data': [
+                    {
+                        'type': 'nodes', 'id': node_without_institution._id
+                    }
+                ]
+            },
+            auth=user.auth
+        )
 
         assert res.status_code == 201
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        mock_send_grid.assert_called_once()
 
-    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
+    def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes, mock_send_grid):
         current_institution = InstitutionFactory()
         node_public.affiliated_institutions.add(current_institution)
 
-        with capture_notifications() as notifications:
-            res = app.delete_json_api(
-                url_institution_nodes,
-                {
-                    'data': [
-                        {
-                            'type': 'nodes', 'id': node_public._id
-                        }
-                    ]
-                },
-                auth=admin.auth
-            )
+        res = app.delete_json_api(
+            url_institution_nodes,
+            {
+                'data': [
+                    {
+                        'type': 'nodes', 'id': node_public._id
+                    }
+                ]
+            },
+            auth=admin.auth
+        )
 
         # Assert response is successful
         assert res.status_code == 204
 
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
-        assert notifications['emits'][0]['kwargs']['user'] == node_public.creator
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
-        assert notifications['emits'][1]['kwargs']['user'] == admin
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == admin.email

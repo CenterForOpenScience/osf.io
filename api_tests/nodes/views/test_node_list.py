@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode, Node, NodeLog, NotificationType
+from osf.models import AbstractNode, Node, NodeLog
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
@@ -26,7 +26,7 @@ from osf_tests.factories import (
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_equals, assert_notification, capture_notifications
+from tests.utils import assert_equals
 from website.views import find_bookmark_collection
 from website import settings
 from osf.utils.workflows import DefaultStates
@@ -1428,11 +1428,9 @@ class TestNodeCreate:
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one):
-            res = app.post_json_api(
-                url, public_project,
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url, public_project,
+            auth=user_one.auth)
         assert res.status_code == 201
         self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
@@ -1514,11 +1512,10 @@ class TestNodeCreate:
                     }
             }
         }
-        with capture_notifications():
-            res = app.post_json_api(
-                url, templated_project_data,
-                auth=user_one.auth
-            )
+
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1576,8 +1573,7 @@ class TestNodeCreate:
                 }
             }
         }
-        with capture_notifications():
-            res = app.post_json_api(url, component_data, auth=user_one.auth)
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1616,7 +1612,10 @@ class TestNodeCreate:
     def test_create_component_inherit_contributors_with_blocked_email(
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
-        parent_project.add_unregistered_contributor(fullname='far', email='foo@bar.baz', permissions=permissions.READ, auth=Auth(user=user_one))
+        parent_project.add_unregistered_contributor(
+            fullname='far', email='foo@bar.baz',
+            permissions=permissions.READ,
+            auth=Auth(user=user_one), save=True)
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
         contributor.save()
@@ -1676,12 +1675,9 @@ class TestNodeCreate:
                 }
             }
         }
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
-            res = app.post_json_api(
-                url,
-                private_project,
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
         assert res.status_code == 201
         region_id = res.json['data']['relationships']['region']['data']['id']
         assert region_id == region._id

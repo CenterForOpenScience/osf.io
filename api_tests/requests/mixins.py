@@ -10,8 +10,6 @@ from osf_tests.factories import (
     ProjectFactory,
 )
 from osf.utils import permissions
-from tests.utils import capture_notifications
-
 
 @pytest.mark.django_db
 class NodeRequestTestMixin:
@@ -39,6 +37,7 @@ class NodeRequestTestMixin:
         proj.add_contributor(
             contributor=write_contrib,
             permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            send_email='access_request',
             save=True
         )
         return proj
@@ -51,8 +50,7 @@ class NodeRequestTestMixin:
             request_type=RequestTypes.ACCESS.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            node_request.run_submit(requester)
+        node_request.run_submit(requester)
         return node_request
 
     @pytest.fixture()
@@ -135,8 +133,7 @@ class PreprintRequestTestMixin:
         pre.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True,
-            notification_type=False
+            save=True
         )
         return pre
 
@@ -150,8 +147,7 @@ class PreprintRequestTestMixin:
         post.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True,
-            notification_type=False
+            save=True
         )
         return post
 
@@ -165,8 +161,7 @@ class PreprintRequestTestMixin:
         preprint.add_contributor(
             contributor=write_contrib,
             permissions=permissions.WRITE,
-            save=True,
-            notification_type=False
+            save=True
         )
         return preprint
 
@@ -211,8 +206,7 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(admin)
+        request.run_submit(admin)
         return request
 
     @pytest.fixture()
@@ -256,6 +250,5 @@ class PreprintRequestTestMixin:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            request.run_submit(requester)
+        request.run_submit(requester)
         return request
