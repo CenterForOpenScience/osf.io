@@ -407,7 +407,7 @@
                 "hasPart[]": [
                     {
                         ".@type": "File",
-                        ".@id": "/data/files/{{choose_additional_metadata_value}}",
+                        ".@id": "files/{{choose_additional_metadata_value}}",
                         "name": "{{choose_additional_metadata_value}}"
                     }
                 ],
