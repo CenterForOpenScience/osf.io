@@ -1477,25 +1477,6 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 404
 
-    #   test_403_on_create_from_template_of_unauthorized_project
-        template_from = ProjectFactory(creator=user_two, is_public=True)
-        templated_project_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes':
-                    {
-                        'title': 'No permission',
-                        'category': 'project',
-                        'template_from': template_from._id,
-                    }
-            }
-        }
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_one.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     def test_creates_project_from_template(self, app, user_one, category, url):
         template_from = ProjectFactory(creator=user_one, is_public=True)
         template_component = ProjectFactory(
@@ -1526,6 +1507,97 @@ class TestNodeCreate:
         assert not new_project.is_public
         assert len(new_project.nodes) == len(template_from.nodes)
         assert new_project.nodes[0].title == template_component.title
+
+    def test_non_contributor_create_project_from_public_template_success(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=True)
+        user_without_permissions = AuthUserFactory()
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+
+    def test_non_contributor_create_project_from_private_template_no_permission_fails(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=False)
+        user_without_permissions = AuthUserFactory()
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_contributor_create_project_from_private_template_with_permission_success(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=False)
+        user_without_permissions = AuthUserFactory()
+        template_from.add_contributor(user_without_permissions, permissions=permissions.READ, auth=Auth(user_one), save=True)
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.READ)
+
+        template_from.update_contributor(
+            user_without_permissions,
+            permission=permissions.WRITE,
+            auth=Auth(user_one),
+            save=True,
+            visible=True
+        )
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.WRITE)
+
+        template_from.update_contributor(
+            user_without_permissions,
+            permission=permissions.ADMIN,
+            auth=Auth(user_one),
+            save=True,
+            visible=True
+        )
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.ADMIN)
 
     def test_creates_project_creates_project_and_sanitizes_html(
             self, app, user_one, category, url):
