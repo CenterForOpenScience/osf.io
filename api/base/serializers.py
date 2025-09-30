@@ -1186,9 +1186,9 @@ class LinksField(ser.Field):
         request = self.context['request']
         referer = request.headers.get('Referer', '')
         if 'html' in ret and 'legacy' in referer:
-            split_host = referer.split('://')
-            split_host[-1] = 'legacy.' + split_host[-1]
-            ret['html'] = '://'.join(split_host)
+            parsed_html_url = urlparse(ret['html'])
+            legacy_url = urlparse(referer)
+            ret['html'] = parsed_html_url._replace(scheme=legacy_url.scheme, netloc=legacy_url.netloc).geturl()
 
         return ret
 
