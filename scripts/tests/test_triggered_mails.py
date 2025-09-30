@@ -6,8 +6,10 @@ from django.utils import timezone
 from tests.base import OsfTestCase
 from osf_tests.factories import UserFactory
 
-from scripts.triggered_mails import main, find_inactive_users_with_no_inactivity_email_sent_or_queued
-from website import mails
+from scripts.triggered_mails import main, find_inactive_users_without_enqueued_or_sent_no_login, NO_LOGIN_PREFIX, send_no_login_email
+import uuid
+from osf.models import EmailTask
+from tests.utils import capture_notifications
 
 
 class TestTriggeredMails(OsfTestCase):
@@ -18,25 +20,18 @@ class TestTriggeredMails(OsfTestCase):
         self.user.date_last_login = timezone.now()
         self.user.save()
 
-    @mock.patch('website.mails.queue_mail')
-    def test_dont_trigger_no_login_mail(self, mock_queue):
+    def test_dont_trigger_no_login_mail(self):
         self.user.date_last_login = timezone.now() - timedelta(seconds=6)
         self.user.save()
-        main(dry_run=False)
-        assert not mock_queue.called
+        with capture_notifications(expect_none=True):
+            main(dry_run=False)
 
-    @mock.patch('website.mails.queue_mail')
-    def test_trigger_no_login_mail(self, mock_queue):
+    def test_trigger_no_login_mail(self):
         self.user.date_last_login = timezone.now() - timedelta(weeks=6)
         self.user.save()
+        assert len(find_inactive_users_without_enqueued_or_sent_no_login()) == 1
         main(dry_run=False)
-        mock_queue.assert_called_with(
-            user=mock.ANY,
-            fullname=self.user.fullname,
-            to_addr=self.user.username,
-            mail={'callback': mock.ANY, 'template': 'no_login', 'subject': mock.ANY},
-            send_at=mock.ANY,
-        )
+        assert len(find_inactive_users_without_enqueued_or_sent_no_login()) == 0
 
     def test_find_inactive_users_with_no_inactivity_email_sent_or_queued(self):
         user_active = UserFactory(fullname='Spot')
@@ -48,9 +43,14 @@ class TestTriggeredMails(OsfTestCase):
         user_active.save()
         user_inactive.save()
         user_already_received_mail.save()
-        mails.queue_mail(to_addr=user_already_received_mail.username,
-                         send_at=timezone.now(),
-                         user=user_already_received_mail,
-                         mail=mails.NO_LOGIN)
-        users = find_inactive_users_with_no_inactivity_email_sent_or_queued()
+        task_id = f'{NO_LOGIN_PREFIX}{uuid.uuid4()}'
+        email_task = EmailTask.objects.create(
+            task_id=task_id,
+            user=user_already_received_mail,
+            status='PENDING',
+        )
+
+        send_no_login_email.delay(email_task_id=email_task.id)
+
+        users = find_inactive_users_without_enqueued_or_sent_no_login()
         assert len(users) == 1

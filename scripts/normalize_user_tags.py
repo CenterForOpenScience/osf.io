@@ -46,7 +46,6 @@ PROVIDER_SOURCE_TAGS = [
 
 CAMPAIGN_SOURCE_TAGS = [
     ('erp_challenge_campaign', CampaignSourceTags.ErpChallenge.value),
-    ('prereg_challenge_campaign', CampaignSourceTags.PreregChallenge.value),
     ('osf_registered_reports', CampaignSourceTags.OsfRegisteredReports.value),
     ('osf4m', CampaignSourceTags.Osf4m.value),
 ]
@@ -82,8 +81,6 @@ PROVIDER_CLAIMED_TAGS = [
 
 CAMPAIGN_CLAIMED_TAGS = [
     CampaignClaimedTags.ErpChallenge.value,
-    CampaignClaimedTags.PreregChallenge.value,
-    CampaignClaimedTags.Prereg.value,
     CampaignClaimedTags.OsfRegisteredReports.value,
     CampaignClaimedTags.Osf4m.value,
 ]

@@ -16,6 +16,7 @@ from osf.models import (
 )
 
 from scripts.find_spammy_content import manage_spammy_content
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -85,7 +86,8 @@ class TestFindSpammyContent:
         assert spam_node_but_old not in spam_guids
 
     def test_ban_all_node_spam(self, user, user_two, kombat_node, node_two):
-        manage_spammy_content('Kombat', models=[Node, ], ban=True)
+        with capture_notifications():
+            manage_spammy_content('Kombat', models=[Node, ], ban=True)
         user.reload()
         kombat_node.reload()
         node_two.reload()
@@ -96,7 +98,8 @@ class TestFindSpammyContent:
         assert not user_two.is_disabled
 
     def test_ban_all_preprint_spam(self, user, user_two, kombat_preprint, preprint_two):
-        manage_spammy_content('Kombat', models=[Preprint, ], ban=True)
+        with capture_notifications():
+            manage_spammy_content('Kombat', models=[Preprint, ], ban=True)
         kombat_preprint.reload()
         preprint_two.reload()
         user.reload()
@@ -107,7 +110,8 @@ class TestFindSpammyContent:
         assert not user_two.is_disabled
 
     def test_ban_all_registration_spam(self, user, user_two, kombat_registration, registration_two):
-        manage_spammy_content('Kombat', models=[Registration, ], ban=True)
+        with capture_notifications():
+            manage_spammy_content('Kombat', models=[Registration, ], ban=True)
         user.reload()
         user_two.reload()
         kombat_registration.reload()
@@ -118,7 +122,8 @@ class TestFindSpammyContent:
         assert not user_two.is_disabled
 
     def test_ban_recent_spam(self, kombat_node, spam_node_but_old, user, user_two):
-        manage_spammy_content('Kombat', models=[Node, ], ban=True)
+        with capture_notifications():
+            manage_spammy_content('Kombat', models=[Node, ], ban=True)
         kombat_node.reload()
         spam_node_but_old.reload()
         user.reload()

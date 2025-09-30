@@ -11,7 +11,7 @@ import datetime
 
 from dateutil.relativedelta import relativedelta
 
-from website.oauth.models import ExternalAccount
+from osf.models import ExternalAccount
 
 from scripts.refresh_addon_tokens import (
     get_targets, main, look_up_provider, PROVIDER_CLASSES
@@ -38,12 +38,12 @@ class TestRefreshTokens(OsfTestCase):
     def test_get_targets(self):
         now = timezone.now()
         records = [
-            BoxAccountFactory(date_last_refreshed=now - datetime.timedelta(days=4)),
-            BoxAccountFactory(date_last_refreshed=now - datetime.timedelta(days=2)),
-            GoogleDriveAccountFactory(date_last_refreshed=now - datetime.timedelta(days=4)),
-            GoogleDriveAccountFactory(date_last_refreshed=now - datetime.timedelta(days=2)),
-            MendeleyAccountFactory(date_last_refreshed=now - datetime.timedelta(days=4)),
-            MendeleyAccountFactory(date_last_refreshed=now - datetime.timedelta(days=2)),
+            BoxAccountFactory(expires_at=now - datetime.timedelta(days=4), date_last_refreshed=now - datetime.timedelta(days=4)),
+            BoxAccountFactory(expires_at=now - datetime.timedelta(days=2), date_last_refreshed=now - datetime.timedelta(days=2)),
+            GoogleDriveAccountFactory(expires_at=now - datetime.timedelta(days=4), date_last_refreshed=now - datetime.timedelta(days=4)),
+            GoogleDriveAccountFactory(expires_at=now - datetime.timedelta(days=2), date_last_refreshed=now - datetime.timedelta(days=2)),
+            MendeleyAccountFactory(expires_at=now - datetime.timedelta(days=4), date_last_refreshed=now - datetime.timedelta(days=4)),
+            MendeleyAccountFactory(expires_at=now - datetime.timedelta(days=2), date_last_refreshed=now - datetime.timedelta(days=2)),
         ]
         box_targets = list(get_targets(delta=relativedelta(days=3), addon_short_name='box'))
         drive_targets = list(get_targets(delta=relativedelta(days=3), addon_short_name='googledrive'))
@@ -59,12 +59,12 @@ class TestRefreshTokens(OsfTestCase):
     @mock.patch('scripts.refresh_addon_tokens.GoogleDriveProvider.refresh_oauth_key')
     @mock.patch('scripts.refresh_addon_tokens.Box.refresh_oauth_key')
     def test_refresh(self, mock_box_refresh, mock_drive_refresh, mock_mendeley_refresh):
-        fake_authorized_box_account = BoxAccountFactory(date_last_refreshed=timezone.now())
-        fake_authorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=timezone.now())
-        fake_authorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=timezone.now())
-        fake_unauthorized_box_account = BoxAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
-        fake_unauthorized_drive_account = GoogleDriveAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
-        fake_unauthorized_mendeley_account = MendeleyAccountFactory(date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
+        fake_authorized_box_account = BoxAccountFactory(expires_at=timezone.now(), date_last_refreshed=timezone.now())
+        fake_authorized_drive_account = GoogleDriveAccountFactory(expires_at=timezone.now(), date_last_refreshed=timezone.now())
+        fake_authorized_mendeley_account = MendeleyAccountFactory(expires_at=timezone.now(), date_last_refreshed=timezone.now())
+        fake_unauthorized_box_account = BoxAccountFactory(expires_at=timezone.now() - datetime.timedelta(days=4), date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
+        fake_unauthorized_drive_account = GoogleDriveAccountFactory(expires_at=timezone.now() - datetime.timedelta(days=4), date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
+        fake_unauthorized_mendeley_account = MendeleyAccountFactory(expires_at=timezone.now() - datetime.timedelta(days=4), date_last_refreshed=timezone.now() - datetime.timedelta(days=4))
         for addon in self.addons:
             Provider = look_up_provider(addon)
             main(delta=relativedelta(days=3), Provider=Provider, rate_limit=(5, 1), dry_run=False)
