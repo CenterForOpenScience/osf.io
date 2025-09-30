@@ -259,6 +259,16 @@ class TestNodeList:
         res = app.get(url_public, auth=superuser.auth)
         assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
 
+    def test_legacy_host_for_htmls(self, app, url, public_project):
+        settings.DOMAIN = 'https://staging3.osf.io'
+        current_domain_response = app.get(url).json['data']
+        assert current_domain_response[-1]['links']['html'].startswith(settings.DOMAIN)
+
+        # mock request from legacy OSF domain to staging3 backend
+        # so that backend uses it to generate html links instead of current domain
+        legacy_domain_response = app.get(url, headers={'Referer': 'http://legacy.osf.io'}).json['data']
+        assert legacy_domain_response[-1]['links']['html'].startswith('http://legacy.osf.io')
+
 
 @pytest.mark.django_db
 @pytest.mark.enable_bookmark_creation
