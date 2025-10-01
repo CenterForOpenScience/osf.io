@@ -7,6 +7,7 @@ from osf.models.metaschema import RegistrationSchema
 from .base import (
     expand_listed_key, get_sources_for_key, find_schema_question, is_special_key, is_key_present, get_value, resolve_array_index
 )
+from .constants_mebyo import MEBYO_SCHEMA_NAME
 from .ro_crate_mebyo import generate_dataset_metadata
 
 
@@ -609,7 +610,7 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
     }
 
     # 未病スキーマ　データセットメタデータ・ファイルメタデータ対応
-    if schema.name == 'ムーンショット目標2データベース（未病DB）のメタデータ登録':
+    if schema.name == MEBYO_SCHEMA_NAME:
         entity_list, properties = generate_dataset_metadata(project_metadatas)
         json_ld['@graph'].extend(entity_list)
         match = next((d for d in json_ld['@graph'] if d.get('@id') == './'), None)
