@@ -72,7 +72,7 @@ MAPPING: Dict[Tuple[str, Union[Type[str], Type[int], Type[float]]], List[str]] =
 }
 
 MAPPING_DICT: Dict[str, Dict[str, str]] = {
-    key: {"prop_name": prop, "prop_type": ptype}
+    key: {'prop_name': prop, 'prop_type': ptype}
     for (prop, ptype), keys in MAPPING.items()
     for key in keys
 }
