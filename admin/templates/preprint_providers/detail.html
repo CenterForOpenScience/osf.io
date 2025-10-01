@@ -36,7 +36,7 @@
                     <a class="btn btn-primary" href={% url 'preprint_providers:share_source' preprint_provider.id %}>Setup Share Source</a>
                 {% endif %}
                 {% if perms.osf.change_preprintprovider %}
-                    <a class="btn btn-primary" href={% url 'preprint_providers:register_moderator_admin' preprint_provider.id %}>Register Moderator/Admin</a>
+                    <a class="btn btn-primary" href={% url 'preprint_providers:add_admin_or_moderator' preprint_provider.id %}>Manage Admins and Moderators</a>
                     <a class="btn btn-primary" href={% url 'preprint_providers:edit' preprint_provider.id %}>Modify Preprint Provider</a>
                 {% if show_taxonomies %}
                     <a class="btn btn-primary" href={% url 'preprint_providers:process_custom_taxonomy' preprint_provider.id %}>Modify Custom Taxonomy</a>
