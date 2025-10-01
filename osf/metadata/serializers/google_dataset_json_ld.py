@@ -79,9 +79,9 @@ def format_creators(basket):
     for creator_iri in basket[DCTERMS.creator]:
         creator_data.append({
             '@type': 'Person',
-            'name': next(basket[creator_iri:FOAF.name]),
-            'givenName': next(basket[creator_iri:FOAF.givenName]),
-            'familyName': next(basket[creator_iri:FOAF.familyName]),
+            'name': next(basket[creator_iri:FOAF.name], None),
+            'givenName': next(basket[creator_iri:FOAF.givenName], None),
+            'familyName': next(basket[creator_iri:FOAF.familyName], None),
         })
     return creator_data
 
