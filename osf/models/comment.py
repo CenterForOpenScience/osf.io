@@ -134,6 +134,21 @@ class Comment(GuidMixin, SpamMixin, CommentableMixin, BaseModel):
         return 0
 
     @classmethod
+    def find_count(cls, node, page, root_id=None):
+        if page == Comment.OVERVIEW:
+            root_target = Guid.load(node._id)
+        elif page == Comment.FILES or page == Comment.WIKI:
+            root_target = Guid.load(root_id)
+        else:
+            raise ValueError('Invalid page')
+
+        return cls.objects.filter(
+            Q(node=node) & 
+            Q(is_deleted=False) &
+            Q(root_target=root_target)
+        ).count()
+
+    @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
         if not comment.node.can_comment(auth):

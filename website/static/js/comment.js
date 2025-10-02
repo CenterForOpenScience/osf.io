@@ -291,6 +291,9 @@ BaseComment.prototype.fetchNext = function(url, comments, setUnread) {
             self.$root.unreadComments(response.links.meta.unread);
             setUnread = false;
         }
+        if (response.links.meta.comment_count) {
+            self.$root.totalComments(response.links.meta.comment_count);
+        }
         comments.forEach(function(comment) {
             self.comments.push(
                 new CommentModel(comment, self, self.$root)
@@ -777,6 +780,15 @@ var CommentListModel = function(options) {
             return self.unreadComments().toString();
         } else {
             return ' ';
+        }
+    });
+
+    self.totalComments = ko.observable(0);
+    self.hasComments = ko.pureComputed(function() {
+        if (self.totalComments() !== 0) {
+            return true;
+        } else {
+            return false;
         }
     });
 
