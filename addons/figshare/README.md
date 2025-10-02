@@ -11,7 +11,7 @@ as figshare updated their original API.) If you set up your figshare access with
 ### Manual generation of auth token and ExternalAccount
 
 1. Go to [figshare](http://figshare.com), create an account, and login
-2. Click the dropdown with your name and select "Applications". Scroll down to the bottom of the page and click ""Create Personal Token"
+2. Click the dropdown with your name and select "Applications". Scroll down to the bottom of the page and click "Create Personal Token"
 3. Make a note of your personal token.
 4. Navigate to your osf.io repo location and run `docker-compose run --rm web invoke shell`, then run:
 ```python
@@ -43,7 +43,7 @@ commit()
 
 
 ### OAuth and ngrok (alternate untested instructions)
-**Note:** It is reccomended that you follow the above instructions over the ngrok insturctions.
+**Note:** It is reccomended that you follow the above instructions over the ngrok instructions.
 
 1. Download ngrok (partially free, but TLS requires [subscription](https://ngrok.com/product#pricing))
 2. Run with `ngrok tls -subdomain=openscience 5000`
