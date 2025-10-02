@@ -14,6 +14,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from framework import sentry
+from osf.models.notification_type import NotificationType
 from .base import BaseModel, ObjectIDMixin
 from .contributor import InstitutionalContributor
 from .institution_affiliation import InstitutionAffiliation
@@ -22,7 +23,6 @@ from .mixins import Loggable, GuardianMixin
 from .storage import InstitutionAssetFile
 from .validators import validate_email
 from osf.utils.fields import NonNaiveDateTimeField, LowercaseEmailField
-from website import mails
 from website import settings as website_settings
 
 logger = logging.getLogger(__name__)
@@ -219,21 +219,16 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
         attempts = 0
         success = 0
         for user in self.get_institution_users():
-            try:
-                attempts += 1
-                mails.send_mail(
-                    to_addr=user.username,
-                    mail=mails.INSTITUTION_DEACTIVATION,
-                    user=user,
-                    forgot_password_link=f'{website_settings.DOMAIN}{forgot_password}',
-                    osf_support_email=website_settings.OSF_SUPPORT_EMAIL
-                )
-            except Exception as e:
-                logger.error(f'Failed to send institution deactivation email to user [{user._id}] at [{self._id}]')
-                sentry.log_exception(e)
-                continue
-            else:
-                success += 1
+            attempts += 1
+            NotificationType.Type.USER_INSTITUTION_DEACTIVATION.instance.emit(
+                user=user,
+                event_context={
+                    'user_fullname': user.fullname,
+                    'forgot_password_link': f'{website_settings.DOMAIN}{forgot_password}',
+                    'osf_support_email': website_settings.OSF_SUPPORT_EMAIL
+                }
+            )
+            success += 1
         logger.info(f'Institution deactivation notification email has been '
                     f'sent to [{success}/{attempts}] users for [{self._id}]')
 

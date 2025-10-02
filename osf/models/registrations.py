@@ -23,6 +23,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
+from osf.models.notification_type import NotificationType
 from .action import RegistrationAction
 from .archive import ArchiveJob
 from .contributor import DraftRegistrationContributor
@@ -661,7 +662,10 @@ class Registration(AbstractNode):
                     f'User {user} does not have moderator privileges on Provider {self.provider}')
 
         retraction = self._initiate_retraction(
-            user, justification, moderator_initiated=moderator_initiated)
+            user,
+            justification,
+            moderator_initiated=moderator_initiated
+        )
         self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
@@ -1246,11 +1250,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         ).order_by(self.order_by_contributor_field)
 
     @property
-    def contributor_email_template(self):
-        # Override for ContributorMixin
-        return 'draft_registration'
-
-    @property
     def institutions_url(self):
         # For NodeInstitutionsRelationshipSerializer
         path = f'/draft_registrations/{self._id}/institutions/'
@@ -1326,7 +1325,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return self.all_tags.filter(system=True).values_list('name', flat=True)
 
     @classmethod
-    def create_from_node(cls, user, schema, node=None, data=None, provider=None):
+    def create_from_node(
+            cls,
+            user,
+            schema,
+            node=None,
+            data=None,
+            provider=None,
+            notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+    ):
         if not provider:
             provider = RegistrationProvider.get_default()
 
@@ -1368,7 +1375,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
                 draft,
                 contributor=user,
                 auth=None,
-                email_template='draft_registration',
+                notification_type=notification_type,
                 permissions=initiator_permissions
             )
 

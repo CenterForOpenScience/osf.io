@@ -27,13 +27,23 @@ class TestFixRegistrationUnclaimedRecords:
 
     @pytest.fixture()
     def contributor_unregistered(self, user, auth, project):
-        ret = project.add_unregistered_contributor(fullname='Johnny Git Gud', email='ford.prefect@hitchhikers.com', auth=auth)
+        ret = project.add_unregistered_contributor(
+            fullname='Jason Kelece',
+            email='burds@eagles.com',
+            auth=auth,
+            notification_type=False
+        )
         project.save()
         return ret
 
     @pytest.fixture()
     def contributor_unregistered_no_email(self, user, auth, project):
-        ret = project.add_unregistered_contributor(fullname='Johnny B. Bard', email='', auth=auth)
+        ret = project.add_unregistered_contributor(
+            fullname='Big Play Slay',
+            email='',
+            auth=auth,
+            notification_type=False
+        )
         project.save()
         return ret
 
