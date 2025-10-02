@@ -29,7 +29,7 @@ from admin_tests.utilities import setup_view
 from admin.preprint_providers import views
 from admin.preprint_providers.forms import PreprintProviderForm
 from admin.base.forms import ImportFileForm
-
+from django.contrib.messages.storage.fallback import FallbackStorage
 import website
 
 pytestmark = pytest.mark.django_db
@@ -424,3 +424,97 @@ class TestProcessCustomTaxonomy(ProcessCustomTaxonomyMixinBase):
     def view(self, req):
         plain_view = views.ProcessCustomTaxonomy()
         return setup_view(plain_view, req)
+
+
+from osf.migrations import update_provider_auth_groups
+
+@pytest.mark.urls('admin.base.urls')
+class TestEditModerators:
+
+    @pytest.fixture()
+    def req(self, user):
+        req = RequestFactory().get('/fake_path')
+        req.user = user
+        return req
+
+    @pytest.fixture()
+    def provider(self):
+        provider = PreprintProviderFactory()
+        update_provider_auth_groups()
+        return provider
+
+    @pytest.fixture()
+    def moderator(self, provider):
+        user = AuthUserFactory()
+        provider.add_to_group(user, 'moderator')
+        return user
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def remove_moderator_view(self, req, provider):
+        view = views.PreprintRemoveAdminsAndModerators()
+        view = setup_view(view, req)
+        view.kwargs = {'provider_id': provider.id}
+        return view
+
+    @pytest.fixture()
+    def add_moderator_view(self, req, provider):
+        view = views.PreprintAddAdminOrModerator()
+        view = setup_view(view, req)
+        view.kwargs = {'provider_id': provider.id}
+        return view
+
+    def test_get(self, add_moderator_view, remove_moderator_view, req):
+        res = add_moderator_view.get(req)
+        assert res.status_code == 200
+
+        res = remove_moderator_view.get(req)
+        assert res.status_code == 200
+
+    def test_post_remove(self, remove_moderator_view, req, moderator, provider):
+        moderator_id = f'Moderator-{moderator.id}'
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            moderator_id: ['on']
+        }
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        res = remove_moderator_view.post(req)
+        assert res.status_code == 302
+        assert not provider.get_group('moderator').user_set.all()
+
+    def test_post_add(self, add_moderator_view, req, user, provider):
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            'add-moderators-form': [user._id],
+            'moderator': ['Add Moderator']
+        }
+
+        # django.contrib.messages has a bug which effects unittests
+        # more info here -> https://code.djangoproject.com/ticket/17971
+        setattr(req, 'session', 'session')
+        messages = FallbackStorage(req)
+        setattr(req, '_messages', messages)
+
+        res = add_moderator_view.post(req)
+        assert res.status_code == 302
+        assert user in provider.get_group('moderator').user_set.all()
+
+        # try to add the same user, but another group
+        req.POST = {
+            'csrfmiddlewaretoken': 'fake csfr',
+            'add-moderators-form': [user._id],
+            'admin': ['Add Admin']
+        }
+        res = add_moderator_view.post(req)
+        assert res.status_code == 302
+        assert user in provider.get_group('moderator').user_set.all()
+        assert user not in provider.get_group('admin').user_set.all()

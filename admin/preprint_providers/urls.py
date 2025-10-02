@@ -18,6 +18,7 @@ urlpatterns = [
     re_path(r'^(?P<preprint_provider_id>[a-z0-9]+)/delete/$', views.DeletePreprintProvider.as_view(), name='delete'),
     re_path(r'^(?P<preprint_provider_id>[a-z0-9]+)/export/$', views.ExportPreprintProvider.as_view(), name='export'),
     re_path(r'^(?P<preprint_provider_id>[a-z0-9]+)/share_source/$', views.ShareSourcePreprintProvider.as_view(), name='share_source'),
-    re_path(r'^(?P<preprint_provider_id>[a-z0-9]+)/register/$', views.PreprintProviderRegisterModeratorOrAdmin.as_view(), name='register_moderator_admin'),
     re_path(r'^(?P<preprint_provider_id>[a-z0-9]+)/edit/$', views.PreprintProviderChangeForm.as_view(), name='edit'),
+    re_path(r'^(?P<provider_id>[a-z0-9]+)/add_admin_or_moderator/$', views.PreprintAddAdminOrModerator.as_view(), name='add_admin_or_moderator'),
+    re_path(r'^(?P<provider_id>[a-z0-9]+)/remove_admins_and_moderators/$', views.PreprintRemoveAdminsAndModerators.as_view(), name='remove_admins_and_moderators'),
 ]
