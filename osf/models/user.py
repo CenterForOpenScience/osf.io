@@ -61,7 +61,7 @@ from website import filters, mails
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
-from osf.utils.requests import get_headers_from_request
+from osf.utils.requests import string_type_request_headers
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -1026,7 +1026,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()
-            headers = get_headers_from_request(request)
+            headers = string_type_request_headers(request)
             self.check_spam(dirty_fields, request_headers=headers)
 
         dirty_fields = set(dirty_fields)
