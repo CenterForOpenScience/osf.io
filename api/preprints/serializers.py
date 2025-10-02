@@ -52,6 +52,7 @@ from osf.models import (
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
+from osf.models.contributor import get_user_permission
 
 
 class PrimaryFileRelationshipField(RelationshipField):
@@ -653,6 +654,7 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
             user  # if user is None then probably we're trying to make bulk update and this validation is not relevant
             and preprint.machine_state == DefaultStates.INITIAL.value
             and preprint.creator_id == user.id
+            and get_user_permission(user, preprint) != value
         ):
             raise ValidationError(
                 'You cannot change your permission setting at this time. '
