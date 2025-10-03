@@ -610,7 +610,7 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
     }
 
     # 未病スキーマ　データセットメタデータ・ファイルメタデータ対応
-    if schema.name == MEBYO_SCHEMA_NAME:
+    if mapping_def.rules['@metadata'].get('schemaname') == MEBYO_SCHEMA_NAME:
         entity_list, properties = generate_dataset_metadata(project_metadatas)
         json_ld['@graph'].extend(entity_list)
         match = next((d for d in json_ld['@graph'] if d.get('@id') == './'), None)

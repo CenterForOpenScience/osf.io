@@ -1,7 +1,7 @@
 from typing import Dict, List, Tuple, Type, Union
 
 # スキーマ名
-MEBYO_SCHEMA_NAME: str = 'ムーンショット目標2データベース（未病DB）のメタデータ登録'
+MEBYO_SCHEMA_NAME: str = 'ms2-mibyodb'
 
 # 日本語・英語対応が必要なプロパティの言語コード
 LANG_LIST: List[str] = ['ja', 'en']
