@@ -1038,3 +1038,42 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert license_one._id in license_ids
         assert license_three._id in license_ids
         assert license_two._id not in license_ids
+
+
+@pytest.mark.django_db
+class OnlyModeratorOrAdminPermissionsMixin:
+
+    @pytest.fixture()
+    def provider(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def moderator(self, provider):
+        mod = AuthUserFactory()
+        provider.get_group('moderator').user_set.add(mod)
+        return mod
+
+    @pytest.fixture()
+    def admin(self, provider):
+        adm = AuthUserFactory()
+        provider.get_group('admin').user_set.add(adm)
+        return adm
+
+    @pytest.fixture()
+    def urls(self):
+        raise NotImplementedError
+
+    def test_moderator_or_admin_have_access_to_provider(self, app, provider, user, moderator, admin, urls):
+        for url in urls:
+            user_res = app.get(url, auth=user.auth, expect_errors=True)
+            assert user_res.status_code == 403
+
+            moderator_res = app.get(url, auth=moderator.auth)
+            assert moderator_res.status_code == 200
+
+            admin_res = app.get(url, auth=admin.auth)
+            assert admin_res.status_code == 200

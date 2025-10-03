@@ -1,4 +1,3 @@
-from guardian.shortcuts import get_perms
 from rest_framework import permissions as drf_permissions
 
 from api.base.utils import get_user_auth
@@ -36,4 +35,7 @@ class CanUpdateModerator(drf_permissions.BasePermission):
 class MustBeModerator(drf_permissions.BasePermission):
     def has_permission(self, request, view):
         auth = get_user_auth(request)
-        return bool(get_perms(auth.user, view.get_provider()))
+        provider = view.get_provider()
+        is_admin = provider.get_group('admin').user_set.filter(id=auth.user.id).exists()
+        is_moderator = provider.get_group('moderator').user_set.filter(id=auth.user.id).exists()
+        return is_moderator or is_admin
