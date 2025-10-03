@@ -787,7 +787,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             template_node = Node.load(template_from)
             if template_node is None:
                 raise exceptions.NotFound
-            if not template_node.has_permission(user, osf_permissions.READ, check_parent=False):
+            if not template_node.is_public and not template_node.is_contributor(user):
                 raise exceptions.PermissionDenied
             validated_data.pop('creator')
             changed_data = {template_from: validated_data}
