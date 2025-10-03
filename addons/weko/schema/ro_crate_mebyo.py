@@ -115,7 +115,7 @@ def _add_property_to_entity(
         _add_dict_property(entity_list, base_entity, prop_name, prop_type, value, entity_id)
 
     else:
-        raise ValueError(f'Value {value} of metadata must be list, dict or scholar.')
+        raise ValueError(f'Value {value} of metadata must be list, dict or scalar.')
 
 def _add_metadata_entity(index: int, resource_metadata: Any, file_prefix: str = '') -> List[Dict[str, Any]]:
     base_entity = _create_new_entity('_:ams:ResourceMetadataDocument_', 'ams:ResourceMetadataDocument', index)
@@ -123,7 +123,7 @@ def _add_metadata_entity(index: int, resource_metadata: Any, file_prefix: str = 
 
     for key, meta in resource_metadata.items():
         if key in MAPPING_DICT and meta['value']:
-            _add_property_to_entity(entity_list, base_entity, key, meta['value'], f'{file_prefix }{key}')
+            _add_property_to_entity(entity_list, base_entity, key, meta['value'], f'{file_prefix}{key}')
 
     # skip empty entity (only has @id and @type)
     if len(base_entity) == 2:
@@ -136,23 +136,23 @@ def generate_dataset_metadata(project_metadatas: Any) -> Tuple[List[Dict[str, An
         raise ValueError('Choose 1 project metadata to export.')
     entities = []
     project_metadata = _deep_json_loads(project_metadatas[0])
-    root_propeties = {}
+    root_properties = {}
     index = 1
 
     # add dataset metadata entity
     dataset_metadata_entities = _add_metadata_entity(index, project_metadata)
     entities += dataset_metadata_entities
     if len(dataset_metadata_entities) > 0:
-        root_propeties['ams:datasetMetadata'] = {
+        root_properties['ams:datasetMetadata'] = {
             '@id': f'_:ResourceMetadataDocument{index}'
         }
         index += 1
 
     # add file metadata entity
     if len(project_metadata['grdm-files']['value']) > 0:
-        root_propeties['ams:fileMetadata'] = []
+        root_properties['ams:fileMetadata'] = []
         for i, original_file_metadata in enumerate(project_metadata['grdm-files']['value']):
-            root_propeties['ams:fileMetadata'].append({
+            root_properties['ams:fileMetadata'].append({
                 '@id': f'_:ResourceMetadataDocument{index}'
             })
 
@@ -173,8 +173,8 @@ def generate_dataset_metadata(project_metadatas: Any) -> Tuple[List[Dict[str, An
 
                 file_metadata[prop] = {'value': [meta_entity]}
 
-            file_metadata_entities = _add_metadata_entity(index, file_metadata, f'file{ i + 1 }_')
+            file_metadata_entities = _add_metadata_entity(index, file_metadata, f'file{i + 1}_')
             entities += file_metadata_entities
             index += 1
 
-    return entities, root_propeties
+    return entities, root_properties
