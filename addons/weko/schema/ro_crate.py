@@ -7,6 +7,8 @@ from osf.models.metaschema import RegistrationSchema
 from .base import (
     expand_listed_key, get_sources_for_key, find_schema_question, is_special_key, is_key_present, get_value, resolve_array_index
 )
+from .constants_mebyo import MEBYO_SCHEMA_NAME
+from .ro_crate_mebyo import generate_dataset_metadata
 
 
 logger = logging.getLogger(__name__)
@@ -606,4 +608,12 @@ def write_ro_crate_json(user, f, target_index, download_file_names, schema_id, f
         ],
         '@graph': _flatten_json_ld_root(hierarchical_object),
     }
+
+    # 未病スキーマ　データセットメタデータ・ファイルメタデータ対応
+    if mapping_def.rules['@metadata'].get('schemaname') == MEBYO_SCHEMA_NAME:
+        entity_list, properties = generate_dataset_metadata(project_metadatas)
+        json_ld['@graph'].extend(entity_list)
+        match = next((d for d in json_ld['@graph'] if d.get('@id') == './'), None)
+        match.update(properties)
+
     json.dump(json_ld, f, indent=2, ensure_ascii=False)

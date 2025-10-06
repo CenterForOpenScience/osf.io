@@ -53,7 +53,7 @@ def _validate_metadata_element(element):
         if key == 'itemtype':
             _validate_itemtype_element(v)
             continue
-        if key in ['filename']:
+        if key in ['filename', 'schemaname']:
             continue
         raise ValueError(f'Unexpected key "{key}" in metadata')
 
@@ -91,9 +91,9 @@ def validate_mapping(mapping):
         if key != '_' and '@type' not in element:
             raise ValueError(f'Mapping "{key}" has no types')
         if key == '_' and '@type' in element:
-            raise ValueError(f'Mapping "_" cannot have @type property')
+            raise ValueError('Mapping "_" cannot have @type property')
         if key == '_' and '@createIf' in element:
-            raise ValueError(f'Mapping "_" cannot have @createIf property')
+            raise ValueError('Mapping "_" cannot have @createIf property')
         _validate_mapping_element(element)
 
 

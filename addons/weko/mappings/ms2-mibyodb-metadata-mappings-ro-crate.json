@@ -1,6 +1,7 @@
 {
     "@metadata": {
-        "filename": "ro-crate-metadata.json"
+        "filename": "ro-crate-metadata.json",
+        "schemaname": "ms2-mibyodb"
     },
     "@files": {
         "@type": "object",
@@ -53,23 +54,22 @@
             "language": "en",
             ".@id": "_:ams:descriptionOfExperimentalCondition2"
         },
-        "root.rdm:keywords[KEYWORD]":
-        {
+        "root.rdm:keywords[KEYWORD]": {
             "@createIf": "{{ keywords_value }}",
             ".@id": "_:keywords1",
             ".@type": "PropertyValue",
-            "keywords[]":[
+            "keywords[]": [
                 {
                     "@createIf": "{{ keywords_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_filename":  "{{ keywords_value }}",
+                    "subitem_filename": "{{ keywords_value }}",
                     "language": "ja",
                     ".@id": "_:rdm:Resource1"
                 },
                 {
                     "@createIf": "{{ keywords_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_filename_en":  "{{ keywords_value }}",
+                    "subitem_filename_en": "{{ keywords_value }}",
                     "language": "en",
                     ".@id": "_:rdm:Resource2"
                 }
@@ -212,7 +212,6 @@
             ".@type": "PropertyValue",
             "value": "{{industrial_use_value}}",
             ".@id": "_:ams:industrialUse"
-
         },
         "root.ams:icIsNo[IC_IS_NO]": {
             "@createIf": "{{ ic_is_no_value }}",
@@ -230,7 +229,7 @@
             "@createIf": "{{ access_rights_value }}",
             ".@type": "PropertyValue",
             "value": "{{access_rights_tooltip_1}}",
-            "rdm:dateAvailable":"{{ scheduled_release_date_value }}",
+            "rdm:dateAvailable": "{{ scheduled_release_date_value }}",
             ".@id": "_:rdm:AccessRights1"
         },
         "root.ams:repository[REPOSITORY_INFORMATION]": {
@@ -259,8 +258,7 @@
             "language": "en",
             ".@id": "_:rdm:Repository4"
         },
-        "root.creator[DATA_CREATOR]":
-        {
+        "root.creator[DATA_CREATOR]": {
             "@createIf": "{{ data_creator_value }}",
             ".@id": "_:Creator1",
             ".@type": "Person",
@@ -268,7 +266,7 @@
                 {
                     "@createIf": "{{ data_creator_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_belonging":  "{{ data_creator_value }}",
+                    "subitem_belonging": "{{ data_creator_value }}",
                     "language": "ja",
                     ".@id": "_:rdm:Person1Affiliation1"
                 },
@@ -280,11 +278,11 @@
                     ".@id": "_:rdm:Person1Affiliation2"
                 }
             ],
-            "email[]":[
+            "email[]": [
                 {
                     "@createIf": "{{ data_creator_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_contact":  "{{ data_creator_value }}",
+                    "subitem_contact": "{{ data_creator_value }}",
                     "language": "ja",
                     ".@id": "_:rdm:Person1Address1"
                 }
@@ -306,35 +304,34 @@
                 }
             ]
         },
-        "root.contributor[DATA_MANAGER]":
-        {
+        "root.contributor[DATA_MANAGER]": {
             "@createIf": "{{ data_manager_value }}",
             ".@id": "_:Contributor1",
-            "jpcoar:addtionalType":{
-                ".@id":"https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            "jpcoar:addtionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
             },
             ".@type": "Person",
             "affiliation[]": [
                 {
                     "@createIf": "{{ data_manager_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_belonging":  "{{ data_manager_value }}",
+                    "subitem_belonging": "{{ data_manager_value }}",
                     "language": "ja",
                     ".@id": "_:rdm:Person2Affiliation1"
                 },
                 {
                     "@createIf": "{{ data_manager_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_belonging_en":  "{{ data_manager_value }}",
+                    "subitem_belonging_en": "{{ data_manager_value }}",
                     "language": "en",
                     ".@id": "_:rdm:Person2Affiliation2"
                 }
             ],
-            "email[]":[
+            "email[]": [
                 {
                     "@createIf": "{{ data_manager_value }}",
                     ".@type": "PropertyValue",
-                    "subitem_contact":  "{{ data_manager_value }}",
+                    "subitem_contact": "{{ data_manager_value }}",
                     "language": "ja",
                     ".@id": "_:rdm:Person2Address1"
                 }
@@ -398,50 +395,53 @@
     },
     "_": {
         "root": {
-                ".@id": "./",
-                ".@type[]": ["Dataset", "rdm:Dataset"],
-                "name": "{% if title_of_dataset_value %}{{ title_of_dataset_en_value }}{% elif title_of_dataset_value %}{{ title_of_dataset_value }}{% endif %}",
-                "description": "{% if purpose_of_experiment_value %}{{ purpose_of_experiment_en_value }}{% elif purpose_of_experiment_value %}{{ purpose_of_experiment_value }}{% endif %}",
-                "dateModified": "{{date_updated_in_metadata_value}}",
-                "dateCreated": "{{ date_registered_in_metadata_value }}",
-                "hasPart[]": [
-                    {
-                        ".@type": "File",
-                        ".@id": "/data/files/{{choose_additional_metadata_value}}",
-                        "name": "{{choose_additional_metadata_value}}"
-                    }
-                ],
-                "conformsTo": {
-                    ".@id": "https://w3id.org/ro/crate/1.1"
-                },
-                "dc:type": "dataset",
-                "datePublished": "{{ nowdate }}",
-                "rdm:name[]": [
-                    {
-                        "@createIf": "{{ title_of_dataset_value }}",
-                        ".@type": "PropertyValue",
-                        "value": "{{title_of_dataset_value}}",
-                        "language": "ja",
-                        ".@id": "_:Name_ja"
-                    },
-                    {
-                        "@createIf": "{{ title_of_dataset_en_value }}",
-                        ".@type": "PropertyValue",
-                        "value": "{{title_of_dataset_en_value}}",
-                        "language": "en",
-                        ".@id": "_:Name_en"
-                    }
-                  ],
-                "wk:index[]": "{{ index_id }}",
-                "wk:publishStatus": "public"
+            ".@id": "./",
+            ".@type[]": [
+                "Dataset",
+                "rdm:Dataset"
+            ],
+            "name": "{% if title_of_dataset_value %}{{ title_of_dataset_en_value }}{% elif title_of_dataset_value %}{{ title_of_dataset_value }}{% endif %}",
+            "description": "{% if purpose_of_experiment_value %}{{ purpose_of_experiment_en_value }}{% elif purpose_of_experiment_value %}{{ purpose_of_experiment_value }}{% endif %}",
+            "dateModified": "{{date_updated_in_metadata_value}}",
+            "dateCreated": "{{ date_registered_in_metadata_value }}",
+            "hasPart[]": [
+                {
+                    ".@type": "File",
+                    ".@id": "files/{{choose_additional_metadata_value}}",
+                    "name": "{{choose_additional_metadata_value}}"
+                }
+            ],
+            "conformsTo": {
+                ".@id": "https://w3id.org/ro/crate/1.1"
             },
-            "ro_crate_metadata": {
-                ".@id": "ro-crate-metadata.json",
-                ".@type": "CreativeWork",
-                "about": {
-                ".@id": "./"
+            "dc:type": "dataset",
+            "datePublished": "{{ nowdate }}",
+            "rdm:name[]": [
+                {
+                    "@createIf": "{{ title_of_dataset_value }}",
+                    ".@type": "PropertyValue",
+                    "value": "{{title_of_dataset_value}}",
+                    "language": "ja",
+                    ".@id": "_:Name_ja"
                 },
-                "conformsTo": {
+                {
+                    "@createIf": "{{ title_of_dataset_en_value }}",
+                    ".@type": "PropertyValue",
+                    "value": "{{title_of_dataset_en_value}}",
+                    "language": "en",
+                    ".@id": "_:Name_en"
+                }
+            ],
+            "wk:index[]": "{{ index_id }}",
+            "wk:publishStatus": "public"
+        },
+        "ro_crate_metadata": {
+            ".@id": "ro-crate-metadata.json",
+            ".@type": "CreativeWork",
+            "about": {
+                ".@id": "./"
+            },
+            "conformsTo": {
                 ".@id": "https://w3id.org/ro/crate/1.1"
             }
         }
