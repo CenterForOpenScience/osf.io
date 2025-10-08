@@ -1228,6 +1228,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     full_name = ser.CharField(required=False)
     email = ser.EmailField(required=False, source='user.email', write_only=True)
     index = ser.IntegerField(required=False, source='_order')
+    children_nodes = ser.ListField(required=False, write_only=True)
 
     users = RelationshipField(
         related_view='users:user-detail',
@@ -1241,13 +1242,15 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     def get_proposed_permissions(self, validated_data):
         return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None):
+    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None, children_nodes=None):
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
         if index is not None and index > len(node.contributors):
             raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {node._id}')
+        if children_nodes and (not_children := set(children_nodes) - set(node.node_ids)):
+            raise exceptions.ValidationError(detail=f'Nodes {', '.join(not_children)} are not children of node with id {node._id}')
 
     def create(self, validated_data):
         id = validated_data.get('_id')
@@ -1260,9 +1263,10 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
         send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+        children_nodes = validated_data.get('children_nodes')
         permissions = self.get_proposed_permissions(validated_data)
 
-        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index)
+        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index, children_nodes=children_nodes)
 
         if send_email not in self.email_preferences:
             raise exceptions.ValidationError(detail=f'{send_email} is not a valid email preference.')
@@ -1270,10 +1274,11 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         try:
             contributor_dict = {
                 'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
-                'bibliographic': bibliographic, 'index': index, 'save': True,
+                'bibliographic': bibliographic, 'index': index, 'save': True, 'permissions': permissions,
             }
-
-            contributor_dict['permissions'] = permissions
+            if children_nodes:
+                for child in AbstractNode.objects.filter(guids___id__in=children_nodes):
+                    child.add_contributor_registered_or_not(**contributor_dict)
             contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
