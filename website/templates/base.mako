@@ -145,6 +145,27 @@
     <div class="main-wrapper">
         ${self.nav()}
         <div class="content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        ## Maintenance alert
+                        % if maintenance:
+                            <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span></button>
+                            <strong>Notice:</strong>
+                            % if maintenance['message']:
+                                ${maintenance['message']}
+                            % else:
+                                The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                                Thank you for your patience.
+                            % endif
+                        </div>
+                        % endif
+                        ## End Maintenance alert
+                    </div>
+                </div>
+            </div>
             ## TODO: shouldn't always have the watermark class
             <div class="main-content flex-grow-1">
                 ${self.content_wrap()}

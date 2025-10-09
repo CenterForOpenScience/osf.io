@@ -234,27 +234,5 @@
             </a>
         </li>
     </ul>
-
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col">
-                ## Maintenance alert
-                % if maintenance:
-                    <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">&times;</span></button>
-                    <strong>Notice:</strong>
-                    % if maintenance['message']:
-                        ${maintenance['message']}
-                    % else:
-                        The site will undergo maintenance between <span id="maintenanceTime"></span>.
-                        Thank you for your patience.
-                    % endif
-                </div>
-                % endif
-                ## End Maintenance alert
-            </div>
-        </div>
-    </div>
 </div>
 </%def>

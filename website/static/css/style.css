@@ -1180,6 +1180,10 @@ input.form-control.form-control {
     .mobile-only {
         display: block;
     }
+
+    #maintenance {
+        margin-top: 50px;
+    }
 }
 
 #slideout-nav {
