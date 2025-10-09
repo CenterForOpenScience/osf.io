@@ -21,7 +21,6 @@ from api.base.serializers import (
 from api.base.serializers import YearmonthField
 from api.nodes.serializers import CompoundIDField
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.utils import absolute_reverse
 
 
 class InstitutionSerializer(JSONAPISerializer):
@@ -205,30 +204,6 @@ class InstitutionRegistrationsRelationshipSerializer(BaseAPISerializer):
         }
 
 
-class InstitutionSummaryMetricSerializer(JSONAPISerializer):
-
-    class Meta:
-        type_ = 'institution-summary-metrics'
-
-    id = IDField(source='institution_id', read_only=True)
-    public_project_count = ser.IntegerField(read_only=True)
-    private_project_count = ser.IntegerField(read_only=True)
-    user_count = ser.IntegerField(read_only=True)
-
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
-
-    def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'institutions:institution-summary-metrics',
-            kwargs={
-                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
-                'version': 'v2',
-            },
-        )
-
-
 class UniqueDeptIDField(CompoundIDField):
     """Creates a unique department ID of the form "<institution-id>-<dept-id>"."""
 
@@ -255,74 +230,9 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
 
-    filterable_fields = frozenset([
-        'id',
-        'name',
-        'number_of_users',
-    ])
-
-    def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'institutions:institution-department-metrics',
-            kwargs={
-                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
-                'version': 'v2',
-            },
-        )
-
-
-class OldInstitutionUserMetricsSerializer(JSONAPISerializer):
+class InstitutionUserMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-users metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is NOT active
-    (and should be removed when that flag is permanently active)
-    '''
-
-    class Meta:
-        type_ = 'institution-users'
-
-    id = IDField(source='user_id', read_only=True)
-    user_name = ser.CharField(read_only=True)
-    public_projects = ser.IntegerField(source='public_project_count', read_only=True)
-    private_projects = ser.IntegerField(source='private_project_count', read_only=True)
-    department = ser.CharField(read_only=True)
-
-    user = RelationshipField(
-        related_view='users:user-detail',
-        related_view_kwargs={'user_id': '<user_id>'},
-    )
-
-    links = LinksField({
-        'self': 'get_absolute_url',
-    })
-
-    filterable_fields = frozenset([
-        'id',
-        'user_name',
-        'public_projects',
-        'private_projects',
-        'department',
-    ])
-
-    def get_absolute_url(self, obj):
-        return absolute_reverse(
-            'institutions:institution-user-metrics',
-            kwargs={
-                'institution_id': self.context['request'].parser_context['kwargs']['institution_id'],
-                'version': 'v2',
-            },
-        )
-
-
-class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
-    '''serializer for institution-users metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
-    (and should be renamed without "New" when that flag is permanently active)
     '''
 
     class Meta:
@@ -360,11 +270,6 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
     )
     contacts = ser.SerializerMethodField()
 
-    links = LinksField({})
-
-    def get_absolute_url(self):
-        return None  # there is no detail view for institution-users
-
     def get_contacts(self, obj):
         user = OSFUser.load(obj._d_['user_id'])
         if not user:
@@ -381,11 +286,8 @@ class NewInstitutionUserMetricsSerializer(JSONAPISerializer):
         return list(results)
 
 
-class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
+class InstitutionSummaryMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-summary metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
-    (and should be renamed without "New" when that flag is permanently active)
     '''
 
     class Meta:
@@ -413,11 +315,6 @@ class NewInstitutionSummaryMetricsSerializer(JSONAPISerializer):
         related_view='institutions:institution-detail',
         related_view_kwargs={'institution_id': '<institution_id>'},
     )
-
-    links = LinksField({})
-
-    def get_absolute_url(self):
-        return None  # there is no detail view for institution-users
 
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):

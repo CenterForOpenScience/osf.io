@@ -1,6 +1,5 @@
 from unittest import mock
 import pytest
-import time
 
 from collections import OrderedDict
 
@@ -9,13 +8,10 @@ from django.utils import timezone
 from addons.osfstorage import settings as osfstorage_settings
 from api_tests.utils import create_test_file
 from framework.auth import Auth
-from osf.management.commands.update_institution_project_counts import update_institution_project_counts
 from osf.management.commands.project_to_draft_registration_contributor_sync import retrieve_draft_registrations_to_sync, project_to_draft_registration_contributor_sync
 from osf.models import RegistrationSchema
-from osf.metrics import InstitutionProjectCounts, UserInstitutionProjectCounts
 from osf_tests.factories import (
     AuthUserFactory,
-    InstitutionFactory,
     PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
@@ -263,109 +259,6 @@ class TestDataStorageUsage(DbTestCase):
         for key in actual_keys:
             if key != 'date':
                 assert (key, expected_summary_data[key]) == (key, actual_summary_data[key])
-
-
-@pytest.mark.es_metrics
-@pytest.mark.django_db
-class TestInstitutionMetricsUpdate:
-
-    @pytest.fixture()
-    def institution(self):
-        # Private: 14, Public: 4
-        return InstitutionFactory()
-
-    @pytest.fixture()
-    def user1(self, institution):
-        # Private: 4, Public: 4 (+1 from user2 fixture)
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution)
-
-        for i in range(5):
-            project = ProjectFactory(creator=user, is_public=False)
-            project.affiliated_institutions.add(institution)
-            project.save()
-
-        project.delete()
-
-        for i in range(3):
-            project = ProjectFactory(creator=user, is_public=True)
-            project.affiliated_institutions.add(institution)
-            project.save()
-
-        ProjectFactory(creator=user, is_public=True)
-        ProjectFactory(creator=user, is_public=False)
-
-        return user
-
-    @pytest.fixture()
-    def user2(self, institution, user1):
-        # Private: 10, Public: 1
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution)
-
-        for i in range(10):
-            project = ProjectFactory(creator=user, is_public=False)
-            project.affiliated_institutions.add(institution)
-            project.save()
-        for i in range(1):
-            project = ProjectFactory(creator=user, is_public=True)
-            project.add_contributor(user1)
-            project.affiliated_institutions.add(institution)
-            project.save()
-
-        return user
-
-    @pytest.fixture()
-    def user3(self, institution):
-        # Private: 0, Public: 0
-        user = AuthUserFactory()
-        user.add_or_update_affiliated_institution(institution)
-
-        return user
-
-    @pytest.fixture()
-    def user4(self):
-        # Projects should not be included in results
-        user = AuthUserFactory()
-
-        for i in range(3):
-            project = ProjectFactory(creator=user, is_public=False)
-            project.save()
-        for i in range(6):
-            project = ProjectFactory(creator=user, is_public=True)
-            project.save()
-
-        return user
-
-    def test_update_institution_counts(self, app, institution, user1, user2, user3, user4):
-        update_institution_project_counts()
-
-        time.sleep(2)
-
-        user_search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-        user_results = user_search.execute()
-        sorted_results = sorted(user_results, key=lambda x: x['private_project_count'])
-
-        user3_record = sorted_results[0]
-        user1_record = sorted_results[1]
-        user2_record = sorted_results[2]
-
-        assert user1_record['user_id'] == user1._id
-        assert user1_record['public_project_count'] == 4
-        assert user1_record['private_project_count'] == 4
-
-        assert user2_record['user_id'] == user2._id
-        assert user2_record['public_project_count'] == 1
-        assert user2_record['private_project_count'] == 10
-
-        assert user3_record['user_id'] == user3._id
-        assert user3_record['public_project_count'] == 0
-        assert user3_record['private_project_count'] == 0
-
-        institution_results = InstitutionProjectCounts.get_latest_institution_project_document(institution)
-
-        assert institution_results['public_project_count'] == 4
-        assert institution_results['private_project_count'] == 14
 
 
 @pytest.mark.django_db

@@ -195,10 +195,6 @@ flags:
     note: This is not used
     everyone: true
 
-  - flag_name: INSTITUTIONAL_DASHBOARD_2024
-    name: institutional_dashboard_2024
-    note: whether to surface older or updated (in 2024) institutional metrics
-
   - flag_name: DISABLE_COMMENTS
     name: disable_comments
     note: This flag controls wheter users can create or interact with comments via BE or FE.
