@@ -27,4 +27,6 @@ urlpatterns = [
         name='reindex-elastic-user'),
     re_path(r'^(?P<guid>[a-z0-9]+)/merge_accounts/$', views.UserMergeAccounts.as_view(), name='merge-accounts'),
     re_path(r'^(?P<guid>[a-z0-9]+)/draft_registrations/$', views.UserDraftRegistrationsList.as_view(), name='draft-registrations'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/affiliations/$', views.UserListAndAddAffiliations.as_view(), name='affiliations'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/remove_affiliations/$', views.UserRemoveAffiliations.as_view(), name='remove_affiliations'),
 ]
