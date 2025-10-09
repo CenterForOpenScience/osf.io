@@ -8,7 +8,8 @@ require('../../vendor/bootstrap-editable-custom/css/bootstrap-editable.css');
 require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
-require('font-awesome-webpack');
+
+import "@fortawesome/fontawesome-free/css/all.css";
 
 var $ = require('jquery');
 var Cookie = require('js-cookie');
