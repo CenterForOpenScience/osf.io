@@ -95,6 +95,7 @@ django-elasticsearch-metrics = {git ="https://github.com/CenterForOpenScience/dj
 djangorestframework-csv = "3.0.2"
 gevent = "24.2.1"
 packaging = "^24.0"
+flask-cors = "^6.0.1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "7.4.4"
