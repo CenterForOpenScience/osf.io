@@ -1052,18 +1052,22 @@ input.form-control.form-control {
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    background: #f7f7f7;
     height: 100vh;
     overflow-y: auto;
+    background: linear-gradient(135deg, #e6f1fc 0%, #f7f7f7 60%, #eaf6ff 100%);
+    background-color: #f7f7f7;
 }
 
 .main-content {
-    min-width: 80%;
-    max-width: 1200px;
-    width: 100%;
     margin: 50px auto 0;
     display: flex;
     align-items: center;
+
+    [role="main"] {
+        border-radius: 0.75rem;
+        background: #fff;
+        padding: 2em;
+    }
 }
 
 .left-logo {
