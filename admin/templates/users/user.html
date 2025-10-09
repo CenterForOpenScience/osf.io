@@ -37,6 +37,9 @@
                 {% include "users/disable_user.html" with user=user %}
                 {% include "users/mark_spam.html" with user=user %}
                 {% include "users/reindex_user_elastic.html" with user=user %}
+                {% if perms.osf.change_institution %}
+					<a class="btn btn-primary" href="{% url 'users:affiliations' guid=user.guid %}">Affiliations</a>
+				{% endif %}
             </div>
         </div>
     </div>

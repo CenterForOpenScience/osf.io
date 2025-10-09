@@ -20,5 +20,7 @@ urlpatterns = [
             name='list_and_add_admin'),
     re_path(r'^(?P<institution_id>[0-9]+)/remove_admins/$', views.InstitutionRemoveAdmin.as_view(),
             name='remove_admins'),
+    re_path(r'^(?P<institution_id>[0-9]+)/affiliations/$', views.InstitutionListAndAddAffiliation.as_view(), name='affiliations'),
+    re_path(r'^(?P<institution_id>[0-9]+)/remove_affiliations/$', views.InstitutionRemoveAffiliation.as_view(), name='remove_affiliations'),
 
 ]

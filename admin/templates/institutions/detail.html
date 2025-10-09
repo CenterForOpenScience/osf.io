@@ -29,6 +29,7 @@
 					{% else %}
 					<a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
 					{% endif %}
+					<a class="btn btn-primary" href={% url 'institutions:affiliations' institution.id %}>Affiliations</a>
 				{% endif %}
             </div>
         </div>
