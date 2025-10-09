@@ -1,13 +1,15 @@
 <%inherit file="base.mako"/>
 <%def name="title()">OSF ${external_id_provider} Login</%def>
 <%def name="content()">
-<h1 class="page-header text-center">OSF ${external_id_provider} Login | Register Email</h1>
+<h1 class="page-header text-center">Sign In With ${external_id_provider}</h1>
 
 <div class="row">
     ## Center the form
     <div class="col-md-6 col-md-offset-3">
-        <p class='help'>
-            Please enter your email to finalize the login.
+        <p>
+            Please enter your email to finalize your ${external_id_provider} login.
+        </p>
+        <p>
             If you already have an OSF account, this will link your ${external_id_provider} profile with OSF.
             If not, this will create a new account for you with your ${external_id_provider} profile.
         </p>
@@ -27,8 +29,10 @@
                 ${form.accepted_terms_of_service(required='required') | unicode, n }
                 <label>I have read and agree to the <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/TERMS_OF_USE.md'>Terms of Use</a> and <a target="_blank" href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>.</label>
             </div>
-            <button type='submit' class='btn btn-primary'>Send</button>
-            <a href='/logout' class='btn btn-danger'>Cancel</a>
+            <div class='border-top flex-row gap-1 padding-top-2'>
+                <a href='/logout' class='btn btn-secondary flex-grow-1'>Cancel</a>
+                <button type='submit' class='btn btn-primary flex-grow-1'>Send</button>
+            </div>
         </form>
     </div>
 </div>
