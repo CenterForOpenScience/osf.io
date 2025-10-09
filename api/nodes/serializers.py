@@ -272,7 +272,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_collection')
     tags = ValuesListField(attr_name='name', child=ser.CharField(), required=False)
-    access_requests_enabled = ShowIfVersion(ser.BooleanField(read_only=False, required=False), min_version='2.0', max_version='2.8')
+    access_requests_enabled = ser.BooleanField(read_only=True, required=False)
     node_license = NodeLicenseSerializer(required=False, source='license')
     # 'analytics_key' can be removed after another version release.
     analytics_key = ShowIfAdminScopeOrAnonymous(ser.CharField(read_only=True, default=''))
