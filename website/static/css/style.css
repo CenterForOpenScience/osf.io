@@ -1110,8 +1110,8 @@ input.form-control.form-control {
 }
 
 .left-pane-nav {
-    width: 250px;
-    max-width: 250px;
+    width: 300px;
+    max-width: 300px;
     height: 100vh;
     overflow-y: auto;
     scrollbar-width: thin;
@@ -1126,15 +1126,17 @@ input.form-control.form-control {
     margin-bottom: 4em;
 
     li {
-        margin-bottom: 2em;
+        margin: 0 1.5em 1em;
     }
 
     a {
         display: flex;
+        align-items: center;
         padding: 0.75em;
         gap: 0.5em;
         width: 100%;
-        font-weight: 400;
+        font-size: medium;
+        font-weight: 700;
         color: #F7F7F7;
         text-decoration: none;
     }

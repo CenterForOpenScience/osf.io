@@ -13,19 +13,19 @@
         <nav>
             <ul class='left-pane-ul'>
                 <li>
-                    <a>
+                    <a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">
                         <i class="fa fa-home"></i>
                         Home
                     </a>
                 </li>
                 <li>
-                    <a>
+                    <a data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">
                         <i class="fa fa-search"></i>
                         Search
                     </a>
                 </li>
                 <li>
-                    <a>
+                    <a data-bind="click: trackClick.bind($data, 'Support')" href="${service_support_url}">
                         <i class="fa fa-headset"></i>
                         Support
                     </a>
@@ -33,27 +33,27 @@
             </ul>
             <ul class='left-pane-ul'>
                 <li>
-                    <a>
-                        <i class="fa fa-flag"></i>
+                    <a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">
+                        <img class="social-icons" src="/static/img/left-nav-icons/registries.svg" title="Registries" alt="Registries icon">
                         Registries
                         <i class="fa fa-chevron-right chevron-right"></i>
                     </a>
                 </li>
                 <li>
-                    <a>
-                        <i class="fa fa-file-text"></i>
+                    <a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">
+                        <img class="social-icons" src="/static/img/left-nav-icons/preprints.svg" title="Preprints" alt="Preprints icon">
                         Preprints
                         <i class="fa fa-chevron-right chevron-right"></i>
                     </a>
                 </li>
                 <li>
-                    <a>
-                        <i class="fa fa-calendar"></i>
+                    <a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">
+                        <img class="social-icons" src="/static/img/left-nav-icons/meetings.svg" title="Meetings" alt="Meetings icon">
                         Meetings
                     </a>
                 </li>
                 <li>
-                    <a>
+                    <a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">
                         <i class="fa fa-university"></i>
                         Institutions
                     </a>
@@ -61,8 +61,8 @@
             </ul>
             <ul class='left-pane-ul'>
                 <li>
-                    <a>
-                        <i class="fa fa-heart"></i>
+                    <a data-bind="click: trackClick.bind($data, 'Donate')" href="https://www.cos.io/support-cos">
+                        <i class="fa fa-hand-holding-dollar"></i>
                         Donate
                     </a>
                 </li>
@@ -180,47 +180,47 @@
     </div>
     <ul class='left-pane-ul'>
         <li>
-            <a>
+            <a data-bind="click: trackClick.bind($data, 'Home')" href="${domain}">
                 <i class="fa fa-home"></i>
                 Home
             </a>
         </li>
         <li>
-            <a>
+            <a data-bind="click: trackClick.bind($data, 'Search')" href="${domain}search/">
                 <i class="fa fa-search"></i>
                 Search
             </a>
         </li>
         <li>
-            <a>
-                <i class="fa fa-life-ring"></i>
+            <a data-bind="click: trackClick.bind($data, 'Support')" href="${service_support_url}">
+                <i class="fa fa-headset"></i>
                 Support
             </a>
         </li>
     </ul>
     <ul class='left-pane-ul'>
         <li>
-            <a>
-                <i class="fa fa-flag"></i>
+            <a data-bind="click: trackClick.bind($data, 'Registries')" href="${domain}registries/">
+                <img src="/static/img/left-nav-icons/registries.svg" title="Registries" alt="Registries icon">
                 Registries
                 <i class="fa fa-chevron-right chevron-right"></i>
             </a>
         </li>
         <li>
-            <a>
-                <i class="fa fa-file-text"></i>
+            <a data-bind="click: trackClick.bind($data, 'Preprints')" href="${domain}preprints/">
+                <img src="/static/img/left-nav-icons/preprints.svg" title="Preprints" alt="Preprints icon">
                 Preprints
                 <i class="fa fa-chevron-right chevron-right"></i>
             </a>
         </li>
         <li>
-            <a>
-                <i class="fa fa-calendar"></i>
+            <a data-bind="click: trackClick.bind($data, 'Meetings')" href="${domain}meetings/">
+                <img src="/static/img/left-nav-icons/meetings.svg" title="Meetings" alt="Meetings icon">
                 Meetings
             </a>
         </li>
         <li>
-            <a>
+            <a data-bind="click: trackClick.bind($data, 'Institutions')" href="${domain}institutions/">
                 <i class="fa fa-university"></i>
                 Institutions
             </a>
@@ -228,8 +228,8 @@
     </ul>
     <ul class='left-pane-ul'>
         <li>
-            <a>
-                <i class="fa fa-heart"></i>
+            <a data-bind="click: trackClick.bind($data, 'Donate')" href="https://www.cos.io/support-cos">
+                <i class="fa fa-hand-holding-dollar"></i>
                 Donate
             </a>
         </li>
