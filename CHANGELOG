@@ -2,6 +2,11 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.17.4 (2025-10-10)
+====================
+
+- Misc. fixes for Angular migration
+
 25.17.3 (2025-10-10)
 ====================
 
