@@ -9,7 +9,7 @@ require('../../vendor/bower_components/jquery-ui/themes/base/resizable.css');
 require('../../css/bootstrap-xl.css');
 require('../../css/animate.css');
 
-import "@fortawesome/fontawesome-free/css/all.css";
+import '@fortawesome/fontawesome-free/css/all.css';
 
 var $ = require('jquery');
 var Cookie = require('js-cookie');
