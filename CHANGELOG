@@ -2,10 +2,16 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.17.6 (2025-10-11)
+====================
+
+- Fix sitemap for preprint files download
+
 25.17.5 (2025-10-11)
 ====================
 
-- Misc. fixes for Angular migration
+- Fix sitemap for nodes and registrations overview
+- Make is_public and bookmarks field filterable for collections
 
 25.17.4 (2025-10-10)
 ====================

@@ -229,8 +229,8 @@ class Sitemap:
                         file_config['loc'] = urljoin(
                             settings.DOMAIN,
                             os.path.join(
-                                obj._id,
                                 'download',
+                                obj._id,
                                 '?format=pdf'
                             )
                         )

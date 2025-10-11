@@ -141,9 +141,9 @@ class TestGenerateSitemap:
             f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
             f'/preprints/{provider_other._id}/{preprint_other._id}',
             f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
-            f'/{preprint_osf._id}/download/?format=pdf',
-            f'/{preprint_osf_version._id}/download/?format=pdf',
-            f'/{preprint_other._id}/download/?format=pdf'
+            f'/download/{preprint_osf._id}/?format=pdf',
+            f'/download/{preprint_osf_version._id}/?format=pdf',
+            f'/download/{preprint_other._id}/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
