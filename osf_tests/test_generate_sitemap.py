@@ -133,10 +133,10 @@ class TestGenerateSitemap:
         urls_to_include.extend([
             user_admin_project_public.url,
             user_admin_project_private.url,
-            project_registration_public.url,
-            project_preprint_osf.url,
-            project_preprint_other.url,
-            registration_active.url,
+            project_registration_public.url + 'overview',
+            project_preprint_osf.url + 'overview',
+            project_preprint_other.url + 'overview',
+            registration_active.url + 'overview',
             f'/preprints/{provider_osf._id}/{preprint_osf._id}',
             f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
             f'/preprints/{provider_other._id}/{preprint_other._id}',
@@ -182,18 +182,18 @@ class TestGenerateSitemap:
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, project_private.url) not in urls
+        assert urljoin(settings.DOMAIN, project_private.url + 'overview') not in urls
 
     def test_embargoed_registration_link_not_included(self, registration_embargoed, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, registration_embargoed.url) not in urls
+        assert urljoin(settings.DOMAIN, registration_embargoed.url + 'overview') not in urls
 
     def test_deleted_project_link_not_included(self, project_deleted, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, project_deleted.url) not in urls
+        assert urljoin(settings.DOMAIN, project_deleted.url + 'overview') not in urls
