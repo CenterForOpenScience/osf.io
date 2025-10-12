@@ -23,7 +23,7 @@
             },
             "Forking": {
                 "status": "partial",
-                "text": "Forking a project or component does not copy Github authorization unless the user forking the project is the same user who authorized the Github add-on in the source project being forked."
+                "text": "Forking a project or component does not copy GitHub authorization unless the user forking the project is the same user who authorized the GitHub add-on in the source project being forked."
             },
             "Registering": {
                 "status": "partial",

@@ -56,7 +56,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
     :param addonNodeSettingsBase node_settings: Addon settings
     :param String name: Additional information for the folder title
-        eg. Repo name for Github or bucket name for S3
+        eg. Repo name for GitHub or bucket name for S3
     :param dict or Auth permissions: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
     :param dict urls: Hgrid related urls
     :param String extra: Html to be appended to the addon folder name

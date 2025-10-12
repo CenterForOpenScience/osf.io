@@ -46,7 +46,7 @@ class GitHubClient:
         return self.gh3.user(user)
 
     def repo(self, user, repo):
-        """Get a single Github repo's info.
+        """Get a single GitHub repo's info.
 
         :param str user: GitHub user name
         :param str repo: GitHub repo name
