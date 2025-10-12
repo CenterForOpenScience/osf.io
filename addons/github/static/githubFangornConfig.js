@@ -1,6 +1,6 @@
 'use strict';
 /**
- * Github FileBrowser configuration module.
+ * GitHub FileBrowser configuration module.
  */
 
 var m = require('mithril');
@@ -83,7 +83,7 @@ function _removeEvent (event, items) {
             var parent = items[0].parent();
             var mithrilContentSingle = m('div', [
                 m('p', 'This action is irreversible.'),
-                parent.children.length < 2 ? m('p', 'If a folder in Github has no children it will automatically be removed.') : ''
+                parent.children.length < 2 ? m('p', 'If a folder in GitHub has no children it will automatically be removed.') : ''
             ]);
             var mithrilButtonsSingle = m('div', [
                 m('span.btn.btn-default', {
@@ -344,7 +344,7 @@ function gotoFile (item) {
     }
 }
 
-function _fangornGithubTitle(item, col)  {
+function _fangornGitHubTitle(item, col)  {
     var tb = this;
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
@@ -383,7 +383,7 @@ function _fangornColumns (item) {
         data : 'name',
         folderIcons : true,
         filter: true,
-        custom : _fangornGithubTitle
+        custom : _fangornGitHubTitle
     });
 
     if(tb.options.placement === 'project-files') {

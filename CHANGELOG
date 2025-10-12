@@ -1300,7 +1300,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Subsequent files do not receive a modal when copied over to a folder
 - Unable to authorize figshare accounts with unicode in name
 - fix incorrect method name in oauth node config js
-- In Fangorn, Github's [Open] button only points to the default branch
+- In Fangorn, GitHub's [Open] button only points to the default branch
 - Popular Public and New & Noteworthy -- making a project private causes error
 - Admin app: accessing list of user's permissions 502s
 - Unable to mark node as Ham
@@ -1694,7 +1694,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Submitting to OSF4M using deleted project name does not create new project
 - Fangorn edit undefined
 - API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
-- API 502s when requesting Github file metadata w/ version=2.2
+- API 502s when requesting GitHub file metadata w/ version=2.2
 - Search unhappy with some users
 - Registries: "Withdrawn" label not appearing on newly-withdrawn registrations
 - Retraction detail pages throw mithril mounting error
@@ -1956,7 +1956,7 @@ Migrations
 0.88.1 (2016-08-25)
 ===================
 
-- Make Github addon logging more tolerant to problems
+- Make GitHub addon logging more tolerant to problems
 
 0.88.0 (2016-08-22)
 ===================
@@ -2726,7 +2726,7 @@ service when files are backed up to a Amazon Glacier archive.
 
 Hotfix release
 
-- Display warning about private Github repos on a public project on files and
+- Display warning about private GitHub repos on a public project on files and
 statistics pages.
 - Refactor celery task for rendering files so that file contents are not
 passed to message broker.
@@ -2770,7 +2770,7 @@ Lots of new UI features and responsiveness improvements.
 - Paginate search results in Add Contributor widget.
 - Speed improvements to contributor manager widget.
 - Add "ongoing" option to Education and Employment sections of user profile.
-- Improved mimetype detection when downloading a file through the Github
+- Improved mimetype detection when downloading a file through the GitHub
 addon.
 - Unread comment counts appear in comment tab.
 - Lots of bug fixes and minor UI improvements to the wiki.
@@ -2778,8 +2778,8 @@ addon.
 - Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
-- Allow multiple users to authenticate with the same Github credentials for
-the Github addon.
+- Allow multiple users to authenticate with the same GitHub credentials for
+the GitHub addon.
 - Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
 - Update required versions of requests, webassets, and bleach.
 
@@ -2795,7 +2795,7 @@ Schema changes
 
 - Remove fork_list and registration_list fields from Node model. NOTE: A
 migration was NOT performed to remove these fields.
-- Add AddonGithubOauthSettings model.
+- Add AddonGitHubOauthSettings model.
 - Remove oauth_access_token and oauth_token_type fields from
 AddonGitHubUserSettings model.
 

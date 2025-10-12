@@ -109,7 +109,7 @@
                                                     </a>
                                                 </span>
                                                 <span data-bind="visible: contributor.social.github">
-                                                    <a data-bind="attr: {href: contributor.social.github}" data-toggle="tooltip" title="Github" target="_blank">
+                                                    <a data-bind="attr: {href: contributor.social.github}" data-toggle="tooltip" title="GitHub" target="_blank">
                                                         <i class="fa fa-github-alt social-icons fa-lg"></i>
                                                     </a>
                                                 </span>
