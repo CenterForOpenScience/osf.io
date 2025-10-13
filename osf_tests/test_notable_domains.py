@@ -68,7 +68,7 @@ class TestDomainExtraction:
         domains = set(spam_tasks._extract_domains(sample_text))
         assert domains == {('This.will.not.connect', NotableDomain.Note.UNVERIFIED)}
 
-    def test_actract_domains__returned_on_error(self, mock_spam_head_request):
+    def test_extract_domains__returned_on_error(self, mock_spam_head_request):
         sample_text = 'This.will.timeout'
         mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.Timeout
         domains = set(spam_tasks._extract_domains(sample_text))
