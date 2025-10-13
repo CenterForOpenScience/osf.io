@@ -169,7 +169,7 @@ class StorageAddonSerializerTestSuiteMixin(OAuthAddonSerializerTestSuiteMixin):
     @abc.abstractmethod
     def client(self):
         """Provide a mocked version of this provider's client (i.e. the client should not make
-        acutal API calls).
+        actual API calls).
         """
         pass
 
