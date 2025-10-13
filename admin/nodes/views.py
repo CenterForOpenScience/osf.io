@@ -905,7 +905,8 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import verify, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.models.admin_log_entry import update_admin_log, MANUAL_ARCHIVE_RESTART
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -933,16 +934,27 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
                 messages.error(request, str(exc))
                 return redirect(self.get_success_url())
         else:
-            # For actual archiving, skip synchronous verification to avoid 502 timeouts
-            # Verification will be performed asynchronously in the task
-            force_archive_task = force_archive.delay(
-                str(registration._id),
-                permissible_addons=list(addons),
-                allow_unconfigured=allow_unconfigured,
-                skip_collisions=skip_collision,
-                delete_collisions=delete_collision,
-            )
-            messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
+            try:
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=registration.pk,
+                    object_repr=str(registration),
+                    message=f'Manual archive restart initiated for registration {registration._id}',
+                    action_flag=MANUAL_ARCHIVE_RESTART
+                )
+                # For actual archiving, skip synchronous verification to avoid 502 timeouts
+                # Verification will be performed asynchronously in the task
+                force_archive_task = force_archive.delay(
+                    str(registration._id),
+                    permissible_addons=list(addons),
+                    allow_unconfigured=allow_unconfigured,
+                    skip_collisions=skip_collision,
+                    delete_collisions=delete_collision,
+                )
+                messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
+
+            except Exception as exc:
+                    messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '                                     f'If the problem persists get a developer to fix it.')
 
         return redirect(self.get_success_url())
 

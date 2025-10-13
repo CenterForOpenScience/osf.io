@@ -474,6 +474,8 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.approve_pending_schema_response',
         'api.share.utils',
+        'scripts.check_manual_restart_approval',
+        'scripts.enhanced_stuck_registration_audit',
     }
 
     try:
