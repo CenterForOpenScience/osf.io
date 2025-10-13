@@ -159,7 +159,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 24.10.0 (2024-12-05)
 ====================
 
-- Migrate Preprint Affilations
+- Migrate Preprint Affiliations
 - Add OOPSpam and Akismet metrics to spam report
 - Add PrivateSpamMetricsReport
 - Update PrivateSpamMetricsReporter to work with refactored MonthlyReporter
