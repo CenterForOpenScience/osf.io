@@ -121,7 +121,7 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
             with pytest.raises(AssertionError):
                 self.ser.serialized_urls
 
-    def test_serialized_acccounts(self):
+    def test_serialized_accounts(self):
         ea = self.ExternalAccountFactory()
         self.user.external_accounts.add(ea)
 
@@ -131,7 +131,7 @@ class OAuthAddonSerializerTestSuiteMixin(AddonSerializerTestSuiteMixin):
         assert len(serialized) == self.user.external_accounts.count()
         assert mock_serialize_account.call_count == len(serialized)
 
-    def test_serialize_acccount(self):
+    def test_serialize_account(self):
         ea = self.ExternalAccountFactory()
         expected = {
             'id': ea._id,
