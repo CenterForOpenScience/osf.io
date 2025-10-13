@@ -461,7 +461,7 @@ class ExternalProvider(metaclass=ExternalProviderMeta):
 
     def _needs_refresh(self):
         """Determines whether or not an associated ExternalAccount needs
-        a oauth_key.
+        an oauth_key.
 
         return bool: True if needs_refresh
         """

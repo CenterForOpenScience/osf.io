@@ -1191,7 +1191,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
+        a given node which they were added as an unregistered contributor for.
         """
         try:
             record = self.get_unclaimed_record(project_id)

@@ -125,7 +125,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
 
 def build_addon_button(text, action, title=''):
-    """Builds am action button to be rendered in HGrid
+    """Builds an action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
     :param str action: The name of the HGrid action for the button to call.
