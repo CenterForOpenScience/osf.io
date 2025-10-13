@@ -680,7 +680,7 @@ button.close {
     font-family : 'Open Sans', Helvetica, sans-serif;
 }
 
-/* Bootstrap Accesibility Override */
+/* Bootstrap Accessibility Override */
 .btn-success-high-contrast {
     background-color: #006803;
     border-color: #54AC54;
