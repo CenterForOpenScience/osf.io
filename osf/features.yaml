@@ -223,7 +223,7 @@ switches:
 
   - flag_name: ENABLE_RAW_METRICS
     name: enable_raw_metrics
-    note: allows for raw queries againest our ES metrics database
+    note: allows for raw queries against our ES metrics database
     active: false
 
   - flag_name: OSF_PREREGISTRATION

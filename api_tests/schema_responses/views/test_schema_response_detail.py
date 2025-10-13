@@ -228,7 +228,7 @@ class TestSchemaResponseDetailGETPermissions:
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailGETBehavior:
-    '''Confirms behavior of GET requests agaisnt the SchemaResponseList Endpoint.
+    '''Confirms behavior of GET requests against the SchemaResponseList Endpoint.
 
     GET should return a serialized instance of the SchemaResponse with the requested ID
     as it exists in the database at the time of the call.
