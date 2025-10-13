@@ -1243,7 +1243,7 @@ class TestProviderSpecificMetadata():
         expected_metadata = [{'field_name': 'foo', 'field_value': ''}]
         assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_metadata
 
-    def test_get_provider_metadata_no_addtional_fields_or_additional_metadata(self, app):
+    def test_get_provider_metadata_no_additional_fields_or_additional_metadata(self, app):
         provider = RegistrationProviderFactory()
         registration = RegistrationFactory()
         registration.provider = provider
