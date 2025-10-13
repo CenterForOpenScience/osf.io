@@ -1316,7 +1316,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Citations preview should show the full name field if the individual name sections are blank
 - Incorrect error message is shown for Dataverse 500 error
 - File checked out to Alex DeHaven after Prereg Challenge submission is approved.
-- Don't use {} as a attribute default value
+- Don't use {} as an attribute default value
 - [admin app] Searching for user names that contain periods or commas returns 502
 - Forks total includes registrations
 - Fix spelling for new VOL section in project settings

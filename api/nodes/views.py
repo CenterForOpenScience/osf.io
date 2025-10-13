@@ -1888,7 +1888,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -1977,7 +1977,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     node identifiers. This will replace the contents of the node_links for this node with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this node.
 
     ###Destroy

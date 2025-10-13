@@ -84,7 +84,7 @@ class TestNodeFileList:
     @responses.activate
     def test_disambiguate_dataverse_paths_initial(self, app, user, node, dataverse):
         '''
-        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after a update to their
+        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after an update to their
         Dataverse files) this test ensures both files are made into OSF filenodes and their `extra` info is passed along
         to the front-end.
         '''
