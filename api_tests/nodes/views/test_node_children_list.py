@@ -656,7 +656,7 @@ class TestNodeChildrenBulkCreate:
 
     def test_bulk_creates_children_and_sanitizes_html_logged_in_owner(
             self, app, user, project, url):
-        title = '<em>Reasoning</em> <strong>Aboot Projects</strong>'
+        title = '<em>Reasoning</em> <strong>About Projects</strong>'
         description = 'A <script>alert("super reasonable")</script> child'
 
         res = app.post_json_api(url, {
