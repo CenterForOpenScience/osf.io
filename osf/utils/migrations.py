@@ -392,7 +392,7 @@ def create_schema_blocks_for_question(state, rs, question, sub=False):
 
 def create_schema_blocks_for_atomic_schema(schema):
     """
-    Atomic schemas are a short cut around making an typical metaschemas by being totally explict about the schemablocks
+    Atomic schemas are a short cut around making a typical metaschemas by being totally explict about the schemablocks
     being created.
     """
 

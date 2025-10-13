@@ -384,7 +384,7 @@ def project_remove_contributor(auth, **kwargs):
 # TODO: consider moving this into utils
 def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 3600):
     """
-    A registered user claiming the unclaimed user account as an contributor to a project.
+    A registered user claiming the unclaimed user account as a contributor to a project.
     Send an email for claiming the account to the referrer and notify the claimer.
 
     :param claimer: the claimer
@@ -450,7 +450,7 @@ def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 360
 # TODO: consider moving this into utils
 def send_claim_email(email, unclaimed_user, node, notify=True, throttle=24 * 3600, email_template='default'):
     """
-    Unregistered user claiming a user account as an contributor to a project. Send an email for claiming the account.
+    Unregistered user claiming a user account as a contributor to a project. Send an email for claiming the account.
     Either sends to the given email or the referrer's email, depending on the email address provided.
 
     :param str email: The address given in the claim user form

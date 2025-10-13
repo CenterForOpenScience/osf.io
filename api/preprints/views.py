@@ -206,7 +206,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
         queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
-        # Use get_metrics_queryset to return an queryset with annotated metrics
+        # Use get_metrics_queryset to return a queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
             return self.get_metrics_queryset(queryset)

@@ -1552,7 +1552,7 @@ class JSONAPISerializer(BaseAPISerializer):
                     # if this is a RelationshipField, serialize as a null relationship
                     data['relationships'][field.field_name] = {'data': None}
                 else:
-                    # otherwise, serialize as an null attribute
+                    # otherwise, serialize as a null attribute
                     data['attributes'][field.field_name] = None
             else:
                 try:
