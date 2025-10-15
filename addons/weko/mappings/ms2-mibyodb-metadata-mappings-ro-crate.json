@@ -391,7 +391,12 @@
     "@agent": {
         "@type": "object",
         "root.wk:feedbackMail[]": "{{ object_username }}",
-        "root.ams:projectId": "{{ object_absolute_url }}"
+        "root.wk:requestMail[]": "{{ object_username }}",
+        "root.ams:projectId": {
+            ".@type": "PropertyValue",
+            "value": "{{ object_absolute_url }}",
+            ".@id": "_:projectId"
+        }
     },
     "_": {
         "root": {

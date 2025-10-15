@@ -118,7 +118,7 @@ def _add_property_to_entity(
         raise ValueError(f'Value {value} of metadata must be list, dict or scalar.')
 
 def _add_metadata_entity(index: int, resource_metadata: Any, file_prefix: str = '') -> List[Dict[str, Any]]:
-    base_entity = _create_new_entity('_:ams:ResourceMetadataDocument_', 'ams:ResourceMetadataDocument', index)
+    base_entity = _create_new_entity('_:ams:ResourceMetadataDocument', 'ams:ResourceMetadataDocument', index)
     entity_list = [base_entity]
 
     for key, meta in resource_metadata.items():
