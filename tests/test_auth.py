@@ -97,12 +97,7 @@ class TestAuthUtils(OsfTestCase):
 
         assert res.status_code == 302
         assert '/' == urlparse(res.location).path
-<<<<<<< HEAD
-        assert len(get_session()['status']) == 1
-=======
-        assert len(self.mock_send_grid.call_args_list) == 0
         # assert len(get_session()['status']) == 1
->>>>>>> upstream/develop
 
     def test_get_user_by_id(self):
         user = UserFactory()

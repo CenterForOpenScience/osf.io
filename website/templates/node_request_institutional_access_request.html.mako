@@ -13,20 +13,12 @@
         </p>
         % endif
         <p>
-<<<<<<< HEAD:website/templates/node_request_institutional_access_request.html.mako
-            To review the request, click <a href="${node_absolute_url}/contributors/">here</a> to allow or deny access and configure permissions.
-=======
             To review the request, click <a href="${node.absolute_url}contributors/">here</a> to allow or deny access and configure permissions.
->>>>>>> upstream/develop:website/templates/emails/node_request_institutional_access_request.html.mako
         </p>
         <p>
             This request is being sent to you because your project has the “Request Access” feature enabled.
             This allows potential collaborators to request to be added to your project or to disable this feature, click
-<<<<<<< HEAD:website/templates/node_request_institutional_access_request.html.mako
-            <a href="${node_absolute_url}/settings/">here</a>
-=======
             <a href="${node.absolute_url}settings/">here</a>
->>>>>>> upstream/develop:website/templates/emails/node_request_institutional_access_request.html.mako
         </p>
 
         <p>

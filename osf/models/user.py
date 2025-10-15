@@ -61,12 +61,9 @@ from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
-<<<<<<< HEAD
-from osf.utils.requests import get_headers_from_request
 from osf.models.notification_type import NotificationType
-=======
 from osf.utils.requests import string_type_request_headers
->>>>>>> upstream/develop
+
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
