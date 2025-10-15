@@ -1183,6 +1183,13 @@ class LinksField(ser.Field):
             if hasattr(obj, 'get_absolute_info_url'):
                 ret['info'] = self._extend_url_with_vol_key(obj.get_absolute_info_url())
 
+        request = self.context['request']
+        referer = request.headers.get('Referer', '')
+        if 'html' in ret and 'legacy' in referer:
+            parsed_html_url = urlparse(ret['html'])
+            legacy_url = urlparse(referer)
+            ret['html'] = parsed_html_url._replace(scheme=legacy_url.scheme, netloc=legacy_url.netloc).geturl()
+
         return ret
 
 

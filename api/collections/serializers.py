@@ -29,6 +29,8 @@ class CollectionSerializer(JSONAPISerializer):
         'title',
         'date_created',
         'date_modified',
+        'is_public',
+        'bookmarks',
     ])
 
     id = IDField(source='_id', read_only=True)
