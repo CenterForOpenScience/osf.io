@@ -14,7 +14,7 @@ class JobState(IntEnum):
     INITIALIZED = 1  # Database preparation has been finished and is ready to be picked up
     PICKED_UP = 2  # Registration creation is in progress
     DONE_FULL = 3  # All (draft) registrations have been successfully created
-    DONE_PARTIAL = 4  # Some (draft) registrations have failed the creation creation process
+    DONE_PARTIAL = 4  # Some (draft) registrations have failed the creation process
     DONE_ERROR = 5  # All (draft) registrations have failed
 
 
