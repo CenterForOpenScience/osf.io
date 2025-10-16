@@ -1072,6 +1072,8 @@ def external_login_email_post():
                 destination = campaign
                 break
 
+    status_message = None
+    error_list = []
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
@@ -1104,11 +1106,11 @@ def external_login_email_post():
                 destination=destination
             )
             # 3. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
             # 4. Clear session data
             clear_external_first_login_anonymous_session_data(session)
         else:
@@ -1134,22 +1136,26 @@ def external_login_email_post():
                 destination=destination
             )
             # 4. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
-            # 5. Clear session data
+            # 5. clear session data
             clear_external_first_login_anonymous_session_data(session)
-        status.push_status_message(message, kind=kind, trust=False)
     else:
-        forms.push_errors_to_status(form.errors)
+        form_errors = form.errors
+        for field, _ in form_errors.items():
+            for error in form_errors[field]:
+                error_list.append(error)
 
     # Don't go anywhere
     return {
         'form': form,
         'external_id_provider': external_id_provider,
-        'auth_user_fullname': fullname
+        'auth_user_fullname': fullname,
+        'status_message': status_message,
+        'error_list': error_list,
     }
 
 
