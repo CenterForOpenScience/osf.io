@@ -12,7 +12,7 @@
     <br>
     <a href="${contributors_url}">Review the request</a> to allow or deny access and configure permissions.<br>
     <br>
-    This request is being sent to you because your project has the 'Request Access' feature enabled. This allows potential collaborators to request to be added to your project. To disable this feature, click <a href="${project_settings_url}">here</a>.<br>
+    This request is being sent to you because your project has the 'Request Access' feature enabled. This allows potential collaborators to request to be added to your project. You can <a href="${project_settings_url}">disable this feature</a>.<br>
     <br>
     Sincerely,<br>
     <br>

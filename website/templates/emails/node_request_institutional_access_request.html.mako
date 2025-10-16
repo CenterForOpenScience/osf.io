@@ -18,8 +18,8 @@
         </p>
         <p>
             This request is being sent to you because your project has the “Request Access” feature enabled.
-            This allows potential collaborators to request to be added to your project or to disable this feature, click
-            <a href="${node.absolute_url}settings/">here</a>
+            This allows potential collaborators to request to be added to your project or you can
+            <a href="${node.absolute_url}settings/">disable this feature</a>.
         </p>
 
         <p>
