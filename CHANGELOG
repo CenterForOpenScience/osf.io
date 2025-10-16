@@ -2254,7 +2254,7 @@ See https://openscience.atlassian.net/browse/OSF-5861
 - Backend for OSF4Institutions: nodes and users can be affiliated with an institution (alpha; disabled on production).
 - Add visitor tracking with Keen.io.
 - Refactor Google Drive addon to use generic views.
-- Use Sendgrid API for sending emails; add categorization of emails.
+- Use SendGrid API for sending emails; add categorization of emails.
 - UI fixes.
 
 0.64.0 (2016-02-10)
