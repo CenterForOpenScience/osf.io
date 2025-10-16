@@ -583,7 +583,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.can_comment(auth)
 
     def get_preprint(self, obj):
-        # Whether the node has supplemental material for a preprint the user can view
+        # Whether the node has supplemental material for a preprint that the user can view
         if hasattr(obj, 'has_viewable_preprints'):
             # if queryset has been annotated with "has_viewable_preprints", use this value
             return obj.has_viewable_preprints

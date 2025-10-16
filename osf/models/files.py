@@ -780,7 +780,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     """
     # Note on fields:
     # `created`: Date version record was created. This is the date displayed to the user.
-    # `modified`: Date this object was last modified. Distinct from the date the file associated
+    # `modified`: Date this object was last modified. Distinct from the date that the file associated
     #       with this object was last modified
     # `external_modified`: Date file modified on third-party backend. Not displayed to user, since
     #       this date may be earlier than the date of upload if the file already
