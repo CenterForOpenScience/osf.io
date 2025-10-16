@@ -52,7 +52,7 @@ class OneDriveProvider(ExternalProvider):
     refresh_time = settings.REFRESH_TIME
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new OneDriveUserSettings
+        """View called when the OAuth flow is completed. Adds a new OneDriveUserSettings
         record to the user and saves the user's access token and account info.
         """
         client = OneDriveClient(response['access_token'])

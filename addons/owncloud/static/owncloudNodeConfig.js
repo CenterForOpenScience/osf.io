@@ -16,7 +16,7 @@ var ViewModel = oop.extend(OauthAddonFolderPicker,{
         // TODO: [OSF-7069]
         self.super.super.constructor.call(self, addonName, url, selector, folderPicker, tbOpts);
         self.super.construct.call(self, addonName, url, selector, folderPicker, opts, tbOpts);
-        // Non-Oauth fields:
+        // Non-OAuth fields:
         self.username = ko.observable('');
         self.password = ko.observable('');
         self.hosts = ko.observableArray([]);
