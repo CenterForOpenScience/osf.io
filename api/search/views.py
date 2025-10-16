@@ -284,8 +284,8 @@ class SearchFiles(BaseSearchView):
         md5                         string             md5 hash of file, null for folders
         sha256                      string             SHA-256 hash of file, null for folders
 
-    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time the file was
-    first uploaded to osfstorage, and `date_modified` is the time the file was last updated while in osfstorage.
+    * A note on timestamps: for files stored in osfstorage, `date_created` refers to the time that the file was
+    first uploaded to osfstorage, and `date_modified` is the time that the file was last updated while in osfstorage.
     Other providers may or may not provide this information, but if they do it will correspond to the provider's
     semantics for created/modified times.  These timestamps may also be stale; metadata retrieved via the File Detail
     endpoint is cached.  The `last_touched` field describes the last time the metadata was retrieved from the external
