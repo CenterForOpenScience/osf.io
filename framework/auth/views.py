@@ -886,7 +886,7 @@ def register_user(**kwargs):
     """
 
     # Verify that email address match.
-    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
+    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users cannot submit the form
     # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():

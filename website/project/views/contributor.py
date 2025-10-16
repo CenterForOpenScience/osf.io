@@ -292,7 +292,7 @@ def project_manage_contributors(auth, node, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': error.args[0]})
     except IntegrityError as error:
         status.push_status_message(
-            'You can not make an institutional curator a bibliographic contributor.',
+            'You cannot make an institutional curator a bibliographic contributor.',
             kind='error',
             trust=False
         )

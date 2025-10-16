@@ -12,7 +12,7 @@
         Your submission of file [${query_file_full_path}] from <a href="${project_url}">your OSF project</a> to Boa has failed. <br>
         <br>
         % if code == 1:
-            OSF can not log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
+            OSF cannot log in to Boa. Please fix your Boa addon configuration on OSF and try again. <br>
             <br>
             For details, visit <a href="${boa_job_list_url}">Boa's job list page</a>. The Boa job ID for this submission is [${job_id}]. <br>
         % elif code == 2:

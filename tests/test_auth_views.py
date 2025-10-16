@@ -482,7 +482,7 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': True, 'confirmed': False}
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400
-        assert res.json['message_long'] == 'Cannnot resend confirmation for confirmed emails'
+        assert res.json['message_long'] == 'Cannot resend confirmation for confirmed emails'
 
     def test_resend_confirmation_not_work_for_confirmed_email(self):
         email = 'test@mail.com'
@@ -490,7 +490,7 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': False, 'confirmed': True}
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400
-        assert res.json['message_long'] == 'Cannnot resend confirmation for confirmed emails'
+        assert res.json['message_long'] == 'Cannot resend confirmation for confirmed emails'
 
     def test_resend_confirmation_does_not_send_before_throttle_expires(self):
         email = 'test@mail.com'

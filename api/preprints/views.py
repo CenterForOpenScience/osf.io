@@ -91,7 +91,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
             return method(request, *args, **kwargs)
-        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
+        message = f'User cannot edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
