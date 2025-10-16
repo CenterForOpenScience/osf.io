@@ -9,7 +9,7 @@
    - macOS: https://docs.docker.com/docker-for-mac/#/preferences
    - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
-3. Setup the Operating System
+3. Set up the Operating System
   - macOS
     - Alias the loopback interface
 
