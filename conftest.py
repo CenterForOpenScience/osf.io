@@ -213,7 +213,7 @@ def mock_akismet():
 @pytest.fixture
 def mock_datacite(registration):
     """
-    This should be used to mock our our datacite client.
+    This should be used to mock our datacite client.
     Relevant endpoints:
     f'{DATACITE_URL}/metadata'
     f'{DATACITE_URL}/doi'
@@ -243,7 +243,7 @@ def mock_datacite(registration):
 @pytest.fixture
 def mock_crossref():
     """
-    This should be used to mock our our crossref integration.
+    This should be used to mock our crossref integration.
     Relevant endpoints:
     """
     with mock.patch.object(website_settings, 'CROSSREF_URL', 'https://test.crossref.org/servlet/deposit'):
