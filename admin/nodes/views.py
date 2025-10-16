@@ -22,6 +22,7 @@ from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
+from admin.nodes.forms import AddSystemTagForm
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -812,3 +813,19 @@ class NodeRevertToDraft(NodeMixin, View):
         registration = self.get_object()
         registration.to_draft()
         return redirect(self.get_success_url())
+
+
+class NodeAddSystemTag(NodeMixin, FormView):
+    """ Allows authorized users to add system tags to a node.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+    form_class = AddSystemTagForm
+
+    def form_valid(self, form):
+        resource = self.get_object()
+        system_tag_to_add = form.cleaned_data['system_tag_to_add']
+        resource.add_system_tag(system_tag_to_add)
+        resource.save()
+
+        return super().form_valid(form)

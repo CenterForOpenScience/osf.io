@@ -19,7 +19,3 @@ class UserSearchForm(forms.Form):
 
 class MergeUserForm(forms.Form):
     user_guid_to_be_merged = forms.CharField(label='user_guid_to_be_merged', min_length=5, max_length=5, required=True)  # TODO: Move max to 6 when needed
-
-
-class AddSystemTagForm(forms.Form):
-    system_tag_to_add = forms.CharField(label='system_tag_to_add', min_length=1, max_length=1024, required=True)

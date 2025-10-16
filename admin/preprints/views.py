@@ -15,7 +15,7 @@ from django.urls import NoReverseMatch, reverse_lazy
 
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.nodes.views import NodeRemoveContributorView
+from admin.nodes.views import NodeRemoveContributorView, NodeAddSystemTag
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
@@ -677,3 +677,9 @@ class PreprintUnwithdrawView(PreprintMixin, View):
 
             preprint.save()
         return redirect(self.get_success_url())
+
+
+class PreprintAddSystemTag(PreprintMixin, NodeAddSystemTag):
+    """ Allows authorized users to add system tags to a preprint.
+    """
+    permission_required = 'osf.change_preprint'

@@ -42,9 +42,9 @@ from osf.models.admin_log_entry import (
 from admin.users.forms import (
     EmailResetForm,
     UserSearchForm,
-    MergeUserForm,
-    AddSystemTagForm
+    MergeUserForm
 )
+from admin.nodes.views import NodeAddSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
 from website.settings import DOMAIN
@@ -383,20 +383,10 @@ class User2FactorDeleteView(UserMixin, View):
         return redirect(self.get_success_url())
 
 
-class UserAddSystemTag(UserMixin, FormView):
+class UserAddSystemTag(UserMixin, NodeAddSystemTag):
     """ Allows authorized users to add system tags to a user.
     """
     permission_required = 'osf.change_osfuser'
-    raise_exception = True
-    form_class = AddSystemTagForm
-
-    def form_valid(self, form):
-        user = self.get_object()
-        system_tag_to_add = form.cleaned_data['system_tag_to_add']
-        user.add_system_tag(system_tag_to_add)
-        user.save()
-
-        return super().form_valid(form)
 
 
 class UserMergeAccounts(UserMixin, FormView):
