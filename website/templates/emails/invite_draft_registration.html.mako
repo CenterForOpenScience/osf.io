@@ -18,7 +18,7 @@
 	<a href="${settings.DOMAIN}/registries/${node.provider._id if node.provider else 'osf'}">${node.provider.name if node.provider else "OSF Registry"}</a>.
     </p>
     <p>
-    <a href="${claim_url}">Click here</a> to set a password for your account.
+    You can <a href="${claim_url}">set a password for your account</a>.
     </p>
     <p>
     Once you have set a password, you will be able to contribute to this registration draft as well as
