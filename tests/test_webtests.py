@@ -608,7 +608,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
-    def test_cannnot_make_primary_email_for_another_user(self):
+    def test_cannot_make_primary_email_for_another_user(self):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'
@@ -622,7 +622,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
-    def test_cannnot_add_email_for_another_user(self):
+    def test_cannot_add_email_for_another_user(self):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'

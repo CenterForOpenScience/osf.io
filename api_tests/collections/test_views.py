@@ -2768,7 +2768,7 @@ class TestBulkDeleteCollectionNodeLinks:
         pointer_url = '/{}collections/{}/node_links/{}/'.format(
             API_BASE, collection_two._id, collection_two_pointer_one._id)
 
-        # check that deleted pointer can not be returned
+        # check that deleted pointer cannot be returned
         res = app.get(pointer_url, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 404
 

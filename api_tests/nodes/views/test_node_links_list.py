@@ -1268,7 +1268,7 @@ class TestBulkDeleteNodeLinks:
             pointer_url = '/{}nodes/{}/node_links/{}/'.format(
                 API_BASE, public_project._id, public_pointer_one._id)
 
-            # check that deleted pointer can not be returned
+            # check that deleted pointer cannot be returned
             res = app.get(pointer_url, auth=user.auth, expect_errors=True)
             assert res.status_code == 404
 
@@ -1285,7 +1285,7 @@ class TestBulkDeleteNodeLinks:
             pointer_url = '/{}nodes/{}/node_links/{}/'.format(
                 API_BASE, private_project._id, private_pointer_one._id)
 
-            # check that deleted pointer can not be returned
+            # check that deleted pointer cannot be returned
             res = app.get(pointer_url, auth=user.auth, expect_errors=True)
             assert res.status_code == 404
 

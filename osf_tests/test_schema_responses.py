@@ -764,7 +764,7 @@ class TestUnmoderatedSchemaResponseApprovalFlows():
         with pytest.raises(PermissionsError):
             initial_response.reject()
 
-    def test_non_approver_cannnot_reject_response(
+    def test_non_approver_cannot_reject_response(
             self, initial_response, admin_user, alternate_user):
         initial_response.approvals_state_machine.set_state(ApprovalStates.UNAPPROVED)
         initial_response.save()
