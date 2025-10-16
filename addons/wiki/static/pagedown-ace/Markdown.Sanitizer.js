@@ -49,7 +49,7 @@
 
         var re = /<\/?\w+[^>]*(\s|$|>)/g;
         // convert everything to lower case; this makes
-        // our case insensitive comparisons easier
+        // our case-insensitive comparisons easier
         var tags = html.toLowerCase().match(re);
 
         // no HTML tags present? nothing to do; exit now
