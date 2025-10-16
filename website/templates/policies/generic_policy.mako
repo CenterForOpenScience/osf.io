@@ -9,7 +9,7 @@
         </div>
         <div class="col-md-12">
             <br>
-            Version history for this policy is available <a href='${POLICY_GITHUB_LINK}'>here</a>
+            <a href='${POLICY_GITHUB_LINK}'>Version history for this policy</a> is available.
         </div>
     </div>
 </div><!-- end container policy -->
