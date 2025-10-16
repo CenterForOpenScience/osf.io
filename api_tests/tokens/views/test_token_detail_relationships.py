@@ -301,7 +301,7 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.mark.enable_implicit_clean
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
-    def test_create_with_nonexistant_scope_fails(
+    def test_create_with_nonexistent_scope_fails(
             self,
             mock_revoke,
             url_token_list,
@@ -349,7 +349,7 @@ class TestTokenDetailScopesAsRelationships:
 
     @pytest.mark.enable_implicit_clean
     @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
-    def test_update_with_nonexistant_scope_fails(
+    def test_update_with_nonexistent_scope_fails(
             self,
             mock_revoke,
             app,
