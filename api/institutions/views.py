@@ -176,7 +176,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
-    """A dedicated view for institution auth, a.k.a "login through institutions".
+    """A dedicated view for institution auth, a.k.a. "login through institutions".
 
     This view is only used and should only be used by CAS.  Changing it may break the institution
     login feature.  Please check with @longze and @matt before making any changes.
