@@ -592,7 +592,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         if not self.for_existing_registration:
             parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
-        # Delete parent registration if it was created at the time the embargo was initiated
+        # Delete parent registration if it was created at the time that the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
             parent_registration.deleted = timezone.now()
