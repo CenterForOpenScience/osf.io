@@ -154,7 +154,7 @@
                "format":"textarea",
                "title":"Patient Characteristics to be used in the analysis",
                "help":"For HETE studies, to reduce confounding in the absence of baseline randomization one may want to identify pre-exposure patient characteristics that are associated/correlated with the study outcome.",
-               "example":"Age, sex, pre-existing dementia, BMI, Hb A1c measurement, …..",
+               "example":"Age, sex, preexisting dementia, BMI, Hb A1c measurement, …..",
                "required":true
             },
             {
