@@ -60,7 +60,7 @@ USE_L10N = False
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Sendgrid Email Settings - Using OSF credentials.
+# SendGrid Email Settings - Using OSF credentials.
 # Add settings references to local.py
 
 EMAIL_HOST = osf_settings.MAIL_SERVER
