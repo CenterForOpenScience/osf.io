@@ -49,7 +49,7 @@
             },
             "Logs": {
                 "status": "none",
-                "text": "OSF does not keep track of changes made using Gitlab directly."
+                "text": "OSF does not keep track of changes made using GitLab directly."
             },
             "Forking": {
                 "status": "partial",

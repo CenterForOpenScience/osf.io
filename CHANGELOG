@@ -687,7 +687,7 @@ domains
 ===================
 - Automatically map subjects when a preprint is moved to a different
   preprint provider in the admin app
-- Gitlab: return all repos to which the user has access
+- GitLab: return all repos to which the user has access
 - Upgrade Bower
 - Py3 backwards compatible changes
 
