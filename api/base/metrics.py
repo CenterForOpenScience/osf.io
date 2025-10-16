@@ -90,7 +90,7 @@ class MetricsViewMixin:
 
     def _add_metrics(self, queryset_or_obj, method):
         """Parse the ?metric[METRIC]=PERIOD query param, validate it, and
-        run ``method`` for each each requested object.
+        run ``method`` for each requested object.
 
         This is used to share code between add_metric_to_object and get_metrics_queryset.
         """
