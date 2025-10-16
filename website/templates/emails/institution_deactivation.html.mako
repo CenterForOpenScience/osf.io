@@ -15,7 +15,7 @@
       We also recommend having multiple ways to access your account by <a href="https://help.osf.io/hc/en-us/articles/360019737194-Sign-in-to-OSF#Sign-in-through-ORCID--">connecting your ORCID</a>
       or <a href="https://help.osf.io/hc/en-us/articles/360019738034-Add-a-New-Email-Address-to-Your-Account">alternate email addresses</a> with your account.<br>
     <br>
-    Click <a href="${forgot_password_link}">here</a> to set a password<br>
+    You can <a href="${forgot_password_link}">set a password</a>.<br>
     <br>
     If you have any issues, questions or need our help, contact <a href="mailto:${osf_support_email}">${osf_support_email}</a> and we will be happy to assist.
       You may find this <a href="https://help.osf.io/hc/en-us/articles/4403227058327-I-can-t-find-my-institution">help guide</a> useful.<br>
