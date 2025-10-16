@@ -326,7 +326,7 @@
 				"nav": "Certification",
 				"type": "choose",
 				"format": "singleselect",
-				"description": "By submitting this form and accompanying documents with EGAP, I confirm that I have rights to put this information in the public domain and I understand that this information will remain on the EGAP registry in perpetuity, regardless of whether the research is subsequently implemented or not.",
+				"description": "By submitting this form and accompanying documents with EGAP, I confirm that I have rights to put this information in the public domain and I understand that this information will remain on the EGAP registry in perpetuity, regardless of whether or not the research is subsequently implemented.",
 				"options": [
 					"Agree"
 				],
