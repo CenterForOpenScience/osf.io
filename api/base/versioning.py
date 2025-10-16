@@ -76,7 +76,7 @@ class BaseVersioning(drf_versioning.BaseVersioning):
         return version
 
     def get_default_version(self, request, major_version):
-        """Returns the latest available version for the browsable api, otherwise REST_FRAMEWORK default version"""
+        """Returns the latest available version for the browsable api; otherwise, REST_FRAMEWORK default version"""
         if request.accepted_renderer.__class__ == BrowsableAPIRendererNoForms:
             return get_latest_sub_version(major_version)
         return self.default_version

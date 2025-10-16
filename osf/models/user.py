@@ -1178,7 +1178,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Verify that the password reset token for this user is valid.
 
         :param token: the token in verification key
-        :return `True` if valid, otherwise `False`
+        :return `True` if valid; otherwise, `False`
         """
 
         if token and self.verification_key_v2:

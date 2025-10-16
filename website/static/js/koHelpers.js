@@ -361,7 +361,7 @@ ko.bindingHandlers.anchorScroll = {
                 event.preventDefault();
                 // get location of the target
                 var target = $item.attr('href');
-                // if target has a scrollbar scroll it, otherwise scroll the page
+                // if target has a scrollbar scroll it; otherwise, scroll the page
                 if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
                     offset = $(target).position();
                     $element.scrollTop(offset.top - buffer);
