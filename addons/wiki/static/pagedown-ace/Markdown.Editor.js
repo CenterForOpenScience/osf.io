@@ -370,7 +370,7 @@ $(function(){
     // this issue:
     // Internet explorer has problems with CSS sprite buttons that use HTML
     // lists.  When you click on the background image "button", IE will
-    // select the non-existent link text and discard the selection in the
+    // select the nonexistent link text and discard the selection in the
     // textarea.  The solution to this is to cache the textarea selection
     // on the button's mousedown event and set a flag.  In the part of the
     // code where we need to grab the selection, we check for the flag

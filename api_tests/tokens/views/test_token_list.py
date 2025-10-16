@@ -151,7 +151,7 @@ class TestTokenListScopesasRelationships:
         res = app.get(url_token_list, expect_errors=True)
         assert res.status_code == 401
 
-    def test_cannot_create_token_with_nonexistant_scope(
+    def test_cannot_create_token_with_nonexistent_scope(
             self, app, url_token_list, data_sample, user_one):
         data_sample['data']['relationships']['scopes']['data'][0]['id'] = 'osf.admin'
         res = app.post_json_api(

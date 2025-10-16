@@ -1452,7 +1452,7 @@ class TestFileViews(StorageTestCase):
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 302
 
-        # Test nonexistant file 404's
+        # Test nonexistent file 404's
         url = base_url.format('FakeGuid')
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
@@ -1558,7 +1558,7 @@ class TestPreprintFileViews(StorageTestCase):
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 302
 
-        # Test nonexistant file 404's
+        # Test nonexistent file 404's
         url = base_url.format('FakeGuid')
         redirect = self.app.get(url, auth=self.user.auth)
         assert redirect.status_code == 404
