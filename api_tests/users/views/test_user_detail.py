@@ -1349,7 +1349,7 @@ class UserProfileMixin:
         assert res.status_code == 400
 
     def test_user_put_profile_date_validate_end_date(self, app, user_one, user_one_url, request_payload, request_key):
-        # End date is greater then start date
+        # End date is greater than start date
         request_payload['data']['attributes'][request_key][0]['startYear'] = 2000
         res = app.put_json_api(user_one_url, request_payload, auth=user_one.auth, expect_errors=True)
         assert res.status_code == 400
