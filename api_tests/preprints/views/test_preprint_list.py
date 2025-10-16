@@ -196,7 +196,7 @@ class TestPreprintList(ApiTestCase):
 
     def test_return_affiliated_institutions(self):
         """
-        Confirmation test for the the new preprint affiliated institutions feature
+        Confirmation test for the new preprint affiliated institutions feature
         """
         self.preprint.affiliated_institutions.add(self.institution)
         res = self.app.get(self.url)

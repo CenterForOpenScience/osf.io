@@ -1217,7 +1217,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user
 
     def update_guessed_names(self):
-        """Updates the CSL name fields inferred from the the full name.
+        """Updates the CSL name fields inferred from the full name.
         """
         parsed = impute_names(self.fullname)
         self.given_name = parsed['given']
