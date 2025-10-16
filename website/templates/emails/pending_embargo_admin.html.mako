@@ -31,7 +31,7 @@
     this registration before it is automatically submitted.
     </p>
     <p>
-    To approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
+    You can <a href="${approval_link}">approve this embargoed registration</a>.<br>
     To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>

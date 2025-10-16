@@ -45,7 +45,7 @@
     withdrawal request before it is automatically submitted.
     </p>
     <p>
-    To approve this withdrawal: <a href="${approval_link}">Click here</a>.<br>
+    You can <a href="${approval_link}">approve this withdrawal</a>.<br>
     To cancel this withdrawal: <a href="${disapproval_link}">Click here</a>.
     </p>
     <p>
