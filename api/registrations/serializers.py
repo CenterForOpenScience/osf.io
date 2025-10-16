@@ -41,6 +41,8 @@ from osf.exceptions import NodeStateError
 from osf.models import Node
 from osf.utils.registrations import strip_registered_meta_comments
 from osf.utils.workflows import ApprovalStates
+from rest_framework import serializers as ser
+
 
 class RegistrationSerializer(NodeSerializer):
     admin_only_editable_fields = [
@@ -942,6 +944,13 @@ class RegistrationContributorsCreateSerializer(NodeContributorsCreateSerializer,
     """
     id = IDField(source='_id', required=False, allow_null=True)
     index = ser.IntegerField(required=False, source='_order')
+
+
+class RegistrationContributorsUpdateSerializer(ser.Serializer):
+
+    def update(self, instance, validated_data):
+        instance.copy_contributors_from(instance.registered_from)
+        return instance
 
 
 class RegistrationFileSerializer(OsfStorageFileSerializer):

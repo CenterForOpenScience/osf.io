@@ -662,6 +662,13 @@ class PreprintContributorDetailSerializer(NodeContributorDetailSerializer, Prepr
         return value
 
 
+class PreprintContributorsUpdateSerializer(ser.Serializer):
+
+    def update(self, instance, validated_data):
+        instance.copy_contributors_from(instance.registered_from)
+        return instance
+
+
 class PreprintStorageProviderSerializer(NodeStorageProviderSerializer):
     node = HideIfPreprint(ser.CharField(source='node_id', read_only=True))
     preprint = ser.CharField(source='node_id', read_only=True)

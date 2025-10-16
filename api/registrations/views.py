@@ -67,7 +67,7 @@ from api.registrations.serializers import (
     RegistrationContributorsSerializer,
     RegistrationContributorsCreateSerializer,
     RegistrationCreateSerializer,
-    RegistrationStorageProviderSerializer,
+    RegistrationStorageProviderSerializer, RegistrationContributorsUpdateSerializer,
 )
 
 from api.nodes.filters import NodesFilterMixin
@@ -275,11 +275,13 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return context
 
 
-class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
+class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin, mixins.UpdateModelMixin, RegistrationMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_list).
     """
     view_category = 'registrations'
     view_name = 'registration-contributors'
+
+    lookup_field = 'node_id'
 
     pagination_class = NodeContributorPagination
     serializer_class = RegistrationContributorsSerializer
@@ -298,14 +300,23 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
     def get_resource(self):
         return self.get_node(check_object_permissions=False)
 
+    def get_object(self):
+        return self.get_node(check_object_permissions=False)
+
     def get_serializer_class(self):
         if self.request.method == 'POST':
             return RegistrationContributorsCreateSerializer
+
+        if self.request.method == 'PATCH' and self.request.query_params.get('copy_contributors_from_parent_project'):
+            return RegistrationContributorsUpdateSerializer
 
         return self.serializer_class
 
     def post(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
+
+    def patch(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
     def get_default_queryset(self):
         node = self.get_resource()

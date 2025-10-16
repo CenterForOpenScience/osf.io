@@ -42,6 +42,7 @@ from api.preprints.serializers import (
     PreprintCreateVersionSerializer,
     PreprintCitationSerializer,
     PreprintContributorDetailSerializer,
+    PreprintContributorsUpdateSerializer,
     PreprintContributorsSerializer,
     PreprintStorageProviderSerializer,
     PreprintNodeRelationshipSerializer,
@@ -496,9 +497,12 @@ class PreprintContributorsList(PreprintOldVersionsImmutableMixin, NodeContributo
     required_read_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.PREPRINT_CONTRIBUTORS_WRITE]
 
+    lookup_field = 'node_id'
+
     view_category = 'preprints'
     view_name = 'preprint-contributors'
     serializer_class = PreprintContributorsSerializer
+
 
     def get_default_queryset(self):
         preprint = self.get_preprint()
@@ -509,6 +513,9 @@ class PreprintContributorsList(PreprintOldVersionsImmutableMixin, NodeContributo
         """
         Use NodeContributorDetailSerializer which requires 'id'
         """
+
+        if self.request.method == 'PATCH' and self.request.query_params.get('copy_contributors_from_parent_project'):
+            return PreprintContributorsUpdateSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             return PreprintContributorDetailSerializer
         elif self.request.method == 'POST':
