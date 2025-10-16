@@ -336,8 +336,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 )
             else:
                 message += (
-                    ' The files in this GitHub repo can be viewed on GitHub '
-                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
+                    ' View the <u><a href="https://github.com/{user}/{repo}/">files in this repo</a></u> on GitHub '
+                    '.'
                 ).format(
                     user=self.user,
                     repo=self.repo,

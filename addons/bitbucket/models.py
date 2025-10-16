@@ -340,8 +340,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                     )
                 else:
                     message += (
-                        ' The files in this Bitbucket repo can be viewed on Bitbucket '
-                        '<u><a href="https://bitbucket.org/{user}/{repo}/">here</a></u>.'
+                        ' View the <u><a href="https://bitbucket.org/{user}/{repo}/">files in this repo</a></u> on Bitbucket '
+                        '.'
                     ).format(
                         user=self.user,
                         repo=self.repo,
