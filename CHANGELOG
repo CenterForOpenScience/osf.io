@@ -1491,7 +1491,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Make ever_mentioned a ManyToMany field
 - Remove unused mongo code in framework.mongo
 - Reduce number of queries made by triggered mails script
-- Add a context manager to prevent auto_now fields from from getting updated during migrations
+- Add a context manager to prevent auto_now fields from getting updated during migrations
 - Remove model name aliasing in imports
 - Remove dead badges code
 - Add view OSF Subjects Permissions
