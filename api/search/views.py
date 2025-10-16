@@ -549,7 +549,7 @@ class SearchUsers(BaseSearchView):
 
     The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
     is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
-    the user's bibliographic information and the date the user registered.
+    the user's bibliographic information and the date that the user registered.
 
     Note that if an anonymous view_only key is being used, user information will not be serialized, and the id will be
     an empty string. Relationships to a user object will not show in this case, either.
