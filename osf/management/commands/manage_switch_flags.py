@@ -40,7 +40,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '-delete',
             action='store_true',
-            help='Use this flag to remove flags, otherwise the script will just add flags'
+            help='Use this flag to remove flags; otherwise, the script will just add flags'
         )
 
     def handle(self, *args, **options):

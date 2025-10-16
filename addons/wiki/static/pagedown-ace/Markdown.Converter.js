@@ -944,7 +944,7 @@ else
                         // Recursion for sub-lists:
                         item = _DoLists(_Outdent(item), /* isInsideParagraphlessListItem= */ true);
                         item = item.replace(/\n$/, ""); // chomp(item)
-                        if (!isInsideParagraphlessListItem) // only the outer-most item should run this, otherwise it's run multiple times for the inner ones
+                        if (!isInsideParagraphlessListItem) // only the outer-most item should run this; otherwise, it's run multiple times for the inner ones
                             item = _RunSpanGamut(item);
                     }
                     last_item_had_a_double_newline = ends_with_double_newline;

@@ -33,7 +33,7 @@ backend server1 {
 
 	# 	.interval  = 5s; # check the health of each backend every 5 seconds
  #    	.timeout   = 1s; # timing out after 1 second.
- #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
+ #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy; otherwise, it will be marked as sick
  #    	.threshold = 3;
  #  	}
 
@@ -57,7 +57,7 @@ backend server1 {
 
 # 	# 	.interval  = 5s; # check the health of each backend every 5 seconds
 #  #    	.timeout   = 1s; # timing out after 1 second.
-#  #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
+#  #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy; otherwise, it will be marked as sick
 #  #    	.threshold = 3;
 #  #  	}
 
@@ -81,7 +81,7 @@ backend server1 {
 
 # 	# 	.interval  = 5s; # check the health of each backend every 5 seconds
 #  #    	.timeout   = 1s; # timing out after 1 second.
-#  #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy, otherwise it will be marked as sick
+#  #    	.window    = 5;  # If 3 out of the last 5 polls succeeded the backend is considered healthy; otherwise, it will be marked as sick
 #  #    	.threshold = 3;
 #  #  	}
 

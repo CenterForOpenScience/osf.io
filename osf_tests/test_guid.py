@@ -212,7 +212,7 @@ class TestResolveGuid(OsfTestCase):
 
     def test_resolve_guid_private_request_access_or_redirect_to_cas(self):
         """
-        Authenticated users are sent to the request access page when it is set to true on the node, otherwise they get a
+        Authenticated users are sent to the request access page when it is set to true on the node; otherwise, they get a
         legacy Forbidden page.
         """
         non_contrib = AuthUserFactory()

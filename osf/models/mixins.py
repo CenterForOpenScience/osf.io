@@ -1509,7 +1509,7 @@ class ContributorMixin(models.Model):
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
-        :param User existing_user: the unregister_contributor if it is already created, otherwise None
+        :param User existing_user: the unregister_contributor if it is already created; otherwise, None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """

@@ -92,7 +92,7 @@ class Command(BaseCommand):
             '--ids',
             dest='ids',
             nargs='+',
-            help='Specific IDs to email, otherwise will email all users'
+            help='Specific IDs to email; otherwise, will email all users'
         )
 
         parser.add_argument(

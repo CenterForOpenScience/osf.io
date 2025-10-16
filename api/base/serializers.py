@@ -432,7 +432,7 @@ class IDField(ser.CharField):
                     raise api_exceptions.Conflict(
                         detail=(
                             f'The id you used in the URL, "{id_field}", does not match the id you used in the json'
-                            f' body\'s id field, "{data}". The object "{id_field}" exists, otherwise you\'d get a'
+                            f' body\'s id field, "{data}". The object "{id_field}" exists; otherwise, you\'d get a'
                             f' 404, so most likely you need to change the id field to match.'
                         ),
                     )
@@ -711,7 +711,7 @@ class RelationshipField(ser.Field):
 
     def get_meta_information(self, meta_data, value):
         """
-        For retrieving meta values, otherwise returns {}
+        For retrieving meta values; otherwise, returns {}
         """
         meta = {}
         for key in meta_data or {}:

@@ -133,7 +133,7 @@ class TestNodeFileList:
     def test_disambiguate_dataverse_paths_retrieve(self, app, user, node, dataverse, dataverse_draft_filenode, dataverse_published_filenode):
         '''
         This test is for retrieving files from Dataverse and disambiguating their corresponding OSF filenodes and
-        ensures their `extra` info is passed along to the front-end. Waterbulter must also be mocked here, otherwise OSF
+        ensures their `extra` info is passed along to the front-end. Waterbulter must also be mocked here; otherwise, OSF
         will assume the files are gone.
         '''
         prepare_mock_wb_response(
