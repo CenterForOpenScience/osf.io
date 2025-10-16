@@ -82,7 +82,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'is_embedded': True,
             })
 
-            # Setup a view ourselves to avoid all the junk DRF throws in
+            # Set up a view ourselves to avoid all the junk DRF throws in
             # v is a function that hides everything v.cls is the actual view class
             view = v.cls()
             view.args = view_args
