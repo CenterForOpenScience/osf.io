@@ -161,7 +161,7 @@ def gitlab_set_config(auth, **kwargs):
         repo = connection.repo(gitlab_repo_id)
     except gitlab.exceptions.GitlabError as exc:
         if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
-            return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+            return {'message': 'Your gitlab account does not have proper authentication. Ensure you have agreed to GitLab\'s '
                      'current Terms of Service by disabling and re-enabling your account.'}, http_status.HTTP_400_BAD_REQUEST
 
     if repo is None:
