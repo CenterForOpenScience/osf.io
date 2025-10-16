@@ -48,7 +48,7 @@ class NoHtmlCharacters:
     we escape for HTML output
 
     TODO: This could still post a problem if we output an email address to a
-    Javascript literal.
+    JavaScript literal.
     """
 
     # TODO: Improve this for a post-bleach world

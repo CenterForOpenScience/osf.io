@@ -1535,7 +1535,7 @@ $(function(){
 
                 var chunks = state.getChunks();
 
-                // Some commands launch a "modal" prompt dialog.  Javascript
+                // Some commands launch a "modal" prompt dialog.  JavaScript
                 // can't really make a modal dialog box and the WMD code
                 // will continue to execute while the dialog is displayed.
                 // This prevents the dialog pattern I'm used to and means

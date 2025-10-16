@@ -383,7 +383,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    ### Javascript loaded at the bottom of the page ###
+    ### JavaScript loaded at the bottom of the page ###
 </%def>
 
 <%def name="footer()">
