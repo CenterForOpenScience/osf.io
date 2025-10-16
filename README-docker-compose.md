@@ -2,15 +2,15 @@
 ## Docker and OS Setup
 
 1. Install the Docker Client
-  - OSX: https://www.docker.com/products/docker#/mac
+  - macOS: https://www.docker.com/products/docker#/mac
   - Ubuntu: https://docs.docker.com/engine/installation/linux/ubuntulinux
   - Windows: https://www.docker.com/products/docker#/windows
 2. Grant the docker client additional resources (recommended minimums of 1 CPU, 8GB memory, 2GB swap, and 32GB disk image size)
-   - OSX: https://docs.docker.com/docker-for-mac/#/preferences
+   - macOS: https://docs.docker.com/docker-for-mac/#/preferences
    - Ubuntu: N/A
    - Windows: https://docs.docker.com/docker-for-windows/#advanced
 3. Setup the Operating System
-  - OSX
+  - macOS
     - Alias the loopback interface
 
     ```bash

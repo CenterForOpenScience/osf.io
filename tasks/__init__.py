@@ -628,7 +628,7 @@ def bower_install(ctx):
 def docker_init(ctx):
     """Initial docker setup"""
     print('You will be asked for your sudo password to continue...')
-    if platform.system() == 'Darwin':  # Mac OSX
+    if platform.system() == 'Darwin':  # macOS
         ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
     else:
         print('Your system is not recognized, you will have to setup docker manually')
