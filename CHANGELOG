@@ -1198,7 +1198,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 
 - Display file metadata for addon files deleted outside of the OSF.
 - Add decorator for feature-flagging EmbOSF routes.
-- Add footer to OSF landing page foor logged out users.
+- Add footer to OSF landing page for logged out users.
 - Make loading indicators consistent.
 - Show DOIs on withdrawn registrations.
 - Make support email configurable in settings.

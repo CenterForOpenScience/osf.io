@@ -425,7 +425,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
 
 
 class StuckRegistrationListView(RegistrationListView):
-    """ Allows authorized users to view a list of registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations the have been archiving files for more then 24 hours.
     """
 
     def get_queryset(self):
