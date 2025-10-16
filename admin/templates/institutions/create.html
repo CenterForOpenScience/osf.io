@@ -26,7 +26,7 @@
                 <div>
                     <h4>Import from JSON</h4>
                     <p>Choose a JSON file that has been previously exported from another Institution detail page. This will
-                        pre-populate the Institution change form with those details.</p>
+                        prepopulate the Institution change form with those details.</p>
                     <form id="import-form" action = {% url 'institutions:import' %} method="post" enctype="multipart/form-data">
                         {% csrf_token %}
                         {{ import_form.as_p }}

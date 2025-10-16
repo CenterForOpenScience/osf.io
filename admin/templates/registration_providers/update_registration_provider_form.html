@@ -64,7 +64,7 @@
         <div>
             <h4>Import from JSON</h4>
             <p>Choose a JSON file that has been previously exported from another Registration Provider detail page. This will
-                pre-populate the Registration Provider change form with those details.</p>
+                prepopulate the Registration Provider change form with those details.</p>
             {% if registration_provider %}
                 <form action = {% url 'registration_providers:import' registration_provider_id=registration_provider.id %} method="post" enctype="multipart/form-data" >
             {% else %}
