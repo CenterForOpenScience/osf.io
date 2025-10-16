@@ -63,7 +63,7 @@ CitationWidget.prototype.init = function() {
         $.when(styleRequest, citationRequest).done(function(style, data) {
             var citeproc = citations.makeCiteproc(style[0], data[0], 'html');
             var items = citeproc.makeBibliography()[1];
-            /* the safety of this was discussed with JIRA ticket OSF-4889 */
+            /* the safety of this was discussed with Jira ticket OSF-4889 */
             self.$citationElement.html(items[0]).slideDown();
         }).fail(function(jqxhr, status, error) {
             $osf.growl(
