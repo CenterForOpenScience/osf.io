@@ -46,7 +46,7 @@
     </p>
     <p>
     You can <a href="${approval_link}">approve this withdrawal</a>.<br>
-    To cancel this withdrawal: <a href="${disapproval_link}">Click here</a>.
+    Or you can <a href="${disapproval_link}">cancel this withdrawal</a>.
     </p>
     <p>
     Note: If any admin clicks their cancel link, the pending withdrawal will be

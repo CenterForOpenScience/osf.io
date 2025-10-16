@@ -30,7 +30,7 @@
     </p>
     <p>
     You can <a href="${approval_link}">approve this registration</a>.<br>
-    To cancel this registration: <a href="${disapproval_link}">Click here</a>.
+    Or you can <a href="${disapproval_link}">cancel this registration</a>.
     </p>
     <p>
     % if not reviewable.provider or reviewable.provider._id != 'gfs':
