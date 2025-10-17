@@ -72,7 +72,7 @@
         `netsh interface show interface`
       - Rename the interface
 
-        `netsh inteface set interface "Ethernet 2" newname="Loopback"`
+        `netsh interface set interface "Ethernet 2" newname="Loopback"`
       - Assign the Loopback interface an IP address
 
         `netsh interface ip add address "Loopback" 192.168.168.167 255.255.255.255`
