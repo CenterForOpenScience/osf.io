@@ -609,7 +609,7 @@ class RegistrationSerializer(NodeSerializer):
         permissions through group membership.
 
         Additionally, provider_specific_metadata fields are only editable by
-        provder admins/moderators, but those users are not allowed to edit
+        provider admins/moderators, but those users are not allowed to edit
         any other fields.
 
         Add fields that need admin perms to admin_only_editable_fields
