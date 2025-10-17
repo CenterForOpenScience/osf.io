@@ -97,6 +97,7 @@
                         <td>IA url</td>
                         <td>{{ node.ia_url }}</td>
                     </tr>
+                    {% include "nodes/add_system_tags.html" with resource=node %}
                     {% include "nodes/contributors.html" with node=node %}
                     {% include "nodes/spam_status.html" with resource=node %}
                     {% include "nodes/draft_registrations.html" with draft_registrations=node.draft_registrations.all %}

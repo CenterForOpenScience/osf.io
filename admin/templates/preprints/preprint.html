@@ -115,6 +115,7 @@
                             </ul>
                         </td>
                     </tr>
+                    {% include "nodes/add_system_tags.html" with resource=preprint %}
                     {% include "preprints/contributors.html" with preprint=preprint %}
                     {% include "nodes/spam_status.html" with resource=preprint %}
                     {% include "preprints/withdraw_request.html" with preprint=preprint %}
