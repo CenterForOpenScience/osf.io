@@ -380,7 +380,7 @@
       }
     },
     "sizes": {
-      "description": "Unstructures size information about the resource.",
+      "description": "Unstructured size information about the resource.",
       "type": "array",
       "items": {
         "type": "string"
