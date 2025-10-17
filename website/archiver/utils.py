@@ -160,7 +160,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     :param src_addon: AddonNodeSettings instance of addon being examined
     :param fileobj_metadata: file or folder metadata of current point of reference
     in file tree
-    :param user: archive initatior
+    :param user: archive initiator
     :return: top-most recursive call returns AggregateStatResult containing addon file tree metadata
     """
     disk_usage = fileobj_metadata.get('size')
