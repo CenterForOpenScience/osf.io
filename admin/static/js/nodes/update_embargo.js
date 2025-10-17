@@ -16,7 +16,7 @@ $(document).ready(function() {
             type: "post",
             data: $("#embargo-update-form").serialize(),
         }).success(function (response) {
-            // reload page only after successfull response
+            // reload page only after successful response
             // so errors can be displayed in case of fail
             location.reload();
         }).fail(function (jqXHR, textStatus, error) {
