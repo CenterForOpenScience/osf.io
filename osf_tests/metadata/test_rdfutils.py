@@ -6,8 +6,8 @@ from website import settings as website_settings
 
 
 def test_contextualized_graph():
-    shouldbe_graph = rdfutils.contextualized_graph()
-    assert isinstance(shouldbe_graph, rdflib.Graph)
+    should_be_graph = rdfutils.contextualized_graph()
+    assert isinstance(should_be_graph, rdflib.Graph)
 
     url_prefix_tests = {
         'https://osf.io/vocab/2022/blarg': ('osf', rdflib.URIRef(rdfutils.OSF), 'blarg'),
@@ -16,8 +16,8 @@ def test_contextualized_graph():
         'http://www.w3.org/2002/07/owl#blarg': ('owl', rdflib.URIRef(rdfutils.OWL), 'blarg'),
     }
     for url, prefixed in url_prefix_tests.items():
-        shouldbe_prefixed = shouldbe_graph.compute_qname(rdflib.URIRef(url), generate=False)
-        assert prefixed == shouldbe_prefixed
+        should_be_prefixed = should_be_graph.compute_qname(rdflib.URIRef(url), generate=False)
+        assert prefixed == should_be_prefixed
 
     # should leave these whole:
     unprefixed_url_tests = {
@@ -26,7 +26,7 @@ def test_contextualized_graph():
     }
     for unprefixed_url in unprefixed_url_tests:
         with pytest.raises(KeyError):
-            shouldbe_graph.compute_qname(rdflib.URIRef(unprefixed_url), generate=False)
+            should_be_graph.compute_qname(rdflib.URIRef(unprefixed_url), generate=False)
 
 def test_checksum_iri():
     checksum_tests = {
