@@ -161,7 +161,7 @@ class TestNodeShare:
             registration.remove_tag(settings.DO_NOT_INDEX_LIST['tags'][0], auth=Auth(user), save=True)
 
     def test_update_share_correctly_for_projects_with_qa_titles(self, mock_share_responses, node, user):
-        node.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
+        node.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitrary text for test title.'
         node.save()
         with expect_ingest_request(mock_share_responses, node, delete=True):
             on_node_updated(node._id, user._id, False, {'is_public'})
@@ -171,7 +171,7 @@ class TestNodeShare:
         assert node.title not in settings.DO_NOT_INDEX_LIST['titles']
 
     def test_update_share_correctly_for_registrations_with_qa_titles(self, mock_share_responses, registration, user):
-        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitary text for test title.'
+        registration.title = settings.DO_NOT_INDEX_LIST['titles'][0] + ' arbitrary text for test title.'
         with expect_ingest_request(mock_share_responses, registration, delete=True):
             registration.save()
         registration.title = 'Not a qa title'
