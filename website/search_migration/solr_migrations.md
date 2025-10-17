@@ -3,7 +3,7 @@ Solr organizes data into "documents" which can then be search on.
 Our Solr schema has 12 main fields:
 
 	id -- this is for our project and users. each project is self contained in one
-	document, and users are similary self contanied in one document
+	document, and users are similary self contained in one document
 
 	** a note: * denotes a dynamic field in Solr. It means that any combination of
 	characters can be used at the beginning of that field. the majority of our fields
