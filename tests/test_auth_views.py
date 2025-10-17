@@ -761,7 +761,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('status_code') == 'auth_logout'
         assert data.get('next_url') == self.next_url
 
-    def test_register_logout_flage_without(self):
+    def test_register_logout_flag_without(self):
         # the second step is to land user on register page with "MUST LOGIN" warning
         data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=self.next_url, logout=True)
         assert data.get('status_code') == http_status.HTTP_200_OK
