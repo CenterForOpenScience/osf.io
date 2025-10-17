@@ -428,7 +428,7 @@
                 ${self.alert()}
             % endif
 
-            ### A11y Reccommended header
+            ### A11y Recommended header
             <h1 style="display: none;">Main content</h1>
             ${self.content()}
         </div><!-- end container -->
