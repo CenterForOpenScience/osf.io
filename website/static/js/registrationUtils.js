@@ -835,7 +835,7 @@ var RegistrationEditor = function(urls, editorId, preview) {
     });
     self.currentPage.subscribe(function(page) {
         // lazily apply subscriptions to question values
-        // TODO: dispose subscriptions to last page? Probably unncessary.
+        // TODO: dispose subscriptions to last page? Probably unnecessary.
         $.each(page.questions, function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
