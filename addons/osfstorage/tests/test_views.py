@@ -373,7 +373,7 @@ class TestUploadFileHook(HookTestCase):
 
     def test_upload_create_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.node_settings.get_root().append_folder('cheesey')
+        parent = self.node_settings.get_root().append_folder('cheesy')
         res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert res.status_code == 201
@@ -394,7 +394,7 @@ class TestUploadFileHook(HookTestCase):
     def test_upload_create_child_with_same_name(self):
         name = 'ლ(ಠ益ಠლ).unicode'
         self.node_settings.get_root().append_file(name)
-        parent = self.node_settings.get_root().append_folder('cheesey')
+        parent = self.node_settings.get_root().append_folder('cheesy')
         res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert res.status_code == 201
@@ -426,7 +426,7 @@ class TestUploadFileHook(HookTestCase):
 
     def test_update_nested_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.node_settings.get_root().append_folder('cheesey')
+        parent = self.node_settings.get_root().append_folder('cheesy')
         old_node = parent.append_file(name)
 
         res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
@@ -451,7 +451,7 @@ class TestUploadFileHook(HookTestCase):
 
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
-        parent = self.node_settings.get_root().append_folder('cheesey')
+        parent = self.node_settings.get_root().append_folder('cheesy')
         res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert res.status_code == 400
@@ -459,7 +459,7 @@ class TestUploadFileHook(HookTestCase):
 
     def test_upload_to_file(self):
         name = 'carpe.png'
-        parent = self.node_settings.get_root().append_file('cheesey')
+        parent = self.node_settings.get_root().append_file('cheesy')
         res = self.send_upload_hook(parent, payload=self.make_payload(name=name))
 
         assert parent.is_file
@@ -549,7 +549,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
     def test_upload_create_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.preprint.root_folder.append_folder('cheesey')
+        parent = self.preprint.root_folder.append_folder('cheesy')
         res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 201
@@ -569,7 +569,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
     def test_upload_create_child_with_same_name(self):
         name = 'ლ(ಠ益ಠლ).unicode'
         self.preprint.root_folder.append_file(name)
-        parent = self.preprint.root_folder.append_folder('cheesey')
+        parent = self.preprint.root_folder.append_folder('cheesy')
         res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 201
@@ -600,7 +600,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
     def test_update_nested_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
-        parent = self.preprint.root_folder.append_folder('cheesey')
+        parent = self.preprint.root_folder.append_folder('cheesy')
         old_node = parent.append_file(name)
 
         res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
@@ -625,7 +625,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
     def test_upload_weird_name(self):
         name = 'another/dir/carpe.png'
-        parent = self.preprint.root_folder.append_folder('cheesey')
+        parent = self.preprint.root_folder.append_folder('cheesy')
         res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert res.status_code == 400
@@ -633,7 +633,7 @@ class TestUploadFileHookPreprint(TestUploadFileHook):
 
     def test_upload_to_file(self):
         name = 'carpe.png'
-        parent = self.preprint.root_folder.append_file('cheesey')
+        parent = self.preprint.root_folder.append_file('cheesy')
         res = self.send_upload_hook(parent, self.preprint, self.make_payload(name=name))
 
         assert parent.is_file
