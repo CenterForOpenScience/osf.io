@@ -513,7 +513,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
 def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
-    # Add '' to the path to ensure thare's a trailing slash
+    # Add '' to the path to ensure there's a trailing slash
     # The trailing slash avoids a 301
     # NOTE: furl encoding to be verified later
     url = furl(
