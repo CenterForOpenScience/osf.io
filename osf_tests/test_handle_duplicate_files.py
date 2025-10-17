@@ -48,7 +48,7 @@ def file_dupe_one(project, user):
 def file_dupe_two(project, user, file_dupe_one):
     # Creating a test file and then renaming it to have the
     # same name as the first file to artificially create
-    # the duplicate file scencario
+    # the duplicate file scenario
     file = create_test_file(project, user, 'temp_name')
     file.name = file_dupe_one.name
     file.save()
