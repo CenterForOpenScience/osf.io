@@ -2020,7 +2020,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.description
@@ -2047,7 +2047,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the category and log the event.
 
         :param str category: The new category
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.category
@@ -2074,7 +2074,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the article_doi and log the event.
 
         :param str article_doi: The new article doi
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.article_doi

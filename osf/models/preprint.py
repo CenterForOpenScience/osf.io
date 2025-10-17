@@ -1208,7 +1208,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         return super().set_description(description, auth, save)

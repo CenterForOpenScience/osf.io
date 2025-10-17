@@ -1826,7 +1826,7 @@ class TestViewUtils(OsfTestCase):
 
     @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
     def test_include_template_json(self, mock_folders):
-        """ Some addons (github, gitlab) need more specialized template infomation so we want to
+        """ Some addons (github, gitlab) need more specialized template information so we want to
         ensure we get those extra variables that when the addon is enabled.
         """
         addon_dicts = serialize_addons(self.node, self.auth_obj)

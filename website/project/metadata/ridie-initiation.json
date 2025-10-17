@@ -486,7 +486,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Hypotheses",
-            "description": "What specific hypotheses do you plan to test with the outcome variables specified above (or other outcomes)? (You may distinguish primary and secondary hypotheses if you like.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Hypotheses_Section\">See help text for more informaiton.</a>",
+            "description": "What specific hypotheses do you plan to test with the outcome variables specified above (or other outcomes)? (You may distinguish primary and secondary hypotheses if you like.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#Hypotheses_Section\">See help text for more information.</a>",
             "help": "",
             "required": false
         }, {
@@ -530,7 +530,7 @@
             "nav": "Analysis Plan",
             "type": "object",
             "title": "Analysis Plan",
-            "description": "If you have a pre-analysis plan to upload, please do so here. (Note that a pre-analysis plan is a detailed outline of the analysis plan written in advance of seeing the data which may specify hypotheses to be tested, variable construction, equations to be estimated, controls to be used, and other aspects of the analysis. See help text for further information. You may select to have the plan kept private until study completion or another date of your choosing.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#AnalysisPlanFileId_Section\">See help text for more informaiton.</a>",
+            "description": "If you have a pre-analysis plan to upload, please do so here. (Note that a pre-analysis plan is a detailed outline of the analysis plan written in advance of seeing the data which may specify hypotheses to be tested, variable construction, equations to be estimated, controls to be used, and other aspects of the analysis. See help text for further information. You may select to have the plan kept private until study completion or another date of your choosing.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#AnalysisPlanFileId_Section\">See help text for more information.</a>",
             "help": "",
             "properties": [
                 {
@@ -615,7 +615,7 @@
             "type": "choose",
             "format": "singleselect",
             "title": "Data Access",
-            "description": "Is this a restricted access data set? If Restricted, skip to Data Approval Process. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#OutcomesDataAccessId_Section\">See help text for more informaiton.</a>",
+            "description": "Is this a restricted access data set? If Restricted, skip to Data Approval Process. <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#OutcomesDataAccessId_Section\">See help text for more information.</a>",
             "options": [
                 "Not restricted - access with no requirements or minimal requirements (e.g. web registration)",
                 "Restricted  -- Access requires a formal  approval process"
@@ -677,7 +677,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Treatment Assignment Data Description",
-            "description": "What kind of data will you use for information on treatment assignment or program participation, i.e., which units received the intervention or participated in the program? Examples include administrative data, household survey, etc. (In some cases, there may be no specific data set. For example, data might simply be common knowledge that a program was implemented in a particular village. This type of information can be treated as a data set.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataDescription_Section\">See help text for more informaiton.</a>",
+            "description": "What kind of data will you use for information on treatment assignment or program participation, i.e., which units received the intervention or participated in the program? Examples include administrative data, household survey, etc. (In some cases, there may be no specific data set. For example, data might simply be common knowledge that a program was implemented in a particular village. This type of information can be treated as a data set.) <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataDescription_Section\">See help text for more information.</a>",
             "help": "",
             "required": true
         }, {
@@ -713,7 +713,7 @@
             "type": "string",
             "format": "textarea",
             "title": "Data Access",
-            "description": "Is this a restricted access data set? <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataAccessId_Section\">See help text for more informaiton.</a>",
+            "description": "Is this a restricted access data set? <a target=\"_blank\" href=\"http://ridie.org/index.php?r=site/page&view=registrationHelp#TreatmentAssignmentDataAccessId_Section\">See help text for more information.</a>",
             "options": [
                 "Not restricted - access with no requirements or minimal requirements (e.g. web registration)",
                 "Restricted  -- Access requires a formal  approval process"
