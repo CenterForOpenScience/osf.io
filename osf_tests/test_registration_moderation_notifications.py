@@ -423,7 +423,7 @@ class TestRegistrationMachineNotification:
         assert any('requested withdrawal' in entry['message'] for entry in updates)
 
     @pytest.mark.parametrize('digest_type', ['email_transactional', 'email_digest'])
-    def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
+    def test_submissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
         notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
