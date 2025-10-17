@@ -67,7 +67,7 @@ prereg_registration_responses = {
     'q14': '',
     'q17': 'this is my explanation of randomization',
     'q10': 'this is my stopping rule',
-    'q11.question': 'these are my maniuplated variables',
+    'q11.question': 'these are my manipulated variables',
     'q16.uploader': [],
     'q19.question': 'ANOVA',
     'q13.uploader': [],
@@ -253,7 +253,7 @@ prereg_registration_metadata = {
         'value': {
             'question': {
                 'comments': [],
-                'value': 'these are my maniuplated variables',
+                'value': 'these are my manipulated variables',
                 'extra': []
             },
             'uploader': {
@@ -546,7 +546,7 @@ prereg_registration_metadata_built = {
         'value': {
             'question': {
                 'comments': [],
-                'value': 'these are my maniuplated variables',
+                'value': 'these are my manipulated variables',
                 'extra': []
             },
             'uploader': {
@@ -1751,7 +1751,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q14'] == ''
         assert responses['q17'] == 'this is my explanation of randomization'
         assert responses['q10'] == 'this is my stopping rule'
-        assert responses['q11.question'] == 'these are my maniuplated variables'
+        assert responses['q11.question'] == 'these are my manipulated variables'
         assert responses['q16.uploader'] == []
         assert responses['q19.question'] == 'ANOVA'
         assert responses['q13.uploader'] == []
@@ -1984,7 +1984,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q14'] == ''
         assert responses['q17'] == 'this is my explanation of randomization'
         assert responses['q10'] == 'this is my stopping rule'
-        assert responses['q11.question'] == 'these are my maniuplated variables'
+        assert responses['q11.question'] == 'these are my manipulated variables'
         assert responses['q16.uploader'] == []
         assert responses['q19.question'] == 'ANOVA'
         assert responses['q13.uploader'] == []
