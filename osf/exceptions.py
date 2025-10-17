@@ -2,7 +2,7 @@ import contextlib
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-# Remants from MODM days
+# Remnants from MODM days
 # TODO: Remove usages of aliased Exceptions
 ValidationError = DjangoValidationError
 ValidationValueError = DjangoValidationError
