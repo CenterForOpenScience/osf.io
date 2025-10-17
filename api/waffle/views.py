@@ -44,7 +44,7 @@ class WaffleList(JSONAPIBaseView, generics.ListAPIView):
     + `page=<Int>` -- page number of results to view, default 1
     + `flags=<>` -- comma-separated list of flag names
     + `switches=<>` -- comma-separated list of switch names
-    + `samples=<>` -- comman-separated list of sample names
+    + `samples=<>` -- comma-separated list of sample names
 
     #This Request/Response
 
