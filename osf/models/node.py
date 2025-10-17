@@ -1821,7 +1821,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
         """
-        Recursively find the first set of descedants under a given node that meet a given condition
+        Recursively find the first set of descendents under a given node that meet a given condition
 
         returns a list of [(node, [children]), ...]
         """
