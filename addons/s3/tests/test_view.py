@@ -222,7 +222,7 @@ class TestCreateBucket(S3AddonTestCase, OsfTestCase):
 
     def test_bad_locations(self):
         assert not validate_bucket_location('Venus')
-        assert not validate_bucket_location('AlphaCentari')
+        assert not validate_bucket_location('AlphaCentauri')
         assert not validate_bucket_location('CostaRica')
 
     def test_locations(self):
