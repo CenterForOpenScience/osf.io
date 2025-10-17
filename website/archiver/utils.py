@@ -217,7 +217,7 @@ def _memoize_get_file_map(func):
 @_memoize_get_file_map
 def get_file_map(node, file_map):
     """
-    note:: file_map is injected implictly by the decorator; this method is called like:
+    note:: file_map is injected implicitly by the decorator; this method is called like:
 
     get_file_map(node)
     """

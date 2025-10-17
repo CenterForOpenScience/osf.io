@@ -190,7 +190,7 @@ class TestNodeChildrenList:
         child = NodeFactory(parent=parent, creator=user_2, is_public=False, category='software')
         NodeFactory(parent=child, creator=user_2, is_public=False)
 
-        # child has one component. `user` can view due to implict admin perms
+        # child has one component. `user` can view due to implicit admin perms
         component_url = f'/{API_BASE}nodes/{child._id}/children/'
         res = app.get(component_url, auth=user.auth)
 

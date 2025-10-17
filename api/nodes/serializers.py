@@ -628,7 +628,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_node_count(self, obj):
         """
         Returns the count of a node's direct children that the user has permission to view.
-        Implict admin and group membership are factored in when determining perms.
+        Implicit admin and group membership are factored in when determining perms.
         """
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
