@@ -20,7 +20,7 @@ flags:
 
   - flag_name: ENABLE_GV
     name: gravy_waffle
-    note: This is used to enable GravyValet, the system responible for addons, this will remove the files widget on the
+    note: This is used to enable GravyValet, the system responsible for addons, this will remove the files widget on the
           project overview page. Will be used with EMBER_USER_SETTINGS_ADDONS and EMBER_NODE_SETTINGS_ADDONS to flip all
           UI elements to the new addons system.
     everyone: true
