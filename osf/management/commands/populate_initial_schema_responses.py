@@ -24,7 +24,7 @@ def _update_schema_response_state(schema_response):
         schema_response.state = ApprovalStates.UNAPPROVED
     elif moderation_state in PENDING_MODERATION_STATES:
         schema_response.state = ApprovalStates.PENDING_MODERATION
-    else:  # All remainint states imply initial responses were approved by users at some point
+    else:  # All remaining states imply initial responses were approved by users at some point
         schema_response.state = ApprovalStates.APPROVED
     schema_response.save()
 
