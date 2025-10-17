@@ -1033,7 +1033,7 @@ tags, using a m2m field.
 ====================
 
 - APIv2: Add Node Settings endpoint.
-- APIv2: Add employers and eductional_institutions to user serializer.
+- APIv2: Add employers and educational_institutions to user serializer.
 - APIv2: Add endpoints for account export and deactivation requests.
 - APIv2: Retrieve/delete user external identities.
 - Move addon max file size limits to settings files.
