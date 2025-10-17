@@ -453,7 +453,7 @@ domains
 21.07.0 (2021-10-04)
 ====================
 - Add support for Registry Admins to bulk upload
-- Add models suppoorting Registration Versioning
+- Add models supporting Registration Versioning
 - Normalize default institutional affiliation for drafts
 - Fix bugs with spam training
 
