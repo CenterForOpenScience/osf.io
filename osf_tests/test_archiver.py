@@ -1008,7 +1008,7 @@ class TestArchiverListeners(ArchiverTestCase):
         assert not reg.archive_job.archive_tree_finished()
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
-    def test_archive_callback_on_tree_sends_only_one_email(self, mock_arhive_success):
+    def test_archive_callback_on_tree_sends_only_one_email(self, mock_archive_success):
         proj = factories.NodeFactory()
         child = factories.NodeFactory(parent=proj)
         factories.NodeFactory(parent=child)
