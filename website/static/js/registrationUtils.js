@@ -46,7 +46,7 @@ var CACHED_EXTENSIONS = ['osf-author-import'];
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
  *
- * @param {Object} data: optional data to instatiate model with
+ * @param {Object} data: optional data to instantiate model with
  * @param {User} data.user
  * @param {Date string} data.lastModified
  * @param {Date string} data.created
