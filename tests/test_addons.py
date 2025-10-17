@@ -1,6 +1,7 @@
 import datetime
 import time
 import functools
+import logging
 from importlib import import_module
 from unittest.mock import Mock
 
@@ -15,14 +16,14 @@ from framework.auth import cas, signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
 from framework.sessions import get_session
-from tests.base import OsfTestCase
+from tests.base import OsfTestCase, get_default_metaschema
 from api_tests.utils import create_test_file
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     RegistrationFactory,
+    DraftRegistrationFactory,
 )
-from tests.utils import capture_notifications
 from website import settings
 from addons.base import views
 from addons.github.exceptions import ApiError
@@ -43,6 +44,8 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
+from api.base.settings.defaults import API_BASE
+from tests.json_api_test_app import JSONAPITestApp
 from website.settings import EXTERNAL_EMBER_APPS
 from waffle.testutils import override_flag
 from django.conf import settings as django_conf_settings
@@ -351,19 +354,18 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    def test_add_log(self):
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_add_log(self, mock_perform):
+        path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
-        payload = self.build_payload(metadata={
-                'nid': self.node._id,
-                'materialized': '/pizza',
-                'path': 'pizza'
-            }
-        )
+        payload = self.build_payload(metadata={'nid': self.node._id, 'path': path})
         nlogs = self.node.logs.count()
-        with capture_notifications():
-            self.app.put(url, json=payload)
+        self.app.put(url, json=payload)
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
+        # # Mocking form_message and perform so that the payload need not be exact.
+        # assert mock_form_message.called, "form_message not called"
+        assert mock_perform.called, 'perform not called'
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -443,12 +445,11 @@ class TestAddonLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        with capture_notifications():
-            self.app.put(
-                url,
-                json=payload,
-                headers={'Content-Type': 'application/json'}
-            )
+        self.app.put(
+            url,
+            json=payload,
+            headers={'Content-Type': 'application/json'}
+        )
         self.node.reload()
 
         assert self.node.logs.latest().action == 'github_addon_file_renamed'
@@ -477,12 +478,11 @@ class TestAddonLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        with capture_notifications():
-            self.app.put(
-                url,
-                json=payload,
-                headers={'Content-Type': 'application/json'}
-            )
+        self.app.put(
+            url,
+            json=payload,
+            headers={'Content-Type': 'application/json'}
+        )
         self.node.reload()
 
         assert self.node.storage_usage == current_usage
@@ -521,8 +521,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 250
@@ -555,8 +554,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'file', 'path': path})
         nlogs = self.node.logs.count()
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
         assert ('urls' in self.node.logs.filter(action='osf_storage_file_added')[0].params)
@@ -573,8 +571,7 @@ class TestAddonLogs(OsfTestCase):
             'size': 100,
             'nid': self.node._id,
         })
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert self.node.storage_usage == 100
 
@@ -590,8 +587,7 @@ class TestAddonLogs(OsfTestCase):
             'size': 120,
             'nid': self.node._id,
         }, action='update')
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert self.node.storage_usage == 120
 
@@ -604,8 +600,7 @@ class TestAddonLogs(OsfTestCase):
             'nid': self.node._id,
         }, action='update')
 
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert self.node.storage_usage == 260
 
@@ -643,8 +638,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
@@ -696,8 +690,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
@@ -740,8 +733,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
@@ -772,8 +764,7 @@ class TestAddonLogs(OsfTestCase):
                 'size': 220
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 220
@@ -813,8 +804,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 250
@@ -867,8 +857,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 525
@@ -911,8 +900,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 500
@@ -963,8 +951,7 @@ class TestAddonLogs(OsfTestCase):
                 'name': 'new.txt',
             },
         )
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 1050
@@ -994,8 +981,7 @@ class TestAddonLogs(OsfTestCase):
             'path': '/lollipop',
             'nid': self.node._id,
         }, action='delete')
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
@@ -1035,8 +1021,7 @@ class TestAddonLogs(OsfTestCase):
             'path': '/lollipop',
             'nid': self.node._id,
         }, action='delete')
-        with capture_notifications():
-            self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
+        self.app.put(url, json=payload, headers={'Content-Type': 'application/json'})
 
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=self.node._id)
         assert storage_usage_cache.get(key) == 0
@@ -1047,8 +1032,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'materialized': path, 'kind': 'folder', 'path': path})
         nlogs = self.node.logs.count()
-        with capture_notifications():
-            self.app.put(url, json=payload)
+        self.app.put(url, json=payload)
         self.node.reload()
         assert self.node.logs.count() == nlogs + 1
         assert ('urls' not in self.node.logs.filter(action='osf_storage_file_added')[0].params)
@@ -1562,7 +1546,6 @@ class TestAddonFileViews(OsfTestCase):
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()
         payload = {
-            'action': 'file_removed',
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/Test',
@@ -1583,7 +1566,6 @@ class TestAddonFileViews(OsfTestCase):
         )
         subfolder.save()
         payload = {
-            'action': 'file_removed',
             'provider': file_node.provider,
             'metadata': {
                 'path': '/test/',

@@ -4,14 +4,12 @@ import uuid
 from api.providers.tasks import bulk_create_registrations
 
 from osf.exceptions import RegistrationBulkCreationContributorError, RegistrationBulkCreationRowError
-from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema, \
-    NotificationType
+from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
 from osf.utils.permissions import ADMIN, READ, WRITE
 
 from osf_tests.factories import InstitutionFactory, SubjectFactory, UserFactory
-from tests.utils import capture_notifications
 
 
 class TestRegistrationBulkUploadContributors:
@@ -65,6 +63,7 @@ class TestRegistrationBulkCreationRowError:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestBulkUploadTasks:
 
     @pytest.fixture()
@@ -318,20 +317,10 @@ class TestBulkUploadTasks:
         assert upload_job_done_full.state == JobState.PICKED_UP
         assert not upload_job_done_full.email_sent
 
-    def test_bulk_creation_done_full(
-            self,
-            registration_row_1,
-            registration_row_2,
-            upload_job_done_full,
-            provider,
-            initiator,
-            read_contributor,
-            write_contributor
-    ):
-        with capture_notifications() as notifications:
-            bulk_create_registrations(upload_job_done_full.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL in notification_types
+    def test_bulk_creation_done_full(self, mock_send_grid, registration_row_1, registration_row_2,
+                                     upload_job_done_full, provider, initiator, read_contributor, write_contributor):
+
+        bulk_create_registrations(upload_job_done_full.id, dry_run=False)
         upload_job_done_full.reload()
         assert upload_job_done_full.state == JobState.DONE_FULL
         assert upload_job_done_full.email_sent
@@ -346,20 +335,13 @@ class TestBulkUploadTasks:
             assert row.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
             assert row.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-    def test_bulk_creation_done_partial(
-            self,
-            registration_row_3,
-            registration_row_invalid_extra_bib_1,
-            upload_job_done_partial,
-            provider,
-            initiator,
-            read_contributor,
-            write_contributor
-    ):
-        with capture_notifications() as notifications:
-            bulk_create_registrations(upload_job_done_partial.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL in notification_types
+        mock_send_grid.assert_called()
+
+    def test_bulk_creation_done_partial(self, mock_send_grid, registration_row_3,
+                                        registration_row_invalid_extra_bib_1, upload_job_done_partial,
+                                        provider, initiator, read_contributor, write_contributor):
+
+        bulk_create_registrations(upload_job_done_partial.id, dry_run=False)
         upload_job_done_partial.reload()
         assert upload_job_done_partial.state == JobState.DONE_PARTIAL
         assert upload_job_done_partial.email_sent
@@ -373,23 +355,16 @@ class TestBulkUploadTasks:
         assert registration_row_3.draft_registration.contributor_set.get(user=write_contributor).permission == WRITE
         assert registration_row_3.draft_registration.contributor_set.get(user=read_contributor).permission == READ
 
-    def test_bulk_creation_done_error(
-            self,
-            registration_row_invalid_extra_bib_2,
-            registration_row_invalid_affiliation,
-            upload_job_done_error,
-            provider,
-            initiator,
-            read_contributor,
-            write_contributor,
-            institution
-    ):
-        with capture_notifications() as notifications:
-            bulk_create_registrations(upload_job_done_error.id, dry_run=False)
-        notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL in notification_types
+        mock_send_grid.assert_called()
 
+    def test_bulk_creation_done_error(self, mock_send_grid, registration_row_invalid_extra_bib_2,
+                                      registration_row_invalid_affiliation, upload_job_done_error,
+                                      provider, initiator, read_contributor, write_contributor, institution):
+
+        bulk_create_registrations(upload_job_done_error.id, dry_run=False)
         upload_job_done_error.reload()
         assert upload_job_done_error.state == JobState.DONE_ERROR
         assert upload_job_done_error.email_sent
         assert len(RegistrationBulkUploadRow.objects.filter(upload__id=upload_job_done_error.id)) == 0
+
+        mock_send_grid.assert_called()

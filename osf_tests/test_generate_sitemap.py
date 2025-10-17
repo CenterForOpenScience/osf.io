@@ -11,7 +11,6 @@ from django.utils import timezone
 from scripts import generate_sitemap
 from osf_tests.factories import (AuthUserFactory, ProjectFactory, RegistrationFactory, CollectionFactory,
                                  PreprintFactory, PreprintProviderFactory, EmbargoFactory, UnconfirmedUserFactory)
-from tests.utils import capture_notifications
 from website import settings
 
 
@@ -107,8 +106,7 @@ class TestGenerateSitemap:
 
     @pytest.fixture(autouse=True)
     def preprint_osf_version(self, preprint_osf_blank):
-        with capture_notifications():
-            return PreprintFactory.create_version(create_from=preprint_osf_blank, creator=preprint_osf_blank.creator)
+        return PreprintFactory.create_version(create_from=preprint_osf_blank, creator=preprint_osf_blank.creator)
 
     @pytest.fixture(autouse=True)
     def preprint_withdrawn(self, project_preprint_osf, user_admin_project_public, provider_osf):
@@ -135,17 +133,17 @@ class TestGenerateSitemap:
         urls_to_include.extend([
             user_admin_project_public.url,
             user_admin_project_private.url,
-            project_registration_public.url,
-            project_preprint_osf.url,
-            project_preprint_other.url,
-            registration_active.url,
+            project_registration_public.url + 'overview',
+            project_preprint_osf.url + 'overview',
+            project_preprint_other.url + 'overview',
+            registration_active.url + 'overview',
             f'/preprints/{provider_osf._id}/{preprint_osf._id}',
             f'/preprints/{provider_osf._id}/{preprint_osf_version._id}',
             f'/preprints/{provider_other._id}/{preprint_other._id}',
             f'/preprints/{provider_osf._id}/{preprint_withdrawn._id}',
-            f'/{preprint_osf._id}/download/?format=pdf',
-            f'/{preprint_osf_version._id}/download/?format=pdf',
-            f'/{preprint_other._id}/download/?format=pdf'
+            f'/download/{preprint_osf._id}/?format=pdf',
+            f'/download/{preprint_osf_version._id}/?format=pdf',
+            f'/download/{preprint_other._id}/?format=pdf'
         ])
         urls_to_include = [urljoin(settings.DOMAIN, item) for item in urls_to_include]
 
@@ -184,18 +182,18 @@ class TestGenerateSitemap:
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, project_private.url) not in urls
+        assert urljoin(settings.DOMAIN, project_private.url + 'overview') not in urls
 
     def test_embargoed_registration_link_not_included(self, registration_embargoed, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, registration_embargoed.url) not in urls
+        assert urljoin(settings.DOMAIN, registration_embargoed.url + 'overview') not in urls
 
     def test_deleted_project_link_not_included(self, project_deleted, create_tmp_directory):
 
         with mock.patch('website.settings.STATIC_FOLDER', create_tmp_directory):
             urls = get_all_sitemap_urls()
 
-        assert urljoin(settings.DOMAIN, project_deleted.url) not in urls
+        assert urljoin(settings.DOMAIN, project_deleted.url + 'overview') not in urls

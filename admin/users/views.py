@@ -20,7 +20,6 @@ from osf.exceptions import UserStateError
 from osf.models.base import Guid
 from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
-from osf.models.notification_type import NotificationType
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
 
@@ -48,7 +47,7 @@ from admin.users.forms import (
 )
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
-from website.settings import DOMAIN, OSF_SUPPORT_EMAIL
+from website.settings import DOMAIN
 from django.urls import reverse_lazy
 
 
@@ -182,14 +181,6 @@ class UserDisableView(UserMixin, View):
                 object_repr='User',
                 message=f'User account {user.pk} disabled',
                 action_flag=USER_REMOVED
-            )
-            NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE.instance.emit(
-                user=user,
-                event_context={
-                    'user_fullname': user.fullname,
-                    'contact_email': OSF_SUPPORT_EMAIL,
-                    'can_change_preferences': False,
-                }
             )
         else:
             user.reactivate_account()

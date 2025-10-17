@@ -21,10 +21,10 @@ from tqdm import tqdm
 from framework.celery_tasks import app as celery_app
 from osf.models import TrashedFile, Node
 
+from website import mails
 from website.app import init_app
 from website.settings.defaults import GBs
 
-from django.core.mail import send_mail
 from scripts import utils as scripts_utils
 
 # App must be init'd before django models are imported
@@ -110,7 +110,7 @@ def main(send_email=False):
     if lines:
         if send_email:
             logger.info('Sending email...')
-            send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
+            mails.send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
         else:
             logger.info(f'send_email is False, not sending email')
         logger.info(f'{len(lines)} offending project(s) and user(s) found')

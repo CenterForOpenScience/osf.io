@@ -4,7 +4,6 @@ from osf.utils import permissions
 from tests.base import OsfTestCase
 
 from framework.auth.decorators import Auth
-from tests.utils import capture_notifications
 
 from website.profile import utils
 
@@ -46,8 +45,7 @@ class TestContributorUtils(OsfTestCase):
             request_type=workflows.RequestTypes.ACCESS.value,
             machine_state=workflows.DefaultStates.INITIAL.value
         )
-        with capture_notifications():
-            node_request.run_submit(new_user)
+        node_request.run_submit(new_user)
         res = utils.serialize_access_requests(self.project)
 
         assert len(res) == 1

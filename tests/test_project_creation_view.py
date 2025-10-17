@@ -13,7 +13,6 @@ from osf_tests.factories import (
 from tests.base import (
     OsfTestCase,
 )
-from tests.utils import capture_notifications
 from website.util import api_url_for, web_url_for
 
 @pytest.mark.enable_implicit_clean
@@ -211,8 +210,7 @@ class TestProjectCreation(OsfTestCase):
             'title': 'Im a real title',
             'template': other_node._id
         }
-        with capture_notifications():
-            res = self.app.post(self.url, json=payload, auth=self.creator.auth)
+        res = self.app.post(self.url, json=payload, auth=self.creator.auth)
         assert res.status_code == 201
         node = AbstractNode.load(res.json['projectUrl'].replace('/', ''))
         assert node
@@ -241,8 +239,7 @@ class TestProjectCreation(OsfTestCase):
         non_contributor = AuthUserFactory()
         project = ProjectFactory(is_public=True)
         url = api_url_for('project_new_from_template', nid=project._id)
-        with capture_notifications():
-            res = self.app.post(url, auth=non_contributor.auth)
+        res = self.app.post(url, auth=non_contributor.auth)
         assert res.status_code == 201
 
     def test_project_new_from_template_contributor(self):
@@ -252,6 +249,5 @@ class TestProjectCreation(OsfTestCase):
         project.save()
 
         url = api_url_for('project_new_from_template', nid=project._id)
-        with capture_notifications():
-            res = self.app.post(url, auth=contributor.auth)
+        res = self.app.post(url, auth=contributor.auth)
         assert res.status_code == 201

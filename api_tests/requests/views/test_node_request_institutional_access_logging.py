@@ -3,10 +3,8 @@ import pytest
 from api.base.settings.defaults import API_BASE
 
 from osf_tests.factories import NodeFactory, InstitutionFactory, AuthUserFactory
-from osf.models import NodeLog, NodeRequest, NotificationType
+from osf.models import NodeLog, NodeRequest
 from osf.utils.workflows import NodeRequestTypes
-from tests.utils import assert_notification
-
 
 @pytest.mark.django_db
 class TestNodeRequestListInstitutionalAccessActionAccept:
@@ -70,8 +68,7 @@ class TestNodeRequestListInstitutionalAccessActionAccept:
         Test a successful POST request to create a node-request action and log it.
         """
         # Perform the POST request
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST, user=institutional_admin):
-            res = app.post_json_api(url, action_payload, auth=user_with_affiliation.auth)
+        res = app.post_json_api(url, action_payload, auth=user_with_affiliation.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['trigger'] == 'accept'
 
@@ -92,8 +89,7 @@ class TestNodeRequestListInstitutionalAccessActionAccept:
         """
         # Perform the POST request
         action_payload['data']['attributes']['trigger'] = 'reject'
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_DENIED, user=institutional_admin):
-            res = app.post_json_api(url, action_payload, auth=user_with_affiliation.auth)
+        res = app.post_json_api(url, action_payload, auth=user_with_affiliation.auth)
         assert res.status_code == 201
         assert res.json['data']['attributes']['trigger'] == 'reject'
 

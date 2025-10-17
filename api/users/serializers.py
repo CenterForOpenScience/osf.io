@@ -34,7 +34,7 @@ from api.base.versioning import get_kebab_snake_case_field
 from api.nodes.serializers import NodeSerializer, RegionRelationshipField
 from framework.auth.views import send_confirm_email_async
 from osf.exceptions import ValidationValueError, ValidationError, BlockedEmailError
-from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution, NotificationType
+from osf.models import Email, Node, OSFUser, Preprint, Registration, UserMessage, Institution
 from osf.models.user_message import MessageTypes
 from osf.models.provider import AbstractProviderGroupObjectPermission
 from osf.utils.requests import string_type_request_headers
@@ -280,9 +280,9 @@ class UserSerializer(JSONAPISerializer):
         try:
             instance.save()
         except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+            raise InvalidModelValueError(detail=str(e))
         except ValidationError as e:
-            raise InvalidModelValueError(e)
+            raise InvalidModelValueError(detail=str(e))
         if set(validated_data.keys()).intersection(set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())):
             request_headers = string_type_request_headers(self.context['request'])
             instance.check_spam(saved_fields=validated_data, request_headers=request_headers)
@@ -711,17 +711,6 @@ class UserEmailsSerializer(JSONAPISerializer):
         if primary and instance.confirmed:
             user.username = instance.address
             user.save()
-            notification_type = NotificationType.Type.USER_PRIMARY_EMAIL_CHANGED
-            notification_type.instance.emit(
-                subscribed_object=user,
-                user=user,
-                event_context={
-                    'user_fullname': user.fullname,
-                    'new_address': user.username,
-                    'can_change_preferences': False,
-                    'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-                },
-            )
         elif primary and not instance.confirmed:
             raise exceptions.ValidationError('You cannot set an unconfirmed email address as your primary email address.')
 

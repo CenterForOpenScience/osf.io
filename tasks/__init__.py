@@ -13,6 +13,7 @@ import sqlite3
 import invoke
 from invoke import Collection
 
+from website import settings
 from .utils import pip_install, bin_prefix
 
 
@@ -62,8 +63,6 @@ def task(*args, **kwargs):
 @task
 def server(ctx, host=None, port=5000, debug=True, gitlogs=False):
     """Run the app server."""
-    from website import settings
-
     if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not debug:
         if os.environ.get('WEB_REMOTE_DEBUG', None):
             import pydevd
@@ -96,8 +95,6 @@ def git_logs(ctx, branch=None):
 def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=True):
     """Run the API server."""
     env = os.environ.copy()
-    from website import settings
-
     cmd = 'DJANGO_SETTINGS_MODULE=api.base.settings {} manage.py runserver {}:{} --nothreading'\
         .format(sys.executable, host, port)
     if not autoreload:
@@ -117,8 +114,6 @@ def apiserver(ctx, port=8000, wait=True, autoreload=True, host='127.0.0.1', pty=
 def adminserver(ctx, port=8001, host='127.0.0.1', pty=True):
     """Run the Admin server."""
     env = 'DJANGO_SETTINGS_MODULE="admin.base.settings"'
-    from website import settings
-
     cmd = f'{env} python3 manage.py runserver {host}:{port} --nothreading'
     if settings.SECURE_MODE:
         cmd = cmd.replace('runserver', 'runsslserver')
@@ -146,7 +141,6 @@ def sharejs(ctx, host=None, port=None, db_url=None, cors_allow_origin=None):
         os.environ['SHAREJS_DB_URL'] = db_url
     if cors_allow_origin:
         os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
-    from website import settings
 
     if settings.SENTRY_DSN:
         os.environ['SHAREJS_SENTRY_DSN'] = settings.SENTRY_DSN
@@ -185,7 +179,7 @@ def celery_beat(ctx, level='debug', schedule=None):
     ctx.run(bin_prefix(cmd), pty=True)
 
 @task
-def migrate_search(ctx, delete=True, remove=False, index='website'):
+def migrate_search(ctx, delete=True, remove=False, index=settings.ELASTIC_INDEX):
     """Migrate the search-enabled models."""
     from website.app import init_app
     init_app(routes=False, set_backends=False)
@@ -552,7 +546,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
         inv wheelhouse --addons
         inv wheelhouse --release
     """
-    from website import settings
     if release or addons:
         for directory in os.listdir(settings.ADDON_PATH):
             path = os.path.join(settings.ADDON_PATH, directory)
@@ -574,8 +567,6 @@ def wheelhouse(ctx, addons=False, release=False, dev=False, pty=True):
 @task
 def addon_requirements(ctx):
     """Install all addon requirements."""
-    from website import settings
-
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory)
 
@@ -592,8 +583,6 @@ def addon_requirements(ctx):
 
 @task
 def ci_addon_settings(ctx):
-    from website import settings
-
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path):
@@ -606,8 +595,6 @@ def ci_addon_settings(ctx):
 
 @task
 def copy_addon_settings(ctx):
-    from website import settings
-
     for directory in os.listdir(settings.ADDON_PATH):
         path = os.path.join(settings.ADDON_PATH, directory, 'settings')
         if os.path.isdir(path) and not os.path.isfile(os.path.join(path, 'local.py')):

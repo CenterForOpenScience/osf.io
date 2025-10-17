@@ -42,19 +42,11 @@ def set_maintenance(message, level=1, start=None, end=None):
 
     return {'start': state.start, 'end': state.end}
 
-
-class InFailedSqlTransaction:
-    pass
-
-
 def get_maintenance():
     """Get the current start and end times for the maintenance state.
     Return None if there is no current maintenance state.
     """
-    try:
-        maintenance = MaintenanceState.objects.all().first()
-    except InFailedSqlTransaction:
-        return None
+    maintenance = MaintenanceState.objects.all().first()
     return MaintenanceStateSerializer(maintenance).data if maintenance else None
 
 def unset_maintenance():

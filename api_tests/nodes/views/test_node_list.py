@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode, Node, NodeLog, NotificationType
+from osf.models import AbstractNode, Node, NodeLog
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
@@ -26,7 +26,7 @@ from osf_tests.factories import (
 )
 from addons.osfstorage.settings import DEFAULT_REGION_ID
 from rest_framework import exceptions
-from tests.utils import assert_equals, assert_notification, capture_notifications
+from tests.utils import assert_equals
 from website.views import find_bookmark_collection
 from website import settings
 from osf.utils.workflows import DefaultStates
@@ -258,6 +258,16 @@ class TestNodeList:
         superuser.save()
         res = app.get(url_public, auth=superuser.auth)
         assert permissions.READ not in res.json['data'][0]['attributes']['current_user_permissions']
+
+    def test_legacy_host_for_htmls(self, app, url, public_project):
+        settings.DOMAIN = 'https://staging3.osf.io'
+        current_domain_response = app.get(url).json['data']
+        assert current_domain_response[-1]['links']['html'].startswith(settings.DOMAIN)
+
+        # mock request from legacy OSF domain to staging3 backend
+        # so that backend uses it to generate html links instead of current domain
+        legacy_domain_response = app.get(url, headers={'Referer': 'http://legacy.osf.io'}).json['data']
+        assert legacy_domain_response[-1]['links']['html'].startswith('http://legacy.osf.io')
 
 
 @pytest.mark.django_db
@@ -1418,11 +1428,9 @@ class TestNodeCreate:
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one):
-            res = app.post_json_api(
-                url, public_project,
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url, public_project,
+            auth=user_one.auth)
         assert res.status_code == 201
         self_link = res.json['data']['links']['self']
         assert res.json['data']['attributes']['title'] == public_project['data']['attributes']['title']
@@ -1469,25 +1477,6 @@ class TestNodeCreate:
             expect_errors=True)
         assert res.status_code == 404
 
-    #   test_403_on_create_from_template_of_unauthorized_project
-        template_from = ProjectFactory(creator=user_two, is_public=True)
-        templated_project_data = {
-            'data': {
-                'type': 'nodes',
-                'attributes':
-                    {
-                        'title': 'No permission',
-                        'category': 'project',
-                        'template_from': template_from._id,
-                    }
-            }
-        }
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_one.auth,
-            expect_errors=True)
-        assert res.status_code == 403
-
     def test_creates_project_from_template(self, app, user_one, category, url):
         template_from = ProjectFactory(creator=user_one, is_public=True)
         template_component = ProjectFactory(
@@ -1504,11 +1493,10 @@ class TestNodeCreate:
                     }
             }
         }
-        with capture_notifications():
-            res = app.post_json_api(
-                url, templated_project_data,
-                auth=user_one.auth
-            )
+
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1519,6 +1507,97 @@ class TestNodeCreate:
         assert not new_project.is_public
         assert len(new_project.nodes) == len(template_from.nodes)
         assert new_project.nodes[0].title == template_component.title
+
+    def test_non_contributor_create_project_from_public_template_success(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=True)
+        user_without_permissions = AuthUserFactory()
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+
+    def test_non_contributor_create_project_from_private_template_no_permission_fails(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=False)
+        user_without_permissions = AuthUserFactory()
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth,
+            expect_errors=True
+        )
+        assert res.status_code == 403
+
+    def test_contributor_create_project_from_private_template_with_permission_success(self, app, user_one, category, url):
+        template_from = ProjectFactory(creator=user_one, is_public=False)
+        user_without_permissions = AuthUserFactory()
+        template_from.add_contributor(user_without_permissions, permissions=permissions.READ, auth=Auth(user_one), save=True)
+        templated_project_data = {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': 'template from project',
+                        'category': category,
+                        'template_from': template_from._id,
+                    }
+            }
+        }
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.READ)
+
+        template_from.update_contributor(
+            user_without_permissions,
+            permission=permissions.WRITE,
+            auth=Auth(user_one),
+            save=True,
+            visible=True
+        )
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.WRITE)
+
+        template_from.update_contributor(
+            user_without_permissions,
+            permission=permissions.ADMIN,
+            auth=Auth(user_one),
+            save=True,
+            visible=True
+        )
+        res = app.post_json_api(
+            url, templated_project_data,
+            auth=user_without_permissions.auth
+        )
+        assert res.status_code == 201
+        assert template_from.has_permission(user_without_permissions, permissions.ADMIN)
 
     def test_creates_project_creates_project_and_sanitizes_html(
             self, app, user_one, category, url):
@@ -1566,8 +1645,7 @@ class TestNodeCreate:
                 }
             }
         }
-        with capture_notifications():
-            res = app.post_json_api(url, component_data, auth=user_one.auth)
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 
@@ -1606,7 +1684,10 @@ class TestNodeCreate:
     def test_create_component_inherit_contributors_with_blocked_email(
             self, app, user_one, title, category):
         parent_project = ProjectFactory(creator=user_one)
-        parent_project.add_unregistered_contributor(fullname='far', email='foo@bar.baz', permissions=permissions.READ, auth=Auth(user=user_one))
+        parent_project.add_unregistered_contributor(
+            fullname='far', email='foo@bar.baz',
+            permissions=permissions.READ,
+            auth=Auth(user=user_one), save=True)
         contributor = parent_project.contributors.filter(fullname='far').first()
         contributor.username = 'foo@example.com'
         contributor.save()
@@ -1666,12 +1747,9 @@ class TestNodeCreate:
                 }
             }
         }
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
-            res = app.post_json_api(
-                url,
-                private_project,
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url, private_project, auth=user_one.auth
+        )
         assert res.status_code == 201
         region_id = res.json['data']['relationships']['region']['data']['id']
         assert region_id == region._id

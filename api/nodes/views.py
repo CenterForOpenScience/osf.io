@@ -152,13 +152,11 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint,
-    Collection,
-    NotificationType,
+    Preprint, Collection,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
-from website import settings
+from website import mails, settings
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -1047,28 +1045,11 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            NotificationType.Type.NODE_FORK_FAILED.instance.emit(
-                user=user,
-                subscribed_object=node,
-                event_context={
-                    'domain': settings.DOMAIN,
-                    'node_title': node.title,
-                    'can_change_preferences': False,
-                },
-            )
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, can_change_preferences=False)
             raise exc
+        else:
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, can_change_preferences=False)
 
-        NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
-            user=user,
-            subscribed_object=node,
-            event_context={
-                'domain': settings.DOMAIN,
-                'node_title': node.title,
-                'fork_title': fork.title,
-                'fork__id': fork._id,
-                'can_change_preferences': False,
-            },
-        )
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (

@@ -11,7 +11,6 @@ from osf.utils import permissions
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf_tests.factories import ProjectFactory, PreprintFactory, AuthUserFactory, PreprintRequestFactory
 from tests.base import ApiTestCase
-from tests.utils import capture_notifications
 
 
 class TestPreprintVersionsListCreate(ApiTestCase):
@@ -218,8 +217,7 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         location = {'object': '06d80e', 'service': 'cloud', osfstorage_settings.WATERBUTLER_RESOURCE: 'osf', }
         metadata = {'size': 1357, 'contentType': 'img/png', }
         preprint_file.create_version(self.user, location, metadata=metadata).save()
-        with capture_notifications():
-            new_version.run_submit(self.moderator)
+        new_version.run_submit(self.moderator)
         assert new_version.is_published is False
         assert new_version.machine_state == 'pending'
         res = self.app.post_json_api(self.pre_mode_version_create_url, auth=self.user.auth, expect_errors=True)
@@ -241,11 +239,9 @@ class TestPreprintVersionsListCreate(ApiTestCase):
         location = {'object': '06d80e', 'service': 'cloud', osfstorage_settings.WATERBUTLER_RESOURCE: 'osf', }
         metadata = {'size': 1357, 'contentType': 'img/png', }
         preprint_file.create_version(self.user, location, metadata=metadata).save()
-        with capture_notifications():
-            new_version.run_submit(self.moderator)
+        new_version.run_submit(self.moderator)
         assert new_version.is_published is True
-        with capture_notifications():
-            new_version.run_accept(self.moderator, 'comment')
+        new_version.run_accept(self.moderator, 'comment')
         assert new_version.machine_state == 'accepted'
         res = self.app.patch_json_api(
             self.post_mod_preprint_update_url,
@@ -322,14 +318,13 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
 
         # pending original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
@@ -368,14 +363,13 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
         assert pre_mod_preprint_v2.machine_state == 'pending'
 
         withdrawal_request = PreprintRequestFactory(
@@ -384,8 +378,7 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         # pending withdrawn original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
@@ -424,15 +417,14 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
-            pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
 
         # accepted original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
@@ -473,15 +465,14 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
-            pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
 
         withdrawal_request = PreprintRequestFactory(
             creator=self.user,
@@ -489,8 +480,7 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         # accepted and withdrawn original preprint is shown for owner
         res = self.app.get(f'/{API_BASE}preprints/{preprint_id}/', auth=self.user.auth)
@@ -531,14 +521,13 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
 
         for reviewer in [self.admin, self.moderator]:
             assert not pre_mod_preprint_v2.is_contributor(reviewer)
@@ -558,14 +547,13 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
         assert pre_mod_preprint_v2.machine_state == 'pending'
 
         withdrawal_request = PreprintRequestFactory(
@@ -574,8 +562,7 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         for reviewer in [self.admin, self.moderator]:
             assert not pre_mod_preprint_v2.is_contributor(reviewer)
@@ -595,15 +582,14 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
-            pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
 
         for reviewer in [self.admin, self.moderator]:
             assert not pre_mod_preprint_v2.is_contributor(reviewer)
@@ -623,15 +609,14 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.user)
-            pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.user)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
 
         withdrawal_request = PreprintRequestFactory(
             creator=self.user,
@@ -639,8 +624,7 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.user)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         for reviewer in [self.admin, self.moderator]:
             assert not pre_mod_preprint_v2.is_contributor(reviewer)
@@ -660,13 +644,12 @@ class TestPreprintVersionsListCreate(ApiTestCase):
 
         contributor = AuthUserFactory()
         self.pre_mod_preprint.add_contributor(contributor, permissions.READ)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
 
         for reviewer in [self.admin, self.moderator]:
             assert not pre_mod_preprint_v2.is_contributor(reviewer)
@@ -680,13 +663,12 @@ class TestPreprintVersionsListCreate(ApiTestCase):
             assert res.status_code == 404
 
     def test_reviewer_can_contribute(self):
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=self.pre_mod_preprint,
-                final_machine_state='initial',
-                creator=self.user,
-                set_doi=False
-            )
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=self.pre_mod_preprint,
+            final_machine_state='initial',
+            creator=self.user,
+            set_doi=False
+        )
 
         for reviewer in [self.admin, self.moderator]:
             pre_mod_preprint_v2.add_contributor(reviewer, permissions.READ)
@@ -728,33 +710,30 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
         post_mod_versions_list_url = f"/{API_BASE}preprints/{post_mod_preprint.get_guid()._id}/versions/"
 
         # Post moderation V2 (Withdrawn)
-        with capture_notifications():
-            post_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=post_mod_preprint,
-                creator=self.creator,
-                final_machine_state='initial',
-                set_doi=False
-            )
-            post_mod_preprint_v2.run_submit(self.creator)
-            post_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        post_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=post_mod_preprint,
+            creator=self.creator,
+            final_machine_state='initial',
+            set_doi=False
+        )
+        post_mod_preprint_v2.run_submit(self.creator)
+        post_mod_preprint_v2.run_accept(self.moderator, 'comment')
         withdrawal_request = PreprintRequestFactory(
             creator=self.creator,
             target=post_mod_preprint_v2,
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.creator)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         # Post moderation V3 (Pending)
-        with capture_notifications():
-            post_mod_preprint_v3 = PreprintFactory.create_version(
-                create_from=post_mod_preprint_v2,
-                creator=self.creator,
-                final_machine_state='initial',
-                set_doi=False
-            )
-            post_mod_preprint_v3.run_submit(self.creator)
+        post_mod_preprint_v3 = PreprintFactory.create_version(
+            create_from=post_mod_preprint_v2,
+            creator=self.creator,
+            final_machine_state='initial',
+            set_doi=False
+        )
+        post_mod_preprint_v3.run_submit(self.creator)
         id_set = {post_mod_preprint._id, post_mod_preprint_v2._id, post_mod_preprint_v3._id}
         res = self.app.get(post_mod_versions_list_url, auth=self.admin_contrib.auth)
         assert res.status_code == 200
@@ -799,23 +778,21 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             print(f'>>>> {contrib}:{contrib.permission}')
 
         # Pre moderation V2 (Withdrawn)
-        with capture_notifications():
-            pre_mod_preprint_v2 = PreprintFactory.create_version(
-                create_from=pre_mod_preprint,
-                creator=self.creator,
-                final_machine_state='initial',
-                set_doi=False
-            )
-            pre_mod_preprint_v2.run_submit(self.creator)
-            pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
+        pre_mod_preprint_v2 = PreprintFactory.create_version(
+            create_from=pre_mod_preprint,
+            creator=self.creator,
+            final_machine_state='initial',
+            set_doi=False
+        )
+        pre_mod_preprint_v2.run_submit(self.creator)
+        pre_mod_preprint_v2.run_accept(self.moderator, 'comment')
         withdrawal_request = PreprintRequestFactory(
             creator=self.creator,
             target=pre_mod_preprint_v2,
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(self.creator)
-        with capture_notifications():
-            withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
+        withdrawal_request.run_accept(self.moderator, withdrawal_request.comment)
 
         # Pre moderation V3 (Rejected)
         pre_mod_preprint_v3 = PreprintFactory.create_version(
@@ -825,20 +802,18 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=False,
             set_doi=False,
         )
-        with capture_notifications():
-            pre_mod_preprint_v3.run_submit(self.creator)
-            pre_mod_preprint_v3.run_reject(self.moderator, 'comment')
+        pre_mod_preprint_v3.run_submit(self.creator)
+        pre_mod_preprint_v3.run_reject(self.moderator, 'comment')
 
         # Pre moderation V4 (Pending)
-        with capture_notifications():
-            pre_mod_preprint_v4 = PreprintFactory.create_version(
-                create_from=pre_mod_preprint_v2,
-                creator=self.creator,
-                final_machine_state='initial',
-                is_published=False,
-                set_doi=False
-            )
-            pre_mod_preprint_v4.run_submit(self.creator)
+        pre_mod_preprint_v4 = PreprintFactory.create_version(
+            create_from=pre_mod_preprint_v2,
+            creator=self.creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        pre_mod_preprint_v4.run_submit(self.creator)
 
         admin_id_set = {pre_mod_preprint._id, pre_mod_preprint_v2._id, pre_mod_preprint_v3._id, pre_mod_preprint_v4._id}
         non_admin_id_set = {pre_mod_preprint._id, pre_mod_preprint_v2._id}
@@ -888,12 +863,11 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
             is_published=True
         )
         for _ in range(5):
-            with capture_notifications():
-                new_version = PreprintFactory.create_version(
-                    create_from=latest_version,
-                    creator=self.creator,
-                    set_doi=False
-                )
+            new_version = PreprintFactory.create_version(
+                create_from=latest_version,
+                creator=self.creator,
+                set_doi=False
+            )
             latest_version = new_version
         versions_url_base_guid = f'/{API_BASE}preprints/{latest_version.get_guid()._id}/versions/'
         res_1 = self.app.get(versions_url_base_guid, auth=self.creator.auth)
