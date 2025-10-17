@@ -1162,7 +1162,7 @@ for GitHub, Zotero, and Mendeley addons.
 - Fix bug that caused project to be unreachable if it had a deleted Bitbucket addon.
 - Fix incorrect OSF Meeting instructions.
 - Remove unused fonts and styles from landing page.
-- Hide hierarchy on search results if parent is priate.
+- Hide hierarchy on search results if parent is private.
 - API: Fix /data/relationships/referent/type for /guids/<registration-id>/?resolve=false endpoint.
 - API: Optimize node delete endpoint.
 - Admin: Fix typos.
