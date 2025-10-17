@@ -46,10 +46,10 @@ var FileRevisionsTable = {
             }).done(function(response) {
                 response = waterbutler.wbLazyLoadPreprocess.call(this, response);
                 m.startComputation();
-                var urlParmas = $osf.urlParams();
+                var urlParams = $osf.urlParams();
                 model.revisions = response.data.map(function(rev, index) {
                     rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
-                    if (urlParmas[rev.versionIdentifier] === rev.version) {
+                    if (urlParams[rev.versionIdentifier] === rev.version) {
                         model.selectedRevision = index;
                     }
                     return rev;
