@@ -152,7 +152,7 @@ def stat_addon(addon_short_name, job_pk):
     :param job_pk: primary key of archive_job
     :return: AggregateStatResult containing file tree metadata
     """
-    # Dataverse reqires special handling for draft and
+    # Dataverse requires special handling for draft and
     # published content
     addon_name = addon_short_name
     version = None
