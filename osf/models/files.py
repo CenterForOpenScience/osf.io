@@ -489,7 +489,7 @@ class File(models.Model):
         return 'file'
 
     def update(self, revision, data, user=None, save=True):
-        """Using revision and data update all data pretaining to self
+        """Using revision and data update all data pertaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata received from waterbutler
         :returns: FileVersion
