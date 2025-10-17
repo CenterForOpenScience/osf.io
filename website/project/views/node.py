@@ -1188,7 +1188,7 @@ def get_node_tree(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_generate_private_link_post(auth, node, **kwargs):
-    """ creata a new private link object and add it to the node and its selected children"""
+    """ create a new private link object and add it to the node and its selected children"""
 
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
