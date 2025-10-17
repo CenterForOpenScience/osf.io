@@ -876,7 +876,7 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
     start - Start time for the maintenance period
-    end - End time for the mainteance period
+    end - End time for the maintenance period
         NOTE: If no start or end values are provided, default to starting now
         and ending 24 hours from now.
     message - Message to display. If omitted, will be:
