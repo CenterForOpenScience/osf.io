@@ -2,7 +2,7 @@ from PIL import Image
 import math
 import os
 
-#This script enlarges institions shield imamges so the corners show when they are displayed as circles.
+#This script enlarges institions shield images so the corners show when they are displayed as circles.
 
 INSTITUTIONS_IMG_PATH =  '../website/static/img/institutions/'
 
