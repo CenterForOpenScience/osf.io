@@ -574,7 +574,7 @@ class File(models.Model):
 
     @property
     def _hashes(self):
-        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        """ Hook for subclasses to return file hashes, commit SHAs, etc.
         Returns dict or None
         """
         return None
