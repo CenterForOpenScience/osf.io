@@ -20,7 +20,7 @@ var iconmap = require('js/iconmap');
 
 var LinkObject;
 var NodeFetcher;
-var formatDataforPO;
+var formatDataForPO;
 var MOBILE_WIDTH = 767;
 
 /**
@@ -434,7 +434,7 @@ var tbOptions = {
             var item;
             for(var i = 0; i < arr.length; i++){
                 item = arr[i];
-                formatDataforPO(item.data);
+                formatDataForPO(item.data);
                 if(item.children.length > 0){
                     formatItems(item.children);
                 }
@@ -448,7 +448,7 @@ var ProjectOrganizer = {
     controller : function (args) {
         LinkObject = args.LinkObject;
         NodeFetcher  = args.NodeFetcher;
-        formatDataforPO = args.formatDataforPO;
+        formatDataForPO = args.formatDataForPO;
         var self = this;
         self.updateTB = function(){
             var poOptions = $.extend(
