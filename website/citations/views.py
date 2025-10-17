@@ -177,7 +177,7 @@ class GenericCitationViews:
         @must_be_contributor_or_public
         @must_have_addon(addon_short_name, 'node')
         def _widget(node_addon, **kwargs):
-            """ Collects and serializes settting needed to build the widget
+            """ Collects and serializes setting needed to build the widget
             """
             return Provider().widget(node_addon)
 
