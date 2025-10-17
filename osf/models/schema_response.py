@@ -185,7 +185,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         On creation, the new SchemaResponses will share all of its response_blocks with the
         previous_version (as no responses have changed). As responses are updated via
-        response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
+        response.update_responses, new SchemaResponseBlocks will be created/updated as appropriate.
 
         A new SchemaResponse cannot be created for a given parent object if it already has another
         SchemaResponse in a non-APPROVED state.
