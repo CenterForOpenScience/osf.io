@@ -570,7 +570,7 @@ class TestDraftRegistrationContributorMethods():
             )
         assert str(exc_info.value) == f"{admin_user.fullname} is the only admin."
 
-        # user should be able to remove their own admin permission if there're 2+ admin contributors
+        # user should be able to remove their own admin permission if there are 2+ admin contributors
         new_contrib = factories.AuthUserFactory()
         draft_registration.add_contributor(new_contrib, permissions=ADMIN, auth=auth)
         assert draft_registration.has_permission(new_contrib, ADMIN) is True
