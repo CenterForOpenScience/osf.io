@@ -377,7 +377,7 @@ class TestDraftRegistrationContributorMethods():
         draft_registration.save()
         assert len(draft_registration.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, draft_registration, auth):
         new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         draft_registration.save()

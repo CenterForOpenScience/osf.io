@@ -958,7 +958,7 @@ class TestClaimViews(OsfTestCase):
         assert res.status_code == 400
 
     def test_cannot_claim_user_with_user_who_is_already_contributor(self):
-        # user who is already a contirbutor to the project
+        # user who is already a contributor to the project
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()
