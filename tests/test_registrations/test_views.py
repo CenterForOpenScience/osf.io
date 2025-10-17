@@ -531,7 +531,7 @@ class TestModeratorRegistrationViews:
         resp = app.get(registration_subpath, auth=moderator.auth)
         assert resp.status_code == 200
 
-    def test_moderator_can_viw_subpath_of_embargoed_registration(
+    def test_moderator_can_view_subpath_of_embargoed_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration
         # to determine if there is a need to withdraw before it becomes public
