@@ -270,7 +270,7 @@ class TestOutcomeArtifact:
         with pytest.raises(IntegrityError):  # Raise when set to a duplicate artifact_type
             test_artifact.update(new_artifact_type=ArtifactTypes.DATA)
 
-    def test_update__enforces_uniquenss_if_finalized__nonfinal_duplicate_okay(self, outcome, project_doi):
+    def test_update__enforces_uniqueness_if_finalized__nonfinal_duplicate_okay(self, outcome, project_doi):
         nonfinal_artifact = outcome.artifact_metadata.create(
             identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=False
         )
@@ -282,7 +282,7 @@ class TestOutcomeArtifact:
         assert test_artifact.artifact_type == nonfinal_artifact.artifact_type
         assert test_artifact.identifier == nonfinal_artifact.identifier
 
-    def test_update__enforces_uniquenss_if_finalized__deleted_duplicate_okay(self, outcome, project_doi):
+    def test_update__enforces_uniqueness_if_finalized__deleted_duplicate_okay(self, outcome, project_doi):
         deleted_artifact = outcome.artifact_metadata.create(
             identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True, deleted=timezone.now()
         )
@@ -338,7 +338,7 @@ class TestOutcomeArtifact:
         with pytest.raises(IntegrityError):
             test_artifact.finalize()
 
-    def test_finalize__enforces_uniquenss__deleted_entry_okay(self, outcome, project_doi):
+    def test_finalize__enforces_uniqueness__deleted_entry_okay(self, outcome, project_doi):
         outcome.artifact_metadata.create(
             identifier=project_doi, artifact_type=ArtifactTypes.DATA, finalized=True, deleted=timezone.now()
         )
