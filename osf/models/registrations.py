@@ -871,7 +871,7 @@ class Registration(AbstractNode):
             if save:
                 self.save()
 
-        if self.root_id == self.id:  # only create SchemaResposnes on the root registration
+        if self.root_id == self.id:  # only create SchemaResponses on the root registration
             schema_response = SchemaResponse.create_initial_response(
                 self.creator,
                 self,
