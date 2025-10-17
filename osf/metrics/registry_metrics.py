@@ -39,7 +39,7 @@ class RegistriesModerationMetrics(MetricMixin, metrics.Metric):
     def get_registries_info(cls) -> dict:
         """
         Gets metrics info for each registry
-        excpected output:
+        expected output:
         {
             'doc_count_error_upper_bound': 0,
             'sum_other_doc_count': 0,
