@@ -1077,7 +1077,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
         self.provider = factories.PreprintProviderFactory(_id='engrxiv')
         self.preprint = factories.PreprintFactory(provider=self.provider)
         self.submitter = factories.UserFactory()
-        self.moderator_transacitonal = factories.UserFactory()
+        self.moderator_transactional = factories.UserFactory()
         self.moderator_digest= factories.UserFactory()
 
         self.context_info_submission = {
@@ -1100,7 +1100,7 @@ class TestNotificationsReviewsModerator(OsfTestCase):
 
         self.action = factories.ReviewActionFactory()
         self.subscription = NotificationSubscription.load(self.provider._id+'_new_pending_submissions')
-        self.subscription.add_user_to_subscription(self.moderator_transacitonal, 'email_transactional')
+        self.subscription.add_user_to_subscription(self.moderator_transactional, 'email_transactional')
         self.subscription.add_user_to_subscription(self.moderator_digest, 'email_digest')
 
     @mock.patch('website.notifications.emails.store_emails')
