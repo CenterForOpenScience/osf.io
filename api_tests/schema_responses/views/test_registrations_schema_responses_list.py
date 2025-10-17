@@ -92,7 +92,7 @@ class TestRegistrationSchemaResponseListGETPermissions:
             return 410
         # Withdrawn registrations always return
         # UNAUTHORIZED for unauthenticated users and
-        # FORBIDDEN for all othrs
+        # FORBIDDEN for all others
         if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
