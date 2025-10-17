@@ -785,7 +785,7 @@ Draft.prototype.reject = function() {
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
- * @property {Object} extensions: mapping of extenstion names to their view models
+ * @property {Object} extensions: mapping of extension names to their view models
  **/
 var RegistrationEditor = function(urls, editorId, preview) {
     var self = this;
