@@ -225,7 +225,7 @@ mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock
 
 def unique(factory):
     """
-    Turns a factory function into a new factory function that guarentees unique return
+    Turns a factory function into a new factory function that guarantees unique return
     values. Note this uses regular item equivalence to check uniqueness, so this may not
     behave as expected with factories with complex return values.
 
