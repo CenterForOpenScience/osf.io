@@ -500,7 +500,7 @@ class File(models.Model):
         version = FileVersion(identifier=revision)
         version.update_metadata(data, save=False)
 
-        # Transform here so it can be sortted on later
+        # Transform here so it can be sorted on later
         if data['modified'] is not None and data['modified'] != '':
             data['modified'] = parse_date(
                 data['modified'],
