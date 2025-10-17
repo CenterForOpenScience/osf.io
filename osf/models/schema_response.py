@@ -301,7 +301,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             )
         super().delete(*args, **kwargs)
 
-# *** Callbcks in support of ApprovalsMachine ***
+# *** Callbacks in support of ApprovalsMachine ***
 
     def _validate_trigger(self, event_data):
         '''Any additional validation to confirm that a trigger is being used correctly.
