@@ -78,7 +78,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         assert res.status_code == http_status.HTTP_200_OK
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task', mock.Mock())
-    def test_register_template_page_backwards_comptability(self):
+    def test_register_template_page_backwards_compatibility(self):
         # Historically metaschema's were referenced by a slugified version
         # of their name.
         reg = self.draft.register(
