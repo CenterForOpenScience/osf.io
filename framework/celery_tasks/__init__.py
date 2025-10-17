@@ -34,7 +34,7 @@ def error_handler(task_id, task_name):
     # query the broker for the AsyncResult
     result = app.AsyncResult(task_id)
     excep = result.get(propagate=False)
-    # log detailed error mesage in error log
+    # log detailed error message in error log
     logger.error(
         '#####FAILURE LOG BEGIN#####\n'
         f'Task {task_name} raised exception: {excep}\n{result.traceback}\n'
