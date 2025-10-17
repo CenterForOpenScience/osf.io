@@ -473,7 +473,7 @@ class TestRequestHelpers:
         addon_one = fake_gv.configure_fake_addon(resource, account_one)
         addon_two = fake_gv.configure_fake_addon(resource, account_two)
         addon_three = fake_gv.configure_fake_addon(resource, account_three)
-        # Unrelated Addon, will KeyError below if retured in request results
+        # Unrelated Addon, will KeyError below if returned in request results
         fake_gv.configure_fake_addon(factories.ProjectFactory(creator=contributor), account_one)
 
         expected_addons = {addon.pk: addon for addon in [addon_one, addon_two, addon_three]}
