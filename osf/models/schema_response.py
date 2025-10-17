@@ -517,7 +517,7 @@ def _is_updated_response(response_block, new_response):
     if response_block.source_schema_block.block_type != 'file-input':
         return current_response != new_response
 
-    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    # `files-input` blocks contain a list of dictinoaries containing file information in the form
     current_file_ids = {entry['file_id'] for entry in current_response}
     new_file_ids = {entry['file_id'] for entry in new_response}
     return current_file_ids != new_file_ids
