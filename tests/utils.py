@@ -240,7 +240,7 @@ def unique(factory):
         over = 0
         while item in used:
             if over > 100:
-                raise RuntimeError('Tried 100 times to generate an unqiue value, stopping.')
+                raise RuntimeError('Tried 100 times to generate an unique value, stopping.')
             item = factory()
             over += 1
         used.append(item)
