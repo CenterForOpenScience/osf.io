@@ -421,7 +421,7 @@ class RegistrationFactory(BaseNodeFactory):
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
-                initator=user,
+                initiator=user,
                 registration_schema=schema,
                 provider=provider,
             )

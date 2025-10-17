@@ -107,7 +107,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 mail=mails.COLLECTION_SUBMISSION_SUBMITTED(self.creator, self.guid.referent),
                 user=contributor,
                 submitter=user,
-                is_initator=self.creator == contributor,
+                is_initiator=self.creator == contributor,
                 is_admin=self.guid.referent.has_permission(contributor, ADMIN),
                 is_registered_contrib=contributor.is_registered,
                 collection=self.collection,
