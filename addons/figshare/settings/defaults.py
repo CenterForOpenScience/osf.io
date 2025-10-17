@@ -32,7 +32,7 @@ FIGSHARE_IDS_TO_TYPES = {
 # When this addon was originally implemented, only type 4 ("fileset") articles behaved like folders
 # and contained multiple files.  Since then, figshare has changed their API so that type 3 articles
 # ("datasets") are the default multiple-file containers.  New requests to create "fileset"s are
-# automatically converted to create "dataset"s.  Pre-exisiting "fileset"s retain the same id.  To
+# automatically converted to create "dataset"s.  Pre-existing "fileset"s retain the same id.  To
 # preserve backcompat, the addon now allows both type 3 and type 4 articles to be valid root
 # folders.
 FIGSHARE_FOLDER_TYPES = {3, 4, }
