@@ -1080,7 +1080,7 @@ class TestAddContributor(OsfTestCase):
 
     def test_search_partial_special_character(self):
         # Searching for a partial name with a special character yields
-        # exctly one result.
+        # exactly one result.
         contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
         assert len(contribs['users']) == 1
 
