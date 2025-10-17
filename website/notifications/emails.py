@@ -204,7 +204,7 @@ def get_settings_url(uid, user):
     return node.web_url_for('node_setting', _guid=True, _absolute=True)
 
 def fix_locale(locale):
-    """Atempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
+    """Attempt to fix a locale to have the correct casing, e.g. de_de -> de_DE
 
     This is NOT guaranteed to return a valid locale identifier.
     """
