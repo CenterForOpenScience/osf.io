@@ -3054,10 +3054,10 @@ tbOptions = {
             }
         });
     },
-    movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
+    movecheck : function (to, from) { //This method gives users an option to do checks and define their return
         return true;
     },
-    movefail : function (to, from) { //This method gives the users an option to do checks and define their return
+    movefail : function (to, from) { //This method gives users an option to do checks and define their return
         return true;
     },
     addcheck : function (treebeard, item, file) {
