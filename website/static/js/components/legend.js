@@ -12,7 +12,7 @@ module.exports = {
                     b == Uncat     = -1
                     a == Other
                         b == Uncat = -1
-                        otherswise =  1
+                        otherwise  =  1
                     b == Other
                         a == Uncat =  1
                         otherwise  = -1
