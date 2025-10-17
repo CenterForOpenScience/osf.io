@@ -93,7 +93,7 @@
       },
       {
          "block_type":"paragraph",
-         "help_text":"This is another paragraph that will appear when both drafting or reviewing responses. Pargraphs can be placed anywhere!"
+         "help_text":"This is another paragraph that will appear when both drafting or reviewing responses. Paragraphs can be placed anywhere!"
       },
       {
          "block_type":"short-text-input"
