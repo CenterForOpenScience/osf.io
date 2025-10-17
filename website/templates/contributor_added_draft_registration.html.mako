@@ -9,7 +9,7 @@
     % if not node_title or node_title == 'Untitled':
       <a href="${node_absolute_url}">a new registration draft</a>
     % else:
-      a new registration draft titled <a href="${node_absolute_url}">${node_title}</a>
+      to a new registration draft titled <a href="${node_absolute_url}">${node_title}</a>
     % endif
     to be submitted for inclusion in the
 	<a href="${domain}/registries/${node_provider__id}">${registry_text}</a>.

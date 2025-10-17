@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_text} as a contributor to the ${branded_service_preprint_word} "${node_title}" on ${branded_service_name}, which is hosted on the Open Science Framework: ${node_absolute_url}<br>
+    ${referrer_text} to the ${branded_service_preprint_word} "${node_title}" on ${branded_service_name}, which is hosted on the Open Science Framework: ${node_absolute_url}<br>
     <br>
     If you have been erroneously associated with "${node_title}", then you may visit the ${branded_service_preprint_word} and remove yourself as a contributor.<br>
     <br>
