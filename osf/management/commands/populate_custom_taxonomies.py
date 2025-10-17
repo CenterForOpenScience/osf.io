@@ -194,7 +194,7 @@ def migrate(provider=None, provider_type='osf.preprintprovider', share_title=Non
 
     assert custom_provider, f'Unable to find specified provider: {provider}'
     assert custom_provider.id != BEPRESS_PROVIDER.id, 'Cannot add custom mapping to BePress provider'
-    assert not custom_provider.subjects.exists(), 'Provider aldready has a custom taxonomy'
+    assert not custom_provider.subjects.exists(), 'Provider already has a custom taxonomy'
 
     if isinstance(custom_provider, PreprintProvider) and custom_provider.share_title in [None, '', 'bepress']:
         if not share_title:
