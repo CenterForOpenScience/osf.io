@@ -120,7 +120,7 @@ def add_tags(tags):
 
 
 def normalize_source_tags():
-    """ Normailize source tags
+    """ Normalize source tags
     """
     migrate_source_tags(PROVIDER_SOURCE_TAGS)
     migrate_source_tags(CAMPAIGN_SOURCE_TAGS)
