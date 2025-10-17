@@ -1087,7 +1087,7 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
                     errors=errors,
                 )
             else:
-                # Dataverse requires two seperate targets, one
+                # Dataverse requires two separate targets, one
                 # for draft files and one for published files
                 if src_provider == 'dataverse':
                     src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())
