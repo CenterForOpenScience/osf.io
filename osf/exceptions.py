@@ -220,7 +220,7 @@ class SchemaResponseUpdateError(SchemaResponseError):
             )
         if unsupported_keys:
             unsupported_keys_message = (
-                f'\nReceived the following resposnes had invalid keys: {unsupported_keys}'
+                f'\nReceived the following responses had invalid keys: {unsupported_keys}'
             )
         error_message = (
             f'Error update SchemaResponse with id [{response._id}]:'
