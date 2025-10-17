@@ -1029,7 +1029,7 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Organization Development', 'Health Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Infrastructure'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Policy Design, Analysis, and Evaluation'], False),
-                (['Social and Behavioral Sciences', 'Organization Development', 'Policy History, Theory, and Methosd'], False),
+                (['Social and Behavioral Sciences', 'Organization Development', 'Policy History, Theory, and Methods'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Science and Technology Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Social Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Social Welfare'], False),
