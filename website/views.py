@@ -254,7 +254,7 @@ def resolve_guid(guid, suffix=None):
     Preprints for example are served from the external emberapp and streamed into Django and on to the user, while Wikis
     are served via a `/v1` endpoint, the `deep_url` for that resource.
 
-    There are also additional routes in this fintion that lead to legacies views that serve bytes for that files guid,
+    There are also additional routes in this function that lead to legacies views that serve bytes for that files guid,
     for example the url `/<file-guid>/?action=download` a response for file data is served.
     '''
 
