@@ -257,17 +257,6 @@ def ember_app(path=None):
                         preprint = Preprint.load(guid_str)
                         if preprint and preprint._id != guid_str:
                             return redirect(f"{settings.DOMAIN}preprints/{path_values[0]}/{preprint._id}", code=302)
-                        if preprint:
-                            from framework.auth import Auth
-                            auth = Auth.from_kwargs(request.args.to_dict(), {})
-                            if not preprint.can_view(auth):
-                                if preprint.is_pending_moderation:
-                                    renderer = OsfWebRenderer('pending_moderation.mako', trust=False)
-                                    return renderer({
-                                        'resource_type': (preprint.provider.preprint_word or 'preprint') if preprint.provider else 'preprint',
-                                        'provider_name': preprint.provider.name if preprint.provider else 'OSF',
-                                    })
-                                raise HTTPError(http_status.HTTP_404_NOT_FOUND)
                 # For all other cases, let ember app handle it
                 ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
             break
