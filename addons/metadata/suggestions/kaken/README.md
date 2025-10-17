@@ -33,8 +33,8 @@ ResourceSync Client → Transformer → Elasticsearch (kaken_researchers)
   it is not used as `_id`.
 
 ### 2. Celery Tasks
-- **sync_kaken_data**: Periodic data synchronization (daily at 2:00 UTC)
-- **cleanup_old_sync_logs**: Old log cleanup (weekly on Sunday at 3:00 UTC)
+- **sync_kaken_data**: Periodic data synchronization (daily at 2:00 JST)
+- **cleanup_old_sync_logs**: Old log cleanup (weekly on Sunday at 3:00 JST)
 
 ### 3. Suggestion API
 - **suggest_kaken()**: Searches KAKEN data based on user input
@@ -102,7 +102,7 @@ Notes:
 
 ## Usage
 
-**Production Environment**: Automatically synchronized (daily at 2:00 UTC). No manual operations required.
+**Production Environment**: Automatically synchronized (daily at 2:00 JST). No manual operations required.
 
 **Development Environment**: Manual execution required due to Celery Beat not being defined.
 
