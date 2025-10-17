@@ -258,7 +258,7 @@ class TestComponents(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
-        # A non-project componenet
+        # A non-project component
         self.component = NodeFactory(
             category='hypothesis',
             creator=self.user,
@@ -426,7 +426,7 @@ class TestShortUrls(OsfTestCase):
         self.auth = self.user.auth
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        # A non-project componenet
+        # A non-project component
         self.component = NodeFactory(parent=self.project, category='hypothesis', creator=self.user)
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
