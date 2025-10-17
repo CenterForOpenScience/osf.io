@@ -61,7 +61,7 @@ class TestDomainExtraction:
         domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
 
-    def test_extract_domains__unverfied_if_does_not_resolve(self, mock_spam_head_request):
+    def test_extract_domains__unverified_if_does_not_resolve(self, mock_spam_head_request):
         mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.ConnectionError
         sample_text = 'This.will.not.connect'
 
