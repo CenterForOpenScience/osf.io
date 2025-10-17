@@ -41,7 +41,7 @@ class MetricsViewMixin:
 
     @property
     def metric_map(self):
-        raise NotImplementedError('MetricsViewMixin sublcasses must define a metric_map class variable.')
+        raise NotImplementedError('MetricsViewMixin subclasses must define a metric_map class variable.')
 
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         """Return a queryset annotated with metrics. Use for list endpoints that expose metrics."""
