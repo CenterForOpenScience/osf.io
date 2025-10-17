@@ -1,5 +1,5 @@
 # Drive credentials
-CLIENT_ID = 'chaneme'
+CLIENT_ID = 'changeme'
 CLIENT_SECRET = 'changeme'
 
 #https://developers.google.com/identity/protocols/OAuth2#expiration
