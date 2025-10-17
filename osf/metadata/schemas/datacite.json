@@ -166,7 +166,7 @@
       }
     },
     "contributors": {
-      "description": "The institution or person responsible for collecting, creating, or otherwise contributing to the developement of the dataset. The personal name format should be: Family, Given.",
+      "description": "The institution or person responsible for collecting, creating, or otherwise contributing to the development of the dataset. The personal name format should be: Family, Given.",
       "type": "array",
       "items": {
         "type": "object",
