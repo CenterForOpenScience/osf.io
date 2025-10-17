@@ -317,7 +317,7 @@ def mock_spam_head_request():
         yield mock_spam_head_request
 
 
-def rolledback_transaction(loglabel):
+def rolled_back_transaction(loglabel):
     class ExpectedRollback(Exception):
         pass
     try:
@@ -342,7 +342,7 @@ def _class_scoped_db(django_db_setup, django_db_blocker):
     referencing directly.
     """
     with django_db_blocker.unblock():
-        yield from rolledback_transaction('class_transaction')
+        yield from rolled_back_transaction('class_transaction')
 
 
 @pytest.fixture(scope='function')
@@ -360,7 +360,7 @@ def with_class_scoped_db(_class_scoped_db):
             return HelpfulThingFactory()
     ```
     """
-    yield from rolledback_transaction('function_transaction')
+    yield from rolled_back_transaction('function_transaction')
 
 @pytest.fixture()
 def mock_send_grid():
