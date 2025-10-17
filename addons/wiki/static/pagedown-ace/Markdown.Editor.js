@@ -2151,7 +2151,7 @@ $(function(){
         //  d) at least one line fulfills a)
         //
         // Since this is essentially a backwards-moving regex, it's susceptible to
-        // catstrophic backtracking and can cause the browser to hang;
+        // catastrophic backtracking and can cause the browser to hang;
         // see e.g. http://meta.stackoverflow.com/questions/9807.
         //
         // Hence we replaced this by a simple state machine that just goes through the
