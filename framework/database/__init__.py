@@ -19,7 +19,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
       - a <str> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
-    :param bool allow_deleted: allow deleleted records?
+    :param bool allow_deleted: allow deleted records?
     :param str display_name:
     :raises: HTTPError(404) if the record does not exist
     :raises: HTTPError(400) if no unique record is found
