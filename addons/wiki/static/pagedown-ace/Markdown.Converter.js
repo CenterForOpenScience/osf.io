@@ -172,7 +172,7 @@ else
 
             // attacklab: Replace ~ with ~T
             // This lets us use tilde as an escape char to avoid md5 hashes
-            // The choice of character is arbitray; anything that isn't
+            // The choice of character is arbitrary; anything that isn't
             // magic in Markdown will work.
             text = text.replace(/~/g, "~T");
 
