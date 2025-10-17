@@ -118,7 +118,7 @@ class ArchiverTask(celery.Task):
         dst.save()
 
         sentry.log_message(
-            f'An error occured while archiving node: {src._id} and registration: {dst._id}',
+            f'An error occurred while archiving node: {src._id} and registration: {dst._id}',
             extra_data={
                 'source node guid': src._id,
                 'registration node guid': dst._id,
