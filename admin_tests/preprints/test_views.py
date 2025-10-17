@@ -358,7 +358,7 @@ class TestPreprintView:
 class TestPreprintReindex:
 
     def test_reindex_preprint_share(self, preprint, req, mock_update_share):
-        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
+        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trench coat in the summer'
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
