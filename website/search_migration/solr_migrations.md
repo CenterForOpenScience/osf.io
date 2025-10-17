@@ -15,7 +15,7 @@ Our Solr schema has 12 main fields:
 	*_public
 	*_wiki
 	*_description
-	*_url -- we wont search on url so it is not indexed, but we're keeping it so we cna
+	*_url -- we wont search on url so it is not indexed, but we're keeping it so we can
 	navigate to the project
 	*_tags -- this is a multivalued values, meaning that it can have multiple values.
 	components can have multiple tags, so this field is multivalued
