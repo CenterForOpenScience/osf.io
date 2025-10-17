@@ -938,7 +938,7 @@ class TestClaimViews(OsfTestCase):
         assert self.mock_send_grid.called
 
     def test_claim_user_post_if_email_is_different_from_given_email(self):
-        email = fake_email()  # email that is different from the one the referrer gave
+        email = fake_email()  # email that is different from the one given by the referrer
         url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
         self.app.post(url, json={'value': email, 'pk': self.user._primary_key} )
         assert self.mock_send_grid.called
