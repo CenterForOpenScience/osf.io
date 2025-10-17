@@ -60,7 +60,7 @@ def check_user(user):
     property of the user object. See ``created_by_external_idp_and_unconfirmed()`` for details.
 
     :param user: the user object to check
-    :raises `UnconfirmedAccountError` if the user was created via default useraname / password
+    :raises `UnconfirmedAccountError` if the user was created via default username / password
         sign-up, or if via ORCiD login with pending status "LINK" or "CREATE" to confirm
     :raises `UnclaimedAccountError` if the user was created as an unregistered contributor of a
         project or group waiting to be claimed
