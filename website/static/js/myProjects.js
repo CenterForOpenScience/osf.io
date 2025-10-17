@@ -259,7 +259,7 @@ NodeFetcher.prototype = {
           this._flat.push(results.data[i]);
 
       if (this._cache[results.data[i].id]) continue;
-      this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
+      this._cache[results.data[i].id] = _formatDataForPO(results.data[i]);
       this._cache[results.data[i].id].children = [];
 
       this._orphans = this._orphans.filter((function(item) {
@@ -299,7 +299,7 @@ NodeFetcher.prototype = {
     for(var i = 0; i < results.data.length; i++) {
       //TODO Sorting get a bit broken here @chrisseto
       if (this._cache[parent.id].children.find(finder.bind(this, results.data[i].id))) continue;
-      this._cache[results.data[i].id] = _formatDataforPO(results.data[i]);
+      this._cache[results.data[i].id] = _formatDataForPO(results.data[i]);
       results.data[i].children = [];
       this._cache[parent.id].children.push(results.data[i]);
     }
@@ -346,7 +346,7 @@ function getUID() {
 }
 
 /* Adjust item data for treebeard to be able to filter tags and contributors not in the view */
-function _formatDataforPO(item) {
+function _formatDataForPO(item) {
     item.kind = 'folder';
     item.uid = item.id;
     item.name = $osf.decodeText(item.attributes.title);
@@ -755,7 +755,7 @@ var MyProjects = {
             }
             for (var i = begin; i < data.length; i++){
                 item = data[i];
-                _formatDataforPO(item);
+                _formatDataForPO(item);
                 var child = self.buildTree()(item, self.treeData());
                 self.treeData().add(child);
             }
@@ -1131,7 +1131,7 @@ var MyProjects = {
                 updateFilesData : ctrl.updateFilesData,
                 LinkObject : LinkObject,
                 NodeFetcher : NodeFetcher,
-                formatDataforPO : _formatDataforPO,
+                formatDataForPO : _formatDataForPO,
                 wrapperSelector : args.wrapperSelector,
                 resetUi : ctrl.resetUi,
                 showSidebar : ctrl.showSidebar,
