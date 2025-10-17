@@ -236,7 +236,7 @@ def archive_addon(addon_short_name, job_pk):
     params = {'cookie': cookie}
     rename_suffix = ''
     # The dataverse API will not differentiate between published and draft files
-    # unless expcicitly asked. We need to create seperate folders for published and
+    # unless explicitly asked. We need to create seperate folders for published and
     # draft in the resulting archive.
     #
     # Additionally trying to run the archive without this distinction creates a race
