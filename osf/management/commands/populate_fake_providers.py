@@ -143,7 +143,7 @@ COLLECTION_PROVIDERS = [
             'title': 'Very bouncy things',
             'collected_type_choices': [
                 'Forgotten',
-                'Remebered',
+                'Remembered',
             ],
             'status_choices': [
                 'In-progress',
