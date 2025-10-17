@@ -2847,7 +2847,7 @@ links will appear the same, regardless of whether you are logged in or not.
 - Project deletion events are logged.
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
-install` to installthem.
+install` to install them.
 - Developers: Various improvements to logging.
 - Developers: ``URLLookup`` class is deprecated. Use ``api_url_for`` and
 ``web_url_for`` in your tests.
