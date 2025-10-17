@@ -167,7 +167,7 @@ COLLECTION_PROVIDERS = [
             'is_public': True,
             'is_promoted': True,
             'is_bookmark_collection': False,
-            'title': 'Future predections',
+            'title': 'Future predictions',
             'collected_type_choices': [
                 'project',
                 'paper',
