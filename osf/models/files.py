@@ -320,7 +320,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
-        # Resvolve primary key on first touch
+        # Resolve primary key on first touch
         self.save()
         # For backwards compatibility
         revision = revision or kwargs.get(self.version_identifier)
