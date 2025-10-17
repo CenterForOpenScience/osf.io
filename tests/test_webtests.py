@@ -1072,7 +1072,7 @@ class TestAUserProfile(OsfTestCase):
         # User has no public components/projects
         res = self.app.get(url, auth=self.me.auth)
         assert 'This user has no public projects' in res
-        assert 'This user has no public components'in res
+        assert 'This user has no public components' in res
 
     # regression test
     def test_does_not_show_registrations(self):

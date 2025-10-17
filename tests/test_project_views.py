@@ -143,7 +143,7 @@ class TestProjectViews(OsfTestCase):
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
         assert 'Private Project' not in res.text
-        assert 'parent project'in res.text
+        assert 'parent project' in res.text
 
     def test_edit_description(self):
         self.app.post(
@@ -387,7 +387,7 @@ class TestProjectViews(OsfTestCase):
 
         url = project.api_url_for('view_project')
         res = self.app.get(url, auth=user.auth)
-        assert 'fork_count'in res.json['node']
+        assert 'fork_count' in res.json['node']
         assert 1 == res.json['node']['fork_count']
 
     def test_registration_retraction_redirect(self):
