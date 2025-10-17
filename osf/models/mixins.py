@@ -511,7 +511,7 @@ class AddonModelMixin(models.Model):
     def get_addons(self, service_type: str | None = None, in_request_context: bool = True, auth=None):
         '''
         This gets all a user's addons whether that user is the model user (self.) or the user making the request (the
-        user signing off on whatever auth mechicanism such as token or basic auth.
+        user signing off on whatever auth mechanism such as token or basic auth.
 
         service_type is the addon type such as "storage" or "citations"
         in_request_context is the addon for the requesting user? or is it outside the request context.
