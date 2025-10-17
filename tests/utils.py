@@ -229,7 +229,6 @@ def run_celery_tasks():
 
 import re, html as html_lib, difflib
 
-
 # Matches a wide range of ISO-like datetimes (with optional microseconds and timezone)
 _ISO_DT = re.compile(
     r'\b\d{4}-\d{2}-\d{2}[ T]'
@@ -256,7 +255,7 @@ def _canon_html(s: str) -> str:
     return s
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True, passthrough: bool = False):
+def capture_notifications(capture_email: bool = True, passthrough: bool = False, expect_none: bool = False):
     """
     Capture NotificationType.emit calls and (optionally) email sends.
     Surfaces helpful template errors if rendering fails.
@@ -330,6 +329,13 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
             stack.enter_context(p)
         yield captured
 
+    if expect_none:
+        if captured['emits']:
+            raise AssertionError(
+                f'{len(captured['emails'])} notifications were emitted. '
+                'Expected at 0'
+            )
+        return
     if not captured['emits']:
         raise AssertionError(
             'No notifications were emitted. '
