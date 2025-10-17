@@ -12,7 +12,7 @@ def update_old_sanction_states():
     '''Fix out-of-date states for Embargo and Retraction objects.
 
     https://github.com/CenterForOpenScience/osf.io/pull/3919 homogenized a lot
-    of the code behind the Embargo and Retraction objecs as part of introducing
+    of the code behind the Embargo and Retraction objects as part of introducing
     the RegistrationApproval. It abruptly changed the acceptable states for
     these models without updating existing values for them. This command
     will bring them up-to-date.
