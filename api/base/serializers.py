@@ -990,7 +990,7 @@ class RelationshipField(ser.Field):
 class TypedRelationshipField(RelationshipField):
     """ Overrides get_url to inject a typed namespace.
 
-        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+        Assumption: Namespaces for each type MUST be the same as the dashed JSONAPI-type
     """
 
     def get_url(self, obj, view_name, request, format):
