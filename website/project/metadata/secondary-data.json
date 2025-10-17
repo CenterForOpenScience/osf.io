@@ -248,7 +248,7 @@
             "qid": "q25",
             "nav": "Assumption Violation/ Model Non-Convergence",
             "title": "Assumption Violation/ Model Non-Convergence",
-            "description": "What will you do should your data violate assumptions, your model not converge, or some otheranalytic problem arises?",
+            "description": "What will you do should your data violate assumptions, your model not converge, or some other analytic problem arises?",
             "help": "When the distribution of the number of volunteering hours (gv111re) is significantly non-normal according to the Kolmogorov-Smirnov test and/or (b) the linearity assumption is violated (i.e., the points are asymmetrically distributed around the diagonal line when plotting observed versus the predicted values), we will log-transform the variable.",
             "type": "string",
             "format": "textarea"
