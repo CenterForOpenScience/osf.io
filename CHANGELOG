@@ -1759,7 +1759,7 @@ Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprint
 0.101.0 (2016-11-23)
 ====================
 - Fix renaming, download button, zip is broken on GitHub non-default branch
-- Prevent 500 error when oving a folder from a OSF in component to OSF storage in parent
+- Prevent 500 error when moving a folder from a OSF in component to OSF storage in parent
 - Ensure IE can view files in a VOL
 - Improve error messaging for attempted moves/deletes of primary file on private preprint project
 - Make comment reply filter work
