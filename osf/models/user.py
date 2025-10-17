@@ -356,7 +356,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'scholar': <google scholar identifier>,
     #     'ssrn': <SSRN username>,
     #     'researchGate': <researchGate username>,
-    #     'baiduScholar': <bauduScholar username>,
+    #     'baiduScholar': <baiduScholar username>,
     #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
