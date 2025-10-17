@@ -345,7 +345,7 @@ class Registration(AbstractNode):
     def updatable(self):
         '''Boolean that tells whether a Registration should support adding new SchemaResponses.
 
-        By convention, in order to allow internal flexiblity, this is used to limit creation of
+        By convention, in order to allow internal flexibility, this is used to limit creation of
         SchemaResponses through the API but not on the models.
         '''
         if self.deleted or self.is_retracted:
