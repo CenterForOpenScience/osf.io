@@ -946,7 +946,7 @@ $(function(){
             */
         };
 
-        // Gets a collection of HTML chunks from the inptut textarea.
+        // Gets a collection of HTML chunks from the input textarea.
         this.getChunks = function () {
 
             var chunk = new Chunks();
