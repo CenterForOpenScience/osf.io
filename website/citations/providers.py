@@ -170,7 +170,7 @@ class CitationsProvider:
         return {'result': result}
 
     def widget(self, node_addon):
-        """Serializes settting needed to build the widget"""
+        """Serializes setting needed to build the widget"""
         ret = node_addon.config.to_json()
         ret.update({
             'complete': node_addon.complete,
