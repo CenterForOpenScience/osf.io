@@ -107,6 +107,6 @@ def test_primitivify_rdf():
         ({(9, (8, rdflib.BNode())), 7}),
         {'di': {rdflib.BNode(): 'hi'}},
     ]
-    for errory_input in should_raise_error:
+    for error_input in should_raise_error:
         with pytest.raises(ValueError):
-            rdfutils.primitivify_rdf(errory_input)
+            rdfutils.primitivify_rdf(error_input)
