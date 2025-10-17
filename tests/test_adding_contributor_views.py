@@ -820,7 +820,7 @@ class TestClaimViews(OsfTestCase):
         url_with_service_ticket = f'{url}?ticket={service_ticket}'
         res = self.app.get(url_with_service_ticket)
         # The response of this request is expected to be a 302 with `Location`.
-        # And the redirect URL must equal to the originial service URL
+        # And the redirect URL must equal to the original service URL
         assert res.status_code == 302
         redirect_url = res.headers['Location']
         assert redirect_url == url
