@@ -144,7 +144,7 @@ class NodeLog(ObjectIDMixin, BaseModel):
     MIGRATED_QUICK_FILES = 'migrated_quickfiles'
 
     RESOURCE_ADDED = 'resource_identifier_added'
-    RESOURCE_UPDATED = 'resource_identifier_udpated'
+    RESOURCE_UPDATED = 'resource_identifier_updated'
     RESOURCE_REMOVED = 'resource_identifier_removed'
 
     actions = ([CHECKED_IN, CHECKED_OUT, FILE_TAG_REMOVED, FILE_TAG_ADDED, CREATED_FROM, PROJECT_CREATED,
