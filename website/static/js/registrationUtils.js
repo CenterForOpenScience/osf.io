@@ -461,7 +461,7 @@ var MetaSchema = function(params, schemaData) {
     self.schema = params.schema || {};
     self.id = params.id;
 
-    // Used for initally selecting a schema
+    // Used for initially selecting a schema
     self._selected = ko.observable(false);
 
     self.requiresApproval = params.requires_approval || false;
