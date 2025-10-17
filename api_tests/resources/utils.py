@@ -19,7 +19,7 @@ TEST_EXTERNAL_PID = 'This is a doi'
 # PENDING_WITHDRAW_REQUEST and PENDING_WITHDRAW (overlaps ACCEPTED)
 # REVERTED (overlaps REJECTED)
 #
-# Techncically PENDING and EMBARGO overlap as well, but worth confirming EMBARGO behavior
+# Technically PENDING and EMBARGO overlap as well, but worth confirming EMBARGO behavior
 STATE_VISIBILITY_MAPPINGS = {
     RegStates.INITIAL: {'public': False, 'deleted': False},
     RegStates.PENDING: {'public': False, 'deleted': False},
