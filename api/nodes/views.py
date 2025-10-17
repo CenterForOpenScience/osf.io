@@ -1170,7 +1170,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'path':
             operation['source_field_name'] = '_path'
         # NOTE: This is potentially fragile, if we ever add filtering on provider
-        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
+        # we're going to have to get a bit tricky. get_default_queryset should retain filtering on BaseFileNode, for now
         if field_name == 'kind':
             if operation['value'].lower() == 'folder':
                 kind = Folder
