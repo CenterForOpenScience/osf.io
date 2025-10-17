@@ -78,7 +78,7 @@ def create_bucket(node_settings, bucket_name, location=''):
 
 
 def bucket_exists(access_key, secret_key, bucket_name):
-    """Tests for the existance of a bucket and if the user
+    """Tests for the existence of a bucket and if the user
     can access it with the given keys
     """
     if not bucket_name:
