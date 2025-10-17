@@ -422,7 +422,7 @@ class TestParentNode:
         assert set(project_affiliations) != set(user_affiliations)
         assert set(template_affiliations) == set(user_affiliations)
 
-    def test_teplate_project_child_has_correct_parent(self, template):
+    def test_template_project_child_has_correct_parent(self, template):
         template_child = NodeFactory(parent=template)
         assert template_child.parent_node._id == template._id
 
