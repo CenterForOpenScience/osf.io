@@ -942,7 +942,7 @@ class TestContributorMethods:
         node.save()
         assert len(node.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, node, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, node, auth):
         new_user = node.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         node.save()

@@ -1379,7 +1379,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
     def copy_contributors_from(self, resource):
         """
-        Copies the contibutors from the resource (including permissions and visibility)
+        Copies the contributors from the resource (including permissions and visibility)
         into this draft registration.
         Visibility, order, draft, and user are stored in DraftRegistrationContributor table.
         Permissions are stored in guardian tables (use add_permission)

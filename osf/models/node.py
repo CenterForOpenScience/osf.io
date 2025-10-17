@@ -1319,7 +1319,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             next_parent = next_parent.parent_node
 
     def copy_contributors_from(self, resource):
-        """Copies the contibutors from node (including permissions and visibility) into this node."""
+        """Copies the contributors from node (including permissions and visibility) into this node."""
         contribs = []
         current_contributors = self.contributor_set.values_list('user_id', flat=True)
         for contrib in resource.contributor_set.all():

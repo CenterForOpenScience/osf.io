@@ -19,7 +19,7 @@ def main():
         qs = AbstractNode.objects.filter(creator__isnull=True)
         logger.info(f'Found {qs.count()} nodes with no creator')
         for node in AbstractNode.objects.filter(creator__isnull=True):
-            logger.info(f'Setting the creator for AbstractNode {node._id} to the first contrbutor')
+            logger.info(f'Setting the creator for AbstractNode {node._id} to the first contributor')
             AbstractNode.objects.filter(id=node.id).update(creator=node.contributors.first())
         if dry:
             raise Exception('Abort Transaction - Dry Run')
