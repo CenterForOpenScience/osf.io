@@ -1153,7 +1153,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_user.get_claim_url(pid, external=True) ==
-            f'{domain}user/{uid}/{pid}/claim/?token={token}'
+            f'{domain}legacy/user/{uid}/{pid}/claim/?token={token}'
         )
 
         # test_unreg_moderator
@@ -1163,7 +1163,7 @@ class TestUnregisteredUser:
         domain = settings.DOMAIN
         assert (
             unreg_moderator.get_claim_url(pid, external=True) ==
-            f'{domain}user/{uid}/{pid}/claim/?token={token}'
+            f'{domain}legacy/user/{uid}/{pid}/claim/?token={token}'
         )
 
     def test_get_claim_url_raises_value_error_if_not_valid_pid(self, unreg_user, unreg_moderator):

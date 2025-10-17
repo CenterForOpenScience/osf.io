@@ -857,7 +857,7 @@ def make_url_map(app):
         # user will be required to set email and password
         # claim token must be present in query parameter
         Rule(
-            ['/user/<uid>/<pid>/claim/'],
+            ['/legacy/user/<uid>/<pid>/claim/'],
             ['get', 'post'],
             project_views.contributor.claim_user_form,
             OsfWebRenderer('claim_account.mako', trust=False)
