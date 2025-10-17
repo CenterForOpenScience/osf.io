@@ -233,7 +233,7 @@ class TestChangeSchemas:
     def test_post(self, view, req, schema, provider):
         schema_id = schema.id
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             str(schema_id): ['on']
         }
 
@@ -291,7 +291,7 @@ class TestEditModerators:
     def test_post_remove(self, remove_moderator_view, req, moderator, provider):
         moderator_id = f'Moderator-{moderator.id}'
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             moderator_id: ['on']
         }
 
@@ -307,7 +307,7 @@ class TestEditModerators:
 
     def test_post_add(self, add_moderator_view, req, user, provider):
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             'add-moderators-form': [user._id],
             'moderator': ['Add Moderator']
         }
@@ -324,7 +324,7 @@ class TestEditModerators:
 
         # try to add the same user, but another group
         req.POST = {
-            'csrfmiddlewaretoken': 'fake csfr',
+            'csrfmiddlewaretoken': 'fake csrf',
             'add-moderators-form': [user._id],
             'admin': ['Add Admin']
         }
