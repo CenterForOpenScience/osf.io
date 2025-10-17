@@ -481,7 +481,7 @@ class JSONAPIRelationship:
 
 
 def _extract_relationships(jsonapi_relationships_data):
-    '''Converts  the `relationship entrie from a JSONAPI into a dict of JSONAPIRelationships keyed by name.'''
+    '''Converts  the `relationship entries from a JSONAPI into a dict of JSONAPIRelationships keyed by name.'''
     relationships_by_name = {}
     for relationship_name, relationship_entry in jsonapi_relationships_data.items():
         if relationship_entry is not None:
