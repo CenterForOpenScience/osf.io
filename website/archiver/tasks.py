@@ -341,7 +341,7 @@ def archive_success(self, dst_pk, job_pk):
     notes about utils.get_file_map: 1) this function memoizes previous results to reduce
     overhead and 2) this function returns a generator that lazily fetches the file metadata
     of child Nodes (it is possible for a selected file to belong to a child Node) using a
-    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    non-recursive DFS. Combined this allows for a relatively efficient implementation with
     seemingly redundant calls.
     """
     create_app_context()
