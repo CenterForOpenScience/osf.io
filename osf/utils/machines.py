@@ -345,7 +345,7 @@ class ApprovalsMachine(Machine):
     The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
     The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
 
-    The ApprovaslMachine can be used by by instantiating an ApprovalsMachine and attaching the
+    The ApprovalsMachine can be used by by instantiating an ApprovalsMachine and attaching the
     desired model with the 'model' kwarg. Attached models will inherit the 'trigger' functions
     named in the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
 
@@ -356,7 +356,7 @@ class ApprovalsMachine(Machine):
     4) Update the state field of the Sanction object via the approval_stage setter
     5) Call Sanction member functions listed in the 'after' key of the dictionary
 
-    Attached models must define the callbacks used by the ApprvalsMachine:
+    Attached models must define the callbacks used by the ApprovalsMachine:
     * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
     * revisable: Determines what transiition to follow on a 'reject' trigger
     * `_on_submit', '_on_approve', '_on_complete', and '_on_reject': Define any custom per-trigger logic

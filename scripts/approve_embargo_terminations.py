@@ -1,5 +1,5 @@
 """EmbargoTerminationApprovals are the Sanction subclass that allows users
-to make Embargoes public before the official end date. Like RegistrationAprpovals
+to make Embargoes public before the official end date. Like RegistrationApprovals
 and Embargoes, if an admin fails to approve or reject this request within 48
 hours it is approved automagically.
 
