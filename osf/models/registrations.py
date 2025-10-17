@@ -385,7 +385,7 @@ class Registration(AbstractNode):
     def provider_specific_metadata(self):
         """Surfaces the additional_metadata fields supported by the provider.
 
-        Also formats the reults to inherit any additional field descriptors defined
+        Also formats the results to inherit any additional field descriptors defined
         by the provider and to simplify consumption by the API.
         """
         additional_metadata = self.additional_metadata or {}
