@@ -89,7 +89,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 - Crossref DOIs not minting with _v1, OSF is displaying DOI versions with _v1
 - When hamming a spammed user, preprints and registrations remain private
 - Fix embargoed registrations not becoming public after admin date change
-- Add v2 enpoint for alternative email confirmation
+- Add v2 endpoint for alternative email confirmation
 - Make relationship on v2/nodes for collected_in
 - API V2: get action reviews request not listing latest preprint submit/withdraw requests
 - Add ability for admin app to change registry that a registration belongs to
