@@ -421,7 +421,7 @@ class TestSchemaResponseDetailPATCHBehavior:
     the SchemaResponse should appear in the list of "updated_response_keys".
 
     Requests that pass an unsupported key in "revision_responses" should return a 400 error,
-    while requests against a SchemaResponse in a state other than IN_PROGRESS shoudl 409.
+    while requests against a SchemaResponse in a state other than IN_PROGRESS should 409.
     '''
 
     @pytest.fixture()
