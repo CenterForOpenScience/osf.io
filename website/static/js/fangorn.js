@@ -50,7 +50,7 @@ var STATE_MAP = {
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 var READ_ONLY_ADDONS = ['bitbucket', 'gitlab'];
 var MOVE_INTERVAL;
-var MILLSECOND_PER_MOVE_REQUEST = 500;
+var MILLISECOND_PER_MOVE_REQUEST = 500;
 
 var CONFLICT_INFO = {
     skip: {
@@ -2715,7 +2715,7 @@ function _dropLogic(event, items, folder) {
                 } else {
                     MOVE_INTERVAL = clearInterval(MOVE_INTERVAL);
                 }
-            }, MILLSECOND_PER_MOVE_REQUEST);
+            }, MILLISECOND_PER_MOVE_REQUEST);
         }
     }
 
