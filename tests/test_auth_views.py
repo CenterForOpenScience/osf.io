@@ -624,7 +624,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == cas.get_login_url(self.next_url, campaign='institution')
 
-    def test_institution_regsiter_with_auth(self):
+    def test_institution_register_with_auth(self):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
