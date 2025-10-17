@@ -55,7 +55,7 @@ class TestParseDatetimes:
             assert True
 
     @mock.patch('api.metrics.utils.timezone.now')
-    def test_time_used_for_specifc_date_fails(self, mock_timezone, start_date, end_date):
+    def test_time_used_for_specific_date_fails(self, mock_timezone, start_date, end_date):
         mock_timezone.return_value = datetime(2019, 1, 4, tzinfo=timezone.utc)
         try:
             parse_datetimes({'on_date': f'{start_date}T01:01:01'})
