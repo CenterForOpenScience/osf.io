@@ -97,7 +97,7 @@ class TestApplicationList:
         assert res.json['data']['attributes']['client_id'] != sample_data['data']['attributes']['client_id']
         assert res.json['data']['attributes']['client_secret'] != sample_data['data']['attributes']['client_secret']
 
-    def test_creating_application_fails_if_callbackurl_fails_validation(
+    def test_creating_application_fails_if_callback_url_fails_validation(
             self, app, user, url, sample_data):
         data = copy.copy(sample_data)
         data['data']['attributes']['callback_url'] = 'itunes:///invalid_url_of_doom'
