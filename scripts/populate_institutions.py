@@ -243,7 +243,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cornell',
                 'name': 'Cornell University',
-                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPPA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
+                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPAA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp.cit.cornell.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
@@ -824,7 +824,7 @@ INSTITUTIONS = {
             {
                 '_id': 'usc',
                 'name': 'University of Southern California',
-                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
+                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPAA regulations</a>.',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': ['osf.usc.edu'],
@@ -1172,7 +1172,7 @@ INSTITUTIONS = {
             {
                 '_id': 'cornell',
                 'name': 'Cornell University [Test]',
-                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPPA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
+                'description': 'Supported by the Cornell Research Data Management Service Group and the Cornell University Library. The OSF service may not be used to store or transfer personally identifiable, confidential/restricted, HIPAA-regulated or any other controlled unclassified information. Learn more at <a href="https://data.research.cornell.edu">https://data.research.cornell.edu</a> | <a href="mailto:rdmsg-help@cornell.edu">rdmsg-help@cornell.edu</a>.',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://shibidp.cit.cornell.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-cornell.cos.io'],
@@ -1775,7 +1775,7 @@ INSTITUTIONS = {
             {
                 '_id': 'usc',
                 'name': 'University of Southern California [Test]',
-                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPPA regulations</a>.',
+                'description': 'Projects must abide by <a href="http://policy.usc.edu/info-security/">USC\'s Information Security Policy</a>. Data stored for human subject research repositories must abide by <a href="http://policy.usc.edu/biorepositories/">USC\'s Biorepository Policy</a>. The OSF may not be used for storage of Personal Health Information that is subject to <a href="http://policy.usc.edu/hipaa/">HIPAA regulations</a>.',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('urn:mace:incommon:usc.edu')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-usc.cos.io'],
