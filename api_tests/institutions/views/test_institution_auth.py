@@ -596,9 +596,9 @@ class TestInstitutionAuth:
 
     def test_multiple_emails_failure_existing_user(self, app, institution, url_auth_institution):
         username, second_email, fullname, password = 'user_mefeu_a', 'user_mefeu_b@user.edu', 'Fake User', 'FuAsKeEr'
-        existing_uesr = make_user(username, fullname)
-        existing_uesr.set_password(password)
-        existing_uesr.save()
+        existing_user = make_user(username, fullname)
+        existing_user.set_password(password)
+        existing_user.save()
         sso_email = f'{username};{second_email}'
         with capture_signals() as mock_signals:
             res = app.post(
