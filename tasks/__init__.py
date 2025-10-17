@@ -240,7 +240,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=True, all=Tru
         inv requirements
         inv requirements --all
 
-    You should use --all for updating your developement environment.
+    You should use --all for updating your development environment.
     --all will install (in order): addons, dev and the base requirements.
 
     By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base

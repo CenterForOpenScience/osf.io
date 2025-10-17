@@ -42,7 +42,7 @@
             "nav": "Status",
             "type": "choose",
             "format": "singleselect",
-            "options": [ "In Developement", "Ongoing", "Completed", "Stopped" ],
+            "options": [ "In Development", "Ongoing", "Completed", "Stopped" ],
             "title": "Status",
             "description": "What is the status of your study?",
             "help": "",
