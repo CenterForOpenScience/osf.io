@@ -681,7 +681,7 @@ veer_registration_metadata = {
                 'value': {
                     'question4b': {
                         'comments': [],
-                        'value': 'these are the preselection rults',
+                        'value': 'these are the preselection rules',
                         'extra': []
                     },
                     'question7b': {
@@ -1176,7 +1176,7 @@ veer_condensed = {
                 'value': {
                     'question4b': {
                         'comments': [],
-                        'value': 'these are the preselection rults',
+                        'value': 'these are the preselection rules',
                         'extra': []
                     },
                     'question7b': {
@@ -1506,7 +1506,7 @@ veer_registration_responses = {
     'description-methods.design.question3b': 'These variables are acting as covariates.',
     'confirmatory-analyses-further.further.question2c': 'i used a common statistical technique',
     'description-methods.exclusion-criteria.question8b': 'these are failing check-tests',
-    'description-methods.planned-sample.question4b': 'these are the preselection rults',
+    'description-methods.planned-sample.question4b': 'these are the preselection rules',
     'confirmatory-analyses-second.second.question3c': 'it was the covariate',
     'dataCollectionDates': '2020 - 2030',
     'recommended-analysis.specify.question6c': 'I used a method of correction for multiple tests',
@@ -1780,7 +1780,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['description-methods.design.question3b'] == 'These variables are acting as covariates.'
         assert responses['confirmatory-analyses-second.second.question1c'] == 'how 2nd prediction calculated'
         assert responses['description-methods.exclusion-criteria.question8b'] == 'these are failing check-tests'
-        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rults'
+        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rules'
         assert responses['confirmatory-analyses-second.second.question3c'] == 'it was the covariate'
         assert responses['recommended-analysis.specify.question6c'] == 'I used a method of correction for multiple tests'
         assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technicque'
@@ -2013,7 +2013,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['description-methods.design.question3b'] == 'These variables are acting as covariates.'
         assert responses['confirmatory-analyses-second.second.question1c'] == 'how 2nd prediction calculated'
         assert responses['description-methods.exclusion-criteria.question8b'] == 'these are failing check-tests'
-        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rults'
+        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rules'
         assert responses['confirmatory-analyses-second.second.question3c'] == 'it was the covariate'
         assert responses['recommended-analysis.specify.question6c'] == 'I used a method of correction for multiple tests'
         assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technicque'
