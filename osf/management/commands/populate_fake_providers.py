@@ -146,7 +146,7 @@ COLLECTION_PROVIDERS = [
                 'Remebered',
             ],
             'status_choices': [
-                'In-progess',
+                'In-progress',
                 'Almost done',
                 'Complete',
             ],
