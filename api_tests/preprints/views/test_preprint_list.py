@@ -371,7 +371,7 @@ class TestPreprintCreate(ApiTestCase):
             'manual_guid': self.manual_guid,
         }
 
-    def test_fail_create_prerprint_with_manual_guid(self):
+    def test_fail_create_preprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 400
