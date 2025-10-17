@@ -316,7 +316,7 @@ class TestResourceDetailPATCHBehavior:
         assert resp.json['errors'][0]['source']['pointer'] == '/data/attributes/resource_type'
 
     def test_patch__pid__updates_identifier(self, app):
-        # For futher nuances of update behavior see osf_tests/test_outcomes
+        # For further nuances of update behavior see osf_tests/test_outcomes
         test_artifact, test_auth, _ = configure_test_preconditions()
         original_identifier = test_artifact.identifier
 
