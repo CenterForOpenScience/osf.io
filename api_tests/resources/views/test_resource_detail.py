@@ -479,7 +479,7 @@ class TestResourceDetailPATCHBehavior:
 
         payload = make_patch_payload(
             test_artifact,
-            new_description='Some new desciprtion',
+            new_description='Some new description',
             new_pid='Some new pid',
             new_resource_type=ArtifactTypes.UNDEFINED,
             is_finalized=True
