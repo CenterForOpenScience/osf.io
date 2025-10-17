@@ -179,7 +179,7 @@ class RegistrationSerializer(NodeSerializer):
         ),
     )
 
-    # Populated via annnotation
+    # Populated via annotation
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
     has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
     has_analytic_code = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
