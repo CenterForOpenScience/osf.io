@@ -674,7 +674,7 @@ class WaterButlerMixin:
             }
 
             # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
-            # preserves legacy behavior by distingishing them by version (Draft/Published).
+            # preserves legacy behavior by distinguishing them by version (Draft/Published).
             if attrs['provider'] == 'dataverse':
                 query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
 
