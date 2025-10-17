@@ -88,7 +88,7 @@ class CitationsProvider:
         pass
 
     def check_credentials(self, node_addon):
-        """Checkes validity of credentials"""
+        """Checks validity of credentials"""
         valid = True
         if node_addon.api.account:
             try:
