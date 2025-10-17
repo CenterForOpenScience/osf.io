@@ -312,7 +312,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.
         If revisions is None the created version is NOT and should NOT be saved
-        as there is no identifing information to tell if it needs to be updated or not.
+        as there is no identifying information to tell if it needs to be updated or not.
         Hits Waterbutler's metadata endpoint and saves the returned data.
         If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
         renderable HTML will be returned.
