@@ -78,7 +78,7 @@ class TestGetMetadataHook(HookTestCase):
         assert isinstance(res.json, list)
         assert res.json == []
 
-    def test_file_metdata(self):
+    def test_file_metadata(self):
         path = 'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()

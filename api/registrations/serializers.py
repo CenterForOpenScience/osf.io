@@ -625,7 +625,7 @@ class RegistrationSerializer(NodeSerializer):
             raise exceptions.PermissionDenied()
 
         # Fail if non-contributor moderator tries to edit
-        # fields other than provider_specific_metdata
+        # fields other than provider_specific_metadata
         if any(field != 'provider_specific_metadata' for field in validated_data) and not can_edit:
             raise exceptions.PermissionDenied()
 

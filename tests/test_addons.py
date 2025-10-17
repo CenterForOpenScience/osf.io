@@ -1650,7 +1650,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node.update(revision=None, user=None, data=data)
         mock_set_context.return_value.__enter__.return_value.set_extra.assert_called_once_with('session', {})
         mock_capture.assert_called_with(
-            'update() receives metatdata older than the newest entry in file history.',
+            'update() receives metadata older than the newest entry in file history.',
             level='error',
         )
 
