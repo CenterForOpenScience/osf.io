@@ -175,7 +175,7 @@ class TitleMixin(models.Model):
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
+        # Title hasn't changed after sanitization, bail out
         if original_title == new_title:
             return False
         self.title = new_title
