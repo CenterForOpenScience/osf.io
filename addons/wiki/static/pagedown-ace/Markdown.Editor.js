@@ -237,7 +237,7 @@ $(function(){
     function Chunks() { }
 
     // startRegex: a regular expression to find the start tag
-    // endRegex: a regular expresssion to find the end tag
+    // endRegex: a regular expression to find the end tag
     Chunks.prototype.findTags = function (startRegex, endRegex) {
 
         var chunkObj = this;
