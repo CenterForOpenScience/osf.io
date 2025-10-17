@@ -829,3 +829,16 @@ class NodeAddSystemTag(NodeMixin, FormView):
         resource.save()
 
         return super().form_valid(form)
+
+
+class NodeRemoveSystemTag(NodeMixin, View):
+    """ Allows authorized users to remove system tags from a node.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        resource = self.get_object()
+        tag = resource.system_tags_objects.get(id=kwargs['tag_id'])
+        resource.remove_tag(tag.name, auth=request.user)
+        return redirect(self.get_success_url())

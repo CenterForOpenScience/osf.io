@@ -21,6 +21,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/get_claim_urls/$', views.GetUserClaimLinks.as_view(), name='get-claim-urls'),
     re_path(r'^(?P<guid>[a-z0-9]+)/two-factor/disable/$', views.User2FactorDeleteView.as_view(), name='remove2factor'),
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/add/$', views.UserAddSystemTag.as_view(), name='add-system-tag'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.UserRemoveSystemTag.as_view(), name='remove-system-tag'),
     re_path(r'^(?P<guid>[a-z0-9]+)/get_confirmation/$', views.GetUserConfirmationLink.as_view(), name='get-confirmation'),
     re_path(r'^(?P<guid>[a-z0-9]+)/get_reset_password/$', views.GetPasswordResetLink.as_view(), name='get-reset-password'),
     re_path(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_user/$', views.UserReindexElastic.as_view(),

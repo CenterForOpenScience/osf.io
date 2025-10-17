@@ -170,7 +170,7 @@
                         {{ user.is_staff }}
                     </td>
                 </tr>
-                {% include "users/add_system_tags.html" with user=user %}
+                {% include "nodes/add_system_tags.html" with resource=user %}
                 {% include "nodes/spam_status.html" with resource=user %}
                 <tr>
                     <td>Preprints</td>

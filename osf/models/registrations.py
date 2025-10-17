@@ -1318,12 +1318,16 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return Tag.all_tags.filter(draftregistration_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this draft registration. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     @classmethod
     def create_from_node(cls, user, schema, node=None, data=None, provider=None):

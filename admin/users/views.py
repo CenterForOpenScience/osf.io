@@ -44,7 +44,7 @@ from admin.users.forms import (
     UserSearchForm,
     MergeUserForm
 )
-from admin.nodes.views import NodeAddSystemTag
+from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
 from api.users.services import send_password_reset_email
 from website.settings import DOMAIN
@@ -385,6 +385,12 @@ class User2FactorDeleteView(UserMixin, View):
 
 class UserAddSystemTag(UserMixin, NodeAddSystemTag):
     """ Allows authorized users to add system tags to a user.
+    """
+    permission_required = 'osf.change_osfuser'
+
+
+class UserRemoveSystemTag(UserMixin, NodeRemoveSystemTag):
+    """ Allows authorized users to remove system tags from a user.
     """
     permission_required = 'osf.change_osfuser'
 

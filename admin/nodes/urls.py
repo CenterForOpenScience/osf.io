@@ -47,4 +47,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/resync_datacite/$', views.NodeResyncDataCiteView.as_view(), name='resync-datacite'),
     re_path(r'^(?P<guid>[a-z0-9]+)/revert/$', views.NodeRevertToDraft.as_view(), name='revert-to-draft'),
     re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/add/$', views.NodeAddSystemTag.as_view(), name='add-system-tag'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.NodeRemoveSystemTag.as_view(), name='remove-system-tag'),
 ]

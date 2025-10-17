@@ -30,4 +30,5 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/make_published/$', views.PreprintMakePublishedView.as_view(), name='make-published'),
     re_path(r'^(?P<guid>\w+)/unwithdraw/$', views.PreprintUnwithdrawView.as_view(), name='unwithdraw'),
     re_path(r'^(?P<guid>\w+)/system_tags/add/$', views.PreprintAddSystemTag.as_view(), name='add-system-tag'),
+    re_path(r'^(?P<guid>\w+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.PreprintRemoveSystemTag.as_view(), name='remove-system-tag'),
 ]
