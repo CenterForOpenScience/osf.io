@@ -366,7 +366,7 @@ class ImportCollectionProvider(ImportProviderView):
             try:
                 collection_provider = self.create_or_update_provider(cleaned_result)
             except exceptions.ValidationError:
-                messages.error(request, 'A Validation Error occured, this JSON is invalid or shares an id with an already existing provider.')
+                messages.error(request, 'A Validation Error occurred, this JSON is invalid or shares an id with an already existing provider.')
                 return redirect('collection_providers:create')
 
             return redirect('collection_providers:detail', collection_provider_id=collection_provider.id)
