@@ -2390,7 +2390,7 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
             node_id = node_pos.get('id')
 
             if node_order > len(node_relations) - 1:
-                errors.append(f"Item {node_id} has _order {node_order} which is higher than the list length.")
+                errors.append(f"Item {node_id} has _order {node_order} which exceeds the list length.")
             if node_order < 0:
                 errors.append(f"Item {node_id} has _order {node_order} which is lower than zero.")
 

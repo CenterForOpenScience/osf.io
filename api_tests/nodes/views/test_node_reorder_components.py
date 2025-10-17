@@ -140,7 +140,7 @@ class TestNodeReorderComponents:
         payload_asc['data'][0]['attributes']['_order'] = 5
         res = app.patch_json_api(url, payload_asc, auth=admin_contrib.auth, expect_errors=True, bulk=True)
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == f'Item {payload_asc['data'][0]['id']} has _order 5 which is higher than the list length.'
+        assert res.json['errors'][0]['detail'] == f'Item {payload_asc['data'][0]['id']} has _order 5 which exceeds the list length.'
 
     def test_reorder_multiple_components_same_order(
             self, app, project, admin_contrib, url, payload_asc
