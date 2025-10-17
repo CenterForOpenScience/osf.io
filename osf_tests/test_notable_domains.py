@@ -422,7 +422,7 @@ class TestNotableDomainReclassification:
         assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
-    def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+    def test_from_spam_to_ignored_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()
