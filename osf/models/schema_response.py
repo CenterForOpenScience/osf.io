@@ -389,7 +389,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('accept_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "accept" SchemaResponse with id [{self._id}]'
             )
 
@@ -410,7 +410,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('reject_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "reject" SchemaResponse with id [{self._id}]'
             )
 
