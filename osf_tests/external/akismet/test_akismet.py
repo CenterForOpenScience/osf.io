@@ -44,7 +44,7 @@ class TestUserSpamAkismet:
 
         # Ordering is not guaranteed on the return value from `_get_spam_content`
         # Split the strings back into individual tokens and sort for more reliable comparison
-        # TODO(ENG-XYZ): Refactor `_get_spam_content` uniersally to return the list of individual field
+        # TODO(ENG-XYZ): Refactor `_get_spam_content` universally to return the list of individual field
         # contents instead of the concatenated list in order to enable easier, more accurate comparison
         returned_content_elements = sorted(returned_content_string.split(' '))
         expected_content_elements = sorted(expected_content_string.split(' '))
