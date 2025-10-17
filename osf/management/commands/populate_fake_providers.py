@@ -140,7 +140,7 @@ COLLECTION_PROVIDERS = [
             'is_public': True,
             'is_promoted': True,
             'is_bookmark_collection': False,
-            'title': 'Very bouncey things',
+            'title': 'Very bouncy things',
             'collected_type_choices': [
                 'Forgotten',
                 'Remebered',
