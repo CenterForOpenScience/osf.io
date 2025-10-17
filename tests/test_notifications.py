@@ -158,7 +158,7 @@ class TestNotificationsModels(OsfTestCase):
         assert len(user_subscriptions) == 1  # subscribed to only user settings
         assert 'global_file_updated' in event_types
 
-    def test_subscribe_user_to_global_notfiications(self):
+    def test_subscribe_user_to_global_notifications(self):
         user = factories.UserFactory()
         utils.subscribe_user_to_global_notifications(user)
         subscription_event_names = list(user.notification_subscriptions.values_list('event_name', flat=True))
