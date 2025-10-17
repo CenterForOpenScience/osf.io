@@ -1463,7 +1463,7 @@ class TestAddonFileViews(OsfTestCase):
         assert resp.status_code == 400
 
     @mock.patch('website.views.stream_emberapp')
-    def test_head_returns_url_and_redriect(self, mock_ember):
+    def test_head_returns_url_and_redirect(self, mock_ember):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
