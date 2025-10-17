@@ -213,7 +213,7 @@ class DescriptionMixin(models.Model):
     def set_description(self, description, auth, save=False):
         """Set the description and log the event.
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.description
@@ -272,7 +272,7 @@ class CategoryMixin(models.Model):
     def set_category(self, category, auth, save=False):
         """Set the category and log the event.
         :param str category: The new category
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.category
