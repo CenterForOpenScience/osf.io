@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 @transaction.atomic
 def update_registration_schemas(dry_run=False):
-    """Update the regitration schemas to match the locally defined schemas."""
+    """Update the registration schemas to match the locally defined schemas."""
     logger.debug('Updating Registration Schemas')
     migrations.ensure_schemas()
     logger.debug('Updating Registration Schema Blocks')

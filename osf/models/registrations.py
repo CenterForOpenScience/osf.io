@@ -758,7 +758,7 @@ class Registration(AbstractNode):
         if trigger is None:
             return  # Not a moderated event, no need to write an action
 
-        # IF fegistration is moving into moderation, "creator" should reflect the
+        # IF registration is moving into moderation, "creator" should reflect the
         # Registration Admin who initiated the Registration/Withdrawal
         if not initiated_by or trigger in [
                 RegistrationModerationTriggers.SUBMIT,

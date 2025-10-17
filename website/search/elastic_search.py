@@ -323,7 +323,7 @@ def load_parent(parent_id):
             'title': parent.title,
             'url': parent.url,
             'id': parent._id,
-            'is_registation': parent.is_registration,
+            'is_registration': parent.is_registration,
         }
     return None
 
