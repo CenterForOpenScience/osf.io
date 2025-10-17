@@ -1266,7 +1266,7 @@ class TestProviderSpecificMetadata():
         assert resp.status_code == 200
 
         registration.refresh_from_db()
-        # Only previder-relevant metadata should be changed
+        # Only provider-relevant metadata should be changed
         assert registration.additional_metadata == {'foo': 'buzz', 'fizz': 'buzz'}
 
         resp = app.get(self.get_registration_detail_url(registration))
