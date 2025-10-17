@@ -43,7 +43,7 @@ class TestNodeSettingsGet:
 
     def test_node_settings_detail(self, app, admin_contrib, non_contrib, write_contrib, url, project):
 
-        # non logged in uers can't access node settings
+        # non logged in users can't access node settings
         res = app.get(url, expect_errors=True)
         assert res.status_code == 401
 
