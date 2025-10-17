@@ -1057,7 +1057,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 }
 
 /**
- * Click event for when upload buttonin Action Column, it essentially runs the hiddenFileInput.click
+ * Click event for when upload button in Action Column, it essentially runs the hiddenFileInput.click
  * @param event DOM event object for click
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} col Information pertinent to that column where this upload event is run from
