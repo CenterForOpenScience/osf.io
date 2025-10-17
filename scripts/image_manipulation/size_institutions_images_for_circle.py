@@ -29,7 +29,7 @@ def alphaToWhite(img):
 def generateTestHTML(size):
 
     path = INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'
-    f = open('image_maniplation/test_rounded_corners.html','w')
+    f = open('image_manipulation/test_rounded_corners.html','w')
     f.write('<body style=background-color:lightgrey;>\n')
     for shieldName in os.listdir(path):
         f.write('<img src={0} style="border-radius:100%;height:{1};width:{1};">\n'.format('../'+path + shieldName, size))
