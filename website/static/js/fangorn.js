@@ -1491,7 +1491,7 @@ function _fangornLazyLoadError (item) {
 }
 
 /**
- * Applies the positionining and initialization of tooltips for file names
+ * Applies the positioning and initialization of tooltips for file names
  * @private
  */
 function reapplyTooltips () {
