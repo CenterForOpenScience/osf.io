@@ -517,7 +517,7 @@ class File(models.Model):
         for entry in self.history:
             # Some entry might have an undefined modified field
             if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
-                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
+                sentry.log_message('update() receives metadata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
