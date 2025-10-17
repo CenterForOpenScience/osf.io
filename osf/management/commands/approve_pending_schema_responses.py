@@ -47,7 +47,7 @@ def approve_pending_schema_responses(dry_run=False):
             logger.exception(
                 f'{"[DRY RUN] " if dry_run else ""}'
                 f'Error auto-approving SchemaResponse with id [{schema_response._id}] '
-                f'for Registration with guit [{schema_response.parent._id}]'
+                f'for Registration with guid [{schema_response.parent._id}]'
             )
         else:
             count += 1
