@@ -15,7 +15,7 @@ Our Solr schema has 12 main fields:
 	*_public
 	*_wiki
 	*_description
-	*_url -- we wont search on url so it is not indexed, but we're keeping it so we can
+	*_url -- we won't search on url so it is not indexed, but we're keeping it so we can
 	navigate to the project
 	*_tags -- this is a multivalued values, meaning that it can have multiple values.
 	components can have multiple tags, so this field is multivalued
@@ -23,7 +23,7 @@ Our Solr schema has 12 main fields:
 	ways of capturing the same information. searching contributors returns the projects
 	that the searched for person is part of it. alternatively, searching users returns
 	the profile pages of the user **
-	*_contributors_url -- not indexed because we wont search on it, but we will keep it
+	*_contributors_url -- not indexed because we won't search on it, but we will keep it
 	so we can easily navigate to contributor
 	public -- not dynamic, as we will filter projects that are not public. if a node is
 	private, we still want to return the project itself.
