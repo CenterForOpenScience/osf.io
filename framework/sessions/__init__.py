@@ -187,7 +187,7 @@ def before_request():
         user_session = get_session(ignore_cookie=True)
         user_session.create()
         # Although the if check is not necessary based on current ``get_session()`` implementation. However, we
-        # keep it here in case ``get_session()`` was changed. It may be removed after we have unit tests for this.
+        # keep it here in case ``get_session()`` is changed. It may be removed after we have unit tests for this.
         if not user_session:
             return
 
