@@ -326,7 +326,7 @@ class CannotDeleteProvider(TemplateView):
         return context
 
 
-class ExportColectionProvider(PermissionRequiredMixin, View):
+class ExportCollectionProvider(PermissionRequiredMixin, View):
     permission_required = 'osf.change_collectionprovider'
     raise_exception = True
 
