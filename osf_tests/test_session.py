@@ -263,7 +263,7 @@ class TestUserSessionMap:
         assert Session.objects.filter(session_key=session.session_key).count() == 0
 
 
-# In order to use AppTestCase to access `self.context.g`, we have to use unitest instead of pytest. There is an issue
+# In order to use AppTestCase to access `self.context.g`, we have to use unit tests instead of pytest. There is an issue
 # with pytest fixtures in unit tests. Unfortunately, the solution provided in the following link doesn't work :(
 #   https://pytest.org/en/latest/how-to/unittest.html
 @pytest.mark.django_db
