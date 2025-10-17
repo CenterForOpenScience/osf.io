@@ -2024,7 +2024,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         Args:
         - resources: A queryset of resources probably of AbstractNode or DraftRegistration.
-        - hard_delete: A boolean indicating whether the resource should be permentently deleted or just marked as such.
+        - hard_delete: A boolean indicating whether the resource should be permanently deleted or just marked as such.
         """
         model = resources.query.model
 
