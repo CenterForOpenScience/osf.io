@@ -403,7 +403,7 @@ class TestStorageAddonBase(ArchiverTestCase):
                     method=responses.GET,
                     url=url,
                     json=self.get_resp(url),
-                    content_type='applcation/json'
+                    content_type='application/json'
                 )
             )
         addon = self.src.get_or_add_addon(addon_short_name, auth=self.auth)
