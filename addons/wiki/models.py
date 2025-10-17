@@ -82,7 +82,7 @@ def build_html_output(content, node):
 def render_content(content, node):
     html_output = build_html_output(content, node)
 
-    # linkify gets called after santize, because we're adding rel="nofollow"
+    # linkify gets called after sanitize, because we're adding rel="nofollow"
     #   to <a> elements - but don't want to allow them for other elements.
     sanitized_content = sanitize(html_output, **settings.WIKI_WHITELIST)
     return sanitized_content
