@@ -358,7 +358,7 @@ class ApprovalsMachine(Machine):
 
     Attached models must define the callbacks used by the ApprovalsMachine:
     * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
-    * revisable: Determines what transiition to follow on a 'reject' trigger
+    * revisable: Determines what transition to follow on a 'reject' trigger
     * `_on_submit', '_on_approve', '_on_complete', and '_on_reject': Define any custom per-trigger logic
     * _save_transition': Defines any global, post-transition logic
 
