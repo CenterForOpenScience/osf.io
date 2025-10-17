@@ -208,7 +208,7 @@ flags:
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails
-    note: if set to true, prevents engagment emails from being sent
+    note: if set to true, prevents engagement emails from being sent
     active: false
 
   - flag_name: ELASTICSEARCH_METRICS
