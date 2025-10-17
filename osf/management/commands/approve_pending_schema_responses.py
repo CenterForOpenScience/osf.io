@@ -41,7 +41,7 @@ def approve_pending_schema_responses(dry_run=False):
         )
         try:
             schema_response.accept(
-                comment=f'Auto-approved following {THRESHOLD_HOURS} hour threshhold'
+                comment=f'Auto-approved following {THRESHOLD_HOURS} hour threshold'
             )
         except MachineError:
             logger.exception(
