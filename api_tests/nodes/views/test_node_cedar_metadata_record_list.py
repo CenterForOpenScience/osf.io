@@ -1,12 +1,12 @@
 import pytest
 
-from .test_node_cedar_metadata_record import TesNodeCedarMetadataRecord
+from .test_node_cedar_metadata_record import TestNodeCedarMetadataRecord
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import AuthUserFactory
 
 
 @pytest.mark.django_db
-class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
+class TestNodeCedarMetadataRecordListPublicProject(TestNodeCedarMetadataRecord):
 
     def test_record_list_no_auth(self, app, node_pub, cedar_record_for_node_pub, cedar_draft_record_for_node_pub):
 
@@ -64,7 +64,7 @@ class TestNodeCedarMetadataRecordListPublicProject(TesNodeCedarMetadataRecord):
 
 
 @pytest.mark.django_db
-class TestNodeCedarMetadataRecordListPrivateProject(TesNodeCedarMetadataRecord):
+class TestNodeCedarMetadataRecordListPrivateProject(TestNodeCedarMetadataRecord):
 
     def test_record_list_no_auth(self, app, node):
 
