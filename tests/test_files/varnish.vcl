@@ -134,7 +134,7 @@ sub vcl_recv {
 
   	# Allow purging
 	if (req.method == "PURGE") {
-		if (!client.ip ~ purge) { # purge is the ACL defined at the begining
+		if (!client.ip ~ purge) { # purge is the ACL defined at the beginning
 			# Not from an allowed IP? Then die with an error.
 			return (synth(405, "This IP is not allowed to send PURGE requests."));
 		}
