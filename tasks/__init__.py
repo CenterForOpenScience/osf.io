@@ -665,7 +665,7 @@ def hotfix(ctx, name, finish=False, push=False):
     """Rename hotfix branch to hotfix/<next-patch-version> and optionally
     finish hotfix.
     """
-    print('Checking out master to calculate curent version')
+    print('Checking out master to calculate current version')
     ctx.run('git checkout master')
     latest_version = latest_tag_info()['current_version']
     print(f'Current version is: {latest_version}')
