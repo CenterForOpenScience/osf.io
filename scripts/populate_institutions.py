@@ -764,7 +764,7 @@ INSTITUTIONS = {
             {
                 '_id': 'umb',
                 'name': 'University of Maryland, Baltimore',
-                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformtion Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
+                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformation Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://webauth.umaryland.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://osf.io/goodbye')),
                 'domains': [],
@@ -1683,7 +1683,7 @@ INSTITUTIONS = {
             {
                 '_id': 'umb',
                 'name': 'University of Maryland, Baltimore [Test]',
-                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformtion Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
+                'description': 'This research data management service is supported by the <a href="https://www2.hshsl.umaryland.edu/cdabs/">Center for Data and Bioinformation Services</a> at the <a href="https://www.hshsl.umaryland.edu/">Health Sciences and Human Services Library</a>. This platform is not intended for the storage of PII or PHI.<br><a href="https://www.umaryland.edu/policies-and-procedures/library/research/policies/iv-9901a.php">UMB Policy Regarding Ownership, Management, and Sharing of Research Data</a> | For questions contact <a href="mailto:data@hshsl.umaryland.edu">data@hshsl.umaryland.edu</a>',
                 'login_url': SHIBBOLETH_SP_LOGIN.format(encode_uri_component('https://webauth.umaryland.edu/idp/shibboleth')),
                 'logout_url': SHIBBOLETH_SP_LOGOUT.format(encode_uri_component('https://test.osf.io/goodbye')),
                 'domains': ['test-osf-umb.cos.io'],
