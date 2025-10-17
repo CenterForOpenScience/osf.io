@@ -743,7 +743,7 @@ veer_registration_metadata = {
                     },
                     'question10c': {
                         'comments': [],
-                        'value': 'assumptions of analysses',
+                        'value': 'assumptions of analyses',
                         'extra': []
                     }
                 },
@@ -1234,7 +1234,7 @@ veer_condensed = {
                     },
                     'question10c': {
                         'comments': [],
-                        'value': 'assumptions of analysses',
+                        'value': 'assumptions of analyses',
                         'extra': []
                     }
                 },
@@ -1562,7 +1562,7 @@ veer_registration_responses = {
     'confirmatory-analyses-first.first.question3c': 'this is each variable role',
     'description-hypothesis.question3a': 'predictions for successful checks',
     'confirmatory-analyses-further.further.question5c': 'also Bayesian',
-    'recommended-analysis.specify.question10c': 'assumptions of analysses',
+    'recommended-analysis.specify.question10c': 'assumptions of analyses',
     'recommended-methods.procedure.question9b-file': [],
     'description-hypothesis.question1a': 'These are the essential elements',
     'description-methods.planned-sample.question7b': 'here is my data collection termination rule',
@@ -1838,7 +1838,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['description-hypothesis.question3a'] == 'predictions for successful checks'
         assert responses['confirmatory-analyses-further.further.question2c'] == 'i used a common statistical technique'
         assert responses['confirmatory-analyses-further.further.question5c'] == 'also Bayesian'
-        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analysses'
+        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analyses'
         assert responses['recommended-methods.procedure.question9b-file'] == []
         assert responses['description-hypothesis.question1a'] == 'These are the essential elements'
         assert responses['description-methods.planned-sample.question7b'] == 'here is my data collection termination rule'
@@ -2071,7 +2071,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['description-hypothesis.question3a'] == 'predictions for successful checks'
         assert responses['confirmatory-analyses-further.further.question2c'] == 'i used a common statistical technique'
         assert responses['confirmatory-analyses-further.further.question5c'] == 'also Bayesian'
-        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analysses'
+        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analyses'
         assert responses['recommended-methods.procedure.question9b-file'] == []
         assert responses['description-hypothesis.question1a'] == 'These are the essential elements'
         assert responses['description-methods.planned-sample.question7b'] == 'here is my data collection termination rule'
