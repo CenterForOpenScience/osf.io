@@ -220,7 +220,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         answer and added to response_blocks, and the outdated response_block entry for that key
         (inherited from the previous_response) will be removed from response_blocks.
 
-        If a previously updated response is udpated again, the existing entry in response_blocks
+        If a previously updated response is updated again, the existing entry in response_blocks
         for that key will have its "response" field updated to the new value.
 
         If a previously updated response has its answer reverted to the previous_response's answer,
@@ -337,7 +337,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
             )
 
-        # Only check newly udpated keys, as old keys have previously passed validation
+        # Only check newly updated keys, as old keys have previously passed validation
         invalid_response_keys = [
             block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
         ]

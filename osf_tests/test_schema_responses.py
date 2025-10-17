@@ -302,7 +302,7 @@ class TestUpdateSchemaResponses():
         for block in initial_response.response_blocks.all():
             assert initial_response.all_responses[block.schema_key] == block.response
 
-    def test_uodated_response_keys_property(self, initial_response, revised_response, schema):
+    def test_updated_response_keys_property(self, initial_response, revised_response, schema):
         # initial_response "updates" all keys
         all_keys = set(
             RegistrationSchemaBlock.objects.filter(
