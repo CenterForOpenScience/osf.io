@@ -670,7 +670,7 @@ class TestNodeSearch(OsfTestCase):
 
     @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
-    def test_node_license_propogates_to_children(self):
+    def test_node_license_propagates_to_children(self):
         docs = query(self.query)['results']
         child = [d for d in docs if d['title'] == self.public_child.title][0]
         assert 'license' in child
