@@ -153,7 +153,7 @@ class TestUnmoderatedFlows():
             sanction_object.approve(user=registration.creator, token=approval_token)
 
     @pytest.mark.parametrize('sanction_object', [registration_approval, embargo, retraction])
-    def test_reject_after_arpprove_fails(self, sanction_object):
+    def test_reject_after_approve_fails(self, sanction_object):
         # using fixtures in parametrize returns the function
         sanction_object = sanction_object()
         sanction_object.to_APPROVED()
