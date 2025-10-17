@@ -854,7 +854,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return self.location_hash == other.location_hash
 
     def get_basefilenode_version(self, file):
-        # Returns the throughtable object  - the record that links this version
+        # Returns the through table object  - the record that links this version
         # to the given file.
         return self.basefileversionsthrough_set.filter(basefilenode=file).first()
 
