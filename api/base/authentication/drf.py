@@ -230,7 +230,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         the primary key `id` or the email `username`.
 
         :param request: the request
-        :return: the user who owns the bear token and the cas repsonse
+        :return: the user who owns the bear token and the cas response
         """
 
         client = cas.get_client()
