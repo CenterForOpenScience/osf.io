@@ -162,7 +162,7 @@ class SchemaBlockConversionError(OSFError):
 
 
 class SchemaResponseError(OSFError):
-    """Superclass for errors ariseing from unexpected SchemaResponse behavior."""
+    """Superclass for errors arising from unexpected SchemaResponse behavior."""
     pass
 
 
