@@ -354,7 +354,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
     # A flag to conditionally run a callback on complete
     notify_initiator_on_complete = models.BooleanField(default=False)
-    # Store a persistant copy of urls for use when needed outside of a request context.
+    # Store a persistent copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
     # {
