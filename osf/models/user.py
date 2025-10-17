@@ -1092,7 +1092,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if external_identity:
             user.external_identity.update(external_identity)
         if campaign:
-            # needed to prevent cirular import
+            # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
