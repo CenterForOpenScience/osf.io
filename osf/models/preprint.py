@@ -1438,7 +1438,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @require_permission([ADMIN])
     def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True, **kwargs):
         """
-        This method sets the `has_data_links` field that respresent the availability of links to supplementary data
+        This method sets the `has_data_links` field that represent the availability of links to supplementary data
         for this preprint and logs that change.
 
         :param auth: Auth object
