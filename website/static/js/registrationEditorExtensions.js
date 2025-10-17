@@ -45,7 +45,7 @@ var osfUploader = function(element, valueAccessor, allBindings, viewModel, bindi
         if (filePicker) {
             // A hack to flush the old mithril controller.
             // It's unclear to me exactly why this is happening (after 3hrs), but seems
-            // to be a KO-mithril interaction. We're programattically changing the div
+            // to be a KO-mithril interaction. We're programmatically changing the div
             // containing mithril mountings, and for some reason old controllers (and
             // their bound settings) are persisting and being reused. This call
             // explicity removes the old controller.
