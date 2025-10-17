@@ -18,7 +18,7 @@ PENDING_MODERATION_STATES = [RegStates.PENDING.db_name, RegStates.REJECTED.db_na
 
 
 def _update_schema_response_state(schema_response):
-    '''Set the schema_response's state based on the current state of the parent rgistration.'''
+    '''Set the schema_response's state based on the current state of the parent registration.'''
     moderation_state = schema_response.parent.moderation_state
     if moderation_state in UNAPPROVED_STATES:
         schema_response.state = ApprovalStates.UNAPPROVED
