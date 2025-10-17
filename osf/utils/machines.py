@@ -38,7 +38,7 @@ class BaseMachine(Machine):
 
     def __init__(self, machineable, state_attr='machine_state'):
         """
-        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, prerprints etc,
+        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, preprints etc,
         but sometimes applies to sanctions, it may be to applied to anything that wants to have states and transitions.
 
         The general idea behind this is that we are instantiating the machine object as part of the model and it will
