@@ -25,7 +25,7 @@
             % else:
                 <a href="${settings.DOMAIN + 'myprojects/'}">${collection.provider.name}</a>
             % endif
-            It will need to be re-submitteds to be included in the collection again.
+            It will need to be re-submitted to be included in the collection again.
         % endif
     </p>
     <p>
