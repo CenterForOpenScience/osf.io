@@ -54,7 +54,7 @@
             "description": "Describe formal tests"
         }, {
             "qid": "yesno1",
-            "title": "Has this research received Insitutional Review Board (IRB) or ethics committee approval?",
+            "title": "Has this research received Institutional Review Board (IRB) or ethics committee approval?",
             "type": "choose",
             "options": ["Yes", "No"]
         }, {
