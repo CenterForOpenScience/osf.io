@@ -1577,7 +1577,7 @@ function gotoFileEvent (item, toUrl) {
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Options for this particulat column
+ * @param {Object} col Options for this particular column
  * @this Treebeard.controller
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
