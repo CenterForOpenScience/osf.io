@@ -124,7 +124,7 @@
 
   - Running containers with docker compose
 
-    - In `webite/settings/local.py`, disable `SEARCH_ENGINE`
+    - In `website/settings/local.py`, disable `SEARCH_ENGINE`
     ```python
     # SEARCH_ENGINE = 'elastic'
     SEARCH_ENGINE = None
