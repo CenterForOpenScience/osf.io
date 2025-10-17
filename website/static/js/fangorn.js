@@ -2549,7 +2549,7 @@ var copyMode = null;
 
 /**
  * Hook for the drag start event on jquery
- * @param event jQuery UI drggable event object
+ * @param event jQuery UI draggable event object
  * @param ui jQuery UI draggable ui object
  * @private
  */
