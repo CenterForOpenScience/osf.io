@@ -1810,7 +1810,7 @@ Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprint
 0.97.0 (2016-10-20)
 ===================
 - API v2 Versioning
-- API v2 Redirect swagger docs to Browseable API
+- API v2 Redirect swagger docs to Browsable API
 - Fix wiki formatting for legacy wiki pages
 - Ensure bad file moves don't delete files
 - API v2 Make private nodes private in inter-node file moves
