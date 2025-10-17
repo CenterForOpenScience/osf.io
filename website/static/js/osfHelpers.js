@@ -659,7 +659,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    // Set nav-box width based on screem
+    // Set nav-box width based on screen
     fixAffixWidth();
     // Show the nav box
     $('.osf-affix').each(function (){
