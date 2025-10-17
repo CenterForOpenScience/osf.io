@@ -21,7 +21,7 @@ class TestMetaData(OsfTestCase):
 
         assert RegistrationSchema.objects.all().count() == len(OSF_META_SCHEMA_FILES)
 
-    def test_reigstrationschema_uniqueness_is_enforced_in_the_database(self):
+    def test_registrationschema_uniqueness_is_enforced_in_the_database(self):
         RegistrationSchema(name='foo', schema={'foo': 42}, schema_version=1).save()
         pytest.raises(ValidationError, RegistrationSchema(name='foo', schema={'bar': 24}, schema_version=1).save)
 
