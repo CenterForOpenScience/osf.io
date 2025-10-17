@@ -4,7 +4,7 @@ var $ = require('jquery');
 var pointers = require('js/pointers');
 var AccountClaimer = require('js/accountClaimer');
 
-// NodeActions is needed for rendering recent logs in nodelists (e.g. regsitrations and forks
+// NodeActions is needed for rendering recent logs in nodelists (e.g. registrations and forks
 // pages
 require('js/project');
 require('js/licensePicker');
