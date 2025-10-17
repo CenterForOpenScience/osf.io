@@ -224,7 +224,7 @@
             "nav": "Effect size",
             "type": "string",
             "title": "Effect size",
-            "description": "If applicable, specify a predicted effect size or a minimum effect size of interest for all the effectstested in your statistical analyses.",
+            "description": "If applicable, specify a predicted effect size or a minimum effect size of interest for all the effects tested in your statistical analyses.",
             "help": "For the logistic regression with ‘Did the graduate do volunteer work in the last 12 months?’ as the outcome variable, our minimum effect size of interest is an odds of 1.05. This means that a one-unit increase on the religiosity scale would be associated with a 1.05 factor change in odds of having done volunteering work in the last 12 months versus not having done so. For the linear regressions with ‘The number of graduate’s volunteer activities in the last 12 months”, and “How many hours did the graduate volunteer during a typical month in the last 12 months?’ as the outcome variables, the minimum regression coefficients of interest of the religiosity variables are 0.05 and 0.5, respectively. This means that a one-unit increase in the religiosity scale would be associated with 0.05 extra volunteering activities in the last 12 months and with 0.5 more hours of volunteering work in the last 12 months. All of these smallest effect sizes of interest are based on our own intuition.",
             "format": "textarea",
             "required": false
