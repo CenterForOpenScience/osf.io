@@ -1481,7 +1481,7 @@ class JSONAPISerializer(BaseAPISerializer):
         return super().to_representation(data)
 
     def run_validation(self, data):
-        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Overrides constructor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
         _validated_data = super().run_validation(data)
         for field in self.writeable_method_fields:
