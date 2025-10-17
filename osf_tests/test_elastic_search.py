@@ -1069,7 +1069,7 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4)
         assert len(contribs['users']) == 0
 
-    def test_search_firstname_special_charcter(self):
+    def test_search_firstname_special_character(self):
         # Searching for a first name with a special character yields
         # exactly one result.
         contribs = search.search_contributor(self.name3.split(' ')[0])
