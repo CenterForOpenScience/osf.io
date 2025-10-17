@@ -283,7 +283,7 @@ class TestConfirmClaimUser:
         _url = url.format(unreg_user._id)
         unclaimed_record = unreg_user.get_unclaimed_record(project._id)
         token = unclaimed_record['token']
-        payload = self.payload(pid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
         res = app.post_json_api(
             _url,
             payload,
@@ -295,7 +295,7 @@ class TestConfirmClaimUser:
     def test_confirm_claim_wrong_pid(self, app, url, unreg_user, project, wrong_preprint):
         _url = url.format(unreg_user._id)
         token = 'someinvalidtoken'
-        payload = self.payload(pid=wrong_preprint._id, password='password1234', accepted_terms_of_service=True, token=token)
+        payload = self.payload(guid=wrong_preprint._id, password='password1234', accepted_terms_of_service=True, token=token)
         res = app.post_json_api(
             _url,
             payload,
@@ -308,7 +308,7 @@ class TestConfirmClaimUser:
         _url = url.format(unreg_user._id)
         unclaimed_record = unreg_user.get_unclaimed_record(project._id)
         token = unclaimed_record['token']
-        payload = self.payload(pid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
         res = app.post_json_api(
             _url,
             payload,

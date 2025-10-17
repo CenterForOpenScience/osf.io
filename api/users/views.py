@@ -1033,13 +1033,13 @@ class ConfirmClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         View for setting the password for a claimed user.
         Sets the user's password.
         HTTP Method: POST
-        **URL:**  /v2/users/<user_id>/claim/
+        **URL:**  /v2/users/<user_id>/confirm_claim/
         **Body (JSON):**
         {
             "data": {
                 "type": "users",
                 "attributes": {
-                    "pid": "pid",
+                    "guid": "node/preprint guid",
                     "token": "token",
                     "password": "password",
                     "accepted_terms_of_service": bool
@@ -1050,20 +1050,20 @@ class ConfirmClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         uid = kwargs['user_id']
         token = request.data.get('token')
-        pid = request.data.get('pid')
+        guid = request.data.get('guid')
         password = request.data.get('password')
         accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
         user = OSFUser.load(uid)
 
         # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
-        if not user or not self.verify_claim_token(user, token, pid):
+        if not user or not self.verify_claim_token(user, token, guid):
             raise ValidationError('Claim user does not exists, the token in the URL is invalid or has expired.')
 
         # If user is logged in, need to use 'confirm_claim_registered' view
         if request.user.is_authenticated:
             raise ValidationError('You are already logged in. Please log out before trying to claim a user via this view.')
 
-        unclaimed_record = user.unclaimed_records[pid]
+        unclaimed_record = user.unclaimed_records[guid]
         user.fullname = unclaimed_record['name']
         user.update_guessed_names()
         username = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
@@ -1073,14 +1073,14 @@ class ConfirmClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         user.unclaimed_records = {}
         user.verification_key = generate_verification_key()
         user.save()
-        provider = PreprintProvider.load(pid)
+        provider = PreprintProvider.load(guid)
         redirect_url = None
         if provider:
             redirect_url = api_v2_url('auth_login', next=provider.landing_url, _absolute=True)
         else:
             # Add related claimed tags to user
-            _add_related_claimed_tag_to_user(pid, user)
-            redirect_url = api_v2_url('resolve_guid', guid=pid, _absolute=True)
+            _add_related_claimed_tag_to_user(guid, user)
+            redirect_url = api_v2_url('resolve_guid', guid=guid, _absolute=True)
 
         data = {
             'firstname': user.given_name,
