@@ -105,10 +105,10 @@ def change_node_region(node, dest_region, gcs_creds):
             if node.type == 'osf.registration':
                 response_blocks_by_file_id = _get_file_block_map(node)
             for f in node.files.all():
-                logger.info(f'Prepraring to move file {f._id}')
+                logger.info(f'Preparing to move file {f._id}')
                 cloned_f = _clone_file(f)
                 if f._id in response_blocks_by_file_id:
-                    logger.info(f'Prepraring to update ResponseBlocks for file {f._id}')
+                    logger.info(f'Preparing to update ResponseBlocks for file {f._id}')
                     _update_blocks(response_blocks_by_file_id, f._id, cloned_f._id)
                 logger.info(f'File {f._id} cloned, copying versions...')
                 _copy_and_clone_versions(f, cloned_f, src_bucket, dest_bucket, dest_bucket_name, dest_region)
