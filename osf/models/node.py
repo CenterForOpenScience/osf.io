@@ -1310,7 +1310,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self
 
     def find_readable_antecedent(self, auth):
-        """ Returns first antecendant node readable by <user>.
+        """ Returns first antecedent node readable by <user>.
         """
         next_parent = self.parent_node
         while next_parent:
