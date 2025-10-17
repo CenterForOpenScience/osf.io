@@ -4,7 +4,7 @@ Django settings for the admin project.
 
 from django.contrib import messages
 from api.base.settings import *  # noqa
-# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
+# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRIDDEN
 # TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
 # import local  # Build own local.py (used with postgres)
