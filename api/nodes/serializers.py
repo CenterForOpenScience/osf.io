@@ -1280,14 +1280,28 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         notification_type = notification_type if email or (contributor and contributor.is_registered) else False
 
         try:
-            contributor_dict = {
-                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': email_pref,
-                'bibliographic': bibliographic, 'index': index, 'save': True, 'permissions': permissions,
-            }
-            contributor_obj = resource.add_contributor_registered_or_not(**contributor_dict)
+            contributor_obj = resource.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=user_id,
+                email=email,
+                full_name=full_name,
+                notification_type=notification_type,
+                bibliographic=bibliographic,
+                index=index,
+                permissions=permissions,
+            )
             if child_nodes:
                 for child in AbstractNode.objects.filter(guids___id__in=child_nodes):
-                    child.add_contributor_registered_or_not(**contributor_dict)
+                    child.add_contributor_registered_or_not(
+                        auth=auth,
+                        user_id=user_id,
+                        email=email,
+                        full_name=full_name,
+                        notification_type=notification_type,
+                        bibliographic=bibliographic,
+                        index=index,
+                        permissions=permissions,
+                    )
         except ValidationError as e:
             raise exceptions.ValidationError(detail=e.messages[0])
         except ValueError as e:
