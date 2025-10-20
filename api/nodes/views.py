@@ -505,7 +505,6 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         context['default_email'] = 'default'
         return context
 
-
     def patch(self, request, *args, **kwargs):
         """
         Override the default patch behavior to handle the special case
