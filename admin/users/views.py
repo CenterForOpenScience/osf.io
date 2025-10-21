@@ -22,6 +22,7 @@ from osf.models.user import OSFUser
 from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
+from osf.models.institution import Institution
 
 from website import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
@@ -579,3 +580,60 @@ class UserDraftRegistrationsList(UserMixin, ListView):
                 'draft_registrations': query_set
             }
         )
+
+
+class UserAffiliationBaseView(UserMixin, ListView):
+    permission_required = 'osf.change_institution'
+    template_name = 'users/affiliated_institutions.html'
+    raise_exception = True
+
+    def get_queryset(self):
+        # Django template does not like attributes with underscores for some reason, so we annotate.
+        return self.get_object().get_affiliated_institutions().annotate(
+            guid=F('_id')
+        )
+
+    def get_context_data(self, **kwargs):
+        institutions = self.get_queryset()
+        context = super().get_context_data(**kwargs)
+        context['institutions'] = institutions
+        context['user'] = self.get_object()
+        return context
+
+
+class UserRemoveAffiliations(UserAffiliationBaseView):
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = dict(request.POST)
+
+        to_be_removed = list(data.keys())
+        removed_affiliations = [institution.replace('institution-', '') for institution in to_be_removed if 'institution-' in institution]
+        institutions_qs = Institution.objects.filter(id__in=removed_affiliations)
+        for institution in institutions_qs:
+            user.remove_affiliated_institution(institution._id)
+
+        if institutions_qs:
+            institutions_names = ' ,'.join(institutions_qs.values_list('name', flat=True))
+            messages.success(request, f'The following users were successfully removed: {institutions_names}')
+
+        return redirect('users:affiliations', guid=user.guid)
+
+
+class UserListAndAddAffiliations(UserAffiliationBaseView):
+
+    def post(self, request, *args, **kwargs):
+        user = self.get_object()
+        data = dict(request.POST)
+        del data['csrfmiddlewaretoken']  # just to remove the key from the form dict
+
+        institution = Institution.load(data['add-affiliation-form'][0])
+        if institution is None:
+            messages.error(request, f'Institution for guid: {data["add-affiliation-form"][0]} could not be found')
+            return redirect('users:affiliations', guid=user.guid)
+
+        user.add_or_update_affiliated_institution(institution)
+
+        messages.success(request, f'The following institution was successfully added: {institution.name}')
+
+        return redirect('users:affiliations', guid=user.guid)
