@@ -302,7 +302,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 )
             else:
                 message += (
-                    ' View the <u><a href="{url}" aria-label="github link" >files in this repo</a></u> on GitLab '
+                    ' View the <u><a href="{url}">files in this repo</a></u> on GitLab '
                     '.'
                 ).format(url=repo.http_url_to_repo)
             messages.append(message)
