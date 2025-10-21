@@ -60,7 +60,7 @@
 
                                 <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${document_type}.
                                     <a href="https://help.osf.io/article/177-upload-a-preprint" target="_blank">Learn how</a></li>
-                                <li>Preregister your next study. <a href="https://help.osf.io/345-create-registrations">Read more</a></li>
+                                <li>Preregister your next study. Learn how to <a href="https://help.osf.io/345-create-registrations">create a registration</a>.</li>
                                 <li>Or share on social media: Tell your friends through:
                                     <table style="display: inline-table;" width="53" border="0" cellspacing="0" cellpadding="0" align="center">
                                         <tbody>
