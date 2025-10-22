@@ -232,3 +232,95 @@ class TestClaimUser:
         )
         assert res.status_code == 204
         assert mock_send_grid.call_count == 2
+
+
+@pytest.mark.django_db
+class TestConfirmClaimUser:
+
+    @pytest.fixture()
+    def referrer(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, referrer):
+        return ProjectFactory(creator=referrer)
+
+    @pytest.fixture()
+    def preprint(self, referrer, project):
+        return PreprintFactory(creator=referrer, project=project)
+
+    @pytest.fixture()
+    def wrong_preprint(self, referrer):
+        return PreprintFactory(creator=referrer)
+
+    @pytest.fixture()
+    def unreg_user(self, referrer, project):
+        return project.add_unregistered_contributor(
+            'David Davidson',
+            'david@david.son',
+            auth=Auth(referrer),
+            save=True
+        )
+
+    @pytest.fixture()
+    def url(self):
+        return f'/{API_BASE}users/{{}}/confirm_claim/'
+
+    def payload(self, **kwargs):
+        payload = {
+            'data': {
+                'attributes': {}
+            }
+        }
+        _id = kwargs.pop('id', None)
+        if _id:
+            payload['data']['id'] = _id
+        if kwargs:
+            payload['data']['attributes'] = kwargs
+        return payload
+
+    def test_confirm_claim(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        unclaimed_record = unreg_user.get_unclaimed_record(project._id)
+        token = unclaimed_record['token']
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+        )
+        assert res.status_code == 200
+        unreg_user.reload()
+        assert unreg_user.is_registered
+
+    def test_confirm_claim_wrong_pid(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        token = 'someinvalidtoken'
+        payload = self.payload(guid=wrong_preprint._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Claim user does not exists, the token in the URL is invalid or has expired.'
+
+    def test_claimed_user(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        unclaimed_record = unreg_user.get_unclaimed_record(project._id)
+        token = unclaimed_record['token']
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+        )
+        assert res.status_code == 200
+        unreg_user.reload()
+        assert unreg_user.is_registered
+
+        res = app.post_json_api(
+            _url,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'User has already been claimed.'
