@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% load static %}
+{% load render_bundle from webpack_loader %}
+{% block title %}
+    <title>Registration Provider</title>
+{% endblock title %}
+{% block content %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2>{{ registration_provider.name }}</h2>
+            </div>
+        </div>
+        <div class="row" id="table-view">
+            <div class="col-md-12">
+                <form id="schema-form" action="{% url 'registration_providers:schemas' registration_provider.id %}" method="post">
+                    {% csrf_token %}
+                    <table class="table table-striped">
+                        <th></th>
+                        <th>Name</th>
+                        <th>Active</th>
+                        {% for schema in schemas %}
+                            <tr>
+                                {% if schema.value %}
+                                    <td><input type="checkbox" name="{{schema.id}}" checked></td>
+                                {% else %}
+                                    <td><input type='checkbox' name="{{schema.id}}"></td>
+                                {% endif %}
+                                <td>{{ schema.name }} v{{schema.schema_version}}</td>
+                                <td>{{schema.active}}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                    <input class="form-button" type="submit" value="Update Schemas" />
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock content %}
+{% block bottom_js %}
+    {% render_bundle 'registration-provider-page' %}
+{% endblock %}

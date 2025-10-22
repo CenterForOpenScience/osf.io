@@ -1659,7 +1659,8 @@ class TestRecentlyAdded:
 
         assert len(list(user.get_recently_added())) == 15
 
-# New tests
+
+@pytest.mark.enable_implicit_clean
 class TestTagging:
     def test_add_system_tag(self, user):
         tag_name = fake.word()

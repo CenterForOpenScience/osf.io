@@ -249,11 +249,28 @@ class NodeFileCollector(object):
 
     def _collect_addons(self, node):
         rv = []
+
+        # GRDM-36019 Package Export/Import
+        from addons.metadata.apps import SHORT_NAME as METADATA_SHORT_NAME
+        metadata_addon = node.get_addon(METADATA_SHORT_NAME)
+
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
                 try:
                     temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                    # GRDM-36019 Package Export/Import
+                    # Display as error if add-on is not set and metadata add-on has settings
+                    if temp is None and metadata_addon is not None and metadata_addon.has_imported_addon_settings_for(addon):
+                        temp = [{
+                            KIND: FOLDER,
+                            'name': '{} is not configured'.format(addon.config.full_name),
+                            'addonFullname': addon.config.full_name,
+                            'provider': addon.config.short_name,
+                            'iconUrl': addon.config.icon_url,
+                            'permissions': {'view': False, 'edit': False},
+                            'unavailable': True,
+                        }]
                 except Exception as e:
                     logger.warn(
                         getattr(

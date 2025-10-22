@@ -8,15 +8,16 @@ from api_tests.nodes.views.test_node_draft_registration_list import (
 from api.base.settings.defaults import API_BASE
 from django.contrib.auth.models import Permission
 
-from osf.models import DraftRegistration, NodeLicense
+from osf.models import DraftRegistration, NodeLicense, RegistrationProvider
 from osf_tests.factories import (
     RegistrationFactory,
     CollectionFactory,
     ProjectFactory,
-    AuthUserFactory,
+    AuthUserFactory
 )
 from osf.utils.permissions import READ, WRITE, ADMIN
 
+from website import settings
 
 @pytest.mark.django_db
 class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
@@ -60,6 +61,37 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
         assert len(res.json['data']) == 0
 
         #   test_unauthenticated_user_cannot_view_draft_list
+        res = app.get(url_draft_registrations, expect_errors=True)
+        assert res.status_code == 401
+
+    # GRDM-50321 Change permissions for drafts
+    def test_can_view_draft_list_by_non_admin_user(
+            self, app, user_write_contrib, project_public,
+            user_read_contrib, user_non_contrib,
+            url_draft_registrations, group, group_mem):
+
+        # test_read_only_contributor_can_view_draft_list
+        res = app.get(
+            url_draft_registrations,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_read_write_contributor_can_view_draft_list
+        res = app.get(
+            url_draft_registrations,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_logged_in_non_contributor_can_view_draft_list(when node is public)
+        res = app.get(
+            url_draft_registrations,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_unauthenticated_user_can_view_draft_list(when node is public)
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
@@ -256,12 +288,26 @@ class TestDraftRegistrationCreateWithoutNode(TestDraftRegistrationCreate):
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == {}
+        assert data['relationships']['provider']['links']['related']['href'] == \
+               f'{settings.API_DOMAIN}v2/providers/registrations/{RegistrationProvider.default__id}/'
+
         assert data['embeds']['branched_from']['data']['id'] == DraftRegistration.objects.get(_id=data['id']).branched_from._id
         assert data['embeds']['initiator']['data']['id'] == user._id
 
         draft = DraftRegistration.load(data['id'])
         assert draft.creator == user
         assert draft.has_permission(user, ADMIN) is True
+
+    def test_create_draft_with_provider(self, app, user, url_draft_registrations, non_default_provider, payload_with_non_default_provider):
+
+        res = app.post_json_api(url_draft_registrations, payload_with_non_default_provider, auth=user.auth)
+        assert res.status_code == 201
+        data = res.json['data']
+        assert data['relationships']['provider']['links']['related']['href'] == \
+               f'{settings.API_DOMAIN}v2/providers/registrations/{non_default_provider._id}/'
+
+        draft = DraftRegistration.load(data['id'])
+        assert draft.provider == non_default_provider
 
     # Overrides TestDraftRegistrationList
     def test_cannot_create_draft(

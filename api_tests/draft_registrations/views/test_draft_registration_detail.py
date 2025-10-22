@@ -470,6 +470,43 @@ class TestDraftRegistrationUpdateWithNode(TestDraftRegistrationUpdate, TestUpdat
             'comments': 'This is my first registration.'
         }
 
+    # GRDM-50321 Change permissions for drafts
+    def test_cannot_update_draft(
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            project_public, group,
+            payload, url_draft_registrations, group_mem):
+
+        #   test_read_only_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_write_contributor_can_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_logged_in_non_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_unauthenticated_user_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True)
+        assert res.status_code == 401
+
 
 @pytest.mark.django_db
 class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
@@ -512,6 +549,43 @@ class TestDraftRegistrationUpdateWithDraftNode(TestDraftRegistrationUpdate):
             'comments': 'This is my first registration.'
         }
 
+    # GRDM-50321 Change permissions for drafts
+    def test_cannot_update_draft(
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            project_public, group,
+            payload, url_draft_registrations, group_mem):
+
+        #   test_read_only_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_write_contributor_can_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_logged_in_non_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_unauthenticated_user_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True)
+        assert res.status_code == 401
+
 
 class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
     @pytest.fixture()
@@ -547,6 +621,43 @@ class TestDraftRegistrationPatchNew(TestDraftRegistrationPatch):
         data = res.json['data']
         assert schema._id in data['relationships']['registration_schema']['links']['related']['href']
         assert data['attributes']['registration_metadata'] == payload['data']['attributes']['registration_metadata']
+
+    # GRDM-50321 Change permissions for drafts
+    def test_cannot_update_draft(
+            self, app, user_write_contrib,
+            user_read_contrib, user_non_contrib,
+            project_public, group,
+            payload, url_draft_registrations, group_mem):
+
+        #   test_read_only_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_write_contributor_can_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_logged_in_non_contributor_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 403
+
+        #   test_unauthenticated_user_cannot_update_draft
+        res = app.patch_json_api(
+            url_draft_registrations,
+            payload, expect_errors=True)
+        assert res.status_code == 401
 
 
 class TestDraftRegistrationDelete(TestDraftRegistrationDelete):

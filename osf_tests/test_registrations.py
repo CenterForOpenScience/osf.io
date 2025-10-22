@@ -279,10 +279,12 @@ class TestRegisterNode:
         assert_datetime_equal(registration.registered_date, timezone.now(), allowance=10000)
 
     def test_registered_addons(self, registration):
-        assert (
-            [addon.config.short_name for addon in registration.get_addons()] ==
-            [addon.config.short_name for addon in registration.registered_from.get_addons()]
-        )
+        # GRDM-54077: Exclude metadata addon from comparison as it's handled differently during registration
+        registration_addons = set([addon.config.short_name for addon in registration.get_addons()
+                                  if addon.config.short_name != 'metadata'])
+        source_addons = set([addon.config.short_name for addon in registration.registered_from.get_addons()
+                            if addon.config.short_name != 'metadata'])
+        assert registration_addons == source_addons
 
     def test_registered_user(self, project):
         # Add a second contributor
@@ -474,9 +476,8 @@ class TestNodeSanctionStates:
         registration = Registration.objects.get(retraction=retraction)
         assert registration.is_retracted
 
-    @mock.patch('website.project.tasks.send_share_node_data')
     @mock.patch('osf.models.node.AbstractNode.update_search')
-    def test_is_retracted_searches_parents(self, mock_registration_updated, mock_update_search):
+    def test_is_retracted_searches_parents(self, mock_update_search):
         user = factories.UserFactory()
         node = factories.ProjectFactory(creator=user)
         child = factories.NodeFactory(creator=user, parent=node)

@@ -519,6 +519,10 @@ msgstr "GakuNin RDM機関管理者ページへようこそ"
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
 
+#: admin/templates/base.html:345
+msgid "/static/img/footer_logo_EN.png"
+msgstr "/static/img/footer_logo_JP.png"
+
 #: admin/templates/collection_providers/cannot_delete.html:7
 msgid "Collection Provider Delete"
 msgstr "コレクションプロバイダーの削除"
@@ -2532,6 +2536,42 @@ msgstr "アクセスキー"
 msgid "Secret Key"
 msgstr "シークレットキー"
 
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:7
+msgid "Configure a JAIRO Cloud application"
+msgstr "JAIRO Cloudアプリケーションの設定"
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:18
+msgid "JAIRO Cloud Display Name"
+msgstr "JAIRO Cloud 表示名"
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:22
+msgid "JAIRO Cloud URL"
+msgstr "JAIRO Cloud URL"
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:26
+msgid "JAIRO Cloud OAuth Client ID"
+msgstr "JAIRO Cloud OAuthクライアントID"
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:30
+msgid "JAIRO Cloud OAuth Client Secret"
+msgstr "JAIRO Cloud OAuthクライアントシークレット"
+
+#: admin/templates/rdm_addons/addons/weko_applications_modal.html:40
+msgid "JAIRO Cloud URL is invalid. JAIRO Cloud URL should be start with http(s)://"
+msgstr "JAIRO Cloud URLが不正です。JAIRO Cloud URLはhttp(s)://から始まる文字列である必要があります。"
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:17
+msgid "Add"
+msgstr "追加"
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:22
+msgid "Delete Application"
+msgstr "アプリケーションの削除"
+
+#: admin/templates/rdm_addons/addons/weko_institution_settings.html:27
+msgid "OAuth Application "
+msgstr "OAuthアプリケーション "
+
 #: admin/templates/rdm_addons/institution_list.html:27
 #: admin/templates/rdm_statistics/institution_list.html:27
 msgid "Institution List"
@@ -2922,7 +2962,7 @@ msgstr ""
 
 #: admin/templates/rdm_metadata/erad.html:23
 msgid "Update"
-msgstr ""
+msgstr "更新"
 
 #: admin/templates/rdm_statistics/crawl.html:14
 #: admin/templates/rdm_statistics/index.html:14
@@ -3625,6 +3665,18 @@ msgstr "削除済みエクスポートデータ一覧"
 msgid "Revert"
 msgstr "復帰"
 
+msgid "User Identification Information"
+msgstr "ユーザー識別情報"
+
+msgid "Extended Storage"
+msgstr "拡張ストレージ"
+
+msgid "Export All Users Statistics (CSV)"
+msgstr "すべてのユーザー統計をエクスポート (CSV)"
+
+msgid "Return"
+msgstr "戻る"
+
 msgid "Delete Permanently"
 msgstr "恒久的に削除"
 
@@ -3774,3 +3826,186 @@ msgstr "NIIストレージの割当て(GB)は0~2147483647の以内でご入力�
 #: admin/templates/users/user_details.html:62
 msgid "Please enter Quota for Institutional Storage (GB) within 0~2147483647."
 msgstr "機関ストレージの割当て(GB)は0~2147483647の以内でご入力ください。"
+
+msgid "Project Limit Number"
+msgstr "プロジェクト制限数"
+
+msgid "Setting Template"
+msgstr "設定テンプレート"
+
+msgid "Project Limit Number Setting Template List"
+msgstr "プロジェクト作成数設定テンプレート一覧"
+
+msgid "Project Limit Number Setting Template"
+msgstr "プロジェクト作成数設定テンプレート"
+
+msgid "Save Availability"
+msgstr "使用可否の保存"
+
+msgid "Clear Availability"
+msgstr "使用可否のクリア"
+
+msgid "Save Availability/Priority"
+msgstr "使用可否/優先順位の保存"
+
+msgid "Clear Availability/Priority"
+msgstr "使用可否/優先順位のクリア"
+
+msgid "Availability"
+msgstr "使用可否"
+
+msgid "Setting Name"
+msgstr "設定名"
+
+msgid "Rule Name"
+msgstr "ルール名称"
+
+msgid "Using Attribute"
+msgstr "使用する属性"
+
+msgid "Created Time"
+msgstr "作成時間"
+
+msgid "Updated Time"
+msgstr "更新時間"
+
+msgid "Template Setting"
+msgstr "テンプレートの設定"
+
+msgid "Setting Type"
+msgstr "値の設定方法"
+
+msgid "Project Limit Number Setting List"
+msgstr "プロジェクト作成数設定一覧"
+
+msgid "Priority"
+msgstr "優先順位"
+
+msgid "Memo"
+msgstr "メモ"
+
+msgid "Project Limit Number Setting"
+msgstr "プロジェクト作成数設定"
+
+msgid "Set the project limit number for users who are meet the above attributes."
+msgstr "以上の属性に合致した場合のプロジェクト作成上限を設定します。"
+
+msgid "Created Project Number"
+msgstr "作成済みプロジェクト数"
+
+msgid "Setting"
+msgstr "設定"
+
+msgid "User List"
+msgstr "ユーザー一覧"
+
+msgid "Project Limit Number Setting Template"
+msgstr "プロジェクト作成数設定テンプレート"
+
+msgid "Operation"
+msgstr "操作"
+
+msgid "Create New"
+msgstr "新規作成"
+
+msgid "Show User List"
+msgstr "ユーザー一覧を表示"
+
+msgid "Project Limit Number Default"
+msgstr "プロジェクト制限のデフォルト"
+
+msgid "Save Default"
+msgstr "デフォルトを保存"
+
+msgid "Are you sure you want to delete this setting?"
+msgstr "この設定を削除してもよろしいですか?"
+
+msgid "Are you sure you want to delete this template?"
+msgstr "このテンプレートを削除してもよろしいですか?"
+
+msgid "No Limit"
+msgstr "無制限"
+
+msgid "Add Input Field"
+msgstr "入力欄を追加"
+
+msgid "Select institution"
+msgstr "機関を選択する"
+
+msgid "Select rule name"
+msgstr "ルール名称を選択する"
+
+msgid "Select attribute name"
+msgstr "使用する属性を選択する"
+
+msgid "Select setting type"
+msgstr "値の設定方法を選択する"
+
+msgid "=== Authentication Attribute ==="
+msgstr "=== 認証属性 ==="
+
+msgid "free_value_all_match"
+msgstr "単一の値(自由入力)(完全一致)"
+
+msgid "free_value_left_suffix_match"
+msgstr "単一の値(自由入力)(後方一致)"
+
+msgid "fixed_value_all_match"
+msgstr "固定値(完全一致)"
+
+msgid "fixed_value_left_suffix_match"
+msgstr "固定値(後方一致)"
+
+msgid "list_value_all_match"
+msgstr "リスト(完全一致)"
+
+msgid "list_value_left_suffix_match"
+msgstr "リスト(後方一致)"
+
+msgid "{template_name} is being used."
+msgstr "{template_name}が使用されています。"
+
+msgid "The attribute list is invalid."
+msgstr "属性一覧が不正です。"
+
+msgid "The attribute list is required."
+msgstr "属性一覧は必須です。"
+
+msgid "The template not exist."
+msgstr "ルール名称が存在しません。"
+
+msgid "The template name is required."
+msgstr "ルール名称は必須です。"
+
+msgid "The template name already exists."
+msgstr "同じルール名称は存在します。"
+
+msgid "The attribute name is required."
+msgstr "使用する属性は必須です。"
+
+msgid "The setting type is required."
+msgstr "値の設定方法は必須です。"
+
+msgid "The attribute value is required."
+msgstr "値は必須です。"
+
+msgid "The setting not exist."
+msgstr "設定が存在しません。"
+
+msgid "The setting name is required."
+msgstr "設定名は必須です。"
+
+msgid "The setting name is invalid."
+msgstr "設定名が不正です。"
+
+msgid "The setting name already exists."
+msgstr "同じ設定名は存在します。"
+
+msgid "The project limit number is invalid."
+msgstr "プロジェクト制限数が不正です。"
+
+msgid "The new project cannot be created due to the created project number is greater than or equal the project number can create."
+msgstr "作成したプロジェクト数が作成可能なプロジェクトの数の上限に達しているため、新規プロジェクトを作成できません。"
+
+msgid "attribute_value is required."
+msgstr "プロジェクト制限数が不正です。"

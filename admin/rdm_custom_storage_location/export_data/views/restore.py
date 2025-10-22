@@ -10,7 +10,6 @@ from celery.states import PENDING
 from celery.contrib.abortable import AbortableAsyncResult, ABORTED
 from django.db import transaction
 from django.db.models import Q
-from django.db.models.functions import Trunc
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from rest_framework import authentication as drf_authentication
@@ -635,11 +634,10 @@ def create_folder_in_destination(task, current_process_step, export_data_folders
     return created_folders
 
 
-def copy_files_from_export_data_to_destination(
-        task, current_process_step,
-        export_data_files, export_data_restore,
-        created_folders,
-        cookies, **kwargs):
+def copy_files_from_export_data_to_destination(task, current_process_step,
+                                               export_data_files, export_data_restore,
+                                               created_folders,
+                                               cookies, **kwargs):
     export_data = export_data_restore.export
 
     destination_region = export_data_restore.destination
@@ -732,21 +730,19 @@ def copy_files_from_export_data_to_destination(
                             file_version = node.get_version(response_file_version_id, required=False)
 
                             if file_version is not None:
-                                contributor = version.get('contributor')
-                                user = OSFUser.objects.filter(username=contributor)
                                 file_version_created_at = version.get('created_at')
-                                file_version_modified = version.get('modified_at')
-                                same_file_versions = node.versions.annotate(
-                                    created_trunc=Trunc('created', 'second'),
-                                    modified_trunc=Trunc('modified', 'second')
-                                ).exclude(
+                                file_version_modified_at = version.get('modified_at')
+
+                                # Find records of old versions with the same 'created_at' and 'modified_at' values
+                                same_file_versions = node.versions.exclude(
                                     identifier=response_file_version_id
                                 ).filter(
-                                    created_trunc=file_version_created_at,
-                                    modified_trunc=file_version_modified
+                                    created=file_version_created_at,
+                                    modified=file_version_modified_at
                                 )
 
                                 if same_file_versions.exists():
+                                    # delete duplicate new record
                                     file_version.delete()
                                 else:
                                     if user.exists():

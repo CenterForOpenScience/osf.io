@@ -72,32 +72,45 @@ def upload_folder_recursive(osf_cookie, pid, local_path, dest_path):
 
 def create_folder(osf_cookie, pid, folder_name, dest_path):
     dest_arr = dest_path.split('/')
+    path = os.path.join(*dest_arr[1:]) if len(dest_arr) > 1 else ''
     response = requests.put(
         waterbutler_api_url_for(
-            pid, dest_arr[0], path='/' + os.path.join(*dest_arr[1:]),
+            pid, dest_arr[0], path='/' + path,
             name=folder_name, kind='folder', meta='', _internal=True
         ),
         cookies={
             settings.COOKIE_NAME: osf_cookie
         }
     )
+    response.raise_for_status()
     return response
 
-def upload_file(osf_cookie, pid, file_path, file_name, dest_path):
+def open_file(file):
+    if isinstance(file, str):
+        return open(file, 'rb')
+    return file
+
+def upload_file(osf_cookie, pid, file, file_name, dest_path):
     response = None
     dest_arr = dest_path.split('/')
-    with open(file_path, 'r') as f:
+    stream = open_file(file)
+    path = os.path.join(*dest_arr[1:]) if len(dest_arr) > 1 else ''
+    try:
         response = requests.put(
             waterbutler_api_url_for(
-                pid, dest_arr[0], path='/' + os.path.join(*dest_arr[1:]),
+                pid, dest_arr[0], path='/' + path,
                 name=file_name, kind='file', _internal=True
             ),
-            data=f,
+            data=stream,
             cookies={
                 settings.COOKIE_NAME: osf_cookie
             }
         )
-    return response
+        response.raise_for_status()
+        return response
+    finally:
+        if stream != file:
+            stream.close()
 
 def get_node_info(osf_cookie, pid, provider, path):
     try:
@@ -117,3 +130,13 @@ def get_node_info(osf_cookie, pid, provider, path):
         content = response.json()
     response.close()
     return content
+
+def delete_file(osf_cookie, pid, provider, path):
+    response = requests.delete(
+        waterbutler_api_url_for(
+            pid, provider, path=path, _internal=True, meta=''
+        ),
+        headers={'content-type': 'application/json'},
+        cookies={settings.COOKIE_NAME: osf_cookie}
+    )
+    response.raise_for_status()

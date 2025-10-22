@@ -295,8 +295,11 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.is_admin_contributor(user):
-            raise PermissionsError('Only admins may embargo a registration')
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        if not self.is_contributor(user) or not self.can_edit(user=user):
+            raise PermissionsError('Only users with write permission can project metadata.')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationError('Registrations can only be embargoed for up to four years.')
@@ -567,6 +570,12 @@ class DraftRegistrationLog(ObjectIDMixin, BaseModel):
         get_latest_by = 'created'
 
 
+def get_default_id():
+    from django.apps import apps
+    RegistrationProvider = apps.get_model('osf', 'RegistrationProvider')
+    return RegistrationProvider.get_default().id
+
+
 class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMixin,
         BaseModel, Loggable, EditableFieldsMixin, GuardianMixin):
     # Fields that are writable by DraftRegistration.update
@@ -601,8 +610,9 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     provider = models.ForeignKey(
         'RegistrationProvider',
         related_name='draft_registrations',
-        null=True,
+        null=False,
         on_delete=models.CASCADE,
+        default=get_default_id,
     )
 
     # Dictionary field mapping question id to a question's comments and answer
@@ -916,7 +926,14 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
     @classmethod
     def create_from_node(cls, user, schema, node=None, data=None, provider=None):
         if not provider:
-            provider = RegistrationProvider.load('osf')
+            provider = RegistrationProvider.get_default()
+
+        if provider.is_default:
+            # If the default provider doesn't have schemas specified yet, allow all schemas
+            if provider.schemas.exists():
+                provider.validate_schema(schema)
+        else:
+            provider.validate_schema(schema)
 
         if not node:
             # If no node provided, a DraftNode is created for you

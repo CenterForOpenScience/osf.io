@@ -21,7 +21,7 @@ from framework.auth.decorators import must_be_logged_in
 from requests_oauthlib import OAuth2Session
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
-from .models import BinderHubToken, get_default_binderhubs
+from .models import BinderHubToken, get_default_binderhub
 from . import SHORT_NAME
 from . import settings
 
@@ -91,8 +91,7 @@ def _get_all_binderhubs(auth, node):
     user_binderhubs = []
     if user_addon:
         user_binderhubs = user_addon.get_binderhubs(allow_secrets=True)
-    system_binderhubs = get_default_binderhubs(allow_secrets=True)
-    return node_binderhubs + user_binderhubs + system_binderhubs
+    return node_binderhubs + user_binderhubs + [get_default_binderhub(allow_secrets=True)]
 
 def update_binderhub_data(client_settings, token, token_resp):
     token.binderhub_token = json.dumps(token_resp)

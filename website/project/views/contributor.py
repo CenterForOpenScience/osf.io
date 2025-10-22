@@ -60,17 +60,17 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 
     contributors = []
 
-    n_contributors = len(users)
+    n_contributors = users.count()
     others_count = ''
 
     for index, user in enumerate(users[:max_count]):
 
-        if index == max_count - 1 and len(users) > max_count:
+        if index == max_count - 1 and n_contributors > max_count:
             separator = ' &'
             others_count = str(n_contributors - 3)
-        elif index == len(users) - 1:
+        elif index == n_contributors - 1:
             separator = ''
-        elif index == len(users) - 2:
+        elif index == n_contributors - 2:
             separator = ' &'
         else:
             separator = ','
@@ -109,6 +109,7 @@ def get_contributors(auth, node, **kwargs):
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
+
     contribs = profile_utils.serialize_contributors(
         node.visible_contributors[0:limit],
         node=node,

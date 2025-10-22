@@ -337,7 +337,12 @@ function ajaxCommon(type, params, providerShortName, route, callback) {
     if (type === 'POST') {
         params = JSON.stringify(params);
     }
-    var url = '../' + route + '/'
+    var url = '../' + route + '/';
+    if (window.contextVars && !!window.contextVars.institutional_storage) {
+        // If page is institutional storage page, request to /custom_storage_location/{route}/{institution_id}
+        var institution_id = window.contextVars.institution_id || '';
+        url = '/custom_storage_location/' + route + '/' + institution_id;
+    }
     $.ajax({
         url: url,
         type: type,
@@ -353,7 +358,7 @@ function ajaxCommon(type, params, providerShortName, route, callback) {
         },
         error: function (jqXHR) {
             if (jqXHR.responseJSON != null && ('message' in jqXHR.responseJSON)) {
-                afterRequest[route].fail(this.custom, jqXHR.responseJSON.message);
+                afterRequest[route].fail(this.custom, _(jqXHR.responseJSON.message));
             } else {
                 afterRequest[route].fail(this.custom, _('Some errors occurred'));
             }
@@ -408,7 +413,7 @@ var afterRequest = {
             }, growlBoxDelay);
         },
         'fail': function (id, message) {
-            $('#' + id + '_message').html(message);
+            $('#' + id + '_message').html(_(message));
             $('#' + id + '_save').attr('disabled', true);
             $('#' + id + '_save').removeClass('btn-success').addClass('btn-default');
             $('#' + id + '_connect').removeClass('btn-default').addClass('btn-success');
@@ -709,8 +714,14 @@ $('#csv_file').change(function () {
         });
         fd.append('check_extuser', $('#csv_check_extuser').is(':checked'));
     }
+    var url = '../usermap/';
+    if (window.contextVars && !!window.contextVars.institutional_storage) {
+        // If page is institutional storage page, request to /custom_storage_location/usermap/{institution_id}
+        var institution_id = window.contextVars.institution_id || '';
+        url = '/custom_storage_location/usermap/' + institution_id;
+    }
     $.ajax({
-        url: '../usermap/',
+        url: url,
         type: 'POST',
         data: fd,
         processData: false,

@@ -2,6 +2,8 @@ import pytz
 import functools
 from rest_framework import status as http_status
 
+from api.share.utils import update_share
+
 from dateutil.parser import parse as parse_date
 from django.apps import apps
 from django.utils import timezone
@@ -19,7 +21,6 @@ from osf.exceptions import (
     InvalidSanctionApprovalToken,
     NodeStateError,
 )
-from website.project import tasks as project_tasks
 
 from osf.models.base import BaseModel, ObjectIDMixin
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -687,7 +688,9 @@ class Retraction(EmailApprovableSanction):
             node.update_search()
         # force a save before sending data to share or retraction will not be updated
         self.save()
-        project_tasks.update_node_share(parent_registration)
+
+        if osf_settings.SHARE_ENABLED:
+            update_share(parent_registration)
 
     def approve_retraction(self, user, token):
         self.approve(user, token)

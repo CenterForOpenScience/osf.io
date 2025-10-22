@@ -154,14 +154,18 @@ def serialize_user(user, node=None, admin=False, full=False, is_profile=False, i
 def serialize_contributors(contribs, node, **kwargs):
     return [
         serialize_user(contrib, node, **kwargs)
-        for contrib in contribs
+        for contrib in contribs.iterator()
     ]
 
 
 def serialize_visible_contributors(node):
     # This is optimized when node has .include('contributor__user__guids')
+    contribs = node.contributor_set.include(
+        'user__groups', 'user__guids', 'user__ext'
+    )
+
     return [
-        serialize_user(c, node) for c in node.contributor_set.all() if c.visible
+        serialize_user(c, node) for c in contribs.iterator() if c.visible
     ]
 
 

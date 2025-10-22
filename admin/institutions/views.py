@@ -4,7 +4,7 @@ import json
 import logging
 from operator import itemgetter
 
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
 from django.db.models import Q
 from django.http import Http404
 from django.core import serializers
@@ -515,9 +515,13 @@ class UpdateQuotaUserListByInstitutionID(RdmPermissionMixin, UserPassesTestMixin
             # Update or create used quota for each user in the institution
             for user in OSFUser.objects.filter(
                     affiliated_institutions=institution_id):
-                UserQuota.objects.update_or_create(
-                    user=user, storage_type=user_quota_type,
-                    defaults={'max_quota': max_quota})
+                try:
+                    with transaction.atomic():
+                        UserQuota.objects.update_or_create(
+                            user=user, storage_type=user_quota_type,
+                            defaults={'max_quota': max_quota})
+                except IntegrityError:
+                    UserQuota.objects.filter(user=user, storage_type=user_quota_type).update(max_quota=max_quota)
         return redirect('institutions:institution_user_list',
                         institution_id=institution_id)
 

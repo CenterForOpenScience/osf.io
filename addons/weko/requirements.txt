@@ -1,1 +1,2 @@
 # libraries for SWORD
+bagit>=1.8.1

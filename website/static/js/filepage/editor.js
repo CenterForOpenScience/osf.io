@@ -100,17 +100,19 @@ var FileEditor = {
                 url: self.url,
                 data: model.editor.getValue(),
                 beforeSend: $osf.setXHRAuthorization
-            }).done(function () {
+            }).done(function (res) {
                 FileFetcher.clear();
                 model.editor.setReadOnly(false);
                 self.unthrottledStatus(oldstatus);
-                $(document).trigger('fileviewpage:reload');
+                $(document).trigger('fileviewpage:reload', res.data);
                 self.initialText = model.editor.getValue();
                 m.redraw();
             }).fail(function(xhr, textStatus, err) {
                 var message;
                 if (xhr.status === 507) {
                     message = _('Could not update file. Insufficient storage space in your Dropbox.');
+                } else if (xhr.status === 406) {
+                    message = _(xhr.responseJSON.message);
                 } else {
                     message = _('The file could not be updated.');
                 }

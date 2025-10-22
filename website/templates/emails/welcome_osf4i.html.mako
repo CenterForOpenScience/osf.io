@@ -47,7 +47,7 @@ GakuNin RDM上のプロジェクトは全て固有の永続的識別子がつい
 <br>
 -->
 <h4>使用中のサービスと接続</h4>
-GakuNin RDMはAmazon S3、Azure Blob Storage、Bitbucket、Box、Dataverse、Dropbox、figshare、GitHub、GitLab、Google Drive、Mendeley、Nextcloud、OneDrive、OpenStack Swift、ownCloud、S3 Compatible Storage、WEKO、Zoteroとの統合が可能。各種サービスをGakunin RDMプロジェクトとリンクすれば、研究資料を全て1か所にまとめられます。<a href="https://support.rdm.nii.ac.jp/usermanual/24/">アドオンについて詳しく見る</a>。<br>
+GakuNin RDMはAmazon S3、Azure Blob Storage、Bitbucket、Box、Dataverse、Dropbox、figshare、GitHub、GitLab、Google Drive、Mendeley、Nextcloud、OneDrive、OpenStack Swift、ownCloud、S3 Compatible Storage、JAIRO Cloud、Zoteroとの統合が可能。各種サービスをGakunin RDMプロジェクトとリンクすれば、研究資料を全て1か所にまとめられます。<a href="https://support.rdm.nii.ac.jp/usermanual/24/">アドオンについて詳しく見る</a>。<br>
 <br>
 
 Gakunin RDMについての詳細は<a href="https://support.rdm.nii.ac.jp/">サポート</a>をご覧ください。<br>

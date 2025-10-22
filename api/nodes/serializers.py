@@ -718,9 +718,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
         return len(registrations)
 
     def get_draft_registration_count(self, obj):
-        auth = get_user_auth(self.context['request'])
-        if obj.has_permission(auth.user, osf_permissions.ADMIN):
-            return obj.draft_registrations_active.count()
+        return obj.draft_registrations_active.count()
 
     def get_pointers_count(self, obj):
         return obj.linked_nodes.count()
@@ -925,6 +923,9 @@ class NodeAddonSettingsSerializerBase(JSONAPISerializer):
     external_account_id = ser.CharField(source='external_account._id', required=False, allow_null=True)
     folder_id = ser.CharField(required=False, allow_null=True)
     folder_path = ser.CharField(required=False, allow_null=True)
+
+    # GRDM-44417: features to check abilities of the addon
+    features = ser.DictField(required=False, read_only=True)
 
     # Forward-specific
     label = ser.CharField(required=False, allow_blank=True)
@@ -1581,15 +1582,14 @@ class DraftRegistrationLegacySerializer(JSONAPISerializer):
         metadata = validated_data.pop('registration_metadata', None)
         registration_responses = validated_data.pop('registration_responses', None)
         schema = validated_data.pop('registration_schema')
-
-        provider = validated_data.pop('provider', None) or RegistrationProvider.load('osf')
-        # TODO: this
-        # if not provider.schemas_acceptable.filter(id=schema.id).exists():
-        #     raise exceptions.ValidationError('Invalid schema for provider.')
+        provider = validated_data.pop('provider', None)
 
         self.enforce_metadata_or_registration_responses(metadata, registration_responses)
 
-        draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        try:
+            draft = DraftRegistration.create_from_node(node=node, user=initiator, schema=schema, provider=provider)
+        except ValidationError as e:
+            raise exceptions.ValidationError(e.message)
 
         if metadata:
             self.update_metadata(draft, metadata)

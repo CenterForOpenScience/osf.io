@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+{% load node_extras %}
+{% block top_includes %}
+    <link rel="stylesheet" type="text/css" href="/static/css/users.css"/>
+{% endblock %}
+
+{% block title %}
+    <title>{% trans "User Details" %}</title>
+{% endblock title %}
+{% block content %}
+    <div class="row">
+        <div class="col-md-12" style="display:flex; align-items: baseline; justify-content: space-between;">
+            <h3>{% trans "User details" %}</h3>
+            {% if user.is_superuser %}
+                <a href="{% url 'user_identification_information:user_identification_list' %}" class="btn btn-primary">
+                    {% trans "Return" %}
+                </a>
+            {% else %}
+                <a href="{% url 'user_identification_information_admin:user_identification_list' %}" class="btn btn-primary">
+                    {% trans "Return" %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>{% trans "Field" %}</th>
+                    <th>{% trans "Value" %}</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>{% trans "Name" %}</td>
+                    <td>{{ user_details.name }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "GakuNin RDM account" %}</td>
+                    <td>
+                        <a href="{{ user_details.osf_link }}">{{ user_details.id }}</a>
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Username" %}</td>
+                    <td>{{ user_details.username }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Emails" %}</td>
+                    <td>
+                        {% for email in user_details.emails %}
+                            <p>{{email}}</p>
+                        {% endfor %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Registered" %}</td>
+                    <td>{{ user_details.registered }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Confirmed" %}</td>
+                    <td>{{ user_details.confirmed }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Affiliation" %}</td>
+                    <td>{{ user_details.affiliation.name }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Last login" %}</td>
+                    <td>{{ user_details.last_login }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Disabled" %}</td>
+                    <td>{{ user_details.disabled }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Two factor" %}</td>
+                    <td>
+                        {{ user_details.two_factor }}
+                        {% if user_details.two_factor %}
+                            <a href="{% url 'users:remove2factor' user_details.id %}"
+                               class="btn btn-default"
+                               data-toggle="modal"
+                               data-target="#twoFactorModal">
+                                {% trans "Deactivate" %}
+                            </a>
+                            <div class="modal" id="twoFactorModal">
+                                <div class="modal-dialog">
+                                    <div class="modal-content"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "System tags" %}</td>
+                    <td>
+                        {% for system_tag in user_details.system_tags %}
+                            {{ system_tag }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                        {% if system_tag is null %} Null {% endif %}
+                    </td>
+                </tr>
+                {% if user_details.osf_groups %}
+                    <tr>
+                        <td>
+                            {% trans "GakuNin RDM Groups" %}
+                        </td>
+                        <td>
+                            <select class="form-control" style="width:90%; display:inherit;" id="groups-select">
+                                {% for group in user_details.osf_groups %}
+                                    <option value="{{ group.id | reverse_osf_group }}">{{ group.name }} ({{ group.role }})</option>
+                                {% endfor %}
+                            </select>
+                            <input type="submit" class="pull-right btn btn-default" value="Go to"
+                                   onclick="document.location.href = document.getElementById('groups-select').value;"/>
+                        </td>
+                    </tr>
+                {% endif %}
+                <tr>
+                    <td>{% trans "Usage" %}</td>
+                    <td>
+                        {{ user_details.usage_value }} {{ user_details.usage_abbr }}
+                    </td>
+                </tr>
+                <tr>
+                    <td>{% trans "Remaining" %}</td>
+                    <td>{{ user_details.remaining_value|floatformat:1 }} {{ user_details.remaining_abbr }}</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Quota" %}</td>
+                    <td>{{ user_details.quota }} GB</td>
+                </tr>
+                <tr>
+                    <td>{% trans "Extended Storage" %}</td>
+                    <td>{{ user_details.extended_storage|linebreaks }}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+{% endblock content %}

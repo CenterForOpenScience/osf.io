@@ -35,7 +35,7 @@ function Contributor(data) {
 
 var AddContributorViewModel;
 AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function (title, nodeId, parentId, parentTitle, options) {
+    constructor: function (title, nodeId, parentId, parentTitle, treeDataPromise, options) {
         this.super.constructor.call(this);
         var self = this;
 
@@ -44,6 +44,7 @@ AddContributorViewModel = oop.extend(Paginator, {
         self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
+        self.treeDataPromise = treeDataPromise;
         self.async = options.async || false;
         self.callback = options.callback || function () {
             };
@@ -516,11 +517,7 @@ AddContributorViewModel = oop.extend(Paginator, {
      */
     fetchNodeTree: function (treebeardUrl) {
         var self = this;
-        return $.ajax({
-            url: treebeardUrl,
-            type: 'GET',
-            dataType: 'json'
-        }).done(function (response) {
+        return $.when(self.treeDataPromise).done(function (response) {
             self.nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], self.nodesOriginal);
             var nodesState = $.extend(true, {}, self.nodesOriginal);
             var nodeParent = response[0].node.id;
@@ -545,7 +542,7 @@ AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, options) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, treeDataPromise, options) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -553,12 +550,14 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle, option
     self.nodeId = nodeId;
     self.parentId = parentId;
     self.parentTitle = parentTitle;
+    self.treeDataPromise = treeDataPromise;
     self.options = options || {};
     self.viewModel = new AddContributorViewModel(
         self.nodeTitle,
         self.nodeId,
         self.parentId,
         self.parentTitle,
+        self.treeDataPromise,
         self.options
     );
     self.init();

@@ -25,7 +25,7 @@ function removeNodesContributors(contributor, nodes) {
 
 
 var RemoveContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, nodeId, userName, userId, contribShouter, pageChangedShouter) {
+    constructor: function(title, nodeId, userName, userId, contribShouter, pageChangedShouter, treeDataPromise) {
         this.super.constructor.call(this);
         var self = this;
         self.title = title;
@@ -36,6 +36,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
         self.REMOVE_ALL = 'removeAll';
         self.REMOVE_NO_CHILDREN = 'removeNoChildren';
         self.REMOVE_SELF = 'removeSelf';
+        self.treeDataPromise = treeDataPromise;
 
         //This shouter allows the ContributorsViewModel to share which contributor to remove
         // with the RemoveContributorViewModel
@@ -197,11 +198,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
             return nodeIDsToRemove;
         });
 
-        $.ajax({
-            url: window.contextVars.node.urls.api + 'tree',
-            type: 'GET',
-            dataType: 'json'
-        }).done(function(response) {
+        $.when(self.treeDataPromise).done(function(response) {
             nodesOriginal = projectSettingsTreebeardBase.getNodesOriginal(response[0], nodesOriginal);
             self.nodesOriginal(nodesOriginal);
         }).fail(function(xhr, status, error) {
@@ -249,7 +246,7 @@ var RemoveContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribRemover(selector, nodeTitle, nodeId, userName, userId, contribShouter, pageChangedShouter) {
+function ContribRemover(selector, nodeTitle, nodeId, userName, userId, contribShouter, pageChangedShouter, treeDataPromise) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
@@ -258,7 +255,7 @@ function ContribRemover(selector, nodeTitle, nodeId, userName, userId, contribSh
     self.userName = userName;
     self.userId = userId;
     self.viewModel = new RemoveContributorViewModel(self.nodeTitle,
-        self.nodeId, self.userName, self.userId, contribShouter, pageChangedShouter);
+    self.nodeId, self.userName, self.userId, contribShouter, pageChangedShouter, treeDataPromise);
     self.init();
 }
 

@@ -44,12 +44,14 @@ from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
 from framework.exceptions import HTTPError
 from osf.models import AbstractNode
 from website import settings as osf_settings
+from osf.models import Node, OSFUser, ProjectStorageType, UserQuota
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
 from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 from website.util import inspect_info  # noqa
+from website.util.quota import update_node_storage, update_user_used_quota
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +176,14 @@ def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
         region.waterbutler_settings = wb_settings
         region.save()
     return region
+
+def update_nodes_storage(institution):
+    for node in Node.objects.filter(affiliated_institutions=institution.id):
+        update_node_storage(node)
+        storage_type = ProjectStorageType.objects.filter(node=node)
+        storage_type.update(storage_type=ProjectStorageType.CUSTOM_STORAGE)
+    for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+        update_user_used_quota(user, storage_type=UserQuota.CUSTOM_STORAGE, is_recalculating_quota=True)
 
 def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
@@ -691,9 +701,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_box_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_box_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_box_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -719,9 +727,7 @@ def save_box_credentials(user, storage_name, folder_id):
         'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
-def save_googledrive_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_googledrive_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_googledrive_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -866,9 +872,7 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id_or_path):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_onedrivebusiness_credentials(institution_id, user, storage_name, provider_name, folder_id_or_path):
     test_connection_result, folder_id = validate_onedrivebusiness_connection(institution_id, folder_id_or_path)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result

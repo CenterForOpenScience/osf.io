@@ -1026,3 +1026,17 @@ class TestOsfStorageCheckout(StorageTestCase):
         self.file.target.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)
+
+
+@pytest.mark.django_db
+class TestOsfStorageFolder(StorageTestCase):
+    def test_serialize(self):
+        folder = OsfStorageFolder(
+            name='Test Mendeley Folder',
+            created=datetime.datetime.strptime('2017-10-14T21:17:14.000Z', '%Y-%m-%dT%H:%M:%S.%fZ'),
+            modified=datetime.datetime.strptime('2017-10-14T21:18:00.000Z', '%Y-%m-%dT%H:%M:%S.%fZ'),
+        )
+        serialize = folder.serialize(True)
+        assert_equal(serialize['name'], 'Test Mendeley Folder')
+        assert_equal(serialize['created'], '2017-10-14T21:17:14')
+        assert_equal(serialize['modified'], '2017-10-14T21:18:00')

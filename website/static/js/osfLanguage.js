@@ -115,7 +115,7 @@ module.exports = {
                 'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },
         weko: {
-            authError: 'Could not connect to WEKO at this time. Please try again later.',
+            authError: 'Could not connect to JAIRO Cloud at this time. Please try again later.',
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
                 'contact ' + $osf.osfSupportLink() + ' if the problem persists.',
         },

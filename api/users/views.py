@@ -329,11 +329,14 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
         return self.optimize_node_queryset(default_queryset)
 
     # overrides ListAPIView
+    """
+    https://github.com/RCOSDP/RDM-osf.io/pull/505
+    """
     def get_queryset(self):
         return (
             self.get_queryset_from_request()
             .select_related('node_license')
-            .include('contributor__user__guids', 'root__guids', limit_includes=10)
+            .include('root__guids', limit_includes=10)
         )
 
 

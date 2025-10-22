@@ -89,6 +89,9 @@ var OPERATIONS = {
     }
 };
 
+var isInUploadFolderProcess = false;
+var isOngoingUploadFolder = false;
+
 // Cross browser key codes for the Command key
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
@@ -1086,7 +1089,18 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     if (msgText !== 'Upload canceled.') {
         addFileStatus(treebeard, file, false, msgText, '');
     }
-    treebeard.dropzone.options.queuecomplete(file);
+
+    // Do not display dialog when upload folder is on-going
+    if (!isOngoingUploadFolder) {
+        treebeard.dropzone.options.queuecomplete(file);
+    } else {
+        if (msgText !== 'Upload canceled.') {
+            $osf.growl(
+                'Error',
+                msgText
+            );
+        }
+    }
 }
 
 /**
@@ -1108,6 +1122,17 @@ function _uploadEvent(event, item, col) {
     self.dropzone.hiddenFileInput.click();
     if (!item.open) {
         self.updateFolder(null, item);
+    }
+    // Add event listener only for this event to avoid handling conflict with Upload folder event
+    self.dropzone.hiddenFileInput.addEventListener('change', _onchange, { once: true });
+
+    function _onchange() {
+        var files = self.dropzone.hiddenFileInput.files || [];
+
+        // Add files to Treebeard
+        for (var i = 0; i < files.length; i++) {
+            self.dropzone.addFile(files[i]);
+        }
     }
 }
 
@@ -1155,18 +1180,13 @@ function _uploadFolderEvent(event, item, mode, col) {
     if (!item.open) {
         tb.updateFolder(null, item);
     }
-    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange);
+    // Add event listener only for this event to avoid handling conflict with Upload event
+    tb.dropzone.hiddenFileInput.addEventListener('change', _onchange, { once: true });
 
     function _onchange() {
-        var node_parent = tb.multiselected()[0];
-        var root_parent = tb.multiselected()[0];
-        var files = [];
-        var total_files_size = 0;
-
-        // get all files in folder
-        files = tb.dropzone.hiddenFileInput.files;
-        total_files_size = 0;
-
+        var nodeParent = tb.multiselected()[0];
+        var files = tb.dropzone.hiddenFileInput.files || [];
+        var totalFilesSize = 0;
         // check folder is empty
         if (files.length === 0) {
             $osf.growl('Error', gettext('The folder that wants to upload is empty.'), 'danger', 5000);
@@ -1175,179 +1195,169 @@ function _uploadFolderEvent(event, item, mode, col) {
 
         // calculate total files size in folder
         for (var i = 0; i < files.length; i++) {
-            total_files_size += files[i].size;
+            totalFilesSize += files[i].size;
         }
 
-        node_parent.open = true;
-        total_files_size = parseFloat(total_files_size).toFixed(2);
+        nodeParent.open = true;
+        totalFilesSize = parseFloat(totalFilesSize).toFixed(2);
         var quota = null;
 
         if (!item.data.provider) {
             return;
         }
+        // check upload quota for upload folder
+        if (item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') {
+            // call api get used quota and max quota
+            quota = $.ajax({
+                async: false,
+                method: 'GET',
+                url: item.data.nodeApiUrl + 'get_creator_quota/',
+            });
 
-        // call api get used quota and max quota
-        quota = $.ajax({
-            async: false,
-            method: 'GET',
-            url: item.data.nodeApiUrl + 'get_creator_quota/',
+            if (!quota.responseJSON) {
+                return;
+            }
+
+            quota = quota.responseJSON;
+
+            if (parseFloat(quota.used) + parseFloat(totalFilesSize) > quota.max) {
+                $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
+                formatProperUnit(totalFilesSize)),
+                'danger', 5000);
+                return;
+            }
+        }
+
+        var createdFolders = [];
+        // Start
+        isInUploadFolderProcess = true;
+        isOngoingUploadFolder = true;
+        var parentFolderList = [];
+        var parentPath = '/';
+        for (var index = 0; index < files.length; index++) {
+            var file = files[index];
+            if (file && file.webkitRelativePath) {
+                var fileParentPath = file.webkitRelativePath.substring(0, file.webkitRelativePath.lastIndexOf('/'));
+                if (!parentFolderList.includes(fileParentPath)) {
+                    parentFolderList.push(fileParentPath);
+                }
+            }
+        }
+
+        // Add parent folders
+        processDataSequentially(_addFolders, parentFolderList).then(function () {
+            // After add parent folders, start upload files process
+            for (var index = 0; index < files.length; index++) {
+                var file = files[index];
+                var parentPath = file.webkitRelativePath.substring(0, file.webkitRelativePath.lastIndexOf('/'));
+                var createdParentFolder = createdFolders.find(function (item) {
+                    return item.path === '/' + parentPath + '/';
+                });
+
+                if (!createdParentFolder) {
+                    // If parent folder path is not fully created, rerun create folder
+                    processDataSequentially(_addFolders, [parentPath]).then(function () {
+                        createdParentFolder = createdFolders.find(function (item) {
+                            return item.path === '/' + parentPath + '/';
+                        });
+                        _addFile(file, createdParentFolder.node_parent);
+                    });
+                } else {
+                    _addFile(file, createdParentFolder.node_parent);
+                }
+            }
+            isInUploadFolderProcess = false;
         });
 
-        if (!quota.responseJSON) {
-            return;
-        }
-
-        quota = quota.responseJSON;
-
-        // check upload quota for upload folder
-        if (parseFloat(quota.used) + parseFloat(total_files_size) > quota.max) {
-            $osf.growl('Error', sprintf(gettext('Not enough quota to upload. The total size of the folder %1$s.'),
-            formatProperUnit(total_files_size)),
-            'danger', 5000);
-            return;
-        }
-
-        var created_folders = [];
-        var created_path = [];
-
-        // Start
-        node_parent = _pushObject(node_parent, 0, files, files[0], 0, _pushObject);
-
-        function _pushObject(node_parent, index, list_paths, file, file_index, next) {
-            var _obj, folder_name;
-            // Stop
-            if (!file) {
-                // console.log('Stop');
-                return node_parent;
-            }
-            // get item object
-            if (index >=0 && index < list_paths.length) {
-                _obj = list_paths[index];
-            }
-            // check type of File
-            if (typeof _obj === typeof file) {
-                // console.log(file);
-                if (file.webkitRelativePath.length === 0) {
-                    tb.dropzoneItemCache = tb.multiselected()[0];
-                    tb.dropzone.addFile(file);
-                    // next file
-                    var next_file_index = ++file_index;
-                    return _pushObject(node_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
+        function processDataSequentially(asyncFunction, remainingData) {
+            // Call function sequentially by promise then chaining
+            return new Promise(function(resolve, reject) {
+                function iterateFunctionCall(remainingData) {
+                    if (remainingData.length === 0) {
+                        return resolve();
+                    }
+                    asyncFunction(remainingData).then(function (item) {
+                        iterateFunctionCall(remainingData.slice(1));
+                    }).catch(reject);
                 }
-
-                // change list_paths of File obj
-                var new_list_paths = file.webkitRelativePath.split('/');
-                return _pushObject(node_parent, 0, new_list_paths, file, file_index, _pushObject);
-            }
-
-            // else, it is folder and file
-            folder_name = _obj;
-            if (file.name === folder_name) {
-                // next file
-                // console.log(folder_name, parent && parent.data.name);
-                return _pushFile(node_parent, file, file_index);
-            }
-            // Create each folder detected from file path
-            // console.log(folder_name, parent && parent.data.name);
-            return _pushFolder(node_parent, index, list_paths, file, file_index, next);
+                iterateFunctionCall(remainingData);
+            });
         }
 
-        function _pushFile(node_parent, file, file_index) {
-            node_parent.open = true;
-            tb.dropzoneItemCache = node_parent;
+        function _addFile(file, nodeParent) {
+            // Add file to Dropzone
+            nodeParent.open = true;
+            tb.dropzoneItemCache = nodeParent;
             tb.dropzone.addFile(file);
-            // console.log('Pushed');
-            // next file
-            var next_file_index = ++file_index;
-            return _pushObject(root_parent, 0, files, files[next_file_index], next_file_index, _pushObject);
         }
 
-        function _pushFolder(node_parent, index, list_paths, file, file_index, next) {
-            var folder_name;
-            if (index >=0 && index < list_paths.length) {
-                folder_name = list_paths[index];
-            }
-            // var currentFolder = created_folders.find(x => x.name === folder_name);
-            var currentFolder = null;
-            for(var i = 0; i < created_folders.length; i++){
-                if(created_folders[i].name === folder_name){
-                    currentFolder = created_folders[i];
-                    break;
-                }
-            }
-            var currentFolderPath = '/' + folder_name + '/';
+        function _addFolders(parentFolderList) {
+            // Add multiple folder parts in folder path
+            // Get only first item, the list will slice the iterated item after promise
+            var fileParentPath = parentFolderList[0];
+            var newFolderParts = fileParentPath.split('/');
+            parentPath = '/';
+            nodeParent = tb.multiselected()[0];
+            return processDataSequentially(_addFolder, newFolderParts);
+        }
 
-            node_parent.open = true;
-
-            if (node_parent.data.materialized) {
-                currentFolderPath = node_parent.data.materialized + folder_name + '/';
-            }
-
-            // check folder is created
-            // var child = node_parent.children.find((e) => {
-            //     return e.data.materialized === currentFolderPath;
-            // });
-            var child = null;
-            for(var j = 0; j < node_parent.children.length; j++){
-                if(encodeURI(node_parent.children[j].data.materialized) === encodeURI(currentFolderPath)){
-                    child = node_parent.children[j];
-                    break;
-                }
-            }
-            if (!!child) {
-                // console.log('child', child);
-                var next_folder_index = ++index;
-                return next(child, next_folder_index, list_paths, file, file_index, next);
-            }
-
-            if (currentFolder && created_path.includes(currentFolderPath)) {
-                // console.log('currentFolder.parent', currentFolder.parent);
-                var new_next_folder_index = ++index;
-                return next(currentFolder.node_parent, new_next_folder_index, list_paths, file, file_index, next);
-            }
-
-            created_path.push(currentFolderPath);
-            // console.log('Creating');
-
-            // prepare data for request new folder
-            var extra = {};
-            var path = node_parent.data.path || '/';
-            var options = {name: folder_name, kind: 'folder', waterbutlerURL: node_parent.data.waterbutlerURL};
-            if ((node_parent.data.provider === 'github') || (node_parent.data.provider === 'gitlab')) {
-                extra.branch = node_parent.data.branch;
-                options.branch = node_parent.data.branch;
-            }
-
-            // call api for create folder
-            m.request({
-                method: 'PUT',
-                background: true,
-                config: $osf.setXHRAuthorization,
-                url: waterbutler.buildCreateFolderUrl(path, node_parent.data.provider, node_parent.data.nodeId, options, extra)
-            }).then(function (item) {
-                item = tb.options.lazyLoadPreprocess.call(this, item).data;
-                inheritFromParent({data: item}, node_parent, ['branch']);
-                item = tb.createItem(item, node_parent.id);
-                node_parent = item;
-                orderFolder.call(tb, node_parent);
-
-                // store folder is created
-                created_folders.push({
-                    'name': folder_name,
-                    'node_parent': node_parent,
+        function _addFolder(folderParts) {
+            // Add a folder part
+            return new Promise(function(resolve, reject) {
+                // Get only first item, the list will slice the iterated item after promise
+                var folderName = folderParts[0];
+                var newFolderPath = parentPath + folderName + '/';
+                var createdFolderItem = createdFolders.find(function (item) {
+                    return item.path === newFolderPath;
                 });
-                // console.log('Created');
-                // nest folder
-                var next_folder_index = ++index;
-                return next(node_parent, next_folder_index, list_paths, file, file_index, next);
-            }, function (data) {
-                if (data && data.code === 409) {
-                    $osf.growl(data.message);
-                    m.redraw();
-                } else {
-                    $osf.growl(gettext('Folder creation failed.'));
+                if (createdFolderItem) {
+                    parentPath = createdFolderItem.path;
+                    nodeParent = createdFolderItem.node_parent;
+                    return resolve();
                 }
-                return root_parent;
+                // Prepare data for request new folder
+                var extra = {};
+                var path = nodeParent.data.path || '/';
+                var options = {name: folderName, kind: 'folder', waterbutlerURL: nodeParent.data.waterbutlerURL};
+                if ((nodeParent.data.provider === 'github') || (nodeParent.data.provider === 'gitlab')) {
+                    extra.branch = nodeParent.data.branch;
+                    options.branch = nodeParent.data.branch;
+                }
+                // Call api for create folder
+                nodeParent.open = true;
+                return m.request({
+                    method: 'PUT',
+                    background: true,
+                    config: $osf.setXHRAuthorization,
+                    url: waterbutler.buildCreateFolderUrl(path, nodeParent.data.provider, nodeParent.data.nodeId, options, extra)
+                }).then(function (item) {
+                    // Add folder item to Treebeard and process after API call
+                    item = tb.options.lazyLoadPreprocess.call(this, item).data;
+                    inheritFromParent({data: item}, nodeParent, ['branch']);
+                    item = tb.createItem(item, nodeParent.id);
+                    nodeParent = item;
+                    nodeParent.open = true;
+                    orderFolder.call(tb, nodeParent);
+
+                    // store folder is created
+                    createdFolders.push({
+                        'path': newFolderPath,
+                        'node_parent': nodeParent,
+                    });
+                    parentPath = newFolderPath;
+                    return resolve();
+                }, function (data) {
+                    // Handle API error
+                    if (data && (data.code === 409 || data.code === 406)) {
+                        $osf.growl(data.message);
+                        m.redraw();
+                    } else if (data && (data.code === 401)) {
+                        window.location.href = '/login';
+                    } else {
+                        $osf.growl(gettext('Folder creation failed.'));
+                    }
+                    return reject();
+                });
             });
         }
     }
@@ -1427,6 +1437,67 @@ function _createFolder(event, dismissCallback, helpText) {
         }
     });
 }
+
+function _createFile(event, dismissCallback, helpText, extension) {
+    var tb = this;
+    helpText('');
+    var val = $.trim(tb.select('#createFileInput').val());
+    var parent = tb.multiselected()[0];
+    if (!parent.open) {
+        tb.updateFolder(null, parent);
+    }
+    if (val.length < 1) {
+        helpText(gettext('Please enter a file name.'));
+        return;
+    }
+    if (val.indexOf('/') !== -1) {
+        helpText(gettext('File name contains illegal characters.'));
+        return;
+    }
+
+    var fname;
+    if (val.match('.(txt|docx|xlsx|pptx)$')) {
+        fname = val.slice(0, val.lastIndexOf('.')) + '.' + extension;
+    } else {
+        fname = val + '.' + extension;
+    }
+
+    var options = {name: fname};
+    if ((parent.data.provider === 'github') || (parent.data.provider === 'gitlab')) {
+        // extra.branch = parent.data.branch;
+        options.branch = parent.data.branch;
+    }
+
+    m.request({
+        method: 'PUT',
+        background: true,
+        config: $osf.setXHRAuthorization,
+        headers: { 'Content-Length': 0 },
+        // url: waterbutler.buildUploadUrl(path, parent.data.provider, parent.data.nodeId, options, extra)
+        url: waterbutler.buildTreeBeardUpload(parent, options)
+    }).then(function(item) {
+        item = tb.options.lazyLoadPreprocess.call(this, item).data;
+        inheritFromParent({data: item}, parent, ['branch']);
+        item = tb.createItem(item, parent.id);
+        orderFolder.call(tb, parent);
+        item.notify.update(gettext('New file created!'), 'success', undefined, 1000);
+        if (extension.match('(txt|docx|xlsx|pptx)')) {
+            var edit_url = window.contextVars.osfURL + window.contextVars.node.id + '/editonlyoffice/' +item.data.id;
+            window.open(edit_url, 'ONLYOFFICE Editor');
+        }
+        if(dismissCallback) {
+            dismissCallback();
+        }
+    }, function(data) {
+        if (data && data.code === 409) {
+            helpText(data.message);
+            m.redraw();
+        } else {
+            helpText(gettext('File creation failed.'));
+        }
+    });
+}
+
 /**
  * Deletes the item, only appears for items
  * @param event DOM event object for click
@@ -1709,7 +1780,7 @@ function orderFolder(tree) {
         this.redraw();
     }
     // hide loading after redrawing new data
-    this.select('#tb-tbody > .tb-modal-shade').hide();
+    this.select('#tb-tbody > .tb-modal-shade.loading-modal').hide();
     this.select('#tb-tbody').css('overflow', '');
 }
 
@@ -1815,6 +1886,10 @@ function _fangornTitleColumnHelper(tb, item, col, nameTitle, toUrl, classNameOpt
     if (item.data.isAddonRoot && item.connected === false) {
         return _connectCheckTemplate.call(this, item);
     }
+    // GRDM-36019 Package Export/Import
+    if (item.data.unavailable && (item.data.name || '').match(/is not configured$/)) {
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         var attrs = {};
         if (tb.options.links) {
@@ -1898,6 +1973,10 @@ function _fangornModifiedColumn(item, col) {
  * @private
  */
 function _connectCheckTemplate(item){
+    // GRDM-36019 Package Export/Import
+    if (item.data.unavailable && (item.data.name || '').match(/is not configured$/)) {
+        return _addonConfigureTemplate.call(this, item);
+    }
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
@@ -1911,6 +1990,23 @@ function _connectCheckTemplate(item){
                 }
             }
         }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * GRDM-36019 Package Export/Import
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _addonConfigureTemplate(item){
+    var tb = this;
+    return m('span.text-warning', [
+        m('span', sprintf(gettext('%1$s is not configured'), item.data.addonFullname)),
+        m('a.btn.btn-xs.btn-default.m-l-xs', {
+            href: 'addons/'
+        }, [m('i.fa.fa-cog'), gettext(' Restore Add-ons')])
     ]);
 }
 
@@ -2058,7 +2154,7 @@ function _lazyLoadPreprocess(obj) {
             var path = attributes.kind === 'folder' ? id.slice(0, -1).replace(attributes.name, '') : id.replace(attributes.name, '');
             var parent = this.flatData.filter(function (item) {
                 return item.row.kind === 'folder' &&
-                    (item.row.provider === 's3' || item.row.provider === 's3compat') &&
+                    (item.row.provider === 's3' || item.row.provider === 's3compat' || item.row.provider === 's3compatinstitutions') &&
                     item.row.id === path;
             });
             if (parent[0]) {
@@ -2111,13 +2207,14 @@ function expandStateLoad(item) {
         }
     }
 
-    if (item.children.length > 0 && item.depth === 2) {
-        for (i = 0; i < item.children.length; i++) {
-            if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
-                tb.updateFolder(null, item.children[i]);
-            }
-        }
-    }
+    // Do not load children to save hundreds of requests
+    // if (item.children.length > 0 && item.depth === 2) {
+    //     for (i = 0; i < item.children.length; i++) {
+    //         if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'NII Storage' ) {
+    //           tb.updateFolder(null, item.children[i]);
+    //         }
+    //     }
+    // }
 
     if (item.depth > 2 && !item.data.isAddonRoot && !item.data.type && item.children.length === 0 && item.open) {
         // Displays loading indicator until request below completes
@@ -2230,7 +2327,8 @@ var toolbarModes = {
     'FILTER' : 'filter',
     'ADDFOLDER' : 'addFolder',
     'RENAME' : 'rename',
-    'ADDPROJECT' : 'addProject'
+    'ADDPROJECT' : 'addProject',
+    'ADDFILE' : 'addFile'
 };
 
 
@@ -2338,7 +2436,14 @@ var FGItemButtons = {
                         },
                         icon: 'fa fa-plus',
                         className: 'text-success'
-                    }, gettext('Create Folder')));
+                    }, gettext('Create Folder')),
+                    m.component(FGButton, {
+                        onclick: function () {
+                            mode(toolbarModes.ADDFILE);
+                        },
+                        icon: 'fa fa-plus',
+                        className: 'text-success'
+                    }, gettext('Create File')));
                 if (item.data.path) {
                     rowButtons.push(
                         m.component(FGButton, {
@@ -2486,6 +2591,9 @@ var FGToolbar = {
         self.nameData = m.prop('');
         self.renameId = m.prop('');
         self.renameData = m.prop('');
+        self.createFile = function(event){
+            _createFile.call(self.tb, event, self.dismissToolbar, self.helpText);
+        };
     },
     view : function(ctrl) {
         var templates = {};
@@ -2577,6 +2685,61 @@ var FGToolbar = {
                     )
                 )
             ];
+            templates[toolbarModes.ADDFILE] = [
+                m('.col-xs-9', [
+                    m.component(FGInput, {
+                        oninput: m.withAttr('value', ctrl.nameData),
+                        //onkeypress: function (event) {
+                        //    if (ctrl.tb.pressedKey === ENTER_KEY) {
+                        //        ctrl.createFile.call(ctrl.tb, event, ctrl.dismissToolbar);
+                        //    }
+                        //},
+                        id: 'createFileInput',
+                        value: ctrl.nameData(),
+                        helpTextId: 'createFileHelp',
+                        placeholder: gettext('New file name'),
+                    }, ctrl.helpText())
+                ]),
+                m('.col-xs-3.tb-buttons-col',
+                    m('.fangorn-toolbar.pull-right',
+                        // [
+                        //     m.component(FGButton, {
+                        //         onclick: ctrl.createFile,
+                        //         icon: 'fa fa-plus',
+                        //         className: 'text-success'
+                        //     }),
+                        //     dismissIcon
+                        // ]
+                        [
+                            m.component(FGButton, {
+                                onclick: function(event){ _createFile.call(ctrl.tb, event, ctrl.dismissToolbar, ctrl.helpText, 'txt'); },
+                                //icon: 'fa fa-plus',
+                                icon: 'file-extension _txt',
+                                className: 'text-success'
+                            }),
+                            m.component(FGButton, {
+                                onclick: function(event){ _createFile.call(ctrl.tb, event, ctrl.dismissToolbar, ctrl.helpText, 'docx'); },
+                                //icon: 'fa fa-plus',
+                                icon: 'file-extension _docx',
+                                className: 'text-success'
+                            }),
+                            m.component(FGButton, {
+                                onclick: function(event){ _createFile.call(ctrl.tb, event, ctrl.dismissToolbar, ctrl.helpText, 'xlsx'); },
+                                //icon: 'fa fa-plus',
+                                icon: 'file-extension _xlsx',
+                                className: 'text-success'
+                            }),
+                            m.component(FGButton, {
+                                onclick: function(event){ _createFile.call(ctrl.tb, event, ctrl.dismissToolbar, ctrl.helpText, 'pptx'); },
+                                //icon: 'fa fa-plus',
+                                icon: 'file-extension _pub',
+                                className: 'text-success'
+                            }),
+                            dismissIcon
+                        ]
+                    )
+                )
+            ];
         }
         // Bar mode
         // Which buttons should show?
@@ -2638,26 +2801,251 @@ var FGToolbar = {
                 icon: 'fa fa-search',
                 className : 'text-primary'
             }, gettext('Filter')));
-            if (ctrl.tb.options.placement !== 'fileview') {
-                generalButtons.push(m.component(FGButton, {
-                    onclick: function(event){
-                        var mithrilContent = m('div', [
-                            m('p', [ m('b', gettext('Select rows:')), m('span', gettext(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
-                            m('p', [ m('b', gettext('Open files:')), m('span', gettext(' Click a file name to go to view the file in the GakuNin RDM.'))]),
-                            m('p', [ m('b', gettext('Open files in new tab:')), m('span', gettext(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
-                            m('p', [ m('b', gettext('Download as zip:')), m('span', gettext(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', gettext(' Not available for all storage add-ons.'))]),
-                            m('p', [ m('b', gettext('Copy files:')), m('span', gettext(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', gettext(' Only for contributors with write access.'))])
-                        ]);
+
+        // Add button "details" for folder and file
+        // if folder or file will not have addonFullname attribute
+        if (item &&
+            items.length === 1 &&
+            item.data.id &&
+            item.data.nodeType !== 'project' &&
+            item.data.addonFullname === undefined) {
+            generalButtons.push(m.component(FGButton, {
+                onclick: function(){
+                    var currentItemNode = this;
+                    new Promise(function(resolve, reject) {
+                        // timeout of recusive api
+                        var isRecursiveCancelled = false;
+                        var resolveResult = {
+                            item: item,
+                            // file count of folder
+                            totalFile: null,
+                            // size of current folder/file
+                            totalSize: 0,
+                            // update user
+                            updatedBy: null
+                        };
+
+                        // use MutationObserver to detect the removal of the modal to cancel recusive calling api
+                        var observer = new MutationObserver(function(mutationsList, observer) {
+                            // loop list mutation of DOM
+                            for (var i = 0; i < mutationsList.length; i++) {
+                                var mutation = mutationsList[i];
+                                // Check if the mutation is a removed element from the DOM.
+                                if (mutation.type === 'childList' && mutation.removedNodes.length > 0) {
+                                    // Detect the removal of the modal.
+                                    for (var j = 0; j < mutation.removedNodes.length; j++) {
+                                        var removedNode = mutation.removedNodes[j];
+                                        if (removedNode.classList && removedNode.classList.contains('tb-modal-shade')) {
+                                            isRecursiveCancelled = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        // start to detect multation of tb-tbody
+                        observer.observe(ctrl.tb.select('#tb-tbody')[0], { childList: true, subtree: true });
+
+                        if (item.kind === 'folder') {
+                            var loadingBall = m('div', { className: 'text-center' }, [
+                                m('div', {className: 'ball-pulse ball-scale-blue text-center'}, [
+                                    // triple horizontal ball loading
+                                    m('div',''),
+                                    m('div',''),
+                                    m('div',''),
+                                ]),
+                                m('p', gettext('Loading...'))
+                            ]);
+                            var mithrilButtons = m('button', {
+                                'type':'button',
+                                'class' : 'btn btn-default',
+                                onclick : function() {
+                                    ctrl.tb.modal.dismiss();
+                                }
+                            },
+                            gettext('Close'));
+
+                            // create a loading when fetch get details info of folder
+                            ctrl.tb.modal.update(
+                                loadingBall,
+                                mithrilButtons,
+                                m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name)));
+                            ctrl.tb.select('#tb-tbody').css('overflow', 'hidden');
+
+                            // Get details info of children of folder to get size and count item
+                            // get info of folder
+                            // call to recursive call to the lowest children to get the final size
+                            getFolderSize(
+                                item,
+                                function () {return isRecursiveCancelled;}
+                            ).then(function(res) {
+                                resolveResult.totalFile = res.count;
+                                // convert from number to size text
+                                resolveResult.totalSize = $osf.humanFileSize(res.size, true);
+
+                                // if modal is closed before api finish will now handle lebow process
+                                // case api finish but modal is show for another folder
+                                // (get folder 1 and quick close modal, then click folder 2 and show details)
+                                if (!ctrl.tb.modal.on || !currentItemNode.className.includes(item.data.id)) {
+                                    return;
+                                }
+                                resolve(resolveResult);
+                            }).catch(function(error) {
+                                // redirect to login page
+                                if (error.code === 401) {
+                                    window.location.href = '/login';
+                                } else {
+                                    // handle when any error occurred
+                                    var errorNotify = m('div', { className: 'text-center' },
+                                        m('span', sprintf(gettext('A server error occurred. Please contact %1$s.'), $osf.osfSupportEmail()))
+                                    );
+                                    ctrl.tb.modal.update(
+                                        errorNotify,
+                                        mithrilButtons,
+                                        m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name))
+                                    );
+                                }
+                                return;
+                            });
+                        } else if (item.kind === 'file') {
+                            // get last version update user
+                            if (item.data.provider === 'osfstorage') {
+                                m.request({
+                                    method: 'GET',
+                                    url: waterbutler.buildRevisionsUrl(
+                                        item.data.path, item.data.provider, item.data.nodeId,
+                                        {branch: $osf.urlParams().branch}
+                                    ),
+                                    config: $osf.setXHRAuthorization
+                                }).then(function (value) {
+                                    var reversions = value.data;
+                                    var lastestVersion = reversions[0];
+                                    resolveResult.updatedBy = lastestVersion.attributes.extra.user.name || '';
+                                    resolveResult.totalSize = item.data.sizeInt !== null ?
+                                        $osf.humanFileSize(item.data.sizeInt, true) :
+                                        '';
+                                    resolve(resolveResult);
+                                }, function(error) {
+                                    // redirect to login page
+                                    if (error.code === 401) {
+                                        window.location.href = '/login';
+                                    } else {
+                                        // handle when any error occurred
+                                        var errorNotify = m('div', { className: 'text-center' },
+                                            m('span', sprintf(gettext('A server error occurred. Please contact %1$s.'), $osf.osfSupportEmail()))
+                                        );
+                                        ctrl.tb.modal.update(
+                                            errorNotify,
+                                            mithrilButtons,
+                                            m('h3.modal-title.break-word.two-line-ellipsis', gettext(item.data.name))
+                                        );
+                                    }
+                                    return;
+                                });
+                            } else {
+                                // mapping infomation when item is file
+                                resolveResult.totalSize = item.data.sizeInt !== null ?
+                                    $osf.humanFileSize(item.data.sizeInt, true) :
+                                    '';
+                                resolve(resolveResult);
+                            }
+                        }
+                    }).then(function(value) {
+                        var totalFile = value.totalFile;
+                        var totalSize = value.totalSize;
+                        var updatedBy = value.updatedBy;
+                        var item = value.item;
+                        // created time
+                        var createdAt = null;
+                        // updated time
+                        var updatedAt = null;
+
+                        // mapping time
+                        if (item.data.created_utc) {
+                            createdAt = moment(item.data.created_utc).format('YYYY-MM-DD hh:mm:ss A');
+                        }
+                        if (item.data.modified_utc) {
+                            updatedAt = moment(item.data.modified_utc).format('YYYY-MM-DD hh:mm:ss A');
+                        }
+
+                        // create a final show content of popup
+                        var detailsContent = [];
+                        // items count
+                        if (totalFile !== null) {
+                            detailsContent.push(
+                                m('p', [m('b', gettext('Total files: ')), m('span', totalFile)])
+                            );
+                        }
+                        // size
+                        if (item.kind === 'file') {
+                            detailsContent.push(m('p', [m('b', gettext('Size: ')), m('span', totalSize)]));
+                        } else if (item.kind === 'folder') {
+                            detailsContent.push(m('p', [m('b', gettext('Total size: ')), m('span', totalSize)]));
+                        }
+                        // created time
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Created at: ')), m('span', createdAt)])
+                        );
+                        // updated time
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Modified at: ')), m('span', updatedAt)])
+                        );
+                        // updated by
+                        detailsContent.push(
+                            m('p', [m('b', gettext('Modified by: ')), m('span', updatedBy)])
+                        );
+                        // fullpath
+                        var fullpath = item.data.materialized;
+                        // remove the last '/' character for folder path
+                        if (fullpath.endsWith('/')) {
+                            fullpath = fullpath.slice(0, -1);
+                        }
+                        detailsContent.push(
+                            m('p', {style: 'line-break: anywhere;'},
+                            [
+                                m('b', gettext('Path: ')),
+                                m('span', fullpath)
+                            ])
+                        );
+
+                        var mithrilContent = m('div', detailsContent);
                         var mithrilButtons = m('button', {
                                 'type':'button',
                                 'class' : 'btn btn-default',
-                                onclick : function(event) { ctrl.tb.modal.dismiss(); } }, gettext('Close'));
-                        ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', gettext('How to Use the File Browser')));
-                    },
-                    icon: 'fa fa-info',
-                    className : 'text-info'
-                }, ''));
-            }
+                                onclick : function(event) {
+                                    ctrl.tb.modal.dismiss();
+                                }},
+                                gettext('Close'));
+                        ctrl.tb.modal.update(mithrilContent,
+                            mithrilButtons,
+                            m('h3.modal-title.break-word.two-line-ellipsis', item.data.name));
+                    });
+                },
+                icon: 'fa fa-info-circle',
+                className : 'text-info ' + item.data.id,
+            }, gettext('Properties')));
+        }
+
+        if (ctrl.tb.options.placement !== 'fileview') {
+            generalButtons.push(m.component(FGButton, {
+                onclick: function(event){
+                    var mithrilContent = m('div', [
+                        m('p', [m('b', gettext('Select rows:')), m('span', gettext(' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.'))]),
+                        m('p', [m('b', gettext('Open files:')), m('span', gettext(' Click a file name to go to view the file in the GakuNin RDM.'))]),
+                        m('p', [m('b', gettext('Open files in new tab:')), m('span', gettext(' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.'))]),
+                        m('p', [m('b', gettext('Download as zip:')), m('span', gettext(' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.')), m('i', gettext(' Not available for all storage add-ons.'))]),
+                        m('p', [m('b', gettext('Copy files:')), m('span', gettext(' Press Option (Alt in Windows) while dragging a file to a new folder or component.')), m('i', gettext(' Only for contributors with write access.'))])
+                    ]);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, gettext('Close'));
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', gettext('How to Use the File Browser')));
+                },
+                icon: 'fa fa-info',
+                className : 'text-info'
+            }, ''));
+        }
         if (ctrl.tb.options.placement === 'fileview') {
             generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
@@ -2899,7 +3287,7 @@ function _fangornQueueComplete(treebeard) {
             m('a.btn.btn-primary', {onclick: function() {treebeard.modal.dismiss();}}, 'Done'), //jshint ignore:line
         ]), m('', [m('h3.break-word.modal-title', gettext('Upload Status')), m('p', total - failed + '/' + total + gettext(' files succeeded.'))]));
         $('[data-toggle="tooltip"]').tooltip();
-    } else {
+    } else if (!isOngoingUploadFolder) {
         fileStatuses.map(function(status) {
            if (!status.success) {
                 if (status.message !== 'Upload canceled.') {
@@ -2911,6 +3299,7 @@ function _fangornQueueComplete(treebeard) {
            }
         });
     }
+    isOngoingUploadFolder = false;
 }
 
 /**
@@ -3124,6 +3513,8 @@ function isInvalidDropItem(folder, item, cannotBeFolder, mustBeIntra) {
         (item.data.provider === 'dataverse' && item.data.extra.hasPublishedVersion) ||
         // no moving folders into dataverse
         (folder.data.provider === 'dataverse' && item.data.kind === 'folder') ||
+        // no moving items from weko
+        (item.data.provider === 'weko') ||
         // no dropping if waiting on waterbutler ajax
         item.inProgress ||
         (cannotBeFolder && item.data.kind === 'folder') ||
@@ -3139,6 +3530,7 @@ function allowedToMove(folder, item, mustBeIntra) {
         item.data.permissions.edit &&
         (!mustBeIntra || (item.data.provider === folder.data.provider && item.data.nodeId === folder.data.nodeId)) &&
         !(item.data.provider === 'figshare' && item.data.extra && item.data.extra.status === 'public') &&
+        (folder.data.provider !== 'weko') &&
         (READ_ONLY_ADDONS.indexOf(item.data.provider) === -1) && (READ_ONLY_ADDONS.indexOf(folder.data.provider) === -1)
     );
 }
@@ -3327,6 +3719,103 @@ function handleScroll() {
     }
 }
 
+/**
+ * Recursive to get the total size of folder item
+ * @param {item} item
+ * @param {recusiveCancelCallback} callback to get flag is the recusive cancelled
+ * @param {next_token} token to get the next data of
+ * @returns
+ */
+function getFolderSize(item, recusiveCancelCallback, nextToken) {
+    recusiveCancelCallback = recusiveCancelCallback || function() {
+        return false;
+    };
+    nextToken = nextToken || null;
+    if (recusiveCancelCallback() === true) {
+        return Promise.resolve({
+            size: 0,
+            count: 0
+        });
+    }
+
+    var totalSize = 0;
+    var totalFile = 0;
+
+    if (nextToken) {
+        item.next_token = nextToken;
+    }
+
+    var url = _fangornResolveLazyLoad(item);
+
+    // reset item for the next time
+    // delete item.next_token
+    item.next_token = null;
+
+    var requestParams = {
+        method: 'GET',
+        url: url,
+        config: $osf.setXHRAuthorization
+    };
+
+    return Promise.resolve(m.request(requestParams).then(function(value) {
+        totalFile = value.data.length;
+        if (value.data.length) {
+            var childPromises = value.data.map(function(child) {
+                if (child.attributes.kind === 'folder') {
+                    // only count file
+                    totalFile -= 1;
+                    var itemInstance = {
+                        data: Object.assign({}, child.attributes, {
+                            nodeId: item.data.nodeId
+                        })
+                    };
+                    return getFolderSize(itemInstance, recusiveCancelCallback).then(function(res) {
+                        totalSize += res.size;
+                        totalFile += res.count;
+                    });
+                } else {
+                    totalSize += child.attributes.sizeInt;
+                    return Promise.resolve();
+                }
+            });
+            return Promise.all(childPromises).then(function() {
+                if (value.next_token) {
+                    return getFolderSize(item, recusiveCancelCallback, value.next_token).then(function(res) {
+                        totalSize += res.size;
+                        totalFile += res.count;
+                        return {
+                            size: totalSize,
+                            count: totalFile
+                        };
+                    });
+                } else {
+                    return Promise.resolve({
+                        size: totalSize,
+                        count: totalFile
+                    });
+                }
+            });
+        } else {
+            if (value.next_token) {
+                return getFolderSize(item, recusiveCancelCallback, value.next_token).then(function(res) {
+                    totalSize += res.size;
+                    totalFile += res.count;
+                    return {
+                        size: totalSize,
+                        count: totalFile
+                    };
+                });
+            } else {
+                return Promise.resolve({
+                    size: totalSize,
+                    count: totalFile
+                });
+            }
+        }
+    }));
+}
+
+
 
 /**
  * OSF-specific Treebeard options common to all addons.
@@ -3420,7 +3909,7 @@ tbOptions = {
         // Add loading modal when loading page
         tb.select('#tb-tbody').prepend(
             '<div style="width: 100%; height: 100%; padding: 50px 100px; position: sticky; top: 0; left: 0; background-color: white;"' +
-            ' class="tb-modal-shade">' +
+            ' class="tb-modal-shade loading-modal">' +
             '<div class="spinner-loading-wrapper" style="background-color: transparent;">' +
             '<div class="ball-scale ball-scale-blue"><div></div></div>' +
             '<p class="m-t-sm fg-load-message">Loading files...</p>' +
@@ -3453,7 +3942,7 @@ tbOptions = {
                     return false;
                 }
             }
-            if (item.data.provider === 'osfstorage') {
+            if ((item.data.provider === 'osfstorage' || item.data.provider === 's3compatinstitutions') && !isInUploadFolderProcess) {
                 quota = $.ajax({
                     async: false,
                     method: 'GET',
@@ -3470,7 +3959,7 @@ tbOptions = {
                     if (quota.used + file.size > quota.max * window.contextVars.threshold) {
                         $osf.growl(
                             gettext('Quota usage alert'),
-                            sprintf(gettext('You have used more than %1$s% of your quota.'),(window.contextVars.threshold * 100)),
+                            sprintf(gettext('You have used more than %1$s%% of your quota.'),(window.contextVars.threshold * 100)),
                             'warning'
                         );
                     }
@@ -3568,7 +4057,28 @@ Fangorn.prototype = {
     },
     // Create the Treebeard once all addons have been configured
     _initGrid: function () {
-        this.grid = new Treebeard(this.options);
+        var treebeard = new Treebeard(this.options);
+        this.grid = treebeard;
+        // create a trigger receiver of event save file editor (markdown), use to update file editted in tree for show dialog 'Properties'
+        $(document).on('fileviewpage:reload', function(event, data) {
+            // get selected file in tree, then replace the infomation base on new updated data
+            var selectedFile = treebeard.find(treebeard.currentFileID);
+            selectedFile.data.size = data.attributes.size;
+            selectedFile.data.sizeInt = data.attributes.sizeInt;
+            selectedFile.data.modified = data.attributes.modified;
+            selectedFile.data.modified_utc = data.attributes.modified_utc;
+
+            // find and replace the old child in list children
+            var children = treebeard.find(selectedFile.parentID).children;
+            children.forEach(function(child, index) {
+                if (child.id === selectedFile.id) {
+                    children[index] = selectedFile;
+                    return;
+                }
+            });
+            treebeard.find(selectedFile.parentID).children = children;
+            treebeard.redraw();
+        });
         return this.grid;
     }
 };
@@ -3589,6 +4099,8 @@ Fangorn.ButtonEvents = {
     _removeEvent : _removeEvent,
     createFolder : _createFolder,
     _gotoFileEvent : gotoFileEvent,
+    _uploadFolderEvent : _uploadFolderEvent,
+    createFile : _createFile,
 };
 
 Fangorn.DefaultColumns = {

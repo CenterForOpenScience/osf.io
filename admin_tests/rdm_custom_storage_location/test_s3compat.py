@@ -31,7 +31,7 @@ class TestConnection(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.TestConnectionView.as_view()(request)
+        return views.TestConnectionView.as_view()(request, institution_id=self.institution.id)
 
     def test_empty_keys_with_provider(self):
         params = {
@@ -150,7 +150,7 @@ class TestSaveCredentials(AdminTestCase):
         )
         request.is_ajax()
         request.user = self.user
-        return views.SaveCredentialsView.as_view()(request)
+        return views.SaveCredentialsView.as_view()(request, institution_id=self.institution.id)
 
     def test_provider_missing(self):
         response = self.view_post({
@@ -224,3 +224,34 @@ class TestSaveCredentials(AdminTestCase):
         nt.assert_equals(response.status_code, http_status.HTTP_400_BAD_REQUEST)
         nt.assert_in('NG', response.content.decode())
         nt.assert_false(Region.objects.filter(_id=self.institution._id).exists())
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.test_s3compat_connection')
+    def test_success_superuser(self, mock_testconnection):
+        self.user.affiliated_institutions.clear()
+        self.user.is_superuser = True
+        self.user.save()
+        mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
+        response = self.view_post({
+            'storage_name': 'My storage',
+            's3compat_endpoint_url': 's3.compat.co.jp',
+            's3compat_access_key': 'Non-empty-access-key',
+            's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Cute bucket',
+            's3compat_server_side_encryption': 'False',
+            'provider_short_name': 's3compat',
+        })
+
+        nt.assert_equals(response.status_code, http_status.HTTP_200_OK)
+        nt.assert_in('Saved credentials successfully!!', response.content.decode())
+
+        institution_storage = Region.objects.filter(_id=self.institution._id).first()
+        nt.assert_is_not_none(institution_storage)
+        nt.assert_equals(institution_storage.name, 'My storage')
+
+        wb_credentials = institution_storage.waterbutler_credentials
+        nt.assert_equals(wb_credentials['storage']['access_key'], 'Non-empty-access-key')
+        nt.assert_equals(wb_credentials['storage']['secret_key'], 'Non-empty-secret-key')
+
+        wb_settings = institution_storage.waterbutler_settings
+        nt.assert_equals(wb_settings['storage']['provider'], 's3compat')
+        nt.assert_equals(wb_settings['storage']['bucket'], 'Cute bucket')

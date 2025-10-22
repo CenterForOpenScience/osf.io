@@ -4,7 +4,7 @@ import csv
 import pytz
 from furl import furl
 from datetime import datetime, timedelta
-from django.db import connection
+from django.db import connection, transaction, IntegrityError
 from django.db.models import Q
 from django.views.defaults import page_not_found
 from django.views.generic import FormView, DeleteView, ListView, TemplateView, View
@@ -795,11 +795,16 @@ class BaseUserQuotaView(View):
         if max_quota <= 0:
             max_quota = 0
 
-        UserQuota.objects.update_or_create(
-            user=OSFUser.load(self.kwargs.get('guid')),
-            storage_type=storage_type,
-            defaults={'max_quota': max_quota}
-        )
+        try:
+            user = OSFUser.load(self.kwargs.get('guid'))
+            with transaction.atomic():
+                UserQuota.objects.update_or_create(
+                    user=user,
+                    storage_type=storage_type,
+                    defaults={'max_quota': max_quota}
+                )
+        except IntegrityError:
+            UserQuota.objects.filter(user=user, storage_type=storage_type).update(max_quota=max_quota)
 
 
 class UserQuotaView(RdmPermissionMixin, UserPassesTestMixin, BaseUserQuotaView):

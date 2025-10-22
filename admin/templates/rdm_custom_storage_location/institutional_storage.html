@@ -85,6 +85,8 @@
         window.contextVars = $.extend(true, {}, window.contextVars, {
             'export_control': false,
             'restore_control': false,
+            'institutional_storage': true,
+            'institution_id': {{ institution.id }},
         });
     </script>
 {% endblock %}

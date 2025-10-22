@@ -23,9 +23,8 @@ from osf.models.admin_log_entry import (
     REJECT_WITHDRAWAL
 )
 
-from website.preprints.tasks import update_preprint_share
 from website.project.views.register import osf_admin_change_status_identifier
-from website import search
+from website import search, settings
 
 from framework.exceptions import PermissionsError
 from admin.base.views import GuidFormView, GuidView
@@ -33,6 +32,8 @@ from admin.nodes.templatetags.node_extras import reverse_preprint
 from admin.nodes.views import NodeDeleteBase, NodeRemoveContributorView, NodeConfirmSpamView, NodeConfirmHamView
 from admin.preprints.serializers import serialize_preprint, serialize_simple_user_and_preprint_permissions, serialize_withdrawal_request
 from admin.preprints.forms import ChangeProviderForm
+
+from api.share.utils import update_share
 
 
 class PreprintMixin(PermissionRequiredMixin):
@@ -136,7 +137,8 @@ class PreprintReindexShare(PreprintMixin, DeleteView):
 
     def delete(self, request, *args, **kwargs):
         preprint = self.get_object()
-        update_preprint_share(preprint)
+        if settings.SHARE_ENABLED:
+            update_share(preprint)
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,

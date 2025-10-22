@@ -35,6 +35,7 @@ page_routes = {
 # JSON endpoints
 api_routes = {
     'rules': [
+        # APIs for user's BinderHub addon settings
         Rule([
             '/settings/{}/settings'.format(SHORT_NAME),
         ], 'get', views.binderhub_get_user_config, json_renderer),
@@ -44,6 +45,11 @@ api_routes = {
         Rule([
             '/settings/{}/settings'.format(SHORT_NAME),
         ], 'post', views.binderhub_add_user_config, json_renderer),
+        # API to purge a binderhub entry from an user's BinderHub addon setting.
+        Rule([
+            '/settings/{}/settings/binderhubs'.format(SHORT_NAME),
+        ], 'delete', views.purge_binderhub_from_user, json_renderer),
+        # APIs for node's BinderHub addon settings
         Rule([
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/settings'.format(SHORT_NAME),
@@ -52,10 +58,57 @@ api_routes = {
             '/project/<pid>/{}/settings'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/settings'.format(SHORT_NAME),
         ], 'put', views.binderhub_set_config, json_renderer),
+        # API to delete binderhub entry from a node.
+        Rule([
+            '/project/<pid>/{}/settings/binderhubs'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/settings/binderhubs'.format(SHORT_NAME),
+        ], 'delete', views.delete_binderhub, json_renderer),
+        # API that reads the config used in RDM-ember-osf-web
         Rule([
             '/project/<pid>/{}/config'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/config'.format(SHORT_NAME),
         ], 'get', views.binderhub_get_config_ember, json_renderer),
+        # API that reads the list of MATLAB product names
+        Rule([
+            '/project/<pid>/{}/matlab/product_name_list/<release>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/matlab/product_name_list/<release>'.format(SHORT_NAME),
+        ], 'get', views.get_matlab_product_name_list, json_renderer),
+        # Server annotations CRUD API.
+        Rule([
+            '/project/<pid>/{}/server_annotation'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/server_annotation'.format(SHORT_NAME),
+        ], 'get', views.get_server_annotation, json_renderer),
+        Rule([
+            '/project/<pid>/{}/server_annotation'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/server_annotation'.format(SHORT_NAME),
+        ], 'post', views.create_server_annotation, json_renderer),
+        Rule([
+            '/project/<pid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
+        ], 'patch', views.patch_server_annotation, json_renderer),
+        Rule([
+            '/project/<pid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/server_annotation/<aid>'.format(SHORT_NAME),
+        ], 'delete', views.delete_server_annotation, json_renderer),
+        # Custom Base Image CRUD API
+        Rule([
+            '/project/<pid>/{}/custom_base_image'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image'.format(SHORT_NAME),
+        ], 'post', views.create_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image'.format(SHORT_NAME),
+        ], 'get', views.get_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+        ], 'patch', views.update_custom_base_image, json_renderer),
+        Rule([
+            '/project/<pid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+            '/project/<pid>/node/<nid>/{}/custom_base_image/<image_id>'.format(SHORT_NAME),
+        ], 'delete', views.delete_custom_base_image, json_renderer),
+        # Read mpm addon list
+        # API to logout from a BinderHub.
         Rule([
             '/project/<pid>/{}/session'.format(SHORT_NAME),
             '/project/<pid>/node/<nid>/{}/session'.format(SHORT_NAME),

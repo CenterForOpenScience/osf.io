@@ -163,16 +163,37 @@ function NodeSettings() {
 
   /* Remove host from binderhub list */
   self.removeHost = function(host) {
-    const removed = self.availableBinderhubs().filter(function(binderhub) {
+    const removed = self.availableBinderhubs().find(function(binderhub) {
       return binderhub.binderhub_url === host.binderhub_url;
     });
-    console.log('Host', host, removed);
-    if (removed.length < 1) {
+    if (typeof removed === "undefined") {
       return;
     }
-    self.availableBinderhubs.remove(removed[0]);
-    self.saveConfig();
-  }
+    self.availableBinderhubs.remove(removed);
+    var url = self.baseUrl + 'settings/binderhubs';
+    return osfHelpers.ajaxJSON(
+      'delete',
+      url,
+      {
+        data: {
+          url: host.binderhub_url
+        }
+      }
+    ).done(function(data) {
+      if(host.binderhub_url === self.binderUrl()) {
+        self.updateDefaultUrl(self.availableBinderhubs()[0]);
+      }
+    }
+    ).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while deleting a binderhub from a node', {
+        extra: {
+          url: url,
+          status: status,
+          error: error
+        }
+      });
+    });
+  };
 
   /** Add preset host to binderhub list */
   self.addPresetHost = function() {
