@@ -9,6 +9,14 @@
       "description": "公的資金による研究データの管理・利活用に関するメタデータの入力画面です。GakuNin RDMをお使いの方は、登録することで資金配分機関へデータ提出するフォーマットでダウンロードできます。|This is the metadata input form for the Management and Utilization of Publicly Funded Research Data. You may download the file in the format that can be submitted to the funding agencies by registering this form.",
       "questions": [
         {
+          "qid": "japan-grant-number",
+          "nav": "体系的番号",
+          "title": "体系的番号|Japan Grant Number",
+          "type": "string",
+          "format": "japan-grant-number",
+          "required": true
+        },
+        {
           "qid": "funder",
           "nav": "資金配分機関情報",
           "title": "資金配分機関情報|Funder",
@@ -129,14 +137,6 @@
           "type": "string",
           "format": "jgn-program-name-en",
           "required": false
-        },
-        {
-          "qid": "japan-grant-number",
-          "nav": "体系的番号",
-          "title": "体系的番号|Japan Grant Number",
-          "type": "string",
-          "format": "japan-grant-number",
-          "required": true
         },
         {
           "qid": "project-name-ja",
@@ -706,8 +706,17 @@
               "space_normalization": true,
               "suggestion": [
                 {
+                  "key": "contributor:erad",
+                  "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
+                  }
+                },
+                {
                   "key": "erad:kenkyusha_no",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
                   "autofill": {
                     "number": "kenkyusha_no",
                     "name_ja": "kenkyusha_shimei_ja_msfullname",
@@ -715,12 +724,12 @@
                   }
                 },
                 {
-                  "key": "contributor:erad",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+                  "key": "kaken:erad",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
                   "autofill": {
                     "number": "erad",
-                    "name_ja": "name-ja-msfullname",
-                    "name_en": "name-en-msfullname"
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
                   }
                 }
               ]
@@ -734,8 +743,17 @@
               "required_if": "name_en",
               "suggestion": [
                 {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
+                  }
+                },
+                {
                   "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
                   "autofill": {
                     "number": "kenkyusha_no",
                     "name_ja": "kenkyusha_shimei_ja_msfullname",
@@ -743,12 +761,12 @@
                   }
                 },
                 {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+                  "key": "kaken:kenkyusha_shimei",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
                   "autofill": {
                     "number": "erad",
-                    "name_ja": "name-ja-msfullname",
-                    "name_en": "name-en-msfullname"
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
                   }
                 }
               ]
@@ -762,8 +780,17 @@
               "required_if": "name_ja",
               "suggestion": [
                 {
+                  "key": "contributor:name",
+                  "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+                  "autofill": {
+                    "number": "erad",
+                    "name_ja": "name-ja-msfullname",
+                    "name_en": "name-en-msfullname"
+                  }
+                },
+                {
                   "key": "erad:kenkyusha_shimei",
-                  "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
                   "autofill": {
                     "number": "kenkyusha_no",
                     "name_ja": "kenkyusha_shimei_ja_msfullname",
@@ -771,12 +798,12 @@
                   }
                 },
                 {
-                  "key": "contributor:name",
-                  "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+                  "key": "kaken:kenkyusha_shimei",
+                  "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
                   "autofill": {
                     "number": "erad",
-                    "name_ja": "name-ja-msfullname",
-                    "name_en": "name-en-msfullname"
+                    "name_ja": "kenkyusha_shimei_ja_msfullname",
+                    "name_en": "kenkyusha_shimei_en_msfullname"
                   }
                 }
               ]
@@ -867,8 +894,19 @@
           },
           "suggestion": [
             {
+              "key": "contributor:erad",
+              "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname",
+                "grdm-file:data-man-org-ja": "affiliated-institution-name-ja",
+                "grdm-file:data-man-org-en": "affiliated-institution-name-en"
+              }
+            },
+            {
               "key": "erad:kenkyusha_no",
-              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
                 "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
@@ -878,12 +916,14 @@
               }
             },
             {
-              "key": "contributor:erad",
-              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+              "key": "kaken:erad",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "erad",
-                "grdm-file:data-man-name-ja": "name-ja-msfullname",
-                "grdm-file:data-man-name-en": "name-en-msfullname"
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
             }
           ]
@@ -901,8 +941,19 @@
           },
           "suggestion": [
             {
+              "key": "contributor:name",
+              "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname",
+                "grdm-file:data-man-org-ja": "affiliated-institution-name-ja",
+                "grdm-file:data-man-org-en": "affiliated-institution-name-en"
+              }
+            },
+            {
               "key": "erad:kenkyusha_shimei",
-              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
                 "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
@@ -912,12 +963,14 @@
               }
             },
             {
-              "key": "contributor:name",
-              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+              "key": "kaken:kenkyusha_shimei",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "erad",
-                "grdm-file:data-man-name-ja": "name-ja-msfullname",
-                "grdm-file:data-man-name-en": "name-en-msfullname"
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
             }
           ]
@@ -935,8 +988,19 @@
           },
           "suggestion": [
             {
+              "key": "contributor:name",
+              "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname",
+                "grdm-file:data-man-org-ja": "affiliated-institution-name-ja",
+                "grdm-file:data-man-org-en": "affiliated-institution-name-en"
+              }
+            },
+            {
               "key": "erad:kenkyusha_shimei",
-              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
                 "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
@@ -946,12 +1010,14 @@
               }
             },
             {
-              "key": "contributor:name",
-              "template": "<div style=\"background-color: white;\"><span>{{name-ja-full}}|{{name-en-full}}</span><span><small class=\"m-l-md text-muted\">{{erad}}</small></span></div>",
+              "key": "kaken:kenkyusha_shimei",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "erad",
-                "grdm-file:data-man-name-ja": "name-ja-msfullname",
-                "grdm-file:data-man-name-en": "name-en-msfullname"
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
               }
             }
           ]
@@ -978,10 +1044,32 @@
           "help": "例: 〇〇研究所〇〇部門〇〇課, 〇〇大学〇〇研究室",
           "suggestion": [
             {
+              "key": "contributor:affiliated-institution-name",
+              "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname",
+                "grdm-file:data-man-org-ja": "affiliated-institution-name-ja",
+                "grdm-file:data-man-org-en": "affiliated-institution-name-en"
+              }
+            },
+            {
               "key": "erad:kenkyukikan_mei",
-              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+              }
+            },
+            {
+              "key": "kaken:kenkyukikan_mei",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
                 "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
                 "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
@@ -1011,10 +1099,32 @@
           "space_normalization": true,
           "suggestion": [
             {
+              "key": "contributor:affiliated-institution-name",
+              "template": "<div style=\"background-color: white;\"><span>{{display-fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{affiliated-institution-name-ja}}|{{affiliated-institution-name-en}} (Contributor)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
+                "grdm-file:data-man-name-ja": "name-ja-msfullname",
+                "grdm-file:data-man-name-en": "name-en-msfullname",
+                "grdm-file:data-man-org-ja": "affiliated-institution-name-ja",
+                "grdm-file:data-man-org-en": "affiliated-institution-name-en"
+              }
+            },
+            {
               "key": "erad:kenkyukikan_mei",
-              "template": "<div style=\"background-color: white;\"><span>{{kenkyusha_shimei}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} - {{kadai_mei}} ({{nendo}})</small></span></div>",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{kenkyusha_no}} - {{kenkyukikan_mei}} (e-Rad)</small></span></div>",
               "autofill": {
                 "grdm-file:data-man-number": "kenkyusha_no",
+                "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
+                "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
+                "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",
+                "grdm-file:data-man-org-en": "kenkyukikan_mei_en"
+              }
+            },
+            {
+              "key": "kaken:kenkyukikan_mei",
+              "template": "<div style=\"background-color: white;\"><span>{{display_fullname}}</span><span><small class=\"m-l-md text-muted\">{{erad}} - {{kenkyukikan_mei}} (KAKEN)</small></span></div>",
+              "autofill": {
+                "grdm-file:data-man-number": "erad",
                 "grdm-file:data-man-name-ja": "kenkyusha_shimei_ja_msfullname",
                 "grdm-file:data-man-name-en": "kenkyusha_shimei_en_msfullname",
                 "grdm-file:data-man-org-ja": "kenkyukikan_mei_ja",

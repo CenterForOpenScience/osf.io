@@ -3,7 +3,7 @@ from io import StringIO
 import logging
 import os
 from addons.metadata.models import ERadRecordSet
-from addons.metadata.suggestion import ERAD_COLUMNS
+from addons.metadata.suggestions.erad import ERAD_COLUMNS
 
 
 logger = logging.getLogger(__name__)

@@ -807,6 +807,214 @@ def safe_download_metadata_asset_pool(wb_object):
     return content
 
 
+class KakenSyncLog(BaseModel):
+    """ResourceSync synchronization processing log"""
+
+    SYNC_TYPE_CHOICES = [
+        ('initial', 'Initial sync'),
+        ('incremental', 'Incremental sync'),
+    ]
+
+    STATUS_CHOICES = [
+        ('running', 'Running'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    sync_type = models.CharField(
+        max_length=20,
+        choices=SYNC_TYPE_CHOICES,
+        help_text='Synchronization processing type'
+    )
+    started_at = models.DateTimeField(
+        help_text='Synchronization start time'
+    )
+    completed_at = models.DateTimeField(
+        null=True, blank=True,
+        help_text='Synchronization completion time'
+    )
+    processed_records = models.IntegerField(
+        default=0,
+        help_text='Number of processed records'
+    )
+    errors_count = models.IntegerField(
+        default=0,
+        help_text='Number of errors'
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        help_text='Synchronization status'
+    )
+    error_details = models.TextField(
+        blank=True,
+        help_text='Error details'
+    )
+    changelist_index = models.IntegerField(
+        null=True, blank=True,
+        help_text='Processed changelist index (for incremental sync)'
+    )
+    total_records = models.IntegerField(
+        default=0,
+        help_text='Total number of records after sync'
+    )
+
+    # Batch processing control fields
+    current_resourcelist_index = models.IntegerField(
+        default=0,
+        help_text='Current processing resourcelist index'
+    )
+    current_resourcelist_url = models.URLField(
+        null=True, blank=True,
+        help_text='URL of currently processing resourcelist'
+    )
+    current_resourcelist_progress = models.IntegerField(
+        default=0,
+        help_text='Number of processed JSON URLs in current resourcelist'
+    )
+    current_changelist_index = models.IntegerField(
+        default=0,
+        help_text='Current processing changelist index'
+    )
+    current_changelist_url = models.URLField(
+        null=True, blank=True,
+        help_text='URL of currently processing changelist'
+    )
+    current_changelist_progress = models.IntegerField(
+        default=0,
+        help_text='Number of processed changes in current changelist'
+    )
+    total_documents_in_batch = models.IntegerField(
+        default=0,
+        help_text='Total number of documents in current batch'
+    )
+    documents_processed_in_batch = models.IntegerField(
+        default=0,
+        help_text='Number of documents processed in current batch'
+    )
+
+    class Meta:
+        app_label = 'addons_metadata'
+        ordering = ['-started_at']
+        indexes = [
+            models.Index(fields=['status', 'completed_at']),
+            models.Index(fields=['sync_type', 'status']),
+        ]
+
+    def __str__(self):
+        return f'KakenSyncLog({self.sync_type}, {self.status}, {self.started_at})'
+
+    @classmethod
+    def get_last_successful_sync(cls):
+        """Get the latest successful sync log"""
+        return cls.objects.filter(
+            status='completed',
+            completed_at__isnull=False
+        ).order_by('-completed_at').first()
+
+    @classmethod
+    def get_last_sync_timestamp(cls):
+        """Get the last sync timestamp (for next incremental sync)"""
+        last_sync = cls.get_last_successful_sync()
+        return last_sync.completed_at if last_sync else None
+
+    @classmethod
+    def get_last_sync_log(cls):
+        """Get the latest sync log (for resumption/new sync determination)"""
+        return cls.objects.order_by('-started_at').first()
+
+    @classmethod
+    def start_sync(cls, sync_type='incremental'):
+        """
+        Start synchronization processing and create log record
+
+        Args:
+            sync_type: Synchronization type ('initial' or 'incremental')
+
+        Returns:
+            Created KakenSyncLog instance
+        """
+        return cls.objects.create(
+            sync_type=sync_type,
+            started_at=timezone.now(),
+            status='running'
+        )
+
+    def complete_sync(self, processed_records=0, errors_count=0, total_records=0,
+                     changelist_index=None):
+        """
+        Mark synchronization processing as completed
+
+        Args:
+            processed_records: Number of processed records
+            errors_count: Number of errors
+            total_records: Total number of records after sync
+            changelist_index: Processed changelist index
+        """
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.processed_records = processed_records
+        self.errors_count = errors_count
+        self.total_records = total_records
+        if changelist_index is not None:
+            self.changelist_index = changelist_index
+        self.save()
+
+    def fail_sync(self, error_details='', processed_records=0, errors_count=0):
+        """
+        Mark synchronization processing as failed
+
+        Args:
+            error_details: Error details
+            processed_records: Number of processed records
+            errors_count: Number of errors
+        """
+        self.status = 'failed'
+        self.completed_at = timezone.now()
+        self.error_details = error_details
+        self.processed_records = processed_records
+        self.errors_count = errors_count
+        self.save()
+
+    def update_progress(self, processed_records=None, errors_count=None):
+        """
+        Update synchronization processing progress
+
+        Args:
+            processed_records: Number of processed records
+            errors_count: Number of errors
+        """
+        if processed_records is not None:
+            self.processed_records = processed_records
+        if errors_count is not None:
+            self.errors_count = errors_count
+        self.save()
+
+    @property
+    def duration(self):
+        """Calculate synchronization processing execution time"""
+        if self.completed_at:
+            return self.completed_at - self.started_at
+        elif self.status == 'running':
+            return timezone.now() - self.started_at
+        return None
+
+    @property
+    def is_running(self):
+        """Check if synchronization processing is running"""
+        return self.status == 'running'
+
+    @property
+    def is_completed(self):
+        """同期処理完了かどうか"""
+        return self.status == 'completed'
+
+    @property
+    def is_failed(self):
+        """同期処理失敗かどうか"""
+        return self.status == 'failed'
+
+
 @receiver(post_save, sender=NodeLog)
 def update_metadata_asset_pool_when_file_changed(sender, instance, created, **kwargs):
     node = instance.node

@@ -1,0 +1,1303 @@
+[
+  {
+    "large_code": "A189",
+    "large_name_ja": "ライフサイエンス",
+    "large_name_en": "Life sciences",
+    "children": [
+      {
+        "small_code": "A38010",
+        "small_name_ja": "植物栄養学、土壌学"
+      },
+      {
+        "small_code": "A38020",
+        "small_name_ja": "応用微生物学"
+      },
+      {
+        "small_code": "A38030",
+        "small_name_ja": "応用生物化学"
+      },
+      {
+        "small_code": "A38040",
+        "small_name_ja": "生物有機化学"
+      },
+      {
+        "small_code": "A38050",
+        "small_name_ja": "食品科学"
+      },
+      {
+        "small_code": "A38060",
+        "small_name_ja": "応用分子細胞生物学"
+      },
+      {
+        "small_code": "A40010",
+        "small_name_ja": "森林科学"
+      },
+      {
+        "small_code": "A40020",
+        "small_name_ja": "木質科学"
+      },
+      {
+        "small_code": "A40030",
+        "small_name_ja": "水圏生産科学"
+      },
+      {
+        "small_code": "A40040",
+        "small_name_ja": "水圏生命科学"
+      },
+      {
+        "small_code": "A42010",
+        "small_name_ja": "動物生産科学"
+      },
+      {
+        "small_code": "A42020",
+        "small_name_ja": "獣医学"
+      },
+      {
+        "small_code": "A42030",
+        "small_name_ja": "動物生命科学"
+      },
+      {
+        "small_code": "A42040",
+        "small_name_ja": "実験動物学"
+      },
+      {
+        "small_code": "A43010",
+        "small_name_ja": "分子生物学"
+      },
+      {
+        "small_code": "A43020",
+        "small_name_ja": "構造生物化学"
+      },
+      {
+        "small_code": "A43030",
+        "small_name_ja": "機能生物化学"
+      },
+      {
+        "small_code": "A43040",
+        "small_name_ja": "生物物理学"
+      },
+      {
+        "small_code": "A43050",
+        "small_name_ja": "ゲノム生物学"
+      },
+      {
+        "small_code": "A43060",
+        "small_name_ja": "システムゲノム科学"
+      },
+      {
+        "small_code": "A44010",
+        "small_name_ja": "細胞生物学"
+      },
+      {
+        "small_code": "A44020",
+        "small_name_ja": "発生生物学"
+      },
+      {
+        "small_code": "A44030",
+        "small_name_ja": "植物分子、生理科学"
+      },
+      {
+        "small_code": "A44040",
+        "small_name_ja": "形態、構造"
+      },
+      {
+        "small_code": "A44050",
+        "small_name_ja": "動物生理化学、生理学、行動学"
+      },
+      {
+        "small_code": "A45010",
+        "small_name_ja": "遺伝学"
+      },
+      {
+        "small_code": "A45020",
+        "small_name_ja": "進化生物学"
+      },
+      {
+        "small_code": "A45030",
+        "small_name_ja": "多様性生物学、分類学"
+      },
+      {
+        "small_code": "A45040",
+        "small_name_ja": "生態学、環境学"
+      },
+      {
+        "small_code": "A45050",
+        "small_name_ja": "自然人類学"
+      },
+      {
+        "small_code": "A45060",
+        "small_name_ja": "応用人類学"
+      },
+      {
+        "small_code": "A46010",
+        "small_name_ja": "神経科学一般"
+      },
+      {
+        "small_code": "A46020",
+        "small_name_ja": "神経形態学"
+      },
+      {
+        "small_code": "A46030",
+        "small_name_ja": "神経機能学"
+      },
+      {
+        "small_code": "A47010",
+        "small_name_ja": "薬系化学、創薬科学"
+      },
+      {
+        "small_code": "A47020",
+        "small_name_ja": "薬系分析、物理化学"
+      },
+      {
+        "small_code": "A47030",
+        "small_name_ja": "薬系衛生、生物化学"
+      },
+      {
+        "small_code": "A47040",
+        "small_name_ja": "薬理学"
+      },
+      {
+        "small_code": "A47050",
+        "small_name_ja": "環境、天然医薬資源学"
+      },
+      {
+        "small_code": "A47060",
+        "small_name_ja": "医療薬学"
+      },
+      {
+        "small_code": "A48010",
+        "small_name_ja": "解剖学"
+      },
+      {
+        "small_code": "A48020",
+        "small_name_ja": "生理学"
+      },
+      {
+        "small_code": "A48040",
+        "small_name_ja": "医化学"
+      },
+      {
+        "small_code": "A49010",
+        "small_name_ja": "病態医化学"
+      },
+      {
+        "small_code": "A49020",
+        "small_name_ja": "人体病理学"
+      },
+      {
+        "small_code": "A49030",
+        "small_name_ja": "実験病理学"
+      },
+      {
+        "small_code": "A49040",
+        "small_name_ja": "寄生虫学"
+      },
+      {
+        "small_code": "A49050",
+        "small_name_ja": "細菌学"
+      },
+      {
+        "small_code": "A49060",
+        "small_name_ja": "ウイルス学"
+      },
+      {
+        "small_code": "A49070",
+        "small_name_ja": "免疫学"
+      },
+      {
+        "small_code": "A50010",
+        "small_name_ja": "腫瘍生物学"
+      },
+      {
+        "small_code": "A50020",
+        "small_name_ja": "腫瘍診断、治療学"
+      },
+      {
+        "small_code": "A51010",
+        "small_name_ja": "基盤脳科学"
+      },
+      {
+        "small_code": "A51020",
+        "small_name_ja": "認知脳科学"
+      },
+      {
+        "small_code": "A51030",
+        "small_name_ja": "病態神経科学"
+      },
+      {
+        "small_code": "A52010",
+        "small_name_ja": "内科学一般"
+      },
+      {
+        "small_code": "A52020",
+        "small_name_ja": "神経内科学"
+      },
+      {
+        "small_code": "A52030",
+        "small_name_ja": "精神神経科学"
+      },
+      {
+        "small_code": "A52040",
+        "small_name_ja": "放射線科学"
+      },
+      {
+        "small_code": "A52050",
+        "small_name_ja": "胎児医学、小児成育学"
+      },
+      {
+        "small_code": "A53010",
+        "small_name_ja": "消化器内科学"
+      },
+      {
+        "small_code": "A53020",
+        "small_name_ja": "循環器内科学"
+      },
+      {
+        "small_code": "A53030",
+        "small_name_ja": "呼吸器内科学"
+      },
+      {
+        "small_code": "A53040",
+        "small_name_ja": "腎臓内科学"
+      },
+      {
+        "small_code": "A53050",
+        "small_name_ja": "皮膚科学"
+      },
+      {
+        "small_code": "A54010",
+        "small_name_ja": "血液、腫瘍内科学"
+      },
+      {
+        "small_code": "A54020",
+        "small_name_ja": "膠原病、アレルギー内科学"
+      },
+      {
+        "small_code": "A54030",
+        "small_name_ja": "感染症内科学"
+      },
+      {
+        "small_code": "A54040",
+        "small_name_ja": "代謝、内分泌学"
+      },
+      {
+        "small_code": "A55010",
+        "small_name_ja": "外科学一般、小児外科学"
+      },
+      {
+        "small_code": "A55020",
+        "small_name_ja": "消化器外科学"
+      },
+      {
+        "small_code": "A55030",
+        "small_name_ja": "心臓血管外科学"
+      },
+      {
+        "small_code": "A55040",
+        "small_name_ja": "呼吸器外科学"
+      },
+      {
+        "small_code": "A55050",
+        "small_name_ja": "麻酔科学"
+      },
+      {
+        "small_code": "A55060",
+        "small_name_ja": "救急医学"
+      },
+      {
+        "small_code": "A56010",
+        "small_name_ja": "脳神経外科学"
+      },
+      {
+        "small_code": "A56020",
+        "small_name_ja": "整形外科学"
+      },
+      {
+        "small_code": "A56030",
+        "small_name_ja": "泌尿器科学"
+      },
+      {
+        "small_code": "A56040",
+        "small_name_ja": "産婦人科学"
+      },
+      {
+        "small_code": "A56050",
+        "small_name_ja": "耳鼻咽喉科学"
+      },
+      {
+        "small_code": "A56060",
+        "small_name_ja": "眼科学"
+      },
+      {
+        "small_code": "A56070",
+        "small_name_ja": "形成外科学"
+      },
+      {
+        "small_code": "A57010",
+        "small_name_ja": "常態系口腔科学"
+      },
+      {
+        "small_code": "A57020",
+        "small_name_ja": "病態系口腔科学"
+      },
+      {
+        "small_code": "A57030",
+        "small_name_ja": "保存治療系歯学"
+      },
+      {
+        "small_code": "A57040",
+        "small_name_ja": "口腔再生医学、歯科医用工学"
+      },
+      {
+        "small_code": "A57050",
+        "small_name_ja": "補綴系歯学"
+      },
+      {
+        "small_code": "A57060",
+        "small_name_ja": "外科系歯学"
+      },
+      {
+        "small_code": "A57070",
+        "small_name_ja": "成長、発育系歯学"
+      },
+      {
+        "small_code": "A57080",
+        "small_name_ja": "社会系歯学"
+      },
+      {
+        "small_code": "A58010",
+        "small_name_ja": "医療管理学、医療系社会学"
+      },
+      {
+        "small_code": "A58020",
+        "small_name_ja": "衛生学、公衆衛生学分野：実験系を含む"
+      },
+      {
+        "small_code": "A58030",
+        "small_name_ja": "衛生学、公衆衛生学分野：実験系を含まない"
+      },
+      {
+        "small_code": "A58040",
+        "small_name_ja": "法医学"
+      },
+      {
+        "small_code": "A58050",
+        "small_name_ja": "基礎看護学"
+      },
+      {
+        "small_code": "A58060",
+        "small_name_ja": "臨床看護学"
+      },
+      {
+        "small_code": "A58070",
+        "small_name_ja": "生涯発達看護学"
+      },
+      {
+        "small_code": "A58080",
+        "small_name_ja": "高齢者看護学、地域看護学"
+      },
+      {
+        "small_code": "A59010",
+        "small_name_ja": "リハビリテーション科学"
+      },
+      {
+        "small_code": "A59020",
+        "small_name_ja": "スポーツ科学"
+      },
+      {
+        "small_code": "A59030",
+        "small_name_ja": "体育、身体教育学"
+      },
+      {
+        "small_code": "A59040",
+        "small_name_ja": "栄養学、健康科学"
+      },
+      {
+        "small_code": "A90110",
+        "small_name_ja": "生体医工学"
+      },
+      {
+        "small_code": "A90120",
+        "small_name_ja": "生体材料学"
+      },
+      {
+        "small_code": "A90130",
+        "small_name_ja": "医用システム"
+      },
+      {
+        "small_code": "A90140",
+        "small_name_ja": "医療技術評価学"
+      },
+      {
+        "small_code": "A90150",
+        "small_name_ja": "医療福祉工学"
+      }
+    ]
+  },
+  {
+    "large_code": "A289",
+    "large_name_ja": "情報通信",
+    "large_name_en": "Informatics",
+    "children": [
+      {
+        "small_code": "A20010",
+        "small_name_ja": "機械力学、メカトロニクス"
+      },
+      {
+        "small_code": "A20020",
+        "small_name_ja": "ロボティクス、知能機械システム"
+      },
+      {
+        "small_code": "A60010",
+        "small_name_ja": "情報学基礎論"
+      },
+      {
+        "small_code": "A60020",
+        "small_name_ja": "数理情報学"
+      },
+      {
+        "small_code": "A60030",
+        "small_name_ja": "統計科学"
+      },
+      {
+        "small_code": "A60040",
+        "small_name_ja": "計算機システム"
+      },
+      {
+        "small_code": "A60050",
+        "small_name_ja": "ソフトウェア"
+      },
+      {
+        "small_code": "A60060",
+        "small_name_ja": "情報ネットワーク"
+      },
+      {
+        "small_code": "A60070",
+        "small_name_ja": "情報セキュリティ"
+      },
+      {
+        "small_code": "A60080",
+        "small_name_ja": "データベース"
+      },
+      {
+        "small_code": "A60090",
+        "small_name_ja": "高性能計算"
+      },
+      {
+        "small_code": "A60100",
+        "small_name_ja": "計算科学"
+      },
+      {
+        "small_code": "A61010",
+        "small_name_ja": "知覚情報処理"
+      },
+      {
+        "small_code": "A61020",
+        "small_name_ja": "ヒューマンインタフェース、インタラクション"
+      },
+      {
+        "small_code": "A61030",
+        "small_name_ja": "知能情報学"
+      },
+      {
+        "small_code": "A61040",
+        "small_name_ja": "ソフトコンピューティング"
+      },
+      {
+        "small_code": "A61050",
+        "small_name_ja": "知能ロボティクス"
+      },
+      {
+        "small_code": "A61060",
+        "small_name_ja": "感性情報学"
+      },
+      {
+        "small_code": "A62010",
+        "small_name_ja": "生命、健康、医療情報学"
+      },
+      {
+        "small_code": "A62020",
+        "small_name_ja": "ウェブ情報学、サービス情報学"
+      },
+      {
+        "small_code": "A62030",
+        "small_name_ja": "学習支援システム"
+      },
+      {
+        "small_code": "A62040",
+        "small_name_ja": "エンタテインメント、ゲーム情報学"
+      }
+    ]
+  },
+  {
+    "large_code": "A389",
+    "large_name_ja": "環境・農学",
+    "large_name_en": "Environmental science/Agricultural science",
+    "children": [
+      {
+        "small_code": "A39010",
+        "small_name_ja": "遺伝育種科学"
+      },
+      {
+        "small_code": "A39020",
+        "small_name_ja": "作物生産科学"
+      },
+      {
+        "small_code": "A39030",
+        "small_name_ja": "園芸科学"
+      },
+      {
+        "small_code": "A39040",
+        "small_name_ja": "植物保護科学"
+      },
+      {
+        "small_code": "A39050",
+        "small_name_ja": "昆虫科学"
+      },
+      {
+        "small_code": "A39060",
+        "small_name_ja": "生物資源保全学"
+      },
+      {
+        "small_code": "A39070",
+        "small_name_ja": "ランドスケープ科学"
+      },
+      {
+        "small_code": "A41020",
+        "small_name_ja": "農業社会構造"
+      },
+      {
+        "small_code": "A41030",
+        "small_name_ja": "地域環境工学、農村計画学"
+      },
+      {
+        "small_code": "A41040",
+        "small_name_ja": "農業環境工学、農業情報工学"
+      },
+      {
+        "small_code": "A41050",
+        "small_name_ja": "環境農学"
+      },
+      {
+        "small_code": "A63010",
+        "small_name_ja": "環境動態解析"
+      },
+      {
+        "small_code": "A63020",
+        "small_name_ja": "放射線影響"
+      },
+      {
+        "small_code": "A63030",
+        "small_name_ja": "化学物質影響"
+      },
+      {
+        "small_code": "A63040",
+        "small_name_ja": "環境影響評価"
+      },
+      {
+        "small_code": "A64010",
+        "small_name_ja": "環境負荷、リスク評価管理"
+      },
+      {
+        "small_code": "A64020",
+        "small_name_ja": "環境負荷低減技術、保全修復技術"
+      },
+      {
+        "small_code": "A64030",
+        "small_name_ja": "環境材料、リサイクル技術"
+      },
+      {
+        "small_code": "A64040",
+        "small_name_ja": "自然共生システム"
+      },
+      {
+        "small_code": "A64050",
+        "small_name_ja": "循環型社会システム"
+      },
+      {
+        "small_code": "A64060",
+        "small_name_ja": "環境政策、環境配慮型社会"
+      }
+    ]
+  },
+  {
+    "large_code": "A489",
+    "large_name_ja": "ナノテク・材料",
+    "large_name_en": "Nanotechnology/Materials",
+    "children": [
+      {
+        "small_code": "A26010",
+        "small_name_ja": "金属材料物性"
+      },
+      {
+        "small_code": "A26020",
+        "small_name_ja": "無機材料、物性"
+      },
+      {
+        "small_code": "A26030",
+        "small_name_ja": "複合材料、界面"
+      },
+      {
+        "small_code": "A26040",
+        "small_name_ja": "構造材料、機能材料"
+      },
+      {
+        "small_code": "A26050",
+        "small_name_ja": "材料加工、組織制御"
+      },
+      {
+        "small_code": "A26060",
+        "small_name_ja": "金属生産、資源生産"
+      },
+      {
+        "small_code": "A28010",
+        "small_name_ja": "ナノ構造化学"
+      },
+      {
+        "small_code": "A28020",
+        "small_name_ja": "ナノ構造物理"
+      },
+      {
+        "small_code": "A28030",
+        "small_name_ja": "ナノ材料科学"
+      },
+      {
+        "small_code": "A28040",
+        "small_name_ja": "ナノバイオサイエンス"
+      },
+      {
+        "small_code": "A28050",
+        "small_name_ja": "ナノマイクロシステム"
+      },
+      {
+        "small_code": "A29010",
+        "small_name_ja": "応用物性"
+      },
+      {
+        "small_code": "A29020",
+        "small_name_ja": "薄膜、表面界面物性"
+      },
+      {
+        "small_code": "A29030",
+        "small_name_ja": "応用物理一般"
+      },
+      {
+        "small_code": "A30010",
+        "small_name_ja": "結晶工学"
+      },
+      {
+        "small_code": "A30020",
+        "small_name_ja": "光工学、光量子科学"
+      },
+      {
+        "small_code": "A32010",
+        "small_name_ja": "基礎物理化学"
+      },
+      {
+        "small_code": "A32020",
+        "small_name_ja": "機能物性化学"
+      },
+      {
+        "small_code": "A33010",
+        "small_name_ja": "構造有機化学、物理有機化学"
+      },
+      {
+        "small_code": "A33020",
+        "small_name_ja": "有機合成化学"
+      },
+      {
+        "small_code": "A34010",
+        "small_name_ja": "無機・錯体化学"
+      },
+      {
+        "small_code": "A34020",
+        "small_name_ja": "分析化学"
+      },
+      {
+        "small_code": "A34030",
+        "small_name_ja": "グリーンサステイナブルケミストリー、環境化学"
+      },
+      {
+        "small_code": "A35010",
+        "small_name_ja": "高分子化学"
+      },
+      {
+        "small_code": "A35020",
+        "small_name_ja": "高分子材料"
+      },
+      {
+        "small_code": "A35030",
+        "small_name_ja": "有機機能材料"
+      },
+      {
+        "small_code": "A36010",
+        "small_name_ja": "無機物質、無機材料化学"
+      },
+      {
+        "small_code": "A36020",
+        "small_name_ja": "エネルギー化学"
+      },
+      {
+        "small_code": "A37010",
+        "small_name_ja": "生体化学"
+      },
+      {
+        "small_code": "A37020",
+        "small_name_ja": "生物分子化学"
+      },
+      {
+        "small_code": "A37030",
+        "small_name_ja": "ケミカルバイオロジー"
+      }
+    ]
+  },
+  {
+    "large_code": "A589",
+    "large_name_ja": "エネルギー",
+    "large_name_en": "Energy",
+    "children": [
+      {
+        "small_code": "A14010",
+        "small_name_ja": "プラズマ科学"
+      },
+      {
+        "small_code": "A14020",
+        "small_name_ja": "核融合学"
+      },
+      {
+        "small_code": "A14030",
+        "small_name_ja": "プラズマ応用科学"
+      },
+      {
+        "small_code": "A31010",
+        "small_name_ja": "原子力工学"
+      },
+      {
+        "small_code": "A31020",
+        "small_name_ja": "地球資源工学、エネルギー学"
+      },
+      {
+        "small_code": "A80040",
+        "small_name_ja": "量子ビーム科学"
+      }
+    ]
+  },
+  {
+    "large_code": "A689",
+    "large_name_ja": "ものづくり技術（機械・電気電子・化学工学）",
+    "large_name_en": "Manufacturing technology (mechanical,",
+    "children": [
+      {
+        "small_code": "A18010",
+        "small_name_ja": "材料力学、機械材料"
+      },
+      {
+        "small_code": "A18020",
+        "small_name_ja": "加工学、生産工学"
+      },
+      {
+        "small_code": "A18030",
+        "small_name_ja": "設計工学"
+      },
+      {
+        "small_code": "A18040",
+        "small_name_ja": "機械要素、トライボロジー"
+      },
+      {
+        "small_code": "A19010",
+        "small_name_ja": "流体工学"
+      },
+      {
+        "small_code": "A19020",
+        "small_name_ja": "熱工学"
+      },
+      {
+        "small_code": "A21010",
+        "small_name_ja": "電力工学"
+      },
+      {
+        "small_code": "A21020",
+        "small_name_ja": "通信工学"
+      },
+      {
+        "small_code": "A21030",
+        "small_name_ja": "計測工学"
+      },
+      {
+        "small_code": "A21040",
+        "small_name_ja": "制御、システム工学"
+      },
+      {
+        "small_code": "A21050",
+        "small_name_ja": "電気電子材料工学"
+      },
+      {
+        "small_code": "A21060",
+        "small_name_ja": "電子デバイス、電子機器"
+      },
+      {
+        "small_code": "A27010",
+        "small_name_ja": "移動現象、単位操作"
+      },
+      {
+        "small_code": "A27020",
+        "small_name_ja": "反応工学、プロセスシステム工学"
+      },
+      {
+        "small_code": "A27030",
+        "small_name_ja": "触媒プロセス、資源化学プロセス"
+      },
+      {
+        "small_code": "A27040",
+        "small_name_ja": "バイオ機能応用、バイオプロセス工学"
+      }
+    ]
+  },
+  {
+    "large_code": "A789",
+    "large_name_ja": "社会基盤（土木・建築・防災）",
+    "large_name_en": "Social infrastructure (civil Engineering, architecture,",
+    "children": [
+      {
+        "small_code": "A22010",
+        "small_name_ja": "土木材料、施工、建設マネジメント"
+      },
+      {
+        "small_code": "A22020",
+        "small_name_ja": "構造工学、地震工学"
+      },
+      {
+        "small_code": "A22030",
+        "small_name_ja": "地盤工学"
+      },
+      {
+        "small_code": "A22040",
+        "small_name_ja": "水工学"
+      },
+      {
+        "small_code": "A22050",
+        "small_name_ja": "土木計画学、交通工学"
+      },
+      {
+        "small_code": "A22060",
+        "small_name_ja": "土木環境システム"
+      },
+      {
+        "small_code": "A23010",
+        "small_name_ja": "建築構造、材料"
+      },
+      {
+        "small_code": "A23020",
+        "small_name_ja": "建築環境、建築設備"
+      },
+      {
+        "small_code": "A23030",
+        "small_name_ja": "建築計画、都市計画"
+      },
+      {
+        "small_code": "A23040",
+        "small_name_ja": "建築史、意匠"
+      },
+      {
+        "small_code": "A25010",
+        "small_name_ja": "社会システム工学"
+      },
+      {
+        "small_code": "A25020",
+        "small_name_ja": "安全工学"
+      },
+      {
+        "small_code": "A25030",
+        "small_name_ja": "防災工学"
+      }
+    ]
+  },
+  {
+    "large_code": "A889",
+    "large_name_ja": "フロンティア（航空・船舶）",
+    "large_name_en": "Aerospace, marine, and maritime Engineering",
+    "children": [
+      {
+        "small_code": "A24010",
+        "small_name_ja": "航空宇宙工学"
+      },
+      {
+        "small_code": "A24020",
+        "small_name_ja": "船舶海洋工学"
+      }
+    ]
+  },
+  {
+    "large_code": "A900",
+    "large_name_ja": "人文・社会",
+    "large_name_en": "Humanities & social sciences",
+    "children": [
+      {
+        "small_code": "A01010",
+        "small_name_ja": "哲学、倫理学"
+      },
+      {
+        "small_code": "A01020",
+        "small_name_ja": "中国哲学、印度哲学、仏教学"
+      },
+      {
+        "small_code": "A01030",
+        "small_name_ja": "宗教学"
+      },
+      {
+        "small_code": "A01040",
+        "small_name_ja": "思想史"
+      },
+      {
+        "small_code": "A01050",
+        "small_name_ja": "美学、芸術論"
+      },
+      {
+        "small_code": "A01060",
+        "small_name_ja": "美術史"
+      },
+      {
+        "small_code": "A01070",
+        "small_name_ja": "芸術実践論"
+      },
+      {
+        "small_code": "A01080",
+        "small_name_ja": "科学社会学、科学技術史"
+      },
+      {
+        "small_code": "A02010",
+        "small_name_ja": "日本文学"
+      },
+      {
+        "small_code": "A02020",
+        "small_name_ja": "中国文学"
+      },
+      {
+        "small_code": "A02030",
+        "small_name_ja": "英文学、英語圏文学"
+      },
+      {
+        "small_code": "A02040",
+        "small_name_ja": "ヨーロッパ文学"
+      },
+      {
+        "small_code": "A02050",
+        "small_name_ja": "文学一般"
+      },
+      {
+        "small_code": "A02060",
+        "small_name_ja": "言語学"
+      },
+      {
+        "small_code": "A02070",
+        "small_name_ja": "日本語学"
+      },
+      {
+        "small_code": "A02080",
+        "small_name_ja": "英語学"
+      },
+      {
+        "small_code": "A02090",
+        "small_name_ja": "日本語教育"
+      },
+      {
+        "small_code": "A02100",
+        "small_name_ja": "外国語教育"
+      },
+      {
+        "small_code": "A03010",
+        "small_name_ja": "史学一般"
+      },
+      {
+        "small_code": "A03020",
+        "small_name_ja": "日本史"
+      },
+      {
+        "small_code": "A03030",
+        "small_name_ja": "アジア史、アフリカ史"
+      },
+      {
+        "small_code": "A03040",
+        "small_name_ja": "ヨーロッパ史、アメリカ史"
+      },
+      {
+        "small_code": "A03050",
+        "small_name_ja": "考古学"
+      },
+      {
+        "small_code": "A03060",
+        "small_name_ja": "文化財科学"
+      },
+      {
+        "small_code": "A03070",
+        "small_name_ja": "博物館学"
+      },
+      {
+        "small_code": "A04010",
+        "small_name_ja": "地理学"
+      },
+      {
+        "small_code": "A04020",
+        "small_name_ja": "人文地理学"
+      },
+      {
+        "small_code": "A04030",
+        "small_name_ja": "文化人類学、民俗学"
+      },
+      {
+        "small_code": "A05010",
+        "small_name_ja": "基礎法学"
+      },
+      {
+        "small_code": "A05020",
+        "small_name_ja": "公法学"
+      },
+      {
+        "small_code": "A05030",
+        "small_name_ja": "国際法学"
+      },
+      {
+        "small_code": "A05040",
+        "small_name_ja": "社会法学"
+      },
+      {
+        "small_code": "A05050",
+        "small_name_ja": "刑事法学"
+      },
+      {
+        "small_code": "A05060",
+        "small_name_ja": "民事法学"
+      },
+      {
+        "small_code": "A05070",
+        "small_name_ja": "新領域法学"
+      },
+      {
+        "small_code": "A06010",
+        "small_name_ja": "政治学"
+      },
+      {
+        "small_code": "A06020",
+        "small_name_ja": "国際関係論"
+      },
+      {
+        "small_code": "A07010",
+        "small_name_ja": "理論経済学"
+      },
+      {
+        "small_code": "A07020",
+        "small_name_ja": "経済学説、経済思想"
+      },
+      {
+        "small_code": "A07030",
+        "small_name_ja": "経済統計"
+      },
+      {
+        "small_code": "A07040",
+        "small_name_ja": "経済政策"
+      },
+      {
+        "small_code": "A07050",
+        "small_name_ja": "公共経済、労働経済"
+      },
+      {
+        "small_code": "A07060",
+        "small_name_ja": "金融、ファイナンス"
+      },
+      {
+        "small_code": "A07070",
+        "small_name_ja": "経済史"
+      },
+      {
+        "small_code": "A07080",
+        "small_name_ja": "経営学"
+      },
+      {
+        "small_code": "A07090",
+        "small_name_ja": "商学"
+      },
+      {
+        "small_code": "A07100",
+        "small_name_ja": "会計学"
+      },
+      {
+        "small_code": "A08010",
+        "small_name_ja": "社会学"
+      },
+      {
+        "small_code": "A08020",
+        "small_name_ja": "社会福祉学"
+      },
+      {
+        "small_code": "A08030",
+        "small_name_ja": "家政学、生活科学"
+      },
+      {
+        "small_code": "A09010",
+        "small_name_ja": "教育学"
+      },
+      {
+        "small_code": "A09020",
+        "small_name_ja": "教育社会学"
+      },
+      {
+        "small_code": "A09030",
+        "small_name_ja": "子ども学、保育学"
+      },
+      {
+        "small_code": "A09040",
+        "small_name_ja": "教科教育学、初等中等教育学"
+      },
+      {
+        "small_code": "A09050",
+        "small_name_ja": "高等教育学"
+      },
+      {
+        "small_code": "A09060",
+        "small_name_ja": "特別支援教育"
+      },
+      {
+        "small_code": "A09070",
+        "small_name_ja": "教育工学"
+      },
+      {
+        "small_code": "A09080",
+        "small_name_ja": "科学教育"
+      },
+      {
+        "small_code": "A10010",
+        "small_name_ja": "社会心理学"
+      },
+      {
+        "small_code": "A10020",
+        "small_name_ja": "教育心理学"
+      },
+      {
+        "small_code": "A10030",
+        "small_name_ja": "臨床心理学"
+      },
+      {
+        "small_code": "A10040",
+        "small_name_ja": "実験心理学"
+      },
+      {
+        "small_code": "A41010",
+        "small_name_ja": "食料農業経済"
+      },
+      {
+        "small_code": "A80010",
+        "small_name_ja": "地域研究"
+      },
+      {
+        "small_code": "A80020",
+        "small_name_ja": "観光学"
+      },
+      {
+        "small_code": "A80030",
+        "small_name_ja": "ジェンダー"
+      },
+      {
+        "small_code": "A90010",
+        "small_name_ja": "デザイン学"
+      },
+      {
+        "small_code": "A90020",
+        "small_name_ja": "図書館情報学、人文社会情報学"
+      },
+      {
+        "small_code": "A90030",
+        "small_name_ja": "認知科学"
+      }
+    ]
+  },
+  {
+    "large_code": "A1000",
+    "large_name_ja": "自然科学一般",
+    "large_name_en": "Natural sciences",
+    "children": [
+      {
+        "small_code": "A11010",
+        "small_name_ja": "代数学"
+      },
+      {
+        "small_code": "A11020",
+        "small_name_ja": "幾何学"
+      },
+      {
+        "small_code": "A12010",
+        "small_name_ja": "基礎解析学"
+      },
+      {
+        "small_code": "A12020",
+        "small_name_ja": "数理解析学"
+      },
+      {
+        "small_code": "A12030",
+        "small_name_ja": "数学基礎"
+      },
+      {
+        "small_code": "A12040",
+        "small_name_ja": "応用数学、統計数学"
+      },
+      {
+        "small_code": "A13010",
+        "small_name_ja": "数理物理、物性基礎"
+      },
+      {
+        "small_code": "A13020",
+        "small_name_ja": "半導体、光物性、原子物理"
+      },
+      {
+        "small_code": "A13030",
+        "small_name_ja": "磁性、超伝導、強相関系"
+      },
+      {
+        "small_code": "A13040",
+        "small_name_ja": "生物物理、化学物理、ソフトマターの物理"
+      },
+      {
+        "small_code": "A15010",
+        "small_name_ja": "素粒子、原子核、宇宙線、宇宙物理に関する理論 Theoretical studies related to particle-, nuclear-, cosmic ray and astro-physics"
+      },
+      {
+        "small_code": "A15020",
+        "small_name_ja": "素粒子、原子核、宇宙線、宇宙物理に関する実験 Particle, nuclear, cosmic-ray, and astrophysics - experiment"
+      },
+      {
+        "small_code": "A16010",
+        "small_name_ja": "天文学"
+      },
+      {
+        "small_code": "A17010",
+        "small_name_ja": "宇宙惑星科学"
+      },
+      {
+        "small_code": "A17020",
+        "small_name_ja": "大気水圏科学"
+      },
+      {
+        "small_code": "A17030",
+        "small_name_ja": "地球人間圏科学"
+      },
+      {
+        "small_code": "A17040",
+        "small_name_ja": "固体地球科学"
+      },
+      {
+        "small_code": "A17050",
+        "small_name_ja": "地球生命科学"
+      }
+    ]
+  },
+  {
+    "large_code": "A9999",
+    "large_name_ja": "その他",
+    "large_name_en": "Other",
+    "children": [
+      {
+        "small_code": "A99999",
+        "small_name_ja": "その他"
+      }
+    ]
+  }
+]
