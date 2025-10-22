@@ -1258,7 +1258,6 @@ class TestUtils(AdminTestCase):
             username='test_username',
             password='test_password',
             folder='test_folder/',
-            notification_secret='not_secret',
             provider_name='nextcloudinstitutions',
         )
         mock_test_owncloud_connection.assert_called()
@@ -1294,7 +1293,6 @@ class TestUtils(AdminTestCase):
             username='test_username',
             password='test_password',
             folder='test_folder/',
-            notification_secret='not_secret',
             provider_name='nextcloudinstitutions',
         )
         mock_test_owncloud_connection.assert_called()

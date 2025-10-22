@@ -3595,6 +3595,12 @@ msgstr "機関ストレージ制御"
 msgid "Export Data Management"
 msgstr "エクスポートデータ管理"
 
+msgid "Default"
+msgstr "デフォルトストレージ"
+
+msgid "Each Institution"
+msgstr "各機関の設定"
+
 # export_data_storage_location.html
 msgid "Configure Accounts for Export Data Storage Location"
 msgstr "エクスポートデータ保存場所のアカウント設定"

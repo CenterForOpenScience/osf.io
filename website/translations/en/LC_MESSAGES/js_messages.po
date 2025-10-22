@@ -983,6 +983,10 @@ msgstr ""
 msgid "Are you sure you want to add this Export Data Storage Location?"
 msgstr ""
 
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:407
+msgid "Export Data Storage location set successfully"
+msgstr ""
+
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:363
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:597
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:737

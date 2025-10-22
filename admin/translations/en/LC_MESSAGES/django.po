@@ -3558,6 +3558,12 @@ msgstr ""
 msgid "Export Data Management"
 msgstr ""
 
+msgid "Default"
+msgstr ""
+
+msgid "Each Institution"
+msgstr ""
+
 # export_data_storage_location.html
 msgid "Configure Accounts for Export Data Storage Location"
 msgstr ""

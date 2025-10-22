@@ -1006,6 +1006,10 @@ msgstr "このストレージをエクスポートデータ保存場所として
 msgid "Some errors occurred"
 msgstr "いくつかのエラーが発生しました"
 
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:407
+msgid "Export Data Storage location set successfully"
+msgstr "エクスポートデータ保存場所が正常に設定されました"
+
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:410
 msgid "Institutional Storage set successfully"
 msgstr "機関ストレージが正常に設定されました"
