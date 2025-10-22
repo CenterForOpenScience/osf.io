@@ -173,9 +173,7 @@
         "dropboxbusiness",
         "s3compatinstitutions",
         "ociinstitutions",
-        "s3",
-        "s3compat",
-        "owncloud"
+        "onedrivebusiness"
     ],
     "institutional_storage_bulk_mount_method": [
         "box",
@@ -190,7 +188,10 @@
     ],
     "addons_has_max_keys": [
         "s3",
-        "s3compat"
+        "s3compat",
+        "s3compatinstitutions",
+        "s3compatb3",
+        "ociinstitutions"
     ],
     "addons_folder_field": {
         "s3": "folder_name",

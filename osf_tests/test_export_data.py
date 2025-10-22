@@ -3,6 +3,8 @@ from datetime import datetime
 
 import mock
 import pytest
+import requests
+import json
 from addons.osfstorage.tests.factories import FileVersionFactory
 from django.http import JsonResponse
 from django.test import TestCase
@@ -18,12 +20,15 @@ from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
     ExportDataFactory,
+    ExportDataFactoryAddon,
     InstitutionFactory,
     OsfStorageFileFactory,
     ExportDataRestoreFactory,
     BaseFileVersionsThroughFactory,
     RdmFileTimestamptokenVerifyResultFactory,
+    BaseFileNodeFactory,
 )
+from osf.models.export_data import get_hashes_from_metadata
 from admin_tests.rdm_custom_storage_location.export_data.test_utils import FAKE_DATA
 
 
@@ -55,6 +60,7 @@ class TestExportData(TestCase):
             basefilenode=file1,
             fileversion=file_version
         )
+        file_version.creator.affiliated_institutions.set([cls.institution])
         file_versions = [file_version]
         total_size = sum([f.size for f in file_versions])
         files_numb = len(file_versions)
@@ -448,6 +454,112 @@ class TestExportData(TestCase):
                                                        self.export_data.process_start_timestamp)
         nt.assert_equal(res, expected_value)
 
+    def test_get_hashes_from_metadata(self):
+        result = get_hashes_from_metadata(provider_name='s3', extra={'hashes': {'md5': 'test'}}, hash_name='md5')
+        nt.assert_is_not_none(result)
+
+    def test_get_hashes_from_metadata_dropboxbusiness(self):
+        result = get_hashes_from_metadata(provider_name='dropboxbusiness', extra={'hashes': {'dropboxbusiness': 'test'}}, hash_name='sha256')
+        nt.assert_is_not_none(result)
+
+    def test_get_hashes_from_metadata_dropboxbusiness_dict(self):
+        result = get_hashes_from_metadata(provider_name='dropboxbusiness', extra={'hashes': {'dropboxbusiness': {'md5': 'test'}}}, hash_name='md5')
+        nt.assert_is_not_none(result)
+
+
+@pytest.mark.django_db
+class TestExportDataInstitutionAddon(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.export_data = ExportDataFactoryAddon()
+        cls.institution = InstitutionFactory.create(_id='vcu')
+        project = ProjectFactory()
+        cls.institution = InstitutionFactory.create(_id=cls.export_data.source.guid)
+        cls.institution.nodes.set([project])
+        cls.institution_json = {
+            'id': cls.institution.id,
+            'guid': cls.institution.guid,
+            'name': cls.institution.name
+        }
+        cls.export_data_json = {
+            'institution': cls.institution_json,
+            'process_start': cls.export_data.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'process_end': cls.export_data.process_end.strftime(
+                '%Y-%m-%d %H:%M:%S') if cls.export_data.process_end else None,
+            'storage': {
+                'name': cls.export_data.source.name,
+                'type': cls.export_data.source.provider_full_name
+            },
+            'projects_numb': 1,
+            'files_numb': 1,
+            'size': -1,
+            'file_path': None
+        }
+
+        projects = cls.institution.nodes.filter(type='osf.node')
+        projects__ids = projects.values_list('id', flat=True)
+        object_id = projects__ids[0]
+        target = AbstractNode(id=object_id)
+        node = BaseFileNodeFactory.create(provider=cls.export_data.source.provider_name, target_object_id=object_id, target=target)
+        cls.file = node
+
+    def test_extract_file_information_json_from_source_institutional_addon_storage(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}, {'attributes': {'version': 2}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'extra': {'hashes': {'md5': 'test'}}}}},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'extra': {'hashes': {'sha256': 'test'}}}}}]
+        mock_request.get.return_value = mock_request_json
+
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_source_institutional_addon_storage_onedrivebusiness(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}},
+                                              {'content': 'test'}]
+        mock_request.get.return_value = mock_request_json
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_source_institutional_addon_storage_get_file_version_error(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 404
+        mock_request.get.return_value = mock_request_json
+        mock_process_directory = mock.MagicMock()
+        mock_process_directory.return_value = None
+
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            with mock.patch('osf.models.export_data.ExportData.process_directory', mock_process_directory):
+                result = self.export_data.extract_file_information_json_from_source_storage()
+                nt.assert_is_not_none(result)
+
+    def test_process_directory(self):
+        test_response = requests.Response()
+        test_response.status_code = 200
+        test_response._content = json.dumps({'data': []}).encode('utf-8')
+
+        mock_request = mock.MagicMock()
+        mock_request.get.return_value = test_response
+        project = ProjectFactory()
+        project_list = []
+        with mock.patch('osf.models.export_data.requests', mock_request):
+            self.export_data.process_directory(project, '/', project_list)
+        nt.assert_equal(project_list, [])
+
 
 @pytest.mark.feature_202210
 @pytest.mark.django_db
@@ -506,3 +618,7 @@ class TestDateTruncMixin(TestCase):
         fake_data = 'fake_value'
         res = self.date_mixin.truncate_date(fake_data)
         nt.assert_equal(res, fake_data)
+
+    def test_truncate_date_none_value(self):
+        res = self.date_mixin.truncate_date(None)
+        nt.assert_is_none(res)

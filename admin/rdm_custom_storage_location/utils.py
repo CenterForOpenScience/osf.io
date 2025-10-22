@@ -14,6 +14,8 @@ import os
 import owncloud
 from django.core.exceptions import ValidationError
 
+from addons.dropboxbusiness.models import node_post_save as dropboxbusiness_post_save
+from addons.onedrivebusiness.models import node_post_save as onedrivebusiness_post_save
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
@@ -37,14 +39,17 @@ from addons.onedrivebusiness.client import OneDriveBusinessClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
-                                            sync_all)
+                                            sync_all,
+                                            node_post_save)
 from framework.exceptions import HTTPError
+from osf.models import AbstractNode
 from website import settings as osf_settings
 from osf.models import Node, OSFUser, ProjectStorageType, UserQuota
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
+from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 from website.util import inspect_info  # noqa
 from website.util.quota import update_node_storage, update_user_used_quota
 
@@ -1147,3 +1152,29 @@ def save_usermap_from_tmp(provider_name, institution):
         rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
         del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
         rdm_addon_option.save()
+
+
+def add_node_settings_to_projects(institution, provider_name):
+    if provider_name not in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+        # If storage is bulk-mount then do nothing
+        return
+
+    # Get projects created by institution users
+    institution_users = institution.osfuser_set.all()
+    projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users)
+
+    # Add or update node settings to projects
+    for project in projects:
+        node_settings = getattr(project, f'addons_{provider_name}_node_settings', None)
+        project_has_no_node_settings = node_settings is None
+
+        if provider_name == 'dropboxbusiness':
+            dropboxbusiness_post_save(None, project, created=project_has_no_node_settings)
+        elif provider_name == 'onedrivebusiness':
+            if not project_has_no_node_settings:
+                # Reset OneDrive Business folder id before update node settings
+                node_settings.folder_id = None
+                node_settings.save()
+            onedrivebusiness_post_save(None, project, created=project_has_no_node_settings)
+        else:
+            node_post_save(None, project, created=project_has_no_node_settings)
