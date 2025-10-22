@@ -534,17 +534,6 @@ class FileMetadata(BaseModel):
         on_delete=models.CASCADE,
     )
 
-    @classmethod
-    def load(cls, project_id, path, select_for_update=False):
-        try:
-            if select_for_update:
-                return cls.objects.filter(project__id=project_id, path=path, deleted__isnull=True) \
-                    .select_for_update().get()
-            else:
-                return cls.objects.get(project__id=project_id, path=path, deleted__isnull=True)
-        except cls.DoesNotExist:
-            return None
-
     @property
     def _id(self):
         path_id = self.path.replace('/', '_')

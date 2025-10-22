@@ -8,4 +8,12 @@ from website import settings as website_settings
 def override_settings():
     """Override settings for the test environment.
     """
+    # First call the parent override_settings to ensure Celery is configured
+    from framework.celery_tasks import app as celery_app
+    celery_app.conf.update({
+        'task_always_eager': True,
+        'task_eager_propagates': True,
+    })
+
+    # Then set metadata-specific settings
     website_settings.ENABLE_PRIVATE_SEARCH = True

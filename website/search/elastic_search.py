@@ -750,7 +750,10 @@ def update_user_async(self, user_id, index=None):
 @celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
 def update_file_metadata_async(self, project_id, path, index=None, bulk=False):
     FileMetadata = apps.get_model(f'addons_{METADATA_SHORT_NAME}.FileMetadata')
-    file_metadata = FileMetadata.load(project_id=project_id, path=path)
+    try:
+        file_metadata = FileMetadata.objects.get(project__id=project_id, path=path)
+    except FileMetadata.DoesNotExist:
+        return
     try:
         update_file_metadata(file_metadata=file_metadata, index=index, bulk=bulk)
     except Exception as exc:
