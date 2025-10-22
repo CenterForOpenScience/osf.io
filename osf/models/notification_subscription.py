@@ -4,9 +4,10 @@ from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from osf.models.notification_type import get_default_frequency_choices
+from osf.models.notification_type import get_default_frequency_choices, NotificationType
 from osf.models.notification import Notification
 from api.base import settings
+from api.base.utils import absolute_reverse
 
 from .base import BaseModel
 
@@ -106,29 +107,24 @@ class NotificationSubscription(BaseModel):
 
     @property
     def absolute_api_v2_url(self):
-        from api.base.utils import absolute_reverse
-        return absolute_reverse('institutions:institution-detail', kwargs={'institution_id': self._id, 'version': 'v2'})
+        return absolute_reverse(
+            'subscriptions:notification-subscription-detail',
+            kwargs={
+                'subscription_id': self._id, 'version': 'v2'
+            }
+        )
 
     @property
     def _id(self):
         """
         Legacy subscription id for API compatibility.
-        Provider: <short_name>_<event>
-        User/global: <user_id>_global_<event>
-        Node/etc: <guid>_<event>
         """
-        # Safety checks
-        event = self.notification_type.name
-        ct = self.notification_type.object_content_type
-        match getattr(ct, 'model', None):
-            case 'preprintprovider' | 'collectionprovider' | 'registrationprovider':
-                # Providers: use subscribed_object._id (which is the provider short name, e.g. 'mindrxiv')
+        match  self.notification_type.name:
+            case NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value:
                 return f'{self.subscribed_object._id}_new_pending_submissions'
-            case 'node' | 'collection' | 'preprint':
-                # Node-like objects: use object_id (guid)
-                return f'{self.subscribed_object._id}_{event}'
-            case 'osfuser' | 'user' | None:
-                # Global: <user_id>_global
-                return f'{self.user._id}_global'
+            case NotificationType.Type.USER_FILE_UPDATED.value:
+                return f'{self.user._id}_file_updated'
+            case NotificationType.Type.NODE_FILE_UPDATED.value:
+                return f'{self.subscribed_object._id}_file_updated'
             case _:
                 raise NotImplementedError()
