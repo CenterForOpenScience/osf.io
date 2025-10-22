@@ -168,8 +168,8 @@
               </li>
           {% endif %}
           {% if user.is_superuser %}
-             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
-                 <a href="{% url 'user_identification_information:user_identification_list' %}">
+             <li class="{% if request.resolver_match.url_name == 'user_identification_institutions' or request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information:user_identification_institutions' %}">
                      <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
                  </a>
              </li>

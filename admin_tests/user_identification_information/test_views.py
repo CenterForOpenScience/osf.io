@@ -24,6 +24,78 @@ from django.core.exceptions import PermissionDenied
 pytestmark = pytest.mark.django_db
 
 
+class TestUserIdentificationInstitutionListView(AdminTestCase):
+    def setUp(self):
+        """Set up test data for all test methods"""
+        super(TestUserIdentificationInstitutionListView, self).setUp()
+        self.user = AuthUserFactory()
+        self.institutions = [InstitutionFactory(), InstitutionFactory()]
+        self.request = RequestFactory().get('/fake_path')
+        self.view = views.UserIdentificationInstitutionListView()
+        self.view = setup_user_view(self.view, self.request, user=self.user)
+
+    def tearDown(self):
+        """Clean up actions after a test case"""
+        super(TestUserIdentificationInstitutionListView, self).tearDown()
+        self.user.delete()
+        for institution in self.institutions:
+            institution.delete()
+
+    def test_super_admin_login(self):
+        """Test superuser login"""
+        self.request.user.is_superuser = True
+        self.request.user.is_staff = True
+        nt.assert_true(self.view.test_func())
+
+    def test_admin_login(self):
+        """Test institution administrator login"""
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = True
+        nt.assert_false(self.view.test_func())
+        nt.assert_true(self.view.raise_exception)
+
+    def test_user_login(self):
+        """Test user login"""
+        self.request.user.is_superuser = False
+        self.request.user.is_staff = False
+        nt.assert_false(self.view.test_func())
+        nt.assert_true(self.view.raise_exception)
+
+    def test_non_active_user_login(self):
+        """Test invalid user login"""
+        self.request.user.is_active = False
+        nt.assert_false(self.view.test_func())
+        nt.assert_true(self.view.raise_exception)
+
+    def test_anonymous_login(self):
+        """Test anonymous user login"""
+        self.request.user = AnonymousUser()
+        nt.assert_false(self.view.test_func())
+        nt.assert_false(self.view.raise_exception)
+
+    def test_get(self, *args, **kwargs):
+        """Test GET method"""
+        self.request.user.is_superuser = True
+        self.request.user.is_staff = True
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.status_code, 200)
+
+    def test_get_queryset(self):
+        """Test get_queryset method"""
+        results = self.view.get_queryset()
+        nt.assert_equal(len(results), len(self.institutions))
+
+    def test_get_context_data(self):
+        """Test get_context_data method"""
+        self.view.object_list = self.view.get_queryset()
+        results = self.view.get_context_data()
+        nt.assert_is_instance(results, dict)
+        nt.assert_in('institutions', results)
+        nt.assert_in('page', results)
+        nt.assert_in('logohost', results)
+        nt.assert_equal(len(results['institutions']), len(self.institutions))
+
+
 class TestUserIdentificationInformationListView(AdminTestCase):
 
     def setUp(self):
@@ -31,6 +103,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         self.user2 = AuthUserFactory(fullname='Test User2')
         self.user3 = AuthUserFactory(fullname='Test User3')
         self.user.is_superuser = True
+        self.user2.is_staff = True
         self.view_permission = views.UserIdentificationInformationListView
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
@@ -46,9 +119,11 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         UserSettingsFactory = S3UserSettingsFactory()
         UserSettingsFactory.save()
 
-        institution = InstitutionFactory()
-        institution.name = 'test institution'
-        self.user.affiliated_institutions.add(institution)
+        self.institution = InstitutionFactory()
+        self.institution.name = 'test institution'
+        self.user.affiliated_institutions.add(self.institution)
+        self.user2.affiliated_institutions.add(self.institution)
+        self.user3.affiliated_institutions.add(self.institution)
 
         self.user.save()
         self.user2.save()
@@ -71,7 +146,7 @@ class TestUserIdentificationInformationListView(AdminTestCase):
 
     def test_get_queryset(self):
         view = views.UserIdentificationListView()
-        view = setup_view(view, self.request)
+        view = setup_view(view, self.request, institution_id=self.institution.id)
         results = view.get_user_list()
         nt.assert_is_instance(results, list)
 
@@ -97,6 +172,38 @@ class TestUserIdentificationInformationListView(AdminTestCase):
         view.get_context_data()
         assert mock_method.called
 
+    @mock.patch('admin.user_identification_information.views.UserIdentificationInformationListView.get_queryset')
+    def test_get_context_data_admin(self, mock_get_queryset):
+        """Test get_context_data with institution administrator"""
+        mock_get_queryset.return_value = [
+            {'id': 'z298m', 'fullname': 'Test User1', 'eppn': '', 'affiliation': '', 'email': 'freddiemercury+12331754@cos.io',
+             'last_login': '', 'usage': 0, 'usage_value': 0.0, 'usage_abbr': 'KB', 'extended_storage': ''},
+            {'id': 'n2dch', 'fullname': 'Broken Matt Hardy', 'eppn': '', 'affiliation': '',
+             'email': 'freddiemercury+12422709@cos.io', 'last_login': '', 'usage': 0, 'usage_value': 0.0, 'usage_abbr': 'KB',
+             'extended_storage': '/Github name\n/Amazon S3'}]
+        self.request.user = self.user2
+        view = views.UserIdentificationInformationListView()
+        view.paginate_by = 25
+        view.object_list = []
+        view = setup_view(view, self.request, institution_id=self.institution.id)
+        results = view.get_context_data()
+        nt.assert_is_instance(results, dict)
+        nt.assert_in('users', results)
+        nt.assert_in('page', results)
+        nt.assert_equal(len(results['users']), 2)
+
+    @mock.patch('admin.user_identification_information.views.UserIdentificationInformationListView.get_queryset')
+    def test_get_context_data__institution_not_exist(self, mock_get_queryset):
+        """Test get_context_data in case institution not exist"""
+        mock_get_queryset.return_value = [
+            {'id': 'dsyem', 'fullname': 'superuser01', 'eppn': '', 'email': 'superuser01@example.com.vn', 'usage': 1352,
+             'usage_value': 1.352, 'usage_abbr': 'KB', 'extended_storage': '/Amazon S3'}, ]
+        view = views.UserIdentificationInformationListView()
+        view.paginate_by = 25
+        view = setup_view(view, self.request, institution_id=0)
+        with nt.assert_raises(Http404):
+            view.get_context_data()
+
 
 class TestUserIdentificationInformationListSorted(AdminTestCase):
 
@@ -118,12 +225,13 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
 
     def add_user(self):
         user = AuthUserFactory()
+        user.affiliated_institutions.add(self.institution)
         user.save()
         return user
 
     def view_get(self, url_params):
         request = RequestFactory().get('/fake_path?{}'.format(url_params))
-        view = setup_user_view(views.UserIdentificationListView(), request, user=self.users[0])
+        view = setup_user_view(views.UserIdentificationListView(), request, user=self.users[0], institution_id=self.institution.id)
         return view.get(request)
 
     def test_get_order_by_fullname_asc(self):
@@ -132,7 +240,7 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
         list_map = list(map(itemgetter('fullname'), response.context_data['users']))
 
         result = []
-        for i in range(len(list_map) - 1):
+        for i in range(len(list_map)):
             result.append(list_map[i])
         nt.assert_equal(result, expected)
 
@@ -154,12 +262,12 @@ class TestUserIdentificationInformationListSorted(AdminTestCase):
 class TestUserIdentificationListView(AdminTestCase):
 
     def setUp(self):
-        institution = InstitutionFactory()
+        self.institution = InstitutionFactory()
 
         self.user = AuthUserFactory(fullname='Test User1')
         self.user.is_superuser = False
         self.user.is_staff = False
-        self.user.affiliated_institutions.add(institution)
+        self.user.affiliated_institutions.add(self.institution)
         self.user.save()
 
         self.superuser = AuthUserFactory(fullname='Broken Matt Hardy')
@@ -168,7 +276,7 @@ class TestUserIdentificationListView(AdminTestCase):
         self.superuser.save()
 
         self.admin_user = AuthUserFactory(fullname='Test User3')
-        self.admin_user.affiliated_institutions.add(institution)
+        self.admin_user.affiliated_institutions.add(self.institution)
         self.admin_user.is_staff = True
         self.admin_user.is_superuser = False
         self.admin_user.save()
@@ -208,7 +316,7 @@ class TestUserIdentificationListView(AdminTestCase):
     def test_get_userlist_user_is_superuser(self):
         self.request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, self.request)
+        view = setup_view(view, self.request, institution_id=self.institution.id)
         results = view.get_user_list()
 
         nt.assert_is_instance(results, list)
@@ -221,56 +329,58 @@ class TestUserIdentificationListView(AdminTestCase):
             view.get_user_list()
 
     def test_get_userlist_search_guid(self):
-        request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
-                                       {'guid': self.superuser._id})
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
+                                       {'guid': self.admin_user._id})
         request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, request)
+        view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['id'], self.superuser._id)
         nt.assert_equal(len(res), 1)
+        nt.assert_equal(res[0]['id'], self.admin_user._id)
 
     def test_get_userlist_search_user_name(self):
-        request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
-                                       {'username': self.superuser.username})
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
+                                       {'username': self.admin_user.username})
         request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, request)
+        view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['email'], self.superuser.username)
         nt.assert_equal(len(res), 1)
+        nt.assert_equal(res[0]['email'], self.admin_user.username)
 
     def test_get_userlist_search_name(self):
-        request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
-                                       {'fullname': 'Broken'})
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
+                                       {'fullname': 'User3'})
         request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, request)
+        view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(res[0]['fullname'], self.superuser.fullname)
         nt.assert_equal(len(res), 1)
+        nt.assert_equal(res[0]['fullname'], self.admin_user.fullname)
 
     def test_get_userlist_search_empty(self):
-        request = RequestFactory().get(reverse('user_identification_information:user_identification_list'), {'fullname': ''})
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
+                                       {'fullname': ''})
         request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, request)
+        view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
-        nt.assert_equal(len(res), 5)
+        nt.assert_equal(len(res), 2)
 
     def test_get_userlist_search_none_in_list(self):
-        request = RequestFactory().get(reverse('user_identification_information:user_identification_list'),
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': self.institution.id}),
                                        {'fullname': 'admin'})
         request.user = self.superuser
         view = views.UserIdentificationListView()
-        view = setup_view(view, request)
+        view = setup_view(view, request, institution_id=self.institution.id)
         res = view.get_user_list()
         nt.assert_equal(len(res), 0)
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
-            views.UserIdentificationListView.as_view()(self.request)
+        response = views.UserIdentificationListView.as_view()(self.request)
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_in('login', str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
@@ -279,13 +389,23 @@ class TestUserIdentificationListView(AdminTestCase):
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
-        res = views.UserIdentificationListView.as_view()(self.request)
+        res = views.UserIdentificationListView.as_view()(self.request, institution_id=self.institution.id)
         nt.assert_equal(res.status_code, 200)
 
     def test__permission_admin(self):
         self.request.user = self.admin_user
         with nt.assert_raises(PermissionDenied):
             views.UserIdentificationListView.as_view()(self.request)
+
+    def test_get_userlist__institution_not_exist(self):
+        """Test get_userlist in case institution not exist"""
+        request = RequestFactory().get(reverse('user_identification_information:user_identification_list', kwargs={'institution_id': 0}))
+        request.user = self.superuser
+        view = views.UserIdentificationListView()
+        view = setup_view(view, request)
+        with nt.assert_raises(Http404):
+            view.get_user_list()
+
 
 class TestUserIdentificationDetailView(AdminTestCase):
 
@@ -345,14 +465,15 @@ class TestUserIdentificationDetailView(AdminTestCase):
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
-        res = views.UserIdentificationListView.as_view()(self.request, guid=self.superuser._id)
+        res = views.UserIdentificationDetailView.as_view()(self.request, guid=self.superuser._id)
         nt.assert_equal(res.status_code, 200)
 
     def test__permission_admin(self):
         self.admin_user.affiliated_institutions.add(InstitutionFactory())
         self.request.user = self.admin_user
         with nt.assert_raises(PermissionDenied):
-            views.UserIdentificationListView.as_view()(self.request, guid=self.admin_user._id)
+            views.UserIdentificationDetailView.as_view()(self.request, guid=self.admin_user._id)
+
 
 class TestExportFileCSVView(AdminTestCase):
     def setUp(self):
@@ -399,15 +520,16 @@ class TestExportFileCSVView(AdminTestCase):
     def test_get_is_super_admin(self):
         request = RequestFactory().get('/fake_path')
         request.user = self.superuser
-        view = setup_view(self.view, request)
+        view = setup_view(self.view, request, institution_id=self.institution.id)
         res = view.get(request)
         nt.assert_equal(res.status_code, 200)
         nt.assert_equal(res['content-type'], 'text/csv')
 
     def test__permission_anonymous(self):
         self.request.user = self.anon
-        with nt.assert_raises(PermissionDenied):
-            views.ExportFileCSVView.as_view()(self.request)
+        response = views.ExportFileCSVView.as_view()(self.request)
+        nt.assert_equal(response.status_code, 302)
+        nt.assert_in('login', str(response))
 
     def test__permission_normal_user(self):
         self.request.user = self.user
@@ -416,7 +538,7 @@ class TestExportFileCSVView(AdminTestCase):
 
     def test__permission_super_user(self):
         self.request.user = self.superuser
-        res = views.ExportFileCSVView.as_view()(self.request)
+        res = views.ExportFileCSVView.as_view()(self.request, institution_id=self.institution.id)
         nt.assert_equal(res.status_code, 200)
 
     def test__permission_admin(self):
@@ -424,3 +546,33 @@ class TestExportFileCSVView(AdminTestCase):
         self.request.user = self.admin_user
         with nt.assert_raises(PermissionDenied):
             views.ExportFileCSVView.as_view()(self.request)
+
+    def test_get__institution_not_exist(self):
+        """Test get method in case institution not exist"""
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        view = setup_view(self.view, request, institution_id=0)
+        with nt.assert_raises(Http404):
+            view.get(request)
+
+    @mock.patch('admin.user_identification_information.views.get_list_extend_storage')
+    def test_get__multiple_extend_storage(self, mock_get_list_extend_storage):
+        """Test get method with user having multiple extend storage"""
+        # Mock storage data for multiple users
+        storage_data = {
+            self.user.id: ['100MB storage1'],
+            self.admin_user.id: ['200MB storage2', '300MB storage3']
+        }
+        mock_get_list_extend_storage.return_value = storage_data
+
+        request = RequestFactory().get('/fake_path')
+        request.user = self.superuser
+        view = setup_view(self.view, request, institution_id=self.institution.id)
+        response = view.get(request)
+
+        # Verify response
+        nt.assert_equal(response.status_code, 200)
+        nt.assert_equal(response['content-type'], 'text/csv')
+        content = response.content.decode('utf-8')
+        nt.assert_in('100MB storage1', content)
+        nt.assert_in('200MB storage2\n300MB storage3', content)
