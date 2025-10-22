@@ -63,6 +63,7 @@ class TestFlaskDjangoIntegration:
             except BaseException:
                 assert False, f'Exception from push_status_message via API v2 with type "{status}".'
 
+    @unittest.skip('[ANG-959] Make push_status_message NOOP (#11350)')
     def test_push_status_message_expected_error(self):
         status_message = 'This is a message'
         try:
@@ -80,6 +81,7 @@ class TestFlaskDjangoIntegration:
         except BaseException:
             assert False, 'Exception from push_status_message when called from the v2 API with type "error"'
 
+    @unittest.skip('[ANG-959] Make push_status_message NOOP (#11350)')
     @mock.patch('framework.status.get_session')
     def test_push_status_message_unexpected_error(self, mock_get_session):
         status_message = 'This is a message'
