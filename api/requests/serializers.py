@@ -15,11 +15,11 @@ from osf.models import (
     PreprintRequest,
     Institution,
     OSFUser,
+    NotificationType,
 )
 from osf.utils.workflows import DefaultStates, RequestTypes, NodeRequestTypes
 from osf.utils import permissions as osf_permissions
 from website import language, settings
-from website.mails import send_mail, NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST
 
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -188,18 +188,23 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
 
             comment = validated_data.get('comment', '').strip() or language.EMPTY_REQUEST_INSTITUTIONAL_ACCESS_REQUEST_TEXT
 
-            send_mail(
-                to_addr=recipient.username,
-                mail=NODE_REQUEST_INSTITUTIONAL_ACCESS_REQUEST,
+            NotificationType.Type.NODE_INSTITUTIONAL_ACCESS_REQUEST.instance.emit(
                 user=recipient,
-                sender=sender,
-                bcc_addr=[sender.username] if validated_data['bcc_sender'] else None,
-                reply_to=sender.username if validated_data['reply_to'] else None,
-                recipient=recipient,
-                comment=comment,
-                institution=institution,
-                osf_url=settings.DOMAIN,
-                node=node_request.target,
+                subscribed_object=node_request.target,
+                event_context={
+                    'sender_fullname': sender.fullname,
+                    'sender_absolute_url': sender.absolute_url,
+                    'node_absolute_url': node_request.target.absolute_url,
+                    'node_title': node_request.target.title,
+                    'recipient_fullname': recipient.username if recipient else None,
+                    'comment': comment,
+                    'domain': settings.DOMAIN,
+                    'institution_name': institution.name if institution else None,
+                },
+                email_context={
+                    'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,
+                    'reply_to': sender.username if validated_data['reply_to'] else None,
+                },
             )
 
         return node_request

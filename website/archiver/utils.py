@@ -6,10 +6,7 @@ from django.db.models import CharField, OuterRef, Subquery
 from framework.auth import Auth
 from framework.utils import sanitize_html
 
-from website import (
-    mails,
-    settings
-)
+from website import settings
 from website.archiver import (
     StatResult, AggregateStatResult,
     ARCHIVER_NETWORK_ERROR,
@@ -17,6 +14,7 @@ from website.archiver import (
     ARCHIVER_FILE_NOT_FOUND,
     ARCHIVER_FORCED_FAILURE,
 )
+from website.settings import MAX_ARCHIVE_SIZE
 
 FILE_HTML_LINK_TEMPLATE = settings.DOMAIN + 'project/{registration_guid}/files/osfstorage/{file_id}'
 FILE_DOWNLOAD_LINK_TEMPLATE = settings.DOMAIN + 'download/{file_id}'
@@ -29,79 +27,123 @@ def normalize_unicode_filenames(filename):
 
 
 def send_archiver_size_exceeded_mails(src, user, stat_result, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_SIZE_EXCEEDED_DESK,
-        user=user,
-        src=src,
-        stat_result=stat_result,
-        can_change_preferences=False,
-        url=url,
+    from osf.models.notification_type import NotificationType
+
+    NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED.instance.emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
+        subscribed_object=src,
+        event_context={
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
+            'stat_result': stat_result,
+            'url': url,
+            'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_SIZE_EXCEEDED_USER,
+    NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED.instance.emit(
         user=user,
-        src=src,
-        can_change_preferences=False,
+        subscribed_object=user,
+        event_context={
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src_title': src.title,
+            'src_url': src.url,
+            'max_archive_size': MAX_ARCHIVE_SIZE / 1024 ** 3,
+            'can_change_preferences': False,
+        }
     )
 
 
 def send_archiver_copy_error_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_COPY_ERROR_DESK,
-        user=user,
-        src=src,
-        results=results,
-        url=url,
-        can_change_preferences=False,
+    from osf.models.notification_type import NotificationType
+
+    NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
+        event_context={
+            'domain': settings.DOMAIN,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_COPY_ERROR_USER,
+    NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'domain': settings.DOMAIN,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src_title': src.title,
+            'results': results,
+            'can_change_preferences': False,
+        }
     )
 
 def send_archiver_file_not_found_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_FILE_NOT_FOUND_DESK,
-        can_change_preferences=False,
-        user=user,
-        src=src,
-        results=results,
-        url=url,
+    from osf.models.notification_type import NotificationType
+
+    NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_FILE_NOT_FOUND_USER,
+    NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'user': user.id,
+            'src': src._id,
+            'src_title': src.title,
+            'src_url': src.url,
+            'results': results,
+            'can_change_preferences': False,
+        }
     )
 
 def send_archiver_uncaught_error_mails(src, user, results, url):
-    mails.send_mail(
-        to_addr=settings.OSF_SUPPORT_EMAIL,
-        mail=mails.ARCHIVE_UNCAUGHT_ERROR_DESK,
-        user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
-        url=url,
+    from osf.models.notification_type import NotificationType
+
+    NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
+        destination_address=settings.OSF_SUPPORT_EMAIL,
+        event_context={
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'user_username': user.username,
+            'src_title': src.title,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src': src._id,
+            'results': [str(error) for error in results],
+            'url': url,
+            'can_change_preferences': False,
+        }
     )
-    mails.send_mail(
-        to_addr=user.username,
-        mail=mails.ARCHIVE_UNCAUGHT_ERROR_USER,
+    NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR.instance.emit(
         user=user,
-        src=src,
-        results=results,
-        can_change_preferences=False,
+        event_context={
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src_title': src.title,
+            'src__id': src._id,
+            'src_url': src.url,
+            'src': src._id,
+            'results': [str(error) for error in results],
+            'can_change_preferences': False,
+        }
     )
 
 

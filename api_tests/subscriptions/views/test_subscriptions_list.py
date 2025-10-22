@@ -1,7 +1,14 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
-from osf_tests.factories import AuthUserFactory, PreprintProviderFactory, ProjectFactory, NotificationSubscriptionFactory
+from osf.models.notification_type import NotificationType
+from osf_tests.factories import (
+    AuthUserFactory,
+    PreprintProviderFactory,
+    ProjectFactory,
+    NotificationSubscriptionFactory
+)
 
 
 @pytest.mark.django_db
@@ -23,30 +30,50 @@ class TestSubscriptionList:
 
     @pytest.fixture()
     def global_user_notification(self, user):
-        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
-        notification.add_user_to_subscription(user, 'email_transactional')
-        return notification
+        return NotificationSubscriptionFactory(
+            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=user.id,
+            content_type_id=ContentType.objects.get_for_model(user).id,
+            user=user,
+        )
 
     @pytest.fixture()
     def file_updated_notification(self, node, user):
-        notification = NotificationSubscriptionFactory(
-            _id=node._id + 'file_updated',
-            owner=node,
-            event_name='file_updated',
+        return NotificationSubscriptionFactory(
+            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+            object_id=node.id,
+            content_type_id=ContentType.objects.get_for_model(node).id,
+            user=user,
         )
-        notification.add_user_to_subscription(user, 'email_transactional')
-        return notification
+
+    @pytest.fixture()
+    def provider_notification(self, provider, user):
+        return NotificationSubscriptionFactory(
+            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            object_id=provider.id,
+            content_type_id=ContentType.objects.get_for_model(provider).id,
+            subscribed_object=provider,
+            user=user,
+        )
 
     @pytest.fixture()
     def url(self, user, node):
         return f'/{API_BASE}subscriptions/'
 
-    def test_list_complete(self, app, user, provider, node, global_user_notification, url):
+    def test_list_complete(
+            self,
+            app,
+            user,
+            provider,
+            node,
+            file_updated_notification,
+            url
+    ):
         res = app.get(url, auth=user.auth)
         notification_ids = [item['id'] for item in res.json['data']]
         # There should only be 3 notifications: users' global, node's file updates and provider's preprint added.
         assert len(notification_ids) == 3
-        assert f'{user._id}_global' in notification_ids
+        assert f'{user._id}_global_file_updated' in notification_ids
         assert f'{provider._id}_new_pending_submissions' in notification_ids
         assert f'{node._id}_file_updated' in notification_ids
 
@@ -64,7 +91,7 @@ class TestSubscriptionList:
         assert put_res.status_code == 405
         assert delete_res.status_code == 405
 
-    def test_multiple_values_filter(self, app, url, global_user_notification, file_updated_notification, user):
+    def test_multiple_values_filter(self, app, url, file_updated_notification, user):
         res = app.get(url + '?filter[event_name]=comments,file_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:

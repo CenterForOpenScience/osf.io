@@ -18,11 +18,14 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
         registration = RegistrationFactory(creator=user)
         registration.add_contributor(
             write_contrib,
-            permissions=permissions.WRITE
+            permissions=permissions.WRITE,
+            notification_type=False
         )
         registration.add_contributor(
             read_contrib,
-            permissions=permissions.READ)
+            permissions=permissions.READ,
+            notification_type=False
+        )
         registration.save()
         return registration
 

@@ -1,4 +1,6 @@
 import pytest
+
+from osf.models.notification_type import NotificationType
 from osf.models.user_message import MessageTypes, UserMessage
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -7,9 +9,9 @@ from osf_tests.factories import (
 )
 from webtest import AppError
 
+from tests.utils import capture_notifications
 
 @pytest.mark.django_db
-@pytest.mark.usefixtures('mock_send_grid')
 class TestUserMessageInstitutionalAccess:
     """
     Tests for `UserMessage`.
@@ -84,31 +86,35 @@ class TestUserMessageInstitutionalAccess:
             }
         }
 
-    def test_institutional_admin_can_create_message(self, mock_send_grid, app, institutional_admin, institution, url_with_affiliation, payload):
+    def test_institutional_admin_can_create_message(self, app, institutional_admin, institution, url_with_affiliation, payload):
         """
         Ensure an institutional admin can create a `UserMessage` with a `message` and `institution`.
         """
-
-        res = app.post_json_api(
-            url_with_affiliation,
-            payload,
-            auth=institutional_admin.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_with_affiliation,
+                payload,
+                auth=institutional_admin.auth
+            )
+        assert len(notifications['emits']) == 1
+        user_message = UserMessage.objects.get(sender=institutional_admin)
+        assert notifications['emits'][0]['kwargs']['user'].username == user_message.recipient.username
         assert res.status_code == 201
         data = res.json['data']
-
-        user_message = UserMessage.objects.get(sender=institutional_admin)
 
         assert user_message.message_text == payload['data']['attributes']['message_text']
         assert user_message.institution == institution
 
-        mock_send_grid.assert_called_once()
-        assert mock_send_grid.call_args[1]['to_addr'] == user_message.recipient.username
         assert user_message._id == data['id']
 
-    def test_institutional_admin_can_not_create_message(self, mock_send_grid, app, institutional_admin_on_institution_without_access,
-                                                        institution_without_access, url_with_affiliation_on_institution_without_access,
-                                                        payload):
+    def test_institutional_admin_can_not_create_message(
+        self,
+        app,
+        institutional_admin_on_institution_without_access,
+        institution_without_access,
+        url_with_affiliation_on_institution_without_access,
+        payload
+    ):
         """
         Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'institutional_request_access_enabled' as False
         """
@@ -193,7 +199,6 @@ class TestUserMessageInstitutionalAccess:
 
     def test_cc_institutional_admin(
             self,
-            mock_send_grid,
             app,
             institutional_admin,
             institution,
@@ -208,42 +213,46 @@ class TestUserMessageInstitutionalAccess:
         # Enable CC in the payload
         payload['data']['attributes']['bcc_sender'] = True
 
-        # Perform the API request
-        res = app.post_json_api(
-            url_with_affiliation,
-            payload,
-            auth=institutional_admin.auth,
-        )
+        with capture_notifications() as notifications:
+            # Perform the API request
+            res = app.post_json_api(
+                url_with_affiliation,
+                payload,
+                auth=institutional_admin.auth,
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
         user_message = UserMessage.objects.get()
-
         assert user_message.is_sender_BCCed
         # Two emails are sent during the CC but this is how the mock works `send_email` is called once.
-        assert mock_send_grid.call_args[1]['to_addr'] == user_with_affiliation.username
 
-    def test_cc_field_defaults_to_false(self, mock_send_grid, app, institutional_admin, url_with_affiliation, user_with_affiliation, institution, payload):
+    def test_cc_field_defaults_to_false(self, app, institutional_admin, url_with_affiliation, user_with_affiliation, institution, payload):
         """
         Ensure the `cc` field defaults to `false` when not provided in the payload.
         """
-        res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
 
         user_message = UserMessage.objects.get(sender=institutional_admin)
         assert user_message.message_text == payload['data']['attributes']['message_text']
 
-        assert mock_send_grid.call_args[1]['to_addr'] == user_with_affiliation.username
-
-    def test_reply_to_header_set(self, mock_send_grid, app, institutional_admin, user_with_affiliation, institution, url_with_affiliation, payload):
+    def test_reply_to_header_set(self, app, institutional_admin, user_with_affiliation, institution, url_with_affiliation, payload):
         """
         Ensure that the 'Reply-To' header is correctly set to the sender's email address.
         """
         payload['data']['attributes']['reply_to'] = True
 
-        res = app.post_json_api(
-            url_with_affiliation,
-            payload,
-            auth=institutional_admin.auth,
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url_with_affiliation,
+                payload,
+                auth=institutional_admin.auth,
+            )
         assert res.status_code == 201
-
-        assert mock_send_grid.call_args[1]['to_addr'] == user_with_affiliation.username
+        assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username

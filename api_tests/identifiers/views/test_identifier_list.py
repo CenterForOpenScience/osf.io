@@ -18,7 +18,7 @@ from osf_tests.factories import (
 )
 from osf.utils.permissions import READ, WRITE
 from osf.utils.workflows import DefaultStates
-from tests.utils import assert_equals
+from tests.utils import assert_equals, capture_notifications
 from website.identifiers.clients import DataCiteClient
 
 from website import settings
@@ -336,7 +336,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
         # test_published_preprint_identifier_unauthenticated
-        preprint.set_published(True, Auth(user))
+        with capture_notifications():
+            preprint.set_published(True, Auth(user))
         preprint.save()
         res = app.get(url_preprint_identifier)
         assert res.status_code == 200
@@ -366,7 +367,8 @@ class TestPreprintIdentifierList:
         assert res.status_code == 200
 
         # test_published_preprint_identifier_unauthenticated
-        preprint.set_published(True, Auth(user))
+        with capture_notifications():
+            preprint.set_published(True, Auth(user))
         preprint.save()
         res = app.get(url_preprint_identifier)
         assert res.status_code == 200

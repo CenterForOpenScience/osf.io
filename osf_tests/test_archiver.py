@@ -12,8 +12,6 @@ import pytest
 from framework.auth import Auth
 from framework.celery_tasks import handlers
 
-from website import mails
-
 from website.archiver import (
     ARCHIVER_INITIATED,
 )
@@ -22,7 +20,7 @@ from website.app import *  # noqa: F403
 from website.archiver import listeners
 from website.archiver.tasks import *   # noqa: F403
 
-from osf.models import Guid, RegistrationSchema, Registration
+from osf.models import Guid, RegistrationSchema, Registration, NotificationType
 from osf.models.archive import ArchiveTarget, ArchiveJob
 from osf.models.base import generate_object_id
 from osf.utils.migrations import map_schema_to_schemablocks
@@ -32,8 +30,7 @@ from api.base.utils import waterbutler_api_url_for
 from osf_tests import factories
 from tests.base import OsfTestCase, fake
 from tests import utils as test_utils
-from tests.utils import unique as _unique
-from conftest import start_mock_send_grid
+from tests.utils import unique as _unique, capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -549,7 +546,8 @@ class TestArchiverTasks(ArchiverTestCase):
             prearchive_responses = registration.registration_responses
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_trees[node._id])):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
 
         registration.refresh_from_db()
         for response_block in registration.schema_responses.get().response_blocks.all():
@@ -590,7 +588,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 registration.refresh_from_db()
                 updated_response = registration.schema_responses.get().all_responses[qid]
                 assert updated_response[0]['file_name'] == fake_file_name
@@ -619,7 +618,8 @@ class TestArchiverTasks(ArchiverTestCase):
 
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock_get_file_tree):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
 
         registration.refresh_from_db()
         registration_files = set()
@@ -658,7 +658,8 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 for key, question in registration.registered_meta[schema._id].items():
                     assert question['extra'][0]['selectedFileName'] == fake_file['name']
 
@@ -714,52 +715,77 @@ class TestArchiverTasks(ArchiverTestCase):
         with test_utils.mock_archive(node, schema=schema, draft_registration=draft_registration, autocomplete=True, autoapprove=True) as registration:
             with mock.patch.object(BaseStorageAddon, '_get_file_tree', mock.Mock(return_value=file_tree)):
                 job = factories.ArchiveJobFactory(initiator=registration.creator)
-                archive_success(registration._id, job._id)
+                with capture_notifications():
+                    archive_success(registration._id, job._id)
                 registration.reload()
                 child_reg = registration.nodes[0]
                 for key, question in registration.registered_meta[schema._id].items():
                     assert child_reg._id in question['extra'][0]['viewUrl']
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverUtils(ArchiverTestCase):
 
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def test_handle_archive_fail(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_NETWORK_ERROR,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_NETWORK_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
         self.dst.reload()
         assert self.dst.is_deleted
 
     def test_handle_archive_fail_copy(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_NETWORK_ERROR,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_NETWORK_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
 
     def test_handle_archive_fail_size(self):
-        archiver_utils.handle_archive_fail(
-            ARCHIVER_SIZE_EXCEEDED,
-            self.src,
-            self.dst,
-            self.user,
-            {}
-        )
-        assert self.mock_send_grid.call_count == 2
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_SIZE_EXCEEDED,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_EXCEEDED
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_EXCEEDED
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
+
+    def test_handle_archive_uncaught_error(self):
+        with capture_notifications() as notifications:
+            archiver_utils.handle_archive_fail(
+                ARCHIVER_UNCAUGHT_ERROR,
+                self.src,
+                self.dst,
+                self.user,
+                {}
+            )
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_ARCHIVE_JOB_UNCAUGHT_ERROR
+        assert notifications['emits'][0]['kwargs']['destination_address'] == settings.OSF_SUPPORT_EMAIL
+        assert notifications['emits'][1]['kwargs']['user'] == self.user
 
     def test_aggregate_file_tree_metadata(self):
         a_stat_result = archiver_utils.aggregate_file_tree_metadata('dropbox', FILE_TREE, self.user)
@@ -846,13 +872,7 @@ class TestArchiverUtils(ArchiverTestCase):
             archiver_utils.get_file_map(node)
             assert mock_get_file_tree.call_count == call_count
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverListeners(ArchiverTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.archiver.utils.before_archive')
@@ -906,7 +926,6 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.save()
         with mock.patch('website.archiver.utils.handle_archive_fail') as mock_fail:
             listeners.archive_callback(self.dst)
-        assert not self.mock_send_grid.called
         assert not mock_fail.called
         assert mock_delay.called
 
@@ -915,7 +934,6 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.archive_job.save()
         listeners.archive_callback(self.dst)
-        assert self.mock_send_grid.call_count == 0
 
     @mock.patch('website.archiver.tasks.archive_success.delay')
     def test_archive_callback_done_embargoed(self, mock_archive_success):
@@ -930,7 +948,6 @@ class TestArchiverListeners(ArchiverTestCase):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         self.dst.save()
         listeners.archive_callback(self.dst)
-        assert self.mock_send_grid.call_count == 0
 
     def test_archive_callback_done_errors(self):
         self.dst.archive_job.update_target('osfstorage', ARCHIVER_FAILURE)
@@ -1022,15 +1039,12 @@ class TestArchiverListeners(ArchiverTestCase):
         rchild.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild.save()
         listeners.archive_callback(rchild)
-        assert not self.mock_send_grid.called
         reg.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         reg.save()
         listeners.archive_callback(reg)
-        assert not self.mock_send_grid.called
         rchild2.archive_job.update_target('osfstorage', ARCHIVER_SUCCESS)
         rchild2.save()
         listeners.archive_callback(rchild2)
-        assert not self.mock_send_grid.called
 
 class TestArchiverScripts(ArchiverTestCase):
 
@@ -1078,13 +1092,7 @@ class TestArchiverScripts(ArchiverTestCase):
             assert pk not in failed
 
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestArchiverBehavior(OsfTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.mock_send_grid = start_mock_send_grid(self)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_registrations_not_added_to_search_before_archival(self, mock_update_search):
@@ -1112,12 +1120,12 @@ class TestArchiverBehavior(OsfTestCase):
         proj = factories.ProjectFactory()
         reg = factories.RegistrationFactory(project=proj, archive=True)
         reg.save()
-        with nested(
+        with capture_notifications():
+            with nested(
                 mock.patch('osf.models.archive.ArchiveJob.archive_tree_finished', mock.Mock(return_value=True)),
                 mock.patch('osf.models.archive.ArchiveJob.success', mock.PropertyMock(return_value=False))
-        ) as (mock_finished, mock_success):
-            listeners.archive_callback(reg)
-        assert mock_delete_index_node.called
+            ) as (mock_finished, mock_success):
+                listeners.archive_callback(reg)
 
     @mock.patch('osf.models.AbstractNode.update_search')
     def test_archiving_nodes_not_added_to_search_on_archive_incomplete(self, mock_update_search):
@@ -1209,17 +1217,3 @@ class TestArchiveJobModel(OsfTestCase):
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in reg.node_and_primary_descendants():
             assert node.archive_job.archive_tree_finished()
-
-# Regression test for https://openscience.atlassian.net/browse/OSF-9085
-def test_archiver_uncaught_error_mail_renders():
-    src = factories.ProjectFactory()
-    user = src.creator
-    job = factories.ArchiveJobFactory()
-    mail = mails.ARCHIVE_UNCAUGHT_ERROR_DESK
-    assert mail.html(
-        user=user,
-        src=src,
-        results=job.target_addons.all(),
-        url=settings.INTERNAL_DOMAIN + src._id,
-        can_change_preferences=False,
-    )

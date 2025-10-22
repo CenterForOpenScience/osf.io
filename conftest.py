@@ -18,6 +18,7 @@ from api_tests.share import _utils as shtrove_test_utils
 from framework.celery_tasks import app as celery_app
 from osf.external.spam import tasks as spam_tasks
 from website import settings as website_settings
+from osf.management.commands.populate_notification_types import populate_notification_types
 
 def pytest_configure(config):
     if not os.getenv('GITHUB_ACTIONS') == 'true':
@@ -35,8 +36,6 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.app',
     'website.archiver.tasks',
-    'website.mails',
-    'website.notifications.listeners',
     'website.search.elastic_search',
     'website.search_migration.migrate',
     'website.util.paths',
@@ -66,7 +65,6 @@ def override_settings():
     website_settings.SHARE_ENABLED = False
     # Set this here instead of in SILENT_LOGGERS, in case developers
     # call setLevel in local.py
-    logging.getLogger('website.mails.mails').setLevel(logging.CRITICAL)
 
 
 @pytest.fixture()
@@ -362,21 +360,6 @@ def with_class_scoped_db(_class_scoped_db):
     """
     yield from rolledback_transaction('function_transaction')
 
-@pytest.fixture()
-def mock_send_grid():
-    with mock.patch.object(website_settings, 'USE_EMAIL', True):
-        with mock.patch.object(website_settings, 'USE_CELERY', False):
-            with mock.patch('framework.email.tasks.send_email') as mock_sendgrid:
-                mock_sendgrid.return_value = True
-                yield mock_sendgrid
-
-
-def start_mock_send_grid(test_case):
-    patcher = mock.patch('framework.email.tasks.send_email')
-    mocked_send = patcher.start()
-    test_case.addCleanup(patcher.stop)
-    mocked_send.return_value = True
-    return mocked_send
 
 @pytest.fixture
 def mock_gravy_valet_get_verified_links():
@@ -391,3 +374,8 @@ def mock_gravy_valet_get_verified_links():
     with mock.patch('osf.external.gravy_valet.translations.get_verified_links') as mock_get_verified_links:
         mock_get_verified_links.return_value = []
         yield mock_get_verified_links
+
+
+@pytest.fixture(autouse=True)
+def load_notification_types(db, *args, **kwargs):
+    populate_notification_types(*args, **kwargs)

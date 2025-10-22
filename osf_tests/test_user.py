@@ -18,6 +18,7 @@ from framework.auth.exceptions import ExpiredTokenError, InvalidTokenError, Chan
 from framework.auth.signals import user_account_merged
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
+from tests.utils import capture_notifications
 from website import settings
 from website import filters
 from website.views import find_bookmark_collection
@@ -32,7 +33,7 @@ from osf.models import (
     DraftRegistrationContributor,
     DraftRegistration,
     DraftNode,
-    UserSessionMap,
+    UserSessionMap, NotificationType,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
@@ -739,8 +740,10 @@ class TestOSFUser:
         u = UnregUserFactory()
         project = NodeFactory()
         project.add_unregistered_contributor(
-            fullname=name, email=u.username,
-            auth=Auth(project.creator)
+            fullname=name,
+            email=u.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         u.reload()
@@ -751,8 +754,10 @@ class TestOSFUser:
         project = NodeFactory()
         old_name = unreg_user.fullname
         project.add_unregistered_contributor(
-            fullname=old_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=old_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -764,8 +769,10 @@ class TestOSFUser:
         assert unreg_user not in project.contributors
         new_name = fake.name()
         project.add_unregistered_contributor(
-            fullname=new_name, email=unreg_user.username,
-            auth=Auth(project.creator)
+            fullname=new_name,
+            email=unreg_user.username,
+            auth=Auth(project.creator),
+            notification_type=False
         )
         project.save()
         unreg_user.reload()
@@ -885,31 +892,34 @@ class TestCookieMethods:
         assert OSFUser.from_cookie(cookie) is None
 
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestChangePassword:
 
     def test_change_password(self, user):
         old_password = 'password'
         new_password = 'new password'
         confirm_password = new_password
-        user.set_password(old_password)
+        with capture_notifications():
+            user.set_password(old_password)
         user.save()
-        user.change_password(old_password, new_password, confirm_password)
+        with capture_notifications():
+            user.change_password(old_password, new_password, confirm_password)
         assert bool(user.check_password(new_password)) is True
 
-    def test_set_password_notify_default(self, mock_send_grid, user):
+    def test_set_password_notify_default(self, user):
         old_password = 'password'
-        user.set_password(old_password)
-        user.save()
-        assert mock_send_grid.called is True
+        with capture_notifications() as notifications:
+            user.set_password(old_password)
+            user.save()
 
-    def test_set_password_no_notify(self, mock_send_grid, user):
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+
+    def test_set_password_no_notify(self, user):
         old_password = 'password'
         user.set_password(old_password, notify=False)
         user.save()
-        assert mock_send_grid.called is False
 
-    def test_check_password_upgrade_hasher_no_notify(self, mock_send_grid, user, settings):
+    def test_check_password_upgrade_hasher_no_notify(self, user, settings):
         # NOTE: settings fixture comes from pytest-django.
         # changes get reverted after tests run
         settings.PASSWORD_HASHERS = (
@@ -920,15 +930,16 @@ class TestChangePassword:
         user.password = 'sha1$lNb72DKWDv6P$e6ae16dada9303ae0084e14fc96659da4332bb05'
         user.check_password(raw_password)
         assert user.password.startswith('md5$')
-        assert mock_send_grid.called is False
 
     def test_change_password_invalid(self, old_password=None, new_password=None, confirm_password=None,
                                      error_message='Old password is invalid'):
         user = UserFactory()
-        user.set_password('password')
+        with capture_notifications():
+            user.set_password('password')
         user.save()
         with pytest.raises(ChangePasswordError, match=error_message):
-            user.change_password(old_password, new_password, confirm_password)
+            with capture_notifications():
+                user.change_password(old_password, new_password, confirm_password)
             user.save()
 
         assert bool(user.check_password(new_password)) is False
@@ -995,7 +1006,8 @@ class TestIsActive:
                 is_disabled=False,
                 date_confirmed=timezone.now(),
             )
-            user.set_password('secret')
+            with capture_notifications():
+                user.set_password('secret')
             for attr, value in attrs.items():
                 setattr(user, attr, value)
             return user
@@ -2087,7 +2099,13 @@ class TestUserGdprDelete:
         non_admin_contrib = UserFactory()
         project = ProjectFactory(creator=user)
         project.add_contributor(non_admin_contrib)
-        project.add_unregistered_contributor('lisa', 'lisafrank@cos.io', permissions=permissions.ADMIN, auth=Auth(user))
+        project.add_unregistered_contributor(
+            'lisa',
+            'lisafrank@cos.io',
+            permissions=permissions.ADMIN,
+            auth=Auth(user),
+            notification_type=False
+        )
         project.save()
         return project
 

@@ -7,6 +7,8 @@ from osf_tests.factories import (
 )
 from api.base.settings.defaults import API_BASE
 from osf.utils.workflows import NodeRequestTypes
+from tests.utils import capture_notifications
+
 
 @pytest.mark.django_db
 class TestUniqueIndexOnNodeRequest:
@@ -22,7 +24,8 @@ class TestUniqueIndexOnNodeRequest:
     @pytest.fixture()
     def project(self, user_with_affiliation, institution):
         node = NodeFactory()
-        node.add_affiliated_institution(institution, user_with_affiliation)
+        with capture_notifications():
+            node.add_affiliated_institution(institution, user_with_affiliation)
         return node
 
     @pytest.fixture()

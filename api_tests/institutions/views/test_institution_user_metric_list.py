@@ -18,6 +18,7 @@ from osf_tests.factories import (
 from osf.metrics import UserInstitutionProjectCounts
 from osf.metrics.reports import InstitutionalUserReport
 from osf.models import UserMessage
+from tests.utils import capture_notifications
 
 
 @pytest.mark.es_metrics
@@ -670,46 +671,48 @@ class TestNewInstitutionUserMetricList:
         )
 
         receiver = user1
-        UserMessage.objects.create(
-            sender=institutional_admin,
-            recipient=receiver,
-            message_text='message1',
-            message_type='institutional_request',
-            institution=institution
-        )
-        UserMessage.objects.create(
-            sender=institutional_admin,
-            recipient=receiver,
-            message_text='message2',
-            message_type='institutional_request',
-            institution=institution
-        )
-        UserMessage.objects.create(
-            sender=institutional_admin,
-            recipient=receiver,
-            message_text='message3',
-            message_type='institutional_request',
-            institution=institution
-        )
+        with capture_notifications():
+            UserMessage.objects.create(
+                sender=institutional_admin,
+                recipient=receiver,
+                message_text='message1',
+                message_type='institutional_request',
+                institution=institution
+            )
+            UserMessage.objects.create(
+                sender=institutional_admin,
+                recipient=receiver,
+                message_text='message2',
+                message_type='institutional_request',
+                institution=institution
+            )
+            UserMessage.objects.create(
+                sender=institutional_admin,
+                recipient=receiver,
+                message_text='message3',
+                message_type='institutional_request',
+                institution=institution
+            )
 
         new_admin = AuthUserFactory()
         institution.get_group('institutional_admins').user_set.add(new_admin)
 
         # messages from another admin
-        UserMessage.objects.create(
-            sender=new_admin,
-            recipient=receiver,
-            message_text='message4',
-            message_type='institutional_request',
-            institution=institution
-        )
-        UserMessage.objects.create(
-            sender=new_admin,
-            recipient=receiver,
-            message_text='message5',
-            message_type='institutional_request',
-            institution=institution
-        )
+        with capture_notifications():
+            UserMessage.objects.create(
+                sender=new_admin,
+                recipient=receiver,
+                message_text='message4',
+                message_type='institutional_request',
+                institution=institution
+            )
+            UserMessage.objects.create(
+                sender=new_admin,
+                recipient=receiver,
+                message_text='message5',
+                message_type='institutional_request',
+                institution=institution
+            )
 
         res = app.get(f'/{API_BASE}institutions/{institution._id}/metrics/users/', auth=institutional_admin.auth)
         contact_object = list(filter(lambda contact: receiver._id in contact['relationships']['user']['links']['related']['href'], res.json['data']))[0]

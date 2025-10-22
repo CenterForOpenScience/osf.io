@@ -44,13 +44,17 @@ EXTERNAL_EMBER_APPS = {
 
 SEARCH_ENGINE = 'elastic'
 
-USE_EMAIL = False
 USE_CELERY = False
 
 # Email
-MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+MAIL_SERVER = 'localhost'  # For local testing
+MAIL_PORT = 1025  # For local testing
+
+MAILHOG_HOST = 'localhost'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://localhost:8025'
 
 MAILHOG_HOST = 'localhost'
 MAILHOG_PORT = 1025
@@ -96,3 +100,4 @@ SHARE_ENABLED = False
 DATACITE_ENABLED = False
 IA_ARCHIVE_ENABLED = False
 USE_COLOR = False
+NEW_AND_NOTEWORTHY_LINKS_NODE = 'nguid'
