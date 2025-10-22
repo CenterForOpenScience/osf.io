@@ -1,6 +1,8 @@
+require('./weko.css');
+
 var WEKOUserConfig = require('./wekoUserConfig.js').WEKOUserConfig;
 
-// Endpoint for WEKO settings
+// Endpoint for JAIRO Cloud settings
 var configUrl = '/api/v1/settings/weko/';
 var accountsUrl = '/api/v1/settings/weko/accounts/';
 

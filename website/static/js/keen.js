@@ -222,8 +222,16 @@ var KeenTracker = (function() {
 
             self.trackPageView = function () {
                 var self = this;
+                var guid;
                 if (lodashGet(window, 'contextVars.node.isPublic', false) &&
                     lodashGet(window, 'contextVars.analyticsMeta.pageMeta.public', false)) {
+
+                    guid = lodashGet(window, 'contextVars.node.id', null);
+                    if (guid) {
+                        var partitioned_collection = 'pageviews-' + guid.charAt(0);
+                        self.trackPublicEvent(partitioned_collection, {});
+                    }
+
                     self.trackPublicEvent('pageviews', {});
                 }
                 self.trackPrivateEvent('pageviews', {});

@@ -135,15 +135,6 @@
                 ]
               }
             },
-            "required": [
-              "host",
-              "object",
-              "folder",
-              "address",
-              "service",
-              "version",
-              "provider"
-            ],
             "additionalProperties": true
           },
           "project": {
@@ -244,15 +235,6 @@
                       ]
                     }
                   },
-                  "required": [
-                    "host",
-                    "object",
-                    "folder",
-                    "address",
-                    "service",
-                    "version",
-                    "provider"
-                  ],
                   "additionalProperties": true
                 },
                 "metadata": {
@@ -318,6 +300,12 @@
                         "null"
                       ]
                     },
+                    "quickXorHash": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
                     "size": {
                       "type": [
                         "string",
@@ -366,9 +354,6 @@
                     "path",
                     "etag",
                     "materialized",
-                    "md5",
-                    "sha1",
-                    "sha256",
                     "size",
                     "sizeInt",
                     "extra",
@@ -376,6 +361,33 @@
                     "created_utc",
                     "modified",
                     "modified_utc"
+                  ],
+                  "anyOf": [
+                    {
+                      "required": [
+                        "md5"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "sha1"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "sha256"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "sha512"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "quickXorHash"
+                      ]
+                    }
                   ],
                   "additionalProperties": true
                 }

@@ -45,6 +45,7 @@ def get_default_metaschema():
     """This needs to be a method so it gets called after the test database is set up"""
     return models.RegistrationSchema.objects.first()
 
+
 def FakeList(provider, n, *args, **kwargs):
     func = getattr(fake, provider)
     return [func(*args, **kwargs) for _ in range(n)]
@@ -362,6 +363,8 @@ class RegistrationProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    access_token = factory.Faker('bs')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.RegistrationProvider
@@ -369,7 +372,16 @@ class RegistrationProviderFactory(DjangoModelFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         user = kwargs.pop('creator', None)
-        obj = cls._build(*args, **kwargs)
+        _id = kwargs.pop('_id', None)
+        try:
+            obj = cls._build(*args, **kwargs)
+        except IntegrityError as e:
+            # This is to ensure legacy tests don't fail when their _ids aren't unique
+            if _id == models.RegistrationProvider.default__id:
+                pass
+            else:
+                raise e
+
         obj._creator = user or models.OSFUser.objects.first() or UserFactory()  # Generates primary_collection
         obj.save()
         return obj
@@ -405,7 +417,7 @@ class RegistrationFactory(BaseNodeFactory):
             user = project.creator
         user = kwargs.pop('user', None) or kwargs.get('creator') or user or UserFactory()
         kwargs['creator'] = user
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         if project.is_admin_contributor(user):
@@ -544,9 +556,9 @@ class DraftRegistrationFactory(DjangoModelFactory):
         provider = kwargs.get('provider')
         branched_from_creator = branched_from.creator if branched_from else None
         initiator = initiator or branched_from_creator or kwargs.get('user', None) or kwargs.get('creator', None) or UserFactory()
-        registration_schema = registration_schema or models.RegistrationSchema.objects.first()
+        registration_schema = registration_schema or get_default_metaschema()
         registration_metadata = registration_metadata or {}
-        provider = provider or models.RegistrationProvider.objects.first() or RegistrationProviderFactory(_id='osf')
+        provider = provider or models.RegistrationProvider.get_default()
         draft = models.DraftRegistration.create_from_node(
             node=branched_from,
             user=initiator,
@@ -635,6 +647,7 @@ class PreprintProviderFactory(DjangoModelFactory):
     name = factory.Faker('company')
     description = factory.Faker('bs')
     external_url = factory.Faker('url')
+    share_source = factory.Sequence(lambda n: 'share source #{0}'.format(n))
 
     class Meta:
         model = models.PreprintProvider
@@ -1041,6 +1054,7 @@ generic_waterbutler_credentials = {
         'fileaccess_token': 'file_abc',
     }
 }
+
 addon_waterbutler_settings = {
     'storage': {
         'provider': 'nextcloudinstitutions',
@@ -1062,6 +1076,28 @@ class RegionFactory(DjangoModelFactory):
     _id = factory.Sequence(lambda n: 'us_east_{0}'.format(n))
     waterbutler_credentials = generic_waterbutler_credentials
     waterbutler_settings = generic_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+
+
+class RegionFactoryInstitutionalAddon(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region2 {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east2_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = addon_waterbutler_settings
+    waterbutler_url = 'http://123.456.test.woo'
+
+
+class RegionFactoryInstitutionalBulkMount(DjangoModelFactory):
+    class Meta:
+        model = Region
+
+    name = factory.Sequence(lambda n: 'Region3 {0}'.format(n))
+    _id = factory.Sequence(lambda n: 'us_east3_{0}'.format(n))
+    waterbutler_credentials = generic_waterbutler_credentials
+    waterbutler_settings = bulkmount_waterbutler_settings
     waterbutler_url = 'http://123.456.test.woo'
 
 
@@ -1165,12 +1201,46 @@ class ExportDataFactory(DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
 
+class ExportDataFactoryAddon(DjangoModelFactory):
+    class Meta:
+        model = models.ExportData
+
+    location = factory.SubFactory(ExportDataLocationFactory)
+    source = factory.SubFactory(RegionFactoryInstitutionalAddon)
+    process_start = datetime.datetime.now()
+    is_deleted = False
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
 class ExportDataRestoreFactory(DjangoModelFactory):
     class Meta:
         model = models.ExportDataRestore
 
     export = factory.SubFactory(ExportDataFactory)
     destination = factory.SubFactory(RegionFactory)
+    process_start = datetime.datetime.now()
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ExportDataRestoreBulkMountFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataRestore
+
+    export = factory.SubFactory(ExportDataFactory)
+    destination = factory.SubFactory(RegionFactoryInstitutionalBulkMount)
+    process_start = datetime.datetime.now()
+    status = models.ExportData.STATUS_COMPLETED
+    creator = factory.SubFactory(UserFactory)
+
+
+class ExportDataRestoreAddonFactory(DjangoModelFactory):
+    class Meta:
+        model = models.ExportDataRestore
+
+    export = factory.SubFactory(ExportDataFactory)
+    destination = factory.SubFactory(RegionFactoryInstitutionalAddon)
     process_start = datetime.datetime.now()
     status = models.ExportData.STATUS_COMPLETED
     creator = factory.SubFactory(UserFactory)
@@ -1212,9 +1282,9 @@ class BaseFileNodeFactory(DjangoModelFactory):
 
     id = 1
     provider = 'osfstorage'
-    path = 'fake_path'
+    path = '/fake_path'
     name = factory.Faker('company')
-
+    type = 'osf.osfstoragefile'
 
 class BaseFileVersionsThroughFactory(DjangoModelFactory):
     class Meta:
@@ -1224,3 +1294,14 @@ class BaseFileVersionsThroughFactory(DjangoModelFactory):
 class RdmFileTimestamptokenVerifyResultFactory(DjangoModelFactory):
     class Meta:
         model = models.RdmFileTimestamptokenVerifyResult
+
+
+class ProjectLimitNumberTemplateFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = models.ProjectLimitNumberTemplate
+
+    template_name = factory.Faker('word')
+    is_availability = factory.Faker('boolean')
+    used_setting_number = factory.Faker('random_int', min=0, max=100)
+    is_deleted = factory.Faker('boolean')
+    modified = factory.Faker('date_this_year')

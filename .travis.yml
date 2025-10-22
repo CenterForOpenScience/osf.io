@@ -123,7 +123,10 @@ before_install:
               break
           fi
       done
-
+    # 54677 test
+    - |
+      echo "[nodeenv]" > ~/.nodeenvrc
+      echo "node = 8.17.0" >> ~/.nodeenvrc
 
 install:
     - cd $TRAVIS_BUILD_DIR
@@ -131,7 +134,7 @@ install:
     - cp api/base/settings/local-travis.py api/base/settings/local.py
     - '[ -d $HOME/preprints ] || ( mkdir -p $HOME/preprints && touch $HOME/preprints/index.html )'
 
-    - travis_retry pip install --upgrade pip
+    - travis_retry pip install --upgrade pip --trusted-host pypi.python.org
     - travis_retry pip install invoke==0.13.0
     - travis_retry pip install flake8==2.4.0 --force-reinstall --upgrade
     - travis_retry invoke wheelhouse --dev --addons

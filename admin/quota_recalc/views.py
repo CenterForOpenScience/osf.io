@@ -1,34 +1,64 @@
 from django.http import JsonResponse
+from django.db import transaction, IntegrityError
 
 from addons.osfstorage.models import Region
 from api.base import settings as api_settings
-from osf.models import OSFUser, UserQuota
+from osf.models import OSFUser, UserQuota, Node
+from osf.models.node import set_project_storage_type
+from osf.utils.requests import check_select_for_update
 from website.util.quota import used_quota
 
 
 def calculate_quota(user):
     storage_type_list = [UserQuota.NII_STORAGE]
 
+    projects = Node.objects.filter(is_deleted=False, creator=user)
+    for p in projects:
+        set_project_storage_type(p)
+
     institution = user.affiliated_institutions.first()
     if institution is not None and Region.objects.filter(_id=institution._id).exists():
         storage_type_list.append(UserQuota.CUSTOM_STORAGE)
 
-    for storage_type in storage_type_list:
-        used = used_quota(user._id, storage_type)
-        try:
-            user_quota = UserQuota.objects.get(
-                user=user,
-                storage_type=storage_type,
-            )
-            user_quota.used = used
-            user_quota.save()
-        except UserQuota.DoesNotExist:
-            UserQuota.objects.create(
-                user=user,
-                storage_type=storage_type,
-                max_quota=api_settings.DEFAULT_MAX_QUOTA,
-                used=used,
-            )
+    with transaction.atomic():
+        for storage_type in storage_type_list:
+            used = used_quota(user._id, storage_type)
+            try:
+                if check_select_for_update():
+                    user_quota = UserQuota.objects.filter(
+                        user=user,
+                        storage_type=storage_type,
+                    ).select_for_update().get()
+                else:
+                    user_quota = UserQuota.objects.get(
+                        user=user,
+                        storage_type=storage_type,
+                    )
+                user_quota.used = used
+                user_quota.save()
+            except UserQuota.DoesNotExist:
+                try:
+                    with transaction.atomic():
+                        UserQuota.objects.create(
+                            user=user,
+                            storage_type=storage_type,
+                            max_quota=api_settings.DEFAULT_MAX_QUOTA,
+                            used=used,
+                        )
+                except IntegrityError:
+                    used = used_quota(user._id, storage_type)
+                    if check_select_for_update():
+                        user_quota = UserQuota.objects.filter(
+                            user=user,
+                            storage_type=storage_type,
+                        ).select_for_update().get()
+                    else:
+                        user_quota = UserQuota.objects.get(
+                            user=user,
+                            storage_type=storage_type,
+                        )
+                    user_quota.used = used
+                    user_quota.save()
 
 def all_users(request, **kwargs):
     c = 0

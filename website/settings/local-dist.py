@@ -70,7 +70,8 @@ COOKIE_NAME = 'osf'
 OSF_COOKIE_DOMAIN = None
 SECRET_KEY = 'CHANGEME'
 SESSION_COOKIE_SECURE = SECURE_MODE
-SESSION_COOKIE_SAMESITE = 'None'
+# Cookie will be blocked if set to 'None' in local env with HTTP where COOKIE_SECURE is disabled
+SESSION_COOKIE_SAMESITE = 'Lax'
 OSF_SERVER_KEY = None
 OSF_SERVER_CERT = None
 
@@ -139,3 +140,5 @@ ENABLE_TIMESTAMP = False
 
 # Show sent emails in console
 logging.getLogger('website.mails.mails').setLevel(logging.DEBUG)
+
+SHARE_ENABLED = False

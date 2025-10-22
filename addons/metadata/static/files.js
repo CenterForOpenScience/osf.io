@@ -10,11 +10,14 @@ const logPrefix = '[metadata] ';
 const rdmGettext = require('js/rdmGettext');
 const _ = rdmGettext._;
 
-const metadataFields = require('./metadata-fields.js');
+const ImportDatasetButton = require('./metadataImportDatasetButton.js');
+
+const QuestionPage = require('./metadata-fields.js').QuestionPage;
 const WaterButlerCache = require('./wbcache.js').WaterButlerCache;
 const registrations = require('./registration.js');
 const RegistrationSchemas = registrations.RegistrationSchemas;
 const DraftRegistrations = registrations.DraftRegistrations;
+const Registrations = registrations.Registrations;
 
 
 const osfBlock = {
@@ -32,67 +35,7 @@ const osfBlock = {
 };
 
 const METADATA_CACHE_EXPIRATION_MSEC = 1000 * 60 * 5;
-
-
-function ERad() {
-  var self = this;
-
-  self.candidates = null;
-
-  self.load = function(baseUrl, callback) {
-    var url = baseUrl + 'erad/candidates';
-    console.log(logPrefix, 'loading: ', url);
-
-    return $.ajax({
-        url: url,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function (data) {
-      console.log(logPrefix, 'loaded: ', data);
-      self.candidates = ((data.data || {}).attributes || {}).records;
-      callback();
-    }).fail(function(xhr, status, error) {
-      $osf.growl('Error', 'Error while retrieving erad candidates: ' + xhr.status);
-      Raven.captureMessage('Error while retrieving erad candidates', {
-          extra: {
-              url: url,
-              status: status,
-              error: error
-          }
-      });
-      callback();
-    });
-  };
-}
-
-function FileMetadataSuggestion(baseUrl) {
-  var self = this;
-
-  self.suggest = function(filepath, format) {
-    var url = baseUrl + 'file_metadata/suggestions/' + encodeURI(filepath);
-    return $.ajax({
-      url: url,
-      type: 'GET',
-      dataType: 'json',
-      data: {
-        format: format
-      }
-    }).catch(function(xhr, status, error) {
-      $osf.growl('Error', 'Error while retrieving file metadata suggestions: ' + xhr.status);
-      Raven.captureMessage('Error while retrieving file metadata suggestions', {
-        extra: {
-          url: url,
-          status: status,
-          error: error
-        }
-      });
-      return Promise.reject({xhr: xhr, status: status, error: error});
-    }).then(function (data) {
-      console.log(logPrefix, 'suggestion: ', data);
-      return ((data.data || {}).attributes || {}).suggestions || [];
-    });
-  };
-}
+var tempIdCounterForDataset = 1000;
 
 function MetadataButtons() {
   var self = this;
@@ -100,14 +43,13 @@ function MetadataButtons() {
   self.loading = null;
   self.contexts = null;
   self.loadingMetadatas = {};
-  self.erad = new ERad();
-  self.fileMetadataSuggestion = new FileMetadataSuggestion(self.baseUrl);
   self.currentItem = null;
   self.registrationSchemas = new RegistrationSchemas();
   self.draftRegistrations = new DraftRegistrations();
   self.registeringFilepath = null;
   self.selectDraftDialog = null;
   self.reservedRows = [];
+  self.moveCompleteHandlers = [];
 
   self.loadConfig = function(callback) {
     if (self.loading !== null) {
@@ -124,14 +66,14 @@ function MetadataButtons() {
       callback(path);
     };
     self.registrationSchemas.load(function() {
-      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function(projectMetadata) {
-        if (projectMetadata && projectMetadata.editable) {
-          self.erad.load(self.baseUrl, loadedCallback);
-          return;
-        }
+      self.loadMetadata(contextVars.node.id, contextVars.node.urls.api + 'metadata/', function() {
         loadedCallback();
       });
     });
+  };
+
+  self.addMoveCompleteHandler = function(handler) {
+    self.moveCompleteHandlers.push(handler);
   };
 
   self.processHash = function() {
@@ -171,6 +113,9 @@ function MetadataButtons() {
     if (self.loadingMetadatas[nodeId]) {
       return;
     }
+    if (!baseUrl) {
+      throw new Error('baseUrl is not defined');
+    }
     self.loadingMetadatas[nodeId] = true;
     const url = baseUrl + 'project';
     console.log(logPrefix, 'loading: ', url);
@@ -191,13 +136,38 @@ function MetadataButtons() {
         projectMetadata: (data.data || {}).attributes,
         wbcache: (self.contexts[nodeId] ? self.contexts[nodeId].wbcache : null) || new WaterButlerCache(),
         validatedFiles: (self.contexts[nodeId] ? self.contexts[nodeId].validatedFiles : null) || {},
-        addonAttached: true
+        addonAttached: true,
+        repositories: null
       };
-      self.contexts[nodeId] = metadata;
-      if (!callback) {
-        return;
-      }
-      callback((data.data || {}).attributes);
+      self.loadRepositories(
+        metadata.projectMetadata.repositories || [],
+        function(repositories) {
+          self.loadingMetadatas[nodeId] = false;
+          metadata.repositories = repositories;
+          const files = [];
+          (metadata.projectMetadata.files || []).forEach(function(file) {
+            files.push(file);
+          });
+          metadata.repositories.forEach(function(repo, repoIndex) {
+            if (!repo.data || repo.data.type !== 'metadata-node-files') {
+              return;
+            }
+            (repo.data.attributes || []).forEach(function(file) {
+              const readonly = !metadata.projectMetadata.repositories[repoIndex].metadata.urls.update;
+              files.push(Object.assign(file, {
+                readonly: readonly,
+              }));
+            });
+          });
+          metadata.projectMetadata.files = files;
+          console.log(logPrefix, 'Metadata loaded', metadata);
+          self.contexts[nodeId] = metadata;
+          if (!callback) {
+            return;
+          }
+          callback((data.data || {}).attributes);
+        }
+      );
     }).fail(function(xhr, status, error) {
       self.loadingMetadatas[nodeId] = false;
       if (xhr.status === 400) {
@@ -232,68 +202,75 @@ function MetadataButtons() {
     });
   };
 
+  self.lastQuestionPage = null;
+
+  // For Metadata-supported addon
+  self.loadRepositories = function(repos, callback) {
+    if (repos.length === 0) {
+      callback([]);
+      return;
+    }
+    self.loadRepository(repos[0], function(result) {
+      self.loadRepositories(repos.slice(1), function(results) {
+        results.splice(0, 0, result);
+        callback(results);
+      });
+    });
+  };
+
+  self.loadRepository = function(repo, callback) {
+    if (!repo.metadata) {
+      if (!callback) {
+        return;
+      }
+      callback(null);
+      return;
+    }
+    const url = repo.metadata.urls.get;
+    console.log(logPrefix, 'loading: ', repo, url);
+    return $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function (data) {
+      console.log(logPrefix, 'loaded: ', data);
+      if (!callback) {
+        return;
+      }
+      callback(data);
+    }).fail(function(xhr, status, error) {
+      Raven.captureMessage('Error while retrieving addon info', {
+        extra: {
+            url: url,
+            status: status,
+            error: error
+        }
+      });
+      if (!callback) {
+        return;
+      }
+      callback(null);
+    });
+  };
+
   self.lastMetadata = null;
   self.lastFields = null;
   self.currentSchemaId = null;
 
-  self.createFields = function(schema, item, options, callback) {
-    const fields = [];
-    const itemData = options.multiple ? {} : item.data || {};
-    (schema.pages || []).forEach(function(page) {
-      (page.questions || []).forEach(function(question) {
-        if (!question.qid || !question.qid.match(/^grdm-file:.+/)) {
-          return;
-        }
-        const value = itemData[question.qid];
-        const field = metadataFields.createField(
-          self.erad,
-          self.fileMetadataSuggestion,
-          question,
-          value,
-          options,
-          callback
-        );
-        fields.push({ field: field, question: question });
-      });
-    });
-    return fields;
+  self.createQuestionPage = function(schema, item, options) {
+    const questionPage = new QuestionPage(schema, item, options);
+    questionPage.create();
+    return questionPage;
   };
 
-  self.fieldsChanged = function(event, options) {
-    if (!self.lastFields) {
-      return;
-    }
-    const fieldSetsAndValues = [];
-    self.lastFields.forEach(function(fieldSet) {
-      const value = fieldSet.field.getValue(fieldSet.input);
-      fieldSetsAndValues.push({ fieldSet: fieldSet, value: value });
+  self.createProjectMetadataQuestionPage = function(schema, item, options) {
+    const questionPage = new QuestionPage(schema, { data: item }, options);
+    questionPage.setQuestionFilter(function(question) {
+      return question.qid && !question.qid.match(/^grdm-file:.+/);
     });
-    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
-      const fieldSet = fieldSetAndValue.fieldSet;
-      const value = fieldSetAndValue.value;
-      var error = null;
-      try {
-        metadataFields.validateField(
-          self.erad,
-          fieldSet.question,
-          value,
-          fieldSetsAndValues,
-          options
-        );
-      } catch(e) {
-        error = e.message;
-      }
-      if (fieldSet.lastError == error) {
-        return;
-      }
-      fieldSet.lastError = error;
-      if (error) {
-        fieldSet.errorContainer.text(error).show()
-      } else {
-        fieldSet.errorContainer.hide().text('')
-      }
-    });
-  }
+    questionPage.create();
+    return questionPage;
+  };
 
   self.prepareFields = function(context, container, schema, filepath, fileitem, options) {
     var lastMetadataItem = {};
@@ -303,34 +280,24 @@ function MetadataButtons() {
         return resolved === schema.id;
       })[0] || {};
     }
-    container.empty();
-    const fields = self.createFields(
+    self.lastQuestionPage = self.createQuestionPage(
       schema.attributes.schema,
       lastMetadataItem,
       {
-        readonly: !((context.projectMetadata || {}).editable),
+        readonly: !((context.projectMetadata || {}).editable) || lastMetadataItem.readonly,
         multiple: options.multiple,
         context: context,
         filepath: filepath,
         wbcache: context.wbcache,
         fileitem: fileitem
-      },
-      self.fieldsChanged
+      }
     );
-    self.lastFields = [];
-    fields.forEach(function(fieldSet) {
-      const errorContainer = $('<div></div>')
-        .css('color', 'red').hide();
-      const input = fieldSet.field.addElementTo(container, errorContainer);
-      self.lastFields.push({
-        field: fieldSet.field,
-        question: fieldSet.question,
-        input: input,
-        lastError: null,
-        errorContainer: errorContainer
-      });
+    self.lastFields = self.lastQuestionPage.fields;
+    container.empty();
+    self.lastFields.forEach(function(field) {
+      container.append(field.element);
     });
-    self.fieldsChanged(null, options);
+    self.lastQuestionPage.validateAll();
   }
 
   self.findSchemaById = function(schemaId) {
@@ -460,7 +427,8 @@ function MetadataButtons() {
           materialized: file.materializedPath,
           path: file.path,
           provider: file.provider,
-          nodeId: contextVars.node.id
+          nodeId: contextVars.node.id,
+          extra: file.extra,
         }
       };
     }
@@ -468,11 +436,48 @@ function MetadataButtons() {
   }
 
   /**
+   * Extra metadata entity for a file item
+   */
+  self._getExtraMetadataEntity = function(item) {
+    return (((item || {}).data || {}).extra || {}).metadata;
+  }
+
+  /**
+   * Extra read-only metadata for a file item
+   */
+  self.getExtraMetadata = function(item) {
+    return (self._getExtraMetadataEntity(item) || {}).content;
+  }
+
+  /**
+   * Whether metadata is editable for a file item
+   */
+  self.isMetadataEditable = function(item) {
+    const entity = self._getExtraMetadataEntity(item);
+    if (!entity) {
+      return true;
+    }
+    return entity.can_edit;
+  }
+
+  /**
+   * Whether metadata is registerable for a file item
+   */
+  self.isMetadataRegisterable = function(item) {
+    const entity = self._getExtraMetadataEntity(item);
+    if (!entity) {
+      return true;
+    }
+    return entity.can_register;
+  }
+
+  /**
    * Start editing metadata.
    */
   self.editMetadata = function(context, filepath, item) {
     var dialog = null;
-    if ((context.projectMetadata || {}).editable) {
+    const extraMetadata = self.getExtraMetadata(item);
+    if ((context.projectMetadata || {}).editable && !extraMetadata) {
       if (!self.editMetadataDialog) {
         self.editMetadataDialog = self.initEditMetadataDialog(true);
       }
@@ -483,9 +488,9 @@ function MetadataButtons() {
       }
       dialog = self.viewMetadataDialog;
     }
-    console.log(logPrefix, 'edit metadata: ', filepath, item);
+    console.log(logPrefix, 'edit(or view) metadata: ', filepath, item, extraMetadata);
     self.currentItem = item;
-    const currentMetadata = self.findMetadataByPath(context.nodeId, filepath);
+    const currentMetadata = extraMetadata || self.findMetadataByPath(context.nodeId, filepath);
     if (!currentMetadata) {
       self.lastMetadata = {
         path: filepath,
@@ -521,7 +526,7 @@ function MetadataButtons() {
       );
     });
     dialog.toolbar.append(selector.group);
-    if ((context.projectMetadata || {}).editable) {
+    if ((context.projectMetadata || {}).editable && !extraMetadata) {
       const pasteButton = $('<button></button>')
         .addClass('btn btn-default')
         .css('margin-right', 0)
@@ -533,6 +538,28 @@ function MetadataButtons() {
       dialog.toolbar.append($('<div></div>')
         .css('display', 'flex')
         .append(pasteButton));
+    }
+    if (dialog.customHandler) {
+      dialog.customHandler.empty();
+      if (item.data && item.data.provider && contextVars.metadataHandlers && contextVars.metadataHandlers[item.data.provider]) {
+        const customButton = contextVars.metadataHandlers[item.data.provider];
+        const button = $('<a href="#" class="btn btn-success"></a>')
+          .text(customButton.text)
+          .css('margin-left', '5px');
+        button.click(function() {
+          osfBlock.block();
+          self.saveEditMetadataModal()
+            .finally(function() {
+              osfBlock.unblock();
+              $(dialog.dialog).modal('hide');
+              const activeItems = (self.lastMetadata.items || []).filter(function(item_) {
+                return item_.active;
+              });
+              customButton.click(item, self.currentSchemaId, activeItems[0] || null);
+            })
+        });
+        dialog.customHandler.append(button);
+      }
     }
     self.prepareFields(
       context,
@@ -624,8 +651,8 @@ function MetadataButtons() {
       });
     }
     var jsonObject = {};
-    (self.lastFields || []).forEach(function(fieldSet) {
-      jsonObject[fieldSet.question.qid] = fieldSet.field.getValue(fieldSet.input);
+    (self.lastFields || []).forEach(function(field) {
+      jsonObject[field.question.qid] = field.getValue();
     });
     const text = JSON.stringify(jsonObject);
     navigator.clipboard.writeText(text).then(function() {
@@ -668,10 +695,14 @@ function MetadataButtons() {
   self.setMetadataFromJson = function(jsonText) {
     try {
       const jsonObject = JSON.parse(jsonText);
-      (self.lastFields || []).forEach(function(fieldSet) {
-        fieldSet.field.setValue(fieldSet.input, jsonObject[fieldSet.question.qid] || '');
+      (self.lastFields || []).forEach(function(field) {
+        field.setValue(jsonObject[field.question.qid] || '');
       });
+      if (self.lastQuestionPage) {
+        self.lastQuestionPage.validateAll();
+      }
     } catch(err) {
+      console.error(logPrefix, 'Could not paste text', err);
       $osf.growl('Error', _('Could not paste text'));
       Raven.captureMessage(_('Could not paste text'), {
         extra: {
@@ -969,6 +1000,31 @@ function MetadataButtons() {
           .attr('id', 'draft-' + r.id + '-link')));
       empty = false;
     });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      if (r.schema !== schema.id) {
+        return;
+      }
+      const text = $('<label></label>')
+        .css('margin-right', '0.5em')
+        .attr('for', r.id)
+        .text(r.name);
+      if (disabled) {
+        text.css('color', '#888');
+      }
+      registrations.append($('<li></li>')
+        .append($('<input></input>')
+          .css('margin-right', '0.5em')
+          .attr('type', 'checkbox')
+          .attr('id', r.id)
+          .attr('name', r.id)
+          .attr('disabled', disabled)
+          .attr('checked', false))
+        .append(text)
+        .append($('<span></span>')
+          .attr('id', r.id + '-link')));
+      empty = false;
+    });
     if (empty) {
       registrations.append($('<li></li>')
         .append($('<span></span>').text(_('There is no draft project metadata compliant with the schema. Create new draft project metadata from the Metadata tab:')))
@@ -1021,65 +1077,31 @@ function MetadataButtons() {
   };
 
   self.prepareReviewFields = function(container, draftSelectionContainer, schema, metadataItem) {
-    const fields = self.createFields(
+    self.lastQuestionPage = self.createQuestionPage(
       schema.attributes.schema,
       metadataItem,
       {
         readonly: true,
       }
     );
+    self.lastFields = self.lastQuestionPage.fields;
     container.empty();
-    var errors = 0;
-    self.lastFields = [];
-    const fieldSetsAndValues = [];
-    fields.forEach(function(fieldSet) {
-      const errorContainer = $('<div></div>')
-        .css('color', 'red').hide();
-      const input = fieldSet.field.addElementTo(container, errorContainer);
-      const value = fieldSet.field.getValue(input);
-      fieldSetsAndValues.push({
-        fieldSet: {
-          field: fieldSet.field,
-          question: fieldSet.question,
-          input: input,
-          lastError: null,
-          errorContainer: errorContainer
-        },
-        value: value
-      });
+    self.lastFields.forEach(function(field) {
+      container.append(field.element);
     });
-    fieldSetsAndValues.forEach(function(fieldSetAndValue) {
-      const fieldSet = fieldSetAndValue.fieldSet;
-      const value = fieldSetAndValue.value;
-      var error = null;
-      try {
-        metadataFields.validateField(
-          self.erad,
-          fieldSet.question,
-          value,
-          fieldSetsAndValues
-        );
-      } catch(e) {
-        error = e.message;
-      }
-      if (error) {
-        fieldSet.errorContainer.text(error).show()
-        errors ++;
-      } else {
-        fieldSet.errorContainer.hide().text('')
-      }
-      self.lastFields.push(fieldSet);
-    });
+    self.lastQuestionPage.validateAll();
     const message = $('<div></div>');
-    if (errors) {
+    if (self.lastQuestionPage.hasValidationError) {
       message.text(_('There are errors in some fields.')).css('color', 'red');
     }
     if (self.selectDraftDialog) {
-      self.selectDraftDialog.select.attr('disabled', errors > 0);
+      self.selectDraftDialog.select.attr('disabled', self.lastQuestionPage.hasValidationError);
     }
     draftSelectionContainer.empty();
     draftSelectionContainer.append(message);
-    draftSelectionContainer.append(self.createDraftsSelect(schema, errors > 0).css('margin', '1em 0'));
+    draftSelectionContainer.append(
+      self.createDraftsSelect(schema, self.lastQuestionPage.hasValidationError).css('margin', '1em 0')
+    );
   };
 
   self.openDraftModal = function(currentMetadata) {
@@ -1127,10 +1149,40 @@ function MetadataButtons() {
     });
   };
 
+  self.getMetadataSupportedRegistries = function() {
+    return (self.contexts[contextVars.node.id].projectMetadata.repositories || [])
+      .map(function(repo) {
+        return repo.registries || [];
+      })
+      .reduce(function(x, y) {
+        var r = [];
+        x.forEach(function(e) {
+          r.push(e);
+        });
+        y.forEach(function(e) {
+          r.push(e);
+        });
+        return r;
+      }, []);
+  }
+
+  self.getRegistrationURL = function(draftId, nodeId, filepath) {
+    console.log('URL', self.baseUrl);
+    // Metadata-supported addons
+    const regs = self.getMetadataSupportedRegistries()
+      .filter(function(reg) {
+        return reg.id === draftId;
+      });
+    if (regs.length > 0) {
+      return regs[0].url + '/' + nodeId + '/' + filepath;
+    }
+    return self.baseUrl + 'draft_registrations/' + draftId + '/files/' + nodeId + '/' + filepath;
+  };
+
   self.updateRegistrationAsync = function(context, checked, filepath, draftId, link) {
     return new Promise(function(resolve, perror) {
       console.log(logPrefix, 'register metadata: ', filepath, draftId);
-      var url = self.baseUrl + 'draft_registrations/' + draftId + '/files/' + context.nodeId + '/' + filepath;
+      const url = self.getRegistrationURL(draftId, context.nodeId, filepath);
       link.text(checked ? _('Registering...') : _('Deleting...'));
       osfBlock.block();
       return $.ajax({
@@ -1138,6 +1190,24 @@ function MetadataButtons() {
           type: checked ? 'PUT' : 'DELETE',
           dataType: 'json'
       }).done(function (data) {
+        if (data.data && data.data.attributes && data.data.attributes.progress_url) {
+          self.waitForRegistration(
+            data.data.attributes.progress_url,
+            function(data, result) {
+              osfBlock.unblock();
+              link.empty();
+              link.append($('<a></a>')
+                .text(_('Open'))
+                .attr('href', result));
+              resolve(data);
+            },
+            function(url, xhr, status, error) {
+              osfBlock.unblock();
+              perror(url, xhr, status, error);
+            }
+          );
+          return;
+        }
         osfBlock.unblock();
         link.empty();
         link.append($('<a></a>')
@@ -1149,7 +1219,31 @@ function MetadataButtons() {
         perror(url, xhr, status, error);
       });
     });
-  }
+  };
+
+  self.waitForRegistration = function(url, resolve, perror) {
+    setTimeout(function() {
+      $.ajax({
+        url: url,
+        type: 'GET',
+        dataType: 'json'
+      }).done(function (data) {
+        if (data.data && data.data.attributes && data.data.attributes.result) {
+          console.log(logPrefix, 'Finished', data);
+          resolve(data, data.data.attributes.result);
+          return;
+        }
+        console.log(logPrefix, 'Processing...', data);
+        self.waitForRegistration(url, resolve, perror);
+      }).fail(function(xhr, status, error) {
+        if (status === 'error' && error === 'NOT FOUND') {
+          self.waitForRegistration(url, resolve, perror);
+          return;
+        }
+        perror(url, xhr, status, error);
+      });
+    }, 500);
+  };
 
   self.selectDraftModal = function() {
     const filepath = self.registeringFilepath;
@@ -1169,6 +1263,15 @@ function MetadataButtons() {
       }
       const link = self.selectDraftDialog.container.find('#draft-' + r.id + '-link');
       ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+    });
+    // Metadata-supported addons
+    self.getMetadataSupportedRegistries().forEach(function(r) {
+      const checkbox = self.selectDraftDialog.container.find('#' + r.id);
+      const checked = checkbox.is(':checked');
+      if (checked) {
+        const link = self.selectDraftDialog.container.find('#' + r.id + '-link');
+        ops.push(self.updateRegistrationAsync(context, checked, filepath, r.id, link));
+      }
     });
     Promise.all(ops)
       .then(function(data) {
@@ -1215,10 +1318,23 @@ function MetadataButtons() {
       return f.path === filepath;
     });
     const currentMetadata = currentMetadatas[0] || null;
-    if (!projectMetadata.editable) {
+    const extraMetadata = self.getExtraMetadata(item);
+    if (extraMetadata === null) {
+      return [];
+    }
+    if (item && item.data.kind === 'folder' && item.data.addonFullname) {
+      // provider
+      const repos = (projectMetadata.repositories || []).filter(function(repo) {
+        return repo.metadata && repo.metadata.provider === item.data.provider;
+      });
+      if (repos.length > 0 && !(repos[0].metadata.permissions || { provider: true }).provider) {
+        return [];
+      }
+    }
+    if (!projectMetadata.editable || extraMetadata) {
       // readonly
       const filepath = item.data.provider + (item.data.materialized || '/');
-      const metadata = self.findMetadataByPath(context.nodeId, filepath);
+      const metadata = extraMetadata || self.findMetadataByPath(context.nodeId, filepath);
       if (!metadata) {
         return [];
       }
@@ -1232,31 +1348,37 @@ function MetadataButtons() {
       return [viewButton];
     }
     const buttons = [];
-    const editButton = createButton({
-      onclick: function(event) {
-        self.editMetadata(context, filepath, item);
-      },
-      icon: 'fa fa-edit',
-      className : 'text-primary'
-    }, _('Edit Metadata'));
-    buttons.push(editButton);
+    if (self.isMetadataEditable(item)) {
+      const editButton = createButton({
+        onclick: function(event) {
+          self.editMetadata(context, filepath, item);
+        },
+        icon: 'fa fa-edit',
+        className : 'text-primary'
+      }, _('Edit Metadata'));
+      buttons.push(editButton);
+    }
     if (currentMetadata) {
-      const registerButton = createButton({
-        onclick: function(event) {
-          self.registerMetadata(context, filepath, item);
-        },
-        icon: 'fa fa-external-link',
-        className : 'text-success'
-      }, _('Register Metadata'));
-      buttons.push(registerButton)
-      const deleteButton = createButton({
-        onclick: function(event) {
-          self.deleteMetadata(context, filepath, item);
-        },
-        icon: 'fa fa-trash',
-        className : 'text-danger'
-      }, _('Delete Metadata'));
-      buttons.push(deleteButton)
+      if (self.isMetadataRegisterable(item)) {
+        const registerButton = createButton({
+          onclick: function(event) {
+            self.registerMetadata(context, filepath, item);
+          },
+          icon: 'fa fa-external-link',
+          className : 'text-success'
+        }, _('Register Metadata'));
+        buttons.push(registerButton);
+      }
+      if (self.isMetadataEditable(item)) {
+        const deleteButton = createButton({
+          onclick: function(event) {
+            self.deleteMetadata(context, filepath, item);
+          },
+          icon: 'fa fa-trash',
+          className : 'text-danger'
+        }, _('Delete Metadata'));
+        buttons.push(deleteButton);
+      }
     }
     return buttons;
   }
@@ -1293,7 +1415,12 @@ function MetadataButtons() {
       return [];
     }
     const projectMetadata = context.projectMetadata;
-    if (!projectMetadata.editable) {
+    const extraMetadatas = items.map(function(item) {
+      return self.getExtraMetadata(item);
+    });
+    if (!projectMetadata.editable || extraMetadatas.some(function(m) {
+      return m;
+    })) {
       // readonly
       return [];
     }
@@ -1411,6 +1538,8 @@ function MetadataButtons() {
       return;
     }
     const remains = items.filter(function(item) {
+      return item.data && item.data.nodeApiUrl;
+    }).filter(function(item) {
       const text = $('.td-title.tb-td[data-id="' + item.id + '"] .title-text');
       if (text.length === 0) {
         return true;
@@ -1429,12 +1558,16 @@ function MetadataButtons() {
           .addClass('metadata-indicator')
           .css('margin-left', '1em');
         text.append(indicator);
+      } else {
+        indicator.empty();
       }
       const filepath = item.data.provider + (item.data.materialized || '/');
-      const metadata = self.findMetadataByPath(context.nodeId, filepath);
+      const extraMetadata = self.getExtraMetadata(item);
+      const metadata = extraMetadata || self.findMetadataByPath(context.nodeId, filepath);
       const projectMetadata = context.projectMetadata;
       if (!metadata && filepath.length > 0 && filepath[filepath.length - 1] !== '/') {
         // file with no metadata
+        indicator.empty();
         return false;
       }
       const childMetadata = projectMetadata.files.filter(function(f) {
@@ -1445,7 +1578,6 @@ function MetadataButtons() {
         return false;
       }
       if (metadata) {
-        indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
           .css('font-weight', 'bold')
@@ -1453,7 +1585,6 @@ function MetadataButtons() {
           .attr('title', _('Metadata is defined')));
         self.setValidatedFile(context, filepath, item, metadata);
       } else {
-        indicator.empty();
         indicator.append($('<span></span>')
           .text('{}')
           .css('font-weight', 'bold')
@@ -1542,11 +1673,81 @@ function MetadataButtons() {
     const observer = new MutationObserver(refreshIfToolbarExists);
     const toggleBar = $('#toggleBar').get(0);
     observer.observe(toggleBar, {attributes: false, childList: true, subtree: false});
+
+    function resolveRows(items) {
+      if (items.length === 0) {
+        return;
+      }
+      const remains = items.filter(function(item) {
+        const text = $('.td-title.tb-td[data-id="' + item.id + '"] .title-text');
+        if (text.length === 0) {
+          return true;
+        }
+        const context = self.findContextByNodeId(item.data.nodeId);
+        if (!context) {
+          self.loadMetadata(item.data.nodeId, item.data.nodeApiUrl + 'metadata/');
+          return true;
+        }
+        if (!item.data.materialized) {
+          context.wbcache.setProvider(item);
+        }
+        return false;
+      });
+      if (remains.length === 0) {
+        return;
+      }
+      setTimeout(function() {
+        resolveRows(remains);
+      }, 1000);
+    }
+
     self.initBase(function(p) {
       path = p;
       refreshIfToolbarExists();
+      resolveRows(self.reservedRows);
+    });
+
+    Fangorn.config = new Proxy(Fangorn.config, {
+      get: function(targetprov, name) {
+        var obj = targetprov[name];
+        if (obj === undefined) {
+          obj = {};
+        }
+        return new Proxy(obj, {
+          get: function(target, propname) {
+            if (propname == 'resolveRows') {
+              return function(item) {
+                var base = null;
+                if (target[propname] !== undefined) {
+                  const prop = target[propname];
+                  const baseRows = typeof prop === 'function' ? prop.apply(this, [item]) : prop;
+                  if (baseRows !== undefined) {
+                    base = baseRows;
+                  }
+                }
+                if (self.contexts) {
+                  setTimeout(function() {
+                    resolveRows([item]);
+                  }, 500);
+                } else {
+                  self.reservedRows.push(item);
+                }
+                return base;
+              };
+            } else {
+              return target[propname];
+            }
+          }
+        });
+      }
     });
   }
+
+  self.notifyMoveComplete = function(item, nodeId, metadata) {
+    self.moveCompleteHandlers.forEach(function(handler) {
+      handler(item, nodeId, metadata);
+    });
+  };
 
   self.initFileTree = function() {
     self.initBase(function() {
@@ -1583,10 +1784,26 @@ function MetadataButtons() {
                     if (tb.options.placement === 'fileview') {
                       return m('span', []);
                     }
-                    return m('span', [
-                               m.component(base, {treebeard : tb, mode : mode,
-                                           item : item }),
-                             ].concat(buttons));
+                    const viewButtons = [
+                      m.component(base, {treebeard : tb, mode : mode,
+                                  item : item }),
+                    ].concat(buttons);
+                    if (item.kind === 'folder' && !item.data.addonFullname) {
+                      const importDatasetButton = new ImportDatasetButton(
+                        tb,
+                        item,
+                        self.contexts,
+                        {
+                          assign: function() {
+                            return tempIdCounterForDataset ++;
+                          }
+                        }
+                      );
+                      if (importDatasetButton.isAvailable()) {
+                        viewButtons.push(importDatasetButton.createButton());
+                      }
+                    }
+                    return m('span', viewButtons);
                   }
                 };
               };
@@ -1633,7 +1850,7 @@ function MetadataButtons() {
                 }
                 const fromFilepath = from.data.provider + (from.data.materialized || '/');
                 const projectMetadata = context.projectMetadata;
-                const fromFilepaths = projectMetadata.files
+                var fromFilepaths = projectMetadata.files
                   .map(function(f) { return f.path; })
                   .filter(function(p) {
                     return p.substring(0, fromFilepath.length) === fromFilepath;
@@ -1642,30 +1859,68 @@ function MetadataButtons() {
                   return;
                 }
                 const toFilepath = item.data.provider + (item.data.materialized || '/');
-                const toFilepaths = fromFilepaths
+                var toFilepaths = fromFilepaths
                   .map(function(p) {
                     return toFilepath + p.replace(fromFilepath, '');
                   });
+                const toNodeId = item.data ? item.data.nodeId : null;
+                const fromNodeId = from.data ? from.data.nodeId : null;
+                if (!toNodeId) {
+                  console.log(logPrefix, 'toNodeId is null');
+                  return;
+                }
+                if (!fromNodeId) {
+                  console.log(logPrefix, 'fromNodeId is null');
+                  return;
+                }
+                var toContext = self.findContextByNodeId(toNodeId);
+                var fromContext = self.findContextByNodeId(fromNodeId);
+                if (!toContext) {
+                  console.log(logPrefix, 'toContext is null');
+                  return;
+                }
+                if (!fromContext) {
+                  console.log(logPrefix, 'fromContext is null');
+                  return;
+                }
                 // try reload project metadata
                 const interval = 250;
                 const maxRetry = 10;
+                const intervalIncrease = 250;
                 var retry = 0;
                 function tryLoadMetadata() {
-                  self.loadMetadata(context.nodeId, context.baseUrl, function() {
-                    const context2 = self.findContextByNodeId(context.nodeId);
+                  // Retrieve metadata for the destination project
+                  self.loadMetadata(toContext.nodeId, toContext.baseUrl, function() {
+                    const toProjectMetadata = self.findProjectMetadataByNodeId(toContext.nodeId);
                     const matches = toFilepaths
                       .map(function(p) {
-                        return context2.projectMetadata.files.find(function(f) { return f.path === p; });
+                        return toProjectMetadata.files.find(function(f) { return f.path === p; });
                       });
                     const unmatchCount = matches.filter(function(m) { return !m; }).length;
                     console.log(logPrefix, 'reloaded metadata: ', {
-                      context: context2,
+                      context: toContext,
                       unmatchCount: unmatchCount,
                       expectedFilepaths: toFilepaths
                     });
+                    self.notifyMoveComplete(item, toContext.nodeId, toProjectMetadata);
                     if (!unmatchCount) {
-                      context2.wbcache.clearCache();
-                      m.redraw();
+                      // Retrieve metadata for the source project
+                      self.loadMetadata(fromContext.nodeId, fromContext.baseUrl, function() {
+                        const fromProjectMetadata = self.findProjectMetadataByNodeId(fromContext.nodeId);
+                        const matches = fromFilepaths
+                          .map(function(p) {
+                            return fromProjectMetadata.files.find(function(f) { return f.path === p; });
+                          });
+                        const matchCount = matches.filter(function(m) { return m; }).length;
+                        console.log(logPrefix, 'reloaded metadata: ', {
+                          context: fromContext,
+                          matchCount: matchCount,
+                          expectedFilepaths: fromFilepaths
+                        });
+                        toContext.wbcache.clearCache();
+                        m.redraw();
+                        self.notifyMoveComplete(from, fromContext.nodeId, fromProjectMetadata);
+                      });
                       return;
                     }
                     retry += 1;
@@ -1674,7 +1929,7 @@ function MetadataButtons() {
                       return;
                     }
                     console.log(logPrefix, retry + 'th retry reload metadata after ' + interval + 'ms: ');
-                    setTimeout(tryLoadMetadata, interval);
+                    setTimeout(tryLoadMetadata, interval + retry * intervalIncrease);
                   });
                 }
                 setTimeout(tryLoadMetadata, interval);
@@ -1710,10 +1965,10 @@ function MetadataButtons() {
         data: {},
       };
       self.lastFields.forEach(function(field) {
-        metacontent.data[field.field.label] = {
+        metacontent.data[field.question.qid] = {
           extra: [],
           comments: [],
-          value: field.field.getValue(field.input)
+          value: field.getValue()
         };
       });
       metadata.items.unshift(metacontent);
@@ -1797,12 +2052,13 @@ function MetadataButtons() {
           data: Object.assign({}, oldMetacontent.data),
         };
         self.lastFields.forEach(function(field) {
-          const value = field.field.getValue(field.input);
-          const clear = field.field.checkedClear && field.field.checkedClear();
+          const value = field.getValue();
+          const clear = field.checkedClear();
+          const qid = field.question.qid;
           if (clear) {
-            delete metacontent.data[field.field.label];
+            delete metacontent.data[qid];
           } else if (value) {
-            metacontent.data[field.field.label] = {
+            metacontent.data[qid] = {
               extra: [],
               comments: [],
               value: value
@@ -1904,6 +2160,7 @@ function MetadataButtons() {
       self.copyToClipboard(event, copyStatus);
     });
     const toolbar = $('<div></div>');
+    const customHandler = $('<span></span>');
     const container = $('<ul></ul>').css('padding', '0 20px');
     var notice = $('<span></span>');
     if (editable) {
@@ -1925,7 +2182,7 @@ function MetadataButtons() {
                   .append(toolbar))
                 .append($('<div class="col-sm-12"></div>')
                   .css('overflow-y', 'scroll')
-                  .css('height', '70vh')
+                  .css('height', '66vh')
                   .append(container))))
             .append($('<div class="modal-footer"></div>')
               .css('display', 'flex')
@@ -1934,7 +2191,8 @@ function MetadataButtons() {
               .append(copyStatus.css('margin-left', 0).css('margin-right', 'auto'))
               .append(notice)
               .append(close)
-              .append(save)))));
+              .append(save)
+              .append(customHandler)))));
     $(window).on('beforeunload', function() {
       if ($(dialog).data('bs.modal').isShown) {
         return _('You have unsaved changes.');
@@ -1946,6 +2204,7 @@ function MetadataButtons() {
       container: container,
       toolbar: toolbar,
       copyStatus: copyStatus,
+      customHandler: editable ? customHandler : null,
     };
   };
 
@@ -2004,7 +2263,11 @@ function MetadataButtons() {
     const dialog = $('<div class="modal fade"></div>');
     const close = $('<a href="#" class="btn btn-default" data-dismiss="modal"></a>').text(_('Close'));
     close.click(self.closeModal);
-    const del = $('<a href="#" class="btn btn-success"></a>').text(_('Delete'));
+    /*
+      Workaround: Cannot use .modal-footer here, because .modal-footer .btn-danger combination
+      may be unintentionally manipulated by Fangorn
+    */
+    const del = $('<a href="#" class="btn btn-danger" style="margin-left: 5px"></a>').text(_('Delete'));
     del.click(function() {
       osfBlock.block()
       self.deleteConfirmedModal()
@@ -2023,7 +2286,7 @@ function MetadataButtons() {
               .append($('<div class="row"></div>')
                 .append($('<div class="col-sm-12"></div>')
                   .append(_('Do you want to delete metadata? This operation cannot be undone.')))))
-            .append($('<div class="modal-footer"></div>')
+            .append($('<div style="padding: 15px; text-align: right;"></div>')
               .append(close).append(del)))));
     dialog.appendTo($('#treeGrid'));
     return dialog;
@@ -2148,6 +2411,104 @@ function MetadataButtons() {
 
 if (contextVars.metadataAddonEnabled) {
   const btn = new MetadataButtons();
+  contextVars.metadata = {
+    loadMetadata: function(nodeId, nodeApiUrl, callback) {
+      var metadataUrl = nodeApiUrl;
+      if (!nodeApiUrl.match(/.+\/$/)) {
+        metadataUrl += '/';
+      }
+      btn.loadMetadata(nodeId, metadataUrl + 'metadata/', callback);
+    },
+    getFileMetadata: function(nodeId, path) {
+      if (!btn.contexts) {
+        return undefined;
+      }
+      const context = btn.contexts[nodeId];
+      if (!context) {
+        return undefined;
+      }
+      const files = (context.projectMetadata || {}).files || [];
+      const results = files.filter(function(metadata) {
+        return metadata.path === path;
+      });
+      if (results.length === 0) {
+        return null;
+      }
+      return results[0];
+    },
+    getProjectMetadata: function(nodeId) {
+      if (!btn.contexts) {
+        return undefined;
+      }
+      const context = btn.contexts[nodeId];
+      if (!context) {
+        return undefined;
+      }
+      return context.projectMetadata;
+    },
+    findSchemaById: function(schemaId) {
+      return btn.findSchemaById(schemaId);
+    },
+    getRegistrations: function(callback) {
+      if (!callback) {
+        throw new Error('callback is required');
+      }
+      const r = new Registrations();
+      r.load(function(error) {
+        callback(error, r);
+      });
+    },
+    getDraftRegistrations: function(callback) {
+      if (!callback) {
+        throw new Error('callback is required');
+      }
+      const r = new DraftRegistrations();
+      r.load(function(error) {
+        callback(error, r);
+      });
+    },
+    isLoadingProjectMetadata: function(nodeId) {
+      if (!btn.loadingMetadatas) {
+        return true;
+      }
+      return btn.loadingMetadatas[nodeId];
+    },
+    extractProjectName: function(projectMetadata) {
+      return btn.extractProjectName(projectMetadata);
+    },
+    createFileMetadataItemPage: function(fileMetadataItem) {
+      const schema = btn.findSchemaById(fileMetadataItem.schema);
+      if (!schema) {
+        throw new Error('Schema not found: ' + fileMetadataItem.schema);
+      }
+      const questionPage = btn.createQuestionPage(
+        schema.attributes.schema,
+        fileMetadataItem,
+        {
+          readonly: true,
+        }
+      );
+      return questionPage;
+    },
+    createProjectMetadataPage: function(registration) {
+      const schemaId = registration.relationships.registration_schema.data.id;
+      const schema = btn.findSchemaById(schemaId);
+      if (!schema) {
+        throw new Error('Schema not found: ' + schemaId);
+      }
+      const questionPage = btn.createProjectMetadataQuestionPage(
+        schema.attributes.schema,
+        registration.attributes.registration_metadata,
+        {
+          readonly: true,
+        }
+      );
+      return questionPage;
+    },
+    addMoveCompleteHandler: function(handler) {
+      btn.addMoveCompleteHandler(handler);
+    },
+  };
   if ($('#fileViewPanelLeft').length > 0) {
     // File View
     btn.initFileView();

@@ -34,7 +34,7 @@ var entry = {
     'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'registration-edit-page': staticPath('js/pages/registration-edit-page.js'),
     'register-page': staticPath('js/pages/register-page.js'),
-    'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
+//    'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'request-access-page': staticPath('js/pages/request-access-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),

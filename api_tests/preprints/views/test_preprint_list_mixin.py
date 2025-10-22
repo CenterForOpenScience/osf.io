@@ -11,6 +11,7 @@ from osf_tests.factories import (
 from osf.utils.permissions import WRITE
 from osf.utils.workflows import DefaultStates
 
+import re
 
 @pytest.mark.django_db
 class PreprintListMatchesPreprintDetailMixin:
@@ -186,10 +187,13 @@ class PreprintIsPublishedListMixin:
 
     def test_unpublished_invisible_to_public(
             self, app, preprint_unpublished, preprint_published, url):
-        res = app.get(url)
-        assert len(res.json['data']) == 1
-        assert preprint_unpublished._id not in [
-            d['id'] for d in res.json['data']]
+        res = app.get(url, expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 1
+            assert preprint_unpublished._id not in [
+                d['id'] for d in res.json['data']]
 
     def test_filter_published_false_non_contrib(
             self, app, user_non_contrib, url):
@@ -199,8 +203,11 @@ class PreprintIsPublishedListMixin:
         assert len(res.json['data']) == 0
 
     def test_filter_published_false_public(self, app, url):
-        res = app.get('{}filter[is_published]=false'.format(url))
-        assert len(res.json['data']) == 0
+        res = app.get('{}filter[is_published]=false'.format(url), expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 0
 
     def test_filter_published_false_admin(
             self, app, user_admin_contrib, preprint_unpublished, url):
@@ -262,12 +269,18 @@ class PreprintIsValidListMixin:
 
     def test_preprint_private_invisible_no_auth(
             self, app, project, preprint, url):
-        res = app.get(url)
-        assert len(res.json['data']) == 1
+        res = app.get(url, expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 1
         preprint.is_public = False
         preprint.save()
-        res = app.get(url)
-        assert len(res.json['data']) == 0
+        res = app.get(url, expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 0
 
     def test_preprint_private_invisible_non_contributor(
             self, app, user_non_contrib, project, preprint, url):
@@ -302,8 +315,11 @@ class PreprintIsValidListMixin:
         preprint.deleted = timezone.now()
         preprint.save()
         # unauth
-        res = app.get(url)
-        assert len(res.json['data']) == 0
+        res = app.get(url, expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 0
         # non_contrib
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 0
@@ -341,8 +357,11 @@ class PreprintIsValidListMixin:
         preprint.save()
 
         # unauth
-        res = app.get(url)
-        assert len(res.json['data']) == 1
+        res = app.get(url, expect_errors=True)
+        if re.match('^/v2/users/.*', url):
+            assert res.status_code == 401
+        else:
+            assert len(res.json['data']) == 1
         # non_contrib
         res = app.get(url, auth=user_non_contrib.auth)
         assert len(res.json['data']) == 1

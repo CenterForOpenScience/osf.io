@@ -1,0 +1,491 @@
+{
+    "@metadata": {
+        "filename": "ro-crate-metadata.json"
+    },
+    "@files": {
+        "@type": "object",
+        "file[]": {
+            ".@type": "File",
+            "name": "{{object_filename}}",
+            "encodingFormat": "{{object_format}}"
+        }
+    },
+    "@projects": {
+        "@type": "object",
+        "root.fundingReference[]": {
+            ".@type": "jpcoar:fundingReference",
+            "jpcoar:funderIdentifier": {
+                "@createIf": "{{ funder_value }}",
+                ".@type": "jpcoar:funderIdentifier",
+                "jpcoar:funderIdentifierType": "e-Rad_funder",
+                "value": "{{funder_value}}"
+            },
+            "jpcoar:funderName[FUNDER_NAME_JA]": {
+                "@createIf": "{{ funder_value }}",
+                ".@type": "PropertyValue",
+                "value": "{{funder_tooltip_0}}({{funder_value}})",
+                "language": "ja"
+            },
+            "jpcoar:funderName[FUNDER_NAME_EN]": {
+                "@createIf": "{{ funder_value }}",
+                ".@type": "PropertyValue",
+                "value": "{{funder_tooltip_1}}({{funder_value}})",
+                "language": "en"
+            },
+            "jpcoar:fundingStreamIdentifier": {
+                "@createIf": "{{ funding_stream_code_value }}",
+                ".@type": "jpcoar:fundingStreamIdentifier",
+                "value": "{{funding_stream_code_value}}",
+                "jpcoar:fundingStreamIdentifierType": "JGN_fundingStream"
+            },
+            "jpcoar:fundingStream[FUNDING_STREAM_JA]": {
+                "@createIf": "{{ program_name_ja_value }}",
+                ".@type": "PropertyValue",
+                "value": "{{program_name_ja_value}}",
+                "language": "ja"
+            },
+            "jpcoar:fundingStream[FUNDING_STREAM_EN]": {
+                "@createIf": "{{ program_name_en_value }}",
+                ".@type": "PropertyValue",
+                "value": "{{program_name_en_value}}",
+                "language": "en"
+            },
+            "jpcoar:awardNumber": {
+                "@createIf": "{{ japan_grant_number_value }}",
+                ".@type": "jpcoar:awardNumber",
+                "jpcoar:awardNumberType": "JGN",
+                "value": "{{japan_grant_number_value}}"
+            },
+            "jpcoar:awardTitle[PROJECT_NAME_JA]": {
+                "@createIf": "{{ project_name_ja_value }}",
+                ".@type": "PropertyValue",
+                "language": "ja",
+                "value": "{{project_name_ja_value}}"
+            },
+            "jpcoar:awardTitle[PROJECT_NAME_EN]": {
+                "@createIf": "{{ project_name_en_value }}",
+                ".@type": "PropertyValue",
+                "language": "en",
+                "value": "{{project_name_en_value}}"
+            }
+        }
+    },
+    "grdm-file:data-number": {
+        "@type": "string",
+        "@createIf": "{{value}}"
+    },
+    "grdm-file:title-ja": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:name": {
+            ".@type": "Thing",
+            "value[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "ja"
+                }
+            ]
+        }
+    },
+    "grdm-file:title-en": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:name": {
+            ".@type": "Thing",
+            "value[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:date-issued-updated": null,
+    "grdm-file:data-description-ja": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:description": {
+            ".@type": "Thing",
+            "value[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "ja"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-description-en": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:description": {
+            ".@type": "Thing",
+            "value[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-research-field": {
+        "@type": "string",
+        "@createIf": "{{grdm_file_data_research_field_value}}{{project_research_field_value}}",
+        "root.rdm:field[]": {
+            ".@type": "Thing",
+            "value[RESEARCH_FIELD_JA]": {
+                ".@type": "PropertyValue",
+                "name": "e-Rad_field",
+                "value": "{% if grdm_file_data_research_field_value != \"project\" %}{{grdm_file_data_research_field_tooltip_0}}{% else %}{{project_research_field_tooltip_0}}{% endif %}",
+                "language": "ja"
+            },
+            "value[RESEARCH_FIELD_EN]": {
+                ".@type": "PropertyValue",
+                "name": "e-Rad_field",
+                "value": "{% if grdm_file_data_research_field_value != \"project\" %}{{grdm_file_data_research_field_tooltip_1}}{% else %}{{project_research_field_tooltip_1}}{% endif %}",
+                "language": "en"
+            }
+        }
+    },
+    "grdm-file:data-type": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root": {
+            "dc:type": "{{value}}"
+        }
+    },
+    "grdm-file:file-size": {
+        "@type": "string",
+        "@createIf": "{{value}}"
+    },
+    "grdm-file:data-policy-free": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:licenseInformation[]": [
+            {
+                ".@type": "rdm:License",
+                "ams:dataPolicyFree": "{{tooltip_1}}"
+            }
+        ]
+    },
+    "grdm-file:data-policy-license": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.license": [
+            {
+                "@createIf": "{% if (value | has_license_def_for_jpcoar2) %}yes{% endif %}",
+                ".@type[]": ["rdm:License", "CreativeWork"],
+                "name": "{% if (value | to_normalized_en_license_name_for_jpcoar2) %}{{ value | to_normalized_en_license_name_for_jpcoar2 }}{% else %}{{ value | to_normalized_ja_license_name_for_jpcoar2 }}{% endif %}",
+                "rdm:name[]": [
+                    {
+                        "@createIf": "{{ value | to_normalized_ja_license_name_for_jpcoar2 }}",
+                        ".@type": "PropertyValue",
+                        "value": "{{ value | to_normalized_ja_license_name_for_jpcoar2 }}",
+                        "language": "ja"
+                    },
+                    {
+                        "@createIf": "{{ value | to_normalized_en_license_name_for_jpcoar2 }}",
+                        ".@type": "PropertyValue",
+                        "value": "{{ value | to_normalized_en_license_name_for_jpcoar2 }}",
+                        "language": "en"
+                    }
+                ],
+                "rdm:url": "{{ value | to_license_url_for_jpcoar2 }}"
+            },
+            {
+                "@createIf": "{% if not (value | has_license_def_for_jpcoar2) %}yes{% endif %}",
+                ".@type[]": ["rdm:License", "CreativeWork"],
+                "name": "{{tooltip_1}}",
+                "rdm:name[]": [
+                    {
+                        ".@type": "PropertyValue",
+                        "value": "{{tooltip_0}}",
+                        "language": "ja"
+                    },
+                    {
+                        ".@type": "PropertyValue",
+                        "value": "{{tooltip_1}}",
+                        "language": "en"
+                    }
+                ]
+            }
+        ]
+    },
+    "grdm-file:data-policy-cite-ja": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:licenseInformation[]": [
+            {
+                ".@type": "rdm:License",
+                "memo": "TODO",
+                "subitem_rights": "{{value}}",
+                "subitem_rights_language": "ja"
+            }
+        ]
+    },
+    "grdm-file:data-policy-cite-en": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:licenseInformation[]": [
+            {
+                ".@type": "rdm:License",
+                "memo": "TODO",
+                "subitem_rights": "{{value}}",
+                "subitem_rights_language": "en"
+            }
+        ]
+    },
+    "grdm-file:access-rights": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:accessRightsInformation[0]": {
+            ".@type": "rdm:AccessRights",
+            "rdm:conditionOfAccess": {
+                ".@id": "{% if value == \"embargoed\" %}https://purl.org/rdm/ontology/EmbargoedAccess{% else %}TODO{% endif %}"
+            }
+        }
+    },
+    "grdm-file:available-date": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.rdm:accessRightsInformation[0]": {
+            "rdm:dateAvailable": "{{value}}"
+        }
+    },
+    "grdm-file:repo-information-ja": null,
+    "grdm-file:repo-information-en": null,
+    "grdm-file:repo-url-doi-link": null,
+    "grdm-file:creators": {
+        "@type": "array",
+        "root.creator[]": {
+            ".@type": "Person",
+            "identifier[]": {
+                "@createIf": "{{object_number}}",
+                ".@type": "jpcoar:nameIdentifierType",
+                "value": "{{object_number}}",
+                "jpcoar:nameIdentifierScheme": "e-Rad_Researcher"
+            },
+            "name": "{% if object_name_en %}{{object_name_en}}{% elif object_name_ja %}{{object_name_ja}}{% endif %}",
+            "rdm:name[]": [
+                {
+                    "@createIf": "{{object_name_ja}}",
+                    ".@type": "PropertyValue",
+                    "value": "{{object_name_ja}}",
+                    "language": "ja"
+                },
+                {
+                    "@createIf": "{{object_name_en}}",
+                    ".@type": "PropertyValue",
+                    "value": "{{object_name_en}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:hosting-inst-ja": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.contributor[HOSTING_INSTITUTION]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
+            },
+            "name": "{% if grdm_file_hosting_inst_en_value %}{{grdm_file_hosting_inst_en_value}}{% else %}{{value}}{% endif %}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "ja"
+                }
+            ]
+        }
+    },
+    "grdm-file:hosting-inst-en": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.contributor[HOSTING_INSTITUTION]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
+            },
+            "name": "{{value}}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:hosting-inst-id": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.contributor[HOSTING_INSTITUTION]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#HostingInstitution"
+            },
+            "identifier": {
+                ".@type": "jpcoar:nameIdentifierType",
+                "jpcoar:nameIdentifierScheme": "ROR",
+                "value": "{{value}}"
+            }
+        }
+    },
+    "grdm-file:data-man-type": null,
+    "grdm-file:data-man-number": {
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{value}}{% endif %}",
+        "root.contributor[DATA_MANAGER]": {
+            ".@type": "Person",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            "identifier[]": {
+                "@createIf": "{{object_number}}",
+                ".@type": "jpcoar:nameIdentifierType",
+                "value": "{{object_number}}",
+                "jpcoar:nameIdentifierScheme": "e-Rad_Researcher"
+            }
+        }
+    },
+    "grdm-file:data-man-name-ja": {
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{value}}{% endif %}",
+        "root.contributor[DATA_MANAGER]": {
+            ".@type": "Person",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            "name": "{% if grdm_file_data_man_name_en_value %}{{grdm_file_data_man_name_en_value}}{% else %}{{value}}{% endif %}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "ja"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-man-name-en": {
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"individual\" %}{{value}}{% endif %}",
+        "root.contributor[DATA_MANAGER]": {
+            ".@type": "Person",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            "name": "{{value}}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-man-org-ja": {
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"organization\" %}{{value}}{% endif %}",
+        "root.contributor[DATA_MANAGER]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            "name": "{% if grdm_file_data_man_org_en_value %}{{grdm_file_data_man_org_en_value}}{% else %}{{value}}{% endif %}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "ja"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-man-org-en": {
+        "@type": "string",
+        "@createIf": "{% if grdm_file_data_man_type_value == \"organization\" %}{{value}}{% endif %}",
+        "root.contributor[DATA_MANAGER]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#DataManager"
+            },
+            "name": "{{value}}",
+            "rdm:name[]": [
+                {
+                    ".@type": "PropertyValue",
+                    "value": "{{value}}",
+                    "language": "en"
+                }
+            ]
+        }
+    },
+    "grdm-file:data-man-address-ja grdm-file:data-man-tel grdm-file:data-man-email": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.contributor[CONTACT_PERSON]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
+            },
+            "name": "{% if grdm_file_data_man_org_en_value %}{{grdm_file_data_man_org_en_value}}{% else %}{{grdm_file_data_man_org_ja_value}}{% endif %} {% if grdm_file_man_address_en_value %}{{grdm_file_man_address_en_value}}{% else %}{{grdm_file_man_address_ja_value}}{% endif %}{% if grdm_file_data_man_tel_value %}TEL: {{grdm_file_data_man_tel_value}} {% endif %}{% if grdm_file_data_man_email_value %}E-Mail: {{grdm_file_data_man_email_value}}{% endif %}",
+            "rdm:name[CONTACT_PERSON_JA]": {
+                ".@type": "PropertyValue",
+                "value": "{{grdm_file_data_man_org_ja_value}} {{grdm_file_data_man_address_ja_value}} {% if grdm_file_data_man_tel_value %}TEL: {{grdm_file_data_man_tel_value}} {% endif %}{% if grdm_file_data_man_email_value %}E-Mail: {{grdm_file_data_man_email_value}}{% endif %}",
+                "language": "ja"
+            }
+        }
+    },
+    "grdm-file:data-man-address-en grdm-file:data-man-tel grdm-file:data-man-email": {
+        "@type": "string",
+        "@createIf": "{{value}}",
+        "root.contributor[CONTACT_PERSON]": {
+            ".@type": "Organization",
+            "additionalType": {
+                ".@id": "https://github.com/JPCOAR/schema/blob/master/2.0/#ContactPerson"
+            },
+            "name": "{% if grdm_file_data_man_org_en_value %}{{grdm_file_data_man_org_en_value}}{% else %}{{grdm_file_data_man_org_ja_value}}{% endif %} {% if grdm_file_man_address_en_value %}{{grdm_file_man_address_en_value}}{% else %}{{grdm_file_man_address_ja_value}}{% endif %}{% if grdm_file_data_man_tel_value %}TEL: {{grdm_file_data_man_tel_value}} {% endif %}{% if grdm_file_data_man_email_value %}E-Mail: {{grdm_file_data_man_email_value}}{% endif %}",
+            "rdm:name[CONTACT_PERSON_EN]": {
+                ".@type": "PropertyValue",
+                "value": "{{grdm_file_data_man_org_en_value}} {{grdm_file_data_man_address_en_value}} {% if grdm_file_data_man_tel_value %}TEL: {{grdm_file_data_man_tel_value}} {% endif %}{% if grdm_file_data_man_email_value %}E-Mail: {{grdm_file_data_man_email_value}}{% endif %}",
+                "language": "en"
+            }
+        }
+    },
+    "grdm-file:remarks-ja": null,
+    "grdm-file:remarks-en": null,
+    "grdm-file:metadata-access-rights": null,
+    "@agent": {
+        "@type": "object",
+        "root.wk:feedbackMail[]": "{{ object_username }}"
+    },
+    "_": {
+        "root": {
+            ".@id": "./",
+            ".@type[]": ["Dataset", "rdm:Dataset"],
+            "name": "{% if grdm_file_title_en_value %}{{ grdm_file_title_en_value }}{% elif grdm_file_title_ja_value %}{{ grdm_file_title_ja_value }}{% endif %}",
+            "description": "{% if grdm_file_data_description_en_value %}{{ grdm_file_data_description_en_value }}{% elif grdm_file_data_description_ja_value %}{{ grdm_file_data_description_ja_value }}{% endif %}",
+            "conformsTo": {
+                ".@id": "https://w3id.org/ro/crate/1.1"
+            },
+            "wk:publishStatus": "private",
+            "wk:index": "{{ index_id }}",
+            "datePublished": "{{ nowdate }}"
+        },
+        "ro_crate_metadata": {
+            ".@id": "ro-crate-metadata.json",
+            ".@type": "CreativeWork",
+            "about": {
+              ".@id": "./"
+            },
+            "conformsTo": {
+              ".@id": "https://w3id.org/ro/crate/1.1"
+            }
+        }
+    }
+}

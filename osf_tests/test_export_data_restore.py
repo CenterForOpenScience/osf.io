@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 
+import mock
 import pytest
 import requests
 from addons.osfstorage.tests.factories import FileVersionFactory
@@ -19,9 +20,11 @@ from osf_tests.factories import (
     AuthUserFactory,
     InstitutionFactory,
     OsfStorageFileFactory,
-    ExportDataRestoreFactory,
+    ExportDataRestoreBulkMountFactory,
+    ExportDataRestoreAddonFactory,
     BaseFileVersionsThroughFactory,
     RdmFileTimestamptokenVerifyResultFactory,
+    BaseFileNodeFactory
 )
 
 
@@ -38,14 +41,13 @@ class TestExportDataRestore(TestCase):
             waterbutler_settings=default_region.waterbutler_settings
         )
         cls.institution = InstitutionFactory.create(_id=inst_region.guid)
-        cls.data_restore = ExportDataRestoreFactory(destination=inst_region)
+        cls.data_restore = ExportDataRestoreBulkMountFactory(destination=inst_region)
         project = ProjectFactory()
         target = AbstractNode(id=project.id)
         cls.institution.nodes.set([project])
         cls.file1 = file1 = OsfStorageFileFactory.create(
             name='file1.txt',
             created=datetime.now(),
-            target_object_id=project.id,
             target=target
         )
         file_version = FileVersionFactory(region=inst_region, size=3,)
@@ -54,6 +56,7 @@ class TestExportDataRestore(TestCase):
             basefilenode=file1,
             fileversion=file_version
         )
+        file_version.creator.affiliated_institutions.set([cls.institution])
         file_versions = [file_version]
         total_size = sum([f.size for f in file_versions])
         files_numb = len(file_versions)
@@ -85,8 +88,8 @@ class TestExportDataRestore(TestCase):
                 'materialized_path': file1.materialized_path,
                 'name': file1.name,
                 'provider': file1.provider,
-                'created_at': file1.created.strftime('%Y-%m-%d %H:%M:%S'),
-                'modified_at': file1.modified.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': str(file1.created),
+                'modified_at': str(file1.modified),
                 'project': {
                     'id': file1.target._id,
                     'name': file1.target.title,
@@ -95,7 +98,7 @@ class TestExportDataRestore(TestCase):
                 'version': [{
                     'identifier': file_version.identifier,
                     'created_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
-                    'modified_at': file_version.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    'modified_at': file_version.modified.strftime('%Y-%m-%d %H:%M:%S'),
                     'size': file_version.size,
                     'version_name': file_versions_through.version_name if file_versions_through else file1.name,
                     'contributor': file_version.creator.username,
@@ -105,6 +108,7 @@ class TestExportDataRestore(TestCase):
                 'size': 0,
                 'location': file_version.location,
                 'timestamp': {},
+                'checkout_id': None,
             }]
         }
 
@@ -121,7 +125,7 @@ class TestExportDataRestore(TestCase):
         nt.assert_equal(str(self.data_restore), test_str)
 
     def test_extract_file_information_json_from_destination_storage__00_not_institution(self):
-        export_data_restore = ExportDataRestoreFactory.build()
+        export_data_restore = ExportDataRestoreBulkMountFactory.build()
         result = export_data_restore.extract_file_information_json_from_destination_storage()
         nt.assert_is_none(result)
 
@@ -202,7 +206,6 @@ class TestExportDataRestore(TestCase):
     def test_extract_file_information_json_from_sourFce_storage__04_abnormal_file_data(self):
         test_file_info_json = copy.deepcopy(self.file_info_json)
         test_export_data_json = copy.deepcopy(self.export_data_json)
-        test_export_data_json['projects_numb'] -= 1
         test_export_data_json['files_numb'] -= 1
         test_export_data_json['size'] -= self.file1.versions.first().size
         self.file1.deleted = datetime.now()
@@ -278,3 +281,75 @@ class TestExportDataRestore(TestCase):
         current_datetime = datetime.now()
         self.data_restore.update(process_end=current_datetime)
         nt.assert_equal(self.data_restore.process_end, current_datetime)
+
+
+@pytest.mark.django_db
+class TestExportDataRestoreInstitutionAddon(TestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.data_restore = ExportDataRestoreAddonFactory()
+        project = ProjectFactory()
+        cls.institution = InstitutionFactory.create(_id=cls.data_restore.destination.guid)
+        cls.institution.nodes.set([project])
+        cls.institution_json = {
+            'id': cls.institution.id,
+            'guid': cls.institution.guid,
+            'name': cls.institution.name
+        }
+        cls.export_data_json = {
+            'institution': cls.institution_json,
+            'process_start': cls.data_restore.process_start.strftime('%Y-%m-%d %H:%M:%S'),
+            'process_end': cls.data_restore.process_end.strftime(
+                '%Y-%m-%d %H:%M:%S') if cls.data_restore.process_end else None,
+            'storage': {
+                'name': cls.data_restore.destination.name,
+                'type': cls.data_restore.destination.provider_full_name
+            },
+            'projects_numb': 1,
+            'files_numb': 1,
+            'size': -1,
+            'file_path': None
+        }
+
+        projects = cls.institution.nodes.filter(type='osf.node')
+        projects__ids = projects.values_list('id', flat=True)
+        object_id = projects__ids[0]
+        target = AbstractNode(id=object_id)
+        node = BaseFileNodeFactory.create(provider=cls.data_restore.destination.provider_name, target_object_id=object_id, target=target)
+        cls.file = node
+
+    def test_extract_file_information_json_from_destination_institutional_addon_storage(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}, {'attributes': {'version': 2}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'extra': {'hashes': {'md5': 'test'}}}}},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}}]
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_destination_institutional_onedrivebusiness(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 200
+        mock_request_json.json.side_effect = [{'data': [{'attributes': {'version': 1}}]},
+                                              {'data': {'attributes': {'sizeInt': 1, 'name': 'test', 'etag': 'test', 'extra': {'hashes': {}}}}},
+                                              {'content': 'test'}]
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)
+
+    def test_extract_file_information_json_from_destination_institutional_addon_storage_get_file_version_error(self):
+        mock_request = mock.MagicMock()
+        mock_request_json = mock.MagicMock()
+        mock_request_json.status_code = 404
+        mock_request.get.return_value = mock_request_json
+
+        with mock.patch('osf.models.export_data_restore.requests', mock_request):
+            result = self.data_restore.extract_file_information_json_from_destination_storage()
+            nt.assert_is_not_none(result)

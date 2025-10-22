@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import os
 from future.moves.urllib.parse import urljoin
 
@@ -212,6 +213,46 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             'repo': self.repo,
             'repo_id': self.repo_id
         }
+
+    # GRDM-36019 Package Export/Import
+    def set_folder_by_id(self, folder_id, auth):
+        """Configure this addon to point to a Google Drive folder by its ID
+
+        :param str folder_id:
+        :param User auth:
+        """
+        self.delete_hook(save=False)
+        folder = json.loads(folder_id)
+        self.user = folder['user']
+        self.repo = folder['repo']
+        self.repo_id = folder['repo_id']
+        self.hook_id = None
+        self.save()
+        # Log repo select
+        node = self.owner
+        node.add_log(
+            action='gitlab_repo_linked',
+            params={
+                'project': node.parent_id,
+                'node': node._id,
+                'gitlab': {
+                    'user': self.user,
+                    'repo': self.repo,
+                    'repo_id': self.repo_id,
+                }
+            },
+            auth=auth,
+        )
+
+    # GRDM-36019 Package Export/Import
+    @property
+    def folder_id_for_export(self):
+        """Get the folder ID includes in the addon settings for use in an export"""
+        return json.dumps({
+            'repo_id': self.repo_id,
+            'user': self.user,
+            'repo': self.repo,
+        })
 
     def create_waterbutler_log(self, auth, action, metadata):
         path = metadata['path']

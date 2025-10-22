@@ -11,3 +11,6 @@ class UserQuota(StorageType):
         default=StorageType.NII_STORAGE)
     max_quota = models.IntegerField(default=100)
     used = models.BigIntegerField(default=0)
+
+    class Meta:
+        unique_together = ['user', 'storage_type']

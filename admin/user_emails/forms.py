@@ -7,9 +7,15 @@ guid_validator = RegexValidator('^([0-9a-z])+$',  # refer to osf.models.base.ALP
 
 
 class UserEmailsSearchForm(forms.Form):
+    def wrap_validate_email(email):
+        if email.startswith('tmp_eppn_'):
+            return True
+        validate_email(email)
+        return True
+
     guid = forms.CharField(label='guid',
                            min_length=5, max_length=5,  # TODO: Move max to 6 when needed
                            validators=[guid_validator],
                            required=False)
     name = forms.CharField(label=_('name'), max_length=255, required=False)
-    email = forms.EmailField(label=_('email'), min_length=6, max_length=255, required=False, validators=[validate_email])
+    email = forms.EmailField(label=_('email'), min_length=6, max_length=255, required=False, validators=[wrap_validate_email])

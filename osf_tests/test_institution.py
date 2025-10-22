@@ -1,6 +1,7 @@
 from nose import tools as nt
 from past.builtins import basestring
-from osf.models import Institution
+from addons.osfstorage.models import Region
+from osf.models import Institution, UserQuota
 from tests.base import AdminTestCase
 from .factories import (
     InstitutionFactory,
@@ -223,3 +224,26 @@ class TestInstitution(AdminTestCase):
         source = RegionFactory(_id=institution.guid)
         res = institution.is_allowed_institutional_storage_id(source.id)
         nt.assert_true(res)
+
+    def test_get_user_quota_type_for_nii_storage__nii_default_storage(self):
+        institution = InstitutionFactory()
+        user_quota_type = institution.get_user_quota_type_for_nii_storage()
+        nt.assert_equal(user_quota_type, UserQuota.NII_STORAGE)
+
+    def test_get_user_quota_type_for_nii_storage__nii_custom_storage(self):
+        institution = InstitutionFactory()
+        region = RegionFactory(_id=institution._id)
+        region.waterbutler_settings['storage']['type'] = Region.NII_STORAGE
+        region.save()
+
+        user_quota_type = institution.get_user_quota_type_for_nii_storage()
+        nt.assert_equal(user_quota_type, UserQuota.CUSTOM_STORAGE)
+
+    def test_get_user_quota_type_for_nii_storage__not_using_nii_storage(self):
+        institution = InstitutionFactory()
+        region = RegionFactory(_id=institution._id)
+        region.waterbutler_settings['storage']['type'] = Region.INSTITUTIONS
+        region.save()
+
+        user_quota_type = institution.get_user_quota_type_for_nii_storage()
+        nt.assert_is_none(user_quota_type)

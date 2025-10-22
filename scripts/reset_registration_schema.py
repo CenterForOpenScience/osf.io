@@ -40,7 +40,8 @@ if __name__ == '__main__':
             schema.id,
             'page-heading',
             display_text=strip_html(page.get('title', '')),
-            help_text=strip_html(page.get('description', ''))
+            help_text=strip_html(page.get('description', '')),
+            concealment_page_navigator=strip_html(page.get('concealment_page_navigator', False))
         )
         for question in page['questions']:
             create_schema_blocks_for_question(apps, schema, question)

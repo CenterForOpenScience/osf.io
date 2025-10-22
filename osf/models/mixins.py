@@ -765,14 +765,6 @@ class NodeLinkMixin(models.Model):
         if forked is None:
             raise ValueError('Could not fork node')
 
-        relation = NodeRelation.objects.get(
-            parent=self,
-            child=node,
-            is_node_link=True
-        )
-        relation.child = forked
-        relation.save()
-
         if hasattr(self, 'add_log'):
             # Add log
             self.add_log(

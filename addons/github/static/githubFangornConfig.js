@@ -9,6 +9,7 @@ var URI = require('URIjs');
 var Fangorn = require('js/fangorn').Fangorn;
 var waterbutler = require('js/waterbutler');
 var $osf = require('js/osfHelpers');
+var gettext = require('js/rdmGettext')._;
 
 // Cross browser key codes for the Command key
 var commandKeys = [224, 17, 91, 93];
@@ -205,6 +206,13 @@ var _githubItemButtons = {
                 // If File and FileRead are not defined dropzone is not supported and neither is uploads
                 if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit) {
                     buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._uploadFolderEvent.call(tb, event, item);
+                            },
+                            icon: 'fa fa-plus',
+                            className: 'text-success'
+                        }, gettext('Upload Folder')),
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
                                 Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);

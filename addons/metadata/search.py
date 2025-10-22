@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 
@@ -20,6 +21,11 @@ def _extract_metadata_text(file_metadata):
             continue
         for value in item['data'].values():
             if 'value' not in value:
+                continue
+            if value['value'] is None:
+                continue
+            if isinstance(value['value'], list) or isinstance(value['value'], dict):
+                text.append(json.dumps(value['value']))
                 continue
             text.append(value['value'])
     return ' '.join(text)

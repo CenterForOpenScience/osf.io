@@ -3,18 +3,23 @@ import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 import pytest
 import unittest
+from django.db import IntegrityError
 
+from addons.onedrive.models import OneDriveFile
+from addons.osfstorage.models import OsfStorageFile
 from framework.auth import Auth
 from addons.base.tests.models import (OAuthAddonNodeSettingsTestSuiteMixin,
                                       OAuthAddonUserSettingTestSuiteMixin)
 
-from addons.googledrive.models import NodeSettings, GoogleDriveProvider
+from addons.googledrive.models import NodeSettings, GoogleDriveProvider, GoogleDriveFile, GoogleDriveFolder
 from addons.googledrive.client import GoogleAuthClient
 from addons.googledrive.tests.factories import (
     GoogleDriveAccountFactory,
     GoogleDriveNodeSettingsFactory,
     GoogleDriveUserSettingsFactory
 )
+from osf.models import BaseFileNode
+from osf_tests.factories import ProjectFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -121,3 +126,132 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
             }
         }
         assert_equal(settings, expected)
+
+
+class TestGoogleDriveFile(unittest.TestCase):
+    def setUp(self):
+        self.node = ProjectFactory()
+        self.node2 = ProjectFactory()
+
+    def test_can_create_different_path_files(self):
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test2.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        assert_equal(
+            GoogleDriveFile.objects.filter(target_object_id=self.node.id).count(),
+            2,
+        )
+
+    def test_cannot_create_same_path_files(self):
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider
+        )
+        with assert_raises(IntegrityError):
+            GoogleDriveFile.objects.create(
+                target=self.node,
+                _path='/test1.txt',
+                provider=GoogleDriveFile._provider
+            )
+
+    def test_can_create_different_path_folders(self):
+        GoogleDriveFolder.objects.create(
+            target=self.node,
+            _path='/test1',
+            provider=GoogleDriveFolder._provider,
+        )
+        GoogleDriveFolder.objects.create(
+            target=self.node,
+            _path='/test2',
+            provider=GoogleDriveFolder._provider,
+        )
+        assert_equal(
+            GoogleDriveFolder.objects.filter(target_object_id=self.node.id).count(),
+            2,
+        )
+
+    def test_cannot_create_same_path_folders(self):
+        GoogleDriveFolder.objects.create(
+            target=self.node,
+            _path='/test1',
+            provider=GoogleDriveFolder._provider
+        )
+        with assert_raises(IntegrityError):
+            GoogleDriveFolder.objects.create(
+                target=self.node,
+                _path='/test1',
+                provider=GoogleDriveFolder._provider
+            )
+
+    def test_can_create_same_path_and_different_type(self):
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1',
+            provider=GoogleDriveFile._provider,
+        )
+        GoogleDriveFolder.objects.create(
+            target=self.node,
+            _path='/test1',
+            provider=GoogleDriveFolder._provider,
+        )
+        assert_equal(
+            BaseFileNode.objects.filter(target_object_id=self.node.id, _path='/test1').count(),
+            2,
+        )
+
+    def test_can_create_same_path_and_different_node(self):
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        GoogleDriveFile.objects.create(
+            target=self.node2,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        assert_equal(
+            GoogleDriveFile.objects.filter(_path='/test1.txt').count(),
+            2,
+        )
+
+    def test_can_create_file_same_as_trashed_file(self):
+        file1 = GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        file1.delete()
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        assert_equal(
+            GoogleDriveFile.objects.filter(target_object_id=self.node.id, _path='/test1.txt').count(),
+            1,
+        )
+
+    def test_can_create_same_path_and_different_provider(self):
+        OneDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=OneDriveFile._provider,
+        )
+        GoogleDriveFile.objects.create(
+            target=self.node,
+            _path='/test1.txt',
+            provider=GoogleDriveFile._provider,
+        )
+        assert_equal(
+            BaseFileNode.objects.filter(target_object_id=self.node.id, _path='/test1.txt').count(),
+            2,
+        )

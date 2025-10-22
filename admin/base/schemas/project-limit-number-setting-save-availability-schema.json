@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "properties": {
+    "institution_id": {
+      "type": "integer"
+    },
+    "setting_list": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "priority": {
+            "type": "integer"
+          },
+          "is_availability": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "priority",
+          "is_availability"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "institution_id",
+    "setting_list"
+  ],
+  "additionalProperties": false
+}

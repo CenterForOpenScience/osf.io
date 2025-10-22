@@ -14,6 +14,8 @@ import os
 import owncloud
 from django.core.exceptions import ValidationError
 
+from addons.dropboxbusiness.models import node_post_save as dropboxbusiness_post_save
+from addons.onedrivebusiness.models import node_post_save as onedrivebusiness_post_save
 from admin.rdm_addons.utils import get_rdm_addon_option
 from addons.googledrive.client import GoogleDriveClient
 from addons.osfstorage.models import Region
@@ -37,14 +39,19 @@ from addons.onedrivebusiness.client import OneDriveBusinessClient
 from addons.base.institutions_utils import (KEYNAME_BASE_FOLDER,
                                             KEYNAME_USERMAP,
                                             KEYNAME_USERMAP_TMP,
-                                            sync_all)
+                                            sync_all,
+                                            node_post_save)
 from framework.exceptions import HTTPError
+from osf.models import AbstractNode
 from website import settings as osf_settings
+from osf.models import Node, OSFUser, ProjectStorageType, UserQuota
 from osf.models.external import ExternalAccountTemporary, ExternalAccount
 from osf.utils import external_util
 import datetime
 
+from website.settings import INSTITUTIONAL_STORAGE_ADD_ON_METHOD
 from website.util import inspect_info  # noqa
+from website.util.quota import update_node_storage, update_user_used_quota
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +66,8 @@ enabled_providers_forinstitutions_list = [
 ]
 
 enabled_providers_list = [
-    's3', 'box', 'googledrive', 'osfstorage',
-    'nextcloud', 'swift', 'owncloud', 's3compat',
+    's3', 'osfstorage',
+    'swift', 's3compat',
 ]
 enabled_providers_list.extend(enabled_providers_forinstitutions_list)
 
@@ -169,6 +176,14 @@ def update_storage(institution_id, storage_name, wb_credentials, wb_settings):
         region.waterbutler_settings = wb_settings
         region.save()
     return region
+
+def update_nodes_storage(institution):
+    for node in Node.objects.filter(affiliated_institutions=institution.id):
+        update_node_storage(node)
+        storage_type = ProjectStorageType.objects.filter(node=node)
+        storage_type.update(storage_type=ProjectStorageType.CUSTOM_STORAGE)
+    for user in OSFUser.objects.filter(affiliated_institutions=institution.id):
+        update_user_used_quota(user, storage_type=UserQuota.CUSTOM_STORAGE, is_recalculating_quota=True)
 
 def transfer_to_external_account(user, institution_id, provider_short_name):
     temp_external_account = ExternalAccountTemporary.objects.filter(_id=institution_id, provider=provider_short_name).first()
@@ -608,6 +623,7 @@ def save_s3_credentials(institution_id, storage_name, access_key, secret_key, bu
             'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3',
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -640,6 +656,7 @@ def save_s3compat_credentials(institution_id, storage_name, host_url, access_key
             'encrypt_uploads': server_side_encryption,
             'bucket': bucket,
             'provider': 's3compat',
+            'type': Region.INSTITUTIONS,
         }
     }
 
@@ -673,6 +690,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
             },
             'bucket': bucket,
             'provider': 's3compatb3',
+            'type': Region.INSTITUTIONS,
         }
     }
 
@@ -683,9 +701,7 @@ def save_s3compatb3_credentials(institution_id, storage_name, host_url, access_k
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_box_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_box_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_box_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -701,6 +717,7 @@ def save_box_credentials(user, storage_name, folder_id):
             'bucket': '',
             'folder': folder_id,
             'provider': 'box',
+            'type': Region.INSTITUTIONS,
         }
     }
     region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
@@ -710,9 +727,7 @@ def save_box_credentials(user, storage_name, folder_id):
         'message': 'OAuth was set successfully'
     }, http_status.HTTP_200_OK)
 
-def save_googledrive_credentials(user, storage_name, folder_id):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_googledrive_credentials(institution_id, user, storage_name, folder_id):
     test_connection_result = test_googledrive_connection(institution_id, folder_id)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -730,6 +745,7 @@ def save_googledrive_credentials(user, storage_name, folder_id):
                 'id': folder_id
             },
             'provider': 'googledrive',
+            'type': Region.INSTITUTIONS,
         }
     }
     region = update_storage(institution_id, storage_name, wb_credentials, wb_settings)
@@ -763,7 +779,8 @@ def save_nextcloud_credentials(institution_id, storage_name, host_url, username,
             'bucket': '',
             'folder': '/{}/'.format(folder.strip('/')),
             'verify_ssl': False,
-            'provider': provider
+            'provider': provider,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -807,6 +824,7 @@ def save_swift_credentials(institution_id, storage_name, auth_version, access_ke
             'folder': '',
             'container': container,
             'provider': 'swift',
+            'type': Region.INSTITUTIONS,
         }
 
     }
@@ -842,7 +860,8 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
             'bucket': '',
             'folder': '/{}/'.format(folder.strip('/')),
             'verify_ssl': True,
-            'provider': provider
+            'provider': provider,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -853,9 +872,7 @@ def save_owncloud_credentials(institution_id, storage_name, host_url, username, 
         'message': 'Saved credentials successfully!!'
     }, http_status.HTTP_200_OK)
 
-def save_onedrivebusiness_credentials(user, storage_name, provider_name, folder_id_or_path):
-    institution_id = user.affiliated_institutions.first()._id
-
+def save_onedrivebusiness_credentials(institution_id, user, storage_name, provider_name, folder_id_or_path):
     test_connection_result, folder_id = validate_onedrivebusiness_connection(institution_id, folder_id_or_path)
     if test_connection_result[1] != http_status.HTTP_200_OK:
         return test_connection_result
@@ -878,7 +895,8 @@ def wd_info_for_institutions(provider_name, server_side_encryption=False):
     wb_settings = {
         'disabled': True,  # used in rubeus.py
         'storage': {
-            'provider': provider_name
+            'provider': provider_name,
+            'type': Region.INSTITUTIONS,
         },
     }
 
@@ -981,7 +999,7 @@ def save_s3compatinstitutions_credentials(institution, storage_name, host_url, a
         username=access_key, password=secret_key, separator=separator)
 
     return save_basic_storage_institutions_credentials_common(
-        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption)
+        institution, storage_name, bucket, provider_name, provider, separator, server_side_encryption=server_side_encryption)
 
 def save_ociinstitutions_credentials(institution, storage_name, host_url, access_key, secret_key, bucket, provider_name):
     host = host_url.rstrip('/').replace('https://', '').replace('http://', '')
@@ -1134,3 +1152,29 @@ def save_usermap_from_tmp(provider_name, institution):
         rdm_addon_option.extended[KEYNAME_USERMAP] = new_usermap
         del rdm_addon_option.extended[KEYNAME_USERMAP_TMP]
         rdm_addon_option.save()
+
+
+def add_node_settings_to_projects(institution, provider_name):
+    if provider_name not in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
+        # If storage is bulk-mount then do nothing
+        return
+
+    # Get projects created by institution users
+    institution_users = institution.osfuser_set.all()
+    projects = AbstractNode.objects.filter(type='osf.node', is_deleted=False, creator__in=institution_users)
+
+    # Add or update node settings to projects
+    for project in projects:
+        node_settings = getattr(project, f'addons_{provider_name}_node_settings', None)
+        project_has_no_node_settings = node_settings is None
+
+        if provider_name == 'dropboxbusiness':
+            dropboxbusiness_post_save(None, project, created=project_has_no_node_settings)
+        elif provider_name == 'onedrivebusiness':
+            if not project_has_no_node_settings:
+                # Reset OneDrive Business folder id before update node settings
+                node_settings.folder_id = None
+                node_settings.save()
+            onedrivebusiness_post_save(None, project, created=project_has_no_node_settings)
+        else:
+            node_post_save(None, project, created=project_has_no_node_settings)

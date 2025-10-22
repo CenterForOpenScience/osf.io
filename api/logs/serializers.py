@@ -215,7 +215,8 @@ class NodeLogParamsSerializer(RestrictedDictSerializer):
 
             try:
                 institution = node.creator.affiliated_institutions.get()
-                return Region.objects.get(_id=institution._id).name
+                storage_name = Region.objects.get(_id=institution._id).name
+                return 'NII Storage' if storage_name == 'United States' else storage_name
             except Institution.DoesNotExist:
                 logging.warning('Unable to retrieve storage name: Institution not found')
                 return 'Institutional Storage'
@@ -289,3 +290,135 @@ class NodeLogSerializer(JSONAPISerializer):
         if obj.action == 'osf_storage_folder_created' and obj.params.get('urls'):
             obj.params.pop('urls')
         return NodeLogParamsSerializer(obj.params, context=self.context, read_only=True).data
+
+
+class NodeLogDownloadSerializer(JSONAPISerializer):
+    """ Serializer for node logs that are specialized for download node logs function """
+    filterable_fields = frozenset(['date', 'user'])
+
+    date = VersionedDateTimeField(read_only=True)
+
+    class Meta:
+        type_ = 'logs'
+
+    user = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': '<user._id>'},
+    )
+
+    def get_absolute_url(self, obj):
+        return obj.absolute_url
+
+    def to_representation(self, obj, envelope='data'):
+        """ Overriding to_representation to return different representation for download node logs function. """
+        # Get params and embed's user based on JSONAPISerializer's to_representation
+        params = NodeLogDownloadParamsSerializer(obj.params, context=self.context, read_only=True).data
+        embeds = self.context.get('embed', {})
+        embed_user = {}
+        if embeds and 'user' in embeds:
+            embed_user = embeds.get('user')(obj)
+        params_node = params.get('params_node', {})
+        rep = {
+            'date': obj.date,
+            'user': embed_user.get('data', {}).get('attributes', {}).get('full_name'),
+            'project_id': params_node.get('id'),
+            'project_title': params_node.get('title'),
+            'action': obj.action,
+        }
+
+        # Optional fields that are retrieved based on front-end's download function
+        if params.get('contributors') and len(params.get('contributors')) > 0 and params.get('contributors')[0] is not None:
+            rep['targetUserFullId'] = params.get('contributors')[0].get('id')
+            rep['targetUserFullName'] = params.get('contributors')[0].get('full_name')
+        if 'checked' in obj.action:
+            rep['item'] = params.get('kind')
+            rep['path'] = params.get('path')
+        if 'osf_storage' in obj.action:
+            rep['path'] = params.get('path')
+        if 'addon' in obj.action:
+            rep['addon'] = params.get('addon')
+        if 'tag' in obj.action:
+            rep['tag'] = params.get('tag')
+        if 'wiki' in obj.action:
+            rep['version'] = params.get('version')
+            rep['page'] = params.get('page')
+
+        return rep
+
+
+class NodeLogDownloadParamsSerializer(RestrictedDictSerializer):
+    """ Serializer for node logs params that are specialized for download node logs function """
+    addon = ser.CharField(read_only=True)
+    contributors = ser.SerializerMethodField(read_only=True)
+    kind = ser.CharField(read_only=True)
+    page = ser.CharField(read_only=True)
+    params_node = ser.SerializerMethodField(read_only=True)
+    path = ser.CharField(read_only=True)
+    tag = ser.CharField(read_only=True)
+    version = ser.CharField(read_only=True)
+
+    def get_params_node(self, obj):
+        """ Serializer method for params_node field """
+        # Same as NodeLogParamsSerializer's get_params_node function
+        node_id = obj.get('node', None)
+        if node_id:
+            node = AbstractNode.objects.filter(guids___id=node_id).values('title').get()
+            return {'id': node_id, 'title': node['title']}
+        return None
+
+    def get_contributors(self, obj):
+        """ Serializer method for contibutor field """
+        # Same as NodeLogParamsSerializer's get_contributors function
+        contributor_info = []
+
+        if is_anonymized(self.context['request']):
+            return contributor_info
+
+        contributor_data = obj.get('contributors', None)
+        params_node = obj.get('node', None)
+
+        if contributor_data:
+            contributor_ids = [each for each in contributor_data if isinstance(each, str)]
+            # Very old logs may contain contributror data with dictionaries for non-registered contributors,
+            # e.g. {'nr_email': 'foo@bar.com', 'nr_name': 'Foo Bar'}
+            non_registered_contributor_data = [each for each in contributor_data if isinstance(each, dict)]
+
+            users = (
+                OSFUser.objects.filter(guids___id__in=contributor_ids)
+                .only(
+                    'fullname', 'given_name',
+                    'middle_names', 'family_name',
+                    'unclaimed_records', 'is_active',
+                )
+                .order_by('fullname')
+            )
+            for user in users:
+                unregistered_name = None
+                if user.unclaimed_records.get(params_node):
+                    unregistered_name = user.unclaimed_records[params_node].get('name', None)
+
+                contributor_info.append({
+                    'id': user._id,
+                    'full_name': user.fullname,
+                    'given_name': user.given_name,
+                    'middle_names': user.middle_names,
+                    'family_name': user.family_name,
+                    'unregistered_name': unregistered_name,
+                    'active': user.is_active,
+                })
+
+            # Add unregistered contributor data
+            for nr_contrib in non_registered_contributor_data:
+                full_name = nr_contrib.get('nr_name', '')
+                guessed_names = impute_names_model(full_name)
+                contributor_info.append({
+                    'id': None,
+                    'full_name': full_name,
+                    'unregistered_name': full_name,
+                    'given_name': guessed_names['given_name'],
+                    'middle_names': guessed_names['middle_names'],
+                    'family_name': guessed_names['family_name'],
+                    'active': False,
+                })
+
+        return contributor_info

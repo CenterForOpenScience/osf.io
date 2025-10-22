@@ -1,8 +1,9 @@
 import pytest
 import json
+import mock
 from io import StringIO
 
-import mock
+import responses
 from nose import tools as nt
 from django.test import RequestFactory
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -14,6 +15,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
     PreprintFactory,
     SubjectFactory,
+    ProviderAssetFileFactory
 )
 from osf.models import PreprintProvider, NodeLicense
 from admin_tests.utilities import setup_form_view, setup_user_view
@@ -50,29 +52,35 @@ class TestShareSourcePreprintProvider(AdminTestCase):
         self.user.save()
 
         self.preprint_provider = PreprintProviderFactory()
+        asset_file = ProviderAssetFileFactory(name='square_color_no_transparent')
+        self.preprint_provider.asset_files.add(asset_file)
+        self.preprint_provider.save()
 
         self.request = RequestFactory().get('/fake_path')
         self.view = views.ShareSourcePreprintProvider()
-        self.view = setup_user_view(self.view, self.request, user=self.user)
-        self.view.kwargs = {'preprint_provider_id': self.preprint_provider.id}
+        self.view = setup_user_view(self.view, self.request, user=self.user, preprint_provider_id=self.preprint_provider.id)
 
-    @mock.patch.object(views.ShareSourcePreprintProvider, 'share_post')
-    def test_update_share_token_and_source(self, share_resp):
+    @responses.activate
+    @mock.patch('api.share.utils.settings.SHARE_ENABLED', True)
+    def test_update_share_token_and_source(self):
         token = 'tokennethbranagh'
         source_name = 'sir'
-        share_resp.return_value = {
-            'data': {
-                'attributes': {
-                    'longTitle': source_name,
+        responses.add(
+            responses.POST, 'https://share.osf.io/api/v2/sources/',
+            body=json.dumps({
+                'data': {
+                    'attributes': {
+                        'longTitle': source_name,
+                    },
                 },
-            },
-            'included': [{
-                'attributes': {
-                    'token': token,
-                },
-                'type': 'ShareUser',
-            }]
-        }
+                'included': [{
+                    'attributes': {
+                        'token': token,
+                    },
+                    'type': 'ShareUser',
+                }]
+            })
+        )
 
         self.view.get(self.request)
         self.preprint_provider.refresh_from_db()

@@ -84,6 +84,7 @@ from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from api.caching.tasks import update_storage_usage
 from api.caching import settings as cache_settings
 from api.caching.utils import storage_usage_cache
+from api.share.utils import update_share
 
 
 logger = logging.getLogger(__name__)
@@ -886,6 +887,23 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return parent.is_admin_parent(user, include_group_admin=include_group_admin)
         return False
 
+    def is_writable_parent(self, user, include_group_writable=True):
+        """
+        :param user: OSFUser to check for admin permissions
+        :param bool include_group_writable: Check if a user is an admin on the parent project via a group.
+                                    Useful for checking parent permissions for non-group actions like registrations.
+        :return: bool Does the user have admin permissions on this object or its parents?
+        """
+        if self.has_permission(user, WRITE, check_parent=False):
+            ret = True
+            if not include_group_writable and not self.is_contributor(user):
+                ret = False
+            return ret
+        parent = self.parent_node
+        if parent:
+            return parent.is_writable_parent(user, include_group_writable=include_group_writable)
+        return False
+
     def find_readable_descendants(self, auth):
         """ Returns a generator of first descendant node(s) readable by <user>
         in each descendant branch.
@@ -1065,7 +1083,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     # Override Taggable
     def on_tag_added(self, tag):
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
     def remove_tag(self, tag, auth, save=True):
         if not tag:
@@ -1088,7 +1107,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             if save:
                 self.save()
             self.update_search()
-            node_tasks.update_node_share(self)
+            if settings.SHARE_ENABLED:
+                update_share(self)
 
             return True
 
@@ -1099,7 +1119,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """
         super(AbstractNode, self).remove_tags(tags, auth, save)
         self.update_search()
-        node_tasks.update_node_share(self)
+        if settings.SHARE_ENABLED:
+            update_share(self)
 
         return True
 
@@ -1394,9 +1415,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :param parent Node: parent registration of registration to be created
         :param provider RegistrationProvider: provider to submit the registration to
         """
-        # NOTE: Admins can register child nodes even if they don't have write access to them, but not if they are group admins
-        not_contributor_or_admin_parent = not self.is_contributor(auth.user) and not self.is_admin_parent(user=auth.user, include_group_admin=False)
-        cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user)
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        not_contributor_or_admin_parent = not self.is_contributor(auth.user) and not self.is_writable_parent(user=auth.user, include_group_writable=False)
+        cannot_edit_or_admin_parent = not self.can_edit(auth=auth) and not self.is_writable_parent(user=auth.user)
         if cannot_edit_or_admin_parent or not_contributor_or_admin_parent:
             raise PermissionsError(
                 'User {} does not have permission '
@@ -1410,11 +1431,6 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         # and point them towards the registration
         if original.is_deleted:
             raise NodeStateError('Cannot register deleted node.')
-
-        if not provider:
-            # Avoid circular import
-            from osf.models.provider import RegistrationProvider
-            provider = RegistrationProvider.load('osf')
 
         registered = original.clone()
         registered.recast('osf.registration')
@@ -1552,8 +1568,9 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def require_approval(self, user, notify_initiator_on_complete=False):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
-        if not self.is_admin_contributor(user):
-            raise PermissionsError('Only admins can initiate a registration approval')
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        if not self.has_permission(user, WRITE):
+            raise PermissionsError('Only writers can initiate a registration approval')
 
         approval = self._initiate_approval(user, notify_initiator_on_complete)
 
@@ -1726,6 +1743,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         # Need to call this after save for the notifications to be created with the _primary_key
         project_signals.contributor_added.send(forked, contributor=user, auth=auth, email_template='false')
+
+        set_project_storage_type(forked)
 
         return forked
 

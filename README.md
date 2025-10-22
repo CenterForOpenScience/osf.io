@@ -1,6 +1,9 @@
 # GakuNin RDM
 
+
+
 The code for [https://rcos.nii.ac.jp](https://rcos.nii.ac.jp).
+
 
 
 - `master` Build Status: [![Build Status](https://travis-ci.org/RCOSDP/RDM-osf.io.svg?branch=nii-mergework-201802)](https://travis-ci.org/RCOSDP/RDM-osf.io)
@@ -37,3 +40,4 @@ pre-commit install --allow-missing-config
 
 The [COS Development Docs](http://cosdev.readthedocs.org/) provide detailed information about all aspects of OSF development.
 This includes style guides, process docs, troubleshooting, and more.
+

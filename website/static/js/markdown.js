@@ -50,6 +50,32 @@ var viewOnlyImage = function(md) {
     };
 };
 
+var resizeImage = function(md) {
+    var defaultRenderer = md.renderer.rules.image;
+    md.renderer.rules.image = function (tokens, idx, options, env, self) {
+        var token = tokens[idx];
+        var imageLink = token.attrs[token.attrIndex('src')][1];
+        var sizeRegex = /^(.+)\s*(?:%20|\s)=\s*(\d+|(\d+)%25)(?:x(\d+|(\d+)%25))?\s*$/;
+        var match = imageLink.match(sizeRegex);
+
+        if (match) {
+            var url = match[1];
+            var width = decodeURIComponent(match[2]);
+            var height = match[4] ? decodeURIComponent(match[4]) : '';
+
+            token.attrs[token.attrIndex('src')][1] = url;
+            if (width) {
+                token.attrs.push(['width', width]);
+            }
+            if (height) {
+                token.attrs.push(['height', height]);
+            }
+        }
+
+        return defaultRenderer(tokens, idx, options, env, self);
+    };
+};
+
 var mfrURL = window.contextVars.node.urls.mfr;
 var osfURL = window.contextVars.osfURL;
 
@@ -80,6 +106,7 @@ var markdown = new MarkdownIt('commonmark', {
     .use(require('@centerforopenscience/markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(viewOnlyImage)
+    .use(resizeImage)
     .use(require('@centerforopenscience/markdown-it-imsize'))
     .use(insDel)
     .enable('table')

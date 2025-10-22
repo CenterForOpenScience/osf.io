@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "data": {
+      "type": "array",
+      "minLength": 1,
+      "items": {
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "is_availability": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "is_availability"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "data"
+  ],
+  "additionalProperties": false
+}

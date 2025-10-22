@@ -1,5 +1,5 @@
 /**
- * Module that controls the WEKO node settings. Includes Knockout view-model
+ * Module that controls the JAIRO Cloud node settings. Includes Knockout view-model
  * for syncing data.
  */
 
@@ -10,13 +10,55 @@ var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 
 var $modal = $('#wekoInputCredentials');
-var language = require('js/osfLanguage').Addons.weko;
+
+var _ = require('js/rdmGettext')._;
+var sprintf = require('agh.sprintf').sprintf;
+
+
+function _getIndexById(indices, id) {
+    for (var i = 0; i < indices.length; i++) {
+        const data = indices[i];
+        if (data.id === id) {
+            return data;
+        }
+        const index = _getIndexById(data.children, id);
+        if (index !== null) {
+            return index;
+        }
+    }
+    return null;
+}
+
+function _getIndexDisplayTitle(index, level) {
+    if (level === 0) {
+        return index.title;
+    }
+    var prefix = '';
+    for (var i = 0; i < level; i ++) {
+        prefix += ' ';
+    }
+    return prefix + '- ' + index.title;
+}
+
+function _flattenIndices(indices, level) {
+    const r = [];
+    indices.forEach(function(data) {
+        const displayTitle = _getIndexDisplayTitle(data, level);
+        r.push(Object.assign({
+            displayTitle: displayTitle,
+        }, data));
+        _flattenIndices(data.children, level + 1).forEach(function(child) {
+            r.push(child);
+        });
+    });
+    return r;
+}
 
 
 function ViewModel(url) {
     var self = this;
 
-    self.addonName = 'WEKO';
+    self.addonName = 'JAIRO Cloud';
     self.url = url;
     self.urls = ko.observable();
 
@@ -36,80 +78,73 @@ function ViewModel(url) {
     self.accounts = ko.observable([]);
     self.selectedRepo = ko.observable();
     self.repositories = ko.observableArray();
-    self.swordUrl = ko.observable('');
-    self.accessKey = ko.observable('');
-    self.secretKey = ko.observable('');
 
-    self.basicAuth = 'Other Repository (Basic Auth)';
+    var addonSafeName = $osf.htmlEscape(self.addonName);
 
     self.messages = {
         userSettingsError: ko.pureComputed(function() {
-            return 'Could not retrieve settings. Please refresh the page or ' +
-                'contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the ' +
-                'problem persists.';
+            return sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s.'),
+                addonSafeName,$osf.osfSupportLink());
         }),
         confirmDeauth: ko.pureComputed(function() {
-            return 'Are you sure you want to remove this ' + self.addonName + ' account?';
+            return sprintf(_('Are you sure you want to remove this %1$s account?'),addonSafeName);
         }),
         confirmAuth: ko.pureComputed(function() {
-            return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
+            return sprintf(_('Are you sure you want to link your %1$s account with this project?'),addonSafeName);
         }),
         deauthorizeSuccess: ko.pureComputed(function() {
-            return 'Disconnected ' + self.addonName + '.';
+            return sprintf(_('Disconnected %1$s.') , addonSafeName );
         }),
         deauthorizeFail: ko.pureComputed(function() {
-            return 'Could not disconnect because of an error. Please try again later.';
+            return sprintf(_('Could not disconnect %1$s account because of an error. Please try again later.'),addonSafeName);
         }),
         authInvalid: ko.pureComputed(function() {
-            return 'The API token provided for ' + $osf.htmlEscape(self.host()) + ' is invalid.';
+            return sprintf(_('Error occurred while importing %1$s account.'),addonSafeName);
         }),
         authError: ko.pureComputed(function() {
-            return 'Sorry, but there was a problem connecting to that instance of WEKO.' +
-                'If you have any questions or believe this to be an error, please contact ' +
-                'rdm_support@nii.ac.jp.';
+            return sprintf(_('Sorry, but there was a problem connecting to that instance of %1$s.' +
+                'If you have any questions, please contact %2$s.'),addonSafeName,$osf.osfSupportLink());
         }),
         tokenImportSuccess: ko.pureComputed(function() {
-            return 'Successfully imported access token from profile.';
+            return sprintf(_('Successfully imported %1$s account from profile.'), addonSafeName);
         }),
         tokenImportError: ko.pureComputed(function() {
-            return 'Error occurred while importing access token.';
+            return sprintf(_('Error occurred while importing %1$s account.'),addonSafeName);
         }),
         updateAccountsError: ko.pureComputed(function() {
-            return 'Could not retrieve ' + self.addonName + ' account list at ' +
-                'this time. Please refresh the page. If the problem persists, email ' +
-                '<a href="mailto:rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a>.';
+            return sprintf(_('Could not retrieve %1$s settings at this time. Please refresh the page. If the problem persists, email %2$s.'),
+                addonSafeName,$osf.osfSupportLink());
         }),
         setInfoSuccess: ko.pureComputed(function() {
             var filesUrl = window.contextVars.node.urls.web + 'files/';
-            return 'Successfully linked index \'' + $osf.htmlEscape(self.savedIndexTitle()) + '\'. Go to the <a href="' +
-                filesUrl + '">Files page</a> to view your content.';
+            return sprintf(_('Successfully linked index "%1$s". Go to the <a href="%2$s">Files page</a> to view your content.'),
+                $osf.htmlEscape(self.options.decodeFolder(self.folder().name)), filesUrl);
         }),
         setIndexError: ko.pureComputed(function() {
-            return 'Could not connect to this index. Please refresh the page or ' +
-                'contact <a href="mailto: rdm_support@nii.ac.jp">rdm_support@nii.ac.jp</a> if the ' +
-                'problem persists.';
+            return sprintf(_('Could not connect to this index. Please refresh the page or ' +
+                'contact %1$s if the problem persists.'), $osf.osfSupportLink());
         })
     };
 
+    self.selectedIndex = ko.pureComputed(function() {
+        return _getIndexById(self.indices(), self.selectedIndexId());
+    });
+
     self.savedIndexUrl = ko.pureComputed(function() {
-        for (var i = 0; i < self.indices().length; i++) {
-            var data = self.indices()[i];
-            if (data.id === self.selectedIndexId()) {
-                return data.about;
-            }
+        const index = self.selectedIndex();
+        if (!index) {
+            return null;
         }
-        return null;
+        return index.url;
     });
 
     self.selectedIndexId = ko.observable();
     self.selectedIndexTitle = ko.pureComputed(function() {
-        for (var i = 0; i < self.indices().length; i++) {
-            var data = self.indices()[i];
-            if (data.id === self.selectedIndexId()) {
-                return data.title;
-            }
+        const index = self.selectedIndex();
+        if (!index) {
+            return null;
         }
-        return null;
+        return index.title;
     });
 
     self.showLinkedIndex = ko.pureComputed(function() {
@@ -136,6 +171,10 @@ function ViewModel(url) {
         return !self.userHasAuth() && !self.nodeHasAuth() && self.loadedSettings();
     });
 
+    self.flattenIndices = ko.pureComputed(function() {
+        return _flattenIndices(self.indices(), 0);
+    });
+
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-info');
@@ -148,11 +187,11 @@ function ViewModel(url) {
     }).done(function(response) {
         // Update view model
         self.updateFromData(response.result);
-        self.repositories(response.result.repositories.concat([self.basicAuth]));
+        self.repositories(response.result.repositories);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
         self.changeMessage(self.messages.userSettingsError, 'text-danger');
-        Raven.captureMessage('Could not GET WEKO settings', {
+        Raven.captureMessage('Could not GET JAIRO Cloud settings', {
             extra: {
                 url: url,
                 textStatus: textStatus,
@@ -178,7 +217,6 @@ ViewModel.prototype.updateFromData = function(data) {
     self.userIsOwner(data.userIsOwner);
 
     if (self.nodeHasAuth()) {
-        self.selectedRepo(data.wekoHost);
         self.indices(data.indices);
         self.savedIndexId(data.savedIndex.id);
         self.savedIndexTitle(data.savedIndex.title);
@@ -187,15 +225,12 @@ ViewModel.prototype.updateFromData = function(data) {
     }
 };
 
-/** Reset all fields from WEKO host selection modal */
+/** Reset all fields from JAIRO Cloud host selection modal */
 ViewModel.prototype.clearModal = function() {
     var self = this;
     self.message('');
     self.messageClass('text-info');
     self.selectedRepo(null);
-    self.swordUrl(null);
-    self.secretKey(null);
-    self.accessKey(null);
 };
 
 ViewModel.prototype.setInfo = function() {
@@ -217,7 +252,7 @@ ViewModel.prototype.setInfo = function() {
         self.submitting(false);
         var errorMessage = self.messages.setIndexError;
         self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with WEKO', {
+        Raven.captureMessage('Could not authenticate with JAIRO Cloud', {
             extra: {
                 url: self.urls().set,
                 textStatus: textStatus,
@@ -227,19 +262,14 @@ ViewModel.prototype.setInfo = function() {
     });
 };
 
-/** Send POST request to authorize WEKO */
+/** Send POST request to authorize JAIRO Cloud */
 ViewModel.prototype.connectOAuth = function() {
     var self = this;
     // Selection should not be empty
     if(!self.selectedRepo()) {
-        self.changeMessage('Please select WEKO repository.', 'text-danger');
+        self.changeMessage(_('Please select JAIRO Cloud repository.'), 'text-danger');
         return;
     }
-    if(self.selectedRepo() == self.basicAuth) {
-        self.connectBasicAccount();
-        return;
-    }
-    console.log('Connect via OAuth: ' + self.selectedRepo());
     window.oauthComplete = function() {
         self.clearModal();
         $modal.modal('hide');
@@ -248,56 +278,7 @@ ViewModel.prototype.connectOAuth = function() {
 
         self.updateAccounts();
     };
-    window.open('/oauth/connect/weko/' + self.selectedRepo() + '/');
-};
-
-/** Send POST request to authorize WEKO */
-ViewModel.prototype.connectBasicAccount = function() {
-    var self = this;
-    // Selection should not be empty
-    if(!self.swordUrl() && !self.accessKey() && !self.secretKey()){
-        self.changeMessage('Please enter all a SWORD URL, WEKO username and password.', 'text-danger');
-        return;
-    }
-
-    if (!self.swordUrl() ){
-        self.changeMessage('Please enter your SWORD URL.', 'text-danger');
-        return;
-    }
-
-    if (!self.accessKey() ){
-        self.changeMessage('Please enter a WEKO username.', 'text-danger');
-        return;
-    }
-
-    if (!self.secretKey() ){
-        self.changeMessage('Please enter a WEKO password.', 'text-danger');
-        return;
-    }
-
-    return $osf.postJSON(
-        self.urls().create,
-        ko.toJS({
-            sword_url: self.swordUrl,
-            access_key: self.accessKey,
-            secret_key: self.secretKey
-        })
-    ).done(function() {
-        self.clearModal();
-        $modal.modal('hide');
-        self.updateAccounts();
-
-    }).fail(function(xhr, textStatus, error) {
-        var errorMessage = (xhr.status === 400 && xhr.responseJSON.message !== undefined) ? xhr.responseJSON.message : language.authError;
-        self.changeMessage(errorMessage, 'text-danger');
-        Raven.captureMessage('Could not authenticate with WEKO', {
-            extra: {
-                url: self.urls().create,
-                textStatus: textStatus,
-                error: error
-            }
-        });
-    });
+    window.open('/oauth/connect/weko/' + self.selectedRepo().id + '/');
 };
 
 ViewModel.prototype.fetchAccounts = function() {
@@ -389,7 +370,7 @@ ViewModel.prototype.importAuth = function() {
         .then(function(){
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + $osf.htmlEscape(self.addonName) + ' Access Token to Import',
+                    title: sprintf(_('Choose %1$s Access Token to Import'),$osf.htmlEscape(self.addonName)),
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -408,13 +389,13 @@ ViewModel.prototype.importAuth = function() {
                     },
                     buttons:{
                         confirm:{
-                            label: 'Import'
+                            label: _('Import')
                         }
                     }
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + $osf.htmlEscape(self.addonName) + ' Access Token?',
+                    title: sprintf(_('Import %1$s Account?'),$osf.htmlEscape(self.addonName)),
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
@@ -423,7 +404,7 @@ ViewModel.prototype.importAuth = function() {
                     },
                     buttons:{
                         confirm:{
-                            label:'Import'
+                            label: _('Import')
                         }
                     }
                 });
@@ -465,7 +446,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Disconnect ' + $osf.htmlEscape(self.addonName) + ' Account?',
+        title: sprintf(_('Disconnect %1$s Account?'),$osf.htmlEscape(self.addonName)),
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {
@@ -474,7 +455,7 @@ ViewModel.prototype.deauthorize = function() {
         },
         buttons:{
             confirm:{
-                label: 'Disconnect',
+                label: _('Disconnect'),
                 className: 'btn-danger'
             }
         }

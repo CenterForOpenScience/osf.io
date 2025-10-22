@@ -1,13 +1,131 @@
-from addons.base.logger import AddonNodeLogger
+import logging
+import re
 
-class WEKONodeLogger(AddonNodeLogger):
+from osf.models.metaschema import RegistrationSchema
 
-    addon_short_name = 'weko'
 
-    def _log_params(self):
-        node_settings = self.node.get_addon('weko')
-        return {
-            'project': self.node.parent_id,
-            'node': self.node._primary_key,
-            'index': node_settings.index_id if node_settings else None
-        }
+REGISTRATION_METADATA_MAPPING_PACKAGING_SIMPLE_ZIP = 'http://purl.org/net/sword/3.0/package/SimpleZip'
+REGISTRATION_METADATA_MAPPING_PACKAGING_SWORD_BAGIT = 'http://purl.org/net/sword/3.0/package/SWORDBagIt'
+
+logger = logging.getLogger(__name__)
+
+
+def _validate_mapping_element(element):
+    if isinstance(element, list):
+        for e in element:
+            if isinstance(e, str):
+                continue
+            _validate_mapping_element(e)
+        return
+    for key, v in element.items():
+        if key.startswith('@'):
+            if key not in ['@type', '@createIf']:
+                raise ValueError(f'Unexpected special property: {key}')
+            continue
+        if not re.match(r'([\.a-zA-Z_]+)(\[[A-Z_]*\])?', key):
+            raise ValueError(f'Unexpected key format "{key}" (must be [a-zA-Z_]+[[A-Z_]*]?)')
+        if isinstance(v, str):
+            continue
+        _validate_mapping_element(v)
+
+
+def _validate_metadata_element(element):
+    if not isinstance(element, dict):
+        raise ValueError('Metadata object must be dict')
+    if len(element) == 0:
+        raise ValueError('Metadata object cannot be empty')
+
+    if 'filename' in element and not element['filename']:
+        raise ValueError('Metadata object must have filename')
+    element['filename'] = element.get('filename', 'ro-crate-metadata.json')
+    filename = element['filename']
+
+    if 'filename' not in element:
+        raise ValueError('Metadata object must have filename')
+    filename = element['filename']
+    if not isinstance(filename, str):
+        raise ValueError('Metadata filename must be string')
+    if filename not in ['ro-crate-metadata.json', 'index.csv']:
+        raise ValueError(f'Unexpected filename "{filename}", must be "ro-crate-metadata.json" or "index.csv"')
+    if 'itemtype' not in element and filename == 'index.csv':
+        raise ValueError('Metadata object must have itemtype for index.csv')
+    for key, v in element.items():
+        if key == 'itemtype':
+            _validate_itemtype_element(v)
+            continue
+        if key in ['filename', 'schemaname']:
+            continue
+        raise ValueError(f'Unexpected key "{key}" in metadata')
+
+
+def _validate_itemtype_element(element):
+    if not isinstance(element, dict):
+        raise ValueError('Itemtype object must be dict')
+    if len(element) == 0:
+        raise ValueError('Itemtype object cannot be empty')
+    if 'name' not in element:
+        raise ValueError('Itemtype object must have name')
+    if 'schema' not in element:
+        raise ValueError('Itemtype object must have schema')
+    for key, v in element.items():
+        if key in ['name', 'schema']:
+            if not isinstance(v, str):
+                raise ValueError(f'Itemtype "{key}" must be string')
+            continue
+        raise ValueError(f'Unexpected key "{key}" in itemtype')
+
+
+def validate_mapping(mapping):
+    if not isinstance(mapping, dict):
+        raise ValueError('Mapping object must be dict')
+    if len(mapping) == 0:
+        raise ValueError('Mapping object cannot be empty')
+    if '@metadata' not in mapping:
+        raise ValueError('Mapping object must have @metadata')
+    for key, element in mapping.items():
+        if element is None:
+            continue
+        if key == '@metadata':
+            _validate_metadata_element(element)
+            continue
+        if key != '_' and '@type' not in element:
+            raise ValueError(f'Mapping "{key}" has no types')
+        if key == '_' and '@type' in element:
+            raise ValueError('Mapping "_" cannot have @type property')
+        if key == '_' and '@createIf' in element:
+            raise ValueError('Mapping "_" cannot have @createIf property')
+        _validate_mapping_element(element)
+
+
+def ensure_registration_metadata_mapping(schema_name, mapping):
+    validate_mapping(mapping)
+    filename = mapping['@metadata']['filename']
+
+    from .models import RegistrationMetadataMapping
+    registration_schema = RegistrationSchema.objects.filter(
+        name=schema_name
+    ).order_by('-schema_version').first()
+    mapping_query = RegistrationMetadataMapping.objects.filter(
+        registration_schema_id=registration_schema._id,
+        filename=filename,
+    )
+    entity = None
+    if mapping_query.exists():
+        entity = mapping_query.first()
+    elif filename == 'index.csv':
+        # index.csv is default filename
+        old_mapping_query = RegistrationMetadataMapping.objects.filter(
+            registration_schema_id=registration_schema._id,
+            filename=None,
+        )
+        if old_mapping_query.exists():
+            entity = old_mapping_query.first()
+    if entity is None:
+        entity = RegistrationMetadataMapping.objects.create(
+            registration_schema_id=registration_schema._id,
+            filename=filename,
+        )
+    entity.rules = mapping
+    entity.filename = filename
+    logger.info(f'Mapping registered: {registration_schema._id}, {filename}, {mapping}')
+    entity.save()

@@ -21,6 +21,8 @@ ALL_JOB_SCHOOL_BOOST = 0.125
 
 def validate_email(user_email):
     if user_email is not None:
+        if user_email.startswith('tmp_eppn_'):
+            return True
         regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
         return bool(re.fullmatch(regex, user_email))
 

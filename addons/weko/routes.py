@@ -1,7 +1,9 @@
-from framework.routing import Rule, json_renderer, xml_renderer
+from framework.routing import Rule, json_renderer
 from website.routes import OsfWebRenderer
 
+from .apps import SHORT_NAME
 from . import views
+
 
 oauth_routes = {
     'rules': [
@@ -12,7 +14,7 @@ oauth_routes = {
             json_renderer,
         ),
         Rule(
-            '/callback/weko/<repoid>/',
+            '/callback/weko/<repodomain>/',
             'get',
             views.weko_oauth_callback,
             OsfWebRenderer('util/oauth_complete.mako', trust=False),
@@ -24,29 +26,21 @@ oauth_routes = {
 api_routes = {
     'rules': [
         Rule(
-            '/settings/weko/',
+            '/settings/{}/'.format(SHORT_NAME),
             'get',
             views.weko_user_config_get,
             json_renderer,
         ),
         Rule(
-            [
-                '/settings/weko/accounts/',
-            ],
-            'post',
-            views.weko_add_user_account,
-            json_renderer,
-        ),
-        Rule(
-            '/settings/weko/accounts/',
+            '/settings/{}/accounts/'.format(SHORT_NAME),
             'get',
             views.weko_account_list,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/weko/settings/',
-                '/project/<pid>/node/<nid>/weko/settings/',
+                '/project/<pid>/{}/settings/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/settings/'.format(SHORT_NAME),
             ],
             'get',
             views.weko_get_config,
@@ -54,8 +48,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/settings/',
-                '/project/<pid>/node/<nid>/weko/settings/',
+                '/project/<pid>/{}/settings/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/settings/'.format(SHORT_NAME),
             ],
             'put',
             views.weko_set_config,
@@ -63,17 +57,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/serviceitemtype/',
-                '/project/<pid>/node/<nid>/weko/serviceitemtype/',
-            ],
-            'get',
-            views.weko_get_serviceitemtype,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/weko/user-auth/',
-                '/project/<pid>/node/<nid>/weko/user-auth/',
+                '/project/<pid>/{}/user-auth/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/user-auth/'.format(SHORT_NAME),
             ],
             'put',
             views.weko_import_auth,
@@ -81,8 +66,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/user-auth/',
-                '/project/<pid>/node/<nid>/weko/user-auth/',
+                '/project/<pid>/{}/user-auth/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/user-auth/'.format(SHORT_NAME),
             ],
             'delete',
             views.weko_deauthorize_node,
@@ -90,8 +75,8 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/hgrid/root/',
-                '/project/<pid>/node/<nid>/weko/hgrid/root/',
+                '/project/<pid>/{}/hgrid/root/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/hgrid/root/'.format(SHORT_NAME),
             ],
             'get',
             views.weko_root_folder,
@@ -99,39 +84,75 @@ api_routes = {
         ),
         Rule(
             [
-                '/project/<pid>/weko/item_view/<itemid>/',
-                '/project/<pid>/node/<nid>/weko/item_view/<itemid>/',
+                '/project/<pid>/{}/metadata'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/metadata'.format(SHORT_NAME),
             ],
             'get',
-            views.weko_get_item_view,
+            views.weko_get_file_metadata,
             json_renderer,
         ),
         Rule(
             [
-                '/project/<pid>/weko/indices/',
-                '/project/<pid>/node/<nid>/weko/indices/',
-            ],
-            'post',
-            views.weko_create_index,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/weko/item_log/',
-                '/project/<pid>/node/<nid>/weko/item_log/',
-            ],
-            'post',
-            views.weko_add_item_created,
-            json_renderer,
-        ),
-        Rule(
-            [
-                '/project/<pid>/weko/metadata/',
-                '/project/<pid>/node/<nid>/weko/metadata/',
+                '/project/<pid>/{}/schemas/'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/schemas/'.format(SHORT_NAME),
             ],
             'get',
-            views.weko_generate_metadata,
-            xml_renderer,
+            views.weko_get_available_schemas,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+            ],
+            'put',
+            views.weko_publish_file,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/files/<mnode>/<path:filepath>'.format(SHORT_NAME),
+            ],
+            'get',
+            views.weko_get_publishing_file,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/registrations/<registration_id>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/registrations/<registration_id>'.format(SHORT_NAME),
+            ],
+            'put',
+            views.weko_publish_registration,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/registrations/<registration_id>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/registrations/<registration_id>'.format(SHORT_NAME),
+            ],
+            'get',
+            views.weko_get_publishing_registration,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/draft_registrations/<draft_registration_id>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/draft_registrations/<draft_registration_id>'.format(SHORT_NAME),
+            ],
+            'put',
+            views.weko_publish_draft_registration,
+            json_renderer,
+        ),
+        Rule(
+            [
+                '/project/<pid>/{}/index/<index_id>/draft_registrations/<draft_registration_id>'.format(SHORT_NAME),
+                '/project/<pid>/node/<nid>/{}/index/<index_id>/draft_registrations/<draft_registration_id>'.format(SHORT_NAME),
+            ],
+            'get',
+            views.weko_get_publishing_draft_registration,
+            json_renderer,
         ),
     ],
     'prefix': '/api/v1'

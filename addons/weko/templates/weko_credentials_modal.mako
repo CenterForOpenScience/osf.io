@@ -3,7 +3,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>${_("Connect a WEKO Account")}</h3>
+                <h3>${_("Connect a JAIRO Cloud Account")}</h3>
             </div>
 
             <form>
@@ -13,34 +13,19 @@
 
                         <div class="col-sm-6">
 
-                            <!-- Select WEKO installation -->
+                            <!-- Select JAIRO Cloud installation -->
                             <div class="form-group">
-                                <label for="hostSelect">${_("WEKO Repository")}</label>
+                                <label for="hostSelect">${_("JAIRO Cloud Repository")}</label>
                                 <select class="form-control"
                                         id="hostSelect"
                                         data-bind="options: repositories,
-                                                   optionsCaption: '${_("Select a WEKO repository")}',
+                                                   optionsText: 'name',
+                                                   optionsCaption: '${_("Select a JAIRO Cloud repository")}',
                                                    value: selectedRepo,
                                                    event: { change: selectionChanged }">
                                 </select>
                             </div>
 
-                        </div>
-
-                        <!-- for Basic Auth -->
-                        <div class="col-sm-6" data-bind="visible: selectedRepo() == 'Other Repository (Basic Auth)'">
-                            <div class="form-group">
-                                <label for="wekoAddon">${_("WEKO SWORD URL")}</label>
-                                <input class="form-control" data-bind="value: swordUrl" name="sword_url" ${'disabled' if disabled else ''} />
-                            </div>
-                            <div class="form-group">
-                                <label for="wekoAddon">${_("WEKO Username")}</label>
-                                <input class="form-control" data-bind="value: accessKey" name="access_key" ${'disabled' if disabled else ''} />
-                            </div>
-                            <div class="form-group">
-                                <label for="wekoAddon">${_("WEKO Password")}</label>
-                                <input type="password" class="form-control" data-bind="value: secretKey" name="secret_key" ${'disabled' if disabled else ''} />
-                            </div>
                         </div>
 
                     </div><!-- end row -->

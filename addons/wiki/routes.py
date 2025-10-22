@@ -116,7 +116,13 @@ api_routes = {
         Rule([
             '/project/<pid>/wiki/<wname>/validate/',
             '/project/<pid>/node/<nid>/wiki/<wname>/validate/',
+            '/project/<pid>/wiki/<wname>/parent/<p_wname>/validate/',
         ], 'get', views.project_wiki_validate_name, json_renderer),
+
+        Rule([
+            '/project/<pid>/wiki/import/<dir_id>/validate/',
+            '/project/<pid>/node/<nid>/wiki/import/<dir_id>/validate/',
+        ], 'get', views.project_wiki_validate_for_import, json_renderer),
 
         # Edit | POST
         Rule([
@@ -158,6 +164,37 @@ api_routes = {
             '/project/<pid>/wiki/<wname>/grid/',
             '/project/<pid>/node/<nid>/wiki/<wname>/grid/'
         ], 'get', views.project_wiki_grid_data, json_renderer),
+
+        # Wiki Import
+        Rule([
+            '/project/<pid>/wiki/import/<dir_id>/',
+            '/project/<pid>/node/<nid>/wiki/import/<dir_id>/'
+        ], 'post', views.project_wiki_import, json_renderer),
+
+        # Get Celery Task Result
+        Rule([
+            '/project/<pid>/wiki/get_task_result/<task_id>/',
+            '/project/<pid>/node/<nid>/wiki/get_task_result/<task_id>/'
+        ], 'get', views.project_get_task_result, json_renderer),
+
+        # Clean Celery Tasks
+        Rule([
+            '/project/<pid>/wiki/tasks/clean/',
+            '/project/<pid>/node/<nid>/wiki/tasks/clean/'
+        ], 'post', views.project_clean_celery_tasks, json_renderer),
+
+        # Get Abort Wiki Import Result
+        Rule([
+            '/project/<pid>/wiki/abort/result/',
+            '/project/<pid>/node/<nid>/wiki/abort/result/'
+        ], 'get', views.project_get_abort_wiki_import_result, json_renderer),
+
+        # Update Wiki Page Sort
+        Rule([
+            '/project/<pid>/wiki/sort/update/',
+            '/project/<pid>/node/<nid>/wiki/sort/update/'
+        ], 'post', views.project_update_wiki_page_sort, json_renderer),
+
 
     ],
 
