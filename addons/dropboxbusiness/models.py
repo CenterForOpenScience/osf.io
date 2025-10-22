@@ -297,7 +297,8 @@ class NodeSettings(BaseNodeSettings, BaseStorageAddon):
         return {
             'folder': '/',
             'admin_dbmid': self.admin_dbmid,
-            'team_folder_id': self.team_folder_id
+            'team_folder_id': self.team_folder_id,
+            'team_folder_name': self.team_folder_name
         }
 
     # Required
