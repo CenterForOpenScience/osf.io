@@ -1264,7 +1264,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         child_nodes = validated_data.get('child_nodes')
         permissions = self.get_proposed_permissions(validated_data)
-        self.validate_data(resource, user_id=id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
+        self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
 
         if email_pref not in self.email_preferences:
             raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
@@ -1281,8 +1281,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         try:
             contributor_dict = {
-                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': email_pref,
-                'bibliographic': bibliographic, 'index': index, 'save': True, 'permissions': permissions,
+                'auth': auth, 'user_id': user_id, 'email': email, 'full_name': full_name, 'notification_type': notification_type,
+                'bibliographic': bibliographic, 'index': index, 'permissions': permissions,
             }
             contributor_obj = resource.add_contributor_registered_or_not(**contributor_dict)
             if child_nodes:
