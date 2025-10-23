@@ -155,7 +155,7 @@ class TestDataCiteClient:
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='publication')
+        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='10.pub/lication')
         outcome = Outcome.objects.for_registration(registration, create=True)
         data_artifact = outcome.artifact_metadata.create(
             identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
@@ -179,7 +179,7 @@ class TestDataCiteClient:
                 'relationType': 'References',
             },
             {
-                'relatedIdentifier': 'publication',
+                'relatedIdentifier': '10.pub/lication',
                 'relatedIdentifierType': 'DOI',
                 'relationType': 'References',
             },
