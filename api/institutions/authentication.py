@@ -21,9 +21,10 @@ from framework.auth.exceptions import MultipleSSOEmailError
 
 from osf import features
 from osf.exceptions import InstitutionAffiliationStateError
-from osf.models import Institution, NotificationType
+from osf.models import Institution
 from osf.models.institution import SsoFilterCriteriaAction
 
+from website.mails import send_mail, WELCOME_OSF4I, DUPLICATE_ACCOUNTS_OSF4I, ADD_SSO_EMAIL_OSF4I
 from website.settings import OSF_SUPPORT_EMAIL, DOMAIN
 from website.util.metrics import institution_source_tag
 
@@ -348,31 +349,26 @@ class InstitutionAuthentication(BaseAuthentication):
             user.save()
 
             # Send confirmation email for all three: created, confirmed and claimed
-            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
+            send_mail(
+                to_addr=user.username,
+                mail=WELCOME_OSF4I,
                 user=user,
-                event_context={
-                    'domain': DOMAIN,
-                    'osf_support_email': OSF_SUPPORT_EMAIL,
-                    'user_fullname': user.fullname,
-                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
-                },
-                save=False,
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
+                storage_flag_is_active=flag_is_active(request, features.STORAGE_I18N),
             )
 
         # Add the email to the user's account if it is identified by the eppn
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
+            send_mail(
+                to_addr=user.username,
+                mail=ADD_SSO_EMAIL_OSF4I,
                 user=user,
-                event_context={
-                    'user_fullname': user.fullname,
-                    'email_to_add': email_to_add,
-                    'domain': DOMAIN,
-                    'osf_support_email': OSF_SUPPORT_EMAIL,
-                    'storage_flag_is_active': flag_is_active(request, features.STORAGE_I18N),
-                },
-                save=False,
+                email_to_add=email_to_add,
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
             )
 
         # Inform the user that a potential duplicate account is found
@@ -383,19 +379,13 @@ class InstitutionAuthentication(BaseAuthentication):
             duplicate_user.remove_sso_identity_from_affiliation(institution)
             if secondary_institution:
                 duplicate_user.remove_sso_identity_from_affiliation(secondary_institution)
-            NotificationType.Type.USER_DUPLICATE_ACCOUNTS_OSF4I.instance.emit(
+            send_mail(
+                to_addr=user.username,
+                mail=DUPLICATE_ACCOUNTS_OSF4I,
                 user=user,
-                subscribed_object=user,
-                event_context={
-                    'user_fullname': user.fullname,
-                    'user_username': user.username,
-                    'user__id': user._id,
-                    'duplicate_user_fullname': duplicate_user.fullname,
-                    'duplicate_user_username': duplicate_user.username,
-                    'duplicate_user__id': duplicate_user._id,
-                    'domain': DOMAIN,
-                    'osf_support_email': OSF_SUPPORT_EMAIL,
-                },
+                duplicate_user=duplicate_user,
+                domain=DOMAIN,
+                osf_support_email=OSF_SUPPORT_EMAIL,
             )
 
         # Affiliate the user to the primary institution if not previously affiliated

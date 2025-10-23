@@ -256,6 +256,7 @@ class Sciencer(BaseProvider):
 logger = logging.getLogger('create_fakes')
 SILENT_LOGGERS = [
     'factory',
+    'website.mails',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)

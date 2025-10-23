@@ -109,6 +109,7 @@ from api.nodes.serializers import (
     DraftRegistrationDetailLegacySerializer,
     NodeContributorsSerializer,
     NodeContributorDetailSerializer,
+    NodeContributorsUpdateSerializer,
     NodeInstitutionsRelationshipSerializer,
     NodeContributorsCreateSerializer,
     NodeViewOnlyLinkSerializer,
@@ -152,13 +153,11 @@ from osf.models import (
     File,
     Folder,
     CedarMetadataRecord,
-    Preprint,
-    Collection,
-    NotificationType,
+    Preprint, Collection,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
-from website import settings
+from website import mails, settings
 
 # This is used to rethrow v1 exceptions as v2
 HTTP_CODE_MAP = {
@@ -436,11 +435,16 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
     def get_resource(self):
         return self.get_node()
 
+    def get_object(self):
+        return self.get_node()
+
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
         Use NodeContributorDetailSerializer which requires 'id'
         """
+        if self.request.method == 'PATCH' and self.request.query_params.get('copy_contributors_from_parent_project'):
+            return NodeContributorsUpdateSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             return NodeContributorDetailSerializer
         elif self.request.method == 'POST':
@@ -501,6 +505,18 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         context['default_email'] = 'default'
         return context
 
+    def patch(self, request, *args, **kwargs):
+        """
+        Override the default patch behavior to handle the special case
+        of updating contributors by copying contributors from the parent project.
+        """
+        if request.query_params.get('copy_contributors_from_parent_project'):
+            instance = self.get_object()
+            serializer = self.get_serializer_class()(instance, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=200)
+        return super().patch(request, *args, **kwargs)
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
@@ -1047,28 +1063,11 @@ class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, Node
         try:
             fork = serializer.save(node=node)
         except Exception as exc:
-            NotificationType.Type.NODE_FORK_FAILED.instance.emit(
-                user=user,
-                subscribed_object=node,
-                event_context={
-                    'domain': settings.DOMAIN,
-                    'node_title': node.title,
-                    'can_change_preferences': False,
-                },
-            )
+            mails.send_mail(user.email, mails.FORK_FAILED, title=node.title, guid=node._id, can_change_preferences=False)
             raise exc
+        else:
+            mails.send_mail(user.email, mails.FORK_COMPLETED, title=node.title, guid=fork._id, can_change_preferences=False)
 
-        NotificationType.Type.NODE_FORK_COMPLETED.instance.emit(
-            user=user,
-            subscribed_object=node,
-            event_context={
-                'domain': settings.DOMAIN,
-                'node_title': node.title,
-                'fork_title': fork.title,
-                'fork__id': fork._id,
-                'can_change_preferences': False,
-            },
-        )
 
 class NodeLinkedByNodesList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (

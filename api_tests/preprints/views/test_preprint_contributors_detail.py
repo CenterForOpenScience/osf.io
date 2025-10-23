@@ -122,7 +122,7 @@ class TestPreprintContributorDetail:
             'Rheisen Dennis',
             'reason@gmail.com',
             auth=Auth(user),
-        )
+            save=True)
         unregistered_contributor = preprint_published.contributors[1]
         url = '/{}preprints/{}/contributors/{}/'.format(
             API_BASE, preprint_published._id, unregistered_contributor._id)
@@ -134,10 +134,7 @@ class TestPreprintContributorDetail:
 
         preprint_two = PreprintFactory(creator=user, is_public=True)
         preprint_two.add_unregistered_contributor(
-            'Nesiehr Sinned',
-            'reason@gmail.com',
-            auth=Auth(user),
-        )
+            'Nesiehr Sinned', 'reason@gmail.com', auth=Auth(user), save=True)
         url = '/{}preprints/{}/contributors/{}/'.format(
             API_BASE, preprint_two._id, unregistered_contributor._id)
         res = app.get(url, auth=user.auth, expect_errors=True)

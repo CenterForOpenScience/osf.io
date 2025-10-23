@@ -29,7 +29,6 @@ from osf_tests.factories import (
     InstitutionFactory,
 )
 from tests.base import ApiTestCase, capture_signals
-from tests.utils import capture_notifications
 from website.project import signals as project_signals
 
 
@@ -324,12 +323,11 @@ class TestPreprintListFilteringByReviewableFields(ReviewableFilterMixin):
                 PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
                 PreprintFactory(is_published=False, project=ProjectFactory(is_public=True)),
             ]
-            with capture_notifications():
-                preprints[0].run_submit(user)
-                preprints[0].run_accept(user, 'comment')
-                preprints[1].run_submit(user)
-                preprints[1].run_reject(user, 'comment')
-                preprints[2].run_submit(user)
+            preprints[0].run_submit(user)
+            preprints[0].run_accept(user, 'comment')
+            preprints[1].run_submit(user)
+            preprints[1].run_reject(user, 'comment')
+            preprints[2].run_submit(user)
             return preprints
 
     @pytest.fixture
@@ -377,6 +375,7 @@ class TestPreprintCreate(ApiTestCase):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
         res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
         assert res.status_code == 400
+        print(res.status_code)
 
     def test_create_preprint_with_manual_guid(self):
         public_project_payload = build_preprint_create_payload(self.public_project._id, self.provider._id, attrs=self.manual_guid_payload)
@@ -415,8 +414,7 @@ class TestPreprintCreate(ApiTestCase):
         assert not self.private_project.is_public
 
         preprint = Preprint.load(res.json['data']['id'])
-        with capture_notifications():
-            res = self.publish_preprint(preprint, self.user)
+        res = self.publish_preprint(preprint, self.user)
         preprint.reload()
         assert res.status_code == 200
         self.private_project.reload()
@@ -521,6 +519,14 @@ class TestPreprintCreate(ApiTestCase):
 
         assert res.status_code == 403
 
+    def test_submission_to_provider_not_allowed(self):
+        provider = PreprintProviderFactory(allow_submissions=False)
+        public_project_payload = build_preprint_create_payload(provider_id=provider._id)
+        res = self.app.post_json_api(self.url, public_project_payload, auth=self.user.auth, expect_errors=True)
+
+        assert res.status_code == 409
+        assert res.json['errors'][0]['detail'] == f'Provider {provider.name} doesn\'t allow new submissions.'
+
     def test_file_not_osfstorage(self):
         public_project_payload = build_preprint_create_payload(provider_id=self.provider._id)
 
@@ -574,8 +580,7 @@ class TestPreprintCreate(ApiTestCase):
         assert res.status_code == 201
 
         preprint = Preprint.load(res.json['data']['id'])
-        with capture_notifications():
-            self.publish_preprint(preprint, self.user)
+        res = self.publish_preprint(preprint, self.user)
 
         log = preprint.logs.latest()
         assert log.action == 'published'
@@ -588,8 +593,7 @@ class TestPreprintCreate(ApiTestCase):
 
         assert not mock_on_preprint_updated.called
         preprint = Preprint.load(res.json['data']['id'])
-        with capture_notifications():
-            self.publish_preprint(preprint, self.user)
+        self.publish_preprint(preprint, self.user)
 
         assert mock_on_preprint_updated.called
 

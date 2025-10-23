@@ -13,7 +13,6 @@ from osf_tests.factories import (
     RegistrationFactory,
     RegistrationProviderFactory
 )
-from tests.utils import capture_notifications
 
 USER_ROLES = ['read', 'write', 'admin', 'moderator', 'non-contributor', 'unauthenticated']
 UNAPPROVED_RESPONSE_STATES = [
@@ -57,13 +56,12 @@ def configure_test_preconditions(
 
     updated_response = None
     if updated_response_state is not None:
-        with capture_notifications():
-            updated_response = SchemaResponse.create_from_previous_response(
-                previous_response=initial_response,
-                initiator=initial_response.initiator
-            )
+        updated_response = SchemaResponse.create_from_previous_response(
+            previous_response=initial_response, initiator=initial_response.initiator
+        )
         updated_response.approvals_state_machine.set_state(updated_response_state)
         updated_response.save()
+
     auth = configure_auth(registration, role)
     return auth, updated_response, registration, provider
 

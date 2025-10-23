@@ -8,8 +8,8 @@ from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
-from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationType
 from framework.auth import Auth
+from osf.models import Preprint, PreprintLog, PreprintRequest
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -27,7 +27,6 @@ from osf.utils.permissions import ADMIN
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
 from admin.preprints import views
-from tests.utils import assert_notification, capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -618,8 +617,7 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'approve'}
         request.user = admin
 
-        with capture_notifications():
-            response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -640,8 +638,7 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'reject'}
         request.user = admin
 
-        with capture_notifications():
-            response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
+        response = views.PreprintRejectWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -657,8 +654,7 @@ class TestPreprintWithdrawalRequests:
         request.POST = {'action': 'approve'}
         request.user = admin
 
-        with capture_notifications():
-            response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
+        response = views.PreprintApproveWithdrawalRequest.as_view()(request, guid=preprint._id)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -693,8 +689,7 @@ class TestPreprintWithdrawalRequests:
         new_request.POST = {'action': 'approve'}
         new_request.user = admin
 
-        with capture_notifications():
-            response = views.PreprintApproveWithdrawalRequest.as_view()(new_request, guid=preprint._id)
+        response = views.PreprintApproveWithdrawalRequest.as_view()(new_request, guid=preprint._id)
         assert response.status_code == 302
 
         new_withdrawal_request.refresh_from_db()
@@ -712,9 +707,7 @@ class TestPreprintWithdrawalRequests:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(admin)
-
-        with assert_notification(type=NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED):
-            withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.machine_state == 'withdrawn'
 
@@ -736,8 +729,7 @@ class TestPreprintWithdrawalRequests:
             request_type=RequestTypes.WITHDRAWAL.value,
             machine_state=DefaultStates.INITIAL.value)
         withdrawal_request.run_submit(admin)
-        with capture_notifications():
-            withdrawal_request.run_accept(admin, withdrawal_request.comment)
+        withdrawal_request.run_accept(admin, withdrawal_request.comment)
 
         assert preprint.machine_state == 'withdrawn'
 
@@ -784,8 +776,7 @@ class TestPreprintWithdrawalRequests:
         request = RequestFactory().post(reverse('preprints:withdrawal-requests'), {'action': action, withdrawal_request.id: ['on']})
         request.user = admin
 
-        with capture_notifications():
-            response = views.PreprintWithdrawalRequestList.as_view()(request)
+        response = views.PreprintWithdrawalRequestList.as_view()(request)
         assert response.status_code == 302
 
         withdrawal_request.refresh_from_db()
@@ -881,8 +872,7 @@ class TestPreprintMakePublishedView:
         admin_group.permissions.add(Permission.objects.get(codename='change_node'))
         user.groups.add(admin_group)
 
-        with capture_notifications():
-            plain_view.as_view()(request, guid=preprint._id)
+        plain_view.as_view()(request, guid=preprint._id)
         preprint.reload()
 
         assert preprint.is_published

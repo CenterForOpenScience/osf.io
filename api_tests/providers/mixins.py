@@ -7,7 +7,6 @@ from osf_tests.factories import (
     CollectionFactory,
 )
 from osf.models import NodeLicense, RegistrationProvider
-from tests.utils import capture_notifications
 
 
 class ProviderMixinBase:
@@ -769,8 +768,7 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
     @pytest.fixture(autouse=True)
     def primary_collection(self, submission_provider, user_one, submission_one):
         c = submission_provider.primary_collection
-        with capture_notifications():
-            c.collect_object(submission_one, user_one, status='fdsa')
+        c.collect_object(submission_one, user_one, status='fdsa')
         return c
 
     @pytest.fixture()
@@ -841,13 +839,11 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
 
         submission_three = self.submission_class(creator=user_two)  # has referent perm
 
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                payload(creator=user_two._id, guid=submission_three._id, status='asdf'),
-                auth=user_two.auth,
-                expect_errors=True
-            )
+        res = app.post_json_api(
+            url,
+            payload(creator=user_two._id, guid=submission_three._id, status='asdf'),
+            auth=user_two.auth,
+            expect_errors=True)
         assert res.status_code == 201
 
         assert not (collection_with_provider.guid_links.all() | collection_without_provider.guid_links.all()).filter(_id=submission_three._id).exists()
@@ -858,22 +854,18 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert len(res.json['data']) == 1
         assert res.status_code == 200
 
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                payload(guid=submission_two._id, status='asdf', subjects=[[subject_one._id]]),
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url,
+            payload(guid=submission_two._id, status='asdf', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
         assert res.status_code == 201
 
         submission_three = self.submission_class(creator=user_two)  # user_one does not have referent perm
 
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                payload(guid=submission_three._id, status='asdf', subjects=[[subject_one._id]]),
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url,
+            payload(guid=submission_three._id, status='asdf', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
         assert res.status_code == 201
 
         res = app.get(url, auth=user_one.auth)
@@ -925,12 +917,10 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert 'not an acceptable "type"' in res.json['errors'][0]['detail']
 
         # Valid
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                payload(guid=submission_two._id, collected_type='asdf', status='two', subjects=[[subject_one._id]]),
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url,
+            payload(guid=submission_two._id, collected_type='asdf', status='two', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
         assert res.status_code == 201
 
     def test_filters(self, app, submission_provider, collection_with_provider, collection_without_provider, user_one, user_two, submission_one, submission_two, subject_one, url, payload):
@@ -953,12 +943,10 @@ class ProviderSubmissionListViewTestBaseMixin(ProviderMixinBase, ProviderSubmiss
         assert len(res.json['data']) == 0
 
         # Add one with a subject to filter for it
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
-                auth=user_one.auth
-            )
+        res = app.post_json_api(
+            url,
+            payload(guid=submission_two._id, collected_type='asdf', subjects=[[subject_one._id]]),
+            auth=user_one.auth)
         assert res.status_code == 201
 
         res = app.get(f'{url}?filter[subjects]={subject_one._id}', auth=user_one.auth)
@@ -1050,3 +1038,42 @@ class ProviderLicensesViewTestBaseMixin(ProviderMixinBase):
         assert license_one._id in license_ids
         assert license_three._id in license_ids
         assert license_two._id not in license_ids
+
+
+@pytest.mark.django_db
+class OnlyModeratorOrAdminPermissionsMixin:
+
+    @pytest.fixture()
+    def provider(self):
+        raise NotImplementedError
+
+    @pytest.fixture()
+    def user(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def moderator(self, provider):
+        mod = AuthUserFactory()
+        provider.get_group('moderator').user_set.add(mod)
+        return mod
+
+    @pytest.fixture()
+    def admin(self, provider):
+        adm = AuthUserFactory()
+        provider.get_group('admin').user_set.add(adm)
+        return adm
+
+    @pytest.fixture()
+    def urls(self):
+        raise NotImplementedError
+
+    def test_moderator_or_admin_have_access_to_provider(self, app, provider, user, moderator, admin, urls):
+        for url in urls:
+            user_res = app.get(url, auth=user.auth, expect_errors=True)
+            assert user_res.status_code == 403
+
+            moderator_res = app.get(url, auth=moderator.auth)
+            assert moderator_res.status_code == 200
+
+            admin_res = app.get(url, auth=admin.auth)
+            assert admin_res.status_code == 200

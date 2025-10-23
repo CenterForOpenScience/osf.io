@@ -75,17 +75,9 @@ class TestNodeLicense:
         project_private = ProjectFactory(
             title='Project Two', is_public=False, creator=user)
         project_private.add_contributor(
-            user_admin,
-            permissions=permissions.CREATOR_PERMISSIONS,
-            save=True,
-            notification_type=False
-        )
+            user_admin, permissions=permissions.CREATOR_PERMISSIONS, save=True)
         project_private.add_contributor(
-            user,
-            permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            save=True,
-            notification_type=False
-        )
+            user, permissions=permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS, save=True)
         project_private.node_license = NodeLicenseRecordFactory(
             node_license=node_license,
             year=year,

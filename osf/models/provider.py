@@ -14,12 +14,12 @@ from dirtyfields import DirtyFieldsMixin
 from guardian.models import GroupObjectPermissionBase, UserObjectPermissionBase
 
 from framework import sentry
-from osf.models.notification_type import NotificationType
 from .base import BaseModel, TypedObjectIDMixin
 from .mixins import ReviewProviderMixin
 from .brand import Brand
 from .citation import CitationStyle
 from .licenses import NodeLicense
+from .notifications import NotificationSubscription
 from .storage import ProviderAssetFile
 from .subject import Subject
 from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
@@ -252,9 +252,7 @@ class AbstractProvider(TypedModel, TypedObjectIDMixin, ReviewProviderMixin, Dirt
 
 
 class CollectionProvider(AbstractProvider):
-    DEFAULT_SUBSCRIPTIONS = [
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-    ]
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions']
 
     class Meta:
         permissions = (
@@ -294,11 +292,7 @@ class RegistrationProvider(AbstractProvider):
     REVIEW_STATES = RegistrationModerationStates
     STATE_FIELD_NAME = 'moderation_state'
 
-    DEFAULT_SUBSCRIPTIONS = [
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
-
-    ]
+    DEFAULT_SUBSCRIPTIONS = ['new_pending_submissions', 'new_pending_withdraw_requests']
 
     # A list of dictionaries describing new fields that providers want to surface on their registrations
     # Each entry must provide a 'field_name' key. In the future, other keys may be supported to enable
@@ -469,6 +463,19 @@ def rules_to_subjects(rules):
 def create_provider_auth_groups(sender, instance, created, **kwargs):
     if created:
         instance.update_group_permissions()
+
+
+@receiver(post_save, sender=CollectionProvider)
+@receiver(post_save, sender=PreprintProvider)
+@receiver(post_save, sender=RegistrationProvider)
+def create_provider_notification_subscriptions(sender, instance, created, **kwargs):
+    if created:
+        for subscription in instance.DEFAULT_SUBSCRIPTIONS:
+            NotificationSubscription.objects.get_or_create(
+                _id=f'{instance._id}_{subscription}',
+                event_name=subscription,
+                provider=instance
+            )
 
 
 @receiver(post_save, sender=CollectionProvider)

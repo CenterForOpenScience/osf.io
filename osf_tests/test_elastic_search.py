@@ -27,7 +27,7 @@ from scripts.populate_institutions import main as populate_institutions
 from osf_tests import factories
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
-from tests.utils import run_celery_tasks, capture_notifications
+from tests.utils import run_celery_tasks
 from osf.utils.workflows import CollectionSubmissionStates
 
 TEST_INDEX = 'test'
@@ -108,9 +108,8 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_private, self.user)
-            self.reg_collection.collect_object(self.reg_private, self.user)
+        self.collection_public.collect_object(self.node_private, self.user)
+        self.reg_collection.collect_object(self.reg_private, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
@@ -122,10 +121,9 @@ class TestCollectionsSearch(OsfTestCase):
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
 
-        with capture_notifications():
-            self.collection_one.collect_object(self.node_one, self.user)
-            self.collection_public.collect_object(self.node_public, self.user)
-            self.reg_collection.collect_object(self.reg_public, self.user)
+        self.collection_one.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
 
         assert self.node_one.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
@@ -140,9 +138,8 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 3
 
-        with capture_notifications():
-            self.collection_private.collect_object(self.node_two, self.user)
-            self.reg_collection_private.collect_object(self.reg_one, self.user)
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.reg_collection_private.collect_object(self.reg_one, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 3
@@ -152,9 +149,8 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_one, self.user)
-            self.collection_one.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_one.collect_object(self.node_one, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 2
@@ -167,8 +163,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
         # test_submissions_turned_public_are_added_to_index
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_private, self.user)
+        self.collection_public.collect_object(self.node_private, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
@@ -185,11 +180,10 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_one, self.user)
-            self.collection_public.collect_object(self.node_two, self.user)
-            self.collection_public.collect_object(self.node_public, self.user)
-            self.reg_collection.collect_object(self.reg_public, self.user)
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 4
@@ -204,11 +198,10 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
         # test_submissions_of_collection_turned_public_are_added_to_index
-        with capture_notifications():
-            self.collection_private.collect_object(self.node_one, self.user)
-            self.collection_private.collect_object(self.node_two, self.user)
-            self.collection_private.collect_object(self.node_public, self.user)
-            self.reg_collection_private.collect_object(self.reg_public, self.user)
+        self.collection_private.collect_object(self.node_one, self.user)
+        self.collection_private.collect_object(self.node_two, self.user)
+        self.collection_private.collect_object(self.node_public, self.user)
+        self.reg_collection_private.collect_object(self.reg_public, self.user)
 
         assert self.node_one.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
@@ -239,11 +232,10 @@ class TestCollectionsSearch(OsfTestCase):
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 0
 
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_one, self.user)
-            self.collection_public.collect_object(self.node_two, self.user)
-            self.collection_public.collect_object(self.node_public, self.user)
-            self.reg_collection.collect_object(self.reg_public, self.user)
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_two, self.user)
+        self.collection_public.collect_object(self.node_public, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
 
         docs = query_collections('Salif Keita')['results']
         assert len(docs) == 4
@@ -257,9 +249,8 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
     def test_removed_submission_are_removed_from_index(self):
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_one, self.user)
-            self.reg_collection.collect_object(self.reg_public, self.user)
+        self.collection_public.collect_object(self.node_one, self.user)
+        self.reg_collection.collect_object(self.reg_public, self.user)
         assert self.node_one.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
@@ -283,8 +274,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert len(docs) == 0
 
     def test_collection_submission_doc_structure(self):
-        with capture_notifications():
-            self.collection_public.collect_object(self.node_one, self.user)
+        self.collection_public.collect_object(self.node_one, self.user)
         docs = query_collections('Keita')['results']
         assert docs[0]['_source']['title'] == self.node_one.title
         with run_celery_tasks():
@@ -301,8 +291,7 @@ class TestCollectionsSearch(OsfTestCase):
         assert docs[0]['_source']['category'] == 'collectionSubmission'
 
     def test_search_updated_after_id_change(self):
-        with capture_notifications():
-            self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
+        self.provider.primary_collection.collect_object(self.node_one, self.node_one.creator)
         with run_celery_tasks():
             self.node_one.save()
         term = f'provider:{self.provider._id}'
@@ -511,8 +500,7 @@ class TestPreprint(OsfTestCase):
     def test_publish_preprint(self):
         title = 'Date'
         self.preprint = factories.PreprintFactory(creator=self.user, is_published=False, title=title)
-        with capture_notifications():
-            self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
+        self.preprint.set_published(True, auth=Auth(self.preprint.creator), save=True)
         assert self.preprint.title == title
         docs = query(title)['results']
         # Both preprint and primary_file showing up in Elastic
@@ -1355,10 +1343,8 @@ class TestSearchMigration(OsfTestCase):
         collection_one = factories.CollectionFactory(is_public=True, provider=provider)
         collection_two = factories.CollectionFactory(is_public=True, provider=provider)
         node = factories.NodeFactory(creator=self.user, title='Ali Bomaye', is_public=True)
-
-        with capture_notifications():
-            collection_one.collect_object(node, self.user)
-            collection_two.collect_object(node, self.user)
+        collection_one.collect_object(node, self.user)
+        collection_two.collect_object(node, self.user)
         assert node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()

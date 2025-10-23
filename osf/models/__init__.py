@@ -8,7 +8,6 @@ from .action import (
     ReviewAction,
     SchemaResponseAction,
 )
-from .email_task import EmailTask
 from .admin_log_entry import AdminLogEntry
 from .admin_profile import AdminProfile
 from .analytics import UserActivityCounter, PageCounter
@@ -63,11 +62,7 @@ from .node import AbstractNode, Node
 from .node_relation import NodeRelation
 from .nodelog import NodeLog
 from .notable_domain import NotableDomain, DomainReference
-from .notifications import NotificationSubscriptionLegacy
-from .notification_subscription import NotificationSubscription
-from .notification_type import NotificationType
-from .notification import Notification
-
+from .notifications import NotificationDigest, NotificationSubscription
 from .oauth import (
     ApiOAuth2Application,
     ApiOAuth2PersonalToken,
@@ -85,6 +80,7 @@ from .provider import (
     RegistrationProvider,
     WhitelistedSHAREPreprintProvider,
 )
+from .queued_mail import QueuedMail
 from .registrations import (
     DraftRegistration,
     DraftRegistrationLog,

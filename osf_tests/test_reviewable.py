@@ -1,13 +1,13 @@
 from unittest import mock
 import pytest
 
-from osf.models import Preprint, NotificationType
+from osf.models import Preprint
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestReviewable:
 
     @mock.patch('website.identifiers.utils.request_identifiers')
@@ -16,48 +16,41 @@ class TestReviewable:
         preprint = PreprintFactory(reviews_workflow='pre-moderation', is_published=False)
         assert preprint.machine_state == DefaultStates.INITIAL.value
 
-        with capture_notifications():
-            preprint.run_submit(user)
+        preprint.run_submit(user)
         assert preprint.machine_state == DefaultStates.PENDING.value
 
-        with capture_notifications():
-            preprint.run_accept(user, 'comment')
+        preprint.run_accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db = Preprint.objects.get(id=preprint.id)
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
-        with capture_notifications():
-            preprint.run_reject(user, 'comment')
+        preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.REJECTED.value
 
-        with capture_notifications():
-            preprint.run_accept(user, 'comment')
+        preprint.run_accept(user, 'comment')
         assert preprint.machine_state == DefaultStates.ACCEPTED.value
         from_db.refresh_from_db()
         assert from_db.machine_state == DefaultStates.ACCEPTED.value
 
-    def test_reject_resubmission_sends_emails(self):
+    def test_reject_resubmission_sends_emails(self, mock_send_grid):
         user = AuthUserFactory()
         preprint = PreprintFactory(
             reviews_workflow='pre-moderation',
             is_published=False
         )
         assert preprint.machine_state == DefaultStates.INITIAL.value
-        with capture_notifications() as notifications:
-            preprint.run_submit(user)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert not mock_send_grid.call_count
+
+        preprint.run_submit(user)
+        assert mock_send_grid.call_count == 1
         assert preprint.machine_state == DefaultStates.PENDING.value
 
         assert not user.notification_subscriptions.exists()
-        with capture_notifications():
-            preprint.run_reject(user, 'comment')
+        preprint.run_reject(user, 'comment')
         assert preprint.machine_state == DefaultStates.REJECTED.value
 
-        with capture_notifications() as notifications:
-            preprint.run_submit(user)  # Resubmission alerts users and moderators
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
+        preprint.run_submit(user)  # Resubmission alerts users and moderators
         assert preprint.machine_state == DefaultStates.PENDING.value
+        assert mock_send_grid.call_count == 2

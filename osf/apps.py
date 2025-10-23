@@ -15,7 +15,6 @@ from osf.migrations import (
     update_waffle_flags,
     update_default_providers
 )
-from osf.management.commands.populate_notification_types import populate_notification_types
 
 logger = logging.getLogger(__file__)
 
@@ -68,8 +67,4 @@ class AppConfig(BaseAppConfig):
         post_migrate.connect(
             update_storage_regions,
             dispatch_uid='osf.apps.update_storage_regions'
-        )
-        post_migrate.connect(
-            populate_notification_types,
-            dispatch_uid='osf.apps.populate_notification_types'
         )
