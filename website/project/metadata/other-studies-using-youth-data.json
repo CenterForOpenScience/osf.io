@@ -37,7 +37,7 @@
         {
             "block_type": "question-label",
             "display_text": "Upload any files or supporting materials",
-            "help_text": "Upload the data request form output pdf file here. \n\nAlso upload any supporting materials that help describe the studiy design, goals, methodology approach, analysis plan, data processing, etc. "
+            "help_text": "Upload the data request form output pdf file here. \n\nAlso upload any supporting materials that help describe the study design, goals, methodology approach, analysis plan, data processing, etc. "
         },
         {
             "block_type": "file-input"

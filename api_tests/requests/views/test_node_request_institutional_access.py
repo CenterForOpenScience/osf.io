@@ -164,7 +164,7 @@ class TestNodeRequestListInstitutionalAccess(NodeRequestTestMixin):
 
     def test_institutional_admin_can_not_add_requested_permission(self, app, project, institutional_admin_on_institution_without_access, url, create_payload_on_institution_without_access):
         """
-        Test that an institutional admin can not make an institutional access request on institution with disabled access .
+        Test that an institutional admin cannot make an institutional access request on institution with disabled access .
         """
         create_payload_on_institution_without_access['data']['attributes']['requested_permissions'] = 'admin'
 

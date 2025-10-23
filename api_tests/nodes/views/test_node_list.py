@@ -1057,7 +1057,7 @@ class TestNodeFiltering:
         assert res.status_code == 200
         assert private.node._id not in [each['id'] for each in res.json['data']]
 
-    def test_abandonded_preprint_in_preprint_true_filter_results(
+    def test_abandoned_preprint_in_preprint_true_filter_results(
             self, app, user_one, user_two):
         abandoned = PreprintFactory(
             creator=user_one,
@@ -1089,7 +1089,7 @@ class TestNodeFiltering:
         assert res.status_code == 200
         assert abandoned.node._id in [each['id'] for each in res.json['data']]
 
-    def test_abandonded_preprint_in_preprint_false_filter_results(
+    def test_abandoned_preprint_in_preprint_false_filter_results(
             self, app, user_one, user_two):
         abandoned = PreprintFactory(
             creator=user_one,

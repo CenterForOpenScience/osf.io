@@ -60,7 +60,7 @@ class TestGitHubConfigViews(GitHubAddonTestCase, OAuthAddonConfigViewsTestCaseMi
     @mock.patch('addons.github.models.NodeSettings.add_hook')
     @mock.patch('addons.github.views.GitHubClient.repo')
     def test_set_config(self, mock_repo, mock_add_hook):
-        # GH selects repos, not folders, so this needs to be overriden
+        # GH selects repos, not folders, so this needs to be overridden
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')
         res = self.app.post(url, json={

@@ -55,7 +55,7 @@ class Provider(ExternalProvider):
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new UserSettings
+        """View called when the OAuth flow is completed. Adds a new UserSettings
         record to the user and saves the user's access token and account info.
         """
 

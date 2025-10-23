@@ -884,7 +884,7 @@ def _view_project(node, auth, primary=False,
     }
 
     # Default should be at top of list for UI and for the project overview page the default region
-    # for a component is that of the it's parent node.
+    # for a component is that of its parent node.
     region_list = get_storage_region_list(user, node=node)
 
     data.update({'storage_regions': region_list})
@@ -1188,7 +1188,7 @@ def get_node_tree(auth, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_generate_private_link_post(auth, node, **kwargs):
-    """ creata a new private link object and add it to the node and its selected children"""
+    """ create a new private link object and add it to the node and its selected children"""
 
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')

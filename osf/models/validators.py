@@ -351,7 +351,7 @@ class RegistrationResponsesValidator:
         an array with the possible multiple choice answers for a given question.
         Schema blocks are linked by schema_block_group_keys, so fetches multiple choice options
         with the same schema_block_group_key as the given question
-        :question SchemaBlock with an registration_response_key
+        :question SchemaBlock with a registration_response_key
         """
         options = [
             block.display_text

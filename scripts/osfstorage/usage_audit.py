@@ -3,7 +3,7 @@ Find all users and projects where their total usage (current file + deleted file
 Projects or users can have their GUID whitelisted via `usage_audit whitelist [GUID ...]`
 User usage is defined as the total usage of all projects they have > READ access on
 Project usage is defined as the total usage of it and all its children
-total usage is defined as the sum of the size of all verions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
+total usage is defined as the sum of the size of all versions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
 """
 
 import os

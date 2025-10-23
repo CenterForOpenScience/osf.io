@@ -2,7 +2,7 @@ import contextlib
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 
-# Remants from MODM days
+# Remnants from MODM days
 # TODO: Remove usages of aliased Exceptions
 ValidationError = DjangoValidationError
 ValidationValueError = DjangoValidationError
@@ -162,7 +162,7 @@ class SchemaBlockConversionError(OSFError):
 
 
 class SchemaResponseError(OSFError):
-    """Superclass for errors ariseing from unexpected SchemaResponse behavior."""
+    """Superclass for errors arising from unexpected SchemaResponse behavior."""
     pass
 
 
@@ -220,7 +220,7 @@ class SchemaResponseUpdateError(SchemaResponseError):
             )
         if unsupported_keys:
             unsupported_keys_message = (
-                f'\nReceived the following resposnes had invalid keys: {unsupported_keys}'
+                f'\nReceived the following responses had invalid keys: {unsupported_keys}'
             )
         error_message = (
             f'Error update SchemaResponse with id [{response._id}]:'

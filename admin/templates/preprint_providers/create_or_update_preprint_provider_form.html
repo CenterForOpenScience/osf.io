@@ -134,7 +134,7 @@
             <div>
                 <h4>Import from JSON</h4>
                 <p>Choose a JSON file that has been previously exported from another Preprint Provider detail page. This will
-                    pre-populate the Preprint Provider change form with those details.</p>
+                    prepopulate the Preprint Provider change form with those details.</p>
                 {% if preprint_provider %}
                     <form action = {% url 'preprint_providers:import' preprint_provider_id=preprint_provider.id %} method="post" enctype="multipart/form-data" >
                 {% else %}

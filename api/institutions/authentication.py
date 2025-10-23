@@ -291,7 +291,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     activation_required = True
                     # Unconfirmed users already have a usable password set by the creator during
                     # sign-up. However, it must be overwritten by a new random one so the creator
-                    # (if he is not the real person) can not access the account after activation.
+                    # (if he is not the real person) cannot access the account after activation.
                     new_password_required = True
                     logger.warning(f'Institution SSO: user status - unconfirmed user {sso_user_info}')
                 else:

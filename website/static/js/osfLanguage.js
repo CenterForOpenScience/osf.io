@@ -29,7 +29,7 @@ module.exports = {
                 'Dataverse authorization from your <a href="/settings/addons/">user settings</a> ' +
                 'page.',
             deauthError: 'Could not disconnect the Dataverse Account at this time.',
-            deauthSuccess: 'Succesfully disconnected the connected Dataverse Account.',
+            deauthSuccess: 'Successfully disconnected the connected Dataverse Account.',
             authError: 'Sorry, but there was a problem connecting to that instance of Dataverse. It ' +
                 'is likely that the instance hasn\'t been upgraded to Dataverse 4.0. If you ' +
                 'have any questions or believe this to be an error, please contact ' + $osf.osfSupportEmail(),

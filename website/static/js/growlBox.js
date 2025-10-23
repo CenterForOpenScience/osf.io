@@ -10,7 +10,7 @@ var oop = require('js/oop');
 * @param {String} title Shows in bold at the top of the box. Required or it looks foolish.
 * @param {String} message Shows a line below the title. This could be '' if there's nothing to say.
 * @param {String} type One of 'success', 'info', 'warning', or 'danger'. Defaults to danger.
-* @param {Number} delay if provided the number of miliseconds before message disappears
+* @param {Number} delay if provided the number of milliseconds before message disappears
  */
 var GrowlBox = oop.defclass({
     constructor: function(title, message, type, delay) {

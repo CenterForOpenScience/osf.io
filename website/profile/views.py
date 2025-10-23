@@ -77,7 +77,7 @@ def resend_confirmation(auth):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST)
 
     if primary or confirmed:
-        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': 'Cannot resend confirmation for confirmed emails'})
 
     user.add_unconfirmed_email(address)
 

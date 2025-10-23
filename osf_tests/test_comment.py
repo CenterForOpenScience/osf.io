@@ -28,7 +28,7 @@ from .factories import (
     AuthUserFactory,
 )
 
-# All tests will require a databse
+# All tests will require a database
 pytestmark = pytest.mark.django_db
 
 

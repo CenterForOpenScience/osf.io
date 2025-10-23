@@ -135,7 +135,7 @@ class TestProjectContributorViews(OsfTestCase):
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
         assert 'Private Project' not in res.text
-        assert 'parent project'in res.text
+        assert 'parent project' in res.text
 
     def test_edit_description(self):
         self.app.post(

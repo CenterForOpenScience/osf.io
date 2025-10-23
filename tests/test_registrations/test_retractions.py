@@ -418,7 +418,7 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             title='Subcomponent'
         )
         self.registration = RegistrationFactory(project=self.project, is_public=True)
-        # Reload the registration; else tests won't catch failures to svae
+        # Reload the registration; else tests won't catch failures to save
         self.registration.reload()
 
     def test_approval_retracts_descendant_nodes(self):
@@ -565,7 +565,7 @@ class RegistrationRetractionShareHook(OsfTestCase):
         self.project = ProjectFactory(is_public=True, creator=self.user)
 
         self.registration = RegistrationFactory(project=self.project, is_public=True)
-        # Reload the registration; else tests won't catch failures to svae
+        # Reload the registration; else tests won't catch failures to save
         self.registration.reload()
 
     def test_approval_calls_share_hook(self):

@@ -187,7 +187,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
-    """A dedicated view for institution auth, a.k.a "login through institutions".
+    """A dedicated view for institution auth, a.k.a. "login through institutions".
 
     This view is only used and should only be used by CAS.  Changing it may break the institution
     login feature.  Please check with @longze and @matt before making any changes.
@@ -464,8 +464,8 @@ class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIVi
 
     def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
         """
-        Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
-        querysets by create a mock queryset with limited filterbility.
+        Since ES returns a list obj instead of an awesome filterable queryset we are faking the filter feature used by
+        querysets by create a mock queryset with limited filterability.
 
         :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
         :return: mock_queryset

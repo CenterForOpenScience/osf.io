@@ -88,7 +88,7 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
 
     current_user_permissions = ser.SerializerMethodField(
         help_text='List of strings representing the permissions '
-        'for the current user on this draft registratione.',
+        'for the current user on this draft registration.',
     )
 
     license = NodeLicenseRelationshipField(

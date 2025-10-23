@@ -88,14 +88,14 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
 - Crossref DOIs not minting with _v1, OSF is displaying DOI versions with _v1
 - When hamming a spammed user, preprints and registrations remain private
-- Fix emabrgoed registrations not becoming public after admin date change
-- Add v2 enpoint for alternative email confirmation
+- Fix embargoed registrations not becoming public after admin date change
+- Add v2 endpoint for alternative email confirmation
 - Make relationship on v2/nodes for collected_in
 - API V2: get action reviews request not listing latest preprint submit/withdraw requests
 - Add ability for admin app to change registry that a registration belongs to
 - Update to /nodes/<node-id> api
 - Subscription filtering not working correctly
-- API V2: Serialize registation resource attributes in Node Linked By Registrations list view and Node Linked Registrations list view
+- API V2: Serialize registration resource attributes in Node Linked By Registrations list view and Node Linked Registrations list view
 
 25.10.0 (2025-06-11)
 ====================
@@ -159,7 +159,7 @@ We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 24.10.0 (2024-12-05)
 ====================
 
-- Migrate Preprint Affilations
+- Migrate Preprint Affiliations
 - Add OOPSpam and Akismet metrics to spam report
 - Add PrivateSpamMetricsReport
 - Update PrivateSpamMetricsReporter to work with refactored MonthlyReporter
@@ -340,7 +340,7 @@ reasons
 
 22.11.0 (2022-11-21)
 ====================
-- Enable monitoring and moderation of OSF resoruces based on links to external
+- Enable monitoring and moderation of OSF resources based on links to external
 domains
 
 22.10.0 (2022-10-25)
@@ -448,12 +448,12 @@ domains
 
 21.08.0 (2021-11-30)
 ====================
-- Remaining work in support of Registrion Versioning/Updating
+- Remaining work in support of Registration Versioning/Updating
 
 21.07.0 (2021-10-04)
 ====================
 - Add support for Registry Admins to bulk upload
-- Add models suppoorting Registration Versioning
+- Add models supporting Registration Versioning
 - Normalize default institutional affiliation for drafts
 - Fix bugs with spam training
 
@@ -687,7 +687,7 @@ domains
 ===================
 - Automatically map subjects when a preprint is moved to a different
   preprint provider in the admin app
-- Gitlab: return all repos to which the user has access
+- GitLab: return all repos to which the user has access
 - Upgrade Bower
 - Py3 backwards compatible changes
 
@@ -1033,7 +1033,7 @@ tags, using a m2m field.
 ====================
 
 - APIv2: Add Node Settings endpoint.
-- APIv2: Add employers and eductional_institutions to user serializer.
+- APIv2: Add employers and educational_institutions to user serializer.
 - APIv2: Add endpoints for account export and deactivation requests.
 - APIv2: Retrieve/delete user external identities.
 - Move addon max file size limits to settings files.
@@ -1159,10 +1159,10 @@ for GitHub, Zotero, and Mendeley addons.
 - Upgrade Dropbox client version.
 - Add field to PreprintProvider to toggle Hypothesis commenting.
 - Fix using django-waffle with groups.
-- Fix bug that caused project to be unreachable if it had a deleted BitBucket addon.
+- Fix bug that caused project to be unreachable if it had a deleted Bitbucket addon.
 - Fix incorrect OSF Meeting instructions.
 - Remove unused fonts and styles from landing page.
-- Hide hierarchy on search results if parent is priate.
+- Hide hierarchy on search results if parent is private.
 - API: Fix /data/relationships/referent/type for /guids/<registration-id>/?resolve=false endpoint.
 - API: Optimize node delete endpoint.
 - Admin: Fix typos.
@@ -1198,7 +1198,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 
 - Display file metadata for addon files deleted outside of the OSF.
 - Add decorator for feature-flagging EmbOSF routes.
-- Add footer to OSF landing page foor logged out users.
+- Add footer to OSF landing page for logged out users.
 - Make loading indicators consistent.
 - Show DOIs on withdrawn registrations.
 - Make support email configurable in settings.
@@ -1300,7 +1300,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Subsequent files do not receive a modal when copied over to a folder
 - Unable to authorize figshare accounts with unicode in name
 - fix incorrect method name in oauth node config js
-- In Fangorn, Github's [Open] button only points to the default branch
+- In Fangorn, GitHub's [Open] button only points to the default branch
 - Popular Public and New & Noteworthy -- making a project private causes error
 - Admin app: accessing list of user's permissions 502s
 - Unable to mark node as Ham
@@ -1316,7 +1316,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Citations preview should show the full name field if the individual name sections are blank
 - Incorrect error message is shown for Dataverse 500 error
 - File checked out to Alex DeHaven after Prereg Challenge submission is approved.
-- Don't use {} as a attribute default value
+- Don't use {} as an attribute default value
 - [admin app] Searching for user names that contain periods or commas returns 502
 - Forks total includes registrations
 - Fix spelling for new VOL section in project settings
@@ -1491,7 +1491,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Make ever_mentioned a ManyToMany field
 - Remove unused mongo code in framework.mongo
 - Reduce number of queries made by triggered mails script
-- Add a context manager to prevent auto_now fields from from getting updated during migrations
+- Add a context manager to prevent auto_now fields from getting updated during migrations
 - Remove model name aliasing in imports
 - Remove dead badges code
 - Add view OSF Subjects Permissions
@@ -1694,7 +1694,7 @@ Deprecates NodeWikiVersion, Node.wiki_pages_versions, and Node.wiki_pages_curren
 - Submitting to OSF4M using deleted project name does not create new project
 - Fangorn edit undefined
 - API 502s when refreshing github metadata (was: TypeError: Can't compare datetime.datetime to NoneType)
-- API 502s when requesting Github file metadata w/ version=2.2
+- API 502s when requesting GitHub file metadata w/ version=2.2
 - Search unhappy with some users
 - Registries: "Withdrawn" label not appearing on newly-withdrawn registrations
 - Retraction detail pages throw mithril mounting error
@@ -1759,7 +1759,7 @@ Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprint
 0.101.0 (2016-11-23)
 ====================
 - Fix renaming, download button, zip is broken on GitHub non-default branch
-- Prevent 500 error when oving a folder from a OSF in component to OSF storage in parent
+- Prevent 500 error when moving a folder from a OSF in component to OSF storage in parent
 - Ensure IE can view files in a VOL
 - Improve error messaging for attempted moves/deletes of primary file on private preprint project
 - Make comment reply filter work
@@ -1810,7 +1810,7 @@ Post-release: python -m scripts.migration.migrate_meetings_preprints_to_preprint
 0.97.0 (2016-10-20)
 ===================
 - API v2 Versioning
-- API v2 Redirect swagger docs to Browseable API
+- API v2 Redirect swagger docs to Browsable API
 - Fix wiki formatting for legacy wiki pages
 - Ensure bad file moves don't delete files
 - API v2 Make private nodes private in inter-node file moves
@@ -1925,7 +1925,7 @@ Migrations
 0.91.0 (2016-08-28)
 ===================
 
-- API Endpoints for Preprints (also includs providers and taxonomies)
+- API Endpoints for Preprints (also includes providers and taxonomies)
 - API Download Counts for OSF Storage Files
 
 Migrations
@@ -1956,7 +1956,7 @@ Migrations
 0.88.1 (2016-08-25)
 ===================
 
-- Make Github addon logging more tolerant to problems
+- Make GitHub addon logging more tolerant to problems
 
 0.88.0 (2016-08-22)
 ===================
@@ -1989,7 +1989,7 @@ Migrations
 0.87.5 (2016-08-16)
 ===================
 
-- Modify wording on ERPC langing page
+- Modify wording on ERPC landing page
 
 0.87.4 (2016-08-15)
 ===================
@@ -2110,7 +2110,7 @@ Migrations
 ===================
 
 - Use CAS for all authentication for OSF.
-- On regisration's file pages, show links to original source file.
+- On registration's file pages, show links to original source file.
 - Creating a wiki page whose name is the same as a previously deleted wiki page will no longer restore the wiki page's versions.
 - Add more contextual information about component hierarchy to the My Projects widget.
 - Add Date Modified column to file browsers.
@@ -2254,7 +2254,7 @@ See https://openscience.atlassian.net/browse/OSF-5861
 - Backend for OSF4Institutions: nodes and users can be affiliated with an institution (alpha; disabled on production).
 - Add visitor tracking with Keen.io.
 - Refactor Google Drive addon to use generic views.
-- Use Sendgrid API for sending emails; add categorization of emails.
+- Use SendGrid API for sending emails; add categorization of emails.
 - UI fixes.
 
 0.64.0 (2016-02-10)
@@ -2417,7 +2417,7 @@ Migrations
 0.50.0 (2015-09-17)
 ===================
 
-- Migration of all addon file collecitons to a single GuidFile collection.
+- Migration of all addon file collections to a single GuidFile collection.
 
 0.49.0 (2015-09-11)
 ===================
@@ -2726,7 +2726,7 @@ service when files are backed up to a Amazon Glacier archive.
 
 Hotfix release
 
-- Display warning about private Github repos on a public project on files and
+- Display warning about private GitHub repos on a public project on files and
 statistics pages.
 - Refactor celery task for rendering files so that file contents are not
 passed to message broker.
@@ -2770,7 +2770,7 @@ Lots of new UI features and responsiveness improvements.
 - Paginate search results in Add Contributor widget.
 - Speed improvements to contributor manager widget.
 - Add "ongoing" option to Education and Employment sections of user profile.
-- Improved mimetype detection when downloading a file through the Github
+- Improved mimetype detection when downloading a file through the GitHub
 addon.
 - Unread comment counts appear in comment tab.
 - Lots of bug fixes and minor UI improvements to the wiki.
@@ -2778,8 +2778,8 @@ addon.
 - Lots of UI fixes to the profile configuration pages.
 - Larger project title and description inputs.
 - Confirmation codes for project deletion are more fun =)
-- Allow multiple users to authenticate with the same Github credentials for
-the Github addon.
+- Allow multiple users to authenticate with the same GitHub credentials for
+the GitHub addon.
 - Includes all fixes from the "Sprint: Initial" milestone: https://github.com/CenterForOpenScience/openscienceframework.org/issues?q=milestone%3A%22Sprint+%3A+Initial%22+
 - Update required versions of requests, webassets, and bleach.
 
@@ -2795,7 +2795,7 @@ Schema changes
 
 - Remove fork_list and registration_list fields from Node model. NOTE: A
 migration was NOT performed to remove these fields.
-- Add AddonGithubOauthSettings model.
+- Add AddonGitHubOauthSettings model.
 - Remove oauth_access_token and oauth_token_type fields from
 AddonGitHubUserSettings model.
 
@@ -2843,11 +2843,11 @@ and prevents a number of circular import problems throughout the codebase.
 - Wiki logs link to wiki pages.
 - Add confirmation dialog when deselecting addons from the user profile page.
 - Registered users no longer have "key ring" of view-only link keys. View-only
-links will appear the same, regardless of whether you are logged in or not.
+links will appear the same, regardless of whether or not you are logged in.
 - Project deletion events are logged.
 - Developers: All deprecated Solr code removed.
 - Developers: Bower components are no longer added to the git tree. Use `bower
-install` to installthem.
+install` to install them.
 - Developers: Various improvements to logging.
 - Developers: ``URLLookup`` class is deprecated. Use ``api_url_for`` and
 ``web_url_for`` in your tests.

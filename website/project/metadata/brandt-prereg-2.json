@@ -28,7 +28,7 @@
             "type": "string",
             "format": "text",
             "title": "The confidence interval of the original effect is",
-            "nav": "Original confidence iterval"
+            "nav": "Original confidence interval"
         }, {
             "qid": "item5",
             "type": "string",

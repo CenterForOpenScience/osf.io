@@ -63,7 +63,7 @@ class TestBitbucketConfigViews(BitbucketAddonTestCase, OAuthAddonConfigViewsTest
     @mock.patch('addons.bitbucket.views.BitbucketClient.repo')
     @mock.patch('addons.bitbucket.models.NodeSettings.external_account')
     def test_set_config(self, mock_account, mock_repo):
-        # BB selects repos, not folders, so this needs to be overriden
+        # BB selects repos, not folders, so this needs to be overridden
         mock_account.return_value = mock.Mock()
         mock_repo.return_value = 'repo_name'
         url = self.project.api_url_for(f'{self.ADDON_SHORT_NAME}_set_config')

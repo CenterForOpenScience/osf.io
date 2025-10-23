@@ -258,7 +258,7 @@ class TestComponents(OsfTestCase):
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(contributor=self.user, auth=self.consolidate_auth)
-        # A non-project componenet
+        # A non-project component
         self.component = NodeFactory(
             category='hypothesis',
             creator=self.user,
@@ -426,7 +426,7 @@ class TestShortUrls(OsfTestCase):
         self.auth = self.user.auth
         self.consolidate_auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        # A non-project componenet
+        # A non-project component
         self.component = NodeFactory(parent=self.project, category='hypothesis', creator=self.user)
         # Hack: Add some logs to component; should be unnecessary pending
         # improvements to factories from @rliebz
@@ -608,7 +608,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
-    def test_cannnot_make_primary_email_for_another_user(self):
+    def test_cannot_make_primary_email_for_another_user(self):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'
@@ -622,7 +622,7 @@ class TestConfirmingEmail(OsfTestCase):
         res = self.app.put(url, json=header, auth=user2.auth)
         assert res.status_code == 403
 
-    def test_cannnot_add_email_for_another_user(self):
+    def test_cannot_add_email_for_another_user(self):
         user1 = AuthUserFactory()
         user2 = AuthUserFactory()
         email = 'test@cos.io'
@@ -1072,7 +1072,7 @@ class TestAUserProfile(OsfTestCase):
         # User has no public components/projects
         res = self.app.get(url, auth=self.me.auth)
         assert 'This user has no public projects' in res
-        assert 'This user has no public components'in res
+        assert 'This user has no public components' in res
 
     # regression test
     def test_does_not_show_registrations(self):

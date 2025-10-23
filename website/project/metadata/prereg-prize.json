@@ -275,7 +275,7 @@
         "id": "page5",
         "title": "Analysis Plan",
         "type": "object",
-        "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent), otherwise it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
+        "description": "You may describe one or more confirmatory analysis in this preregistration. Please remember that all analyses specified below must be reported in the final article, and any additional analyses must be noted as exploratory or hypothesis-generating.<br /><br />A confirmatory analysis plan must state up front which variables are predictors (independent) and which are the outcomes (dependent); otherwise, it is an exploratory analysis. You are allowed to describe any exploratory work here, but a clear confirmatory analysis is required.",
         "questions": [{
             "qid": "q19",
             "nav": "Statistical models",
@@ -310,7 +310,7 @@
             "nav": "Follow-up analyses",
             "title": "Follow-up analyses",
             "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions? Remember that any analyses not specified in this research plan must be noted as exploratory.",
-            "help": "If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
+            "help": "If the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to conduct all possible pairwise comparison.<br /><br /> How responses will be evaluated: This is simply a place to allow entering in any additional analyses. The criteria for these follow up analyses are identical to any analyses listed in other sections. It is also fine to enter these follow up analyses in a separate analysis section. The purpose of this question is to allow entering of any follow up tests that naturally follow from a primary analysis.",
             "required": true,
             "type": "string",
             "format": "textarea"

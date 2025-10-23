@@ -47,7 +47,7 @@ class CommentList(PermissionRequiredMixin, ListView):
 
 
 class UserCommentList(CommentList):
-    """ Allow authorized admin user to see the comments a user has had
+    """ Allow authorized admin user to see the comments that a user has had
      marked spam
     """
     template_name = 'comments/user.html'

@@ -437,7 +437,7 @@ class TestUserFactoryConflict:
 
     def test_build_create_user_time_conflict(self):
         # Test that build and create user factories do not create conflicting usernames
-        # because they occured quickly
+        # because they occurred quickly
         user_email_one = fake_email()
         user_email_two = fake_email()
         assert user_email_one != user_email_two

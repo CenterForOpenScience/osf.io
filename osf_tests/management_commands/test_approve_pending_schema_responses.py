@@ -50,7 +50,7 @@ class TestApprovePendingSchemaResponses:
     def test_auto_approval(self, control_response, is_moderated, expected_state):
         with mock.patch(
             'osf.models.schema_response.SchemaResponse.is_moderated',
-            new_callaoble=mock.PropertyMock
+            new_callable=mock.PropertyMock
         ) as mock_is_moderated:
             mock_is_moderated.return_value = is_moderated
             count = approve_pending_schema_responses()

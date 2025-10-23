@@ -77,7 +77,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--institutions',
             nargs='*',
-            help='Specify insitutions guids'
+            help='Specify institutions guids'
         )
         parser.add_argument(
             '--num_institutions',

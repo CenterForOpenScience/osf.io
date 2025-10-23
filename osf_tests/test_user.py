@@ -2132,7 +2132,7 @@ class TestUserGdprDelete:
         assert DraftNode.objects.all().count() == 1
         user.gdpr_delete()
 
-        # DraftNodes soft-deleted, DraftRegistions hard-deleted
+        # DraftNodes soft-deleted, DraftRegistrations hard-deleted
         assert user.nodes.exclude(is_deleted=True).count() == 0
         assert DraftRegistration.objects.all().count() == 0
 

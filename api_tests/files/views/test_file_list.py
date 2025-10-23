@@ -84,7 +84,7 @@ class TestNodeFileList:
     @responses.activate
     def test_disambiguate_dataverse_paths_initial(self, app, user, node, dataverse):
         '''
-        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after a update to their
+        This test is for retrieving files from Dataverse initially, (Osf is contacting Dataverse after an update to their
         Dataverse files) this test ensures both files are made into OSF filenodes and their `extra` info is passed along
         to the front-end.
         '''
@@ -133,7 +133,7 @@ class TestNodeFileList:
     def test_disambiguate_dataverse_paths_retrieve(self, app, user, node, dataverse, dataverse_draft_filenode, dataverse_published_filenode):
         '''
         This test is for retrieving files from Dataverse and disambiguating their corresponding OSF filenodes and
-        ensures their `extra` info is passed along to the front-end. Waterbulter must also be mocked here, otherwise OSF
+        ensures their `extra` info is passed along to the front-end. Waterbutler must also be mocked here; otherwise, OSF
         will assume the files are gone.
         '''
         prepare_mock_wb_response(

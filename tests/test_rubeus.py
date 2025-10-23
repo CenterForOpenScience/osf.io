@@ -231,7 +231,7 @@ class TestRubeus(OsfTestCase):
         private_child = NodeFactory(parent=public_project, creator=user, is_public=False)
         public_grandchild = NodeFactory(parent=private_child, creator=user, is_public=True)
         private_greatgrandchild = NodeFactory(parent=public_grandchild, creator=user, is_public=False)
-        public_greatgreatgranchild = NodeFactory(parent=private_greatgrandchild, creator=user, is_public=True)
+        public_greatgreatgrandchild = NodeFactory(parent=private_greatgrandchild, creator=user, is_public=True)
 
         serializer = rubeus.NodeFileCollector(node=public_project, auth=Auth(user=UserFactory()))
         ret = serializer.to_hgrid()
@@ -244,8 +244,8 @@ class TestRubeus(OsfTestCase):
         assert public_grandchild.title == children[1]['name']
         assert False == children[1]['permissions']['edit']
 
-        assert public_greatgreatgranchild._id == children[1]['children'][1]['nodeID']
-        assert public_greatgreatgranchild.title == children[1]['children'][1]['name']
+        assert public_greatgreatgrandchild._id == children[1]['children'][1]['nodeID']
+        assert public_greatgreatgrandchild.title == children[1]['children'][1]['name']
         assert False == children[1]['children'][1]['permissions']['edit']
 
         assert 'Private Component' not in ret

@@ -2,7 +2,7 @@ from PIL import Image
 import math
 import os
 
-#This script enlarges institions shield imamges so the corners show when they are displayed as circles.
+#This script enlarges institutions shield images so the corners show when they are displayed as circles.
 
 INSTITUTIONS_IMG_PATH =  '../website/static/img/institutions/'
 
@@ -29,7 +29,7 @@ def alphaToWhite(img):
 def generateTestHTML(size):
 
     path = INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'
-    f = open('image_maniplation/test_rounded_corners.html','w')
+    f = open('image_manipulation/test_rounded_corners.html','w')
     f.write('<body style=background-color:lightgrey;>\n')
     for shieldName in os.listdir(path):
         f.write('<img src={0} style="border-radius:100%;height:{1};width:{1};">\n'.format('../'+path + shieldName, size))
@@ -47,5 +47,5 @@ def main():
             img.save(INSTITUTIONS_IMG_PATH + 'shields-rounded-corners/'+ shield[:-4] + '-rounded-corners.png')
 
     generateTestHTML(size=100)
-    print('This script removes transparency from images, check the test html to ensure a the quality has been maintained')
+    print('This script removes transparency from images, check the test html to ensure that the quality has been maintained')
 main()

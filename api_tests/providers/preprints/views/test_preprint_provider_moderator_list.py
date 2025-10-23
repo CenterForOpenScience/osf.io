@@ -129,7 +129,7 @@ class ProviderModeratorListTestClass:
 
     def test_list_moderators_alphabetically(self, app, url, admin, moderator, provider):
         admin.fullname = 'Alice Alisdottir'
-        moderator.fullname = 'Bob Bobsson'
+        moderator.fullname = 'Bob Bobson'
         new_mod = AuthUserFactory(fullname='Cheryl Cherylsdottir')
         provider.get_group('moderator').user_set.add(new_mod)
         admin.save()

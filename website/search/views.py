@@ -127,7 +127,7 @@ def search_projects_by_title(**kwargs):
     ignore_nodes = request.args.getlist('ignoreNode', [])
 
     matching_title = Q(
-        title__icontains=term,  # search term (case insensitive)
+        title__icontains=term,  # search term (case-insensitive)
         category=category  # is a project
     )
 

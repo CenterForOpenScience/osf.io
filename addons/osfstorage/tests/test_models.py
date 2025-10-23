@@ -755,7 +755,7 @@ class TestNodeSettingsModel:
 
     def test_fork_reverts_to_node_storage_region(self, user2, region, region2, node, child_node_with_different_region):
         """
-        Despite different user regions defaults, the forked node always stay in the same region as it's orginal node.
+        Despite different user regions defaults, the forked node always stay in the same region as it's original node.
         """
         fork = node.fork_node(Auth(user2))
         assert fork.get_addon('osfstorage').region_id == region.id

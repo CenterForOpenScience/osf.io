@@ -406,7 +406,7 @@ class GenericProviderLicenseList(LicenseList):
 
     def get_default_queryset(self):
         """
-        Returns provider.acceptable_licenses if they exist, otherwise returns all licenses.
+        Returns provider.acceptable_licenses if they exist; otherwise, returns all licenses.
         The provider's default_license is also included in the queryset if one exists.
         """
         provider = get_object_or_error(

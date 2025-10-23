@@ -146,7 +146,7 @@ class TestRegistrationMachineNotification:
         """
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call/args and also implicitly ensures
-        # that the email acutally renders as normal in send_mail.
+        # that the email actually renders as normal in send_mail.
         notify_submit(registration, admin)
 
         assert len(mock_send_grid.call_args_list) == 2
@@ -174,7 +174,7 @@ class TestRegistrationMachineNotification:
 
         # Set up mock_email as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders correctly.
+        # ensures that the email actually renders correctly.
         store_emails = emails.store_emails
         with mock.patch.object(emails, 'store_emails', side_effect=store_emails) as mock_email:
             notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
@@ -244,7 +244,7 @@ class TestRegistrationMachineNotification:
 
         # Set up mock_email as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders correctly
+        # ensures that the email actually renders correctly
         store_emails = emails.store_emails
         with mock.patch.object(emails, 'store_emails', side_effect=store_emails) as mock_email:
             notify_accept_reject(registration, registration.creator, accept_action, RegistrationModerationStates)
@@ -339,7 +339,7 @@ class TestRegistrationMachineNotification:
         """
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
+        # ensures that the email actually renders as normal in send_mail.
         notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_send_grid.call_args_list) == 2
@@ -362,7 +362,7 @@ class TestRegistrationMachineNotification:
         """
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
+        # ensures that the email actually renders as normal in send_mail.
         notify_reject_withdraw_request(registration, withdraw_request_action)
 
         assert len(mock_send_grid.call_args_list) == 2
@@ -385,7 +385,7 @@ class TestRegistrationMachineNotification:
         """
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
+        # ensures that the email actually renders as normal in send_mail.
         notify_withdraw_registration(registration_with_retraction, withdraw_action)
 
         assert len(mock_send_grid.call_args_list) == 2
@@ -423,7 +423,7 @@ class TestRegistrationMachineNotification:
         assert any('requested withdrawal' in entry['message'] for entry in updates)
 
     @pytest.mark.parametrize('digest_type', ['email_transactional', 'email_digest'])
-    def test_submsissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
+    def test_submissions_and_withdrawals_do_not_appear_in_node_digest(self, digest_type, registration, admin, moderator, daily_moderator):
         notify_submit(registration, admin)
         notify_moderator_registration_requests_withdrawal(registration, admin)
 
@@ -433,7 +433,7 @@ class TestRegistrationMachineNotification:
         notify_moderator_registration_requests_withdrawal(registration, admin)
         # Set up mock_send_mail as a pass-through to the original function.
         # This lets us assert on the call count/args and also implicitly
-        # ensures that the email acutally renders as normal in send_mail.
+        # ensures that the email actually renders as normal in send_mail.
         tasks._send_reviews_moderator_emails('email_transactional')
 
         mock_send_grid.assert_called()

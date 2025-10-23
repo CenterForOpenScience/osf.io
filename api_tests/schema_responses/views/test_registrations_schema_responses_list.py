@@ -92,7 +92,7 @@ class TestRegistrationSchemaResponseListGETPermissions:
             return 410
         # Withdrawn registrations always return
         # UNAUTHORIZED for unauthenticated users and
-        # FORBIDDEN for all othrs
+        # FORBIDDEN for all others
         if registration_status == 'withdrawn':
             if role == 'unauthenticated':
                 return 401
@@ -210,7 +210,7 @@ class TestRegistrationSchemaResponseListGETBehavior:
         assert encountered_ids == expected_ids
 
     # Only test contributors here.
-    # Moderators tested elsehwere, and permissions tests confirm that unauthenticated users
+    # Moderators tested elsewhere, and permissions tests confirm that unauthenticated users
     # and non-contributors cannot GET SchemaResponses for private registrations
     @pytest.mark.parametrize('role', ['read', 'write', 'admin'])
     @pytest.mark.parametrize('response_state', ApprovalStates)

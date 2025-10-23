@@ -41,7 +41,7 @@ class MetricsViewMixin:
 
     @property
     def metric_map(self):
-        raise NotImplementedError('MetricsViewMixin sublcasses must define a metric_map class variable.')
+        raise NotImplementedError('MetricsViewMixin subclasses must define a metric_map class variable.')
 
     def get_annotated_queryset_with_metrics(self, queryset, metric_class, metric_name, after):
         """Return a queryset annotated with metrics. Use for list endpoints that expose metrics."""
@@ -90,7 +90,7 @@ class MetricsViewMixin:
 
     def _add_metrics(self, queryset_or_obj, method):
         """Parse the ?metric[METRIC]=PERIOD query param, validate it, and
-        run ``method`` for each each requested object.
+        run ``method`` for each requested object.
 
         This is used to share code between add_metric_to_object and get_metrics_queryset.
         """

@@ -129,7 +129,7 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Dataset'
 
-    def test_datcite_format_contributors(self, datacite_client):
+    def test_datacite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
         visible_contrib2.given_name = 'ヽ༼ ಠ益ಠ ༽ﾉ'

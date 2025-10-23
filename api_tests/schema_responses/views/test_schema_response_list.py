@@ -270,7 +270,7 @@ class TestSchemaResponseListPOSTBehavior:
 
     @pytest.fixture()
     def schema_response(self, registration):
-        '''A pre-existing, APPROVED SchemaResponse on the registration.'''
+        '''A preexisting, APPROVED SchemaResponse on the registration.'''
         response = SchemaResponse.create_initial_response(
             parent=registration, initiator=registration.creator
         )

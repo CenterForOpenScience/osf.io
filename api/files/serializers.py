@@ -457,7 +457,7 @@ class FileVersionSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
-    content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
+    content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this version')
     date_created = VersionedDateTimeField(source='created', read_only=True, help_text='The date that this version was created')
     name = ser.SerializerMethodField()
     links = LinksField({
@@ -513,7 +513,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
 def get_file_download_link(obj, version=None, view_only=None):
     guid = obj.get_guid()
-    # Add '' to the path to ensure thare's a trailing slash
+    # Add '' to the path to ensure there's a trailing slash
     # The trailing slash avoids a 301
     # NOTE: furl encoding to be verified later
     url = furl(

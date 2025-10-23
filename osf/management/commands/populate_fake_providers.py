@@ -140,13 +140,13 @@ COLLECTION_PROVIDERS = [
             'is_public': True,
             'is_promoted': True,
             'is_bookmark_collection': False,
-            'title': 'Very bouncey things',
+            'title': 'Very bouncy things',
             'collected_type_choices': [
                 'Forgotten',
-                'Remebered',
+                'Remembered',
             ],
             'status_choices': [
-                'In-progess',
+                'In-progress',
                 'Almost done',
                 'Complete',
             ],
@@ -167,7 +167,7 @@ COLLECTION_PROVIDERS = [
             'is_public': True,
             'is_promoted': True,
             'is_bookmark_collection': False,
-            'title': 'Future predections',
+            'title': 'Future predictions',
             'collected_type_choices': [
                 'project',
                 'paper',

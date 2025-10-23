@@ -61,14 +61,14 @@ class TestDomainExtraction:
         domains = set(spam_tasks._extract_domains(sample_text))
         assert not domains
 
-    def test_extract_domains__unverfied_if_does_not_resolve(self, mock_spam_head_request):
+    def test_extract_domains__unverified_if_does_not_resolve(self, mock_spam_head_request):
         mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.ConnectionError
         sample_text = 'This.will.not.connect'
 
         domains = set(spam_tasks._extract_domains(sample_text))
         assert domains == {('This.will.not.connect', NotableDomain.Note.UNVERIFIED)}
 
-    def test_actract_domains__returned_on_error(self, mock_spam_head_request):
+    def test_extract_domains__returned_on_error(self, mock_spam_head_request):
         sample_text = 'This.will.timeout'
         mock_spam_head_request.side_effect = spam_tasks.requests.exceptions.Timeout
         domains = set(spam_tasks._extract_domains(sample_text))
@@ -422,7 +422,7 @@ class TestNotableDomainReclassification:
         assert set(obj_two.spam_data['domains']) == {self.spam_domain_two.netloc}
 
     @pytest.mark.parametrize('factory', [NodeFactory, CommentFactory, PreprintFactory, RegistrationFactory, UserFactory])
-    def test_from_spam_to_ignored_makred_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
+    def test_from_spam_to_ignored_marked_by_external(self, factory, spam_notable_domain_one, spam_notable_domain_two, unknown_notable_domain, ignored_notable_domain):
         obj_three = factory()
         obj_three.spam_data['who_flagged'] = 'some external spam checker'
         obj_three.save()

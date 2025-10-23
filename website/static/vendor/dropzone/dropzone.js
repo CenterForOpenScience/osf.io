@@ -444,7 +444,7 @@ require.register("dropzone/lib/dropzone.js", function(exports, require, module){
       dictCancelUploadConfirmation: "Are you sure you want to cancel this upload?",
       dictRemoveFile: "Remove file",
       dictRemoveFileConfirmation: null,
-      dictMaxFilesExceeded: "You can not upload any more files.",
+      dictMaxFilesExceeded: "You cannot upload any more files.",
       accept: function(file, done) {
         return done();
       },

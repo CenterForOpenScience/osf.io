@@ -918,7 +918,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            raise Conflict(f'{target.provider.name} is an umoderated provider. If you believe this is an error, contact OSF Support.')
+            raise Conflict(f'{target.provider.name} is an unmoderated provider. If you believe this is an error, contact OSF Support.')
 
         serializer.save(user=self.request.user)
 
@@ -1087,7 +1087,7 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
                     errors=errors,
                 )
             else:
-                # Dataverse requires two seperate targets, one
+                # Dataverse requires two separate targets, one
                 # for draft files and one for published files
                 if src_provider == 'dataverse':
                     src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())

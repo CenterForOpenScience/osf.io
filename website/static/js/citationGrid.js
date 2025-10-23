@@ -211,7 +211,7 @@ var renderActions = function(item, col) {
             config: function(elm, isInit, ctx) {
                 // In JS, double-backlashes escape in-string backslashes,
                 // Quick overview of RTF file formatting (see https://msdn.microsoft.com/en-us/library/aa140284%28v=office.10%29.aspx for more):
-                // "{\rtf1\ansi             <- RTF headers indicating RTF version and char encoding, other headers possible but unecessary
+                // "{\rtf1\ansi             <- RTF headers indicating RTF version and char encoding, other headers possible but unnecessary
                 //  [content line 1]\       <- Trailing backlash indicating newline in displayed file, \n otherwise ignored for display
                 //  [content line 2]        <- Trailing backslash not strictly necessary for final line, but doesn't hurt
                 //  }"                      <- Closing brace indicates EOF for display purposes

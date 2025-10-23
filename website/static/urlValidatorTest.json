@@ -27,7 +27,7 @@
     "http://staging.damowmow.com/":"should accept valid website with sub-domain",
     "http://☺.damowmow.com/":"should accept valid website with unicode in sub-domain",
     "http://code.google.com/events/#&product=browser":"should accept valid website with variables",
-    "ftp://foo.bar/baz":"should acccept valid website with ftps",
+    "ftp://foo.bar/baz":"should accept valid website with ftps",
     "http://foo.bar/?q=Test%20URL-encoded%20stuff":"should accept valid website with encoded stuff in path",
     "http://مثال.إختبار":"should accept valid unicode heavy website test 1",
     "http://例子.测试":"should accept valid unicode heavy website test 2",

@@ -178,7 +178,7 @@ def default_node_permission_queryset(user, model_cls):
 def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
-    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    # Django's aliasing will break and the resulting QS will be empty and you will be sad.
     qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
     if annotations:
         qs = qs.annotate(**annotations)

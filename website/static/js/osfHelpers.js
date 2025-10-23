@@ -580,7 +580,7 @@ var hasTimeComponent = function(dateString) {
 
 /**
   * A date object with two formats: local time or UTC time.
-  * @param {String} date The original date as a string. Should be an standard
+  * @param {String} date The original date as a string. Should be a standard
   *                      format such as RFC or ISO. If the date is a datetime string
   *                      with no offset, an offset of UTC +00:00 will be assumed. However,
   *                      if the date is just a date (no time component), the time
@@ -659,7 +659,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    // Set nav-box width based on screem
+    // Set nav-box width based on screen
     fixAffixWidth();
     // Show the nav box
     $('.osf-affix').each(function (){

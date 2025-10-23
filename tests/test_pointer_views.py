@@ -154,7 +154,7 @@ class TestPointerViews(OsfTestCase):
         )
         assert res.status_code == 400
 
-    def test_add_pointers_no_user_logg_in(self):
+    def test_add_pointers_no_user_log_in(self):
 
         url = self.project.api_url_for('add_pointers')
         node_ids = [

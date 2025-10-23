@@ -39,7 +39,7 @@ class ParseCrossRefConfirmation(APIView):
 
         if status == 'completed':
             guids = []
-            # Keep track of errors recieved, ignore those that are handled
+            # Keep track of errors received, ignore those that are handled
             unexpected_errors = False
             for record in records:
                 doi = getattr(record.find('doi'), 'text', None)

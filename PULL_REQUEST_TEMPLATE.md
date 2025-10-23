@@ -36,4 +36,4 @@ Any concerns/considerations/questions that development raised?
 
 ## Ticket
 
-<!-- Link to JIRA ticket, if applicable e.g. https://openscience.atlassian.net/browse/OSF-1234 -->
+<!-- Link to Jira ticket, if applicable e.g. https://openscience.atlassian.net/browse/OSF-1234 -->

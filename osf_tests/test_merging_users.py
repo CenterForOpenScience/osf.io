@@ -288,7 +288,7 @@ class TestUserMerging(OsfTestCase):
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_merge_doesnt_send_signal(self, mock_notify):
-        #Explictly reconnect signal as it is disconnected by default for test
+        #Explicitly reconnect signal as it is disconnected by default for test
         contributor_added.connect(notify_added_contributor)
         other_user = UserFactory()
         with override_flag(ENABLE_GV, active=True):

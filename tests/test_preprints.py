@@ -369,7 +369,7 @@ class TestContributorMethods:
         preprint.save()
         assert len(preprint.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, preprint, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, preprint, auth):
         new_user = preprint.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         preprint.save()
