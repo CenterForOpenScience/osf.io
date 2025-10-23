@@ -58,8 +58,8 @@ class GitLabClient:
             return self.gitlab.projects.list(membership=True, all=all)
         except gitlab.GitlabAuthenticationError:
             raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-                'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
-                                'reconnect with a valid token <a href="/settings/addons/">here</a>.'
+                'message_long': 'Your GitLab token is deleted or invalid you may <a href="/settings/addons/">disconnect '
+                                'your GitLab account and reconnect with a valid token</a>.'
             })
 
     def branches(self, repo_id, branch=None):

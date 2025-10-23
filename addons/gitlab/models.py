@@ -302,8 +302,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 )
             else:
                 message += (
-                    ' The files in this GitLab repo can be viewed on GitLab '
-                    '<u><a href="{url}" aria-label="github link" >here</a></u>.'
+                    ' View the <u><a href="{url}">files in this repo</a></u> on GitLab '
+                    '.'
                 ).format(url=repo.http_url_to_repo)
             messages.append(message)
             return messages
@@ -318,8 +318,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         """
         try:
             message = (super().before_remove_contributor_message(node, removed) +
-            'You can download the contents of this repository before removing '
-            'this contributor <u><a href="{url}">here</a></u>.'.format(
+            'You can <u><a href="{url}">download the contents of this repository</a></u> before removing '
+            'this contributor.'.format(
                 url=node.api_url + 'gitlab/tarball/'
             ))
         except TypeError:

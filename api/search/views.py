@@ -260,7 +260,7 @@ class SearchFiles(BaseSearchView):
     For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder, because
     it belongs to the `files` collection of the API.  They can be distinguished by the `kind` attribute.  Files and
     folders use the same representation, but some attributes may be null for one kind but not the other. `size` will be
-    null for folders.  A list of storage provider keys can be found [here](/v2/#storage-providers).
+    null for folders.  See the [list of storage provider keys](/v2/#storage-providers).
 
         name                        type               description
         ================================================================================================================

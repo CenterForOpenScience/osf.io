@@ -13,9 +13,9 @@
     % endif
     <p>
     % if can_write:
-      <a href="${update_url}">Click here</a> to review and contribute to the updates in progress.
+      <a href="${update_url}">Review and contribute to the updates in progress</a>.
     % else:
-      <a href="${update_url}">Click here</a> to review the updates in progress.
+      <a href="${update_url}">Review the updates in progress</a>.
     % endif
     <p>
     Sincerely,<br>

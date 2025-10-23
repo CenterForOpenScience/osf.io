@@ -336,8 +336,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
                 )
             else:
                 message += (
-                    ' The files in this GitHub repo can be viewed on GitHub '
-                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
+                    ' View the <u><a href="https://github.com/{user}/{repo}/">files in this repo</a></u> on GitHub '
+                    '.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
@@ -355,8 +355,8 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
         """
         try:
             message = (super().before_remove_contributor_message(node, removed) +
-            'You can download the contents of this repository before removing '
-            'this contributor <u><a href="{url}">here</a></u>.'.format(
+            'You can <u><a href="{url}">download the contents of this repository</a></u> before removing '
+            'this contributor.'.format(
                 url=node.api_url + 'github/tarball/'
             ))
         except TypeError:

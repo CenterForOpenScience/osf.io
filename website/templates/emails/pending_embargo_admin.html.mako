@@ -31,8 +31,8 @@
     this registration before it is automatically submitted.
     </p>
     <p>
-    To approve this embargoed registration: <a href="${approval_link}">Click here</a>.<br>
-    To cancel this embargoed registration: <a href="${disapproval_link}">Click here</a>.
+    You can <a href="${approval_link}">approve this embargoed registration</a>.<br>
+    Or you can <a href="${disapproval_link}">cancel this embargoed registration</a>.
     </p>
     <p>
     % if not reviewable.provider or reviewable.provider._id != 'gfs':

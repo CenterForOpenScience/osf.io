@@ -132,7 +132,7 @@ class SubjectList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class SubjectDetail(JSONAPIBaseView, generics.RetrieveAPIView, SubjectMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subjects_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/subjects_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -151,7 +151,7 @@ class SubjectDetail(JSONAPIBaseView, generics.RetrieveAPIView, SubjectMixin):
 
 
 class SubjectChildrenList(JSONAPIBaseView, generics.ListAPIView, SubjectMixin, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subject_children_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/subject_children_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

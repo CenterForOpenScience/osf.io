@@ -7,7 +7,7 @@
         % if is_rejected:
 			Your submission ${reviewable.title}, submitted to ${reviewable.provider.name},
             has not been accepted. Your registration was returned as a draft so you can make the appropriate edits for resubmission.
-			<a href=${draft_registration.absolute_url}>Click here</a> to view your draft.
+			<a href=${draft_registration.absolute_url}>View your draft</a>.
         % else:
 			Your submission <a href="${reviewable.absolute_url}">${reviewable.title}</a>, submitted to ${reviewable.provider.name}, has been accepted by the moderator.
         % endif
@@ -55,12 +55,12 @@
                             Now that you've shared your ${document_type}, take advantage of more OSF features:
                             <ul>
                                 % if has_psyarxiv_chronos_text:
-                                    <li>Submit your preprint to an APA-published journal. <a href="https://help.osf.io/article/401-submitting-to-a-moderated-preprint-service ">Learn more</a></li>
+                                    <li>Submit your preprint to an APA-published journal. Learn about <a href="https://help.osf.io/article/376-preprints-home-page#Submitting-to-a-Moderated-Preprint-Service-nueKG">Submitting to a Moderated Preprint Service</a>.</li>
                                 % endif
 
                                 <li>Upload supplemental, materials, data, and code to the OSF project associated with your ${document_type}.
-                                    <a href="https://help.osf.io/article/177-upload-a-preprint" target="_blank">Learn how</a></li>
-                                <li>Preregister your next study. <a href="https://help.osf.io/345-create-registrations">Read more</a></li>
+                                    Learn how to <a href="https://help.osf.io/article/177-upload-a-preprint" target="_blank">upload a preprint</a>.</li>
+                                <li>Preregister your next study. Learn how to <a href="https://help.osf.io/345-create-registrations">create a registration</a>.</li>
                                 <li>Or share on social media: Tell your friends through:
                                     <table style="display: inline-table;" width="53" border="0" cellspacing="0" cellpadding="0" align="center">
                                         <tbody>

@@ -148,7 +148,7 @@ class RegistrationProviderList(GenericProviderList):
 
 
 class PreprintProviderList(PreprintMetricsViewMixin, GenericProviderList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_list).
     """
 
     model_class = PreprintProvider
@@ -226,7 +226,7 @@ class RegistrationProviderDetail(GenericProviderDetail):
 
 
 class PreprintProviderDetail(GenericProviderDetail, generics.UpdateAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -322,7 +322,7 @@ class RegistrationProviderSubjects(BaseProviderSubjects):
 
 
 class PreprintProviderSubjects(BaseProviderSubjects):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_subjects_list).
     """
     view_category = 'preprint-providers'
     provider_class = PreprintProvider  # Not actually the model being serialized, privatize to avoid issues
@@ -400,7 +400,7 @@ class PreprintProviderHighlightedSubjectList(GenericProviderHighlightedSubjectLi
 
 
 class GenericProviderLicenseList(LicenseList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_provider_licenses_list)
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_provider_licenses_list)
     """
     ordering = ()  # TODO: should be ordered once the frontend for selecting default licenses no longer relies on order
 
@@ -447,7 +447,7 @@ class PreprintProviderLicenseList(GenericProviderLicenseList):
 
 
 class PreprintProviderPreprintList(JSONAPIBaseView, generics.ListAPIView, PreprintFilterMixin, ProviderMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_providers_preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_providers_preprints_list).
     """
     provider_class = PreprintProvider
     permission_classes = (

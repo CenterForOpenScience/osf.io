@@ -38,7 +38,7 @@
       <li><a href="https://help.osf.io/hc/en-us/articles/360019737614-Create-Components">Organize your project with components</a> to take advantage of the flexible structure and maximize storage options.</li>
     </ul>
     <br>
-    Learn more about OSF Storage capacity <a href="https://help.osf.io/article/137-osf-storage-caps">here</a>, or contact <a href="mailto:support@osf.io">support@osf.io</a> with any questions you may have.<br>
+    Learn more about <a href="https://help.osf.io/article/137-osf-storage-caps">OSF Storage capacity</a>, or contact <a href="mailto:support@osf.io">support@osf.io</a> with any questions you may have.<br>
     <br>
     Thanks,<br>
     <br>

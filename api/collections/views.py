@@ -471,7 +471,7 @@ class LegacyCollectionSubmissionDetail(JSONAPIBaseView, generics.RetrieveUpdateD
 
 
 class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/collected_meta_subjects).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -489,7 +489,7 @@ class CollectionSubmissionSubjectsList(BaseResourceSubjectsList, CollectionMixin
 
 
 class CollectionSubmissionSubjectsRelationshipList(SubjectRelationshipBaseView, CollectionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/collected_meta_subjects_relationship).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

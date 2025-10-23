@@ -195,7 +195,7 @@
     % endif
 
     % if node['anonymous'] and user['is_contributor_or_group_member']:
-        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. You can <a class="link-solid" href="${node['redirect_url']}">view it as a contributor</a>.</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor_or_group_member']:

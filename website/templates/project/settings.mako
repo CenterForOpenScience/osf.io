@@ -385,7 +385,7 @@
 
                                 <div class="help-block">
                                   Withdrawing children components of a registration is not allowed. Should you wish to
-                                  withdraw this component, please withdraw its parent registration <a href="${web_url_for('node_setting', pid=node['root_id'])}">here</a>.
+                                  withdraw this component, please <a href="${web_url_for('node_setting', pid=node['root_id'])}">withdraw its parent registration</a>.
                                 </div>
 
                             % else:

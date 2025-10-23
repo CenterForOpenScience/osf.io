@@ -16,7 +16,7 @@ from api.schemas.serializers import (
 
 
 class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/metaschemas_list).
 
     """
     permission_classes = (
@@ -42,7 +42,7 @@ class RegistrationSchemaList(JSONAPIBaseView, generics.ListAPIView, ListFilterMi
 
 
 class RegistrationSchemaDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/metaschemas_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

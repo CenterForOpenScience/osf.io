@@ -34,7 +34,7 @@ class BrandMixin:
 
 
 class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -57,7 +57,7 @@ class BrandList(JSONAPIBaseView, generics.ListAPIView, BrandMixin):
 
 
 class BrandDetail(JSONAPIBaseView, generics.RetrieveAPIView, BrandMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/subjects_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/subjects_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
