@@ -794,6 +794,22 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def is_latest_version(self):
         return self.guids.exists()
 
+    @property
+    def date_created_first_version(self):
+        try:
+            base_guid = self.versioned_guids.first().guid if self.versioned_guids.exists() else None
+            if not base_guid:
+                return self.created
+
+            first_version = base_guid.versions.filter(is_rejected=False).order_by('version').first()
+
+            if first_version and first_version.referent:
+                return first_version.referent.created
+
+            return self.created
+        except Exception:
+            return self.created
+
     def get_preprint_versions(self, include_rejected=True, **version_filters):
         guids = self.versioned_guids.first().guid.versions.all()
         preprint_versions = (
