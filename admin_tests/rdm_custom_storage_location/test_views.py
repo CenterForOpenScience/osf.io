@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import PermissionDenied
@@ -120,6 +122,24 @@ class TestInstitutionDefaultStorage(AdminTestCase):
             nt.assert_true(type(addon).__name__ in self.addon_type_dict)
         nt.assert_equal(res.context_data['region'], self.us)
         nt.assert_equal(res.context_data['selected_provider_short_name'], res.context_data['region'].waterbutler_settings['storage']['provider'])
+
+    def test_get_storage_information(self, *args, **kwargs):
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.context_data['region'], self.default_region)
+        nt.assert_equal(res.context_data['selected_provider_full_name'], 'NII Storage')
+        nt.assert_equal(res.context_data['storage'], {
+            'folder': {'field_name': 'Folder', 'value': self.default_region.waterbutler_settings.get('storage', {}).get('folder')}
+        })
+        nt.assert_true(res.context_data['disable_view_setting_info'])
+
+    @mock.patch('admin.rdm_custom_storage_location.utils.get_institutional_storage_information')
+    def test_get_storage_information_exception(self, mock_get_institutional_storage_information, *args, **kwargs):
+        mock_get_institutional_storage_information.side_effect = Exception('test exception')
+        res = self.view.get(self.request, *args, **kwargs)
+        nt.assert_equal(res.context_data['region'], self.default_region)
+        nt.assert_equal(res.context_data['selected_provider_full_name'], 'NII Storage')
+        nt.assert_equal(res.context_data['storage'], {})
+        nt.assert_true(res.context_data['disable_view_setting_info'])
 
 
 class TestInstitutionalStorageListView(AdminTestCase):

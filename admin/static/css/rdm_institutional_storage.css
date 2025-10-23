@@ -31,3 +31,9 @@
 .csv-upload-button div {
     margin-left: 10px;
 }
+
+.wrap-cell {
+    word-wrap: break-word;
+    word-break: break-word;
+    white-space: normal !important;
+}

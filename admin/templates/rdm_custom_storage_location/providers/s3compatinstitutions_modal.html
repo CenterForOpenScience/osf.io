@@ -32,7 +32,7 @@
                         <div class="form-group">
                             <label data-toggle="tooltip" title="{% trans '*The storage API must support Server Side Encryption' %}" for="s3compatinstitutions_server_side_encryption">{% trans "Enable Server Side Encryption" %}</label><br>
                             <label for="s3compatinstitutions_server_side_encryption" style="font-size: 15px; font-weight: normal; margin-left: 5px;">
-                                <input type="checkbox" class="s3compatinstitutions-params" id="s3compatinstitutions_server_side_encryption" style="margin-right: 10px; transform: scale(1.2);" value="false" onchange="setValue()">
+                                <input type="checkbox" class="s3compatinstitutions-params" id="s3compatinstitutions_server_side_encryption" style="margin-right: 10px; transform: scale(1.2);" value="false" onchange="setValueS3CompatInstitutions()">
                                 {% trans "Yes@institutional_storage" %}
                             </label>
                         </div>
@@ -53,7 +53,7 @@
 </div>
 
 <script>
-    function setValue(value) {
+    function setValueS3CompatInstitutions() {
         var element = document.getElementById("s3compatinstitutions_server_side_encryption");
         element.value = element.checked;
     }

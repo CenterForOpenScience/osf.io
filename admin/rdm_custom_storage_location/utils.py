@@ -1154,6 +1154,112 @@ def save_usermap_from_tmp(provider_name, institution):
         rdm_addon_option.save()
 
 
+def create_storage_info_template(field_name, value):
+    """Create a standard storage information template."""
+    return {'field_name': field_name, 'value': value}
+
+
+def get_institution_addon_info(institution_id, provider_name):
+    """Get institution addon option and external account."""
+    rdm_addon_option = get_rdm_addon_option(institution_id, provider_name, create=False)
+    external_account = rdm_addon_option.external_accounts.first()
+    return rdm_addon_option, external_account
+
+
+def get_osfstorage_info(waterbutler_settings_storage):
+    """Get storage information for OSF storage."""
+    return {
+        'folder': create_storage_info_template('Folder', waterbutler_settings_storage.get('folder'))
+    }
+
+
+def get_s3_info(waterbutler_credentials_storage, waterbutler_settings_storage):
+    """Get storage information for Amazon S3."""
+    return {
+        'access_key': create_storage_info_template('Access Key', waterbutler_credentials_storage.get('access_key')),
+        'bucket': create_storage_info_template('Bucket', waterbutler_settings_storage.get('bucket')),
+        'encrypt_uploads': create_storage_info_template(
+            'Enable Server Side Encryption',
+            waterbutler_settings_storage.get('encrypt_uploads', False)
+        )
+    }
+
+
+def get_s3compat_info(waterbutler_credentials_storage, waterbutler_settings_storage):
+    """Get storage information for S3 Compatible Storage."""
+    return {
+        'host': create_storage_info_template('Endpoint URL', waterbutler_credentials_storage.get('host')),
+        'access_key': create_storage_info_template('Access Key', waterbutler_credentials_storage.get('access_key')),
+        'bucket': create_storage_info_template('Bucket', waterbutler_settings_storage.get('bucket')),
+        'encrypt_uploads': create_storage_info_template(
+            'Enable Server Side Encryption',
+            waterbutler_settings_storage.get('encrypt_uploads', False)
+        )
+    }
+
+
+def get_s3compatinstitutions_info(institution, provider_name, region):
+    """Get storage information for S3 Compatible Storage for Institutions."""
+    rdm_addon_option, external_account = get_institution_addon_info(institution.id, provider_name)
+    return {
+        'host': create_storage_info_template('Endpoint URL', external_account.profile_url),
+        'access_key': create_storage_info_template('Access Key', external_account.display_name),
+        'bucket': create_storage_info_template('Bucket', rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)),
+        'encrypt_uploads': create_storage_info_template(
+            'Enable Server Side Encryption',
+            region.waterbutler_settings.get('encrypt_uploads', False)
+        )
+    }
+
+
+def get_ociinstitutions_info(institution, provider_name):
+    """Get storage information for Oracle Cloud Infrastructure for Institutions."""
+    rdm_addon_option, external_account = get_institution_addon_info(institution.id, provider_name)
+    return {
+        'host': create_storage_info_template('Endpoint URL', external_account.profile_url),
+        'access_key': create_storage_info_template('Access Key', external_account.display_name),
+        'bucket': create_storage_info_template('Bucket', rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER))
+    }
+
+
+def get_nextcloudinstitutions_info(institution, provider_name):
+    """Get storage information for Nextcloud for Institutions."""
+    rdm_addon_option, external_account = get_institution_addon_info(institution.id, provider_name)
+    return {
+        'host': create_storage_info_template('Host URL', external_account.profile_url),
+        'username': create_storage_info_template('Username', external_account.display_name),
+        'folder': create_storage_info_template('Folder', rdm_addon_option.extended.get(KEYNAME_BASE_FOLDER)),
+        'notification_secret': create_storage_info_template(
+            'Connection common key from File Upload Notification App',
+            rdm_addon_option.extended.get(KEYNAME_NOTIFICATION_SECRET)
+        )
+    }
+
+
+def get_dropboxbusiness_info(institution, provider_name):
+    """Get storage information for Dropbox Business."""
+    rdm_addon_option, external_account = get_institution_addon_info(institution.id, provider_name)
+    return {
+        'authorized_by': create_storage_info_template('authorized_by', external_account.display_name)
+    }
+
+
+def get_institutional_storage_information(provider_name, region, institution):
+    """Get current institutional storage information."""
+    waterbutler_credentials_storage = region.waterbutler_credentials.get('storage', {})
+    waterbutler_settings_storage = region.waterbutler_settings.get('storage', {})
+
+    provider_handlers = {
+        'osfstorage': lambda: get_osfstorage_info(waterbutler_settings_storage),
+        's3': lambda: get_s3_info(waterbutler_credentials_storage, waterbutler_settings_storage),
+        's3compat': lambda: get_s3compat_info(waterbutler_credentials_storage, waterbutler_settings_storage),
+        's3compatinstitutions': lambda: get_s3compatinstitutions_info(institution, provider_name, region),
+        'ociinstitutions': lambda: get_ociinstitutions_info(institution, provider_name),
+        'nextcloudinstitutions': lambda: get_nextcloudinstitutions_info(institution, provider_name),
+        'dropboxbusiness': lambda: get_dropboxbusiness_info(institution, provider_name)
+    }
+
+    return provider_handlers.get(provider_name, lambda: {})()
 def add_node_settings_to_projects(institution, provider_name):
     if provider_name not in INSTITUTIONAL_STORAGE_ADD_ON_METHOD:
         # If storage is bulk-mount then do nothing
