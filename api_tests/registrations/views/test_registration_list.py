@@ -814,15 +814,17 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
 
     def test_cannot_create_registration(
             self, app, user_write_contrib, user_read_contrib,
-            payload, url_registrations, project_public):
+            payload, url_registrations, draft_registration):
 
         # def test_write_only_contributor_cannot_create_registration(self):
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        draft_registration.add_contributor(user_write_contrib, permissions.WRITE)
         res = app.post_json_api(
             url_registrations,
             payload,
             auth=user_write_contrib.auth,
             expect_errors=True)
-        assert res.status_code == 403
+        assert res.status_code == 201
 
     # def test_read_only_contributor_cannot_create_registration(self):
         res = app.post_json_api(
@@ -832,16 +834,12 @@ class TestNodeRegistrationCreate(DraftRegistrationTestCase):
             expect_errors=True)
         assert res.status_code == 403
 
-    # def test_non_authenticated_user_cannot_create_registration(self):
+    def test_non_authenticated_user_cannot_create_registration(
+            self, app, payload, url_registrations):
+        # GRDM-50321 Project Metadata should be available to non-admins.
         res = app.post_json_api(url_registrations, payload, expect_errors=True)
         assert res.status_code == 401
-
-        # admin via a group cannot create registration
-        group_mem = AuthUserFactory()
-        group = OSFGroupFactory(creator=group_mem)
-        project_public.add_osf_group(group, permissions.ADMIN)
-        res = app.post_json_api(url_registrations, payload, auth=group_mem.auth, expect_errors=True)
-        assert res.status_code == 403
+        # There are no public registrations in the GakuNin RDM
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task')
     def test_registration_draft_must_be_specified(
@@ -1601,18 +1599,19 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        assert res.status_code == 201
 
         # User is an admin group contributor on the node (not enough)
+        draft_registration = DraftRegistrationFactory(creator=user_two)
+        draft_registration.add_contributor(user, permissions.ADMIN)
         draft_registration.branched_from.add_osf_group(group, permissions.ADMIN)
         payload_ver['data']['attributes']['draft_registration_id'] = draft_registration._id
         assert draft_registration.branched_from.is_admin_contributor(user) is False
         assert draft_registration.branched_from.has_permission(user, permissions.ADMIN) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is True
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
+        assert res.status_code == 201
 
         draft_registration = DraftRegistrationFactory(creator=user_two)
         draft_registration.add_contributor(user, permissions.WRITE)
@@ -1622,8 +1621,7 @@ class TestRegistrationCreate(TestNodeRegistrationCreate):
         draft_registration.branched_from.is_admin_contributor(user) is True
         assert draft_registration.has_permission(user, permissions.ADMIN) is False
         res = app.post_json_api(url_registrations_ver, payload_ver, auth=user.auth, expect_errors=True)
-        assert res.status_code == 403
-        assert res.json['errors'][0]['detail'] == 'You must be an admin contributor on both the project and the draft registration to create a registration.'
+        assert res.status_code == 201
 
         # User is admin on draft and node
         draft_registration = DraftRegistrationFactory(creator=user)

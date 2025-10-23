@@ -9,6 +9,7 @@ from website.util import rubeus
 from website.project.decorators import must_be_contributor_or_public, must_not_be_retracted_registration
 from website.project.views.node import _view_project
 from website.ember_osf_web.decorators import ember_flag_is_active
+from osf.models import Guid
 from addons.osfstorage.models import NodeSettings
 
 @must_not_be_retracted_registration
@@ -50,12 +51,17 @@ def grid_data(auth, node, **kwargs):
     """
     data = request.args.to_dict()
     ret = rubeus.to_hgrid(node, auth, **data)
-    if NodeSettings.objects.filter(owner_id=node.id).exists() and ret[0]['children']:
-        for _, child in enumerate(ret[0]['children']):
-            if child.get('provider') == 'osfstorage' and 'nodeRegion' in child:
-                if child['nodeRegion'] in ['NII Storage', 'United States']:
-                    child['nodeRegion'] = 'NII Storage'
-                else:
-                    child['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
-                    child['addonFullname'] = child['nodeRegion']
+
+    def _inner(_id, data):
+        guid = Guid.load(_id)
+        if guid and NodeSettings.objects.filter(owner_id=guid.object_id).exists() and data.get('children'):
+            for _, child in enumerate(data['children']):
+                _inner(child.get('nodeId') if child.get('provider') else child.get('nodeID'), child)
+                if child.get('provider') == 'osfstorage' and 'nodeRegion' in child:
+                    if child['nodeRegion'] in ['NII Storage', 'United States']:
+                        child['nodeRegion'] = 'NII Storage'
+                    else:
+                        child['iconUrl'] = '/static/addons/osfstorage/comicon_custom_storage.png'
+                        child['addonFullname'] = child['nodeRegion']
+    _inner(node._id, ret[0])
     return {'data': ret}

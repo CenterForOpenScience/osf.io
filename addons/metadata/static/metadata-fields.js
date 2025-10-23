@@ -841,13 +841,13 @@ const ArrayFormField = oop.extend(FormFieldInterface, {
       rows = value || [];
     }
 
-    if(self.question.hasOwnProperty('initial_row_addition') && self.question.initial_row_addition ){
-      self.addRow();
-    }
-
     rows.forEach(function(row) {
       self.addRow(row);
     });
+
+    if(self.question.hasOwnProperty('initial_row_addition') && self.question.initial_row_addition ){
+      self.addRow();
+    }
   },
 
   reset: function() {

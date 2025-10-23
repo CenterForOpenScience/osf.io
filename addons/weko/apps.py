@@ -11,7 +11,7 @@ TEMPLATE_PATH = os.path.join(
 )
 
 SHORT_NAME = 'weko'
-FULL_NAME = 'WEKO'
+FULL_NAME = 'JAIRO Cloud'
 NAME = 'addons.weko'
 
 

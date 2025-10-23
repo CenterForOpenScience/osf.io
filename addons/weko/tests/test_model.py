@@ -38,13 +38,13 @@ def mock_requests_get(url, **kwargs):
 class TestUserSettings(OAuthAddonUserSettingTestSuiteMixin, unittest.TestCase):
 
     short_name = 'weko'
-    full_name = 'WEKO'
+    full_name = 'JAIRO Cloud'
     ExternalAccountFactory = WEKOAccountFactory
 
 class TestNodeSettings(OAuthAddonNodeSettingsTestSuiteMixin, unittest.TestCase):
 
     short_name = 'weko'
-    full_name = 'WEKO'
+    full_name = 'JAIRO Cloud'
     ExternalAccountFactory = WEKOAccountFactory
     NodeSettingsFactory = WEKONodeSettingsFactory
     NodeSettingsClass = NodeSettings

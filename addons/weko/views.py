@@ -398,6 +398,7 @@ def weko_get_available_schemas(auth, **kwargs):
         mapping.registration_schema_id
         for mapping in RegistrationMetadataMapping.objects.all()
     ]
+    available_schema_ids = list(set(available_schema_ids))
     node = kwargs['node'] or kwargs['project']
     addon = node.get_addon(SHORT_NAME)
     schemas = [

@@ -5,13 +5,13 @@
   "pages": [
     {
       "id": "page1",
-      "title": "プロジェクトメタデータ登録|Poject Metadata Registration",
-      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【プロジェクトメタデータ】を登録することができます。実験に関する情報やファイル形式毎にデータの概要情報を記載できます。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\nhttps://rdm.nii.ac.jp/3sw6v/|This registration screen can only be used by those involved in the Moonshot Research and Development Project Goal 2 (MS2). In the Moonshot Goal 2 database (Mebyo DB), the metadata for the entire dataset is called 「project metadata」, and the metadata for individual files and folders is called 「file metadata」. On this registration screen, you can enter project metadata for the Mebyo DB.\nhttps://rdm.nii.ac.jp/3sw6v/",
+      "title": "プロジェクトメタデータ登録|Project Metadata Registration",
+      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【プロジェクトメタデータ】を登録することができます。研究プロジェクトの概要情報やデータセットの管理情報を記載できます。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|This registration form is where you register \"Project Metadata\" for the Moonshot Goal 2 Database (Mebyo DB). You can enter overview information about your research project and management information for the dataset. In the Mebyo DB, metadata is categorized as follows:\n\"Project Metadata\": Overview of the research project and management information for the dataset\n\"Dataset Metadata\": Information describing  the experimental conditions and content of the entire dataset\n\"File Metadata\": Information describing the experimental conditions and data content for individual files/folders\n\"Extended Metadata\": Additional supplementary information not covered by the regular metadata types\nFor more details, please refer to the Mebyo DB Guidelines.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
       "questions": [
         {
           "qid": "title-of-dataset",
           "nav": "データセットの名称",
-          "title": "データセットの名称（日本語）|Title of Dataset (Japanese)",
+          "title": "データセットの名称（日本語） [必須]|Title of Dataset (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -33,7 +33,7 @@
         {
           "qid": "project-name",
           "nav": "MSプロジェクト名",
-          "title": "MSプロジェクト名|MS Project name",
+          "title": "MSプロジェクト名 [必須]|MS Project name [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "required": true,
@@ -70,7 +70,7 @@
         {
           "qid": "date-registered-in-metadata",
           "nav": "メタデータ登録日・メタデータ更新日",
-          "title": "メタデータ登録日|Date (Registered) in Metadata",
+          "title": "メタデータ登録日 [必須]|Date (Registered) in Metadata [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -81,7 +81,7 @@
         {
           "qid": "date-updated-in-metadata",
           "nav": "メタデータ登録日・メタデータ更新日",
-          "title": "メタデータ更新日|Date (Updated) in Metadata",
+          "title": "メタデータ更新日 [必須]|Date (Updated) in Metadata [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -92,7 +92,7 @@
         {
           "qid": "purpose-of-experiment",
           "nav": "データの説明",
-          "title": "実験（もしくは解析結果・解析ツールなど）の目的（日本語）|Purpose of experiment (Purpose of Analytical results or Analytical tools) (Japanese)",
+          "title": "実験（もしくは解析結果・解析ツールなど）の目的（日本語） [必須]|Purpose of experiment (Purpose of Analytical results or Analytical tools) (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "space_normalization": true,
@@ -110,7 +110,7 @@
         {
           "qid": "description-of-experimental-condition",
           "nav": "データの説明",
-          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明（日本語）|Description of experimental condition (Description of  Analytical results or Analytical tools) (Japanese)",
+          "title": "実験状況など（もしくは解析結果・解析ツールの背景など）の説明（日本語） [必須]|Description of experimental condition (Description of  Analytical results or Analytical tools) (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "space_normalization": true,
@@ -126,9 +126,9 @@
           "required": false
         },
         {
-          "qid": "keyword-arr",
+          "qid": "keywords",
           "nav": "データの説明",
-          "title": "キーワード（日本語）|Keywords (Japanese)",
+          "title": "キーワード [必須]*|Keywords [Required]*",
           "required": true,
           "type": "array",
           "properties": [
@@ -137,28 +137,19 @@
             "title": "キーワード（日本語）|Keywords (Japanese)",
             "type": "string",
             "format": "text"
-            }
-          ]
-        },
-        {
-          "qid": "keyword-arr-en",
-          "nav": "データの説明",
-          "title": "Keywords (English)",
-          "required": true,
-          "type": "array",
-          "properties": [
+            },
             {
-            "id": "filename",
-            "title": "Keywords (English)",
-            "type": "string",
-            "format": "text"
+              "id": "filename-en",
+              "title": "Keywords (English)",
+              "type": "string",
+              "format": "text"
             }
           ]
         },
         {
           "qid": "dataset-research-field",
           "nav": "データセットの分野",
-          "title": "データセットの分野|Dataset Research field",
+          "title": "データセットの分野 [必須]|Dataset Research field [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -213,7 +204,7 @@
         {
           "qid": "Analysis-type",
           "nav": "解析対象データ",
-          "title": "解析対象データ|Analysis type",
+          "title": "解析対象データ [必須]|Analysis type [Required]",
           "type": "choose",
           "format": "multiselect",
           "required": true,
@@ -263,7 +254,7 @@
         {
           "qid": "the-presence-of-metadata-files-created-for-a-specific-modality-in-other-databases",
           "nav": "データの説明",
-          "title": "他のデータベースで特定のモダリティ用に作成したメタデータファイルの有無|The presence of metadata files created for a specific modality in other databases",
+          "title": "他のデータベースで特定のモダリティ用に作成したメタデータファイルの有無 [必須]|The presence of metadata files created for a specific modality in other databases [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -297,7 +288,7 @@
         {
           "qid": "necessity-of-contact-and-permission",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "連絡・許諾の要不要|Necessity of Contact and Permission",
+          "title": "連絡・許諾の要不要 [必須]|Necessity of Contact and Permission [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -320,7 +311,7 @@
         {
           "qid": "necessity-of-including-in-acknowledgments",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "謝辞に記載の要不要|Necessity of including in Acknowledgments",
+          "title": "謝辞に記載の要不要 [必須]|Necessity of including in Acknowledgments [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -339,7 +330,7 @@
         {
           "qid": "names-to-be-included-in-the-acknowledgments",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文（日本語）|Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (Japanese)",
+          "title": "謝辞に記載する名称（個人名、グループ名等）、または謝辞全文（日本語） [必須]|Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -348,7 +339,7 @@
         {
           "qid": "names-to-be-included-in-the-acknowledgments-en",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (English)",
+          "title": "Names to be included in the Acknowledgments (individuals, groups, etc.), or the full text of the Acknowledgments (English) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -375,7 +366,7 @@
         {
           "qid": "data-policy-license",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "ライセンス|License",
+          "title": "ライセンス [必須]|License [Required]",
           "required": true,
           "type": "choose",
           "format": "singleselect-pulldown",
@@ -391,10 +382,6 @@
             {
               "text": "CC0 1.0 Universal",
               "tooltip": "CC0 1.0 Universal"
-            },
-            {
-              "text": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication",
-              "tooltip": "CC0 1.0 パブリック・ドメイン提供|CC0 1.0 Public Domain Dedication"
             },
             {
               "text": "CC BY 4.0 表示 国際|CC BY 4.0 Attribution International",
@@ -481,7 +468,7 @@
         {
           "qid": "data-policy-free",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "有償・無償 |Pay or Free ",
+          "title": "有償・無償 [必須]|Pay or Free [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -499,7 +486,7 @@
         {
           "qid": "availability-of-commercial-use",
           "nav": "データの提供・公開（解析結果・解析ツールの提供・公開）",
-          "title": "商用利用の可否  |Availability of commercial use  ",
+          "title": "商用利用の可否 [必須]|Availability of commercial use [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -517,7 +504,7 @@
         {
           "qid": "access-rights",
           "nav": "データの提供・公開",
-          "title": "アクセス権|Access rights",
+          "title": "アクセス権 [必須]|Access rights [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -553,7 +540,7 @@
         {
           "qid": "repository-information",
           "nav": "リポジトリ",
-          "title": "リポジトリ情報 |Repository information ",
+          "title": "リポジトリ情報 [必須]|Repository information [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -634,109 +621,97 @@
           "help": "(*) If there is not enough space, write here"
         },
         {
-          "qid": "name-of-data-creator",
-          "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "データ作成者 氏名（日本語）|Name of data creator (Japanese)",
-          "type": "string",
-          "format": "text",
+          "qid": "data-creator",
+          "nav": "データ作成者",
+          "title": "データ作成者 [必須]*|Name of data creator [Required]*",
           "required": true,
-          "space_normalization": true,
-          "help": "e.g. 未病太郎|e.g. Mebyo Todai"
+          "type": "array",
+          "properties": [
+            {
+              "id": "name",
+              "title": "データ作成者 氏名（日本語）|Name of data creator (Japanese)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. 未病太郎|e.g. Mebyo Taro"
+            },
+            {
+              "id": "name-en",
+              "title": "Name of data creator (English)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. Mebyo Taro"
+            },
+            {
+              "id": "belonging",
+              "title": "データ作成者  所属（日本語）|Belonging of data creator (Japanese)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. 未病大学|e.g. Mebyo University"
+            },
+            {
+              "id": "belonging-en",
+              "title": "Belonging of data creator (English)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. Mebyo University"
+            },
+            {
+              "id": "contact",
+              "title": "データ作成者  連絡先|Contact of data creator",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. xxxxx@yyyy.ac.jp|e.g. xxxxx@yyyy.ac.jp"
+            }
+          ]
         },
         {
-          "qid": "name-of-data-creator-en",
-          "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "Name of data creator (English)",
-          "type": "string",
-          "format": "text",
-          "required": false,
-          "space_normalization": true,
-          "help": "e.g. Mebyo Todai"
-        },
-        {
-          "qid": "belonging-of-data-creator",
-          "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "データ作成者  所属（日本語）|Belonging of data creator (Japanese)",
-          "type": "string",
-          "format": "text",
+          "qid": "data-manager",
+          "nav": "データ管理者",
+          "title": "データ管理者 [必須]*|Name of data manager [Required]*",
           "required": true,
-          "space_normalization": true,
-          "help": "e.g. 未病大学|e.g. Mebyo University"
-        },
-        {
-          "qid": "belonging-of-data-creator-en",
-          "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "Belonging of data creator (English)",
-          "type": "string",
-          "format": "text",
-          "required": false,
-          "space_normalization": true,
-          "help": "e.g. Mebyo University"
-        },
-        {
-          "qid": "contact-of-data-creator",
-          "nav": "データ作成者（解析結果・解析ツール作成者）",
-          "title": "データ作成者  連絡先|Contact of data creator",
-          "type": "string",
-          "format": "text",
-          "required": true,
-          "space_normalization": true,
-          "help": "e.g. xxxxx@yyyy.ac.jp|e.g. xxxxx@yyyy.ac.jp"
-        },
-        {
-          "qid": "name-of-data-manager",
-          "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "データ管理者 氏名（日本語）|Name of data manager (Japanese)",
-          "type": "string",
-          "format": "text",
-          "required": true,
-          "space_normalization": true,
-          "help": "e.g. 未病太郎|e.g. Mebyo Todai"
-        },
-        {
-          "qid": "name-of-data-manager-en",
-          "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "Name of data manager (English)",
-          "type": "string",
-          "format": "text",
-          "required": false,
-          "space_normalization": true,
-          "help": "e.g. Mebyo Todai"
-        },
-        {
-          "qid": "belonging-of-data-manager",
-          "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "データ管理者  所属（日本語）|Belonging of data manager (Japanese)",
-          "type": "string",
-          "format": "text",
-          "required": true,
-          "space_normalization": true,
-          "help": "e.g. 未病大学|e.g. Mebyo University"
-        },
-        {
-          "qid": "belonging-of-data-manager-en",
-          "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "Belonging of data manager (English)",
-          "type": "string",
-          "format": "text",
-          "required": false,
-          "space_normalization": true,
-          "help": "e.g. Mebyo University"
-        },
-        {
-          "qid": "contact-of-data-manager",
-          "nav": "データ管理者（解析結果・解析ツール管理者）",
-          "title": "データ管理者  連絡先|Contact of data manager ",
-          "type": "string",
-          "format": "text",
-          "required": true,
-          "space_normalization": true,
-          "help": "e.g. xxxxx@yyyy.ac.jp|e.g. xxxxx@yyyy.ac.jp"
+          "type": "array",
+          "properties": [
+            {
+              "id": "name",
+              "title": "データ管理者 氏名（日本語）|Name of data manager (Japanese)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. 未病太郎|e.g. Mebyo Taro"
+            },
+            {
+              "id": "name-en",
+              "title": "Name of data manager (English)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. Mebyo Taro"
+            },
+            {
+              "id": "belonging",
+              "title": "データ管理者  所属（日本語）|Belonging of data manager (Japanese)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. 未病大学|e.g. Mebyo University"
+            },
+            {
+              "id": "belonging-en",
+              "title": "Belonging of data manager (English)",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. Mebyo University"
+            },
+            {
+              "id": "contact",
+              "title": "データ管理者  連絡先|Contact of data manager",
+              "type": "string",
+              "format": "text",
+              "help": "e.g. xxxxx@yyyy.ac.jp|e.g. xxxxx@yyyy.ac.jp"
+            }
+          ]
         },
         {
           "qid": "target-type-of-acquired-data",
           "nav": "取得データの対象種別",
-          "title": "取得データの対象種別（日本語）|Target type of acquired data (Japanese)",
+          "title": "取得データの対象種別（日本語） [必須]|Target type of acquired data (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -754,7 +729,7 @@
         {
           "qid": "ethics-review-committee-approval",
           "nav": "倫理審査委員会承認 ",
-          "title": "倫理審査委員会承認（日本語）|Ethics Review Committee Approval (Japanese)",
+          "title": "倫理審査委員会承認（日本語） [必須]|Ethics Review Committee Approval (Japanese) [Required]",
           "type": "string",
           "format": "text",
           "required": true,
@@ -774,7 +749,7 @@
         {
           "qid": "informed-consent",
           "nav": "インフォームドコンセント",
-          "title": "（ヒト）インフォームドコンセント（IC） 有・無・不要 |(Human) Informed Consent (IC) Yes, No, or Unnecessary",
+          "title": "（ヒト）インフォームドコンセント（IC） 有・無・不要 [必須]|(Human) Informed Consent (IC) Yes, No, or Unnecessary [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -898,7 +873,7 @@
         {
           "qid": "conflict-of-interest-Yes-or-No",
           "nav": "利益相反の有無",
-          "title": "利益相反の有無|Conflict of interest Yes or No ",
+          "title": "利益相反の有無 [必須]|Conflict of interest Yes or No [Required]",
           "type": "choose",
           "format": "singleselect-pulldown",
           "options": [
@@ -958,8 +933,8 @@
     },
     {
       "id": "page2",
-      "title": "データセットメタデータ登録|dataset metadata",
-      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【データセットメタデータ】を登録することができます。実験に関する情報やファイル形式毎にデータの概要情報を記載できます。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\nhttps://rdm.nii.ac.jp/3sw6v/",
+      "title": "データセットメタデータ登録|Dataset Metadata Registration",
+      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【データセットメタデータ】を登録することができます。実験に関する情報やファイル形式毎のデータ概要情報を記載できます。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|This registration form is where you register \"Dataset Metadata\" for the Moonshot Goal 2 Database (Mebyo DB). You can enter summary information about the research／experiment and the dataset. In the Mebyo DB, metadata is categorized as follows:\n\n\"Project Metadata\": Overview of the research project and management information for the dataset\n\"Dataset Metadata\": Information describing  the experimental conditions and content of the entire dataset\n\"File Metadata\": Information describing the experimental conditions and data content for individual files／folders\n\"Extended Metadata\": Additional supplementary information not covered by the regular metadata types\nFor more details, please refer to the Mebyo DB Guidelines.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
       "questions": [
         {
           "qid": "d-msr-object-of-measurement-jp",
@@ -1151,10 +1126,10 @@
         {
           "qid": "d-txt-group",
           "nav": "テキストファイル",
-          "title": "テキストファイル|TextFile",
-          "help": "以下の項目はデータセットに含まれるテキスト(e.g. csv, tsv, txt)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。",
+          "title": "テキストファイル|Text files",
+          "help": "以下の項目はデータセットに含まれるテキスト(e.g. csv, tsv, txt)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。|This section is where you provide an overview of text format files (e.g., csv, tsv, txt) included in the dataset. Please enter common metadata for all files of the same format here, and use \"File Metadata\" for information about individual files. If you have multiple types of files in the same format (e.g., time series data for heart rate and body temperature), please add input fields using the \"Add\" button at the bottom of the section. To help dataset users understand the content, please include information such as naming conventions, file extensions, and row/column labels.",
           "type": "array",
-          "row_addition_caption": "テキストファイル|TextFile",
+          "row_addition_caption": "テキストファイル|Text files",
           "properties": [
             {
               "id":"d-txt-file-name-convention-file-extension",
@@ -1228,7 +1203,7 @@
               "properties": [
                 {
                   "id": "Position-of-column",
-                  "title": "行の位置（日本語）|Position of column (Japanese)",
+                  "title": "列の位置（日本語）|Position of column (Japanese)",
                   "type": "string",
                   "format": "textarea"
                 },
@@ -1347,10 +1322,10 @@
         {
           "qid": "d-exl-group",
           "nav": "エクセルファイル",
-          "title": "エクセルファイル|ExcelFile",
+          "title": "エクセルファイル|Excel files",
           "type": "array",
-          "row_addition_caption": "エクセルファイル|ExcelFile",
-          "help": "以下の項目はデータセットに含まれるエクセル(e.g. xlsx, xlsm)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。",
+          "row_addition_caption": "エクセルファイル|Excel files",
+          "help": "以下の項目はデータセットに含まれるエクセル(e.g. xlsx, xlsm)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。|This section is where you provide an overview of excel format files (e.g., xlsx, xlsm) included in the dataset. Please enter common metadata for all files of the same format here, and use \"File Metadata\" for information about individual files. If you have multiple types of files in the same format (e.g., time series data for heart rate and body temperature), please add input fields using the \"Add\" button at the bottom of the section. To help dataset users understand the content, please include information such as naming conventions, file extensions, and row/column labels.",
           "properties": [
             {
               "id": "d-exl-file-name-convention-file-extension",
@@ -1526,10 +1501,10 @@
         {
           "qid": "d-image-group",
           "nav": "画像ファイル",
-          "title": "画像ファイル|ImageFile",
-          "help": "以下の項目はデータセットに含まれる画像(e.g. jpg, png, tif)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（静止画と動画など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。",
+          "title": "画像ファイル|Image files",
+          "help": "以下の項目はデータセットに含まれる画像(e.g. jpg, png, tif)形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（静止画と動画など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。|This section is where you provide an overview of image format files (e.g., jpg, png, tif) included in the dataset. Please enter common metadata for all files of the same format here, and use \"File Metadata\" for information about individual files. If you have multiple types of files in the same format (e.g., photographs and videos), please add input fields using the \"Add\" button at the bottom of the section. To help dataset users understand the content, please include information such as naming conventions, file extensions, and row/column labels.",
           "type": "array",
-          "row_addition_caption": "画像ファイル|ImageFile",
+          "row_addition_caption": "画像ファイル|Image files",
           "properties": [
             {
               "id": "d-img-file-name-convention-file-extension",
@@ -1649,10 +1624,10 @@
         {
           "qid": "d-any-group",
           "nav": "任意のファイル",
-          "title": "任意のファイル|AnyFile",
+          "title": "任意のファイル|Other files",
           "type": "array",
-          "row_addition_caption": "任意のファイル|AnyFile",
-          "help": "以下の項目はデータセットに含まれる任意形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。なおここにないメタデータ項目を入力する場合は「ユーザ定義メタデータ」の欄をご活用ください。",
+          "row_addition_caption": "任意のファイル|Other files",
+          "help": "以下の項目はデータセットに含まれる任意形式のファイル概要を記載できます。ここでは同形式のファイル全体に対する概要情報を記載し、個別のファイルに関してはファイルメタデータをご活用ください。同形式で複数種類のファイル（心拍と体温の時系列など）がある場合は、欄下部にある追加ボタンから入力欄を追加してください。データ利用者が分かりやすいよう、ファイルに用いている命名規則や拡張子、行列の各ラベルなどの情報をご記載ください。なおここにないメタデータ項目を入力する場合は「ユーザ定義メタデータ」の欄をご活用ください。|This section is where you provide an overview of files in any other format included in the dataset. Please enter common metadata for all files of the same format here, and use File Metadata for information about individual files. If you have multiple types of files in the same format (e.g., time series data for heart rate and body temperature), please use the “Add” button at the bottom to add more input fields. To help dataset users understand the content, please include information such as naming conventions, file extensions, and row/column labels. If you need to enter metadata items not covered in this form, please use the \"User-Defined Metadata\" section.",
           "properties": [
             {
               "id": "d-abt-file-name-convention-file-extension",
@@ -1853,8 +1828,8 @@
     },
     {
       "id": "page3",
-      "title": "拡張メタデータアップロード|Upload Additional Metadata",
-      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【拡張メタデータ】をアップロードすることができます。カタログ登録したいファイルを下の画面でアップロードしてください。実データをアップロードしないよう、注意してください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\nhttps://rdm.nii.ac.jp/3sw6v/",
+      "title": "拡張メタデータアップロード|Extended Metadata Upload",
+      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【拡張メタデータ】をアップロードすることができます。カタログ登録したいファイルを下の画面でアップロードしてください。実データや関係ないファイルをアップロードしないよう、注意してください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|This upload form is where you can upload \"Extended Metadata\" for the Moonshot Goal 2 Database (Mebyo DB). Please upload the metadata files you wish to register in the Mebyo DB catalog using this page. Be careful not to upload actual research data files or unrelated documents.\nIn the Mebyo DB, metadata is categorized as follows:\n\"Project Metadata\": Overview of the research project and management information for the dataset\n\"Dataset Metadata\": Information describing  the experimental conditions and content of the entire dataset\n\"File Metadata\": Information describing the experimental conditions and data content for individual files/folders\n\"Extended Metadata\": Additional supplementary information not covered by the regular metadata types\nFor more details, please refer to the Mebyo DB Guidelines.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
       "clipboardCopyPaste": false,
       "questions": [
         {
@@ -1869,9 +1844,9 @@
     },
     {
       "id": "page4",
-      "title": "拡張メタデータの選択|Choose Additional Metadata",
+      "title": "拡張メタデータの選択|Extended Metadata Selection",
       "clipboardCopyPaste": false,
-      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【拡張メタデータ】を登録することができます。カタログ登録したいファイルを下の画面で選択してください。下記画面に表示されていないファイルを登録する場合には、前画面「拡張メタデータアップロード」に戻り、該当ファイルをアップロードしてください。実データを選択しないよう、注意してください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\nhttps://rdm.nii.ac.jp/3sw6v/",
+      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【拡張メタデータ】を登録することができます。カタログ登録したいファイルを下の画面で選択してください。下記画面に表示されていないファイルを登録する場合には、前画面「拡張メタデータアップロード」に戻り、該当ファイルをアップロードしてください。実データを選択しないよう、注意してください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|This registration form is where you register \"Extended Metadata\" for the Moonshot Goal 2 Database (Mebyo DB). You can select the files you wish to register in the Mebyo DB catalog using this page. If the file you want to register is not displayed on this page, please go back to the previous \"Upload Extended Metadata\" screen and upload the file there. Be careful not to upload actual research data files.\nIn the Mebyo DB, metadata is categorized as follows:\n\"Project Metadata\": Overview of the research project and management information for the dataset\n\"Dataset Metadata\": Information describing  the experimental conditions and content of the entire dataset\n\"File Metadata\": Information describing the experimental conditions and data content for individual files/folders\n\"Extended Metadata\": Additional supplementary information not covered by the regular metadata types\nFor more details, please refer to the Mebyo DB Guidelines.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
       "questions": [
         {
           "qid": "choose-additional-metadata",
@@ -1884,8 +1859,8 @@
     },
     {
       "id": "page5",
-      "title": "ファイルメタデータ|file metadata",
-      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【ファイルメタデータ】を登録することができます。カタログ登録したいファイルを下の画面で選択してください。実データを選択しないよう、注意してください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\nhttps://rdm.nii.ac.jp/3sw6v/|This registration screen is available only to those involved in the Moonshot Research and Development Project Goal 2 (MS2).On this registration screen, you can enter file metadata for the Meibyo DB.Only files that have already been given file metadata on the project portal etc. will be displayed here.\nhttps://rdm.nii.ac.jp/3sw6v/",
+      "title": "ファイルメタデータ|File Metadata Selection",
+      "description": "本登録画面ではムーンショット目標2データベース（未病DB）の【ファイルメタデータ】を登録することができます。カタログ登録したいファイルを下の画面で選択してください。画面に対象ファイルが表示されない場合は、プロジェクトトップページに行き、先にファイルブラウザよりファイルメタデータ入力を行ってください。\n\nなお、未病DBではデータセット全体の管理情報に対するメタデータを「プロジェクトメタデータ」、実験やデータの詳細に対するメタデータを「データセットメタデータ」、個々のファイルやフォルダに対するメタデータを「ファイルメタデータ」、その他追加のメタデータファイルを「拡張メタデータ」としています。各メタデータについて詳しくは未病DBガイドラインを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|This registration form is where you register \"File Metadata\" for the Moonshot Goal 2 Database (Mebyo DB). You can select the files you wish to register in the Mebyo DB catalog using this page. If the file you want to register is not displayed on this page, please go to the file browser page and input File Metadata.\nIn the Mebyo DB, metadata is categorized as follows:\n\"Project Metadata\": Overview of the research project and management information for the dataset\n\"Dataset Metadata\": Information describing the experimental conditions and content of the entire dataset\n\"File Metadata\": Information describing the experimental conditions and data content for individual files/folders\n\"Extended Metadata\": Additional supplementary information not covered by the regular metadata types\nFor more details, please refer to the Mebyo DB Guidelines.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
       "clipboardCopyPaste": false,
       "questions": [
         {
@@ -1910,6 +1885,224 @@
     },
     {
       "id": "page6",
+      "title": "チェックリスト:（MS2共有）カタログ登録前|Checklist: (MS2 Sharing) Before Catalog Registration",
+      "clipboardCopyPaste": false,
+      "questions": [
+        {
+          "qid": "Checklist1",
+          "nav": "解析対象データ3",
+          "title": "協定書（付帯事項含む。以降協定書）およびガイドラインの理解|Understanding of Agreement (including supplementary provisions) and Guidelines",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」（以降ガイドライン）はムーンショット目標2（以降MS2）に参画する全ての研究参加者がその内容を理解し、遵守する必要があります。内容について改めて確認したい方は以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/d3y6e/\n協定書付帯事項：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|All participants in Moonshot Goal 2 (MS2) are required to understand and comply with the \"Agreement on the Policy of Research Project for the Moonshot Goal 22\" (including supplementary provisions, hereinafter \"Agreement\") and the \"Moonshot Goal 2 Database Guidelines\" (hereinafter \"Guidelines\"). If you would like to review the content, please refer to the following links.\nMS2 Agreement: https://rdm.nii.ac.jp/d3y6e/\nMS2 Agreement - Supplementary Provisions: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "options": [
+            {
+              "text": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」を全て読み、内容を理解しましたか？|Have you read and understood the Agreement and Guidelines?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist2",
+          "nav": "解析対象データ3",
+          "title": "研究データの個人情報|Personal Information on Research Data",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "共有する実データに対して、倫理審査時に記載した指針に従った適切な処理を行いましたか？|Have you properly processed the actual research data to be shared in accordance with the guidelines described in the ethics review?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist3",
+          "nav": "解析対象データ3",
+          "title": "メタデータの個人情報|Personal Information on Metadata",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "ムーンショット目標2データベース（以降未病DB）では、様々なメタデータを記録いただけるよう各種インターフェイスなどを提供していく予定です。また、記録されたメタデータは広くメンバー間で共有できるようカタログに登録され、MS2の全メンバーが閲覧可能となります。個人の特定が可能となる可能性があるメタデータが含まれる場合は、予めカタログ登録する内容から除外していただく必要があります。|Mebyo DB plans to provide various interfaces to record different metadata.The recorded metadata will be registered in the Mebyo DB catalog and made available to all MS2 members. If metadata includes information that could potentially identify individuals, please exclude it before catalog registration.",
+          "multilanguage": true,
+          "options": [
+            {
+              "text": "メタデータには個人情報など個人が特定できる情報が含まれていませんか？|Does the metadata contain personal or identifiable information?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist4",
+          "nav": "データの品質",
+          "title": "正しいメタデータ種別の選択|Selection of Correct Metadata Type",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "ファイルメタデータ入力時、「ムーンショット目標2データベース（未病DB）のメタデータ」を選択していますか？|When entering File Metadata, did you select \"Moonshot Goal 2 Database (Mebyo DB) Metadata\"?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist5",
+          "nav": "データの品質",
+          "title": "メタデータの品質|Metadata Quality",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "未病DBでは、メタデータカタログを通して研究コラボレーションが創発・活発化することが期待されています。実験・数理・応用など様々な分野の研究者が互いの持つ研究資産を理解しコラボレーションにつながるためには、各提供者が自身の研究について分野外から見ても十分に理解可能な形で説明を付与する必要があります。未病DBのコンセプトやメタデータ入力についての解説は以下のリンクを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/\n未病DBデータ格納手順書：https://rdm.nii.ac.jp/6hs2b/|The Mebyo Database (Mebyo DB) is expected to promote and facilitate interdisciplinary research collaboration through its metadata catalog. \nTo enable researchers from diverse fields—such as experimental, mathematical, and applied sciences—to understand one another’s research assets and work together effectively, each data provider must describe their research in a manner that is accessible to those outside their specific field.\nFor more details, please refer to the Mebyo DB Guidelines.\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/\nMebyo DB Deposition Guide (Under Development): https://rdm.nii.ac.jp/6hs2b/",
+          "options": [
+            {
+              "text": "メタデータは、他の研究者が見ても分かりやすい形で記入しましたか？|Is the metadata written in a way that other researchers can easily understand?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist6",
+          "nav": "データの品質",
+          "title": "データセットの品質|Dataset Quality",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "共有する実データは、他の研究者による再利用が可能な程度の品質が確保されていますか？|Is the shared data of sufficient quality to be reused by other researchers?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist7",
+          "nav": "データの共有設定",
+          "title": "データの共有設定|Data Sharing Settings",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "未病DBでは、公開・制限公開・共有・制限共有の各共有レベルが設定されています。各研究データは倫理審査などの状況に応じて、正しい共有レベルに設定する必要があります。各共有レベルについての解説は以下のリンクを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|Mebyo DB has public, restricted public, shared, and restricted shared levels.\nEach dataset must be set to the appropriate sharing level according to the situation, such as ethics review. For details on each sharing level, please refer to the following link.\n\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "options": [
+            {
+              "text": "共有レベルは適切ですか？制限共有とすべき研究データが含まれていませんか？|Is the sharing level appropriate? Are there any datasets that should be set as restricted sharing?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist8",
+          "nav": "データの共有設定",
+          "title": "制限共有の条件|Conditions for Restricted Sharing",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "制限共有は、MS2全体での共有が難しい特別な事情がある場合に利用されるべき共有設定であることを理解しましたか？|Do you understand that restricted sharing should be used only when there are special circumstances that make sharing with all MS2 members difficult?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist9",
+          "nav": "データの共有設定",
+          "title": "アクセス権の設定|Access Permissions Settings",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "GakuNin RDM上のプロジェクト（コンポーネント）へのアクセス権を正しく設定していますか？|Have you correctly set access permissions for the project (component) on GakuNin RDM?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist10",
+          "nav": "連絡先",
+          "title": "連絡先の正しい記載|Accurate Entry of Contact Information",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "各提供者は自身の研究データに対して責任をもって管理する必要があります。未病DBでは、各データセットに関して提供者にコンタクトを取る必要がある場合に、メタデータに記載された連絡先の情報を元に連絡をとります。そのため、メタデータの連絡先は常にコンタクト可能なものに更新してある必要があります。研究データの取扱や提供者の責務については以下のリンクを参照ください。\n\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|Each provider is responsible for managing their research data. \nIn the Mebyo Database (Mebyo DB), if it becomes necessary to contact a provider regarding a dataset, contact information listed in the metadata can used to start communication. \nTherefore, it is necessary to always keep the contact information up to date. \nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "options": [
+            {
+              "text": "有効なメールアドレスがメタデータに正しく記載されていますか？|Is a valid email address correctly listed in the metadata?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist11",
+          "nav": "連絡先",
+          "title": "研究対象者からの申立への対応|Handling Requests from Research Participants ",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "options": [
+            {
+              "text": "研究対象者から申し立てがあった場合における未病DBの定める対応指針について十分に理解していますか？|Do you fully understand the procedures established by Mebyo DB for responding to requests from research subjects?",
+              "multi_language": true
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist12",
+          "nav": "解析対象データ3",
+          "title": "オーサーシップ・著作権に関する指針|Authorship and Copyright Guidelines",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "未病DBでは各提供者のオーサーシップや著作権について協定書に規定しています。各データセットにおいて、協定書を参考にデータ利用者との間で事前に取り決めを交わしておくことを推奨しています。提供者の権利については以下のリンクを参照ください。\n\n協定書：https://rdm.nii.ac.jp/d3y6e/\n協定書付帯事項：https://rdm.nii.ac.jp/ve4fp/\n未病DBガイドライン：https://rdm.nii.ac.jp/3sw6v/|In the Mebyo Database (Mebyo DB), authorship and copyright are stipulated in the agreement. \nIt is recommended that providers make prior arrangements with data users based on the Agreement for each dataset. For details on provider rights, please refer to the following links.\n\nMS2 Agreement: https://rdm.nii.ac.jp/d3y6e/\nMS2 Agreement - Supplementary Provisions: https://rdm.nii.ac.jp/ve4fp/\nMebyo DB Guidelines: https://rdm.nii.ac.jp/3sw6v/",
+          "options": [
+            {
+              "text": "未病DBが定めるオーサーシップや著作権に関する指針について理解しましたか？|Do you understand the Mebyo DB's authorship and copyright policies?",
+              "multi_language": true
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "Checklist13",
+          "nav": "解析対象データ3",
+          "title": "協定書およびガイドライン更新時の対応|Response to Agreement and Guideline Updates",
+          "type": "choose",
+          "format": "multiselect",
+          "required": true,
+          "help": "協定書およびガイドラインはプロジェクトの進展に伴い、プロジェクト状況に合わせた修正を行う場合があります。当チェックリストは、重要な修正があった場合に再度記入しなければならない場合があります。その際は、メタデータやメタデータカタログ（以降カタログ）に記載されたメールアドレスなどに通知されます。そのため、提供者の連絡先は常に最新のものに更新しておく必要があります。|The Agreement and Guidelines may be revised as the project progresses.\nIn such cases, notifications will be sent to the contact information—such as the email address—listed in the metadata or the Mebyo DB catalog.\nTherefore, it is necessary to always keep the provider’s contact information up to date.",
+          "options": [
+            {
+              "text": "協定書、ガイドラインに変更があった場合には、メタデータに登録した連絡先にメール通知が行きます。その後、当チェックリスト項目を再入力しなければならない場合があることを理解しましたか？|Do you understand that if there are any changes to the Agreement or Guidelines, a notification will be sent to the contact information registered in the metadata, and you may be required to re-enter this checklist?"
+            }
+          ],
+          "required_all_check": "disclaimer-check-date"
+        },
+        {
+          "qid": "disclaimer-check-date",
+          "nav": "カタログ登録前チェックリスト",
+          "title": "（MS2共有）カタログ登録前チェック日付|Disclaimer check date",
+          "type": "string",
+          "format": "text",
+          "readonly": true,
+          "required": true
+        },
+        {
+          "qid": "disclaimer-version",
+          "nav": "カタログ登録前チェックリスト",
+          "title": "（MS2共有）カタログ登録前チェックリスト バージョン|Disclaimer version",
+          "type": "string",
+          "format": "text",
+          "required": true,
+          "readonly": true,
+          "retrieval_version": "2025/03/19"
+        }
+      ]
+    },
+    {
+      "id": "page7",
       "title": "測定手順・条件等|measurement procedures/conditions",
       "concealment_page_navigator": true,
       "questions": [
@@ -2066,7 +2259,7 @@
       ]
     },
     {
-      "id": "page7",
+      "id": "page8",
       "title": "フォルダ構成|Folder structure",
       "concealment_page_navigator": true,
       "questions": [
@@ -2132,7 +2325,7 @@
       ]
     },
     {
-      "id": "page8",
+      "id": "page9",
       "title": "テキストファイル|■TextFile",
       "concealment_page_navigator": true,
       "questions": [
@@ -2393,7 +2586,7 @@
       ]
     },
     {
-      "id": "page9",
+      "id": "page10",
       "title": "エクセルファイル|ExcelFile",
       "concealment_page_navigator": true,
       "questions": [
@@ -2624,7 +2817,7 @@
       ]
     },
     {
-      "id": "page10",
+      "id": "page11",
       "title": "画像ファイル|ImageFile",
       "concealment_page_navigator": true,
       "questions": [
@@ -2823,7 +3016,7 @@
       ]
     },
     {
-      "id": "page11",
+      "id": "page12",
       "title": "任意のファイル|AnyFile",
       "concealment_page_navigator": true,
       "questions": [
@@ -3131,224 +3324,6 @@
           "type": "string",
           "format": "textarea",
           "space_normalization": true
-        }
-      ]
-    },
-    {
-      "id": "page12",
-      "title": "チェックリスト:（MS2共有）カタログ登録前",
-      "clipboardCopyPaste": false,
-      "questions": [
-        {
-          "qid": "Checklist1",
-          "nav": "解析対象データ3",
-          "title": "協定書（付帯事項含む。以降協定書）およびガイドラインの理解",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」（以降ガイドライン）はムーンショット目標2（以降MS2）に参画する全ての研究参加者がその内容を理解し、遵守する必要があります。内容について改めて確認したい方は以下のリンクを参照ください。（MS2協定書、未病DBガイドライン）\nhttps://rdm.nii.ac.jp/ve4fp/\nhttps://rdm.nii.ac.jp/3sw6v/",
-          "options": [
-            {
-              "text": "「ムーンショット目標2研究データデポジットの基本方針に係る協定書」（付帯事項含む。以降協定書）および「ムーンショット目標２データベースガイドライン」を全て読み、内容を理解しましたか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist3",
-          "nav": "解析対象データ3",
-          "title": "研究データの個人情報",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "共有する実データに対して、倫理審査時に記載した指針に従った適切な処理を行いましたか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist4",
-          "nav": "解析対象データ3",
-          "title": "メタデータの個人情報",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "ムーンショット目標2データベース（以降未病DB）では、様々なメタデータを記録いただけるよう各種インターフェイスなどを提供していく予定です。また、記録されたメタデータは広くメンバー間で共有できるようカタログに登録され、MS2の全メンバーが閲覧可能となります。個人の特定が可能となる可能性があるメタデータが含まれる場合は、予めカタログ登録する内容から除外していただく必要があります。",
-          "multilanguage": true,
-          "options": [
-            {
-              "text": "メタデータには個人情報など個人が特定できる情報が含まれていませんか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist6",
-          "nav": "データの品質",
-          "title": "正しいメタデータ種別の選択",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "ファイルメタデータ入力時、「ムーンショット目標2データベース（未病DB）のメタデータ」を選択していますか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist7",
-          "nav": "データの品質",
-          "title": "メタデータの品質",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "未病DBでは、メタデータカタログを通して研究コラボレーションが創発・活発化することが期待されています。実験・数理・応用など様々な分野の研究者が互いの持つ研究資産を理解しコラボレーションにつながるためには、各提供者が自身の研究について分野外から見ても十分に理解可能な形で説明を付与する必要があります。未病DBのコンセプトやメタデータ入力についての解説は以下のリンクを参照ください。（未病DBガイドライン、未病DBデータ格納手順書）\nhttps://rdm.nii.ac.jp/3sw6v/\nhttps://rdm.nii.ac.jp/ve4fp/",
-          "options": [
-            {
-              "text": "メタデータは、他の研究者が見ても分かりやすい形で記入しましたか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist8",
-          "nav": "データの品質",
-          "title": "データセットの品質",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "共有する実データは、他の研究者による再利用が可能な程度の品質が確保されていますか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist9",
-          "nav": "データの共有設定",
-          "title": "データの共有設定",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "未病DBでは、公開・制限公開・共有・制限共有の各共有レベルが設定されています。各研究データは倫理審査などの状況に応じて、正しい共有レベルに設定する必要があります。各共有レベルについての解説は以下のリンクを参照ください。（未病DBガイドライン）\nhttps://rdm.nii.ac.jp/3sw6v/",
-          "options": [
-            {
-              "text": "共有レベルは適切ですか？制限共有とすべき研究データが含まれていませんか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist10",
-          "nav": "データの共有設定",
-          "title": "制限共有の条件",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "制限共有は、MS2全体での共有が難しい特別な事情がある場合に利用されるべき共有設定であることを理解しましたか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist11",
-          "nav": "データの共有設定",
-          "title": "アクセス権の設定",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "GakuNin RDM上のプロジェクト（コンポーネント）へのアクセス権を正しく設定していますか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist12",
-          "nav": "連絡先",
-          "title": "連絡先の正しい記載",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "各提供者は自身の研究データに対して責任をもって管理する必要があります。未病DBでは、各データセットに関して提供者にコンタクトを取る必要がある場合に、メタデータに記載された連絡先の情報を元に連絡をとります。そのため、メタデータの連絡先は常にコンタクト可能なものに更新してある必要があります。研究データの取扱や提供者の責務については以下のリンクを参照ください。（未病DBガイドライン）\nhttps://rdm.nii.ac.jp/3sw6v/",
-          "options": [
-            {
-              "text": "有効なメールアドレスがメタデータに正しく記載されていますか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist13",
-          "nav": "連絡先",
-          "title": "研究対象者からの申立への対応",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "options": [
-            {
-              "text": "研究対象者から申し立てがあった場合における未病DBの定める対応指針について十分に理解していますか？",
-              "multi_language": true
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist14",
-          "nav": "解析対象データ3",
-          "title": "オーサーシップ・著作権に関する指針",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "未病DBでは各提供者のオーサーシップや著作権について協定書に規定しています。各データセットにおいて、協定書を参考にデータ利用者との間で事前に取り決めを交わしておくことを推奨しています。提供者の権利については以下のリンクを参照ください。（協定書、未病DBガイドライン）",
-          "options": [
-            {
-              "text": "未病DBが定めるオーサーシップや著作権に関する指針について理解しましたか？",
-              "multi_language": true
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "Checklist2",
-          "nav": "解析対象データ3",
-          "title": "協定書およびガイドライン更新時の対応",
-          "type": "choose",
-          "format": "multiselect",
-          "required": true,
-          "help": "協定書およびガイドラインはプロジェクトの進展に伴い、プロジェクト状況に合わせた修正を行う場合があります。当チェックリストは、重要な修正があった場合に再度記入しなければならない場合があります。その際は、メタデータやメタデータカタログ（以降カタログ）に記載されたメールアドレスなどに通知されます。そのため、提供者の連絡先は常に最新のものに更新しておく必要があります。",
-          "options": [
-            {
-              "text": "協定書、ガイドラインに変更があった場合には、メタデータに登録した連絡先にメール通知が行きます。その後、当チェックリスト項目を再入力しなければならない場合があることを理解しましたか？"
-            }
-          ],
-          "required_all_check": "disclaimer-check-date"
-        },
-        {
-          "qid": "disclaimer-check-date",
-          "nav": "カタログ登録前チェックリスト",
-          "title": "（MS2共有）カタログ登録前チェック日付|Disclaimer check date",
-          "type": "string",
-          "format": "text",
-          "readonly": true,
-          "required": true
-        },
-        {
-          "qid": "disclaimer-version",
-          "nav": "カタログ登録前チェックリスト",
-          "title": "（MS2共有）カタログ登録前チェックリスト バージョン|Disclaimer version",
-          "type": "string",
-          "format": "text",
-          "required": true,
-          "readonly": true,
-          "retrieval_version": "2025/03/19"
         }
       ]
     }

@@ -1,19 +1,29 @@
 # -*- coding: utf-8 -*-
 import os
-from future.moves.urllib.parse import quote
+import logging
 import uuid
-
+import unicodedata
 import ssl
+from future.moves.urllib.parse import quote
+
 from pymongo import MongoClient
 import requests
 from bs4 import BeautifulSoup
 from django.apps import apps
 
+from django.core.exceptions import ObjectDoesNotExist
 from addons.wiki import settings as wiki_settings
 from addons.wiki.exceptions import InvalidVersionError
+from osf.models.files import BaseFileNode
 from osf.utils.permissions import ADMIN, READ, WRITE
+from framework.exceptions import HTTPError
+from rest_framework import status as http_status
+from website.files.utils import attach_versions
+from website.util import timestamp
 # MongoDB forbids field names that begin with "$" or contain ".". These
 # utilities map to and from Mongo field names.
+
+logger = logging.getLogger(__name__)
 
 mongo_map = {
     '.': '__!dot!__',
@@ -259,3 +269,134 @@ def serialize_wiki_widget(node):
     }
     wiki_widget_data.update(wiki.config.to_json())
     return wiki_widget_data
+
+def _get_all_child_file_ids(dir_id):
+    parent_dir = BaseFileNode.objects.get(_id=dir_id)
+    children_folder = parent_dir._children.filter(type='osf.osfstoragefolder', deleted__isnull=True)
+    children_file = parent_dir._children.filter(type='osf.osfstoragefile', deleted__isnull=True)
+
+    for child_file in children_file:
+        yield child_file._id
+
+    for child_folder in children_folder:
+        yield from _get_all_child_file_ids(child_folder._id)
+
+def get_node_file_mapping(node, dir_id):
+    file_ids = list(_get_all_child_file_ids(dir_id))
+    node_file_infos = BaseFileNode.objects.filter(target_object_id=node.id, type='osf.osfstoragefile', deleted__isnull=True, _id__in=file_ids).values_list('_id', 'name', 'parent_id__name')
+    mapping = {unicodedata.normalize('NFC', f'{node_file_info[2]}^{node_file_info[1]}'): node_file_info[0] for node_file_info in node_file_infos}
+    return mapping
+
+def get_import_wiki_name_list(wiki_info):
+    import_wiki_name_list = [info['original_name'] for info in wiki_info]
+    return import_wiki_name_list
+
+def get_wiki_fullpath(node, w_name):
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+    wiki = WikiPage.objects.get_for_node(node, w_name)
+    if wiki is None:
+        return ''
+    fullpath = '/' + _get_wiki_parent(wiki, w_name)
+    return fullpath
+
+def _get_wiki_parent(wiki, path):
+    try:
+        parent_wiki_page_name = wiki.parent.page_name
+        if parent_wiki_page_name == 'home':
+            parent_wiki_page_name = 'HOME'
+        path = parent_wiki_page_name + '/' + path
+        return _get_wiki_parent(wiki.parent, path)
+    except Exception:
+        return path
+
+def get_numbered_name_for_existing_wiki(node, base_name):
+    WikiPage = apps.get_model('addons_wiki.WikiPage')
+    existing_wiki_names = WikiPage.objects.filter(page_name__istartswith=base_name, deleted__isnull=True, node=node).values_list('page_name', flat=True)
+
+    target_wiki_names = [wiki_name for wiki_name in existing_wiki_names if wiki_name.lower() == base_name.lower() or wiki_name[len(base_name) + 1: -1].isdigit()]
+
+    if not target_wiki_names and base_name.lower() == 'home':
+        existing_wiki_names = WikiPage.objects.filter(page_name='home', deleted__isnull=True, node=node).values_list('page_name', flat=True)
+        target_wiki_names = existing_wiki_names
+        base_name = 'home'
+
+    if not target_wiki_names:
+        return ''
+
+    max_index = max((0 if wiki_name.lower() == base_name.lower() else int(wiki_name[len(base_name) + 1: -1]) for wiki_name in target_wiki_names), default='')
+
+    return max_index + 1 if max_index != '' else max_index
+
+def check_file_object_in_node(dir_id, node):
+    try:
+        target = BaseFileNode.objects.get(_id=dir_id)
+    except ObjectDoesNotExist:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            message_short='directory id does not exist',
+            message_long='directory id does not exist'
+        ))
+    if node.id != target.target_object_id:
+        raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=dict(
+            message_short='directory id is invalid',
+            message_long='directory id is invalid'
+        ))
+    return True
+
+def copy_files_with_timestamp(auth, src, target_node, parent=None, name=None):
+    """
+    This is an extended method that adds timestamp processing to `website.files.utils.copy_files`.
+
+    :param auth: The authentication object required to add the timestamp.
+    :param Folder src: The source to copy children from
+    :param Node target_node: The node to copy files to
+    :param Folder parent: The parent of to attach the clone of src to, if applicable
+    """
+    assert not parent or not parent.is_file, 'Parent must be a folder'
+    renaming = src.name != name
+
+    cloned = src.clone()
+    cloned.parent = parent
+    cloned.target = target_node
+    cloned.name = name or cloned.name
+    cloned.copied_from = src
+
+    cloned.save()
+    if src.is_file and src.versions.exists():
+        fileversions = src.versions.select_related('region').order_by('-created')
+        most_recent_fileversion = fileversions.first()
+        if most_recent_fileversion.region and most_recent_fileversion.region != target_node.osfstorage_region:
+            # add all original version except the most recent
+            attach_versions(cloned, fileversions[1:], src)
+            # create a new most recent version and update the region before adding
+            new_fileversion = most_recent_fileversion.clone()
+            new_fileversion.region = target_node.osfstorage_region
+            new_fileversion.save()
+            attach_versions(cloned, [new_fileversion], src)
+        else:
+            attach_versions(cloned, src.versions.all(), src)
+
+        if renaming:
+            latest_version = cloned.versions.first()
+            node_file_version = latest_version.get_basefilenode_version(cloned)
+            # If this is a copy and a rename, update the name on the through table
+            node_file_version.version_name = cloned.name
+            node_file_version.save()
+
+        # copy over file metadata records
+        if cloned.provider == 'osfstorage':
+            for record in cloned.records.all():
+                record.metadata = src.records.get(schema__name=record.schema.name).metadata
+                record.save()
+
+        # add timestamp
+        if auth:
+            cookie = auth.user.get_or_create_cookie()
+            file_info = timestamp.get_file_info(cookie, cloned, cloned.versions.first())
+            if file_info is not None:
+                timestamp.add_token(auth.user.id, target_node, file_info)
+
+    if not src.is_file:
+        for child in src.children:
+            copy_files_with_timestamp(auth, child, target_node, parent=cloned)
+
+    return cloned

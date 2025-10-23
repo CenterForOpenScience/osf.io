@@ -42,7 +42,7 @@ class S3CompatInstitutionsFolder(S3CompatInstitutionsFileNode, Folder):
 
 
 class S3CompatInstitutionsFile(S3CompatInstitutionsFileNode, File):
-    pass
+    version_identifier = 'version'
 
 
 class S3CompatInstitutionsProvider(BasicAuthProviderMixin):

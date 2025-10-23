@@ -1,10 +1,10 @@
 {
-    "weko_file_added" : "A user added a draft file to a WEKO index in a project",
-    "weko_file_removed" : "A user removed a draft file from a WEKO index in a project",
-    "weko_index_linked" : "A user linked a WEKO index to a project",
-    "weko_folder_created" : "A user created a draft folder in WEKO in a project",
-    "weko_item_deposited" : "A user deposit item in a WEKO index in a project",
-    "weko_node_authorized" : "A user authorized the WEKO addon for a project",
-    "weko_node_deauthorized" : "A user deauthorized the WEKO addon for a project",
-    "weko_node_deauthorized_no_user" : "WEKO addon for a project deauthorized"
+    "weko_file_added" : "A user added a draft file to a JAIRO Cloud index in a project",
+    "weko_file_removed" : "A user removed a draft file from a JAIRO Cloud index in a project",
+    "weko_index_linked" : "A user linked a JAIRO Cloud index to a project",
+    "weko_folder_created" : "A user created a draft folder in JAIRO Cloud in a project",
+    "weko_item_deposited" : "A user deposit item in a JAIRO Cloud index in a project",
+    "weko_node_authorized" : "A user authorized the JAIRO Cloud addon for a project",
+    "weko_node_deauthorized" : "A user deauthorized the JAIRO Cloud addon for a project",
+    "weko_node_deauthorized_no_user" : "JAIRO Cloud addon for a project deauthorized"
 }

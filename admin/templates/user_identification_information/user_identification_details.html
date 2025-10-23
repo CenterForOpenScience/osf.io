@@ -14,7 +14,7 @@
         <div class="col-md-12" style="display:flex; align-items: baseline; justify-content: space-between;">
             <h3>{% trans "User details" %}</h3>
             {% if user.is_superuser %}
-                <a href="{% url 'user_identification_information:user_identification_list' %}" class="btn btn-primary">
+                <a href="{% url 'user_identification_information:user_identification_list' institution_id=user_details.affiliation.id %}" class="btn btn-primary">
                     {% trans "Return" %}
                 </a>
             {% else %}

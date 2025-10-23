@@ -641,27 +641,27 @@ msgid "Enter your verification code:"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:6
-msgid "Connect a WEKO Account"
+msgid "Connect a JAIRO Cloud Account"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:18
-msgid "WEKO Repository"
+msgid "JAIRO Cloud Repository"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:22
-msgid "Select a WEKO repository"
+msgid "Select a JAIRO Cloud repository"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:33
-msgid "WEKO SWORD URL"
+msgid "JAIRO Cloud SWORD URL"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:37
-msgid "WEKO Username"
+msgid "JAIRO Cloud Username"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:41
-msgid "WEKO Password"
+msgid "JAIRO Cloud Password"
 msgstr ""
 
 #: weko/templates/weko_credentials_modal.mako:60

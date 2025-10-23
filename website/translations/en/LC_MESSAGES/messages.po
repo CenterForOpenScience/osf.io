@@ -902,15 +902,15 @@ msgid "Enter your verification code:"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:6
-msgid "Connect a WEKO Account"
+msgid "Connect a JAIRO Cloud Account"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:18
-msgid "WEKO Repository"
+msgid "JAIRO Cloud Repository"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:23
-msgid "Select a WEKO repository"
+msgid "Select a JAIRO Cloud repository"
 msgstr ""
 
 #: addons/weko/templates/weko_credentials_modal.mako:45
@@ -1369,6 +1369,10 @@ msgstr ""
 
 #: website/templates/footer.mako:60
 msgid "Reproducibility&nbsp;Project: Cancer Biology"
+msgstr ""
+
+#: website/templates/footer.mako:77
+msgid "/static/img/footer_logo_EN.png"
 msgstr ""
 
 #: website/templates/institution.mako:8

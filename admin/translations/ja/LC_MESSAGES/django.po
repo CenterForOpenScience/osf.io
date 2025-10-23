@@ -519,6 +519,10 @@ msgstr "GakuNin RDM機関管理者ページへようこそ"
 msgid "National Institute of Informatics"
 msgstr "国立情報学研究所"
 
+#: admin/templates/base.html:345
+msgid "/static/img/footer_logo_EN.png"
+msgstr "/static/img/footer_logo_JP.png"
+
 #: admin/templates/collection_providers/cannot_delete.html:7
 msgid "Collection Provider Delete"
 msgstr "コレクションプロバイダーの削除"
@@ -2533,28 +2537,28 @@ msgid "Secret Key"
 msgstr "シークレットキー"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:7
-msgid "Configure a WEKO application"
-msgstr "WEKOアプリケーションの設定"
+msgid "Configure a JAIRO Cloud application"
+msgstr "JAIRO Cloudアプリケーションの設定"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:18
-msgid "WEKO Display Name"
-msgstr "WEKO 表示名"
+msgid "JAIRO Cloud Display Name"
+msgstr "JAIRO Cloud 表示名"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:22
-msgid "WEKO URL"
-msgstr "WEKO URL"
+msgid "JAIRO Cloud URL"
+msgstr "JAIRO Cloud URL"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:26
-msgid "WEKO OAuth Client ID"
-msgstr "WEKO OAuthクライアントID"
+msgid "JAIRO Cloud OAuth Client ID"
+msgstr "JAIRO Cloud OAuthクライアントID"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:30
-msgid "WEKO OAuth Client Secret"
-msgstr "WEKO OAuthクライアントシークレット"
+msgid "JAIRO Cloud OAuth Client Secret"
+msgstr "JAIRO Cloud OAuthクライアントシークレット"
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:40
-msgid "WEKO URL is invalid. WEKO URL should be start with http(s)://"
-msgstr "WEKO URLが不正です。WEKO URLはhttp(s)://から始まる文字列である必要があります。"
+msgid "JAIRO Cloud URL is invalid. JAIRO Cloud URL should be start with http(s)://"
+msgstr "JAIRO Cloud URLが不正です。JAIRO Cloud URLはhttp(s)://から始まる文字列である必要があります。"
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:17
 msgid "Add"
@@ -3590,6 +3594,12 @@ msgstr "機関ストレージ制御"
 
 msgid "Export Data Management"
 msgstr "エクスポートデータ管理"
+
+msgid "Default"
+msgstr "デフォルトストレージ"
+
+msgid "Each Institution"
+msgstr "各機関の設定"
 
 # export_data_storage_location.html
 msgid "Configure Accounts for Export Data Storage Location"

@@ -168,8 +168,8 @@
               </li>
           {% endif %}
           {% if user.is_superuser %}
-             <li class="{% if request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
-                 <a href="{% url 'user_identification_information:user_identification_list' %}">
+             <li class="{% if request.resolver_match.url_name == 'user_identification_institutions' or request.resolver_match.url_name == 'user_identification_list' or request.resolver_match.url_name == 'user_identification_detail' %}active{% endif %}">
+                 <a href="{% url 'user_identification_information:user_identification_institutions' %}">
                      <i class='fa fa-link'></i><span>{% trans "User Identification Information" %}</span>
                  </a>
              </li>
@@ -358,14 +358,14 @@
           {% if not user.is_superuser and user.is_staff %}
             <li><a href="{% url 'custom_storage_location:institutional_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Institutional Storage" %}</span></a></li>
           {% endif %}
-          {% if False and user.is_superuser %}
+          {% if user.is_superuser %}
             <li class="{% if request.resolver_match.url_name == 'export_data_institutions' or request.resolver_match.url_name == 'export_data_institutional_storage' %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_institutions' %}">
                     <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
                 </a>
             </li>
           {% endif %}
-          {% if False and not user.is_superuser and user.is_institutional_admin %}
+          {% if not user.is_superuser and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_institutional_storage' %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_institutional_storage' institution_id=user.representative_affiliated_institution.id %}">
                     <i class="fa fa-link"></i> <span>{% trans "Institutional Storages Control" %}</span>
@@ -378,18 +378,18 @@
           {% if user.is_superuser or user.is_staff %}
             <li><a href="{% url 'institutional_storage_quota_control:list_institution_storage' %}"><i class='fa fa-link'></i> <span>{% trans "Inst. Storage Quota Control" %}</span></a></li>
           {% endif %}
-		  {% if user.is_superuser or user.is_institutional_admin %}
-              <li><a role="button" data-toggle="collapse" href="#collapseProjectLimitNumber">
-                  <i class='fa fa-caret-down'></i> {% trans "Project Limit Number" %}
-              </a></li>
-              <div class="collapse" id="collapseProjectLimitNumber">
-                  <ul class="sidebar-menu sidebar-menu-inner">
-                      {% if user.is_superuser %}
-                      <li><a href="{% url 'project_limit_number:templates:list-template' %}"><i class='fa fa-link'></i><span> {% trans "Setting Template" %}</span> </a></li>
-                      {% endif %}
-                      <li><a href="{% url 'project_limit_number:settings:list-setting' %}"><i class='fa fa-link'></i><span> {% trans "Setting" %}</span> </a></li>
-                  </ul>
-              </div>
+          {% if user.is_superuser %}
+            <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
+              <a role="button" data-toggle="collapse" href="#collapseExportLocationGroups">
+                <i class='fa fa-caret-down'></i> {% trans "Export data storage location" %}
+              </a>
+            </li>
+            <div class="collapse" id="collapseExportLocationGroups">
+                <ul class="sidebar-menu sidebar-menu-inner">
+                    <li><a href="{% url 'custom_storage_location:export_data:export_data_storage_location' %}"><i class='fa fa-link'></i><span> {% trans "Default" %}</span> </a></li>
+                    <li><a href="{% url 'custom_storage_location:export_data:export_data_storage_location_institution_list' %}"><i class='fa fa-link'></i><span> {% trans "Each Institution" %}</span> </a></li>
+                </ul>
+            </div>
           {% endif %}
           {% if False and user.is_superuser or False and user.is_institutional_admin %}
             <li class="{% if request.resolver_match.url_name == 'export_data_storage_location'  %}active{% endif %}">
@@ -397,6 +397,7 @@
                     <i class="fa fa-link"></i> <span>{% trans "Export data storage location" %}</span>
                 </a>
             </li>
+          {% endif %}
           {% if user.is_superuser%}
           <li class="{% if request.resolver_match.url_name == 'export_data_list' or request.resolver_match.url_name == 'export_data_list_institutions' or request.resolver_match.url_name == 'export_data_list_institution' or request.resolver_match.url_name == 'export_data_deleted_list_institution' or request.resolver_match.url_name == 'export_data_information' %}active{% endif %}">
                 <a href="{% url 'custom_storage_location:export_data:export_data_list_institutions' %}">
@@ -411,7 +412,7 @@
                 </a>
             </li>
           {% endif %}
-          {% endif %}
+
           </ul><!-- /.sidebar-menu -->
         </section>
         <!-- /.sidebar -->
@@ -435,7 +436,7 @@
       <!-- Main Footer -->
       <footer class="main-footer">
         <!-- Default to the left -->
-          <strong>Copyright &copy; 2016-{% now "Y" %} <a href="https://www.nii.ac.jp/">{% trans "National Institute of Informatics" %}</a></strong>
+          <strong>Copyright &copy; {% trans "National Institute of Informatics" %}<a href="https://www.nii.ac.jp/"><img src={% trans "/static/img/footer_logo_EN.png" %}></a></strong>
       </footer>
 
     </div><!-- ./wrapper -->

@@ -64,6 +64,37 @@ class TestDraftRegistrationListNewWorkflow(TestDraftRegistrationList):
         res = app.get(url_draft_registrations, expect_errors=True)
         assert res.status_code == 401
 
+    # GRDM-50321 Change permissions for drafts
+    def test_can_view_draft_list_by_non_admin_user(
+            self, app, user_write_contrib, project_public,
+            user_read_contrib, user_non_contrib,
+            url_draft_registrations, group, group_mem):
+
+        # test_read_only_contributor_can_view_draft_list
+        res = app.get(
+            url_draft_registrations,
+            auth=user_read_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_read_write_contributor_can_view_draft_list
+        res = app.get(
+            url_draft_registrations,
+            auth=user_write_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_logged_in_non_contributor_can_view_draft_list(when node is public)
+        res = app.get(
+            url_draft_registrations,
+            auth=user_non_contrib.auth,
+            expect_errors=True)
+        assert res.status_code == 200
+
+        #   test_unauthenticated_user_can_view_draft_list(when node is public)
+        res = app.get(url_draft_registrations, expect_errors=True)
+        assert res.status_code == 401
+
 
 class TestDraftRegistrationCreateWithNode(TestDraftRegistrationCreate):
     @pytest.fixture()

@@ -108,6 +108,7 @@ ALLOW_LOGIN = True
 SEARCH_ENGINE = 'elastic'  # Can be 'elastic', or None
 ELASTIC_URI = '127.0.0.1:9200'
 ELASTIC_TIMEOUT = 10
+ELASTIC_TIMEOUT_FOR_WIKI_IMPORT = 60
 ELASTIC_INDEX = 'website'
 ELASTIC_INDEX_PRIVATE_PREFIX = 'private__'  # for ENABLE_PRIVATE_SEARCH
 ELASTIC_KWARGS = {
@@ -521,6 +522,7 @@ class CeleryConfig:
         'osf.management.commands.update_institution_project_counts',
         'nii.mapcore_refresh_tokens',
         'admin.rdm_custom_storage_location.tasks',
+        'addons.metadata.tasks',
     )
 
     # Modules that need metrics and release requirements
@@ -673,6 +675,14 @@ class CeleryConfig:
                 'schedule': crontab(minute=0, hour=10),  # Daily 5:00 a.m. EST (-5h)
                 #'schedule': crontab(minute='*/1'), # for DEBUG
                 'kwargs': {'dry_run': False},
+            },
+            'sync_kaken_data': {
+                'task': 'addons.metadata.tasks.sync_kaken_data',
+                'schedule': crontab(minute=0, hour=17),  # Daily at 5:00 p.m. UTC (2:00 a.m. JST)
+            },
+            'cleanup_old_sync_logs': {
+                'task': 'addons.metadata.tasks.cleanup_old_sync_logs',
+                'schedule': crontab(minute=0, hour=18, day_of_week=6),  # Weekly on Saturday at 6:00 p.m. UTC (Sunday 3:00 a.m. JST)
             },
         }
 

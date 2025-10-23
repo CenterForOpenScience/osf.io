@@ -1,9 +1,12 @@
 import json
+import mock
 
+from django.http import Http404
 import pytest
 from django.test import RequestFactory
 from nose import tools as nt
 from rest_framework import status as http_status
+from django.core.exceptions import PermissionDenied
 
 from admin.rdm_custom_storage_location.export_data.views import location
 from admin_tests.utilities import setup_view
@@ -88,6 +91,57 @@ class TestExportStorageLocationViewBaseView(AdminTestCase):
         self.request.user = self.institution02_admin
         nt.assert_false(setup_view(self.view, self.request).test_func())
 
+    def test__admin_login_having_institution_id(self):
+        self.request.user = self.institution02_admin
+        nt.assert_false(setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
+
+    def test__super_login_with_institution_id(self):
+        self.request.user = self.superuser
+        nt.assert_true(setup_view(self.view, self.request, institution_id=self.institution.id).test_func())
+
+    def test__super_login_missing_institution_id(self):
+        self.request.user = self.superuser
+        nt.assert_true(setup_view(self.view, self.request).test_func())
+
+
+class TestExportStorageLocationInstitutionListView(AdminTestCase):
+    def setUp(self):
+        super(TestExportStorageLocationInstitutionListView, self).setUp()
+        self.user = AuthUserFactory()
+        self.request = RequestFactory().get('/fake_path')
+        self.request.user = self.user
+        self.user.save()
+        self.view_permission = location.ExportStorageLocationViewBaseView
+        self.view = location.ExportStorageLocationInstitutionListView()
+
+    def test_unauthorized(self):
+        self.user = AnonymousUser()
+        view = setup_view(self.view, self.request)
+        nt.assert_false(view.test_func())
+
+    def test_admin_login(self):
+        self.user.is_superuser = False
+        self.user.is_staff = True
+        view = setup_view(self.view, self.request)
+        nt.assert_false(view.test_func())
+
+    def test_superuser_login(self):
+        self.user.is_superuser = True
+        view = setup_view(self.view, self.request)
+        nt.assert_true(view.test_func())
+
+    def test_get_queryset(self):
+        institution = InstitutionFactory()
+        res = self.view.get_queryset()
+        nt.assert_equal(len(res), 1)
+        nt.assert_equal(res[0], institution)
+
+    def test_get_context_data(self):
+        self.view.object_list = self.view.get_queryset()
+        view = setup_view(self.view, self.request)
+        res = view.get_context_data()
+        nt.assert_is_not_none(res)
+
 
 @pytest.mark.feature_202210
 class ExportStorageLocationView(AdminTestCase):
@@ -97,13 +151,49 @@ class ExportStorageLocationView(AdminTestCase):
         self.view = location.ExportStorageLocationView()
         self.institution = InstitutionFactory()
         self.user.affiliated_institutions.add(self.institution)
+        self.user.is_staff = True
         self.request = RequestFactory().get('/fake_path')
         self.request.user = self.user
         self.user.save()
 
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
     def test_get(self):
         view = setup_view(self.view, self.request)
         view.get(self.request)
+
+    def test_get_superuser_login(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request)
+        view.get(self.request)
+
+    def test_get_superuser_login_with_institution_id(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request, institution_id=self.institution.id)
+        view.get(self.request)
+
+    def test_get_superuser_login_with_out_institution_id(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request)
+        view.get(self.request)
+
+    def test_get_admin_login_with_institution_id(self):
+        view = setup_view(self.view, self.request, institution_id=self.institution.id)
+        view.get(self.request)
+
+    def test_get_admin_login_with_institution_id_not_belonged(self):
+        institution = InstitutionFactory()
+        view = setup_view(self.view, self.request, institution_id=institution.id)
+        with nt.assert_raises(PermissionDenied):
+            view.get(self.request)
+
+    def test_get_admin_login_with_institution_id_not_exist(self):
+        view = setup_view(self.view, self.request, institution_id=-1)
+        with nt.assert_raises(Http404):
+            view.get(self.request)
 
     def test_get_queryset(self):
         view = setup_view(self.view, self.request)
@@ -112,7 +202,6 @@ class ExportStorageLocationView(AdminTestCase):
     def test_get_context_data(self):
         view = setup_view(self.view, self.request)
         view.object_list = view.get_queryset()
-
         view.get_context_data()
 
 
@@ -208,6 +297,11 @@ class TestSaveCredentialsView(AdminTestCase):
         self.user.is_staff = True
         self.user.save()
 
+        self.superuser = AuthUserFactory(fullname='superuser')
+        self.superuser.is_staff = True
+        self.superuser.is_superuser = True
+        self.superuser.save()
+
     def view_post(self, params):
         request = RequestFactory().post(
             'fake_path',
@@ -217,6 +311,16 @@ class TestSaveCredentialsView(AdminTestCase):
         request.is_ajax()
         request.user = self.user
         return location.SaveCredentialsView.as_view()(request)
+
+    def view_post_user(self, user, params, institution_id):
+        request = RequestFactory().post(
+            'fake_path',
+            json.dumps(params),
+            content_type='application/json'
+        )
+        request.is_ajax()
+        request.user = user
+        return location.SaveCredentialsView.as_view()(request, institution_id=institution_id)
 
     def test_view_post_provider_short_name_empty(self):
         params = {
@@ -292,14 +396,46 @@ class TestSaveCredentialsView(AdminTestCase):
         request_post_response = self.view_post(params)
         nt.assert_equals(request_post_response.status_code, http_status.HTTP_400_BAD_REQUEST)
 
+    @mock.patch('admin.rdm_custom_storage_location.export_data.utils.save_s3compat_credentials')
+    def test_super_admin_post_with_institution_id(self, mock_save_s3):
+        mock_save_s3.return_value = {'message': 'Saved credentials successfully!!'}, http_status.HTTP_200_OK
+        params = {
+            's3compat_access_key': 'Non-empty-secret-key',
+            's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
+            'provider_short_name': 's3compat',
+            'storage_name': 'test storage_name',
+        }
+        request_post_response = self.view_post_user(self.superuser, params, self.institution.id)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_200_OK)
+
+    def test_super_admin_post_with_institution_id_not_exist(self):
+        params = {
+            's3compat_access_key': 'Non-empty-secret-key',
+            's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
+            'provider_short_name': 's3compat',
+        }
+        request_post_response = self.view_post_user(self.superuser, params, -1)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_404_NOT_FOUND)
+
+    def test_admin_post_with_institution_id(self):
+        params = {
+            's3compat_access_key': 'Non-empty-secret-key',
+            's3compat_secret_key': 'Non-empty-secret-key',
+            's3compat_bucket': 'Water bucket',
+            'provider_short_name': 's3compat',
+        }
+        request_post_response = self.view_post_user(self.user, params, -1)
+        nt.assert_equals(request_post_response.status_code, http_status.HTTP_404_NOT_FOUND)
 
 @pytest.mark.feature_202210
 class TestDeleteCredentialsView(AdminTestCase):
 
     def setUp(self):
         self.user = AuthUserFactory()
-
         self.request = RequestFactory().get('/fake_path')
+        self.user.is_staff = True
         self.request.user = self.user
         self.user.save()
         self.institution = InstitutionFactory()
@@ -370,13 +506,13 @@ class TestDeleteCredentialsView(AdminTestCase):
     def test__test_func_super_user(self):
         self.request.user = self.superuser
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
-        view = setup_view(self.view, self.request, export_location.id)
+        view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=self.institution.id)
         nt.assert_true(view.test_func())
 
     def test__test_func_admin_not_inst(self):
         self.request.user = self.institution02_admin
         export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
-        view = setup_view(self.view, self.request, export_location.id)
+        view = setup_view(self.view, self.request, location_id=export_location.id)
         nt.assert_false(view.test_func())
 
     def test__test_func_admin_not_permission(self):
@@ -384,15 +520,37 @@ class TestDeleteCredentialsView(AdminTestCase):
         request = RequestFactory().get('/fake_path')
         user2.is_superuser = False
         user2.is_staff = True
-        request.user = user2
-        user2.affiliated_institutions.add(self.institution)
+        institution = InstitutionFactory()
+        user2.affiliated_institutions.add(institution)
         user2.save()
+        request.user = user2
 
-        export_location = ExportDataLocation.objects.create()
-
-        view = setup_view(self.view, self.request, export_location.id)
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, request, location_id=export_location.id)
         nt.assert_false(view.test_func())
 
-        export_location = ExportDataLocation.objects.create(institution_guid=InstitutionFactory().guid)
-        view = setup_view(self.view, self.request, export_location.id)
-        nt.assert_false(view.test_func())
+    def test__test_func_admin(self):
+        self.request.user = self.user
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.guid)
+        view = setup_view(self.view, self.request, location_id=export_location.id)
+        nt.assert_true(view.test_func())
+
+    def test__test_func_admin_institution_not_exist(self):
+        self.request.user = self.user
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.id)
+        view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=-1)
+        with nt.assert_raises(Http404):
+            view.test_func()
+
+    def test__test_func_super_admin_institution_not_exist(self):
+        self.request.user = self.superuser
+        export_location = ExportDataLocation.objects.create(institution_guid=self.institution.id)
+        view = setup_view(self.view, self.request, location_id=export_location.id, institution_id=-1)
+        with nt.assert_raises(Http404):
+            view.test_func()
+
+    def test__test_func_no_storage_location(self):
+        self.request.user = self.superuser
+        view = setup_view(self.view, self.request)
+        with nt.assert_raises(Http404):
+            view.test_func()

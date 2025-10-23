@@ -15,7 +15,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: Babel 2.5.1\n"
+"Generated-By: Babel 2.11.0\n"
 
 #: addons/github/static/githubFangornConfig.js:215
 #: website/static/js/fangorn.js:2427
@@ -415,7 +415,7 @@ msgstr ""
 #: addons/weko/static/wekoFangornConfig.js:564
 msgid ""
 "No file metadata is defined for the schema available for depositting to "
-"WEKO."
+"JAIRO Cloud."
 msgstr ""
 
 #: addons/weko/static/wekoFangornConfig.js:584
@@ -438,7 +438,7 @@ msgstr ""
 
 #: addons/weko/static/wekoFangornConfig.js:617
 msgid ""
-"Do you want to deposit the file/folder \"%1$s\" to WEKO? This operation "
+"Do you want to deposit the file/folder \"%1$s\" to JAIRO Cloud? This operation "
 "is irreversible."
 msgstr ""
 
@@ -451,7 +451,7 @@ msgid "Deposit files"
 msgstr ""
 
 #: addons/weko/static/wekoFangornConfig.js:837
-msgid "Save and Deposit to WEKO"
+msgid "Save and Deposit to JAIRO Cloud"
 msgstr ""
 
 #: addons/weko/static/wekoNodeConfig.js:86
@@ -514,7 +514,7 @@ msgid ""
 msgstr ""
 
 #: addons/weko/static/wekoNodeConfig.js:270
-msgid "Please select WEKO repository."
+msgid "Please select JAIRO Cloud repository."
 msgstr ""
 
 #: addons/weko/static/wekoNodeConfig.js:373
@@ -937,17 +937,17 @@ msgid "Error while retrieving addon account"
 msgstr ""
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:91
-msgid "Could not set accounts for WEKO"
+msgid "Could not set accounts for JAIRO Cloud"
 msgstr ""
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:107
-msgid "Delete WEKO Application?"
+msgid "Delete JAIRO Cloud Application?"
 msgstr ""
 
 #: admin/static/js/rdm_addons/weko/wekoRdmConfig.js:109
 msgid ""
-"Are you sure you want to delete the WEKO application "
-"<strong>%1$s</strong>? WEKO add-on connections already set up for the "
+"Are you sure you want to delete the JAIRO Cloud application "
+"<strong>%1$s</strong>? JAIRO Cloud add-on connections already set up for the "
 "projects will be preserved."
 msgstr ""
 
@@ -971,6 +971,10 @@ msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:120
 msgid "Are you sure you want to add this Export Data Storage Location?"
+msgstr ""
+
+#: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:407
+msgid "Export Data Storage location set successfully"
 msgstr ""
 
 #: admin/static/js/rdm_custom_storage_location/rdm-institutional-storage-page.js:363
@@ -2025,7 +2029,7 @@ msgstr ""
 msgid ""
 "\n"
 "\n"
-"<h3>WEKO Add-on Terms</h3>\n"
+"<h3>JAIRO Cloud Add-on Terms</h3>\n"
 "\n"
 "<table class=\"table table-bordered table-addon-terms\">\n"
 "\n"
@@ -2040,19 +2044,19 @@ msgid ""
 "            <tr class=\"warning\">\n"
 "                <td>Add / update files</td>\n"
 "                <td>Deposit files to the index in the project via GakuNin"
-" RDM will be reflected in WEKO.</td>\n"
+" RDM will be reflected in JAIRO Cloud.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Logs</td>\n"
 "                <td>The GakuNin RDM keeps track of changes you make to "
-"your WEKO index through the GakuNin RDM, but not for changes made using "
-"WEKO directly.</td>\n"
+"your JAIRO Cloud index through the GakuNin RDM, but not for changes made using "
+"JAIRO Cloud directly.</td>\n"
 "            </tr>\n"
 "            <tr class=\"warning\">\n"
 "                <td>Forking</td>\n"
-"                <td>Forking a project or component does not copy WEKO "
+"                <td>Forking a project or component does not copy JAIRO Cloud "
 "authorization unless the user forking the project is the same user who "
-"authorized the WEKO add-on in the source project being forked.</td>\n"
+"authorized the JAIRO Cloud add-on in the source project being forked.</td>\n"
 "            </tr>\n"
 "    </tbody>\n"
 "\n"
@@ -3885,40 +3889,82 @@ msgstr ""
 msgid "A user deauthorized the Azure Blob Storage addon for a project"
 msgstr ""
 
+#: website/static/js/fangorn.js:2791
+msgid "Properties"
+msgstr ""
+
+#: website/static/js/fangorn.js:2791
+msgid "Size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2793
+msgid "Total size: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2810
+msgid "Path: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2755
+msgid "Total files: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2761
+msgid "Created at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2767
+msgid "Modified at: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2773
+msgid "Modified by: "
+msgstr ""
+
+#: website/static/js/fangorn.js:2665
+msgid "Loading..."
+msgstr ""
+
+#: website/static/js/fangorn.js:2649
+msgid ""
+" Press Option (Alt in Windows) while dragging a file to a new folder or "
+"component."
+msgstr ""
+
 #: website/static/js/anonymousLogActionsList_extract.js:202
 msgid "Azure Blob Storage addon for a project deauthorized"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:203
-msgid "A user added a draft file to a WEKO index in a project"
+msgid "A user added a draft file to a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:204
-msgid "A user removed a draft file from a WEKO index in a project"
+msgid "A user removed a draft file from a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:205
-msgid "A user linked a WEKO index to a project"
+msgid "A user linked a JAIRO Cloud index to a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:206
-msgid "A user created a draft folder in WEKO in a project"
+msgid "A user created a draft folder in JAIRO Cloud in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:207
-msgid "A user deposit item in a WEKO index in a project"
+msgid "A user deposit item in a JAIRO Cloud index in a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:208
-msgid "A user authorized the WEKO addon for a project"
+msgid "A user authorized the JAIRO Cloud addon for a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:209
-msgid "A user deauthorized the WEKO addon for a project"
+msgid "A user deauthorized the JAIRO Cloud addon for a project"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:210
-msgid "WEKO addon for a project deauthorized"
+msgid "JAIRO Cloud addon for a project deauthorized"
 msgstr ""
 
 #: website/static/js/anonymousLogActionsList_extract.js:211
@@ -6734,39 +6780,39 @@ msgid "Azure Blob Storage addon for ${node} deauthorized"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:229
-msgid "${user} added draft file ${filename} to WEKO index ${dataset} in ${node}"
+msgid "${user} added draft file ${filename} to JAIRO Cloud index ${dataset} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:230
 msgid ""
-"${user} removed draft file ${filename} from WEKO index ${dataset} in "
+"${user} removed draft file ${filename} from JAIRO Cloud index ${dataset} in "
 "${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:231
-msgid "${user} linked WEKO index ${dataset} to ${node}"
+msgid "${user} linked JAIRO Cloud index ${dataset} to ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:232
 msgid ""
-"${user} created draft folder ${filename} in WEKO index ${dataset} in "
+"${user} created draft folder ${filename} in JAIRO Cloud index ${dataset} in "
 "${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:233
-msgid "${user} deposit item ${path} in WEKO index ${dataset} in ${node}"
+msgid "${user} deposit item ${path} in JAIRO Cloud index ${dataset} in ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:234
-msgid "${user} authorized the WEKO addon for ${node}"
+msgid "${user} authorized the JAIRO Cloud addon for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:235
-msgid "${user} deauthorized the WEKO addon for ${node}"
+msgid "${user} deauthorized the JAIRO Cloud addon for ${node}"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:236
-msgid "WEKO addon for ${node} deauthorized"
+msgid "JAIRO Cloud addon for ${node} deauthorized"
 msgstr ""
 
 #: website/static/js/logActionsList_extract.js:237
@@ -8952,8 +8998,14 @@ msgstr ""
 msgid "An unexpected error occurred. Please try again."
 msgstr ""
 
+#: website/static/js/fangorn.js:2732
+msgid "A server error occurred. Please contact %1$s."
+msgstr ""
+
 #: website/static/js/pages/wiki-edit-page.js:108
-msgid "<p>Could not retrieve wiki pages. If this issue persists, "
+msgid ""
+"<p>Could not retrieve wiki pages. Please reload the page. If this issue "
+"persists, "
 msgstr ""
 
 #: website/static/js/pages/wiki-edit-page.js:109

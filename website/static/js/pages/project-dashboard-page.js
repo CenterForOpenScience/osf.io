@@ -23,6 +23,7 @@ var md = require('js/markdown').full;
 var oldMd = require('js/markdown').old;
 var AddProject = require('js/addProjectPlugin');
 var SocialShare = require('js/components/socialshare');
+var gettext = require('js/rdmGettext')._;
 
 var ctx = window.contextVars;
 var node = window.contextVars.node;
@@ -30,6 +31,15 @@ var nodeApiUrl = ctx.node.urls.api;
 var nodeCategories = ctx.nodeCategories || [];
 var currentUserRequestState = ctx.currentUserRequestState;
 var canCreateProject = ctx.canCreateProject;
+
+var STATE_MAP = {
+    copy: {
+        display: gettext('Copying ')
+    },
+    move: {
+        display: gettext('Moving ')
+    },
+};
 
 var _ = require('js/rdmGettext')._;
 var sprintf = require('agh.sprintf').sprintf;
@@ -608,6 +618,22 @@ $(document).ready(function () {
                     if(item.data.permissions && !item.data.permissions.view){
                         item.css += ' tb-private-row';
                     }
+
+                    // Reference _fangornResolveRows function of fangorn.js
+                    if (item.data.status) {
+                        var keys = Object.keys(STATE_MAP);
+                        if(keys.includes(item.data.status)) {
+                            return [{
+                                data : '',  // Data field name
+                                css : 't-a-c',
+                                custom : function(){ return m('span.text-muted', [STATE_MAP[item.data.status].display, item.data.name, '...']); }
+                            }, {
+                                data : '',  // Data field name
+                                custom : function(){ return '';}
+                            }];
+                        }
+                    }
+
                     var defaultColumns = [
                                 {
                                 data: 'name',
@@ -620,6 +646,7 @@ $(document).ready(function () {
                                 filter: false,
                                 custom: Fangorn.DefaultColumns._fangornModifiedColumn
                             }];
+
                     if (item.parentID) {
                         item.data.permissions = item.data.permissions || item.parent().data.permissions;
                         if (item.data.kind === 'folder') {
@@ -794,8 +821,23 @@ $(document).ready(function () {
             var renderedText = ctx.renderedBeforeUpdate ? oldMd.render(rawText) : md.render(rawText);
             // don't truncate the text when length = 400
             var truncatedText = $.truncate(renderedText, {length: 401});
+            truncatedText = truncatedText.replace(/<a href="\.\.\/(.*?)\/">/g, `<a href="../${node.id}/wiki/$1/">`);
+            //#47039　Add　Start
+            truncatedText = truncatedText.replace(/\&lt\;/g, `<`);
+            truncatedText = truncatedText.replace(/\&gt\;/g, `>`);
+            //#47039　Add　End
             markdownElement.html(truncatedText);
             mathrender.mathjaxify(markdownElement);
+
+            markdownElement.find('table, th, td').css({
+                'border': '1px solid #ccc',
+                'padding': '8px'
+            });
+            markdownElement.find('table').css({
+                'border-collapse': 'collapse',
+                'width': '100%'
+            });
+
             markdownElement.show();
         });
     }
@@ -869,3 +911,20 @@ $(document).ready(function () {
     initDatetimepicker('#LogSearchS');
     initDatetimepicker('#LogSearchE');
 });
+
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+            document.querySelectorAll('#markdownRender ul li').forEach(function(li) {
+                const a = li.querySelector('a');
+                if (a && li.childElementCount === 1 && a.parentElement === li) {
+                    li.style.listStyleType = 'disc';
+                }
+            });
+        }
+    });
+});
+
+const targetNode = document.getElementById('markdownRender');
+const config = { childList: true, subtree: true };
+observer.observe(targetNode, config);

@@ -115,7 +115,7 @@ module.exports = {
                 '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
         },
         weko: {
-            authError: '現在、WEKOに接続できませんでした。 後でもう一度やり直してください。',
+            authError: '現在、JAIRO Cloudに接続できませんでした。 後でもう一度やり直してください。',
             userSettingsError: '設定を取得できませんでした。 ページを更新するか、' +
                 '問題が解決しない場合は' + $osf.osfSupportLink() + 'へお問い合わせください。',
         },

@@ -394,7 +394,8 @@ def verify(registration):
                             ))
                             return False
         addons = reg.registered_from.get_addon_names()
-        if set(addons) - set(PERMISSIBLE_ADDONS | {'wiki'}) != set():
+        # metadata addon is enabled by default but doesn't need archiving
+        if set(addons) - set(PERMISSIBLE_ADDONS | {'wiki', 'metadata'}) != set():
             logger.error('{}: Original node {} has addons: {}'.format(registration._id, reg.registered_from._id, addons))
             return False
         if nonignorable_logs.exists():

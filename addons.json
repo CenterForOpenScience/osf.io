@@ -39,7 +39,8 @@
         "nextcloudinstitutions",
         "dropboxbusiness",
         "onedrivebusiness",
-        "onlyoffice"
+        "onlyoffice",
+        "metadata"
     ],
     "addons_archivable": {
         "osfstorage": "full",
@@ -124,7 +125,7 @@
         "onedrive": "Microsoft OneDrive is a file storage add-on. Connect your Microsoft OneDrive account to a GakuNin RDM project to interact with files hosted on Microsoft OneDrive via the GakuNin RDM.",
         "swift": "OpenStack Swift is a file storage add-on. Connect your OpenStack Swift account to a GakuNin RDM project to interact with files hosted on OpenStack Swift via the GakuNin RDM.",
         "azureblobstorage": "Azure Blob Storage is a file storage add-on. Connect your Azure Storage account to a GakuNin RDM project to interact with files hosted on Azure Blob Storage (Block Blob) via the GakuNin RDM.",
-        "weko": "WEKO is an application server to share, archive data.",
+        "weko": "JAIRO Cloud is an application server to share, archive data.",
         "jupyterhub": "Jupyter is a web-based interactive computational environment. Files on a GakuNin RDM project can be imported to/exported from Jupyter",
         "s3compat": "S3 Compatible Storage is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
         "s3compatinstitutions": "S3 Compatible Storage for Institutions is a file storage add-on. Connect your S3 Compatible Storage account to a GakuNin RDM project to interact with files hosted on S3 Compatible Storage via the GakuNin RDM.",
@@ -172,9 +173,7 @@
         "dropboxbusiness",
         "s3compatinstitutions",
         "ociinstitutions",
-        "s3",
-        "s3compat",
-        "owncloud"
+        "onedrivebusiness"
     ],
     "institutional_storage_bulk_mount_method": [
         "box",
@@ -189,7 +188,10 @@
     ],
     "addons_has_max_keys": [
         "s3",
-        "s3compat"
+        "s3compat",
+        "s3compatinstitutions",
+        "s3compatb3",
+        "ociinstitutions"
     ],
     "addons_folder_field": {
         "s3": "folder_name",

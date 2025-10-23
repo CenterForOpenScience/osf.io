@@ -295,8 +295,11 @@ class Registration(AbstractNode):
         :raises: PermissionsError if user is not an admin for the Node
         :raises: ValidationError if end_date is not within time constraints
         """
-        if not self.is_admin_contributor(user):
-            raise PermissionsError('Only admins may embargo a registration')
+        # GRDM-50321 Project Metadata should be available to non-admins.
+        # In GakuNin RDM, registered objects are used as project metadata and are not used for public registration.
+        # Therefore, the project metadata should be available to non-admins.
+        if not self.is_contributor(user) or not self.can_edit(user=user):
+            raise PermissionsError('Only users with write permission can project metadata.')
         if not self._is_embargo_date_valid(end_date):
             if (end_date - timezone.now()) >= settings.EMBARGO_END_DATE_MIN:
                 raise ValidationError('Registrations can only be embargoed for up to four years.')

@@ -417,6 +417,7 @@ class SaveCredentialsView(InstitutionalStorageBaseView, View):
             utils.update_nodes_storage(institution)
             utils.change_allowed_for_institutions(
                 institution, provider_short_name)
+            utils.add_node_settings_to_projects(institution, provider_short_name)
         return JsonResponse(result[0], status=status)
 
 

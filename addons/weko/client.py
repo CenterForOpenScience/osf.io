@@ -109,6 +109,11 @@ class Client(object):
             error_type = error_reason.get('@type', 'Unknown')
             error_message = error_reason.get('error', 'Unknown')
             raise HTTPError(f'Bad Request for URL: {self._base_host + path}: type={error_type}, message={error_message}')
+        if resp.status_code == 500:
+            error_reason = resp.json()
+            error_type = error_reason.get('@type', 'Unknown')
+            error_message = error_reason.get('error', 'Unknown')
+            raise HTTPError(f'Internal Server Error for URL: {self._base_host + path}: type={error_type}, message={error_message}')
         resp.raise_for_status()
         return resp.json()
 

@@ -519,6 +519,10 @@ msgstr ""
 msgid "National Institute of Informatics"
 msgstr ""
 
+#: admin/templates/base.html:345
+msgid "/static/img/footer_logo_EN.png"
+msgstr ""
+
 #: admin/templates/collection_providers/cannot_delete.html:7
 msgid "Collection Provider Delete"
 msgstr ""
@@ -2521,27 +2525,27 @@ msgid "Secret Key"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:7
-msgid "Configure a WEKO application"
+msgid "Configure a JAIRO Cloud application"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:18
-msgid "WEKO Display Name"
+msgid "JAIRO Cloud Display Name"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:22
-msgid "WEKO URL"
+msgid "JAIRO Cloud URL"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:26
-msgid "WEKO OAuth Client ID"
+msgid "JAIRO Cloud OAuth Client ID"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:30
-msgid "WEKO OAuth Client Secret"
+msgid "JAIRO Cloud OAuth Client Secret"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_applications_modal.html:40
-msgid "WEKO URL is invalid. WEKO URL should be start with http(s)://"
+msgid "JAIRO Cloud URL is invalid. JAIRO Cloud URL should be start with http(s)://"
 msgstr ""
 
 #: admin/templates/rdm_addons/addons/weko_institution_settings.html:17
@@ -3552,6 +3556,12 @@ msgid "Institutional Storages Control"
 msgstr ""
 
 msgid "Export Data Management"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "Each Institution"
 msgstr ""
 
 # export_data_storage_location.html

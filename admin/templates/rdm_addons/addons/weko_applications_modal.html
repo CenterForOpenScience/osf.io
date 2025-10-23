@@ -4,7 +4,7 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h3>{% trans "Configure a WEKO application" %}</h3>
+                <h3>{% trans "Configure a JAIRO Cloud application" %}</h3>
             </div>
 
             <form>
@@ -15,19 +15,19 @@
 
                         <div class="col-sm-6">
                             <div class="form-group">
-                                <label for="wekoAddon">{% trans "WEKO Display Name" %}</label>
+                                <label for="wekoAddon">{% trans "JAIRO Cloud Display Name" %}</label>
                                 <input class="form-control" data-bind="value: wekoName" name="weko_name" />
                             </div>
                             <div class="form-group">
-                                <label for="wekoAddon">{% trans "WEKO URL" %}</label>
+                                <label for="wekoAddon">{% trans "JAIRO Cloud URL" %}</label>
                                 <input class="form-control" data-bind="value: wekoUrl" name="weko_url" />
                             </div>
                             <div class="form-group">
-                                <label for="wekoAddon">{% trans "WEKO OAuth Client ID" %}</label>
+                                <label for="wekoAddon">{% trans "JAIRO Cloud OAuth Client ID" %}</label>
                                 <input class="form-control" data-bind="value: wekoOAuthClientId" name="weko_oauth_client_id" />
                             </div>
                             <div class="form-group">
-                                <label for="wekoAddon">{% trans "WEKO OAuth Client Secret" %}</label>
+                                <label for="wekoAddon">{% trans "JAIRO Cloud OAuth Client Secret" %}</label>
                                 <input type="password" class="form-control" data-bind="value: wekoOAuthClientSecret" name="weko_oauth_client_secret" />
                             </div>
                         </div>
@@ -37,7 +37,7 @@
                     <div class="help-block">
                         <!-- ko if: wekoUrlInvalid() -->
                         <p class='text-danger'>
-                            {% trans "WEKO URL is invalid. WEKO URL should be start with http(s)://" %}
+                            {% trans "JAIRO Cloud URL is invalid. JAIRO Cloud URL should be start with http(s)://" %}
                         </p>
                         <!-- /ko -->
                     </div>

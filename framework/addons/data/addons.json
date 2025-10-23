@@ -442,7 +442,7 @@
                 "text": "Azure Blob Storage content will not be registered."
             }
         },
-        "WEKO": {
+        "JAIRO Cloud": {
             "Permissions": {
                 "status": "NA"
             },
@@ -451,22 +451,22 @@
             },
             "Add / update files": {
                 "status": "partial",
-                "text": "Deposit files to the index in the project via GakuNin RDM will be reflected in WEKO."
+                "text": "Deposit files to the index in the project via GakuNin RDM will be reflected in JAIRO Cloud."
             },
             "Delete files": {
                 "status": "NA"
             },
             "Logs": {
                 "status": "partial",
-                "text": "The GakuNin RDM keeps track of changes you make to your WEKO index through the GakuNin RDM, but not for changes made using WEKO directly."
+                "text": "The GakuNin RDM keeps track of changes you make to your JAIRO Cloud index through the GakuNin RDM, but not for changes made using JAIRO Cloud directly."
             },
             "Forking": {
                 "status": "partial",
-                "text": "Forking a project or component does not copy WEKO authorization unless the user forking the project is the same user who authorized the WEKO add-on in the source project being forked."
+                "text": "Forking a project or component does not copy JAIRO Cloud authorization unless the user forking the project is the same user who authorized the JAIRO Cloud add-on in the source project being forked."
             },
             "Registering": {
                 "status": "none",
-                "text": "WEKO content will not be registered."
+                "text": "JAIRO Cloud content will not be registered."
             }
         },
         "S3 Compatible Storage": {

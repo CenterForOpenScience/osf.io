@@ -423,7 +423,8 @@ class TestGatherView(AdminTestCase):
     @patch('admin.rdm_statistics.views.requests.Session.get', side_effect=mocked_requests_get)
     def test_get(self, *args, **kwargs):
         resp = json.loads(self.view.get(self, self.request, self.view.args, self.view.kwargs).content)
-        nt.assert_equal(len(resp), 2)
+        # metadata addon is now enabled by default, so we have 3 providers
+        nt.assert_equal(len(resp), 3)
 
     def test_send_stat_mail(self, *args, **kwargs):
         nt.assert_equal(views.send_stat_mail(self.request).status_code, 200)

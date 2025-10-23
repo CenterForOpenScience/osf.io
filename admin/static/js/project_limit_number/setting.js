@@ -91,6 +91,7 @@ $(document).ready(function() {
     $('#setting_name_id').on('invalid', setInvalidMessageForSettingName);
     $('#template_id').on('invalid', setInvalidMessageForTemplateName);
     $('input[name="attribute_value_input"]').on('invalid', setInvalidMessageForAttributeValue);
+    $('.wrapper').css('overflow-y', 'hidden');
 })
 
 // Trim input data on blur

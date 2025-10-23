@@ -1,19 +1,38 @@
-import mock
 import pytest
 from nose import tools as nt
 
 from addons.osfstorage.models import Region
 from admin.rdm_custom_storage_location.utils import (
-    get_providers, save_s3compatb3_credentials, wd_info_for_institutions, create_storage_info_template,
-    get_osfstorage_info, get_institution_addon_info, get_s3_info, get_s3compat_info, get_s3compatinstitutions_info, get_ociinstitutions_info,
-    get_nextcloudinstitutions_info, get_dropboxbusiness_info, get_institutional_storage_information
+    get_providers,
+    add_node_settings_to_projects,
+    save_s3compatb3_credentials,
+    wd_info_for_institutions,
+    create_storage_info_template,
+    get_osfstorage_info,
+    get_institution_addon_info,
+    get_s3_info,
+    get_s3compat_info,
+    get_s3compatinstitutions_info,
+    get_ociinstitutions_info,
+    get_nextcloudinstitutions_info,
+    get_dropboxbusiness_info,
+    get_institutional_storage_information
 )
-from osf_tests.factories import RegionFactory, InstitutionFactory
+from mock import patch, MagicMock
+from osf_tests.factories import (
+    InstitutionFactory,
+    ProjectFactory,
+    RegionFactory,
+    bulkmount_waterbutler_settings,
+    addon_waterbutler_settings,
+    AuthUserFactory
+)
 from tests.base import AdminTestCase
 from rest_framework import status as http_status
 
 
 @pytest.mark.feature_202210
+@pytest.mark.django_db
 class TestUtils:
     def test_get_providers(self):
         provider_list = get_providers()
@@ -37,14 +56,17 @@ class TestUtils:
         provider_list_short_name = [p.short_name for p in provider_list]
         nt.assert_list_equal(provider_list_short_name, available_list)
 
-    @mock.patch('osf.utils.external_util.remove_region_external_account')
-    @mock.patch('admin.rdm_custom_storage_location.utils.update_storage')
-    @mock.patch('admin.rdm_custom_storage_location.utils.test_s3compatb3_connection')
-    def test_save_s3compatb3_credentials(self, mock_testconnection, mock_update_storage, mock_remove_region_external_account):
+    @patch('osf.utils.external_util.remove_region_external_account')
+    @patch('admin.rdm_custom_storage_location.utils.update_storage')
+    @patch('admin.rdm_custom_storage_location.utils.test_s3compatb3_connection')
+    def test_save_s3compatb3_credentials(self, 
+                                         _testconnection, mock_update_storage,
+                                         mock_remove_region_external_account):
         mock_testconnection.return_value = {'message': 'Nice'}, http_status.HTTP_200_OK
         mock_update_storage.return_value = {}
         mock_remove_region_external_account.return_value = None
-        response, status = save_s3compatb3_credentials('guid_test', 'My storage', 's3.compat.co.jp', 'Non-empty-access-key', 'Non-empty-secret-key', 'Cute bucket')
+        response, status = save_s3compatb3_credentials('guid_test', 'My storage', 's3.compat.co.jp',
+                                                       'Non-empty-access-key', 'Non-empty-secret-key', 'Cute bucket')
         nt.assert_equal(response, {'message': 'Saved credentials successfully!!'})
         nt.assert_equal(status, http_status.HTTP_200_OK)
 
@@ -73,6 +95,88 @@ class TestUtils:
                 test_wb_settings['encrypt_uploads'] = False
             nt.assert_equal(wd_credentials, test_wd_credentials)
             nt.assert_equal(wd_settings, test_wb_settings)
+
+    def test_add_node_settings_to_projects_bulk_mount_storage(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        region = RegionFactory(waterbutler_settings=bulkmount_waterbutler_settings)
+        institution = InstitutionFactory.create(_id=region.guid)
+        institution.nodes.set([project])
+        user.affiliated_institutions.add(institution)
+
+        mock_dropboxbusiness_post_save = MagicMock()
+        mock_onedrivebusiness_post_save = MagicMock()
+        mock_node_post_save = MagicMock()
+        with patch('admin.rdm_custom_storage_location.utils.dropboxbusiness_post_save', mock_dropboxbusiness_post_save):
+            with patch('admin.rdm_custom_storage_location.utils.onedrivebusiness_post_save',
+                       mock_onedrivebusiness_post_save):
+                with patch('admin.rdm_custom_storage_location.utils.node_post_save', mock_node_post_save):
+                    add_node_settings_to_projects(institution, 'osfstorage')
+                    mock_dropboxbusiness_post_save.assert_not_called()
+                    mock_onedrivebusiness_post_save.assert_not_called()
+                    mock_node_post_save.assert_not_called()
+
+    def test_add_node_settings_to_projects_dropboxbusiness(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
+        institution = InstitutionFactory.create(_id=region.guid)
+        institution.nodes.set([project])
+        user.affiliated_institutions.add(institution)
+
+        mock_dropboxbusiness_post_save = MagicMock()
+        mock_onedrivebusiness_post_save = MagicMock()
+        mock_node_post_save = MagicMock()
+        with patch('admin.rdm_custom_storage_location.utils.dropboxbusiness_post_save', mock_dropboxbusiness_post_save):
+            with patch('admin.rdm_custom_storage_location.utils.onedrivebusiness_post_save',
+                       mock_onedrivebusiness_post_save):
+                with patch('admin.rdm_custom_storage_location.utils.node_post_save', mock_node_post_save):
+                    add_node_settings_to_projects(institution, 'dropboxbusiness')
+                    mock_dropboxbusiness_post_save.assert_called()
+                    mock_onedrivebusiness_post_save.assert_not_called()
+                    mock_node_post_save.assert_not_called()
+
+    def test_add_node_settings_to_projects_onedrivebusiness(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        project.add_addon('onedrivebusiness', None)
+        project.save()
+        region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
+        institution = InstitutionFactory.create(_id=region.guid)
+        institution.nodes.set([project])
+        user.affiliated_institutions.add(institution)
+
+        mock_dropboxbusiness_post_save = MagicMock()
+        mock_onedrivebusiness_post_save = MagicMock()
+        mock_node_post_save = MagicMock()
+        with patch('admin.rdm_custom_storage_location.utils.dropboxbusiness_post_save', mock_dropboxbusiness_post_save):
+            with patch('admin.rdm_custom_storage_location.utils.onedrivebusiness_post_save',
+                       mock_onedrivebusiness_post_save):
+                with patch('admin.rdm_custom_storage_location.utils.node_post_save', mock_node_post_save):
+                    add_node_settings_to_projects(institution, 'onedrivebusiness')
+                    mock_dropboxbusiness_post_save.assert_not_called()
+                    mock_onedrivebusiness_post_save.assert_called()
+                    mock_node_post_save.assert_not_called()
+
+    def test_add_node_settings_to_projects_other_add_on_storage(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        region = RegionFactory(waterbutler_settings=addon_waterbutler_settings)
+        institution = InstitutionFactory.create(_id=region.guid)
+        institution.nodes.set([project])
+        user.affiliated_institutions.add(institution)
+
+        mock_dropboxbusiness_post_save = MagicMock()
+        mock_onedrivebusiness_post_save = MagicMock()
+        mock_node_post_save = MagicMock()
+        with patch('admin.rdm_custom_storage_location.utils.dropboxbusiness_post_save', mock_dropboxbusiness_post_save):
+            with patch('admin.rdm_custom_storage_location.utils.onedrivebusiness_post_save',
+                       mock_onedrivebusiness_post_save):
+                with patch('admin.rdm_custom_storage_location.utils.node_post_save', mock_node_post_save):
+                    add_node_settings_to_projects(institution, 'nextcloudinstitutions')
+                    mock_dropboxbusiness_post_save.assert_not_called()
+                    mock_onedrivebusiness_post_save.assert_not_called()
+                    mock_node_post_save.assert_called()
 
 
 class TestStorageInformationUtils(AdminTestCase):

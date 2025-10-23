@@ -614,6 +614,15 @@ class TestNodeMODMCompat:
         assert node in Node.objects.filter(guids___id=node._id, guids___id__isnull=False)
 
 
+class TestNode:
+    def test_node_guid(self, node):
+        assert node.guid == node.guids.first()._id
+
+    def test_node_guid_none(self, node):
+        node.guids.all().delete()
+        assert node.guid is None
+
+
 # copied from tests/test_models.py
 class TestProject:
 
