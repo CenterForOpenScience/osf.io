@@ -22,6 +22,7 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
+from framework.auth import Auth
 
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
@@ -829,6 +830,45 @@ class TestPreprintReVersionView:
         admin_group = Group.objects.get(name='osf_admin')
         admin_group.permissions.add(Permission.objects.get(codename='change_node'))
         user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.refresh_from_db()
+
+        assert len(preprint.get_preprint_versions()) == 2
+
+    def test_osf_admin_can_create_new_version_with_unregistered_contributors(self, plain_view):
+        # user isn't admin contributor in the preprint
+        osf_admin = AuthUserFactory()
+        admin_group = Group.objects.get(name='osf_admin')
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        osf_admin.groups.add(admin_group)
+
+        user = AuthUserFactory()
+        preprint_admin = AuthUserFactory()
+        preprint = PreprintFactory(creator=user)
+
+        preprint.add_permission(
+            preprint_admin,
+            ADMIN,
+            save=True
+        )
+
+        # assume admin contributor added an unregistered contributor
+        preprint.add_unregistered_contributor(
+            'Rheisen Dennis',
+            'reason@gmail.com',
+            auth=Auth(preprint_admin),
+            save=True
+        )
+
+        # osf admin recreates a new version 1 that forces to add unregistered contributors
+        # to this preprint
+        request = RequestFactory().post(
+            reverse('preprints:re-version-preprint',
+            kwargs={'guid': preprint._id}),
+            data={'file_versions': ['1']}
+        )
+        request.user = osf_admin
 
         plain_view.as_view()(request, guid=preprint._id)
         preprint.refresh_from_db()
