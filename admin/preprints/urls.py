@@ -20,6 +20,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>\w+)/make_public/$', views.PreprintMakePublic.as_view(), name='make-public'),
     re_path(r'^(?P<guid>\w+)/remove/$', views.PreprintDeleteView.as_view(), name='remove'),
     re_path(r'^(?P<guid>\w+)/restore/$', views.PreprintDeleteView.as_view(), name='restore'),
+    re_path(r'^(?P<guid>[\w_]+)/hard_delete/$', views.PreprintHardDeleteView.as_view(), name='hard-delete'),
     re_path(r'^(?P<guid>\w+)/confirm_unflag/$', views.PreprintConfirmUnflagView.as_view(), name='confirm-unflag'),
     re_path(r'^(?P<guid>\w+)/confirm_spam/$', views.PreprintConfirmSpamView.as_view(), name='confirm-spam'),
     re_path(r'^(?P<guid>\w+)/confirm_ham/$', views.PreprintConfirmHamView.as_view(), name='confirm-ham'),
