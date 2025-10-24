@@ -36,10 +36,13 @@ from django.utils import timezone
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFolder, OsfStorageFileNode
 from framework import sentry
 from framework.exceptions import HTTPError
+from osf import features
 from osf.models import AbstractNode, Node, NodeLog, Registration, BaseFileNode
 from osf.models.files import TrashedFileNode
+from osf.utils.requests import get_current_request
 from osf.exceptions import RegistrationStuckRecoverableException, RegistrationStuckBrokenException
 from api.base.utils import waterbutler_api_url_for
+from api.waffle.utils import flag_is_active
 from scripts import utils as script_utils
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import ARCHIVE_TIMEOUT_TIMEDELTA, ARCHIVE_PROVIDER, COOKIE_NAME
@@ -149,9 +152,11 @@ def complete_archive_target(reg, addon_short_name):
 
 def perform_wb_copy(reg, node_settings, delete_collisions=False, skip_collisions=False):
     src, dst, user = reg.archive_job.info()
-    if dst.files.filter(name=node_settings.archive_folder_name.replace('/', '-')).exists():
+    dst_storage = dst.get_addon('osfstorage')
+    archive_name = node_settings.archive_folder_name.replace('/', '-')
+    if dst_storage.get_root().children.filter(name=archive_name).exists():
         if not delete_collisions and not skip_collisions:
-            raise Exception('Archive folder for {} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
+            raise Exception(f'Archive folder for {archive_name} already exists. Investigate manually and rerun with either --delete-collisions or --skip-collisions')
         if delete_collisions:
             archive_folder = dst.files.exclude(type='osf.trashedfolder').get(name=node_settings.archive_folder_name.replace('/', '-'))
             logger.info(f'Removing {archive_folder}')
@@ -393,12 +398,23 @@ def archive(registration, *args, permissible_addons=DEFAULT_PERMISSIBLE_ADDONS, 
         logger.info(f'Preparing to archive {reg._id}')
         for short_name in permissible_addons:
             node_settings = reg.registered_from.get_addon(short_name)
+            if not node_settings and short_name != 'osfstorage' and flag_is_active(get_current_request(), features.ENABLE_GV):
+                # get_addon() returns None for addons when archive is running inside of
+                # the celery task. In this case, try to get addon settings from the GV
+                try:
+                    from website.archiver.tasks import get_addon_from_gv
+                    node_settings = get_addon_from_gv(reg.registered_from, short_name, reg.registered_from.creator)
+                except Exception as e:
+                    logger.warning(f'Could not load {short_name} from GV: {e}')
+
             if not hasattr(node_settings, '_get_file_tree'):
                 # Excludes invalid or None-type
+                logger.warning(f"Skipping {short_name} for {registration._id}.")
                 continue
             if not node_settings.configured:
                 if not allow_unconfigured:
                     raise Exception(f'{reg._id}: {short_name} on {reg.registered_from._id} is not configured. If this is permissible, re-run with `--allow-unconfigured`.')
+                logger.warning(f"{short_name} is not configured for {registration._id}.")
                 continue
             if not reg.archive_job.get_target(short_name) or reg.archive_job.get_target(short_name).status == ARCHIVER_SUCCESS:
                 continue
@@ -486,7 +502,7 @@ def verify_registrations(registration_ids, permissible_addons):
             else:
                 SKIPPED.append(reg)
 
-def check(reg):
+def check(reg, *args, **kwargs):
     """Check registration status. Raise exception if registration stuck."""
     logger.info(f'Checking {reg._id}')
     if reg.is_deleted:
@@ -503,7 +519,7 @@ def check(reg):
         still_archiving = not archive_tree_finished
     if still_archiving and root_job.datetime_initiated < expired_if_before:
         logger.warning(f'Registration {reg._id} is stuck in archiving')
-        if verify(reg):
+        if verify(reg, *args, **kwargs):
             raise RegistrationStuckRecoverableException(f'Registration {reg._id} is stuck and verified recoverable')
         else:
             raise RegistrationStuckBrokenException(f'Registration {reg._id} is stuck and verified broken')
