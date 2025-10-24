@@ -30,7 +30,7 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
 
 
 def osf_staff_check(user):
-    return user.is_authenticated and user.is_staff
+    return user and user.is_authenticated and user.is_staff
 
 
 def get_subject_rules(subjects_selected):

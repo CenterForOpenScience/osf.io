@@ -17,6 +17,7 @@ from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.nodes.views import NodeRemoveContributorView
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
+from admin.base.utils import osf_staff_check
 
 from api.share.utils import update_share
 from api.providers.workflows import Workflows
@@ -330,6 +331,11 @@ class PreprintHardDeleteView(PreprintMixin, View):
     permission_required = ('osf.delete_preprint',)
 
     def post(self, request, *args, **kwargs):
+        breakpoint()
+        if not osf_staff_check(request.user):
+            messages.error(request, 'Only staff can perform hard deletes.')
+            return redirect(self.get_success_url())
+
         preprint = self.get_object()
 
         if preprint.machine_state != DefaultStates.INITIAL.value:
