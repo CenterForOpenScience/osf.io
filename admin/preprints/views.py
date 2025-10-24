@@ -331,7 +331,6 @@ class PreprintHardDeleteView(PreprintMixin, View):
     permission_required = ('osf.delete_preprint',)
 
     def post(self, request, *args, **kwargs):
-        breakpoint()
         if not osf_staff_check(request.user):
             messages.error(request, 'Only staff can perform hard deletes.')
             return redirect(self.get_success_url())
