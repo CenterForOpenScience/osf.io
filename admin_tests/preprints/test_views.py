@@ -415,6 +415,8 @@ class TestPreprintHardDeleteView(AdminTestCase):
     def setUp(self):
         super().setUp()
         self.user = AuthUserFactory()
+        self.user.is_staff = True
+        self.user.save()
         self.preprint = PreprintFactory(creator=self.user, machine_state=DefaultStates.INITIAL.value)
         self.plain_view = views.PreprintHardDeleteView
 
@@ -423,6 +425,7 @@ class TestPreprintHardDeleteView(AdminTestCase):
         self.preprint.save()
 
         request = RequestFactory().post('/fake_path')
+        request.user = self.user
         patch_messages(request)
 
         assert Preprint.objects.filter(id=self.preprint.id).exists()
@@ -440,6 +443,7 @@ class TestPreprintHardDeleteView(AdminTestCase):
         versioned_guid = f"{self.preprint._id}_v{self.preprint.version}"
 
         request = RequestFactory().post('/fake_path')
+        request.user = self.user
         patch_messages(request)
 
         view = setup_log_view(self.plain_view(), request, guid=versioned_guid)
@@ -466,6 +470,7 @@ class TestPreprintHardDeleteView(AdminTestCase):
         assert base_guid.referent == draft_preprint
 
         request = RequestFactory().post('/fake_path')
+        request.user = self.user
         patch_messages(request)
 
         view = setup_log_view(self.plain_view(), request, guid=base_guid._id)
