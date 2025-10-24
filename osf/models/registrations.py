@@ -1019,7 +1019,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}/review'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
