@@ -230,6 +230,11 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
+    def get_absolute_url(self, obj):
+        institution_id = self.context['request'].parser_context['kwargs']['institution_id']
+        dept_id = obj['name'].replace(' ', '-')
+        return f'/institutions/{institution_id}/metrics/departments/{dept_id}/'
+
 
 class InstitutionUserMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-users metrics
@@ -285,6 +290,10 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
         ).order_by('sender_name')
         return list(results)
 
+    def get_absolute_url(self, obj):
+        institution_id = self.context['request'].parser_context['kwargs']['institution_id']
+        return f'/institutions/{institution_id}/metrics/users/'
+
 
 class InstitutionSummaryMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-summary metrics
@@ -315,6 +324,10 @@ class InstitutionSummaryMetricsSerializer(JSONAPISerializer):
         related_view='institutions:institution-detail',
         related_view_kwargs={'institution_id': '<institution_id>'},
     )
+
+    def get_absolute_url(self, obj):
+        institution_id = self.context['request'].parser_context['kwargs']['institution_id']
+        return f'/institutions/{institution_id}/metrics/summary/'
 
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):

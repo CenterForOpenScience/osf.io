@@ -754,6 +754,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
         from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.models.admin_log_entry import update_admin_log, MANUAL_ARCHIVE_RESTART
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -779,6 +780,14 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
             messages.success(request, f"Registration {registration._id} can be archived.")
         else:
             try:
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=registration.pk,
+                    object_repr=str(registration),
+                    message=f'Manual archive restart initiated for registration {registration._id}',
+                    action_flag=MANUAL_ARCHIVE_RESTART
+                )
+
                 archive(
                     registration,
                     permissible_addons=addons,
