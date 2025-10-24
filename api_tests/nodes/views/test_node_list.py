@@ -1525,10 +1525,13 @@ class TestNodeCreate:
                     }
             }
         }
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_without_permissions.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_without_permissions.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_non_contributor_create_project_from_private_template_no_permission_fails(self, app, user_one, category, url):
@@ -1567,10 +1570,13 @@ class TestNodeCreate:
                     }
             }
         }
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_without_permissions.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_without_permissions.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.READ)
 
@@ -1581,10 +1587,13 @@ class TestNodeCreate:
             save=True,
             visible=True
         )
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_without_permissions.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_without_permissions.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.WRITE)
 
@@ -1595,10 +1604,13 @@ class TestNodeCreate:
             save=True,
             visible=True
         )
-        res = app.post_json_api(
-            url, templated_project_data,
-            auth=user_without_permissions.auth
-        )
+        with capture_notifications() as notifications:
+            res = app.post_json_api(
+                url, templated_project_data,
+                auth=user_without_permissions.auth
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.ADMIN)
 
