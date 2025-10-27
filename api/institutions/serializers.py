@@ -287,6 +287,9 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
             count=Count('sender_name'),
         ).order_by('sender_name')
         return list(results)
+    
+    def get_absolute_url(self, obj):
+        raise NotImplementedError()
 
 
 class InstitutionSummaryMetricsSerializer(JSONAPISerializer):
@@ -318,6 +321,9 @@ class InstitutionSummaryMetricsSerializer(JSONAPISerializer):
         related_view='institutions:institution-detail',
         related_view_kwargs={'institution_id': '<institution_id>'},
     )
+
+    def get_absolute_url(self, obj):
+        raise NotImplementedError()
 
 
 class InstitutionRelated(JSONAPIRelationshipSerializer):
