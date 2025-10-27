@@ -230,6 +230,9 @@ class InstitutionDepartmentMetricsSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True)
     number_of_users = ser.IntegerField(read_only=True)
 
+    def get_absolute_url(self, obj):
+        raise NotImplementedError()
+
 
 class InstitutionUserMetricsSerializer(JSONAPISerializer):
     '''serializer for institution-users metrics
