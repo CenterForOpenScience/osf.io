@@ -4,7 +4,6 @@ import lxml
 import pytest
 import responses
 
-from tests.utils import capture_notifications
 from website import settings
 from website.identifiers.clients import crossref
 
@@ -43,8 +42,7 @@ def preprint():
 
 @pytest.fixture()
 def preprint_version(preprint):
-    with capture_notifications():
-        versioned_preprint = PreprintFactory.create_version(preprint)
+    versioned_preprint = PreprintFactory.create_version(preprint)
     return versioned_preprint
 
 @pytest.fixture()

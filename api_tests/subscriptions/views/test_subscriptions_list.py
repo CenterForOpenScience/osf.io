@@ -1,13 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models.notification_type import NotificationType
-from osf_tests.factories import (
-    AuthUserFactory,
-    PreprintProviderFactory,
-    ProjectFactory,
-    NotificationSubscriptionFactory
-)
+from osf_tests.factories import AuthUserFactory, PreprintProviderFactory, ProjectFactory, NotificationSubscriptionFactory
 
 
 @pytest.mark.django_db
@@ -29,42 +23,25 @@ class TestSubscriptionList:
 
     @pytest.fixture()
     def global_user_notification(self, user):
-        return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
-            user=user,
-        )
+        notification = NotificationSubscriptionFactory(_id=f'{user._id}_global', user=user, event_name='global')
+        notification.add_user_to_subscription(user, 'email_transactional')
+        return notification
 
     @pytest.fixture()
     def file_updated_notification(self, node, user):
-        return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.NODE_FILES_UPDATED.instance,
-            subscribed_object=node,
-            user=user,
+        notification = NotificationSubscriptionFactory(
+            _id=node._id + 'file_updated',
+            owner=node,
+            event_name='file_updated',
         )
-
-    @pytest.fixture()
-    def provider_notification(self, provider, user):
-        return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
-            subscribed_object=provider,
-            user=user,
-        )
+        notification.add_user_to_subscription(user, 'email_transactional')
+        return notification
 
     @pytest.fixture()
     def url(self, user, node):
         return f'/{API_BASE}subscriptions/'
 
-    def test_list_complete(
-            self,
-            app,
-            user,
-            provider,
-            node,
-            global_user_notification,
-            provider_notification,
-            file_updated_notification,
-            url
-    ):
+    def test_list_complete(self, app, user, provider, node, global_user_notification, url):
         res = app.get(url, auth=user.auth)
         notification_ids = [item['id'] for item in res.json['data']]
         # There should only be 3 notifications: users' global, node's file updates and provider's preprint added.

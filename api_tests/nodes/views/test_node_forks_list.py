@@ -3,7 +3,6 @@ from unittest import mock
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.core import Auth
-from osf.models.notification_type import NotificationType
 from osf_tests.factories import (
     NodeFactory,
     ProjectFactory,
@@ -15,7 +14,6 @@ from rest_framework import exceptions
 from osf.utils import permissions
 
 from api.nodes.serializers import NodeForksSerializer
-from tests.utils import assert_notification, capture_notifications
 
 
 @pytest.fixture()
@@ -53,13 +51,11 @@ class TestNodeForksList:
 
     @pytest.fixture()
     def private_fork(self, user, private_project):
-        with capture_notifications():
-            return ForkFactory(project=private_project, user=user)
+        return ForkFactory(project=private_project, user=user)
 
     @pytest.fixture()
     def public_fork(self, user, public_project):
-        with capture_notifications():
-            return ForkFactory(project=public_project, user=user)
+        return ForkFactory(project=public_project, user=user)
 
     @pytest.fixture()
     def private_project_url(self, private_project):
@@ -207,6 +203,7 @@ class TestNodeForksList:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestNodeForkCreate:
 
     @pytest.fixture()
@@ -248,55 +245,32 @@ class TestNodeForkCreate:
         }
 
     def test_create_fork_from_public_project_with_new_title(
-            self,
-            app,
-            user,
-            public_project,
+            self, app, user, public_project, fork_data_with_title, public_project_url):
+        res = app.post_json_api(
+            public_project_url,
             fork_data_with_title,
-            public_project_url
-    ):
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                public_project_url,
-                fork_data_with_title,
-                auth=user.auth
-            )
+            auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
         assert res.json['data']['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
 
     def test_create_fork_from_private_project_with_new_title(
-            self,
-            app,
-            user,
-            private_project,
+            self, app, user, private_project, fork_data_with_title, private_project_url):
+        res = app.post_json_api(
+            private_project_url,
             fork_data_with_title,
-            private_project_url
-    ):
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                private_project_url,
-                fork_data_with_title,
-                auth=user.auth
-            )
+            auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == private_project.forks.first()._id
         assert res.json['data']['attributes']['title'] == fork_data_with_title['data']['attributes']['title']
 
     def test_can_fork_public_node_logged_in(
-            self,
-            app,
-            public_project,
-            fork_data,
-            public_project_url
-    ):
+            self, app, public_project, fork_data, public_project_url):
         non_contrib = AuthUserFactory()
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=non_contrib):
-            res = app.post_json_api(
-                public_project_url,
-                fork_data,
-                auth=non_contrib.auth
-            )
+        res = app.post_json_api(
+            public_project_url,
+            fork_data,
+            auth=non_contrib.auth)
         fork = public_project.forks.first()
         assert res.status_code == 201
         assert res.json['data']['id'] == fork._id
@@ -333,12 +307,7 @@ class TestNodeForkCreate:
 
     def test_can_fork_public_node_logged_in_contributor(
             self, app, user, public_project, fork_data, public_project_url):
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                public_project_url,
-                fork_data,
-                auth=user.auth
-            )
+        res = app.post_json_api(public_project_url, fork_data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
@@ -346,13 +315,10 @@ class TestNodeForkCreate:
 
     def test_can_fork_private_node_logged_in_contributor(
             self, app, user, private_project, fork_data, private_project_url):
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                private_project_url +
-                '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from',
-                fork_data,
-                auth=user.auth
-            )
+        res = app.post_json_api(
+            private_project_url +
+            '?embed=children&embed=node_links&embed=logs&embed=contributors&embed=forked_from',
+            fork_data, auth=user.auth)
         assert res.status_code == 201
 
         data = res.json['data']
@@ -366,7 +332,8 @@ class TestNodeForkCreate:
         assert forked_from['id'] == private_project._id
 
     def test_fork_private_components_no_access(
-            self, app, user_two, public_project, fork_data, public_project_url):
+            self, app, user_two, public_project,
+            fork_data, public_project_url):
         user_three = AuthUserFactory()
         url = public_project_url + '?embed=children'
         NodeFactory(
@@ -374,8 +341,7 @@ class TestNodeForkCreate:
             creator=user_two,
             is_public=False
         )
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user_three):
-            res = app.post_json_api(url, fork_data, auth=user_three.auth)
+        res = app.post_json_api(url, fork_data, auth=user_three.auth)
         assert res.status_code == 201
         # Private components that you do not have access to are not forked
         assert res.json['data']['embeds']['children']['links']['meta']['total'] == 0
@@ -385,8 +351,7 @@ class TestNodeForkCreate:
             fork_data, private_project_url):
         url = private_project_url + '?embed=children'
         new_component = NodeFactory(parent=private_project, creator=user)
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(url, fork_data, auth=user.auth)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['embeds']['children']['links']['meta']['total'] == 1
         assert res.json['data']['embeds']['children']['data'][0]['id'] == new_component.forks.first(
@@ -403,12 +368,7 @@ class TestNodeForkCreate:
         url = private_project_url + '?embed=node_links'
 
         # Node link is forked, but shows up as a private node link
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                url,
-                fork_data,
-                auth=user.auth
-            )
+        res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
 
         assert (res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']
@@ -424,12 +384,8 @@ class TestNodeForkCreate:
         private_project.add_pointer(pointer, auth=Auth(user_two), save=True)
 
         url = private_project_url + '?embed=node_links'
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                url,
-                fork_data,
-                auth=user.auth
-            )
+
+        res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
 
         assert res.json['data']['embeds']['node_links']['data'][0]['embeds']['target_node']['data']['id'] == pointer._id
@@ -440,8 +396,7 @@ class TestNodeForkCreate:
         registration = RegistrationFactory(project=private_project, user=user)
 
         url = f'/{API_BASE}registrations/{registration._id}/forks/'
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(url, fork_data, auth=user.auth)
+        res = app.post_json_api(url, fork_data, auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == registration.forks.first()._id
         assert res.json['data']['attributes']['title'] == 'Fork of ' + \
@@ -450,36 +405,40 @@ class TestNodeForkCreate:
     def test_read_only_contributor_can_fork_private_registration(
             self, app, private_project, fork_data, private_project_url):
         read_contrib = AuthUserFactory()
+
         private_project.add_contributor(
             read_contrib,
             permissions=permissions.READ, save=True)
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=read_contrib):
-            res = app.post_json_api(
-                private_project_url,
-                fork_data,
-                auth=read_contrib.auth
-            )
-
+        res = app.post_json_api(
+            private_project_url, fork_data,
+            auth=read_contrib.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == private_project.forks.first()._id
+        assert res.json['data']['attributes']['title'] == 'Fork of ' + \
+            private_project.title
 
-    def test_send_email_success(self, app, user, public_project_url, fork_data_with_title, public_project):
-        with assert_notification(type=NotificationType.Type.NODE_FORK_COMPLETED, user=user):
-            res = app.post_json_api(
-                public_project_url,
-                fork_data_with_title,
-                auth=user.auth
-            )
+    def test_send_email_success(
+            self, app, user, public_project_url,
+            fork_data_with_title, public_project, mock_send_grid):
 
+        res = app.post_json_api(
+            public_project_url,
+            fork_data_with_title,
+            auth=user.auth)
         assert res.status_code == 201
         assert res.json['data']['id'] == public_project.forks.first()._id
+        call_args = mock_send_grid.call_args[1]
+        assert call_args['to_addr'] == user.email
+        assert call_args['subject'] == 'Your fork has completed'
 
-    def test_send_email_failed(self, app, user, public_project_url, fork_data_with_title):
+    def test_send_email_failed(
+            self, app, user, public_project_url,
+            fork_data_with_title, public_project, mock_send_grid):
+
         with mock.patch.object(NodeForksSerializer, 'save', side_effect=Exception()):
             with pytest.raises(Exception):
-                with assert_notification(type=NotificationType.Type.NODE_FORK_FAILED, user=user):
-                    app.post_json_api(
-                        public_project_url,
-                        fork_data_with_title,
-                        auth=user.auth
-                    )
+                app.post_json_api(
+                    public_project_url,
+                    fork_data_with_title,
+                    auth=user.auth)
+                assert mock_send_grid.called

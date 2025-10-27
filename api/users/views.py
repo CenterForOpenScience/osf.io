@@ -45,6 +45,7 @@ from api.registrations import annotations as registration_annotations
 from api.registrations.serializers import RegistrationSerializer
 from api.resources import annotations as resource_annotations
 
+from api.users.services import send_password_reset_email
 from api.users.permissions import (
     CurrentUser, ReadOnlyOrCurrentUser,
     ReadOnlyOrCurrentUserRelationship,
@@ -99,14 +100,16 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
-    NotificationType,
+    PreprintProvider,
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
-from website import settings, language
+from website import mails, settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
+from website.project.views.contributor import _add_related_claimed_tag_to_user
+from website.util import api_v2_url
 
 
 class UserMixin:
@@ -639,15 +642,11 @@ class UserAccountExport(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = self.get_user()
-        NotificationType.Type.DESK_REQUEST_EXPORT.instance.emit(
+        mails.send_mail(
+            to_addr=settings.OSF_SUPPORT_EMAIL,
+            mail=mails.REQUEST_EXPORT,
             user=user,
-            destination_address=settings.OSF_SUPPORT_EMAIL,
-            event_context={
-                'user_username': user.username,
-                'user_absolute_url': user.absolute_url,
-                'user__id': user._id,
-                'can_change_preferences': False,
-            },
+            can_change_preferences=False,
         )
         user.email_last_sent = timezone.now()
         user.save()
@@ -827,46 +826,21 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
         if not email:
             raise ValidationError('Request must include email in query params.')
 
-        status_message = language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email)
         # check if the user exists
         user_obj = get_user(email=email)
-        institutional = bool(request.query_params.get('institutional', None))
-
-        if user_obj:
+        if user_obj and user_obj.is_active:
             # rate limit forgot_password_post
             if not throttle_period_expired(user_obj.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                return Response(
-                    {
-                        'message': language.THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE,
-                        'kind': 'error',
-                    },
-                    status=status.HTTP_429_TOO_MANY_REQUESTS,
-                )
-            elif user_obj.is_active:
-                # new random verification key (v2)
-                user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
-                user_obj.email_last_sent = timezone.now()
-                user_obj.save()
-                reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
-                if institutional:
-                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
-                else:
-                    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD
+                status_message = 'You have recently requested to change your password. ' \
+                    'Please wait a few minutes before trying again.'
+                return Response({'message': status_message, 'kind': 'error'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
-                notification_type.instance.emit(
-                    user=user_obj,
-                    message_frequency='instantly',
-                    event_context={
-                        'can_change_preferences': False,
-                        'reset_link': reset_link,
-                    },
-                )
+            send_password_reset_email(user_obj, email, institutional=institutional)
 
         return Response(
             status=status.HTTP_200_OK,
             data={
-                'message': status_message,
-
+                'message': language.RESET_PASSWORD_SUCCESS_STATUS_MESSAGE.format(email=email),
                 'kind': 'success',
                 'institutional': institutional,
             },
@@ -1037,6 +1011,86 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class ConfirmClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+
+    view_category = 'users'
+    view_name = 'confirm-claim-user'
+
+    def verify_claim_token(self, user, token, pid):
+        """View helper that checks that a claim token for a given user and node ID
+        is valid. If not valid, throws an error with custom error messages.
+        """
+        # if token is invalid, throw an error
+        if not user.verify_claim_token(token=token, project_id=pid):
+            if user.is_registered:
+                raise ValidationError('User has already been claimed.')
+            else:
+                return False
+        return True
+
+    def post(self, request, *args, **kwargs):
+        """
+        View for setting the password for a claimed user.
+        Sets the user's password.
+        HTTP Method: POST
+        **URL:**  /v2/users/<user_id>/confirm_claim/
+        **Body (JSON):**
+        {
+            "data": {
+                "type": "users",
+                "attributes": {
+                    "guid": "node/preprint guid",
+                    "token": "token",
+                    "password": "password",
+                    "accepted_terms_of_service": bool
+                }
+            }
+        }
+        """
+
+        uid = kwargs['user_id']
+        token = request.data.get('token')
+        guid = request.data.get('guid')
+        password = request.data.get('password')
+        accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
+        user = OSFUser.load(uid)
+
+        # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
+        if not user or not self.verify_claim_token(user, token, guid):
+            raise ValidationError('Claim user does not exists, the token in the URL is invalid or has expired.')
+
+        # If user is logged in, need to use 'confirm_claim_registered' view
+        if request.user.is_authenticated:
+            raise ValidationError('You are already logged in. Please log out before trying to claim a user via this view.')
+
+        unclaimed_record = user.unclaimed_records[guid]
+        user.fullname = unclaimed_record['name']
+        user.update_guessed_names()
+        username = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
+
+        user.register(username=username, password=password, accepted_terms_of_service=accepted_terms_of_service)
+        # Clear unclaimed records
+        user.unclaimed_records = {}
+        user.verification_key = generate_verification_key()
+        user.save()
+        provider = PreprintProvider.load(guid)
+        redirect_url = None
+        if provider:
+            redirect_url = api_v2_url('auth_login', next=provider.landing_url, _absolute=True)
+        else:
+            # Add related claimed tags to user
+            _add_related_claimed_tag_to_user(guid, user)
+            redirect_url = api_v2_url('resolve_guid', guid=guid, _absolute=True)
+
+        data = {
+            'firstname': user.given_name,
+            'email': username if username else '',
+            'fullname': user.fullname,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'next': redirect_url,
+        }
+
+        return Response(status=status.HTTP_200_OK, data=data)
 
 class ConfirmEmailView(generics.CreateAPIView):
     """
@@ -1080,15 +1134,14 @@ class ConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&' + urlencode({'new': 'true'})
         elif external_status == 'LINK':
-            NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
+            mails.send_mail(
                 user=user,
-                message_frequency='instantly',
-                event_context={
-                    'user_fullname': user.fullname,
-                    'can_change_preferences': False,
-                    'external_id_provider': provider,
-                },
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
             )
+
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))
 
         return service_url
@@ -1402,13 +1455,12 @@ class ExternalLoginConfirmEmailView(generics.CreateAPIView):
         if external_status == 'CREATE':
             service_url += '&{}'.format(urlencode({'new': 'true'}))
         elif external_status == 'LINK':
-            NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK.instance.emit(
+            mails.send_mail(
                 user=user,
-                message_frequency='instantly',
-                event_context={
-                    'can_change_preferences': False,
-                    'external_id_provider': provider.name,
-                },
+                to_addr=user.username,
+                mail=mails.EXTERNAL_LOGIN_LINK_SUCCESS,
+                external_id_provider=provider,
+                can_change_preferences=False,
             )
 
         enqueue_task(update_affiliation_for_orcid_sso_users.s(user._id, provider_id))

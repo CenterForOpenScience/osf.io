@@ -34,7 +34,7 @@ from osf.models import (
     NodeRelation,
     Registration,
     DraftRegistration,
-    CollectionSubmission, NotificationType
+    CollectionSubmission
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -42,7 +42,6 @@ from osf.models.node import AbstractNodeQuerySet
 from osf.exceptions import ValidationError, ValidationValueError, UserStateError
 from osf.utils.workflows import DefaultStates, CollectionSubmissionStates
 from framework.auth.core import Auth
-from tests.utils import capture_notifications
 
 from osf_tests.factories import (
     AuthUserFactory,
@@ -121,8 +120,7 @@ class TestParentNode:
 
     @pytest.fixture()
     def template(self, project, auth):
-        with capture_notifications():
-            return project.use_as_template(auth=auth)
+        return project.use_as_template(auth=auth)
 
     @pytest.fixture()
     def project_with_affiliations(self, user):
@@ -379,13 +377,11 @@ class TestParentNode:
         assert reg_grandchild.root == reg_root
 
     def test_fork_has_no_parent(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         assert fork.parent_node is None
 
     def test_fork_has_correct_affiliations(self, user, auth, project_with_affiliations):
-        with capture_notifications():
-            fork = project_with_affiliations.fork_node(auth=auth)
+        fork = project_with_affiliations.fork_node(auth=auth)
         user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         fork_affiliations = fork.affiliated_institutions.values_list('id', flat=True)
@@ -393,14 +389,12 @@ class TestParentNode:
         assert set(fork_affiliations) == set(user_affiliations)
 
     def test_fork_child_has_parent(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         assert fork_child.parent_node._id == fork._id
 
     def test_fork_grandchild_has_child_id(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.parent_node._id == fork_child._id
@@ -409,8 +403,7 @@ class TestParentNode:
         child = NodeFactory(parent=project)
         NodeFactory(parent=child)
 
-        with capture_notifications():
-            fork_root = project.fork_node(auth=auth)
+        fork_root = project.fork_node(auth=auth)
         fork_child = fork_root._nodes.first()
         fork_grandchild = fork_child._nodes.first()
 
@@ -422,8 +415,7 @@ class TestParentNode:
         assert template.parent_node is None
 
     def test_template_has_correct_affiliations(self, user, auth, project_with_affiliations):
-        with capture_notifications():
-            template = project_with_affiliations.use_as_template(auth=auth)
+        template = project_with_affiliations.use_as_template(auth=auth)
         user_affiliations = user.get_institution_affiliations().values_list('institution__id', flat=True)
         project_affiliations = project_with_affiliations.affiliated_institutions.values_list('id', flat=True)
         template_affiliations = template.affiliated_institutions.values_list('id', flat=True)
@@ -443,8 +435,7 @@ class TestParentNode:
         child = NodeFactory(parent=project)
         NodeFactory(parent=child)
 
-        with capture_notifications():
-            template_root = project.use_as_template(auth=auth)
+        template_root = project.use_as_template(auth=auth)
         template_child = template_root._nodes.first()
         template_grandchild = template_child._nodes.first()
 
@@ -512,38 +503,32 @@ class TestRoot:
         assert registration_grandchild.root._id == registration._id
 
     def test_fork_has_own_root(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         fork.save()
         assert fork.root._id == fork._id
 
     def test_fork_children_have_correct_root(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         assert fork_child.root._id == fork._id
 
     def test_fork_grandchildren_have_correct_root(self, project, auth):
-        with capture_notifications():
-            fork = project.fork_node(auth=auth)
+        fork = project.fork_node(auth=auth)
         fork_child = NodeFactory(parent=fork)
         fork_grandchild = NodeFactory(parent=fork_child)
         assert fork_grandchild.root._id == fork._id
 
     def test_template_project_has_own_root(self, project, auth):
-        with capture_notifications():
-            new_project = project.use_as_template(auth=auth)
+        new_project = project.use_as_template(auth=auth)
         assert new_project.root._id == new_project._id
 
     def test_template_project_child_has_correct_root(self, project, auth):
-        with capture_notifications():
-            new_project = project.use_as_template(auth=auth)
+        new_project = project.use_as_template(auth=auth)
         new_project_child = NodeFactory(parent=new_project)
         assert new_project_child.root._id == new_project._id
 
     def test_template_project_grandchild_has_correct_root(self, project, auth):
-        with capture_notifications():
-            new_project = project.use_as_template(auth=auth)
+        new_project = project.use_as_template(auth=auth)
         new_project_child = NodeFactory(parent=new_project)
         new_project_grandchild = NodeFactory(parent=new_project_child)
         assert new_project_grandchild.root._id == new_project._id
@@ -910,14 +895,13 @@ class TestContributorMethods:
     def test_add_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        with capture_notifications():
-            node.add_contributors(
-                [
-                    {'user': user1, 'permissions': ADMIN, 'visible': True},
-                    {'user': user2, 'permissions': WRITE, 'visible': False}
-                ],
-                auth=auth
-            )
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': ADMIN, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': False}
+            ],
+            auth=auth
+        )
         last_log = node.logs.all().order_by('-date')[0]
         assert (
             last_log.params['contributors'] ==
@@ -1108,14 +1092,13 @@ class TestContributorMethods:
     def test_remove_contributors(self, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        with capture_notifications():
-            node.add_contributors(
-                [
-                    {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
-                    {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
-                ],
-                auth=auth
-            )
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
+                {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
         assert user1 in node.contributors
         assert user2 in node.contributors
 
@@ -1231,8 +1214,7 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, save=True)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1240,8 +1222,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_registered_or_not_unreg_user_without_unclaimed_records(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
 
         contributor = contributor_obj.user
         assert contributor in node.contributors
@@ -1250,32 +1231,29 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_user_id_already_contributor(self, user, node):
         with pytest.raises(ValidationError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id)
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id=user._id, save=True)
         assert 'is already a contributor' in str(excinfo.value)
 
     def test_add_contributor_invalid_user_id(self, user, node):
         with pytest.raises(ValueError) as excinfo:
-            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde')
+            node.add_contributor_registered_or_not(auth=Auth(user), user_id='abcde', save=True)
         assert 'was not found' in str(excinfo.value)
 
     def test_add_contributor_fullname_email(self, user, node):
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1284,8 +1262,7 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         secondary_email = 'secondary@test.test'
         Email.objects.create(address=secondary_email, user=registered_user)
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
         contributor = contributor_obj.user
         assert contributor == registered_user
         assert contributor in node.contributors
@@ -1294,8 +1271,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_unregistered(self, user, node):
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+        contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
         contributor = contributor_obj.user
         assert contributor == unregistered_user
         assert contributor in node.contributors
@@ -1345,8 +1321,7 @@ class TestContributorAddedSignal:
             'permissions': permissions.WRITE
         }]
         with capture_signals() as mock_signals:
-            with capture_notifications():
-                node.add_contributors(contributors=contributors, auth=auth)
+            node.add_contributors(contributors=contributors, auth=auth)
             node.save()
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == {contributor_added}
@@ -1678,16 +1653,14 @@ class TestPermissionMethods:
         assert project.can_view(other_guy_auth)
 
     def test_is_fork_of(self, project):
-        with capture_notifications():
-            fork1 = project.fork_node(auth=Auth(user=project.creator))
-            fork2 = fork1.fork_node(auth=Auth(user=project.creator))
+        fork1 = project.fork_node(auth=Auth(user=project.creator))
+        fork2 = fork1.fork_node(auth=Auth(user=project.creator))
         assert fork1.is_fork_of(project) is True
         assert fork2.is_fork_of(project) is True
 
     def test_is_fork_of_false(self, project):
         to_fork = ProjectFactory()
-        with capture_notifications():
-            fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
+        fork = to_fork.fork_node(auth=Auth(user=to_fork.creator))
         assert fork.is_fork_of(project) is False
 
     def test_is_fork_of_no_forked_from(self, project):
@@ -1734,8 +1707,7 @@ class TestPermissionMethods:
         project.add_unregistered_contributor(
             fullname='David Davidson',
             email=unreg.username,
-            auth=auth,
-            notification_type=False
+            auth=auth
         )
         project.save()
         assert project.is_contributor(unreg) is True
@@ -2077,8 +2049,7 @@ def test_find_by_institutions():
     user = project.creator
     user.add_or_update_affiliated_institution(inst1)
     user.add_or_update_affiliated_institution(inst2)
-    with capture_notifications():
-        project.add_affiliated_institution(inst1, user=user)
+    project.add_affiliated_institution(inst1, user=user)
     project.save()
 
     inst1_result = Node.find_by_institutions(inst1)
@@ -2120,8 +2091,7 @@ class TestSetPrivacy:
         with pytest.raises(PermissionsError):
             project.set_privacy('public', Auth(non_contrib))
 
-        with capture_notifications():
-            project.set_privacy('public', Auth(project.creator))
+        project.set_privacy('public', Auth(project.creator))
         project.save()
 
         # Non-contrib can't make project private
@@ -2146,8 +2116,7 @@ class TestSetPrivacy:
 
     def test_set_privacy(self, node, auth):
         last_logged_before_method_call = node.last_logged
-        with capture_notifications():
-            node.set_privacy('public', auth=auth)
+        node.set_privacy('public', auth=auth)
         assert node.logs.first().action == NodeLog.MADE_PUBLIC
         assert last_logged_before_method_call != node.last_logged
         node.save()
@@ -2158,17 +2127,23 @@ class TestSetPrivacy:
         assert node.logs.first().action == NodeLog.MADE_PRIVATE
         assert last_logged_before_method_call != node.last_logged
 
-    def test_set_privacy_sends_mail_default(self, node, auth):
-        with capture_notifications():
-            node.set_privacy('private', auth=auth)
-            node.set_privacy('public', auth=auth)
+    @mock.patch('osf.models.queued_mail.queue_mail')
+    def test_set_privacy_sends_mail_default(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth)
+        assert mock_queue.call_count == 1
 
-    def test_set_privacy_sends_mail(self, node, auth):
-        with capture_notifications() as notifications:
-            node.set_privacy('private', auth=auth)
-            node.set_privacy('public', auth=auth, meeting_creation=False)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
+    @mock.patch('osf.models.queued_mail.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth, meeting_creation=False)
+        assert mock_queue.call_count == 1
+
+    @mock.patch('osf.models.queued_mail.queue_mail')
+    def test_set_privacy_skips_mail_if_meeting(self, mock_queue, node, auth):
+        node.set_privacy('private', auth=auth)
+        node.set_privacy('public', auth=auth, meeting_creation=True)
+        assert bool(mock_queue.called) is False
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)
@@ -2248,8 +2223,7 @@ class TestNodeSpam:
 
         with mock.patch.object(Node, 'do_check_spam') as mock_do_check_spam:
             mock_do_check_spam.return_value = False
-            with capture_notifications():
-                project.set_privacy('public', auth=Auth(user))
+            project.set_privacy('public', auth=Auth(user))
 
             mock_do_check_spam.assert_called_once()
             args = mock_do_check_spam.call_args[0]
@@ -2605,13 +2579,12 @@ class TestManageContributors:
 
     def test_contributor_set_visibility_validation(self, node, user, auth):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
-        with capture_notifications():
-            node.add_contributors(
-                [
-                    {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
-                    {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-                ]
-            )
+        node.add_contributors(
+            [
+                {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
+                {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
+            ]
+        )
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
             node.set_visible(user=user, visible=False, auth=None)
@@ -3039,15 +3012,13 @@ class TestPointerMethods:
     def test_cannot_fork_deleted_node(self, node, auth):
         child = NodeFactory(parent=node, is_deleted=True)
         child.save()
-        with capture_notifications():
-            fork = node.fork_node(auth=auth)
+        fork = node.fork_node(auth=auth)
         assert not fork.nodes
 
     def test_cannot_template_deleted_node(self, node, auth):
         child = NodeFactory(parent=node, is_deleted=True)
         child.save()
-        with capture_notifications():
-            template = node.use_as_template(auth=auth, top_level=False)
+        template = node.use_as_template(auth=auth, top_level=False)
         assert not template.nodes
 
     def _fork_pointer(self, node, content, auth):
@@ -3074,13 +3045,11 @@ class TestPointerMethods:
 
     def test_fork_pointer_project(self, node, user, auth):
         project = ProjectFactory(creator=user)
-        with capture_notifications():
-            self._fork_pointer(node=node, content=project, auth=auth)
+        self._fork_pointer(node=node, content=project, auth=auth)
 
     def test_fork_pointer_component(self, node, user, auth):
         component = NodeFactory(creator=user)
-        with capture_notifications():
-            self._fork_pointer(node=node, content=component, auth=auth)
+        self._fork_pointer(node=node, content=component, auth=auth)
 
 
 # copied from tests/test_models.py
@@ -3164,9 +3133,8 @@ class TestForkNode:
         fork_date = timezone.now()
 
         # Fork node
-        with capture_notifications():
-            with mock.patch.object(Node, 'bulk_update_search'):
-                fork = project.fork_node(auth=auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = project.fork_node(auth=auth)
 
         # Compare fork to original
         self._cmp_fork_original(user, fork_date, fork, project)
@@ -3220,22 +3188,19 @@ class TestForkNode:
         user2_auth = Auth(user=user2)
         fork = None
         # New user forks the project
-        with capture_notifications():
-            fork = node.fork_node(user2_auth)
+        fork = node.fork_node(user2_auth)
 
         # fork correct children
         assert fork._nodes.count() == 2
         assert 'Not Forked' not in fork._nodes.values_list('title', flat=True)
 
     def test_fork_not_public(self, node, auth):
-        with capture_notifications():
-            node.set_privacy('public')
-            fork = node.fork_node(auth)
+        node.set_privacy('public')
+        fork = node.fork_node(auth)
         assert fork.is_public is False
 
     def test_fork_log_has_correct_log(self, node, auth):
-        with capture_notifications():
-            fork = node.fork_node(auth)
+        fork = node.fork_node(auth)
         last_log = fork.logs.latest()
         assert last_log.action == NodeLog.NODE_FORKED
         # Legacy 'registration' param should be the ID of the fork
@@ -3247,8 +3212,7 @@ class TestForkNode:
         link = PrivateLinkFactory()
         link.nodes.add(node)
         link.save()
-        with capture_notifications():
-            fork = node.fork_node(auth)
+        fork = node.fork_node(auth)
         assert link not in fork.private_links.all()
 
     def test_cannot_fork_private_node(self, node):
@@ -3261,16 +3225,14 @@ class TestForkNode:
         node.set_privacy('public')
         user2 = UserFactory()
         user2_auth = Auth(user=user2)
-        with capture_notifications():
-            fork = node.fork_node(user2_auth)
+        fork = node.fork_node(user2_auth)
         assert bool(fork) is True
 
     def test_contributor_can_fork(self, node):
         user2 = UserFactory()
         node.add_contributor(user2)
         user2_auth = Auth(user=user2)
-        with capture_notifications():
-            fork = node.fork_node(user2_auth)
+        fork = node.fork_node(user2_auth)
         assert bool(fork) is True
         # Forker has admin permissions
         assert fork.contributors.count() == 1
@@ -3280,14 +3242,12 @@ class TestForkNode:
         license = NodeLicenseRecordFactory()
         node.node_license = license
         node.save()
-        with capture_notifications():
-            fork = node.fork_node(auth)
+        fork = node.fork_node(auth)
         assert fork.node_license.license_id == license.license_id
 
     def test_fork_registration(self, user, node, auth):
         registration = RegistrationFactory(project=node)
-        with capture_notifications():
-            fork = registration.fork_node(auth)
+        fork = registration.fork_node(auth)
 
         # fork should not be a registration
         assert fork.is_registration is False
@@ -3302,8 +3262,7 @@ class TestForkNode:
 
     def test_fork_project_with_no_wiki_pages(self, user, auth):
         project = ProjectFactory(creator=user)
-        with capture_notifications():
-            fork = project.fork_node(auth)
+        fork = project.fork_node(auth)
         assert WikiPage.objects.get_wiki_pages_latest(fork).exists() is False
         assert fork.wikis.all().exists() is False
         assert fork.wiki_private_uuids == {}
@@ -3320,8 +3279,7 @@ class TestForkNode:
                 wiki_page=wiki_page,
             )
             current_wiki = WikiVersionFactory(wiki_page=wiki_page, identifier=2)
-        with capture_notifications():
-            fork = project.fork_node(auth)
+        fork = project.fork_node(auth)
         assert fork.wiki_private_uuids == {}
 
         fork_wiki_current = WikiVersion.objects.get_for_node(fork, current_wiki.wiki_page.page_name)
@@ -3356,14 +3314,13 @@ class TestContributorOrdering:
     def test_move_contributor(self, user, node, auth):
         user1 = UserFactory()
         user2 = UserFactory()
-        with capture_notifications():
-            node.add_contributors(
-                [
-                    {'user': user1, 'permissions': WRITE, 'visible': True},
-                    {'user': user2, 'permissions': WRITE, 'visible': True}
-                ],
-                auth=auth
-            )
+        node.add_contributors(
+            [
+                {'user': user1, 'permissions': WRITE, 'visible': True},
+                {'user': user2, 'permissions': WRITE, 'visible': True}
+            ],
+            auth=auth
+        )
 
         user_contrib_id = node.contributor_set.get(user=user).id
         user1_contrib_id = node.contributor_set.get(user=user1).id
@@ -3749,8 +3706,7 @@ class TestNodeUpdate:
         assert node2.category_display == 'Methods and Measures'
 
     def test_update_is_public(self, node, user, auth):
-        with capture_notifications():
-            node.update({'is_public': True}, auth=auth, save=True)
+        node.update({'is_public': True}, auth=auth, save=True)
         assert node.is_public
 
         last_log = node.logs.latest()
@@ -3823,12 +3779,11 @@ class TestOnNodeUpdate:
     @pytest.fixture()
     def node_in_collection(self, collection):
         node = ProjectFactory(is_public=True)
-        with capture_notifications():
-            CollectionSubmission(
-                guid=node.guids.first(),
-                collection=collection,
-                creator=node.creator,
-            ).save()
+        CollectionSubmission(
+            guid=node.guids.first(),
+            collection=collection,
+            creator=node.creator,
+        ).save()
         return node
 
     @pytest.fixture()
@@ -4001,10 +3956,9 @@ class TestTemplateNode:
     def test_simple_template(self, project, auth):
         """Create a templated node, with no changes"""
         # created templated node
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth
-            )
+        new = project.use_as_template(
+            auth=auth
+        )
 
         assert new.title == self._default_title(project)
         assert new.created != project.created
@@ -4015,25 +3969,23 @@ class TestTemplateNode:
         changed_title = 'Made from template'
 
         # create templated node
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth,
-                changes={
-                    project._primary_key: {
-                        'title': changed_title,
-                    }
+        new = project.use_as_template(
+            auth=auth,
+            changes={
+                project._primary_key: {
+                    'title': changed_title,
                 }
-            )
+            }
+        )
 
         assert new.title == changed_title
         assert new.created != project.created
         self._verify_log(new)
 
     def test_use_as_template_adds_default_addons(self, project, auth):
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth
-            )
+        new = project.use_as_template(
+            auth=auth
+        )
 
         assert new.has_addon('wiki')
         assert new.has_addon('osfstorage')
@@ -4042,24 +3994,21 @@ class TestTemplateNode:
         license = NodeLicenseRecordFactory()
         project.node_license = license
         project.save()
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth
-            )
+        new = project.use_as_template(
+            auth=auth
+        )
 
         assert new.license.node_license._id == license.node_license._id
         self._verify_log(new)
 
     def test_can_template_a_registration(self, user, auth):
         registration = RegistrationFactory(creator=user)
-        with capture_notifications():
-            new = registration.use_as_template(auth=auth)
+        new = registration.use_as_template(auth=auth)
         assert new.is_registration is False
 
     def test_cannot_template_deleted_registration(self, project, auth):
         registration = RegistrationFactory(project=project, is_deleted=True)
-        with capture_notifications():
-            new = registration.use_as_template(auth=auth)
+        new = registration.use_as_template(auth=auth)
         assert not new.nodes
 
     @pytest.fixture()
@@ -4089,8 +4038,7 @@ class TestTemplateNode:
         project1 = ProjectFactory(creator=user)
         ProjectFactory(creator=user, parent=project1)
 
-        with capture_notifications():
-            new = project1.use_as_template(auth=auth)
+        new = project1.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project1)
         assert len(list(new.nodes)) == len(list(project1.nodes))
@@ -4108,8 +4056,7 @@ class TestTemplateNode:
         """Create a templated node from a node with children"""
 
         # create templated node
-        with capture_notifications():
-            new = project.use_as_template(auth=auth)
+        new = project.use_as_template(auth=auth)
 
         assert new.title == self._default_title(project)
         assert len(list(new.nodes)) == len(list(project.nodes)) - 1
@@ -4133,11 +4080,10 @@ class TestTemplateNode:
         }
 
         # create templated node
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth,
-                changes=changes
-            )
+        new = project.use_as_template(
+            auth=auth,
+            changes=changes
+        )
         old_nodes = [x for x in project.nodes if x not in project.linked_nodes]
 
         for old_node, new_node in zip(old_nodes, new.nodes):
@@ -4154,10 +4100,9 @@ class TestTemplateNode:
 
     def test_template_wiki_pages_not_copied(self, project, auth):
         WikiPage.objects.create_for_node(project, 'template', 'lol', auth)
-        with capture_notifications():
-            new = project.use_as_template(
-                auth=auth
-            )
+        new = project.use_as_template(
+            auth=auth
+        )
         assert WikiPage.objects.get_for_node(project, 'template').page_name == 'template'
         latest_version = WikiVersion.objects.get_for_node(project, 'template')
         assert latest_version.identifier == 1
@@ -4171,8 +4116,7 @@ class TestTemplateNode:
         user = UserFactory()
         auth = Auth(user)
 
-        with capture_notifications():
-            templated = project.use_as_template(auth)
+        templated = project.use_as_template(auth)
 
         assert set(templated.get_permissions(user)) == {permissions.READ, permissions.WRITE, permissions.ADMIN}
 
@@ -4207,8 +4151,7 @@ class TestTemplateNode:
         visible_nodes = [x for x in project.nodes if x.can_view(other_user_auth)]
 
         # create templated node
-        with capture_notifications():
-            new = project.use_as_template(auth=other_user_auth)
+        new = project.use_as_template(auth=other_user_auth)
 
         assert new.title == self._default_title(project)
 
@@ -4267,8 +4210,7 @@ class TestNodeLog:
     def test_original_node_and_current_node_for_fork_logs(self):
         user = UserFactory()
         project = ProjectFactory(creator=user)
-        with capture_notifications():
-            fork = project.fork_node(auth=Auth(user))
+        fork = project.fork_node(auth=Auth(user))
 
         log_project_created_original = project.logs.last()
         log_project_created_fork = fork.logs.last()
@@ -4428,8 +4370,7 @@ class TestAddonCallbacks:
             )
 
     def test_set_privacy_callback(self, node, auth):
-        with capture_notifications():
-            node.set_privacy('public', auth)
+        node.set_privacy('public', auth)
         for addon in node.addons:
             callback = addon.after_set_privacy
             callback.assert_called_with(
@@ -4444,13 +4385,12 @@ class TestAddonCallbacks:
             )
 
     def test_fork_callback(self, node, auth):
-        with capture_notifications():
-            fork = node.fork_node(auth=auth)
-            for addon in node.addons:
-                callback = addon.after_fork
-                callback.assert_called_once_with(
-                    node, fork, auth.user
-                )
+        fork = node.fork_node(auth=auth)
+        for addon in node.addons:
+            callback = addon.after_fork
+            callback.assert_called_once_with(
+                node, fork, auth.user
+            )
 
     def test_register_callback(self, node, auth):
         with mock_archive(node) as registration:
@@ -4648,13 +4588,13 @@ class TestCollectionProperties:
         assert not node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
         ).exists()
-        with capture_notifications():
-            collection_one.collect_object(node, collector)
-            collection_two.collect_object(node, collector)
-            public_non_provided_collection.collect_object(node, collector)
-            private_non_provided_collection.collect_object(node, collector)
-            bookmark_collection.collect_object(node, collector)
-            collection_public.collect_object(node, collector)
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_public.collect_object(node, collector)
 
         assert node.collection_submissions.filter(
             machine_state=CollectionSubmissionStates.ACCEPTED
@@ -4672,14 +4612,14 @@ class TestCollectionProperties:
             self, user, node, contrib, subjects, collection_one, collection_two,
             collection_public, public_non_provided_collection, private_non_provided_collection,
             bookmark_collection, collector):
-        with capture_notifications():
-            collection_one.collect_object(node, collector)
-            collection_two.collect_object(node, collector)
-            public_non_provided_collection.collect_object(node, collector)
-            private_non_provided_collection.collect_object(node, collector)
-            bookmark_collection.collect_object(node, collector)
-            collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
-            collection_submission.set_subjects(subjects, Auth(collector))
+
+        collection_one.collect_object(node, collector)
+        collection_two.collect_object(node, collector)
+        public_non_provided_collection.collect_object(node, collector)
+        private_non_provided_collection.collect_object(node, collector)
+        bookmark_collection.collect_object(node, collector)
+        collection_submission = collection_public.collect_object(node, collector, status='Complete', collected_type='Dataset')
+        collection_submission.set_subjects(subjects, Auth(collector))
 
         ## test_not_logged_in_user_only_sees_public_collection_info
         collection_summary = serialize_collections(node.collection_submissions, Auth())

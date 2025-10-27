@@ -14,6 +14,7 @@ urlpatterns = [
     re_path(r'^(?P<user_id>\w+)/addons/(?P<provider>\w+)/accounts/$', views.UserAddonAccountList.as_view(), name=views.UserAddonAccountList.view_name),
     re_path(r'^(?P<user_id>\w+)/addons/(?P<provider>\w+)/accounts/(?P<account_id>\w+)/$', views.UserAddonAccountDetail.as_view(), name=views.UserAddonAccountDetail.view_name),
     re_path(r'^(?P<user_id>\w+)/claim/$', views.ClaimUser.as_view(), name=views.ClaimUser.view_name),
+    re_path(r'^(?P<user_id>\w+)/confirm_claim/$', views.ConfirmClaimUser.as_view(), name=views.ConfirmClaimUser.view_name),
     re_path(r'^(?P<user_id>\w+)/confirm/$', views.ConfirmEmailView.as_view(), name=views.ConfirmEmailView.view_name),
     re_path(r'^(?P<user_id>\w+)/sanction_response/$', views.SanctionResponseView.as_view(), name=views.SanctionResponseView.view_name),
     re_path(r'^(?P<user_id>\w+)/draft_registrations/$', views.UserDraftRegistrations.as_view(), name=views.UserDraftRegistrations.view_name),

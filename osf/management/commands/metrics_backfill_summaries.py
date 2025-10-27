@@ -78,20 +78,22 @@ def _map_download_count(row):
 def _map_file_summary(row):
     # date(keen.timestamp)                                => _source.report_date         # "2022-12-30",
     # keen.created_at                                     => _source.timestamp           # "2023-01-02T14:59:04.397056+00:00"
-    # osfstorage_files.private       => _source.files.private       # 12146,
-    # osfstorage_files.total_daily   => _source.files.total_daily   # 0,
-    # osfstorage_files.public_daily  => _source.files.public_daily  # 0,
-    # osfstorage_files.private_daily => _source.files.private_daily # 0
+    # osfstorage_files_including_quickfiles.total         => _source.files.total         # 12272,
+    # osfstorage_files_including_quickfiles.public        => _source.files.public        # 126,
+    # osfstorage_files_including_quickfiles.private       => _source.files.private       # 12146,
+    # osfstorage_files_including_quickfiles.total_daily   => _source.files.total_daily   # 0,
+    # osfstorage_files_including_quickfiles.public_daily  => _source.files.public_daily  # 0,
+    # osfstorage_files_including_quickfiles.private_daily => _source.files.private_daily # 0
     return {
         'report_date': _timestamp_to_date(row['keen.timestamp']),
         'timestamp': _timestamp_to_dt(row['keen.created_at']),
         'files': {
-            'total': int(row['osfstorage_files.total']),
-            'public': int(row['osfstorage_files.public']),
-            'private': int(row['osfstorage_files.private']),
-            'total_daily': int(row['osfstorage_files.total_daily']),
-            'public_daily': int(row['osfstorage_files.public_daily']),
-            'private_daily': int(row['osfstorage_files.private_daily']),
+            'total': int(row['osfstorage_files_including_quickfiles.total']),
+            'public': int(row['osfstorage_files_including_quickfiles.public']),
+            'private': int(row['osfstorage_files_including_quickfiles.private']),
+            'total_daily': int(row['osfstorage_files_including_quickfiles.total_daily']),
+            'public_daily': int(row['osfstorage_files_including_quickfiles.public_daily']),
+            'private_daily': int(row['osfstorage_files_including_quickfiles.private_daily']),
         },
     }
 

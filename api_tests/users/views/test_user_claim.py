@@ -1,21 +1,18 @@
-from unittest import mock
-
 import pytest
+from django.utils import timezone
 
 from api.base.settings.defaults import API_BASE
 from api.users.views import ClaimUser
 from api_tests.utils import only_supports_methods
 from framework.auth.core import Auth
-from osf.models import NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     ProjectFactory,
     PreprintFactory,
 )
-from tests.utils import capture_notifications
-
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestClaimUser:
 
     @pytest.fixture()
@@ -40,7 +37,7 @@ class TestClaimUser:
             'David Davidson',
             'david@david.son',
             auth=Auth(referrer),
-            notification_type=False
+            save=True
         )
 
     @pytest.fixture()
@@ -119,47 +116,41 @@ class TestClaimUser:
         )
         assert res.status_code == 401
 
-    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(email='david@david.son', id=project._id),
-            )
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+    def test_claim_unauth_success_with_original_email(self, app, url, project, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(email='david@david.son', id=project._id),
+        )
         assert res.status_code == 204
+        assert mock_send_grid.call_count == 1
 
-    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(email=claimer.username, id=project._id)
-            )
+    def test_claim_unauth_success_with_claimer_email(self, app, url, unreg_user, project, claimer, mock_send_grid):
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(email=claimer.username, id=project._id)
+        )
         assert res.status_code == 204
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        assert mock_send_grid.call_count == 2
 
-    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(email='asdf@fdsa.com', id=project._id),
-            )
+    def test_claim_unauth_success_with_unknown_email(self, app, url, project, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(email='asdf@fdsa.com', id=project._id),
+        )
         assert res.status_code == 204
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert mock_send_grid.call_count == 2
 
-    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(email='david@david.son', id=preprint._id),
-            )
+    def test_claim_unauth_success_with_preprint_id(self, app, url, preprint, unreg_user, mock_send_grid):
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(email='david@david.son', id=preprint._id),
+        )
         assert res.status_code == 204
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert mock_send_grid.call_count == 1
 
     def test_claim_auth_failure(self, app, url, claimer, wrong_preprint, project, unreg_user, referrer):
         _url = url.format(unreg_user._id)
@@ -218,18 +209,10 @@ class TestClaimUser:
         )
         assert res.status_code == 403
 
-    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project):
-        with mock.patch('osf.email.send_email_with_send_grid', return_value=None):
-            with capture_notifications(passthrough=True) as notifications:
-                app.post_json_api(
-                    url.format(unreg_user._id),
-                    self.payload(id=project._id),
-                    auth=claimer.auth,
-                    expect_errors=True
-                )
-            assert len(notifications['emits']) == 2
-            assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-            assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+    def test_claim_auth_throttle_error(self, app, url, claimer, unreg_user, project, mock_send_grid):
+        unreg_user.unclaimed_records[project._id]['last_sent'] = timezone.now()
+        unreg_user.save()
+        mock_send_grid.reset_mock()
         res = app.post_json_api(
             url.format(unreg_user._id),
             self.payload(id=project._id),
@@ -238,15 +221,106 @@ class TestClaimUser:
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User account can only be claimed with an existing user once every 24 hours'
+        assert mock_send_grid.call_count == 0
 
-    def test_claim_auth_success(self, app, url, claimer, unreg_user, project):
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                url.format(unreg_user._id),
-                self.payload(id=project._id),
-                auth=claimer.auth
-            )
+    def test_claim_auth_success(self, app, url, claimer, unreg_user, project, mock_send_grid):
+        mock_send_grid.reset_mock()
+        res = app.post_json_api(
+            url.format(unreg_user._id),
+            self.payload(id=project._id),
+            auth=claimer.auth
+        )
         assert res.status_code == 204
-        assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+        assert mock_send_grid.call_count == 2
+
+
+@pytest.mark.django_db
+class TestConfirmClaimUser:
+
+    @pytest.fixture()
+    def referrer(self):
+        return AuthUserFactory()
+
+    @pytest.fixture()
+    def project(self, referrer):
+        return ProjectFactory(creator=referrer)
+
+    @pytest.fixture()
+    def preprint(self, referrer, project):
+        return PreprintFactory(creator=referrer, project=project)
+
+    @pytest.fixture()
+    def wrong_preprint(self, referrer):
+        return PreprintFactory(creator=referrer)
+
+    @pytest.fixture()
+    def unreg_user(self, referrer, project):
+        return project.add_unregistered_contributor(
+            'David Davidson',
+            'david@david.son',
+            auth=Auth(referrer),
+            save=True
+        )
+
+    @pytest.fixture()
+    def url(self):
+        return f'/{API_BASE}users/{{}}/confirm_claim/'
+
+    def payload(self, **kwargs):
+        payload = {
+            'data': {
+                'attributes': {}
+            }
+        }
+        _id = kwargs.pop('id', None)
+        if _id:
+            payload['data']['id'] = _id
+        if kwargs:
+            payload['data']['attributes'] = kwargs
+        return payload
+
+    def test_confirm_claim(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        unclaimed_record = unreg_user.get_unclaimed_record(project._id)
+        token = unclaimed_record['token']
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+        )
+        assert res.status_code == 200
+        unreg_user.reload()
+        assert unreg_user.is_registered
+
+    def test_confirm_claim_wrong_pid(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        token = 'someinvalidtoken'
+        payload = self.payload(guid=wrong_preprint._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'Claim user does not exists, the token in the URL is invalid or has expired.'
+
+    def test_claimed_user(self, app, url, unreg_user, project, wrong_preprint):
+        _url = url.format(unreg_user._id)
+        unclaimed_record = unreg_user.get_unclaimed_record(project._id)
+        token = unclaimed_record['token']
+        payload = self.payload(guid=project._id, password='password1234', accepted_terms_of_service=True, token=token)
+        res = app.post_json_api(
+            _url,
+            payload,
+        )
+        assert res.status_code == 200
+        unreg_user.reload()
+        assert unreg_user.is_registered
+
+        res = app.post_json_api(
+            _url,
+            payload,
+            expect_errors=True
+        )
+        assert res.status_code == 400
+        assert res.json['errors'][0]['detail'] == 'User has already been claimed.'

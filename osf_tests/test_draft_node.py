@@ -21,7 +21,6 @@ from osf_tests.factories import (
     ProjectFactory,
     get_default_metaschema,
 )
-from tests.utils import capture_notifications
 from website.project.signals import after_create_registration
 from website import settings
 
@@ -120,12 +119,11 @@ class TestDraftNode:
 
     def test_create_draft_registration_without_node(self, user):
         data = {'some': 'data'}
-        with capture_notifications():
-            draft = DraftRegistration.create_from_node(
-                user=user,
-                schema=get_default_metaschema(),
-                data=data,
-            )
+        draft = DraftRegistration.create_from_node(
+            user=user,
+            schema=get_default_metaschema(),
+            data=data,
+        )
         assert draft.title == ''
         assert draft.branched_from.title == settings.DEFAULT_DRAFT_NODE_TITLE
         assert draft.branched_from.type == 'osf.draftnode'
@@ -147,8 +145,7 @@ class TestDraftNode:
 
     def test_draft_registration_fields_are_copied_back_to_draft_node(self, user, institution,
             subject, write_contrib, title, description, category, license, make_complex_draft_registration):
-        with capture_notifications():
-            draft_registration = make_complex_draft_registration()
+        draft_registration = make_complex_draft_registration()
         draft_node = draft_registration.branched_from
 
         with disconnected_from_listeners(after_create_registration):

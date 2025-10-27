@@ -158,6 +158,10 @@ class PreprintMixin(NodeMixin):
             or preprint.machine_state == ReviewStates.WITHDRAWN.value,
         )
         if not preprint_is_public and not user_is_contributor and not user_is_reviewer:
+            if preprint.is_pending_moderation:
+                raise PermissionDenied(
+                    detail='This preprint is pending moderation and is not yet publicly available.',
+                )
             raise NotFound
 
         return preprint

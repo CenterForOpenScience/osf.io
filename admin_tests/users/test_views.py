@@ -26,8 +26,6 @@ from admin_tests.utilities import setup_view, setup_log_view, setup_form_view
 from admin.users import views
 from admin.users.forms import UserSearchForm, MergeUserForm
 from osf.models.admin_log_entry import AdminLogEntry
-from tests.utils import assert_notification, capture_notifications
-from osf.models.notification_type import NotificationType
 
 pytestmark = pytest.mark.django_db
 
@@ -101,11 +99,7 @@ class TestResetPasswordView(AdminTestCase):
         request.POST = {'emails': ', '.join(user.emails.all().values_list('address', flat=True))}
         request.user = user
 
-        with capture_notifications() as notifications:
-            response = views.ResetPasswordView.as_view()(request, guid=guid)
-
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        response = views.ResetPasswordView.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 302)
 
 
@@ -168,16 +162,14 @@ class TestDisableUser(AdminTestCase):
     def test_disable_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
         count = AdminLogEntry.objects.count()
-        with assert_notification(type=NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE, user=self.user):
-            self.view().post(self.request)
+        self.view().post(self.request)
         self.user.reload()
         assert self.user.is_disabled
         assert AdminLogEntry.objects.count() == count + 1
 
     def test_reactivate_user(self):
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
-        with assert_notification(type=NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE, user=self.user):
-            self.view().post(self.request)
+        self.view().post(self.request)
         count = AdminLogEntry.objects.count()
         self.view().post(self.request)
         self.user.reload()
@@ -206,11 +198,11 @@ class TestDisableUser(AdminTestCase):
         change_permission = Permission.objects.get(codename='change_osfuser')
         user.user_permissions.add(change_permission)
         user.save()
-        with assert_notification(type=NotificationType.Type.USER_REQUEST_DEACTIVATION_COMPLETE, user=user):
-            request = RequestFactory().post(reverse('users:disable', kwargs={'guid': guid}))
-            request.user = user
 
-            response = self.view.as_view()(request, guid=guid)
+        request = RequestFactory().post(reverse('users:disable', kwargs={'guid': guid}))
+        request.user = user
+
+        response = self.view.as_view()(request, guid=guid)
         self.assertEqual(response.status_code, 302)
 
 

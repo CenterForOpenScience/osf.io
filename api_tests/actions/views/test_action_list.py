@@ -7,7 +7,6 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from osf.utils import permissions as osf_permissions
-from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -101,12 +100,11 @@ class TestReviewActionCreateRoot:
         )
 
         # Node admin can submit
-        with capture_notifications():
-            res = app.post_json_api(
-                url,
-                submit_payload,
-                auth=node_admin.auth
-            )
+        res = app.post_json_api(
+            url,
+            submit_payload,
+            auth=node_admin.auth
+        )
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'pending'
@@ -319,8 +317,7 @@ class TestReviewActionCreateRoot:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                with capture_notifications():
-                    res = app.post_json_api(url, payload, auth=moderator.auth)
+                res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
 
                 action = preprint.actions.order_by('-created').first()

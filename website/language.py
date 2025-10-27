@@ -57,9 +57,8 @@ TERMS_OF_SERVICE = """
 
 REGISTRATION_SUCCESS = """Registration successful. Please check {email} to confirm your email address."""
 
-EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = """A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address."""
-
-EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = """Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action."""
+EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = """Hello {fullname}, a new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address."""
+EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = """Hello {fullname}, your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action."""
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
@@ -221,9 +220,6 @@ RESET_PASSWORD_SUCCESS_STATUS_MESSAGE = (
     'reset the OSF password has been sent to {email}. If you do not receive an email and believe '
     'you should have, please contact OSF Support. '
 )
-
-THROTTLE_PASSWORD_CHANGE_ERROR_MESSAGE = \
-    'You have recently requested to change your password. Please wait a few minutes before trying again.'
 
 SANCTION_STATUS_MESSAGES = {
     'registration': {

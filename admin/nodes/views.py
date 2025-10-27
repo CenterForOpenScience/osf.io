@@ -21,7 +21,7 @@ from django.urls import reverse_lazy
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.notifications.views import delete_selected_notifications
+from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -100,6 +100,7 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
+        detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
         children = node.get_nodes(is_node_link=False)
         # Annotate guid because django templates prohibit accessing attributes that start with underscores
         children = AbstractNode.objects.filter(
@@ -113,7 +114,8 @@ class NodeView(NodeMixin, GuidView):
             'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
-            'has_update_permission': node.is_admin_contributor(self.request.user)
+            'has_update_permission': node.is_admin_contributor(self.request.user),
+            'duplicates': detailed_duplicates
         })
 
         return context

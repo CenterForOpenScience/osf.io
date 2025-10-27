@@ -2,9 +2,10 @@ import logging
 import json
 from tqdm import tqdm
 
+from website import mails
 from django.core.management.base import BaseCommand
 
-from osf.models import Node, OSFUser, NotificationType
+from osf.models import Node, OSFUser
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -39,15 +40,13 @@ def main(json_file, dry=False):
         if public_nodes or private_nodes:
             if not dry:
                 try:
-                    NotificationType.objects.get(
-                        name=NotificationType.Type.USER_STORAGE_CAP_EXCEEDED_ANNOUNCEMENT
-                    ).emit(
+                    mails.send_mail(
+                        to_addr=user.username,
+                        mail=mails.STORAGE_CAP_EXCEEDED_ANNOUNCEMENT,
                         user=user,
-                        event_context={
-                            'public_nodes': public_nodes,
-                            'private_nodes': private_nodes,
-                            'can_change_preferences': False,
-                        }
+                        public_nodes=public_nodes,
+                        private_nodes=private_nodes,
+                        can_change_preferences=False,
                     )
                 except Exception:
                     errors.append(user._id)

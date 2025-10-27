@@ -10,7 +10,7 @@ from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.cas import CasResponse
-from osf.models import OSFUser, ApiOAuth2PersonalToken, NotificationType
+from osf.models import OSFUser, ApiOAuth2PersonalToken
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -19,7 +19,6 @@ from osf_tests.factories import (
     Auth,
 )
 from osf.utils.permissions import CREATOR_PERMISSIONS
-from tests.utils import capture_notifications
 from website import settings
 
 
@@ -247,6 +246,7 @@ class TestUsers:
 
 
 @pytest.mark.django_db
+@pytest.mark.usefixtures('mock_send_grid')
 class TestUsersCreate:
 
     @pytest.fixture()
@@ -279,7 +279,7 @@ class TestUsersCreate:
         OSFUser.remove()
 
     def test_logged_in_user_with_basic_auth_cannot_create_other_user_or_send_mail(
-            self, app, user, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             f'{url_base}?send_email=true',
@@ -290,9 +290,10 @@ class TestUsersCreate:
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_send_grid.call_count == 0
 
     def test_logged_out_user_cannot_create_other_user_or_send_mail(
-            self, app, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, email_unconfirmed, data, url_base):
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
         res = app.post_json_api(
             f'{url_base}?send_email=true',
@@ -302,10 +303,11 @@ class TestUsersCreate:
 
         assert res.status_code == 401
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
     def test_cookied_requests_can_create_and_email(
-            self, app, user, email_unconfirmed, data, url_base):
+            self, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         # NOTE: skipped tests are not tested during session refactor, only updated to fix import
         session = SessionStore()
         session['auth_user_id'] = user._id
@@ -314,15 +316,13 @@ class TestUsersCreate:
         app.set_cookie(settings.COOKIE_NAME, str(cookie))
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data
-            )
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data
+        )
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_send_grid.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
@@ -331,7 +331,7 @@ class TestUsersCreate:
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_can_create_and_send_email(
-            self, mock_auth, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -352,18 +352,16 @@ class TestUsersCreate:
         mock_auth.return_value = user, mock_cas_resp
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                headers={'Authorization': f'Bearer {token.token_id}'}
-            )
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            headers={'Authorization': f'Bearer {token.token_id}'}
+        )
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_send_grid.call_count == 1
 
     @pytest.mark.skip  # failing locally post converision
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
@@ -372,7 +370,7 @@ class TestUsersCreate:
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_does_not_send_email_without_kwarg(
-            self, mock_auth, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -404,6 +402,7 @@ class TestUsersCreate:
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
@@ -412,7 +411,7 @@ class TestUsersCreate:
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.users.create unavailable')
     def test_properly_scoped_token_can_create_without_username_but_not_send_email(
-            self, mock_auth, app, user, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Authorized Token',
@@ -448,10 +447,11 @@ class TestUsersCreate:
         except ValueError:
             raise AssertionError('Username is not a valid UUID')
         assert OSFUser.objects.filter(fullname='No Email').count() == 1
+        assert mock_send_grid.call_count == 0
 
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     def test_improperly_scoped_token_can_not_create_or_email(
-            self, mock_auth, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Unauthorized Token',
@@ -483,6 +483,7 @@ class TestUsersCreate:
 
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
+        assert mock_send_grid.call_count == 0
 
     @pytest.mark.skip  # failing locally post converision
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
@@ -491,7 +492,7 @@ class TestUsersCreate:
         not settings.DEV_MODE,
         'DEV_MODE disabled, osf.admin unavailable')
     def test_admin_scoped_token_can_create_and_send_email(
-            self, mock_auth, app, user, email_unconfirmed, data, url_base):
+            self, mock_auth, mock_send_grid, app, user, email_unconfirmed, data, url_base):
         token = ApiOAuth2PersonalToken(
             owner=user,
             name='Admin Token',
@@ -512,15 +513,13 @@ class TestUsersCreate:
         mock_auth.return_value = user, mock_cas_resp
 
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
-        with capture_notifications() as notifications:
-            res = app.post_json_api(
-                f'{url_base}?send_email=true',
-                data,
-                headers={'Authorization': f'Bearer {token.token_id}'}
-            )
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        res = app.post_json_api(
+            f'{url_base}?send_email=true',
+            data,
+            headers={'Authorization': f'Bearer {token.token_id}'}
+        )
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
+        assert mock_send_grid.call_count == 1
