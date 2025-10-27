@@ -287,7 +287,7 @@ class InstitutionUserMetricsSerializer(JSONAPISerializer):
             count=Count('sender_name'),
         ).order_by('sender_name')
         return list(results)
-    
+
     def get_absolute_url(self, obj):
         raise NotImplementedError()
 
