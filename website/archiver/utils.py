@@ -64,7 +64,15 @@ def send_archiver_copy_error_mails(src, user, results, url):
     NotificationType.Type.DESK_ARCHIVE_JOB_COPY_ERROR.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
+            'domain': settings.DOMAIN,
+            'user_fullname': user.fullname,
+            'user__id': user._id,
+            'src__id': src._id,
+            'src_url': src.url,
             'src_title': src.title,
+            'results': results,
+            'url': url,
+            'can_change_preferences': False,
         }
     )
     NotificationType.Type.USER_ARCHIVE_JOB_COPY_ERROR.instance.emit(
