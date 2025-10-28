@@ -59,7 +59,6 @@ from osf.exceptions import (
 )
 from django.contrib.postgres.fields import ArrayField
 from api.share.utils import update_share
-from api.providers.workflows import Workflows
 
 logger = logging.getLogger(__name__)
 
@@ -1679,27 +1678,13 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             user: The user triggering this transition.
         """
         ret = super().run_submit(user=user)
-        provider = self.provider
-        reviews_workflow = provider.reviews_workflow
-        # Only post moderation is relevant for Preprint, and hybrid moderation is included for integrity purpose.
-        need_guid_update = any(
-            [
-                reviews_workflow == Workflows.POST_MODERATION.value,
-                reviews_workflow == Workflows.HYBRID_MODERATION.value and
-                any([
-                    provider.get_group('moderator') in user.groups.all(),
-                    provider.get_group('admin') in user.groups.all()
-                ])
-            ]
-        )
-        # Only update the base guid obj to refer to the new version 1) if the provider is post-moderation, or 2) if the
-        # provider is hybrid-moderation and if the user who submits the preprint is a moderator or admin.
-        if need_guid_update:
-            base_guid_obj = self.versioned_guids.first().guid
-            base_guid_obj.referent = self
-            base_guid_obj.object_id = self.pk
-            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
-            base_guid_obj.save()
+
+        base_guid_obj = self.versioned_guids.first().guid
+        base_guid_obj.referent = self
+        base_guid_obj.object_id = self.pk
+        base_guid_obj.content_type = ContentType.objects.get_for_model(self)
+        base_guid_obj.save()
+
         return ret
 
     def run_accept(self, user, comment, **kwargs):
@@ -1711,14 +1696,6 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             comment: Text describing why.
         """
         ret = super().run_accept(user=user, comment=comment, **kwargs)
-        reviews_workflow = self.provider.reviews_workflow
-        if reviews_workflow == Workflows.PRE_MODERATION.value or reviews_workflow == Workflows.HYBRID_MODERATION.value:
-            base_guid_obj = self.versioned_guids.first().guid
-            base_guid_obj.referent = self
-            base_guid_obj.object_id = self.pk
-            base_guid_obj.content_type = ContentType.objects.get_for_model(self)
-            base_guid_obj.save()
-
         versioned_guid = self.versioned_guids.first()
         if versioned_guid.is_rejected:
             versioned_guid.is_rejected = False
@@ -1734,9 +1711,38 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             comment: Text describing why.
         """
         ret = super().run_reject(user=user, comment=comment)
-        versioned_guid = self.versioned_guids.first()
-        versioned_guid.is_rejected = True
-        versioned_guid.save()
+        current_version_guid = self.versioned_guids.first()
+        current_version_guid.is_rejected = True
+        current_version_guid.save()
+
+        self.rollback_main_guid()
+
+        return ret
+
+    def rollback_main_guid(self):
+        """Reset main guid to resolve to last versioned guid which is not withdrawn/rejected if there is one.
+        """
+        guid = None
+        for version in self.versioned_guids.all()[1:]:  # skip first guid as it refers to current version
+            guid = version.guid
+            if guid.referent.machine_state not in (ReviewStates.REJECTED, ReviewStates.WITHDRAWN):
+                break
+        if guid:
+            guid.referent = self
+            guid.object_id = self.pk
+            guid.content_type = ContentType.objects.get_for_model(self)
+            guid.save()
+
+    def run_withdraw(self, user, comment):
+        """Override `ReviewableMixin`/`MachineableMixin`.
+        Run the 'withdraw' state transition and create a corresponding Action.
+
+        Params:
+            user: The user triggering this transition.
+            comment: Text describing why.
+        """
+        ret = super().run_withdraw(user=user, comment=comment)
+        self.rollback_main_guid()
         return ret
 
 @receiver(post_save, sender=Preprint)
