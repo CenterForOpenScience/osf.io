@@ -7,7 +7,7 @@ from django.core.validators import URLValidator, validate_email as django_valida
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.deconstruct import deconstructible
 from rest_framework import exceptions
-
+from osf.models.notification_type import get_default_frequency_choices
 from osf.utils.registrations import FILE_VIEW_URL_REGEX
 from osf.utils.sanitize import strip_html
 from osf.exceptions import ValidationError, ValidationValueError, reraise_django_validation_errors, BlockedEmailError
@@ -52,7 +52,7 @@ def string_required(value):
 
 
 def validate_subscription_type(value):
-    if value not in ['email_transactional', 'email_digest', 'none']:
+    if value not in get_default_frequency_choices():
         raise ValidationValueError
 
 

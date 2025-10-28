@@ -216,6 +216,7 @@ class TestCrossRefEmailResponse:
         update_xml = self.update_success_xml(preprint)
 
         context_data = self.make_mailgun_payload(crossref_response=update_xml)
-        app.post(url, context_data)
+        with capture_notifications(expect_none=True):
+            app.post(url, context_data)
 
         assert preprint.identifiers.get(category='legacy_doi').deleted
