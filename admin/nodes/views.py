@@ -119,7 +119,7 @@ class NodeView(NodeMixin, GuidView):
         })
 
         return context
-    
+
 
 class NodeRemoveNotificationView(View):
     def post(self, request, *args, **kwargs):
