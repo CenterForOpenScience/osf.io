@@ -260,8 +260,6 @@ class NodeRequestMachine(BaseMachine):
         """ Notify admins that someone is requesting access
         """
         context = self.get_context()
-        context['contributors_url'] = f'{self.machineable.target.absolute_url}contributors/'
-        context['project_settings_url'] = f'{self.machineable.target.absolute_url}settings/'
 
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):

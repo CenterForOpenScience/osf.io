@@ -9,7 +9,7 @@ from django.conf import settings as django_conf_settings
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
-from osf.models import BaseFileNode
+from osf.models import BaseFileNode, NotificationType
 from osf.exceptions import ValidationError
 from osf.utils.permissions import WRITE, ADMIN
 
@@ -746,8 +746,11 @@ class TestNodeSettingsModel:
             version = factories.FileVersionFactory()
             record.add_version(version)
 
-        with capture_notifications():
+        with capture_notifications() as notifications:
             fork = node.fork_node(auth_obj)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
 

@@ -7,7 +7,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-      Hello ${user_fullname},<br>
+      Hello ${fullname},<br>
       <br>
       Your submission [${job_id}] of file [${query_file_full_path}] to Boa is successful. <br>
       <br>

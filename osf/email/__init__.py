@@ -5,7 +5,7 @@ import logging
 import importlib
 import sys
 from html import unescape
-from typing import List, Optional
+from typing import Optional
 from mako.template import Template as MakoTemplate
 
 
@@ -25,22 +25,32 @@ from python_http_client.exceptions import (
 from osf import features
 from website import settings
 
-def _existing_dirs(paths: List[str]) -> List[str]:
-    out = []
-    seen = set()
-    for p in paths:
-        if not p:
-            continue
-        ap = os.path.abspath(p)
-        tail = os.path.basename(ap.rstrip(os.sep))
-        if tail in ('emails', 'notifications'):
-            ap = os.path.dirname(ap)
-        if os.path.isdir(ap) and ap not in seen:
-            out.append(ap)
-            seen.add(ap)
-    return out
+def collect_existing_directories(paths: list[str]) -> list[str]:
+    """Collect and return unique existing directories from the given paths.
 
-def _default_template_roots() -> List[str]:
+    If a path ends with 'emails' or 'notifications', its parent directory
+    is used instead. Only directories that exist on disk are included.
+    """
+    existing_directories = []
+    processed_paths = set()
+
+    for path in paths:
+        if not path:
+            continue
+
+        absolute_path = os.path.abspath(path)
+        last_component = os.path.basename(absolute_path.rstrip(os.sep))
+
+        if last_component in ('emails', 'notifications'):
+            absolute_path = os.path.dirname(absolute_path)
+
+        if os.path.isdir(absolute_path) and absolute_path not in processed_paths:
+            existing_directories.append(absolute_path)
+            processed_paths.add(absolute_path)
+
+    return existing_directories
+
+def _default_template_roots() -> list[str]:
     roots = []
     cfg = getattr(settings, 'EMAIL_TEMPLATE_DIRS', None)
     if cfg:
@@ -57,26 +67,35 @@ def _default_template_roots() -> List[str]:
     if base_path:
         roots.append(os.path.join(base_path, 'website', 'templates'))
 
-    return _existing_dirs(roots)
+    return collect_existing_directories(roots)
 
 LOOKUP_DIRS = _default_template_roots()
 MAKO_LOOKUP = TemplateLookup(directories=LOOKUP_DIRS, input_encoding='utf-8')
 
-def _discover_notify_base_uri() -> Optional[str]:
-    for root in LOOKUP_DIRS:
-        for folder in ('emails', 'notifications', ''):
-            p = os.path.join(root, folder, 'notify_base.mako')
-            if os.path.exists(p):
-                rel = os.path.relpath(p, root).replace(os.sep, '/')
-                return '/' + rel
-    for root in LOOKUP_DIRS:
-        for dirpath, _, files in os.walk(root):
+def _discover_notification_base_uri() -> Optional[str]:
+    """Find and return the relative URI path to the first found 'notify_base.mako' template.
+
+    Searches through directories listed in LOOKUP_DIRS, checking common subfolders
+    ('emails', 'notifications', and root). Returns the relative path as a URI string,
+    or None if no such template is found.
+    """
+    for lookup_root in LOOKUP_DIRS:
+        for subfolder in ('emails', 'notifications', ''):
+            candidate_path = os.path.join(lookup_root, subfolder, 'notify_base.mako')
+            if os.path.exists(candidate_path):
+                relative_path = os.path.relpath(candidate_path, lookup_root).replace(os.sep, '/')
+                return '/' + relative_path
+
+    for lookup_root in LOOKUP_DIRS:
+        for current_dir, _, files in os.walk(lookup_root):
             if 'notify_base.mako' in files:
-                rel = os.path.relpath(os.path.join(dirpath, 'notify_base.mako'), root).replace(os.sep, '/')
-                return '/' + rel
+                template_path = os.path.join(current_dir, 'notify_base.mako')
+                relative_path = os.path.relpath(template_path, lookup_root).replace(os.sep, '/')
+                return '/' + relative_path
+
     return None
 
-NOTIFY_BASE_URI = _discover_notify_base_uri()
+NOTIFY_BASE_URI = _discover_notification_base_uri()
 if not NOTIFY_BASE_URI:
     logging.error('Email templates: could not locate notify_base.mako. lookup_dirs=%s', LOOKUP_DIRS)
 else:
@@ -182,6 +201,8 @@ def send_email_over_smtp(to_email, notification_type, context, email_context):
         host = settings.MAIL_SERVER
         port = settings.MAIL_PORT
     if not host or not port:
+        if settings.DEBUG:
+            return
         raise NotImplementedError('MAIL_SERVER or MAIL_PORT is not set')
 
     subject = None if not notification_type.subject else notification_type.subject.format(**context)
@@ -282,22 +303,13 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
                               err.get('message'), err.get('field'), err.get('help'))
         raise
 
-    except (SGUnauthorizedError, SGForbiddenError) as exc:
+    except (SGUnauthorizedError, SGForbiddenError, SGHTTPError) as exc:
         body = getattr(exc, 'body', b'')
         try:
             body = body.decode('utf-8', 'ignore') if isinstance(body, (bytes, bytearray)) else str(body)
         except Exception:
             pass
-        logging.error('SendGrid auth error (%s): %s', exc.__class__.__name__, body)
-        raise
-
-    except SGHTTPError as exc:
-        body = getattr(exc, 'body', b'')
-        try:
-            body = body.decode('utf-8', 'ignore') if isinstance(body, (bytes, bytearray)) else str(body)
-        except Exception:
-            pass
-        logging.error('SendGrid HTTPError: %s | payload=%s', body, payload)
+        logging.error('SendGrid error (%s): %s', exc.__class__.__name__, body)
         raise
     except Exception as exc:
         if 'pytest' in sys.modules:

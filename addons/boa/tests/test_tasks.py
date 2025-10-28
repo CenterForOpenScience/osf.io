@@ -39,9 +39,6 @@ class TestBoaErrorHandling(OsfTestCase):
         self.output_file_name = 'fake_boa_script_results.txt'
         self.job_id = '1a2b3c4d5e6f7g8'
 
-    def tearDown(self):
-        super().tearDown()
-
     def test_boa_error_code(self):
         assert BoaErrorCode.NO_ERROR == -1
         assert BoaErrorCode.UNKNOWN == 0

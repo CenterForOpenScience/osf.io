@@ -1,3 +1,4 @@
+import re, html as html_lib, difflib
 import copy
 from collections import Counter
 import datetime
@@ -227,7 +228,6 @@ def run_celery_tasks():
     yield
     celery_teardown_request()
 
-import re, html as html_lib, difflib
 
 # Matches a wide range of ISO-like datetimes (with optional microseconds and timezone)
 _ISO_DT = re.compile(
@@ -478,42 +478,46 @@ def _notif_type_name(t: Any) -> str:
     return str(t).strip().lower()
 
 
-def _safe_user_id(u: Any) -> Optional[str]:
-    """Normalize user object to stable identifier."""
-    if u is None:
+def _safe_user_id(user: Any) -> Optional[str]:
+    """Normalize a user object to a stable identifier."""
+    if user is None:
         return None
+
     for attr in ('_id', 'id', 'guids', 'guid', 'pk'):
-        if hasattr(u, attr):
+        if hasattr(user, attr):
             try:
-                val = getattr(u, attr)
-                if hasattr(val, 'first'):
-                    g = val.first()
-                    if g and hasattr(g, '_id'):
-                        return g._id
-                if isinstance(val, (str, int)):
-                    return str(val)
+                value = getattr(user, attr)
+                if hasattr(value, 'first'):
+                    guid = value.first()
+                    if guid and hasattr(guid, '_id'):
+                        return guid._id
+                if isinstance(value, (str, int)):
+                    return str(value)
             except Exception:
                 pass
-    return f'obj:{id(u)}'
+
+    return f'obj:{id(user)}'
 
 
-def _safe_obj_id(o: Any) -> Optional[str]:
-    """Normalize object to stable identifier."""
-    if o is None:
+def _safe_obj_id(obj: Any) -> Optional[str]:
+    """Normalize an object to a stable identifier."""
+    if obj is None:
         return None
+
     for attr in ('_id', 'id', 'guid', 'guids', 'pk'):
-        if hasattr(o, attr):
+        if hasattr(obj, attr):
             try:
-                val = getattr(o, attr)
-                if hasattr(val, 'first'):
-                    g = val.first()
-                    if g and hasattr(g, '_id'):
-                        return g._id
-                if isinstance(val, (str, int)):
-                    return str(val)
+                value = getattr(obj, attr)
+                if hasattr(value, 'first'):
+                    guid = value.first()
+                    if guid and hasattr(guid, '_id'):
+                        return guid._id
+                if isinstance(value, (str, int)):
+                    return str(value)
             except Exception:
                 pass
-    return f'obj:{id(o)}'
+
+    return f'obj:{id(obj)}'
 
 
 @contextlib.contextmanager

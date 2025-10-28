@@ -19,8 +19,9 @@ from django.apps import apps
 
 logger = get_task_logger(__name__)
 
-@celery_app.task(bind=True)
-def send_user_email_task(self, user_id, notification_ids, **kwargs):
+
+def get_user_and_email_task(task_id, user_id):
+    """Helper to safely fetch user and initialize EmailTask."""
     try:
         user = OSFUser.objects.get(
             guids___id=user_id,
@@ -28,22 +29,31 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         )
     except OSFUser.DoesNotExist:
         logger.error(f'OSFUser with id {user_id} does not exist')
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
+        email_task, _ = EmailTask.objects.get_or_create(task_id=task_id)
         email_task.status = 'NO_USER_FOUND'
         email_task.error_message = 'User not found or disabled'
         email_task.save()
+        return None, email_task
+
+    email_task, _ = EmailTask.objects.get_or_create(task_id=task_id)
+    email_task.user = user
+    email_task.status = 'STARTED'
+
+    if user.is_disabled:
+        email_task.status = 'USER_DISABLED'
+        email_task.error_message = 'User not found or disabled'
+        email_task.save()
+        return None, email_task
+
+    return user, email_task
+
+@celery_app.task(bind=True)
+def send_user_email_task(self, user_id, notification_ids, **kwargs):
+    user, email_task = get_user_and_email_task(self.request.id, user_id)
+    if not user:
         return
 
     try:
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
-        email_task.user = user
-        email_task.status = 'STARTED'
-        if user.is_disabled:
-            email_task.status = 'USER_DISABLED'
-            email_task.error_message = 'User not found or disabled'
-            email_task.save()
-            return
-
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
         rendered_notifications = [n.render() for n in notifications_qs]
 
@@ -90,29 +100,11 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
 
 @celery_app.task(bind=True)
 def send_moderator_email_task(self, user_id, provider_id, notification_ids, **kwargs):
-    try:
-        user = OSFUser.objects.get(
-            guids___id=user_id,
-            deleted__isnull=True
-        )
-    except OSFUser.DoesNotExist:
-        logger.error(f'OSFUser with id {user_id} does not exist')
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
-        email_task.status = 'NO_USER_FOUND'
-        email_task.error_message = 'User not found or disabled'
-        email_task.save()
+    user, email_task = get_user_and_email_task(self.request.id, user_id)
+    if not user:
         return
 
     try:
-        email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
-        email_task.user = user
-        email_task.status = 'STARTED'
-        if user.is_disabled:
-            email_task.status = 'USER_DISABLED'
-            email_task.error_message = 'User not found or disabled'
-            email_task.save()
-            return
-
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
         rendered_notifications = [notification.render() for notification in notifications_qs]
 
@@ -302,10 +294,7 @@ def remove_supplemental_node_from_preprints(node_id):
     AbstractNode = apps.get_model('osf.AbstractNode')
 
     node = AbstractNode.load(node_id)
-    for preprint in node.preprints.all():
-        if preprint.node is not None:
-            preprint.node = None
-            preprint.save()
+    node.preprints.filter(node__isnull=False).update(node=None)
 
 
 @run_postcommit(once_per_request=False, celery=True)

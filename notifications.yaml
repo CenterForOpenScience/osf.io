@@ -193,13 +193,6 @@ notification_types:
     template: 'website/templates/storage_cap_exceeded_announcement.html.mako'
     tests: []
 
-  - name: user_add_sso_email_osf4i
-    subject: 'Your OSF Account Email Address'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/add_sso_email_osf4i.html.mako'
-    tests: ['']
-
   - name: user_duplicate_accounts_sso_osf4i
     subject: 'Duplicate Account Detection'
     __docs__: ...

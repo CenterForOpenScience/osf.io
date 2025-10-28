@@ -646,6 +646,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
         else:
             logger.error(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
+            sentry.log_message(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
             return
 
         notification_type.instance.emit(
