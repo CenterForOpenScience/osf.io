@@ -268,6 +268,8 @@ class NodeRequestMachine(BaseMachine):
                     subscribed_object=self.machineable,
                     event_context={
                         'user_fullname': admin.fullname,
+                        'contributors_url': f'{self.machineable.target.absolute_url}contributors/',
+                        'project_settings_url': f'{self.machineable.target.absolute_url}settings/',
                         **context
                     }
                 )
