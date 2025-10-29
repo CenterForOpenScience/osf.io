@@ -15,7 +15,7 @@ from django.urls import NoReverseMatch, reverse_lazy
 
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.nodes.views import NodeRemoveContributorView
+from admin.nodes.views import NodeRemoveContributorView, NodeUpdatePermissionsView
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
 
 from api.share.utils import update_share
@@ -48,6 +48,7 @@ from osf.models.admin_log_entry import (
     UNFLAG_SPAM,
 )
 from osf.utils.workflows import DefaultStates
+from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS
 from website import search
 from website.files.utils import copy_files
 from website.preprints.tasks import on_preprint_updated
@@ -75,9 +76,13 @@ class PreprintView(PreprintMixin, GuidView):
         preprint = self.get_object()
         return super().get_context_data(**{
             'preprint': preprint,
+            # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
+            'annotated_contributors': preprint.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'SPAM_STATUS': SpamStatus,
             'change_provider_form': ChangeProviderForm(instance=preprint),
             'change_machine_state_form': MachineStateForm(instance=preprint),
+            'permissions': API_CONTRIBUTOR_PERMISSIONS,
+            'has_update_permission': preprint.is_admin_contributor(self.request.user)
         }, **kwargs)
 
 
@@ -270,6 +275,12 @@ class PreprintRemoveContributorView(PreprintMixin, NodeRemoveContributorView):
             },
             should_hide=True,
         ).save()
+
+
+class PreprintUpdatePermissionsView(PreprintMixin, NodeUpdatePermissionsView):
+    permission_required = ('osf.view_preprint', 'osf.change_preprint')
+    raise_exception = True
+    redirect_view = PreprintRemoveContributorView
 
 
 class PreprintDeleteView(PreprintMixin, View):

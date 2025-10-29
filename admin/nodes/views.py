@@ -47,7 +47,7 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 
 from scripts.approve_registrations import approve_past_pendings
 
@@ -110,11 +110,16 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
+            # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
+            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
+            'permissions': API_CONTRIBUTOR_PERMISSIONS,
+            'has_update_permission': node.is_admin_contributor(self.request.user),
             'duplicates': detailed_duplicates
         })
 
         return context
+
 
 class NodeRemoveNotificationView(View):
     def post(self, request, *args, **kwargs):
@@ -195,6 +200,75 @@ class NodeRemoveContributorView(NodeMixin, View):
             date=timezone.now(),
             should_hide=True,
         ).save()
+
+
+class NodeUpdatePermissionsView(NodeMixin, View):
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    redirect_view = NodeRemoveContributorView
+
+    def post(self, request, *args, **kwargs):
+        data = dict(request.POST)
+        contributor_id_to_remove = data.get('remove-user')
+        resource = self.get_object()
+
+        if contributor_id_to_remove:
+            contributor_id = contributor_id_to_remove[0]
+            # html renders form into form incorrectly,
+            # so this view handles contributors deletion and permissions update
+            return self.redirect_view(
+                request=request,
+                kwargs={'guid': resource.guid, 'user_id': contributor_id}
+            ).post(request, user_id=contributor_id)
+
+        new_emails_to_add = data.get('new-emails', [])
+        new_permissions_to_add = data.get('new-permissions', [])
+
+        new_permission_indexes_to_remove = []
+        for email, permission in zip(new_emails_to_add, new_permissions_to_add):
+            contributor_user = OSFUser.objects.filter(emails__address=email.lower()).first()
+            if not contributor_user:
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
+                messages.error(self.request, f'Email {email} is not registered in OSF.')
+                continue
+            elif resource.is_contributor(contributor_user):
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
+                messages.error(self.request, f'User with email {email} is already a contributor.')
+                continue
+
+            resource.add_contributor_registered_or_not(
+                auth=request,
+                user_id=contributor_user._id,
+                permissions=permission,
+                save=True
+            )
+            messages.success(self.request, f'User with email {email} was successfully added.')
+
+        # should remove permissions of invalid emails because
+        # admin can make all existing contributors non admins
+        # and enter an invalid email with the only admin permission
+        for permission_index in new_permission_indexes_to_remove:
+            new_permissions_to_add.pop(permission_index)
+
+        updated_permissions = data.get('updated-permissions', [])
+        all_permissions = updated_permissions + new_permissions_to_add
+        has_admin = list(filter(lambda permission: ADMIN in permission, all_permissions))
+        if not has_admin:
+            messages.error(self.request, 'Must be at least one admin on this node.')
+            return redirect(self.get_success_url())
+
+        for contributor_permission in updated_permissions:
+            guid, permission = contributor_permission.split('-')
+            user = OSFUser.load(guid)
+            resource.update_contributor(
+                user,
+                permission,
+                resource.get_visible(user),
+                request,
+                save=True
+            )
+
+        return redirect(self.get_success_url())
 
 
 class NodeDeleteView(NodeMixin, View):
