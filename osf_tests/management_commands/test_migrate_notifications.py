@@ -105,7 +105,6 @@ class TestNotificationSubscriptionMigration:
             assert subs.filter(object_id=obj.id, content_type=content_type).exists()
 
     def test_migrate_node_subscription(self, users, user, node):
-        self.create_legacy_sub('file_updated', users, user=user, node=node)
         migrate_legacy_notification_subscriptions()
         nt = NotificationType.objects.get(name=NotificationType.Type.NODE_FILE_UPDATED)
         assert nt.object_content_type == ContentType.objects.get_for_model(Node)

@@ -66,7 +66,6 @@ class TestSubscriptionList:
             user,
             provider,
             node,
-            file_updated_notification,
             url
     ):
         res = app.get(url, auth=user.auth)
@@ -91,8 +90,37 @@ class TestSubscriptionList:
         assert put_res.status_code == 405
         assert delete_res.status_code == 405
 
-    def test_multiple_values_filter(self, app, url, file_updated_notification, user):
+    def test_multiple_values_filter(self, app, url, user):
         res = app.get(url + '?filter[event_name]=comments,file_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:
             subscription['attributes']['event_name'] in ['global', 'comments']
+
+    def test_value_filter_id(
+        self,
+        app,
+        url,
+        user,
+        node,
+    ):
+        # Request all subscriptions first, to confirm all are visible
+        res = app.get(url, auth=user.auth)
+        all_ids = [sub['id'] for sub in res.json['data']]
+        assert len(all_ids) == 2
+        assert f'{node._id}_file_updated' in all_ids
+        assert f'{user._id}_global_file_updated' in all_ids
+
+        # Now filter by a specific annotated legacy_id (the node file_updated one)
+        target_id = f'{node._id}_file_updated'
+        filtered_res = app.get(f'{url}?filter[id]={target_id}', auth=user.auth)
+
+        # Response should contain exactly one record matching that legacy_id
+        assert filtered_res.status_code == 200
+        data = filtered_res.json['data']
+        assert len(data) == 1
+        assert data[0]['id'] == target_id
+
+        # Confirm it’s the expected subscription object
+        attributes = data[0]['attributes']
+        assert attributes['event_name'] is None  # event names are legacy
+        assert attributes['frequency'] in ['instantly', 'daily', 'none']

@@ -21,17 +21,24 @@ def subscribe_creator(resource):
             NotificationSubscription.objects.get_or_create(
                 user=user,
                 notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+                object_id=user.id,
+                content_type=ContentType.objects.get_for_model(user),
                 _is_digest=True,
+                message_frequency='instantly',
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=NotificationType.Type.FILE_UPDATED.instance,
-            object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource),
-            _is_digest=True,
-        )
+        try:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                object_id=resource.id,
+                content_type=ContentType.objects.get_for_model(resource),
+                _is_digest=True,
+                message_frequency='instantly',
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
 
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
@@ -54,7 +61,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
             ),
             NotificationSubscription(
                 user=contributor,
-                notification_type=NotificationType.Type.FILE_UPDATED.instance,
+                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
