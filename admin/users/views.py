@@ -18,7 +18,7 @@ from django.core.exceptions import ValidationError
 
 from osf.exceptions import UserStateError
 from osf.models.base import Guid
-from osf.models.user import OSFUser
+from osf.models.user import OSFUser, Email
 from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
@@ -411,6 +411,19 @@ class UserAddEmail(UserMixin, FormView):
 
         user = self.get_object()
         address = form.cleaned_data['new_email'].strip().lower()
+
+        existing_email = Email.objects.filter(address=address).first()
+        if existing_email:
+            if existing_email.user == user:
+                messages.error(self.request, f'Email {address} is already confirmed for this user.')
+            else:
+                messages.error(self.request, f'Email {address} already exists in the system and is associated with another user.')
+            return super().form_valid(form)
+
+        if address in user.unconfirmed_emails:
+            messages.error(self.request, f'Email {address} is already pending confirmation for this user.')
+            return super().form_valid(form)
+
         try:
             user.add_unconfirmed_email(address)
 
