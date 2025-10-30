@@ -11,17 +11,19 @@ from django.views.generic import (
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
+from django.utils import timezone
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
-from osf.exceptions import UserStateError
+from osf.exceptions import UserStateError, BlockedEmailError
 from osf.models.base import Guid
 from osf.models.user import OSFUser, Email
 from osf.models.spam import SpamStatus
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
+from framework.auth.views import send_confirm_email_async
 
 from website import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
@@ -404,10 +406,6 @@ class UserAddEmail(UserMixin, FormView):
     form_class = AddEmailForm
 
     def form_valid(self, form):
-        from osf.exceptions import BlockedEmailError
-        from django.core.exceptions import ValidationError as DjangoValidationError
-        from framework.auth.views import send_confirm_email_async
-        from django.utils import timezone
 
         user = self.get_object()
         address = form.cleaned_data['new_email'].strip().lower()
@@ -431,7 +429,7 @@ class UserAddEmail(UserMixin, FormView):
             user.email_last_sent = timezone.now()
             user.save()
             messages.success(self.request, f'Added unconfirmed email {address} and sent confirmation email.')
-        except (DjangoValidationError, ValueError) as e:
+        except (ValidationError, ValueError) as e:
             messages.error(self.request, f'Invalid email: {getattr(e, "message", str(e))}')
         except BlockedEmailError:
             messages.error(self.request, 'This email address domain is blocked.')
