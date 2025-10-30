@@ -142,53 +142,78 @@
         <div id='devmode' data-bind='click: showHideMetaInfo'><strong>WARNING</strong>: This site is running in development mode.</div>
     </div>
     % endif
-
-    ${self.nav()}
-     ## TODO: shouldn't always have the watermark class
-    ${self.content_wrap()}
-
-<div class="footBanners">
-    <div id="IEDepreciationBanner"  class="alert warningBanner">
-        <div class="warningBannerText">
-            OSF does not support the use of Internet Explorer. For optimal performance, please switch to another browser.
-        </div>
-        <div class="warningBannerAcceptBtn">
-            <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
-        </div>
-    </div>
-    % if not user_id:
-    <div id="cookieBanner" class="alert warningBanner">
-        <div id="cookieText" class="warningBannerText">
-            This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
-            see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
-            and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
-        </div>
-        <div class="warningBannerAcceptBtn">
-            <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
-        </div>
-    </div>
-    <div id="footerSlideIn">
-        <div class="container">
-            <div class="row">
-                <div class='col-sm-2 hidden-xs'>
-                    <img class="logo" src="/static/img/circle_logo.png">
-                </div>
-                <div class='col-sm-10 col-xs-12'>
-                    <a data-bind="click: dismiss" class="close" href="#">&times;</a>
-                    <h1>Start managing your projects on the OSF today.</h1>
-                    <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
-                    <div>
-                        <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
-
-                        <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://help.osf.io/article/384-managing-projects" target="_blank" rel="noreferrer">Learn More</a>
-                        <a data-bind="click: dismiss">Hide this message</a>
+    <div class="main-wrapper">
+        ${self.nav()}
+        <div class="content-wrapper">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col">
+                        ## Maintenance alert
+                        % if maintenance:
+                            <div id="maintenance" class="scripted alert alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                <span aria-hidden="true">&times;</span></button>
+                            <strong>Notice:</strong>
+                            % if maintenance['message']:
+                                ${maintenance['message']}
+                            % else:
+                                The site will undergo maintenance between <span id="maintenanceTime"></span>.
+                                Thank you for your patience.
+                            % endif
+                        </div>
+                        % endif
+                        ## End Maintenance alert
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-% endif
+            ## TODO: shouldn't always have the watermark class
+            <div class="main-content flex-grow-1">
+                ${self.content_wrap()}
+            </div>
+
+
+            <div class="footBanners">
+                <div id="IEDepreciationBanner"  class="alert warningBanner">
+                    <div class="warningBannerText">
+                        OSF does not support the use of Internet Explorer. For optimal performance, please switch to another browser.
+                    </div>
+                    <div class="warningBannerAcceptBtn">
+                        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+                    </div>
+                </div>
+                % if not user_id:
+                <div id="cookieBanner" class="alert warningBanner">
+                    <div id="cookieText" class="warningBannerText">
+                        This website relies on cookies to help provide a better user experience. By clicking Accept or continuing to use the site, you agree. For more information,
+                        see our <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md'>Privacy Policy</a>
+                        and information on <a href='https://github.com/CenterForOpenScience/cos.io/blob/master/PRIVACY_POLICY.md#7-types-of-information-we-collect'>cookie use</a>.
+                    </div>
+                    <div class="warningBannerAcceptBtn">
+                        <div class="btn btn-default" data-dismiss="alert" data-bind="click: accept" aria-label="Accept">Accept</div>
+                    </div>
+                </div>
+                <div id="footerSlideIn">
+                    <div class="container">
+                        <div class="row">
+                            <div class='col-sm-2 hidden-xs'>
+                                <img class="logo" src="/static/img/circle_logo.png">
+                            </div>
+                            <div class='col-sm-10 col-xs-12'>
+                                <a data-bind="click: dismiss" class="close" href="#">&times;</a>
+                                <h1>Start managing your projects on the OSF today.</h1>
+                                <p>Free and easy to use, the Open Science Framework supports the entire research lifecycle: planning, execution, reporting, archiving, and discovery.</p>
+                                <div>
+                                    <a data-bind="click: trackClick.bind($data, 'Create Account')" class="btn btn-primary" href="${web_url_for('index')}#signUp">Create an Account</a>
+
+                                    <a data-bind="click: trackClick.bind($data, 'Learn More')" class="btn btn-primary" href="https://help.osf.io/article/384-managing-projects" target="_blank" rel="noreferrer">Learn More</a>
+                                    <a data-bind="click: dismiss">Hide this message</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            % endif
 
 
     ${self.footer()}
@@ -279,6 +304,8 @@
         % endif
 
         ${self.javascript_bottom()}
+    </div>
+</div>
     </body>
 </html>
 

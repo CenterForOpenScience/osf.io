@@ -266,27 +266,6 @@ def assert_resource_type(obj, resource_tuple):
     assert isinstance(obj, resource_tuple), f'obj must be {a_or_an} {error_message}; got {obj}'
 
 
-class MockQueryset(list):
-    """
-    This class is meant to convert a simple list into a filterable queryset look-a-like.
-    """
-
-    def __init__(self, items, search, default_attrs=None, **kwargs):
-        self.search = search
-
-        for item in items:
-            if default_attrs:
-                item.update(default_attrs)
-            self.add_dict_as_item(item)
-
-    def __len__(self):
-        return self.search.count()
-
-    def add_dict_as_item(self, dict):
-        item = type('item', (object,), dict)
-        self.append(item)
-
-
 def toggle_view_by_flag(flag_name, old_view, new_view):
     '''toggle between view implementations based on a feature flag
 

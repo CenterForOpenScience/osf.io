@@ -807,7 +807,7 @@ class TestPreprintVersionsListRetrieve(ApiTestCase):
 
         # Pre moderation V4 (Pending)
         pre_mod_preprint_v4 = PreprintFactory.create_version(
-            create_from=pre_mod_preprint_v2,
+            create_from=pre_mod_preprint_v3,
             creator=self.creator,
             final_machine_state='initial',
             is_published=False,

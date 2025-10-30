@@ -19,6 +19,7 @@ from api.metrics.views import (
 )
 from api.users.views import (
     ClaimUser,
+    ConfirmClaimUser,
     ResetPassword,
     ExternalLoginConfirmEmailView,
     ExternalLogin,
@@ -60,6 +61,7 @@ class TestApiBaseViews(ApiTestCase):
     def setUp(self):
         super().setUp()
         self.EXCLUDED_VIEWS = [
+            ConfirmClaimUser,
             ClaimUser,
             CopyFileMetadataView,
             CountedAuthUsageView,
