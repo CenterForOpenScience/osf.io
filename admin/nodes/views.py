@@ -265,7 +265,8 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 permission,
                 resource.get_visible(user),
                 request,
-                save=True
+                save=True,
+                skip_permission=True
             )
 
         return redirect(self.get_success_url())
