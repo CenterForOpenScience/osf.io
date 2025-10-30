@@ -56,7 +56,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        return NotificationSubscription.objects.filter(
+        qs = NotificationSubscription.objects.filter(
             notification_type__in=[
                 NotificationType.Type.USER_FILE_UPDATED.instance,
                 NotificationType.Type.NODE_FILE_UPDATED.instance,
@@ -91,6 +91,13 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             ),
         )
 
+        # Apply manual filter for legacy_id if requested
+        filter_id = self.request.query_params.get('filter[id]')
+        if filter_id:
+            qs = [obj for obj in qs if obj.legacy_id == filter_id]
+            # convert to list comprehension because legacy_id is an annotation, not in DB
+
+        return qs
 
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_queryset(self):
