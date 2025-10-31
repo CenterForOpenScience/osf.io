@@ -9,8 +9,7 @@ from framework.celery_tasks import app as celery_app
 from celery.utils.log import get_task_logger
 
 from framework.postcommit_tasks.handlers import run_postcommit
-from osf.models import OSFUser, Notification, NotificationType, EmailTask, AbstractProvider, RegistrationProvider, \
-    CollectionProvider
+from osf.models import OSFUser, Notification, NotificationType, EmailTask, RegistrationProvider, CollectionProvider
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
@@ -99,7 +98,7 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         raise self.retry(exc=e)
 
 @celery_app.task(bind=True)
-def send_moderator_email_task(self, user_id, provider_id, notification_ids, **kwargs):
+def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
     user, email_task = get_user_and_email_task(self.request.id, user_id)
     if not user:
         return
@@ -114,7 +113,12 @@ def send_moderator_email_task(self, user_id, provider_id, notification_ids, **kw
             email_task.save()
             return
 
-        provider = AbstractProvider.objects.get(id=provider_id)
+        provider = user.provider
+        if not user.provider.get_group('moderator').user_set.filter(id=user_id).exists():
+            log_message(f"User is not a moderator for provider {user.provider._id} - skipping email")
+            email_task.status = 'NOT MODERATOR'
+            email_task.save()
+
         additional_context = {}
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
@@ -203,10 +207,9 @@ def send_moderators_digest_email(dry_run=False):
         grouped_emails = get_moderators_emails(freq)
         for group in grouped_emails:
             user_id = group['user_id']
-            provider_id = group['provider_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
-                send_moderator_email_task.delay(user_id, provider_id, notification_ids)
+                send_moderator_email_task.delay(user_id, notification_ids)
 
 def get_moderators_emails(message_freq: str):
     """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.
@@ -217,7 +220,6 @@ def get_moderators_emails(message_freq: str):
         SELECT
             json_build_object(
                 'user_id', osf_guid._id,
-                'provider_id', (n.event_context ->> 'provider_id'),
                 'info', json_agg(
                     json_build_object(
                         'notification_id', n.id
@@ -330,7 +332,6 @@ def send_moderators_instant_digest_email(self, dry_run=False, **kwargs):
     grouped_emails = get_moderators_emails('instantly')
     for group in grouped_emails:
         user_id = group['user_id']
-        provider_id = group['provider_id']
         notification_ids = [msg['notification_id'] for msg in group['info']]
         if not dry_run:
-            send_moderator_email_task.delay(user_id, provider_id, notification_ids)
+            send_moderator_email_task.delay(user_id, notification_ids)
