@@ -116,6 +116,8 @@ def send_no_login_email(email_task_id: int):
                 'domain': settings.DOMAIN,
             }
         )
+        email_task.status = 'SUCCESS'
+        email_task.save()
 
     except Exception as exc:  # noqa: BLE001
         logger.exception(f'EmailTask {email_task.id}: error while sending')
