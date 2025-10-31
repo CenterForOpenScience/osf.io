@@ -108,7 +108,6 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
         rendered_notifications = [notification.render() for notification in notifications_qs]
 
         if not rendered_notifications:
-            log_message(f"No notifications to send for moderator user {user._id}")
             email_task.status = 'SUCCESS'
             email_task.save()
             return
