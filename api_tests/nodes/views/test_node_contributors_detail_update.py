@@ -33,6 +33,21 @@ class TestNodeContributorUpdate:
         return project
 
     @pytest.fixture()
+    def component_project_and_parent_project(self, user, contrib):
+        # both need to be in same method to keep root same as parent
+        parent_project = ProjectFactory(creator=user)
+        parent_project.add_contributor(
+            contrib,
+            permissions=permissions.WRITE,
+            visible=True,
+            save=True
+        )
+        component_project = ProjectFactory(creator=user)
+        component_project.root = parent_project
+        component_project.save()
+        return component_project, parent_project
+
+    @pytest.fixture()
     def url_creator(self, user, project):
         return f'/{API_BASE}nodes/{project._id}/contributors/{user._id}/'
 
@@ -414,3 +429,22 @@ class TestNodeContributorUpdate:
             attributes = res.json['data']['attributes']
             assert attributes['permission'] == permissions.WRITE
             assert project.get_permissions(user) == [permissions.READ, permissions.WRITE]
+
+    def test_update_component_project_with_parent_contributors(self, app, user, component_project_and_parent_project):
+        def exists_unique_parent_contributors(parent_project, component_project):
+            return parent_project.contributors.exclude(
+                id__in=component_project.contributors.values_list('id', flat=True)
+            ).exists()
+        component_project, parent_project = component_project_and_parent_project
+        assert exists_unique_parent_contributors(parent_project, component_project)
+        res = app.patch_json_api(
+            f'/{API_BASE}nodes/{component_project._id}/contributors/?copy_contributors_from_parent_project=true',
+            {
+                'data': {
+                    'type': 3
+                }
+            },
+            auth=user.auth
+        )
+        assert res.status_code == 200
+        assert not exists_unique_parent_contributors(parent_project, component_project)
