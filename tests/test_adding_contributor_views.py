@@ -559,7 +559,258 @@ class TestUserInviteViews(OsfTestCase):
         project.save()
         with capture_notifications():
             send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
-        # 2nd call raises error because throttle hasn't expired
 
         with pytest.raises(HTTPError):
-            send_claim_email(email=fake_email(), unclaimed_user=unreg_user, node=project)
+            send_claim_registered_email(
+                claimer=reg_user,
+                unclaimed_user=self.user,
+                node=self.project,
+            )
+        assert not self.mock_send_grid.called
+
+    @mock.patch('website.project.views.contributor.send_claim_registered_email')
+    def test_claim_user_post_with_email_already_registered_sends_correct_email(
+            self, send_claim_registered_email):
+        reg_user = UserFactory()
+        payload = {
+            'value': reg_user.username,
+            'pk': self.user._primary_key
+        }
+        url = self.project.api_url_for('claim_user_post', uid=self.user._id)
+        self.app.post(url, json=payload)
+        assert send_claim_registered_email.called
+
+    def test_user_with_removed_unclaimed_url_claiming(self):
+        """ Tests that when an unclaimed user is removed from a project, the
+        unregistered user object does not retain the token.
+        """
+        self.project.remove_contributor(self.user, Auth(user=self.referrer))
+
+        assert self.project._primary_key not in self.user.unclaimed_records.keys()
+
+    def test_user_with_claim_url_cannot_claim_twice(self):
+        """ Tests that when an unclaimed user is replaced on a project with a
+        claimed user, the unregistered user object does not retain the token.
+        """
+        reg_user = AuthUserFactory()
+
+        self.project.replace_contributor(self.user, reg_user)
+
+        assert self.project._primary_key not in self.user.unclaimed_records.keys()
+
+    def test_claim_user_form_redirects_to_password_confirm_page_if_user_is_logged_in(self):
+        reg_user = AuthUserFactory()
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, auth=reg_user.auth)
+        assert res.status_code == 302
+        res = self.app.get(url, auth=reg_user.auth, follow_redirects=True)
+        token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        expected = self.project.web_url_for(
+            'claim_user_registered',
+            uid=self.user._id,
+            token=token,
+        )
+        assert res.request.path == expected
+
+    @mock.patch('framework.auth.cas.make_response_from_ticket')
+    def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
+        # TODO: check in qa url encoding
+        token = self.user.get_unclaimed_record(self.project._primary_key)['token']
+        url = f'/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
+        # logged out user gets redirected to cas login
+        res1 = self.app.get(url)
+        assert res1.status_code == 302
+        res = self.app.resolve_redirect(self.app.get(url))
+        service_url = f'http://localhost{url}'
+        expected = cas.get_logout_url(service_url=cas.get_login_url(service_url=service_url))
+        assert res1.location == expected
+
+        # user logged in with orcid automatically becomes a contributor
+        orcid_user, validated_credentials, cas_resp = generate_external_user_with_resp(url)
+        mock_response_from_ticket.return_value = authenticate(
+            orcid_user,
+            redirect(url)
+        )
+        orcid_user.set_unusable_password()
+        orcid_user.save()
+
+        # The request to OSF with CAS service ticket must not have cookie and/or auth.
+        service_ticket = fake.md5()
+        url_with_service_ticket = f'{url}?ticket={service_ticket}'
+        res = self.app.get(url_with_service_ticket)
+        # The response of this request is expected to be a 302 with `Location`.
+        # And the redirect URL must equal to the originial service URL
+        assert res.status_code == 302
+        redirect_url = res.headers['Location']
+        assert redirect_url == url
+        # The response of this request is expected have the `Set-Cookie` header with OSF cookie.
+        # And the cookie must belong to the ORCiD user.
+        raw_set_cookie = res.headers['Set-Cookie']
+        assert raw_set_cookie
+        simple_cookie = SimpleCookie()
+        simple_cookie.load(raw_set_cookie)
+        cookie_dict = {key: value.value for key, value in simple_cookie.items()}
+        osf_cookie = cookie_dict.get(settings.COOKIE_NAME, None)
+        assert osf_cookie is not None
+        user = OSFUser.from_cookie(osf_cookie)
+        assert user._id == orcid_user._id
+        # The ORCiD user must be different from the unregistered user created when the contributor was added
+        assert user._id != self.user._id
+
+        # Must clear the Flask g context manual and set the OSF cookie to context
+        g.current_session = None
+        self.app.set_cookie(settings.COOKIE_NAME, osf_cookie)
+        res = self.app.resolve_redirect(res)
+        assert res.status_code == 302
+        assert self.project.is_contributor(orcid_user)
+        assert self.project.url in res.headers.get('Location')
+
+    def test_get_valid_form(self):
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(url, follow_redirects=True)
+        assert res.status_code == 200
+
+    def test_invalid_claim_form_raise_400(self):
+        uid = self.user._primary_key
+        pid = self.project._primary_key
+        url = f'/legacy/user/{uid}/{pid}/claim/?token=badtoken'
+        res = self.app.get(url, follow_redirects=True)
+        assert res.status_code == 400
+
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
+    def test_posting_to_claim_form_with_valid_data(self, mock_update_search_nodes):
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, data={
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert res.status_code == 302
+        location = res.headers.get('Location')
+        assert 'login?service=' in location
+        assert 'username' in location
+        assert 'verification_key' in location
+        assert self.project._primary_key in location
+
+        self.user.reload()
+        assert self.user.is_registered
+        assert self.user.is_active
+        assert self.project._primary_key not in self.user.unclaimed_records
+
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
+    def test_posting_to_claim_form_removes_all_unclaimed_data(self, mock_update_search_nodes):
+        # user has multiple unclaimed records
+        p2 = ProjectFactory(creator=self.referrer)
+        self.user.add_unclaimed_record(p2, referrer=self.referrer,
+                                       given_name=fake.name())
+        self.user.save()
+        assert len(self.user.unclaimed_records.keys()) > 1  # sanity check
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.post(url, data={
+            'username': self.given_email,
+            'password': 'bohemianrhap',
+            'password2': 'bohemianrhap'
+        })
+        self.user.reload()
+        assert self.user.unclaimed_records == {}
+
+    @mock.patch('osf.models.OSFUser.update_search_nodes')
+    def test_posting_to_claim_form_sets_fullname_to_given_name(self, mock_update_search_nodes):
+        # User is created with a full name
+        original_name = fake.name()
+        unreg = UnregUserFactory(fullname=original_name)
+        # User invited with a different name
+        different_name = fake.name()
+        new_user = self.project.add_unregistered_contributor(
+            email=unreg.username,
+            fullname=different_name,
+            auth=Auth(self.project.creator),
+        )
+        self.project.save()
+        # Goes to claim url
+        claim_url = new_user.get_claim_url(self.project._id)
+        self.app.post(claim_url, data={
+            'username': unreg.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+        unreg.reload()
+        # Full name was set correctly
+        assert unreg.fullname == different_name
+        # CSL names were set correctly
+        parsed_name = impute_names_model(different_name)
+        assert unreg.given_name == parsed_name['given_name']
+        assert unreg.family_name == parsed_name['family_name']
+
+    def test_claim_user_post_returns_fullname(self):
+        url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
+        res = self.app.post(
+            url,
+            auth=self.referrer.auth,
+            json={
+                'value': self.given_email,
+                'pk': self.user._primary_key
+            },
+        )
+        assert res.json['fullname'] == self.given_name
+        assert self.mock_send_grid.called
+
+    def test_claim_user_post_if_email_is_different_from_given_email(self):
+        email = fake_email()  # email that is different from the one the referrer gave
+        url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
+        self.app.post(url, json={'value': email, 'pk': self.user._primary_key} )
+        assert self.mock_send_grid.called
+        assert self.mock_send_grid.call_count == 2
+        call_to_invited = self.mock_send_grid.mock_calls[0]
+        call_to_invited.assert_called_with(to_addr=email)
+        call_to_referrer = self.mock_send_grid.mock_calls[1]
+        call_to_referrer.assert_called_with(to_addr=self.given_email)
+
+    def test_claim_url_with_bad_token_returns_400(self):
+        url = self.project.web_url_for(
+            'claim_user_registered',
+            uid=self.user._id,
+            token='badtoken',
+        )
+        res = self.app.get(url, auth=self.referrer.auth)
+        assert res.status_code == 400
+
+    def test_cannot_claim_user_with_user_who_is_already_contributor(self):
+        # user who is already a contirbutor to the project
+        contrib = AuthUserFactory()
+        self.project.add_contributor(contrib, auth=Auth(self.project.creator))
+        self.project.save()
+        # Claiming user goes to claim url, but contrib is already logged in
+        url = self.user.get_claim_url(self.project._primary_key)
+        res = self.app.get(
+            url,
+            auth=contrib.auth, follow_redirects=True)
+        # Response is a 400
+        assert res.status_code == 400
+
+    def test_claim_user_with_project_id_adds_corresponding_claimed_tag_to_user(self):
+        assert OsfClaimedTags.Osf.value not in self.user.system_tags
+        url = self.user.get_claim_url(self.project_with_source_tag._primary_key)
+        res = self.app.post(url, data={
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert res.status_code == 302
+        self.user.reload()
+        assert OsfClaimedTags.Osf.value in self.user.system_tags
+
+    def test_claim_user_with_preprint_id_adds_corresponding_claimed_tag_to_user(self):
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') not in self.user.system_tags
+        url = self.user.get_claim_url(self.preprint_with_source_tag._primary_key)
+        res = self.app.post(url, data={
+            'username': self.user.username,
+            'password': 'killerqueen',
+            'password2': 'killerqueen'
+        })
+
+        assert res.status_code == 302
+        self.user.reload()
+        assert provider_claimed_tag(self.preprint_with_source_tag.provider._id, 'preprint') in self.user.system_tags
