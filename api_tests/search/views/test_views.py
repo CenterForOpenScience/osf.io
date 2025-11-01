@@ -891,8 +891,9 @@ class TestSearchCollections(ApiSearchTestCase):
         assert total == num_results == 2
 
         # test_search_collections_by_submission_abstract
-        collection_public.collect_object(node_with_abstract, user)
-        registration_collection.collect_object(reg_with_abstract, user)
+        with capture_notifications():
+            collection_public.collect_object(node_with_abstract, user)
+            registration_collection.collect_object(reg_with_abstract, user)
         url = '{}?q={}'.format(url_collection_search, 'KHADJA')
         res = app.get(url)
         assert res.status_code == 200
