@@ -86,6 +86,26 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         self.check_object_permissions(self.request, obj)
         return obj
 
+    def update(self, request, *args, **kwargs):
+        ret = super().update(request, *args, **kwargs)
+        obj = self.get_object()
+        # Copy global_reviews subscription changes to new_pending_submissions subscriptions [ENG-9666]
+        if obj.event_name == 'global_reviews':
+            user = obj.user
+            qs = NotificationSubscription.objects.filter(
+                event_name='new_pending_submissions',
+            ).filter(
+                Q(none=user) |
+                Q(email_digest=user) |
+                Q(email_transactional=user),
+            ).distinct()
+            for subscription in qs:
+                data = {**request.data, 'id': subscription._id}
+                serializer = self.get_serializer(subscription, data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+        return ret
+
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):
     view_name = 'provider-notification-subscription-detail'
