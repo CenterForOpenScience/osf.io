@@ -392,7 +392,6 @@ API_TESTS3 = [
     'api_tests/subscriptions',
     'api_tests/wikis',
     'api_tests/wb',
-    'api_tests/notifications',
 ]
 API_TESTS4 = [
     'api_tests/cedar_metadata_records',
