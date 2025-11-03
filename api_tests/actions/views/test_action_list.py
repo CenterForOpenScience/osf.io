@@ -1,5 +1,4 @@
 import pytest
-import pytest_socket
 
 from api.base.settings.defaults import API_BASE
 from osf.models import NotificationType
@@ -9,7 +8,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from osf.utils import permissions as osf_permissions
-from tests.utils import capture_notifications
+from tests.utils import capture_notifications, capture_notifications_or_not
 
 
 @pytest.mark.django_db
@@ -325,11 +324,8 @@ class TestReviewActionCreateRoot:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                try:
+                with capture_notifications_or_not():  # covers cases where notification are sent and not sent.
                     res = app.post_json_api(url, payload, auth=moderator.auth)
-                except pytest_socket.SocketConnectBlockedError:
-                    with capture_notifications():
-                        res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
 
                 action = preprint.actions.order_by('-created').first()
