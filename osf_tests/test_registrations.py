@@ -373,6 +373,27 @@ class TestRegisterNode:
         registration.set_privacy(Node.PUBLIC, auth=auth)
         assert registration.is_public
 
+    def test_registration_becomes_public_even_when_doi_creation_fails(self, registration, auth):
+        registration.is_public = False
+        existing_doi = registration.get_identifier('doi')
+        if existing_doi:
+            existing_doi.delete()
+        registration.save()
+
+        assert registration.get_identifier_value('doi') is None
+
+        with mock.patch.object(registration, 'get_doi_client') as mock_get_client:
+            mock_client = mock.Mock()
+            mock_client.create_identifier.side_effect = Exception('DataCite API unavailable')
+            mock_get_client.return_value = mock_client
+
+            result = registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
+
+            assert registration.is_public is True
+            assert result is True
+
+            mock_client.create_identifier.assert_called_once()
+
 
 class TestRegisterNodeContributors:
 
