@@ -379,6 +379,7 @@ API_TESTS3 = [
     'api_tests/meetings',
     'api_tests/metadata_records',
     'api_tests/reviews',
+    'api_tests/notifications',
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
@@ -391,7 +392,6 @@ API_TESTS3 = [
     'api_tests/subscriptions',
     'api_tests/wikis',
     'api_tests/wb',
-    'api_tests/notifications',
 ]
 API_TESTS4 = [
     'api_tests/cedar_metadata_records',
