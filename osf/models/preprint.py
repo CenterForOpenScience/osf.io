@@ -532,6 +532,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                     referrer=auth.user,
                     email=contributor.user.email,
                     given_name=contributor.user.fullname,
+                    skip_referrer_permissions=auth.user.groups.filter(name='osf_admin').exists()
                 )
             except ValidationError as e:
                 sentry.log_exception(e)
