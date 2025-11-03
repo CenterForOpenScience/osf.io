@@ -255,10 +255,26 @@ def _canon_html(s: str) -> str:
     return s
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True, passthrough: bool = False, expect_none: bool = False):
+def capture_notifications(
+    capture_email: bool = True,
+    passthrough: bool = False,
+    expect_none: bool = False,
+    allow_none: bool = False,
+):
     """
     Capture NotificationType.emit calls and (optionally) email sends.
-    Surfaces helpful template errors if rendering fails.
+
+    By default, this asserts that at least one NotificationType.emit occurred.
+
+    You can relax this behavior by setting either:
+      - allow_none=True  → silently allow zero emits
+      - expect_none=True → explicitly expect zero emits (will raise if any are emitted)
+
+    Args:
+        capture_email (bool): Whether to capture email send calls (default True).
+        passthrough (bool): If True, calls real emit/send methods as well.
+        expect_none (bool): Explicitly expect zero emits; raises if any occur.
+        allow_none (bool): Allow zero emits without raising an error.
     """
     try:
         from osf.email import _extract_vars as _extract_template_vars
@@ -337,11 +353,12 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False,
             )
         return
     if not captured['emits']:
-        raise AssertionError(
-            'No notifications were emitted. '
-            'Expected at least one call to NotificationType.emit. '
-            'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
-        )
+        if not allow_none:
+            raise AssertionError(
+                'No notifications were emitted. '
+                'Expected at least one call to NotificationType.emit. '
+                'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
+            )
 
     # Validate each captured emit renders (to catch missing template vars early)
     for idx, rec in enumerate(captured.get('emits', []), start=1):
@@ -388,7 +405,6 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False,
                 f'Email render returned the raw template (no interpolation) for '
                 f'"{getattr(nt, "name", "(unknown)")}"; template rendering likely failed.'
             )
-
 
 def get_mailhog_messages():
     """Fetch messages from MailHog API."""

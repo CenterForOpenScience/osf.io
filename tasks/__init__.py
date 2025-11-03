@@ -379,6 +379,7 @@ API_TESTS3 = [
     'api_tests/meetings',
     'api_tests/metadata_records',
     'api_tests/reviews',
+    'api_tests/notifications',
     'api_tests/regions',
     'api_tests/search',
     'api_tests/scopes',
