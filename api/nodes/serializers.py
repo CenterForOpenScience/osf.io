@@ -1308,12 +1308,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             validated_data,
         )
 
-class NodeContributorsUpdateSerializer(ser.Serializer):
-    def update(self, instance, validated_data):
-        if project := instance.root:
-            instance.copy_contributors_from(project)
-        return instance
-
 
 class NodeLinksSerializer(JSONAPISerializer):
 

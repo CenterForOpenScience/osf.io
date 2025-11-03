@@ -378,6 +378,7 @@ API_TESTS3 = [
     'api_tests/guids',
     'api_tests/meetings',
     'api_tests/metadata_records',
+    'api_tests/osf_groups',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
