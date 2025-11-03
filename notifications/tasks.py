@@ -9,7 +9,8 @@ from framework.celery_tasks import app as celery_app
 from celery.utils.log import get_task_logger
 
 from framework.postcommit_tasks.handlers import run_postcommit
-from osf.models import OSFUser, Notification, NotificationType, EmailTask, RegistrationProvider, CollectionProvider
+from osf.models import OSFUser, Notification, NotificationType, EmailTask, RegistrationProvider, \
+    CollectionProvider
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
@@ -105,18 +106,26 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
 
     try:
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
+        first_notification = notifications_qs.select_related('subscription').first()
+        subscription = first_notification.subscription if first_notification else None
+        provider = getattr(subscription, 'subscribed_object', None) if subscription else None
         rendered_notifications = [notification.render() for notification in notifications_qs]
-
         if not rendered_notifications:
+            log_message(f"No notifications to send for moderator user {user._id}")
             email_task.status = 'SUCCESS'
             email_task.save()
             return
 
-        provider = user.provider
-        if not user.provider.get_group('moderator').user_set.filter(id=user_id).exists():
-            log_message(f"User is not a moderator for provider {user.provider._id} - skipping email")
-            email_task.status = 'NOT MODERATOR'
+        if provider is None:
+            log_message(f"Provider fpr {subscription} does not exist")
+            email_task.status = 'PROVIDER NOT FOUND'
             email_task.save()
+            return
+
+        current_moderators = provider.get_group('moderator')
+        if current_moderators is None or not current_moderators.user_set.filter(id=user.id).exists():
+            log_message(f"User is not a moderator for provider {provider._id} - skipping email")
+            email_task.status = 'NOT MODERATOR'
 
         additional_context = {}
         if isinstance(provider, RegistrationProvider):
