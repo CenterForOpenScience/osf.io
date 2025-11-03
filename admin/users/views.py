@@ -512,7 +512,7 @@ class GetUserClaimLinks(GetUserLink):
 
         for guid, value in user.unclaimed_records.items():
             obj = Guid.load(guid)
-            url = f'{DOMAIN}legacy/user/{user._id}/{guid}/claim/?token={value["token"]}'
+            url = f'{DOMAIN}user/{user._id}/{guid}/claim/?token={value["token"]}'
             links.append(f'Claim URL for {obj.content_type.model} {obj._id}: {url}')
 
         return links or ['User currently has no active unclaimed records for any nodes.']

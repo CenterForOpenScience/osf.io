@@ -121,8 +121,10 @@ class TestFileView:
     def test_file_guid_not_created_with_basic_auth(
             self, mock_allow, app, user, file_url):
         res = app.get(f'{file_url}?create_guid=1', auth=user.auth)
+        guid = res.json['data']['attributes'].get('guid', None)
         assert res.status_code == 200
         assert mock_allow.call_count == 1
+        assert guid is None
 
     @mock.patch('api.base.throttling.CreateGuidThrottle.allow_request')
     def test_file_guid_created_with_cookie(
