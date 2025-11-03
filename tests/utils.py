@@ -255,10 +255,26 @@ def _canon_html(s: str) -> str:
     return s
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True, passthrough: bool = False, expect_none: bool = False):
+def capture_notifications(
+    capture_email: bool = True,
+    passthrough: bool = False,
+    expect_none: bool = False,
+    allow_none: bool = False,
+):
     """
     Capture NotificationType.emit calls and (optionally) email sends.
-    Surfaces helpful template errors if rendering fails.
+
+    By default, this asserts that at least one NotificationType.emit occurred.
+
+    You can relax this behavior by setting either:
+      - allow_none=True  → silently allow zero emits
+      - expect_none=True → explicitly expect zero emits (will raise if any are emitted)
+
+    Args:
+        capture_email (bool): Whether to capture email send calls (default True).
+        passthrough (bool): If True, calls real emit/send methods as well.
+        expect_none (bool): Explicitly expect zero emits; raises if any occur.
+        allow_none (bool): Allow zero emits without raising an error.
     """
     try:
         from osf.email import _extract_vars as _extract_template_vars
@@ -337,11 +353,12 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False,
             )
         return
     if not captured['emits']:
-        raise AssertionError(
-            'No notifications were emitted. '
-            'Expected at least one call to NotificationType.emit. '
-            'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
-        )
+        if not allow_none:
+            raise AssertionError(
+                'No notifications were emitted. '
+                'Expected at least one call to NotificationType.emit. '
+                'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
+            )
 
     # Validate each captured emit renders (to catch missing template vars early)
     for idx, rec in enumerate(captured.get('emits', []), start=1):
@@ -387,126 +404,6 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False,
             raise AssertionError(
                 f'Email render returned the raw template (no interpolation) for '
                 f'"{getattr(nt, "name", "(unknown)")}"; template rendering likely failed.'
-            )
-
-@contextlib.contextmanager
-def capture_notifications_or_not(
-    capture_email: bool = True,
-    passthrough: bool = False,
-    allow_none: bool = True,
-):
-    """
-    Variant of capture_notifications that *allows* cases where no NotificationType.emit
-    calls occur, instead of raising an AssertionError.
-
-    Args:
-        capture_email (bool): Whether to capture email send calls (default True).
-        passthrough (bool): If True, calls real emit/send methods as well.
-        allow_none (bool): If True, do not raise if no notifications are emitted.
-    """
-    try:
-        from osf.email import _extract_vars as _extract_template_vars
-    except Exception:
-        _extract_template_vars = None
-
-    NotificationTypeModel = apps.get_model('osf', 'NotificationType')
-    captured = {'emits': [], 'emails': []}
-
-    # Patch emit
-    _real_emit = NotificationTypeModel.emit
-
-    def _wrapped_emit(self, *emit_args, **emit_kwargs):
-        ek = dict(emit_kwargs)
-        if isinstance(ek.get('event_context'), dict):
-            ek['event_context'] = copy.deepcopy(ek['event_context'])
-        if isinstance(ek.get('email_context'), dict):
-            ek['email_context'] = copy.deepcopy(ek['email_context'])
-        captured['emits'].append({
-            'type': getattr(self, 'name', None),
-            'args': emit_args,
-            'kwargs': ek,
-            '_is_digest': ek.get('is_digest'),
-        })
-        if passthrough:
-            return _real_emit(self, *emit_args, **ek)
-
-    patches = [mock.patch('osf.models.notification_type.NotificationType.emit', new=_wrapped_emit)]
-
-    if capture_email:
-        from osf import email as _osf_email
-        _real_send_over_smtp = _osf_email.send_email_over_smtp
-        _real_send_with_sendgrid = _osf_email.send_email_with_send_grid
-
-        def _fake_send_over_smtp(to_email, notification_type, context=None, email_context=None):
-            captured['emails'].append({
-                'protocol': 'smtp',
-                'to': to_email,
-                'notification_type': notification_type,
-                'context': context.copy() if isinstance(context, dict) else context,
-                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
-            })
-            if passthrough:
-                return _real_send_over_smtp(to_email, notification_type, context, email_context)
-
-        def _fake_send_with_sendgrid(user, notification_type, context=None, email_context=None):
-            captured['emails'].append({
-                'protocol': 'sendgrid',
-                'to': user,
-                'notification_type': notification_type,
-                'context': context.copy() if isinstance(context, dict) else context,
-                'email_context': email_context.copy() if isinstance(email_context, dict) else email_context,
-            })
-            if passthrough:
-                return _real_send_with_sendgrid(user, notification_type, context, email_context)
-
-        patches.extend([
-            mock.patch('osf.email.send_email_over_smtp', new=_fake_send_over_smtp),
-            mock.patch('osf.email.send_email_with_send_grid', new=_fake_send_with_sendgrid),
-        ])
-
-    with contextlib.ExitStack() as stack:
-        for p in patches:
-            stack.enter_context(p)
-        yield captured
-
-    # If no notifications were emitted, skip validation when allowed
-    if not captured['emits']:
-        if not allow_none:
-            raise AssertionError(
-                'No notifications were emitted. Expected at least one call to NotificationType.emit.'
-            )
-        return
-
-    # Template rendering validation
-    for rec in captured['emits']:
-        nt = NotificationType.objects.get(name=rec.get('type'))
-        template_text = getattr(nt, 'template', '') or ''
-        ctx = rec['kwargs'].get('event_context', {}) or {}
-        try:
-            rendered = _render_email_html(nt, ctx)
-        except Exception as e:
-            missing_hint = ''
-            if _extract_template_vars and isinstance(ctx, dict):
-                try:
-                    needed = set(_extract_template_vars(template_text))
-                    missing = sorted(v for v in needed if v not in ctx)
-                    if missing:
-                        missing_hint = f' Missing variables: {missing}.'
-                except Exception:
-                    pass
-            raise AssertionError(
-                f'Email render failed for notification "{nt.name}" '
-                f'with error: {type(e).__name__}: {e}.{missing_hint}'
-            ) from e
-
-        if not isinstance(rendered, str) or not rendered.strip():
-            raise AssertionError(
-                f'Email render produced empty or blank HTML for notification "{nt.name}".'
-            )
-
-        if template_text and rendered.strip() == template_text.strip():
-            raise AssertionError(
-                f'Email render returned the raw template (no interpolation) for "{nt.name}".'
             )
 
 def get_mailhog_messages():

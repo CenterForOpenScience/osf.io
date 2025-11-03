@@ -8,7 +8,7 @@ from osf_tests.factories import (
     PreprintProviderFactory,
 )
 from osf.utils import permissions as osf_permissions
-from tests.utils import capture_notifications, capture_notifications_or_not
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -324,7 +324,7 @@ class TestReviewActionCreateRoot:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                with capture_notifications_or_not():  # covers cases where notification are sent and not sent.
+                with capture_notifications(allow_none=True):  # covers cases where notification are sent and not sent.
                     res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
 
