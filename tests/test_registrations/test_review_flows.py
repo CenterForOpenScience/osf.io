@@ -1,5 +1,4 @@
 import pytest
-import pytest_socket
 
 from api.providers.workflows import Workflows
 from framework.exceptions import PermissionsError
@@ -98,11 +97,8 @@ class TestUnmoderatedFlows():
         assert registration.sanction._id == sanction_object._id
 
         approval_token = sanction_object.token_for_user(registration.creator, 'approval')
-        try:
+        with capture_notifications(allow_none=True):
             sanction_object.approve(user=registration.creator, token=approval_token)
-        except pytest_socket.SocketConnectBlockedError:
-            with capture_notifications():
-                sanction_object.approve(user=registration.creator, token=approval_token)
 
         registration.refresh_from_db()
         assert registration.moderation_state == end_state.db_name
@@ -137,11 +133,8 @@ class TestUnmoderatedFlows():
         assert registration.sanction._id == sanction_object._id
 
         rejection_token = sanction_object.token_for_user(registration.creator, 'rejection')
-        try:
+        with capture_notifications(allow_none=True):
             sanction_object.reject(user=registration.creator, token=rejection_token)
-        except pytest_socket.SocketConnectBlockedError:
-            with capture_notifications():
-                sanction_object.reject(user=registration.creator, token=rejection_token)
 
         assert sum([val['has_rejected'] for val in sanction_object.approval_state.values()]) == 1
         registration.refresh_from_db()
@@ -266,10 +259,7 @@ class TestModeratedFlows():
         registration.refresh_from_db()
         assert registration.moderation_state == intermediate_state.db_name
 
-        try:
-            with capture_notifications():
-                sanction_object.accept(user=moderator)
-        except AssertionError:
+        with capture_notifications(allow_none=True):
             sanction_object.accept(user=moderator)
 
         registration.refresh_from_db()
@@ -347,10 +337,7 @@ class TestModeratedFlows():
         registration.refresh_from_db()
         assert registration.moderation_state == intermediate_state.db_name
 
-        try:
-            with capture_notifications():
-                sanction_object.reject(user=moderator)
-        except AssertionError:
+        with capture_notifications(allow_none=True):
             sanction_object.reject(user=moderator)
 
         registration.refresh_from_db()
@@ -540,18 +527,12 @@ class TestModeratedFlows():
     def test_provider_admin_can_accept_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        try:
-            with capture_notifications():
-                sanction_object.accept()
-        except AssertionError:
+        with capture_notifications(allow_none=True):
             sanction_object.accept()
 
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
-        try:
-            with capture_notifications():
-                sanction_object.accept(user=provider_admin)
-        except AssertionError:
+        with capture_notifications(allow_none=True):
             sanction_object.accept(user=provider_admin)
         assert sanction_object.approval_stage is ApprovalStates.APPROVED
 
@@ -560,9 +541,7 @@ class TestModeratedFlows():
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
         if sanction_object in (embargo, registration_approval):
-            sanction_object.accept()
-        else:
-            with capture_notifications():
+            with capture_notifications(allow_none=True):
                 sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
@@ -844,11 +823,8 @@ class TestNestedFlows():
         assert child_registration.moderation_state == pending_registration.moderation_state
         assert grandchild_registration.moderation_state == pending_registration.moderation_state
 
-        try:
+        with capture_notifications(allow_none=True):
             pending_registration.sanction.accept()
-        except pytest_socket.SocketConnectBlockedError:
-            with capture_notifications():
-                pending_registration.sanction.accept()
 
         # verify that all registrations have updated state
         for reg in [pending_registration, child_registration, grandchild_registration]:
