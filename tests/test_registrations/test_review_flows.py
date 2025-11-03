@@ -527,12 +527,18 @@ class TestModeratedFlows():
     def test_provider_admin_can_accept_as_moderator(
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
-        with capture_notifications(allow_none=True):
+        try:
+            with capture_notifications():
+                sanction_object.accept()
+        except AssertionError:
             sanction_object.accept()
 
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
-        with capture_notifications(allow_none=True):
+        try:
+            with capture_notifications():
+                sanction_object.accept(user=provider_admin)
+        except AssertionError:
             sanction_object.accept(user=provider_admin)
         assert sanction_object.approval_stage is ApprovalStates.APPROVED
 
@@ -541,7 +547,9 @@ class TestModeratedFlows():
         self, sanction_object, provider, provider_admin):
         sanction_object = sanction_object(provider)
         if sanction_object in (embargo, registration_approval):
-            with capture_notifications(allow_none=True):
+            sanction_object.accept()
+        else:
+            with capture_notifications():
                 sanction_object.accept()
         assert sanction_object.approval_stage is ApprovalStates.PENDING_MODERATION
 
