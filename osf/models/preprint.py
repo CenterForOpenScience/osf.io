@@ -382,14 +382,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_last_not_rejected_version(self):
         """Get the last version that is not rejected.
+        Returns None if all versions are rejected.
         """
-        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
+        last_not_rejected = self.get_guid().versions.filter(is_rejected=False).order_by('-version').first()
+        return last_not_rejected.referent if last_not_rejected else None
 
     def has_unpublished_pending_version(self):
         """Check if preprint has pending unpublished version.
         Note: use `.check_unfinished_or_unpublished_version()` if checking both types
         """
         last_not_rejected_version = self.get_last_not_rejected_version()
+        if not last_not_rejected_version:
+            return False
         return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
 
     def has_initiated_but_unfinished_version(self):
@@ -800,7 +804,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             if not base_guid:
                 return self.created
 
-            first_version = base_guid.versions.filter(is_rejected=False).order_by('version').first()
+            first_version = base_guid.versions.order_by('version').first()
 
             if first_version and first_version.referent:
                 return first_version.referent.created
