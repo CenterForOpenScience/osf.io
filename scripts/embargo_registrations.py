@@ -18,7 +18,7 @@ from framework import sentry
 from framework.celery_tasks import app as celery_app
 
 from website import settings
-from osf.models import Embargo, Registration, NodeLog
+from osf.models import Embargo, Registration
 
 from scripts import utils as scripts_utils
 
@@ -59,17 +59,27 @@ def main(dry_run=True):
                     embargo.accept()
                     transaction.savepoint_commit(sid)
                 except Exception as err:
+                    root = parent_registration._dirty_root
+                    embargo = root.embargo
+
                     logger.error(
                         f'Unexpected error raised when activating embargo for '
-                        f'registration {parent_registration._id}. Continuing...'
+                        f'registration {parent_registration._id}. Error: {err}',
+                        exc_info=err,
+                        extra={
+                            'is_public': root.is_public,
+                            'approval_stage': embargo.approval_stage.name,
+                            'is_approved': root.embargo.is_approved
+                        }
                     )
                     logger.exception(err)
-                    sentry.log_message(str(err))
+                    sentry.log_exception(err)
+
                     transaction.savepoint_rollback(sid)
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
-        if embargo.end_date < timezone.now() and not embargo.is_deleted:
+        if True:
             if dry_run:
                 logger.warning('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
@@ -89,11 +99,21 @@ def main(dry_run=True):
                     parent_registration.terminate_embargo()
                     transaction.savepoint_commit(sid)
                 except Exception as err:
+                    root = parent_registration._dirty_root
+                    embargo = root.embargo
+
                     logger.error(
                         f'Registration {parent_registration._id} could not be made public because {str(err)}',
-                        exc_info=err
+                        exc_info=err,
+                        extra={
+                            'is_public': root.is_public,
+                            'approval_stage': embargo.approval_stage.name,
+                            'is_approved': root.embargo.is_approved
+                        }
                     )
-                    sentry.log_message(f'Registration {parent_registration._id} could not be made public because {str(err)}')
+                    logger.exception(err)
+                    sentry.log_exception(err)
+
                     transaction.savepoint_rollback(sid)
 
 
