@@ -24,12 +24,15 @@
                 <a class="btn btn-danger" href={% url 'institutions:delete' institution.id %}>Delete institution</a>
                 {%  endif %}
 				{% if perms.osf.change_institution %}
-					{% if institution.deactivated is None %}
-					<a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
-					{% else %}
-					<a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
-					{% endif %}
+                {% if institution.deactivated is None %}
+                <a class="btn btn-danger" href={% url 'institutions:deactivate' institution.id %}>Deactivate institution</a>
+                {% else %}
+                <a class="btn btn-danger" href={% url 'institutions:reactivate' institution.id %}>Reactivate institution</a>
+                {% endif %}
 				{% endif %}
+                {% if perms.osf.change_institution %}
+                <a class="btn btn-primary" href={% url 'institutions:list_and_add_admin' institution.id %}>Manage Admins</a>
+                {% endif %}
             </div>
         </div>
 
@@ -64,12 +67,6 @@
                     <button id="show-modify-form" class="btn btn-link" type="button">
                         Modify Institution
                     </button>
-                    <div class="col-md-12">
-                        <a class="btn btn-link" href={% url 'institutions:register_metrics_admin' institution.id %}>Create Moderator/Admin</a>
-                    </div>
-                    <div class="col-md-12">
-                        <a class="btn btn-link" href={% url 'institutions:list_and_add_admin' institution.id %}>Contributors list</a>
-                    </div>
                 {% endif %}
             </div>
         </div>
