@@ -124,7 +124,10 @@ def test_send_moderator_email_task_registration_provider_admin(fake):
         sent=None,
     )
     notification_ids = [notification.id]
-    send_moderator_email_task.apply(args=(user._id, reg_provider.id, notification_ids)).get()
+    with capture_notifications() as notifications:
+        send_moderator_email_task.apply(args=(user._id, reg_provider.id, notification_ids)).get()
+    assert len(notifications['emits']) == 1
+    assert notifications['emits'][0]['type'] == NotificationType.Type.DIGEST_REVIEWS_MODERATORS
     email_task = EmailTask.objects.filter(user_id=user.id).first()
     assert email_task.status == 'SUCCESS'
     notification.refresh_from_db()
