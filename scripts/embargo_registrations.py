@@ -79,7 +79,7 @@ def main(dry_run=True):
 
     active_embargoes = Embargo.objects.filter(state=Embargo.APPROVED)
     for embargo in active_embargoes:
-        if True:
+        if embargo.end_date < timezone.now() and not embargo.is_deleted:
             if dry_run:
                 logger.warning('Dry run mode')
             parent_registration = Registration.objects.get(embargo=embargo)
