@@ -394,6 +394,24 @@ class TestRegisterNode:
 
             mock_client.create_identifier.assert_called_once()
 
+    @mock.patch('osf.models.node.update_doi_metadata_on_change')
+    def test_registration_becomes_public_even_when_doi_metadata_update_fails(self, mock_update_doi, registration, auth):
+
+        registration.is_public = False
+        registration.set_identifier_value('doi', '10.1234/test.doi')
+        registration.save()
+
+        assert registration.get_identifier_value('doi') == '10.1234/test.doi'
+
+        mock_update_doi.side_effect = Exception('DataCite metadata update failed')
+
+        result = registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
+
+        assert registration.is_public is True
+        assert result is True
+
+        mock_update_doi.assert_called_once_with(registration._id)
+
 
 class TestRegisterNodeContributors:
 

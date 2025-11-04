@@ -1245,16 +1245,21 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     status.push_status_message(message, kind='info', trust=False)
 
         # Update existing identifiers
-        try:
-            if self.get_identifier_value('doi'):
+        if self.get_identifier_value('doi'):
+            try:
                 update_doi_metadata_on_change(self._id)
-            elif self.is_registration:
+            except Exception:
+                logger.exception(
+                    f'Failed to update DOI metadata for {self._id} during set_privacy. '
+                )
+        elif self.is_registration:
+            try:
                 doi = self.request_identifier('doi')['doi']
                 self.set_identifier_value('doi', doi)
-        except Exception:
-            logger.exception(
-                f'Failed to create/update DOI for {self._id} during set_privacy. '
-            )
+            except Exception:
+                logger.exception(
+                    f'Failed to create DOI for registration {self._id} during set_privacy. '
+                )
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
