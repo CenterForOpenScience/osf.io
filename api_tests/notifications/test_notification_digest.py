@@ -13,7 +13,6 @@ from notifications.tasks import (
 from osf_tests.factories import AuthUserFactory, RegistrationProviderFactory
 from tests.utils import capture_notifications
 
-
 def add_notification_subscription(user, notification_type, frequency, provider=None, subscription=None):
     """
     Create a NotificationSubscription for a user.
@@ -37,7 +36,7 @@ def add_notification_subscription(user, notification_type, frequency, provider=N
 @pytest.mark.django_db
 class TestNotificationDigestTasks:
 
-    def test_send_user_email_task_success(fake):
+    def test_send_user_email_task_success(self):
         user = AuthUserFactory()
         notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
         subscription_type = add_notification_subscription(
@@ -64,7 +63,7 @@ class TestNotificationDigestTasks:
                 'osf_logo_list': 'osf_logo_list',
                 'destination_node_parent_node_title': 'test parent node title',
                 'destination_node_title': 'test node title',
-            },
+            }
         )
         user.save()
         notification_ids = [notification.id]
@@ -168,7 +167,7 @@ class TestNotificationDigestTasks:
         assert email_task.exists()
         assert email_task.first().status == 'NO_USER_FOUND'
 
-    def test_get_users_emails(fake):
+    def test_get_users_emails(self):
         user = AuthUserFactory()
         notification_type = NotificationType.objects.get(name=NotificationType.Type.USER_DIGEST)
         notification1 = Notification.objects.create(
@@ -249,17 +248,20 @@ class TestNotificationDigestTasks:
             subscription=add_notification_subscription(user, notification_type, 'daily', provider=provider),
             sent=None,
             event_context={
-                'reviews_submission_url': 'http://example.com/reviews_submission.png',
-                'requester_contributor_names': ['<NAME>'],
+                'submitter_fullname': 'submitter_fullname',
+                'requester_fullname': 'requester_fullname',
+                'requester_contributor_names': 'requester_contributor_names',
+                'localized_timestamp': '2024-01-01T00:00:00Z',
+                'message': 'submitted title.',
+                'reviews_submission_url': 'reviews_submission_url',
                 'is_request_email': False,
-                'localized_timestamp': 'test timestamp',
-                'requester_fullname': '<NAME>',
-                'message': 'test message',
-                'profile_image_url': 'http://example.com/profile.png',
+                'is_initiator': False,
+                'profile_image_url': 'profile_image_url'
             },
         )
         with capture_notifications() as notifications:
             send_moderators_digest_email.delay()
         assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DIGEST_REVIEWS_MODERATORS
         email_task = EmailTask.objects.filter(user_id=user.id).first()
         assert email_task.status == 'SUCCESS'
