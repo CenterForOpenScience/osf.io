@@ -17,6 +17,7 @@ from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.nodes.views import NodeRemoveContributorView, NodeUpdatePermissionsView
 from admin.preprints.forms import ChangeProviderForm, MachineStateForm
+from admin.base.utils import osf_staff_check
 
 from api.share.utils import update_share
 from api.providers.workflows import Workflows
@@ -325,6 +326,60 @@ class PreprintDeleteView(PreprintMixin, View):
 
         return redirect(self.get_success_url())
 
+
+class PreprintHardDeleteView(PreprintMixin, View):
+    """Allows authorized users to permanently delete an initial-state preprint version.
+
+    This removes ONLY the broken draft preprint version (N+1) and its GuidVersionsThrough
+    version record, preserving all previous good versions (1 through N) so that a user
+    can initiate a new version again.
+
+    Based on create_version() and check_unfinished_or_unpublished_version() logic:
+    - Each version is a separate preprint instance
+    - The base Guid points to the latest published version
+    - We only delete the specific broken draft version, not the entire preprint lineage
+    """
+    permission_required = ('osf.delete_preprint',)
+
+    def post(self, request, *args, **kwargs):
+        if not osf_staff_check(request.user):
+            messages.error(request, 'Only staff can perform hard deletes.')
+            return redirect(self.get_success_url())
+
+        preprint = self.get_object()
+
+        if preprint.machine_state != DefaultStates.INITIAL.value:
+            messages.error(request, f'Only initial-state drafts can be hard deleted. Current state: {preprint.machine_state}')
+            return redirect(self.get_success_url())
+
+        try:
+            with transaction.atomic():
+                guid_version = preprint.versioned_guids.first()
+                if not guid_version:
+                    messages.error(request, 'No version record found for this draft preprint')
+                    return redirect('preprints:search')
+
+                version_number = guid_version.version
+                base_guid_obj = guid_version.guid
+
+                previous_version = base_guid_obj.versions.filter(
+                    version__lt=version_number,
+                    is_rejected=False
+                ).order_by('-version').first()
+                if previous_version:
+                    base_guid_obj.referent = previous_version.referent
+                    base_guid_obj.object_id = previous_version.object_id
+                    base_guid_obj.content_type = previous_version.content_type
+                    base_guid_obj.save()
+
+                guid_version.delete()
+                preprint.delete()
+
+            messages.success(request, f'Successfully deleted draft version {version_number}. Previous versions preserved.')
+            return redirect('preprints:search')
+        except Exception as exc:
+            messages.error(request, f'Failed to hard delete draft preprint: {str(exc)}')
+            return redirect(self.get_success_url())
 
 class PreprintWithdrawalRequestList(PermissionRequiredMixin, ListView):
     """ Allows authorized users to view list of withdraw requests for preprints and approve or reject the submitted
