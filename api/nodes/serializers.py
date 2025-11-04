@@ -1,4 +1,4 @@
-from django.db import connection, transaction
+from django.db import connection
 from packaging.version import Version
 
 from api.base.exceptions import (
@@ -1226,104 +1226,80 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
         node = self.context['resource']
         auth = Auth(request.user)
 
-        with transaction.atomic():
-            results = []
-            registered_items = []
-            unregistered_items = []
+        def _perm(item):
+            return osf_permissions.get_contributor_proposed_permissions(item)
 
-            for item in validated_data:
-                if item.get('_id') and not item.get('user', {}).get('email'):
-                    registered_items.append(item)
-                else:
-                    unregistered_items.append(item)
+        send_email_default = request.GET.get('send_email') or self.context['default_email']
+        # Preload users once and pass through to the bulk method (also reused for children)
+        user_ids = {item.get('_id') for item in validated_data if item.get('_id')}
+        user_map = {}
+        if user_ids:
+            for u in OSFUser.objects.filter(guids___id__in=user_ids):
+                user_map[u._id] = u
 
-            def _perm(item):
-                return osf_permissions.get_contributor_proposed_permissions(item)
+        payload = []
+        for item in validated_data:
+            uid = item.get('_id')
+            user = user_map.get(uid)
+            email = item.get('user', {}).get('email', None)
+            full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
+            if not uid and not full_name:
+                raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+            payload.append({
+                'user_id': uid,
+                'user': user,
+                'email': email,
+                'full_name': full_name,
+                'send_email': send_email_default,
+                'permissions': _perm(item),
+                'bibliographic': item.get('bibliographic'),
+                'index': item.get('_order') if '_order' in item else None,
+            })
 
-            if registered_items:
-                # Load users once and build a mapping to reuse
-                user_map = {}
-                for item in registered_items:
-                    user_id = item.get('_id')
-                    if user_id and user_id not in user_map:
-                        user = OSFUser.load(user_id)
-                        if not user:
-                            raise exceptions.NotFound(detail=f"User {user_id} not found")
-                        user_map[user_id] = user
+        try:
+            contribs = node.add_contributors_registered_or_not(payload, auth=auth, save=True)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=e.messages[0])
+        except ValueError as e:
+            raise exceptions.NotFound(detail=e.args[0])
 
-                contrib_dicts = []
-                for item in registered_items:
-                    user = user_map[item.get('_id')]
-                    contrib_dicts.append({
-                        'user': user,
-                        'permissions': _perm(item),
-                        'visible': item.get('bibliographic'),
-                    })
-                contribs = node.add_contributors(contrib_dicts, auth=auth, log=True, save=True)
-                results.extend(contribs)
+        child_to_items = {}
+        for item in validated_data:
+            child_nodes = item.get('child_nodes')
+            if child_nodes:
+                for child_id in child_nodes:
+                    child_to_items.setdefault(child_id, []).append(item)
 
-                child_to_items = {}
-                for item in registered_items:
-                    child_nodes = item.get('child_nodes')
-                    if child_nodes:
-                        for child_id in child_nodes:
-                            child_to_items.setdefault(child_id, []).append(item)
-
-                for child_id, items in child_to_items.items():
-                    child = AbstractNode.load(child_id)
-                    if not child:
-                        continue
-                    child_contribs = []
-                    for item in items:
-                        child_contribs.append({
-                            'user': user_map[item.get('_id')],
-                            'permissions': _perm(item),
-                            'visible': item.get('bibliographic'),
-                        })
-                    child.add_contributors(child_contribs, auth=auth, log=True, save=True)
-
-            for item in unregistered_items:
-                id = item.get('_id')
+        for child_id, items in child_to_items.items():
+            child = AbstractNode.load(child_id)
+            if not child:
+                continue
+            child_payload = []
+            for item in items:
+                uid = item.get('_id')
+                user = user_map.get(uid)
                 email = item.get('user', {}).get('email', None)
-                full_name = item.get('full_name')
-                bibliographic = item.get('bibliographic')
-                index = item.get('_order') if '_order' in item else None
-                send_email = request.GET.get('send_email') or self.context['default_email']
-                permissions = _perm(item)
+                full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
+                if not uid and not full_name:
+                    raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+                child_payload.append({
+                    'user_id': uid,
+                    'user': user,
+                    'email': email,
+                    'full_name': full_name,
+                    'send_email': send_email_default,
+                    'permissions': _perm(item),
+                    'bibliographic': item.get('bibliographic'),
+                    'index': item.get('_order') if '_order' in item else None,
+                })
+            try:
+                child.add_contributors_registered_or_not(child_payload, auth=auth, save=True)
+            except ValidationError as e:
+                raise exceptions.ValidationError(detail=e.messages[0])
+            except ValueError as e:
+                raise exceptions.NotFound(detail=e.args[0])
 
-                try:
-                    contributor_obj = node.add_contributor_registered_or_not(
-                        auth=auth,
-                        user_id=id,
-                        email=email,
-                        full_name=full_name,
-                        send_email=send_email,
-                        permissions=permissions,
-                        bibliographic=bibliographic,
-                        index=index,
-                        save=True,
-                    )
-                    results.append(contributor_obj)
-                    child_nodes = item.get('child_nodes')
-                    if child_nodes:
-                        for child in AbstractNode.objects.filter(guids___id__in=child_nodes):
-                            child.add_contributor_registered_or_not(
-                                auth=auth,
-                                user_id=id,
-                                email=email,
-                                full_name=full_name,
-                                send_email=send_email,
-                                permissions=permissions,
-                                bibliographic=bibliographic,
-                                index=index,
-                                save=True,
-                            )
-                except ValidationError as e:
-                    raise exceptions.ValidationError(detail=e.messages[0])
-                except ValueError as e:
-                    raise exceptions.NotFound(detail=e.args[0])
-
-            return results
+        return contribs
 
 
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
