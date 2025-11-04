@@ -1,4 +1,4 @@
-from django.db import connection
+from django.db import connection, transaction
 from packaging.version import Version
 
 from api.base.exceptions import (
@@ -7,7 +7,7 @@ from api.base.exceptions import (
 )
 from api.base.serializers import (
     VersionedDateTimeField, HideIfRegistration, IDField,
-    JSONAPISerializer, LinksField,
+    JSONAPISerializer, JSONAPIListSerializer, LinksField,
     NodeFileHyperLinkField, RelationshipField,
     ShowIfVersion, TargetTypeField, TypeField,
     WaterbutlerLink, BaseAPISerializer,
@@ -38,7 +38,7 @@ from osf.models import (
     Comment, DraftRegistration, ExternalAccount,
     RegistrationSchema, AbstractNode, PrivateLink, Preprint,
     RegistrationProvider, NodeLicense, DraftNode,
-    Registration, Node,
+    Registration, Node, OSFUser,
 )
 from website.project import new_private_link
 from website.project.model import NodeUpdateError
@@ -1219,6 +1219,113 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return unclaimed_records.get('name', None)
 
 
+class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
+
+    def create(self, validated_data):
+        request = self.context['request']
+        node = self.context['resource']
+        auth = Auth(request.user)
+
+        with transaction.atomic():
+            results = []
+            registered_items = []
+            unregistered_items = []
+
+            for item in validated_data:
+                if item.get('_id') and not item.get('user', {}).get('email'):
+                    registered_items.append(item)
+                else:
+                    unregistered_items.append(item)
+
+            def _perm(item):
+                return osf_permissions.get_contributor_proposed_permissions(item)
+
+            if registered_items:
+                # Load users once and build a mapping to reuse
+                user_map = {}
+                for item in registered_items:
+                    user_id = item.get('_id')
+                    if user_id and user_id not in user_map:
+                        user = OSFUser.load(user_id)
+                        if not user:
+                            raise exceptions.NotFound(detail=f"User {user_id} not found")
+                        user_map[user_id] = user
+
+                contrib_dicts = []
+                for item in registered_items:
+                    user = user_map[item.get('_id')]
+                    contrib_dicts.append({
+                        'user': user,
+                        'permissions': _perm(item),
+                        'visible': item.get('bibliographic'),
+                    })
+                contribs = node.add_contributors(contrib_dicts, auth=auth, log=True, save=True)
+                results.extend(contribs)
+
+                child_to_items = {}
+                for item in registered_items:
+                    child_nodes = item.get('child_nodes')
+                    if child_nodes:
+                        for child_id in child_nodes:
+                            child_to_items.setdefault(child_id, []).append(item)
+
+                for child_id, items in child_to_items.items():
+                    child = AbstractNode.load(child_id)
+                    if not child:
+                        continue
+                    child_contribs = []
+                    for item in items:
+                        child_contribs.append({
+                            'user': user_map[item.get('_id')],
+                            'permissions': _perm(item),
+                            'visible': item.get('bibliographic'),
+                        })
+                    child.add_contributors(child_contribs, auth=auth, log=True, save=True)
+
+            for item in unregistered_items:
+                id = item.get('_id')
+                email = item.get('user', {}).get('email', None)
+                full_name = item.get('full_name')
+                bibliographic = item.get('bibliographic')
+                index = item.get('_order') if '_order' in item else None
+                send_email = request.GET.get('send_email') or self.context['default_email']
+                permissions = _perm(item)
+
+                try:
+                    contributor_obj = node.add_contributor_registered_or_not(
+                        auth=auth,
+                        user_id=id,
+                        email=email,
+                        full_name=full_name,
+                        send_email=send_email,
+                        permissions=permissions,
+                        bibliographic=bibliographic,
+                        index=index,
+                        save=True,
+                    )
+                    results.append(contributor_obj)
+                    child_nodes = item.get('child_nodes')
+                    if child_nodes:
+                        for child in AbstractNode.objects.filter(guids___id__in=child_nodes):
+                            child.add_contributor_registered_or_not(
+                                auth=auth,
+                                user_id=id,
+                                email=email,
+                                full_name=full_name,
+                                send_email=send_email,
+                                permissions=permissions,
+                                bibliographic=bibliographic,
+                                index=index,
+                                save=True,
+                            )
+                except ValidationError as e:
+                    raise exceptions.ValidationError(detail=e.messages[0])
+                except ValueError as e:
+                    raise exceptions.NotFound(detail=e.args[0])
+
+            return results
+
+
 class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add email, full_name, send_email, and non-required index and users field.
@@ -1239,8 +1346,8 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
     email_preferences = ['default', 'false']
 
-    def get_proposed_permissions(self, validated_data):
-        return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+    class Meta(NodeContributorsSerializer.Meta):
+        list_serializer_class = NodeContributorsBulkCreateListSerializer
 
     def validate_data(self, resource, user_id=None, full_name=None, email=None, index=None, child_nodes=None):
         if not user_id and not full_name:
@@ -1263,7 +1370,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
 
         email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         child_nodes = validated_data.get('child_nodes')
-        permissions = self.get_proposed_permissions(validated_data)
+        permissions = osf_permissions.get_contributor_proposed_permissions(validated_data)
         self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
 
         if email_pref not in self.email_preferences:
