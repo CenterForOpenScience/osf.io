@@ -96,17 +96,20 @@ def send_no_login_email(email_task_id: int):
         return
 
     # Update to STARTED
-    EmailTask.objects.filter(id=email_task.id).update(status='STARTED')
+    email_task.status = 'STARTED'
+    email_task.save()
 
     try:
         user = email_task.user
         if user is None:
-            EmailTask.objects.filter(id=email_task.id).update(status='NO_USER_FOUND')
+            email_task.status = 'NO_USER_FOUND'
+            email_task.save()
             logger.warning(f'EmailTask {email_task.id}: no associated user')
             return
 
         if not user.is_active:
-            EmailTask.objects.filter(id=email_task.id).update(status='USER_DISABLED')
+            email_task.status = 'USER_DISABLED'
+            email_task.save()
             logger.warning(f'EmailTask {email_task.id}: user {user.id} is not active')
             return
         NotificationType.Type.USER_NO_LOGIN.instance.emit(
@@ -116,13 +119,14 @@ def send_no_login_email(email_task_id: int):
                 'domain': settings.DOMAIN,
             }
         )
+        email_task.status = 'SUCCESS'
+        email_task.save()
 
     except Exception as exc:  # noqa: BLE001
         logger.exception(f'EmailTask {email_task.id}: error while sending')
-        EmailTask.objects.filter(id=email_task.id).update(
-            status='FAILURE',
-            error_message=str(exc)
-        )
+        email_task.status = 'FAILURE'
+        email_task.error_message = str(exc)
+        email_task.save()
 
 
 @celery_app.task(name='scripts.triggered_mails')  # keep the original entry point for compatibility
