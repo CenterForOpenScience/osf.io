@@ -23,6 +23,14 @@ class Migration(migrations.Migration):
                 ALTER TABLE osf_notificationsubscription
                 RENAME TO osf_notificationsubscription_legacy;
 
+                -- Rename M2M join tables
+                ALTER TABLE IF EXISTS osf_notificationsubscription_none
+                    RENAME TO osf_notificationsubscription_legacy_none;
+                ALTER TABLE IF EXISTS osf_notificationsubscription_email_digest
+                    RENAME TO osf_notificationsubscription_legacy_email_digest;
+                ALTER TABLE IF EXISTS osf_notificationsubscription_email_transactional
+                    RENAME TO osf_notificationsubscription_legacy_email_transactional;
+
                 DO $$
                 DECLARE
                     idx record;
@@ -43,6 +51,14 @@ class Migration(migrations.Migration):
             reverse_sql="""
                 ALTER TABLE osf_notificationsubscription_legacy
                 RENAME TO osf_notificationsubscription;
+
+                -- Reverse rename M2M join tables
+                ALTER TABLE IF EXISTS osf_notificationsubscription_legacy_none
+                    RENAME TO osf_notificationsubscription_none;
+                ALTER TABLE IF EXISTS osf_notificationsubscription_legacy_email_digest
+                    RENAME TO osf_notificationsubscription_email_digest;
+                ALTER TABLE IF EXISTS osf_notificationsubscription_legacy_email_transactional
+                    RENAME TO osf_notificationsubscription_email_transactional;
 
                 DO $$
                 DECLARE
