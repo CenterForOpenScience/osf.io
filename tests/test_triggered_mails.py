@@ -62,7 +62,7 @@ class TestTriggeredMails(OsfTestCase):
         assert tasks.count() == 1
         # Current task code sets STARTED and only flips to FAILURE on exception;
         # allow either STARTED (no explicit success mark yet) or SUCCESS if added later.
-        assert tasks.latest('id').status in {'STARTED', 'SUCCESS'}
+        assert tasks.latest('id').status in {'SUCCESS'}
 
     def test_trigger_no_login_mail_failure_marks_task_failure(self):
         """If sending raises, the task should capture the exception and mark FAILURE."""
