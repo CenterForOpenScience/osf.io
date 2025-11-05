@@ -60,9 +60,22 @@ class TestTriggeredMails(OsfTestCase):
             user=self.user, task_id__startswith=NO_LOGIN_PREFIX
         ).order_by('id')
         assert tasks.count() == 1
-        # Current task code sets STARTED and only flips to FAILURE on exception;
-        # allow either STARTED (no explicit success mark yet) or SUCCESS if added later.
         assert tasks.latest('id').status in {'SUCCESS'}
+
+    @mock.patch('scripts.triggered_mails.send_no_login_email.delay')
+    def test_trigger_no_login_mail_starts_EmailTask(self, mock_delay):
+        """Inactive user -> EmailTask is enqueued and task runs without failing."""
+        self.user.date_last_login = _inactive_time()
+        self.user.save()
+
+        with capture_notifications(expect_none=True):
+            main(dry_run=False)
+
+        tasks = EmailTask.objects.filter(
+            user=self.user, task_id__startswith=NO_LOGIN_PREFIX
+        ).order_by('id')
+        assert tasks.count() == 1
+        assert tasks.latest('id').status in {'PENDING'}
 
     def test_trigger_no_login_mail_failure_marks_task_failure(self):
         """If sending raises, the task should capture the exception and mark FAILURE."""
