@@ -1250,7 +1250,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         if auth and permissions == 'public':
             for contributor in self.contributors:
-                NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance.emit(
+                NotificationType.Type.NODE_NEW_PUBLIC_PROJECT.instance.emit(
                     user=contributor,
                     subscribed_object=self,
                     event_context={
