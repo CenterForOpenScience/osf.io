@@ -111,6 +111,27 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Notification Subscriptions',
             },
         ),
+        migrations.AddField(
+            model_name='notificationsubscription',
+            name='created',
+            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created'),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='notificationsubscription',
+            name='modified',
+            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        ),
+        migrations.AlterField(
+            model_name='notificationtype',
+            name='object_content_type',
+            field=models.ForeignKey(blank=True,
+                                    help_text='Content type for subscribed objects. Null means global event.',
+                                    null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='contenttypes.contenttype'),
+        ),
         migrations.CreateModel(
             name='EmailTask',
             fields=[
@@ -174,5 +195,21 @@ class Migration(migrations.Migration):
         migrations.AlterUniqueTogether(
             name='notificationsubscriptionlegacy',
             unique_together={('_id', 'provider')},
+        ),
+        migrations.RemoveField(
+            model_name='abstractnode',
+            name='child_node_subscriptions',
+        ),
+        migrations.RemoveField(
+            model_name='osfuser',
+            name='contributor_added_email_records',
+        ),
+        migrations.RemoveField(
+            model_name='osfuser',
+            name='group_connected_email_records',
+        ),
+        migrations.RemoveField(
+            model_name='osfuser',
+            name='member_added_email_records',
         ),
     ]
