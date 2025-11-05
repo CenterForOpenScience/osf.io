@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
+from osf.exceptions import NodeStateError
 from osf.models import Node, Registration, Sanction, RegistrationSchema, NodeLog, GuidMetadataRecord
 from addons.wiki.models import WikiPage
 from osf.utils.permissions import ADMIN
@@ -373,7 +374,7 @@ class TestRegisterNode:
         registration.set_privacy(Node.PUBLIC, auth=auth)
         assert registration.is_public
 
-    def test_registration_becomes_public_even_when_doi_creation_fails(self, registration, auth):
+    def test_registration_cannot_become_public_when_doi_creation_fails(self, registration, auth):
         registration.is_public = False
         existing_doi = registration.get_identifier('doi')
         if existing_doi:
@@ -387,10 +388,11 @@ class TestRegisterNode:
             mock_client.create_identifier.side_effect = Exception('DataCite API unavailable')
             mock_get_client.return_value = mock_client
 
-            result = registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
+            with pytest.raises(NodeStateError) as exc_info:
+                registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
 
-            assert registration.is_public is True
-            assert result is True
+            assert 'Unable to make registration public: DOI creation failed' in str(exc_info.value)
+            assert registration.is_public is False
 
             mock_client.create_identifier.assert_called_once()
 
