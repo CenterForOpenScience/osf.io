@@ -36,7 +36,6 @@ from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
 from osf.models.notification_type import NotificationType
-from osf.models.notification_subscription import NotificationSubscription
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -1250,22 +1249,17 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         if save:
             self.save()
         if auth and permissions == 'public':
-            project_signals.privacy_set_public.send(auth.user, node=self)
-            existing_sub = NotificationSubscription.objects.filter(
-                user=auth.user,
-                notification_type=NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance,
-            )
-            if not existing_sub:  # This is only ever sent once per user.
-                NotificationType.Type.USER_NEW_PUBLIC_PROJECT.instance.emit(
-                    user=auth.user,
-                    subscribed_object=auth.user,
+            for contributor in self.contributors:
+                NotificationType.Type.NODE_NEW_PUBLIC_PROJECT.instance.emit(
+                    user=contributor,
+                    subscribed_object=self,
                     event_context={
-                        'user_fullname': auth.user.fullname,
+                        'user_fullname': contributor.fullname,
                         'domain': settings.DOMAIN,
                         'nid': self._id,
                         'project_title': self.title,
                     },
-                    save=True
+                    save=False
                 )
         return True
 

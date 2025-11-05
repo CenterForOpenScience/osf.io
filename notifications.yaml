@@ -319,13 +319,6 @@ notification_types:
     template: 'website/templates/archive_uncaught_error_user.html.mako'
     tests: []
 
-  - name: user_new_public_project
-    subject: 'Now, public. Next, impact.'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/new_public_project.html.mako'
-    tests: ['osf_tests/test_node.py']
-
   - name: user_confirm_email_erpc
     subject: 'OSF Account Verification, Election Research Preacceptance Competition'
     object_content_type_model_name: osfuser
@@ -653,6 +646,14 @@ notification_types:
   - name: node_withdraw_registration_declined
     object_content_type_model_name: abstractnode
     template: 'website/templates/withdrawal_request_declined.html.mako'
+
+  - name: node_new_public_project
+    subject: 'Now, public. Next, impact.'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/new_public_project.html.mako'
+    tests: ['osf_tests/test_node.py']
+
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf

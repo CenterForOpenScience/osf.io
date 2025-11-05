@@ -71,7 +71,6 @@ class NotificationType(models.Model):
         USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
-        USER_NEW_PUBLIC_PROJECT = 'user_new_public_project'
         USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
@@ -108,6 +107,7 @@ class NotificationType(models.Model):
         NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
         NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
         NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
+        NODE_NEW_PUBLIC_PROJECT = 'node_new_public_project'
 
         FILE_UPDATED = 'file_updated'
         FILE_ADDED = 'file_added'

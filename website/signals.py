@@ -10,7 +10,6 @@ ALL_SIGNALS = [  # TODO: Fix
     project.unreg_contributor_added,
     project.contributor_added,
     project.contributor_removed,
-    project.privacy_set_public,
     project.node_deleted,
     auth.user_confirmed,
     auth.user_email_removed,
