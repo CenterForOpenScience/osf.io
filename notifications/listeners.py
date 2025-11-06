@@ -51,22 +51,28 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
             return None
 
     if contributor.is_registered:
-        NotificationSubscription.objects.bulk_create([
-            NotificationSubscription(
+        try:
+            NotificationSubscription.objects.get_or_create(
                 user=contributor,
                 notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
                 object_id=contributor.id,
                 content_type=ContentType.objects.get_for_model(contributor),
                 _is_digest=True,
-            ),
-            NotificationSubscription(
+                message_frequency='instantly',
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
+        try:
+            NotificationSubscription.objects.get_or_create(
                 user=contributor,
                 notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
+                message_frequency='instantly',
             )
-        ], ignore_conflicts=True)
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
 
 
 # Handle email notifications to notify moderators of new submissions.
