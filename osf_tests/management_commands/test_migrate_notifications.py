@@ -1,6 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
-from django.db import transaction
+from django.db import transaction, connection
 
 from osf.models import Node, RegistrationProvider
 from osf_tests.factories import (
@@ -206,37 +206,43 @@ class TestNotificationSubscriptionMigration:
         migrated = NotificationSubscription.objects.filter(user=user).first()
         assert migrated.notification_type.name == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value
 
-    def test_migrate_subscription_frequencies_none(self, user):
-        # Create a legacy subscription with all three frequency types
+    def test_migrate_subscription_frequencies_none(self, user, django_db_blocker):
         legacy = self.create_legacy_sub(
             event_name='global_file_updated',
             user=user,
         )
-        legacy.none.add(user)
 
-        # Run the migration
+        # Insert directly into the M2M table for "none"
+        with django_db_blocker.unblock():
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO osf_notificationsubscriptionlegacy_none (notificationsubscriptionlegacy_id, osfuser_id)
+                    VALUES (%s, %s)
+                """, [legacy.id, user.id])
+
         migrate_legacy_notification_subscriptions()
 
-        # Fetch the migrated NotificationType and corresponding subscriptions
         nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
-        subs = NotificationSubscription.objects.filter(
-            notification_type=nt,
-        )
+        subs = NotificationSubscription.objects.filter(notification_type=nt)
         assert subs.count() == 1
         assert subs.get().message_frequency == 'none'
 
-    def test_migrate_subscription_frequencies_transactional(self, user):
-        # Create a legacy subscription with all three frequency types
+    def test_migrate_subscription_frequencies_transactional(self, user, django_db_blocker):
         legacy = self.create_legacy_sub(
             event_name='global_file_updated',
             user=user,
         )
-        legacy.email_transactional.add(user)
 
-        # Run the migration
+        # Insert directly into the M2M table for "email_transactional"
+        with django_db_blocker.unblock():
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO osf_notificationsubscriptionlegacy_email_transactional (notificationsubscriptionlegacy_id, osfuser_id)
+                    VALUES (%s, %s)
+                """, [legacy.id, user.id])
+
         migrate_legacy_notification_subscriptions()
 
-        # Fetch the migrated NotificationType and corresponding subscriptions
         nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(
             notification_type=nt,
@@ -246,19 +252,22 @@ class TestNotificationSubscriptionMigration:
         assert subs.count() == 1
         assert subs.get().message_frequency == 'instant'
 
-    def test_migrate_subscription_frequencies_daily(self, user):
-        # Create a legacy subscription with all three frequency types
-
+    def test_migrate_subscription_frequencies_daily(self, user, django_db_blocker):
         legacy = self.create_legacy_sub(
             event_name='global_file_updated',
             user=user,
         )
-        legacy.email_digest.add(user)
 
-        # Run the migration
+        # Insert directly into the M2M table for "email_digest"
+        with django_db_blocker.unblock():
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    INSERT INTO osf_notificationsubscriptionlegacy_email_digest (notificationsubscriptionlegacy_id, osfuser_id)
+                    VALUES (%s, %s)
+                """, [legacy.id, user.id])
+
         migrate_legacy_notification_subscriptions()
 
-        # Fetch the migrated NotificationType and corresponding subscriptions
         nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
         subs = NotificationSubscription.objects.filter(
             notification_type=nt,
