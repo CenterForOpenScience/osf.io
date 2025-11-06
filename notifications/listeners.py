@@ -24,7 +24,9 @@ def subscribe_creator(resource):
                 object_id=user.id,
                 content_type=ContentType.objects.get_for_model(user),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
@@ -35,7 +37,9 @@ def subscribe_creator(resource):
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
@@ -58,7 +62,9 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
                 object_id=contributor.id,
                 content_type=ContentType.objects.get_for_model(contributor),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
@@ -69,7 +75,9 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
