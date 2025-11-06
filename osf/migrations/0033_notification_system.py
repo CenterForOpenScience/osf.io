@@ -173,6 +173,7 @@ class Migration(migrations.Migration):
             options={
                 'verbose_name': 'Notification Subscription',
                 'verbose_name_plural': 'Notification Subscriptions',
+                'db_table': 'osf_notificationsubscription_v2',
             },
         ),
         migrations.AddField(
