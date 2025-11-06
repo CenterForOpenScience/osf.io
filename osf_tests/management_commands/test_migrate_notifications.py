@@ -75,21 +75,14 @@ class TestNotificationSubscriptionMigration:
 
     ALL_EVENT_NAMES = ALL_PROVIDER_EVENTS + ALL_NODE_EVENTS + ALL_COLLECTION_EVENTS
 
-    def create_legacy_sub(self, event_name, users, user=None, provider=None, node=None):
-        legacy = NotificationSubscriptionLegacy.objects.create(
-            _id=f'{(provider or node)._id}_{event_name}',
+    def create_legacy_sub(self, event_name, users=None, user=None, provider=None, node=None):
+        return NotificationSubscriptionLegacy.objects.create(
+            _id=f'{(provider or node or user)._id}_{event_name}',
             user=user,
             event_name=event_name,
             provider=provider,
             node=node
         )
-        if hasattr(legacy, 'none'):
-            legacy.none.add(users['none'])
-        if hasattr(legacy, 'email_digest'):
-            legacy.email_digest.add(users['digest'])
-        if hasattr(legacy, 'email_transactional'):
-            legacy.email_transactional.add(users['transactional'])
-        return legacy
 
     def test_migrate_provider_subscription(self, users, provider, provider2):
         self.create_legacy_sub(event_name='new_pending_submissions', users=users, provider=provider)
@@ -212,3 +205,65 @@ class TestNotificationSubscriptionMigration:
         assert NotificationSubscription.objects.filter(user=user).count() == 1
         migrated = NotificationSubscription.objects.filter(user=user).first()
         assert migrated.notification_type.name == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value
+
+    def test_migrate_subscription_frequencies_none(self, user):
+        # Create a legacy subscription with all three frequency types
+        legacy = self.create_legacy_sub(
+            event_name='global_file_updated',
+            user=user,
+        )
+        legacy.none.add(user)
+
+        # Run the migration
+        migrate_legacy_notification_subscriptions()
+
+        # Fetch the migrated NotificationType and corresponding subscriptions
+        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        subs = NotificationSubscription.objects.filter(
+            notification_type=nt,
+        )
+        assert subs.count() == 1
+        assert subs.get().message_frequency == 'none'
+
+    def test_migrate_subscription_frequencies_transactional(self, user):
+        # Create a legacy subscription with all three frequency types
+        legacy = self.create_legacy_sub(
+            event_name='global_file_updated',
+            user=user,
+        )
+        legacy.email_transactional.add(user)
+
+        # Run the migration
+        migrate_legacy_notification_subscriptions()
+
+        # Fetch the migrated NotificationType and corresponding subscriptions
+        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        subs = NotificationSubscription.objects.filter(
+            notification_type=nt,
+            content_type=ContentType.objects.get_for_model(user.__class__),
+            object_id=user.id,
+        )
+        assert subs.count() == 1
+        assert subs.get().message_frequency == 'instant'
+
+    def test_migrate_subscription_frequencies_daily(self, user):
+        # Create a legacy subscription with all three frequency types
+
+        legacy = self.create_legacy_sub(
+            event_name='global_file_updated',
+            user=user,
+        )
+        legacy.email_digest.add(user)
+
+        # Run the migration
+        migrate_legacy_notification_subscriptions()
+
+        # Fetch the migrated NotificationType and corresponding subscriptions
+        nt = NotificationType.objects.get(name=NotificationType.Type.USER_FILE_UPDATED)
+        subs = NotificationSubscription.objects.filter(
+            notification_type=nt,
+            content_type=ContentType.objects.get_for_model(user.__class__),
+            object_id=user.id,
+        )
+        assert subs.count() == 1
+        assert subs.get().message_frequency == 'daily'

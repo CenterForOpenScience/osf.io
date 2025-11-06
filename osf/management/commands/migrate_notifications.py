@@ -19,7 +19,7 @@ BATCH_SIZE = 1000       # Default batch size
 
 FREQ_MAP = {
     'none': 'none',
-    'email_digest': 'weekly',
+    'email_digest': 'daily',
     'email_transactional': 'instantly',
 }
 
@@ -130,6 +130,8 @@ def migrate_legacy_notification_subscriptions(
             content_type = content_type_cache[model_class]
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
+            if subscribed_object == legacy.user:
+                notif_enum = NotificationType.Type.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
                 continue
@@ -149,7 +151,16 @@ def migrate_legacy_notification_subscriptions(
                 skipped += 1
                 continue
 
-            frequency = 'weekly' if getattr(legacy, 'email_digest', False) else default_frequency
+            if legacy.none.all():
+                frequency = 'none'
+            elif legacy.email_digest.all():
+                frequency = 'daily'
+            elif legacy.email_transactional.all():
+                frequency = 'instant'
+            else:
+                logger.info(
+                    f"Bugged notification no frequency for user {legacy.user_id} default to instant")
+                frequency = 'instant'
 
             if dry_run:
                 created += 1

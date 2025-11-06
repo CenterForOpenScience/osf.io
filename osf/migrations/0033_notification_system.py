@@ -17,36 +17,25 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Step 1: Rename old NotificationSubscription table and its indexes
+        # Step 2: Create legacy models needs for managment command `migrate_notifications``
         migrations.RunSQL(
             sql="""
-                ALTER TABLE osf_notificationsubscription
-                RENAME TO osf_notificationsubscription_legacy;
-
-                -- Rename M2M join tables
-                ALTER TABLE IF EXISTS osf_notificationsubscription_none
-                    RENAME TO osf_notificationsubscription_legacy_none;
-                ALTER TABLE IF EXISTS osf_notificationsubscription_email_digest
-                    RENAME TO osf_notificationsubscription_legacy_email_digest;
-                ALTER TABLE IF EXISTS osf_notificationsubscription_email_transactional
-                    RENAME TO osf_notificationsubscription_legacy_email_transactional;
-
-                DO $$
-                DECLARE
-                    idx record;
-                BEGIN
-                    FOR idx IN
-                        SELECT indexname
-                        FROM pg_indexes
-                        WHERE tablename = 'osf_notificationsubscription_legacy'
-                    LOOP
-                        EXECUTE format(
-                            'ALTER INDEX %I RENAME TO %I',
-                            idx.indexname,
-                            replace(idx.indexname, 'osf_notificationsubscription', 'osf_notificationsubscription_legacy')
-                        );
-                    END LOOP;
-                END$$;
+                    DO $$
+                    DECLARE
+                        idx record;
+                    BEGIN
+                        FOR idx IN
+                            SELECT indexname
+                            FROM pg_indexes
+                            WHERE tablename = 'osf_notificationsubscription'
+                        LOOP
+                            EXECUTE format(
+                                'ALTER INDEX %I RENAME TO %I',
+                                idx.indexname,
+                                replace(idx.indexname, 'osf_notificationsubscription', 'osf_notificationsubscription_legacy')
+                            );
+                        END LOOP;
+                    END$$;
             """,
             reverse_sql="""
                 ALTER TABLE osf_notificationsubscription_legacy
@@ -80,6 +69,32 @@ class Migration(migrations.Migration):
                 END$$;
             """
         ),
+        migrations.CreateModel(
+            name='NotificationSubscriptionLegacy',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, max_length=100)),
+                ('event_name', models.CharField(max_length=100)),
+                ('email_digest', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
+                ('email_transactional', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
+                ('none', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
+                ('node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                           related_name='notification_subscriptions', to='osf.node')),
+                ('provider', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                               related_name='notification_subscriptions', to='osf.abstractprovider')),
+                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE,
+                                           related_name='notification_subscriptions', to=settings.AUTH_USER_MODEL)),
+            ],
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            options={
+                'db_table': 'osf_notificationsubscription_legacy',
+            }
+        ),
+        migrations.DeleteModel(name='NotificationSubscription'),
         # Step 2: Create new models
         migrations.CreateModel(
             name='NotificationType',
@@ -187,31 +202,9 @@ class Migration(migrations.Migration):
                 'verbose_name_plural': 'Notifications',
             },
         ),
-        # Step 2: Create legacy models needs for managment command `migrate_notifications``
-        migrations.CreateModel(
-            name='NotificationSubscriptionLegacy',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('_id', models.CharField(db_index=True, max_length=100)),
-                ('event_name', models.CharField(max_length=100)),
-                ('email_digest', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('email_transactional', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('none', models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('node', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.node')),
-                ('provider', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.abstractprovider')),
-                ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to=settings.AUTH_USER_MODEL)),
-            ],
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-        ),
         # Step 3: Drop legacy-only models
         migrations.DeleteModel(name='NotificationDigest'),
         migrations.DeleteModel(name='QueuedMail'),
-        migrations.AlterUniqueTogether(
-            name='notificationsubscriptionlegacy',
-            unique_together={('_id', 'provider')},
-        ),
         migrations.RemoveField(
             model_name='abstractnode',
             name='child_node_subscriptions',
