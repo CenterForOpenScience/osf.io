@@ -554,7 +554,7 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
         include_children = is_truthy(self.request.query_params.get('include_children', False))
 
-        if include_children:
+        if include_children and isinstance(node, Node):
             hierarchy = Node.objects.get_children(node, active=True, include_root=True)
             targets = hierarchy.filter(
                 Exists(
