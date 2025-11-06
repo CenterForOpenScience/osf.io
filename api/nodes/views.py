@@ -549,13 +549,20 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         auth = get_user_auth(self.request)
         if node.visible_contributors.count() == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
-        removed = node.remove_contributor(instance, auth)
-        if not removed:
-            raise ValidationError('Must have at least one registered admin contributor')
-        propagate = self.request.query_params.get('propagate_to_children') == 'true'
-        if propagate:
-            for child_node in node.get_nodes(_contributors__in=[instance.user]):
-                child_node.remove_contributor(instance, auth)
+
+        include_children = is_truthy(self.request.query_params.get('include_children', False))
+
+        if include_children:
+            hierarchy = Node.objects.get_children(node, active=True, include_root=True)
+            targets = hierarchy.filter(contributor_set__user=instance.user)
+            for descendant in targets:
+                removed = descendant.remove_contributor(instance, auth)
+                if not removed:
+                    raise ValidationError('Children must have at least one registered admin contributor')
+        else:
+            removed = node.remove_contributor(instance, auth)
+            if not removed:
+                raise ValidationError('Must have at least one registered admin contributor')
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
