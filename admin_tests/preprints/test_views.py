@@ -23,7 +23,6 @@ from osf.models.admin_log_entry import AdminLogEntry
 from osf.models.spam import SpamStatus
 from osf.utils.workflows import DefaultStates, RequestTypes
 from osf.utils.permissions import ADMIN
-from framework.auth import Auth
 
 from admin_tests.utilities import setup_view, setup_log_view, handle_post_view_request
 
