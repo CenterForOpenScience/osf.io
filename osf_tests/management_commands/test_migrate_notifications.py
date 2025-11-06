@@ -207,6 +207,7 @@ class TestNotificationSubscriptionMigration:
         assert migrated.notification_type.name == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value
 
     def test_migrate_subscription_frequencies_none(self, user, django_db_blocker):
+        # Create a legacy subscription
         legacy = self.create_legacy_sub(
             event_name='global_file_updated',
             user=user,
@@ -216,7 +217,7 @@ class TestNotificationSubscriptionMigration:
         with django_db_blocker.unblock():
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    INSERT INTO osf_notificationsubscriptionlegacy_none (notificationsubscriptionlegacy_id, osfuser_id)
+                    INSERT INTO osf_notificationsubscriptionlegacy_none (notificationsubscription_id, osfuser_id)
                     VALUES (%s, %s)
                 """, [legacy.id, user.id])
 
@@ -237,7 +238,7 @@ class TestNotificationSubscriptionMigration:
         with django_db_blocker.unblock():
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    INSERT INTO osf_notificationsubscriptionlegacy_email_transactional (notificationsubscriptionlegacy_id, osfuser_id)
+                    INSERT INTO osf_notificationsubscriptionlegacy_email_transactional (notificationsubscription_id, osfuser_id)
                     VALUES (%s, %s)
                 """, [legacy.id, user.id])
 
@@ -262,7 +263,7 @@ class TestNotificationSubscriptionMigration:
         with django_db_blocker.unblock():
             with connection.cursor() as cursor:
                 cursor.execute("""
-                    INSERT INTO osf_notificationsubscriptionlegacy_email_digest (notificationsubscriptionlegacy_id, osfuser_id)
+                    INSERT INTO osf_notificationsubscriptionlegacy_email_digest (notificationsubscription_id, osfuser_id)
                     VALUES (%s, %s)
                 """, [legacy.id, user.id])
 
