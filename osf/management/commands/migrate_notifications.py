@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import transaction, connection
 
 from osf.models import NotificationType, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
@@ -45,6 +45,20 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
     'collection_submission_removed_private': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
     'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
 }
+
+def has_legacy_m2m_entry(table_name, subscription_id):
+    """Directly check M2M existence via raw SQL for legacy join tables."""
+    with connection.cursor() as cursor:
+        cursor.execute(
+            f"""
+            SELECT 1
+            FROM {table_name}
+            WHERE notificationsubscription_id = %s
+            LIMIT 1;
+            """,
+            [subscription_id],
+        )
+        return cursor.fetchone() is not None
 
 
 @contextmanager
@@ -151,15 +165,16 @@ def migrate_legacy_notification_subscriptions(
                 skipped += 1
                 continue
 
-            if legacy.none.all():
+            if has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_none', legacy.id):
                 frequency = 'none'
-            elif legacy.email_digest.all():
+            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_digest', legacy.id):
                 frequency = 'daily'
-            elif legacy.email_transactional.all():
+            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_transactional', legacy.id):
                 frequency = 'instant'
             else:
                 logger.info(
-                    f"Bugged notification no frequency for user {legacy.user_id} default to instant")
+                    f"Bugged notification no frequency for user {legacy.user_id}, default to instant"
+                )
                 frequency = 'instant'
 
             if dry_run:

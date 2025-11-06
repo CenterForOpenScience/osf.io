@@ -23,4 +23,3 @@ class NotificationSubscriptionLegacy(BaseModel):
     class Meta:
         # Both PreprintProvider and RegistrationProvider default instances use "osf" as their `_id`
         unique_together = ('_id', 'provider')
-        db_table = 'osf_notificationsubscription_legacy'
