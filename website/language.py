@@ -70,7 +70,7 @@ BLOCKED_EMAIL = f'Invalid email address. If this should not have occurred, pleas
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
-               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
+               ' You can <a href="/resend/">resend your confirmation email</a>.')
 
 # Shown if the user's account is disabled
 DISABLED = """

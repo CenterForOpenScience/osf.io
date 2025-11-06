@@ -168,7 +168,7 @@ class UserMixin:
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -195,7 +195,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -231,7 +231,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
 
 class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_addons_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -255,7 +255,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
 
 
 class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_addons_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -275,7 +275,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
 
 
 class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/Users_addon_accounts_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -296,7 +296,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
         return self.get_addon_settings(check_object_permissions=False).external_accounts
 
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/Users_addon_accounts_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -322,7 +322,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin, NodeOptimizationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -361,7 +361,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_preprints_list).
     """
 
     permission_classes = (
@@ -396,7 +396,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
 
 
 class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/).
+    """See [documentation for this endpoint](https://developer.osf.io/).
     """
 
     permission_classes = (
@@ -426,7 +426,7 @@ class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, Prepr
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -451,7 +451,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 
 class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_registrations_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_registrations_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -557,7 +557,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
 class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/external_identities_list).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -585,7 +585,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/external_identities_detail).
     """
     permission_classes = (
         base_permissions.TokenHasScope,

@@ -18,7 +18,7 @@ class DeprecatedRegistrationMetaSchemaDetail(DeprecatedView, views.RegistrationS
 
 
 class DeprecatedMetaSchemasList(DeprecatedView, views.RegistrationSchemaList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/metaschemas_list).
     """
     max_version = '2.7'
     view_category = 'metaschemas'
@@ -27,7 +27,7 @@ class DeprecatedMetaSchemasList(DeprecatedView, views.RegistrationSchemaList):
 
 
 class DeprecatedMetaSchemaDetail(DeprecatedView, views.RegistrationSchemaDetail):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/metaschemas_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/metaschemas_read).
     """
     max_version = '2.7'
     view_category = 'metaschemas'
