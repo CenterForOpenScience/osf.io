@@ -56,10 +56,10 @@ def build_addon_root(node_settings, name, permissions=None,
 
     :param addonNodeSettingsBase node_settings: Addon settings
     :param String name: Additional information for the folder title
-        eg. Repo name for Github or bucket name for S3
+        eg. Repo name for GitHub or bucket name for S3
     :param dict or Auth permissions: Dictionary of permissions for the addon's content or Auth for use in node.can_X methods
     :param dict urls: Hgrid related urls
-    :param String extra: Html to be appened to the addon folder name
+    :param String extra: Html to be appended to the addon folder name
         eg. Branch switcher for github/bitbucket/gitlab
     :param list of dicts buttons: List of buttons to appear in HGrid row. Each
         dict must have 'text', a string that will appear on the button, and
@@ -125,7 +125,7 @@ def build_addon_root(node_settings, name, permissions=None,
 
 
 def build_addon_button(text, action, title=''):
-    """Builds am action button to be rendered in HGrid
+    """Builds an action button to be rendered in HGrid
 
     :param str text: A string or html to appear on the button itself
     :param str action: The name of the HGrid action for the button to call.

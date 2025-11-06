@@ -91,7 +91,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
             return method(request, *args, **kwargs)
-        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
+        message = f'User cannot edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -206,7 +206,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
         queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
-        # Use get_metrics_queryset to return an queryset with annotated metrics
+        # Use get_metrics_queryset to return a queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
             return self.get_metrics_queryset(queryset)

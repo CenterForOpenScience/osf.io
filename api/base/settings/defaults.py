@@ -221,7 +221,7 @@ MIDDLEWARE = (
     'api.base.middleware.CeleryTaskMiddleware',
     'api.base.middleware.PostcommitTaskMiddleware',
     # A profiling middleware. ONLY FOR DEV USE
-    # Uncomment and add "prof" to url params to recieve a profile for that url
+    # Uncomment and add "prof" to url params to receive a profile for that url
     # 'api.base.middleware.ProfileMiddleware',
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',

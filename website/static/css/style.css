@@ -180,7 +180,7 @@ a {
     height: auto;
 }
 
-/* Project page has project navigation bar, which is fixed and therefore increases the offset the anchors need */
+/* Project page has project navigation bar, which is fixed and therefore increases the offset that anchors need */
 .project-page .anchor {
     margin-top: -100px;
     padding-top: 100px;
@@ -273,7 +273,7 @@ a {
     }
 }
 
-/* Allow search-bar and nav-bar to support mutiple size of screen */
+/* Allow search-bar and nav-bar to support multiple size of screen */
 @media (max-width: 767px) {
     #searchControls > .osf-search {
         z-index: 99;
@@ -680,7 +680,7 @@ button.close {
     font-family : 'Open Sans', Helvetica, sans-serif;
 }
 
-/* Bootstrap Accesibility Override */
+/* Bootstrap Accessibility Override */
 .btn-success-high-contrast {
     background-color: #006803;
     border-color: #54AC54;

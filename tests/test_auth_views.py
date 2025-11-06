@@ -482,7 +482,7 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': True, 'confirmed': False}
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400
-        assert res.json['message_long'] == 'Cannnot resend confirmation for confirmed emails'
+        assert res.json['message_long'] == 'Cannot resend confirmation for confirmed emails'
 
     def test_resend_confirmation_not_work_for_confirmed_email(self):
         email = 'test@mail.com'
@@ -490,7 +490,7 @@ class TestAuthViews(OsfTestCase):
         header = {'address': email, 'primary': False, 'confirmed': True}
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400
-        assert res.json['message_long'] == 'Cannnot resend confirmation for confirmed emails'
+        assert res.json['message_long'] == 'Cannot resend confirmation for confirmed emails'
 
     def test_resend_confirmation_does_not_send_before_throttle_expires(self):
         email = 'test@mail.com'
@@ -624,7 +624,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('status_code') == http_status.HTTP_302_FOUND
         assert data.get('next_url') == cas.get_login_url(self.next_url, campaign='institution')
 
-    def test_institution_regsiter_with_auth(self):
+    def test_institution_register_with_auth(self):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
@@ -761,7 +761,7 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         assert data.get('status_code') == 'auth_logout'
         assert data.get('next_url') == self.next_url
 
-    def test_register_logout_flage_without(self):
+    def test_register_logout_flag_without(self):
         # the second step is to land user on register page with "MUST LOGIN" warning
         data = login_and_register_handler(self.no_auth, login=False, campaign=None, next_url=self.next_url, logout=True)
         assert data.get('status_code') == http_status.HTTP_200_OK

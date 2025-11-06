@@ -169,7 +169,7 @@ class TestPreprintDetail:
 
     def test_return_affiliated_institutions(self, app, user, preprint, institution, url):
         """
-        Confirmation test for the the new preprint affiliated institutions feature
+        Confirmation test for the new preprint affiliated institutions feature
         """
         preprint.affiliated_institutions.add(institution)
         res = app.get(url)

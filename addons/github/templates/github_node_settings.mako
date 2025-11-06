@@ -2,7 +2,7 @@
 
     <div>
         <h4 class="addon-title">
-            <img class="addon-icon" src="${addon_icon_url}" aria-label="Github icon" alt="Github icon">
+            <img class="addon-icon" src="${addon_icon_url}" aria-label="GitHub icon" alt="GitHub icon">
             GitHub
             <small class="authorized-by">
                 % if node_has_auth:

@@ -277,7 +277,7 @@ class NodeSettings(BaseOAuthNodeSettings, BaseStorageAddon):
             return
         except gitlab.exceptions.GitlabError as exc:
             if exc.response_code == 403 and 'must accept the Terms of Service' in exc.error_message:
-                return [('Your gitlab account does not have proper authentication. Ensure you have agreed to Gitlab\'s '
+                return [('Your gitlab account does not have proper authentication. Ensure you have agreed to GitLab\'s '
                          'current Terms of Service by disabling and re-enabling your account.')]
             else:
                 raise exc

@@ -25,7 +25,7 @@
                 </p>
             </span>
 
-            <!-- Oauth Start Button -->
+            <!-- OAuth Start Button -->
             <span data-bind="if: showTokenCreateButton">
                 <a data-bind="click: connectAccount" class="text-primary pull-right addon-auth">
                   Connect Account

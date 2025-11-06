@@ -1106,7 +1106,7 @@ class ConfirmEmailView(generics.CreateAPIView):
     }
 
     On success returns a response with a 201 status code with a JSONAPI payload that includes the `redirect_url`
-    attritbute.
+    attribute.
     """
     permission_classes = (
         base_permissions.TokenHasScope,

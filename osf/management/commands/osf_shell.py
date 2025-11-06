@@ -2,7 +2,7 @@
 Includes all features from django-extension's shell_plus command plus OSF-specific
 niceties.
 
-By default, sessions run in a transaction, so changes won't be commited until
+By default, sessions run in a transaction, so changes won't be committed until
 you execute `commit()`.
 
 All models are imported by default, as well as common OSF and Django objects.

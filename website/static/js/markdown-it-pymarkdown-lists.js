@@ -300,7 +300,7 @@ module.exports = function list(state, startLine, endLine, silent) {
         }
     }
 
-    // Finilize list
+    // Finalize list
     if (state.renderList) {
         if (isOrdered) {
             token = state.push('ordered_list_close', 'ol', -1);

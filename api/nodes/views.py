@@ -1170,7 +1170,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'path':
             operation['source_field_name'] = '_path'
         # NOTE: This is potentially fragile, if we ever add filtering on provider
-        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
+        # we're going to have to get a bit tricky. get_default_queryset should retain filtering on BaseFileNode, for now
         if field_name == 'kind':
             if operation['value'].lower() == 'folder':
                 kind = Folder
@@ -1888,7 +1888,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -1977,7 +1977,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     node identifiers. This will replace the contents of the node_links for this node with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this node.
 
     ###Destroy
@@ -2390,9 +2390,9 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
             node_id = node_pos.get('id')
 
             if node_order > len(node_relations) - 1:
-                errors.append(f"Item {node_id} has _order {node_order} which is higher than the list length.")
+                errors.append(f"Item {node_id} has _order {node_order} which exceeds the list length.")
             if node_order < 0:
-                errors.append(f"Item {node_id} has _order {node_order} which is lower than zero.")
+                errors.append(f"Item {node_id} has _order {node_order} which is less than zero.")
 
             try:
                 child_node_id = self.get_node(node_id=node_id).id
