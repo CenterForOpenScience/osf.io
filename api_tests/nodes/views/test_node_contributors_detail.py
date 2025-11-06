@@ -459,3 +459,46 @@ class TestNodeContributorDelete:
                 )
             assert res.status_code == 204
             assert user_write_contrib not in project.contributors
+
+    def test_remove_contributor_include_children_removes_descendants(self, app, user, user_write_contrib, project):
+        child1 = ProjectFactory(parent=project, creator=user)
+        child2 = ProjectFactory(parent=project, creator=user)
+        child1.add_contributor(user_write_contrib, permissions=permissions.WRITE, visible=True, save=True)
+        child2.add_contributor(user_write_contrib, permissions=permissions.WRITE, visible=True, save=True)
+
+        assert user_write_contrib in project.contributors
+        assert user_write_contrib in child1.contributors
+        assert user_write_contrib in child2.contributors
+
+        url = f'/{API_BASE}nodes/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth)
+        assert res.status_code == 204
+
+        project.reload()
+        child1.reload()
+        child2.reload()
+
+        assert user_write_contrib not in project.contributors
+        assert user_write_contrib not in child1.contributors
+        assert user_write_contrib not in child2.contributors
+
+    def test_remove_contributor_include_children_is_atomic_on_violation(self, app, user, user_write_contrib, project):
+        child = ProjectFactory(parent=project, creator=user)
+        child.add_contributor(user_write_contrib, permissions=permissions.ADMIN, visible=True, save=True)
+        child.set_permissions(user, permissions.READ, save=True)
+
+        assert user_write_contrib in project.contributors
+        assert user_write_contrib in child.contributors
+
+        url = f'/{API_BASE}nodes/{project._id}/contributors/{user_write_contrib._id}/?include_children=true'
+        with disconnected_from_listeners(contributor_removed):
+            res = app.delete(url, auth=user.auth, expect_errors=True)
+
+        assert res.status_code == 400
+
+        project.reload()
+        child.reload()
+
+        assert user_write_contrib in project.contributors
+        assert user_write_contrib in child.contributors
