@@ -47,19 +47,27 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
 }
 
 def has_legacy_m2m_entry(table_name, subscription_id):
-    """Directly check M2M existence via raw SQL for legacy join tables."""
-    with connection.cursor() as cursor:
-        cursor.execute(
-            f"""
-            SELECT 1
-            FROM {table_name}
-            WHERE notificationsubscription_id = %s
-            LIMIT 1;
-            """,
-            [subscription_id],
-        )
-        return cursor.fetchone() is not None
+    table_sql = {
+        'osf_notificationsubscriptionlegacy_none': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_none
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+        'osf_notificationsubscriptionlegacy_email_digest': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_digest
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+        'osf_notificationsubscriptionlegacy_email_transactional': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_transactional
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+    }.get(table_name)
 
+    if not table_sql:
+        raise ValueError(f"Unexpected table name: {table_name!r}")
+
+    with connection.cursor() as cursor:
+        cursor.execute(table_sql, [subscription_id])
+        return cursor.fetchone() is not None
 
 @contextmanager
 def time_limit(seconds):
@@ -99,7 +107,6 @@ def build_existing_keys():
 def migrate_legacy_notification_subscriptions(
     dry_run=False,
     batch_size=BATCH_SIZE,
-    default_frequency='none',
     start_id=0,
 ):
     logger.info('Starting legacy notification subscription migration...')
