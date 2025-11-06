@@ -9,7 +9,8 @@ from api.collections.serializers import CollectionSerializer
 from osf import features
 from packaging.version import Version
 from django.apps import apps
-from django.db.models import F, Max, Q, Subquery
+from django.db.models import F, Max, Q, Subquery, Exists, OuterRef
+from django.db import transaction
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from rest_framework import generics, permissions as drf_permissions, exceptions
@@ -154,6 +155,7 @@ from osf.models import (
     Folder,
     CedarMetadataRecord,
     Preprint, Collection,
+    Contributor,
 )
 from addons.osfstorage.models import Region
 from osf.utils.permissions import ADMIN, WRITE_NODE
@@ -554,11 +556,19 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
 
         if include_children:
             hierarchy = Node.objects.get_children(node, active=True, include_root=True)
-            targets = hierarchy.filter(contributor_set__user=instance.user)
-            for descendant in targets:
-                removed = descendant.remove_contributor(instance, auth)
-                if not removed:
-                    raise ValidationError('Children must have at least one registered admin contributor')
+            targets = hierarchy.filter(
+                Exists(
+                    Contributor.objects.filter(
+                        node=OuterRef('pk'),
+                        user=instance.user,
+                    ),
+                ),
+            )
+            with transaction.atomic():
+                for descendant in targets:
+                    removed = descendant.remove_contributor(instance, auth)
+                    if not removed:
+                        raise ValidationError(f'{descendant._id} must have at least one registered admin contributor')
         else:
             removed = node.remove_contributor(instance, auth)
             if not removed:
