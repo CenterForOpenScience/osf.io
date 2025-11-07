@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import transaction, connection
 
 from osf.models import NotificationType, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
@@ -19,7 +19,7 @@ BATCH_SIZE = 1000       # Default batch size
 
 FREQ_MAP = {
     'none': 'none',
-    'email_digest': 'weekly',
+    'email_digest': 'daily',
     'email_transactional': 'instantly',
 }
 
@@ -46,6 +46,28 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
     'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
 }
 
+def has_legacy_m2m_entry(table_name, subscription_id):
+    table_sql = {
+        'osf_notificationsubscriptionlegacy_none': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_none
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+        'osf_notificationsubscriptionlegacy_email_digest': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_digest
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+        'osf_notificationsubscriptionlegacy_email_transactional': """
+            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_transactional
+            WHERE notificationsubscription_id = %s LIMIT 1;
+        """,
+    }.get(table_name)
+
+    if not table_sql:
+        raise ValueError(f"Unexpected table name: {table_name!r}")
+
+    with connection.cursor() as cursor:
+        cursor.execute(table_sql, [subscription_id])
+        return cursor.fetchone() is not None
 
 @contextmanager
 def time_limit(seconds):
@@ -85,7 +107,6 @@ def build_existing_keys():
 def migrate_legacy_notification_subscriptions(
     dry_run=False,
     batch_size=BATCH_SIZE,
-    default_frequency='none',
     start_id=0,
 ):
     logger.info('Starting legacy notification subscription migration...')
@@ -130,6 +151,8 @@ def migrate_legacy_notification_subscriptions(
             content_type = content_type_cache[model_class]
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
+            if subscribed_object == legacy.user:
+                notif_enum = NotificationType.Type.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
                 continue
@@ -149,7 +172,17 @@ def migrate_legacy_notification_subscriptions(
                 skipped += 1
                 continue
 
-            frequency = 'weekly' if getattr(legacy, 'email_digest', False) else default_frequency
+            if has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_none', legacy.id):
+                frequency = 'none'
+            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_digest', legacy.id):
+                frequency = 'daily'
+            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_transactional', legacy.id):
+                frequency = 'instant'
+            else:
+                logger.info(
+                    f"Bugged notification no frequency for user {legacy.user_id}, default to instant"
+                )
+                frequency = 'instant'
 
             if dry_run:
                 created += 1

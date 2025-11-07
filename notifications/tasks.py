@@ -235,7 +235,7 @@ def get_moderators_emails(message_freq: str):
                 )
             )
         FROM osf_notification AS n
-        INNER JOIN osf_notificationsubscription AS ns ON n.subscription_id = ns.id
+        INNER JOIN osf_notificationsubscription_v2 AS ns ON n.subscription_id = ns.id
         INNER JOIN osf_notificationtype AS nt ON ns.notification_type_id = nt.id
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL
@@ -274,7 +274,7 @@ def get_users_emails(message_freq):
                 )
             )
         FROM osf_notification AS n
-        INNER JOIN osf_notificationsubscription AS ns ON n.subscription_id = ns.id
+        INNER JOIN osf_notificationsubscription_v2 AS ns ON n.subscription_id = ns.id
         INNER JOIN osf_notificationtype AS nt ON ns.notification_type_id = nt.id
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL

@@ -17,27 +17,13 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # This renames the legacy data so we have overwrite it later with migrate notifications management command
+        # Step 1: Create legacy tables needs for managment command `migrate_notifications``
         migrations.RunSQL(
-            """
-            DO $$
-            DECLARE
-                idx record;
-            BEGIN
-                FOR idx IN
-                    SELECT indexname
-                    FROM pg_indexes
-                    WHERE tablename = 'osf_notificationsubscription'
-                LOOP
-                    EXECUTE format(
-                        'ALTER INDEX %I RENAME TO %I',
-                        idx.indexname,
-                        replace(idx.indexname, 'osf_notificationsubscription', 'osf_notificationsubscription_legacy')
-                    );
-                END LOOP;
-            END$$;
-            """,
-            reverse_sql="""
+            sql="""
+                -- 1. Rename the existing table and its indexes
+                ALTER TABLE osf_notificationsubscription
+                    RENAME TO osf_notificationsubscriptionlegacy;
+
                 DO $$
                 DECLARE
                     idx record;
@@ -45,18 +31,171 @@ class Migration(migrations.Migration):
                     FOR idx IN
                         SELECT indexname
                         FROM pg_indexes
-                        WHERE tablename = 'osf_notificationsubscription_legacy'
+                        WHERE tablename = 'osf_notificationsubscriptionlegacy'
                     LOOP
-                        IF position('osf_notificationsubscription_legacy' in idx.indexname) > 0 THEN
+                        EXECUTE format(
+                            'ALTER INDEX %I RENAME TO %I',
+                            idx.indexname,
+                            replace(idx.indexname, 'osf_notificationsubscription', 'osf_notificationsubscriptionlegacy')
+                        );
+                    END LOOP;
+                END$$;
+
+                -- 2. Rename related M2M tables
+                ALTER TABLE osf_notificationsubscription_none
+                    RENAME TO osf_notificationsubscriptionlegacy_none;
+                ALTER TABLE osf_notificationsubscription_email_digest
+                    RENAME TO osf_notificationsubscriptionlegacy_email_digest;
+                ALTER TABLE osf_notificationsubscription_email_transactional
+                    RENAME TO osf_notificationsubscriptionlegacy_email_transactional;
+            """,
+            reverse_sql="""
+                -- Reverse: restore original names
+                ALTER TABLE osf_notificationsubscriptionlegacy
+                    RENAME TO osf_notificationsubscription;
+
+                ALTER TABLE osf_notificationsubscriptionlegacy_none
+                    RENAME TO osf_notificationsubscription_none;
+                ALTER TABLE osf_notificationsubscriptionlegacy_email_digest
+                    RENAME TO osf_notificationsubscription_email_digest;
+                ALTER TABLE osf_notificationsubscriptionlegacy_email_transactional
+                    RENAME TO osf_notificationsubscription_email_transactional;
+
+                DO $$
+                DECLARE
+                    idx record;
+                BEGIN
+                    FOR idx IN
+                        SELECT indexname
+                        FROM pg_indexes
+                        WHERE tablename = 'osf_notificationsubscription'
+                    LOOP
+                        IF position('osf_notificationsubscriptionlegacy' in idx.indexname) > 0 THEN
                             EXECUTE format(
                                 'ALTER INDEX %I RENAME TO %I',
                                 idx.indexname,
-                                replace(idx.indexname, 'osf_notificationsubscription_legacy', 'osf_notificationsubscription')
+                                replace(idx.indexname, 'osf_notificationsubscriptionlegacy', 'osf_notificationsubscription')
                             );
                         END IF;
                     END LOOP;
                 END$$;
-                """
+            """
+        ),
+        migrations.CreateModel(
+            name='NotificationSubscriptionLegacy',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('created',
+                 django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
+                ('modified',
+                 django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
+                ('_id', models.CharField(db_index=True, max_length=100)),
+                ('event_name', models.CharField(max_length=100)),
+                ('email_digest', models.ManyToManyField(
+                    related_name='+',
+                    to=settings.AUTH_USER_MODEL,
+                )),
+                ('email_transactional', models.ManyToManyField(
+                    related_name='+',
+                    to=settings.AUTH_USER_MODEL,
+                )),
+                ('none', models.ManyToManyField(
+                    related_name='+',
+                    to=settings.AUTH_USER_MODEL,
+                )),
+                ('node', models.ForeignKey(
+                    blank=True, null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='notification_subscriptions',
+                    to='osf.node'
+                )),
+                ('provider', models.ForeignKey(
+                    blank=True, null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='notification_subscriptions',
+                    to='osf.abstractprovider'
+                )),
+                ('user', models.ForeignKey(
+                    blank=True, null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='notification_subscriptions',
+                    to=settings.AUTH_USER_MODEL
+                )),
+            ],
+            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
+            options={
+                'db_table': 'osf_notificationsubscriptionlegacy',
+                'managed': False,
+            },
+        ),
+        # Step 2: Create new models
+        migrations.CreateModel(
+            name='NotificationType',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('notification_interval_choices', django.contrib.postgres.fields.ArrayField(
+                    base_field=models.CharField(max_length=32),
+                    blank=True,
+                    default=osf.models.notification_type.get_default_frequency_choices,
+                    size=None,
+                )),
+                ('name', models.CharField(max_length=255, unique=True)),
+                ('template', models.TextField(
+                    help_text='Template used to render the event_info. Supports Django template syntax.')),
+                ('subject', models.TextField(blank=True,
+                                             help_text='Template used to render the subject line of email. Supports Django template syntax.',
+                                             null=True)),
+                ('object_content_type',
+                 models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                   to='contenttypes.contenttype')),
+            ],
+            options={
+                'verbose_name': 'Notification Type',
+                'verbose_name_plural': 'Notification Types',
+            },
+        ),
+        migrations.CreateModel(
+            name='NotificationSubscription',
+            fields=[
+                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('message_frequency', models.CharField(max_length=500, null=True)),
+                ('object_id', models.CharField(blank=True, max_length=255, null=True)),
+                ('_is_digest', models.BooleanField(default=False)),
+                ('notification_type', models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.notificationtype')),
+                ('user', models.ForeignKey(
+                    null=True,
+                    on_delete=django.db.models.deletion.CASCADE,
+                    related_name='subscriptions',
+                    to=settings.AUTH_USER_MODEL,
+                )),
+                ('content_type', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype')),
+            ],
+            options={
+                'verbose_name': 'Notification Subscription',
+                'verbose_name_plural': 'Notification Subscriptions',
+                'db_table': 'osf_notificationsubscription_v2',
+            },
+        ),
+        migrations.AddField(
+            model_name='notificationsubscription',
+            name='created',
+            field=django_extensions.db.fields.CreationDateTimeField(auto_now_add=True,
+                                                                    default=django.utils.timezone.now,
+                                                                    verbose_name='created'),
+            preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name='notificationsubscription',
+            name='modified',
+            field=django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified'),
+        ),
+        migrations.AlterField(
+            model_name='notificationtype',
+            name='object_content_type',
+            field=models.ForeignKey(blank=True,
+                                    help_text='Content type for subscribed objects. Null means global event.',
+                                    null=True, on_delete=django.db.models.deletion.SET_NULL,
+                                    to='contenttypes.contenttype'),
         ),
         migrations.CreateModel(
             name='EmailTask',
@@ -66,22 +205,20 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('error_message', models.TextField(blank=True)),
-                (
-                    'status',
-                    models.CharField(
-                        choices=[
-                            ('PENDING', 'Pending'),
-                            ('NO_USER_FOUND', 'No User Found'),
-                            ('USER_DISABLED', 'User Disabled'),
-                            ('STARTED', 'Started'),
-                            ('SUCCESS', 'Success'),
-                            ('FAILURE', 'Failure'),
-                            ('RETRY', 'Retry'),
-                        ],
-                        default='PENDING',
-                        max_length=20
-                    )
-                )
+                ('status', models.CharField(
+                    choices=[
+                        ('PENDING', 'Pending'),
+                        ('NO_USER_FOUND', 'No User Found'),
+                        ('USER_DISABLED', 'User Disabled'),
+                        ('STARTED', 'Started'),
+                        ('SUCCESS', 'Success'),
+                        ('FAILURE', 'Failure'),
+                        ('RETRY', 'Retry'),
+                    ],
+                    default='PENDING',
+                    max_length=20,
+                )),
+                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -92,53 +229,16 @@ class Migration(migrations.Migration):
                 ('sent', models.DateTimeField(blank=True, null=True)),
                 ('seen', models.DateTimeField(blank=True, null=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
+                ('subscription', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='osf.notificationsubscription')),
             ],
             options={
                 'verbose_name': 'Notification',
                 'verbose_name_plural': 'Notifications',
             },
         ),
-        migrations.CreateModel(
-            name='NotificationSubscriptionLegacy',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
-                ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
-                ('_id', models.CharField(db_index=True, max_length=100)),
-                ('event_name', models.CharField(max_length=100)),
-            ],
-            options={
-                'db_table': 'osf_notificationsubscription_legacy',
-            },
-            bases=(models.Model, osf.models.base.QuerySetExplainMixin),
-        ),
-        migrations.CreateModel(
-            name='NotificationType',
-            fields=[
-                ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('notification_interval_choices', django.contrib.postgres.fields.ArrayField(base_field=models.CharField(max_length=32), blank=True, default=osf.models.notification_type.get_default_frequency_choices, size=None)),
-                ('name', models.CharField(max_length=255, unique=True)),
-                ('template', models.TextField(help_text='Template used to render the event_info. Supports Django template syntax.')),
-                ('subject', models.TextField(blank=True, help_text='Template used to render the subject line of email. Supports Django template syntax.', null=True)),
-                ('object_content_type', models.ForeignKey(blank=True, help_text='Content type for subscribed objects. Null means global event.', null=True, on_delete=django.db.models.deletion.SET_NULL, to='contenttypes.contenttype')),
-            ],
-            options={
-                'verbose_name': 'Notification Type',
-                'verbose_name_plural': 'Notification Types',
-            },
-        ),
-        migrations.RemoveField(
-            model_name='queuedmail',
-            name='user',
-        ),
-        migrations.AlterModelOptions(
-            name='notificationsubscription',
-            options={'verbose_name': 'Notification Subscription', 'verbose_name_plural': 'Notification Subscriptions'},
-        ),
-        migrations.AlterUniqueTogether(
-            name='notificationsubscription',
-            unique_together=set(),
-        ),
+        # Step 3: Drop legacy-only models
+        migrations.DeleteModel(name='NotificationDigest'),
+        migrations.DeleteModel(name='QueuedMail'),
         migrations.RemoveField(
             model_name='abstractnode',
             name='child_node_subscriptions',
@@ -154,113 +254,5 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='osfuser',
             name='member_added_email_records',
-        ),
-        migrations.AddField(
-            model_name='notificationsubscription',
-            name='_is_digest',
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscription',
-            name='content_type',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='contenttypes.contenttype'),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscription',
-            name='message_frequency',
-            field=models.CharField(max_length=500, null=True),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscription',
-            name='object_id',
-            field=models.CharField(blank=True, max_length=255, null=True),
-        ),
-        migrations.AlterField(
-            model_name='notificationsubscription',
-            name='user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='subscriptions', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.DeleteModel(
-            name='NotificationDigest',
-        ),
-        migrations.DeleteModel(
-            name='QueuedMail',
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='email_digest',
-            field=models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='email_transactional',
-            field=models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='node',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.node'),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='none',
-            field=models.ManyToManyField(related_name='+', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='provider',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to='osf.abstractprovider'),
-        ),
-        migrations.AddField(
-            model_name='notificationsubscriptionlegacy',
-            name='user',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notification_subscriptions', to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.AddField(
-            model_name='notification',
-            name='subscription',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='osf.notificationsubscription'),
-        ),
-        migrations.AddField(
-            model_name='emailtask',
-            name='user',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='_id',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='email_digest',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='email_transactional',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='event_name',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='node',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='none',
-        ),
-        migrations.RemoveField(
-            model_name='notificationsubscription',
-            name='provider',
-        ),
-        migrations.AddField(
-            model_name='notificationsubscription',
-            name='notification_type',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='osf.notificationtype'),
-        ),
-        migrations.AlterUniqueTogether(
-            name='notificationsubscriptionlegacy',
-            unique_together={('_id', 'provider')},
         ),
     ]
