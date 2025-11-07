@@ -32,6 +32,7 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
     'reviews_submission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
     'reviews_resubmission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
     'confirm_email_moderation': NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION,
+    'global_reviews': NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
 
     # Node notifications
     'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
@@ -46,28 +47,26 @@ EVENT_NAME_TO_NOTIFICATION_TYPE = {
     'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
 }
 
-def has_legacy_m2m_entry(table_name, subscription_id):
-    table_sql = {
-        'osf_notificationsubscriptionlegacy_none': """
-            SELECT 1 FROM osf_notificationsubscriptionlegacy_none
-            WHERE notificationsubscription_id = %s LIMIT 1;
-        """,
-        'osf_notificationsubscriptionlegacy_email_digest': """
-            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_digest
-            WHERE notificationsubscription_id = %s LIMIT 1;
-        """,
-        'osf_notificationsubscriptionlegacy_email_transactional': """
-            SELECT 1 FROM osf_notificationsubscriptionlegacy_email_transactional
-            WHERE notificationsubscription_id = %s LIMIT 1;
-        """,
-    }.get(table_name)
 
-    if not table_sql:
-        raise ValueError(f"Unexpected table name: {table_name!r}")
-
+def get_legacy_subscribed_users_and_frequency(legacy):
+    none = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_none where notificationsubscription_id = %s'
+    email_digest = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_email_digest where notificationsubscription_id = %s'
+    email_transactional = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_email_transactional where notificationsubscription_id = %s'
     with connection.cursor() as cursor:
-        cursor.execute(table_sql, [subscription_id])
-        return cursor.fetchone() is not None
+        cursor.execute(none, [legacy.id])
+        none_users = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(email_digest, [legacy.id])
+        digest_users = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(email_transactional, [legacy.id])
+        transactional_users = [row[0] for row in cursor.fetchall()]
+
+    return {
+        'none': none_users,
+        'email_digest': digest_users,
+        'email_transactional': transactional_users
+    }
 
 @contextmanager
 def time_limit(seconds):
@@ -151,7 +150,7 @@ def migrate_legacy_notification_subscriptions(
             content_type = content_type_cache[model_class]
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
-            if subscribed_object == legacy.user:
+            if subscribed_object == legacy.user and event_name == 'global_file_updated':
                 notif_enum = NotificationType.Type.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
@@ -162,39 +161,31 @@ def migrate_legacy_notification_subscriptions(
                 skipped += 1
                 continue
 
-            key = (
-                legacy.user_id,
-                content_type.id,
-                int(subscribed_object.id),
-                notification_type_id,
-            )
-            if key in existing_keys:
-                skipped += 1
-                continue
+            frequency_data = get_legacy_subscribed_users_and_frequency(legacy)
 
-            if has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_none', legacy.id):
-                frequency = 'none'
-            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_digest', legacy.id):
-                frequency = 'daily'
-            elif has_legacy_m2m_entry('osf_notificationsubscriptionlegacy_email_transactional', legacy.id):
-                frequency = 'instant'
-            else:
-                logger.info(
-                    f"Bugged notification no frequency for user {legacy.user_id}, default to instant"
-                )
-                frequency = 'instant'
-
-            if dry_run:
-                created += 1
-            else:
-                subscriptions_to_create.append(NotificationSubscription(
-                    notification_type_id=notification_type_id,
-                    user_id=legacy.user_id,
-                    content_type=content_type,
-                    object_id=subscribed_object.id,
-                    message_frequency=frequency,
-                ))
-                existing_keys.add(key)
+            for frequency_key, value in frequency_data.items():
+                for user_id in value:
+                    key = (
+                        user_id,
+                        content_type.id,
+                        int(subscribed_object.id),
+                        notification_type_id,
+                    )
+                    if key in existing_keys:
+                        skipped += 1
+                        continue
+                    frequency = FREQ_MAP[frequency_key]
+                    if dry_run:
+                        created += 1
+                    else:
+                        subscriptions_to_create.append(NotificationSubscription(
+                            notification_type_id=notification_type_id,
+                            user_id=user_id,
+                            content_type=content_type,
+                            object_id=subscribed_object.id,
+                            message_frequency=frequency,
+                        ))
+                    existing_keys.add(key)
 
         if not dry_run and subscriptions_to_create:
             with transaction.atomic():
