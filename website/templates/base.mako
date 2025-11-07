@@ -410,7 +410,7 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    ### Javascript loaded at the bottom of the page ###
+    ### JavaScript loaded at the bottom of the page ###
 </%def>
 
 <%def name="footer()">
@@ -428,7 +428,7 @@
                 ${self.alert()}
             % endif
 
-            ### A11y Reccommended header
+            ### A11y Recommended header
             <h1 style="display: none;">Main content</h1>
             ${self.content()}
         </div><!-- end container -->

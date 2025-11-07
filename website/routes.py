@@ -810,7 +810,7 @@ def make_url_map(app):
             notemplate
         ),
 
-        # forgot password post - instutitional
+        # forgot password post - institutional
         Rule(
             '/forgotpassword-institution/',
             'post',

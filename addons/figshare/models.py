@@ -71,7 +71,7 @@ class FigshareProvider(ExternalProvider):
     default_scopes = ['all']
 
     def handle_callback(self, response):
-        """View called when the Oauth flow is completed. Adds a new BoxUserSettings
+        """View called when the OAuth flow is completed. Adds a new BoxUserSettings
         record to the user and saves the user's access token and account info.
         """
         client = FigshareClient(response['access_token'])

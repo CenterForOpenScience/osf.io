@@ -179,7 +179,7 @@ class RegistrationSerializer(NodeSerializer):
         ),
     )
 
-    # Populated via annnotation
+    # Populated via annotation
     revision_state = HideIfWithdrawal(ser.CharField(read_only=True, required=False))
     has_data = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
     has_analytic_code = HideIfWithdrawal(ser.BooleanField(read_only=True, required=False))
@@ -609,7 +609,7 @@ class RegistrationSerializer(NodeSerializer):
         permissions through group membership.
 
         Additionally, provider_specific_metadata fields are only editable by
-        provder admins/moderators, but those users are not allowed to edit
+        provider admins/moderators, but those users are not allowed to edit
         any other fields.
 
         Add fields that need admin perms to admin_only_editable_fields
@@ -625,7 +625,7 @@ class RegistrationSerializer(NodeSerializer):
             raise exceptions.PermissionDenied()
 
         # Fail if non-contributor moderator tries to edit
-        # fields other than provider_specific_metdata
+        # fields other than provider_specific_metadata
         if any(field != 'provider_specific_metadata' for field in validated_data) and not can_edit:
             raise exceptions.PermissionDenied()
 

@@ -434,7 +434,7 @@ if settings.DEV_MODE:
                                                  'all public and private projects accessible to this account.',
                                      is_public=True),
 
-        # Undocumented scopes that can not be requested by third parties (per CAS restriction)
+        # Undocumented scopes that cannot be requested by third parties (per CAS restriction)
         'osf.users.create': scope(parts_=frozenset(ComposedScopes.USERS_CREATE),
                            description='This permission should only be granted to OSF collaborators. Allows a site to '
                                        'programmatically create new users with this account.',

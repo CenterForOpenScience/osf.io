@@ -382,14 +382,18 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_last_not_rejected_version(self):
         """Get the last version that is not rejected.
+        Returns None if all versions are rejected.
         """
-        return self.get_guid().versions.filter(is_rejected=False).order_by('-version').first().referent
+        last_not_rejected = self.get_guid().versions.filter(is_rejected=False).order_by('-version').first()
+        return last_not_rejected.referent if last_not_rejected else None
 
     def has_unpublished_pending_version(self):
         """Check if preprint has pending unpublished version.
         Note: use `.check_unfinished_or_unpublished_version()` if checking both types
         """
         last_not_rejected_version = self.get_last_not_rejected_version()
+        if not last_not_rejected_version:
+            return False
         return not last_not_rejected_version.date_published and last_not_rejected_version.machine_state == 'pending'
 
     def has_initiated_but_unfinished_version(self):
@@ -528,6 +532,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
                     referrer=auth.user,
                     email=contributor.user.email,
                     given_name=contributor.user.fullname,
+                    skip_referrer_permissions=auth.user.groups.filter(name='osf_admin').exists()
                 )
             except ValidationError as e:
                 sentry.log_exception(e)
@@ -800,7 +805,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
             if not base_guid:
                 return self.created
 
-            first_version = base_guid.versions.filter(is_rejected=False).order_by('version').first()
+            first_version = base_guid.versions.order_by('version').first()
 
             if first_version and first_version.referent:
                 return first_version.referent.created
@@ -1214,7 +1219,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         return super().set_description(description, auth, save)
@@ -1444,7 +1449,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     @require_permission([ADMIN])
     def update_has_data_links(self, auth: Auth, has_data_links: bool, log: bool = True, save: bool = True, **kwargs):
         """
-        This method sets the `has_data_links` field that respresent the availability of links to supplementary data
+        This method sets the `has_data_links` field that represent the availability of links to supplementary data
         for this preprint and logs that change.
 
         :param auth: Auth object

@@ -185,7 +185,7 @@ class TestDOICreation:
         registration.registration_approval.accept()
         assert registration.get_identifier_value(category='doi')
 
-    def test_embargo__identifier_created_but_not_minted_on_aproval(self):
+    def test_embargo__identifier_created_but_not_minted_on_approval(self):
         registration = self.make_test_registration(embargoed=True, moderated=False)
         assert not registration.get_identifier(category='doi')
 

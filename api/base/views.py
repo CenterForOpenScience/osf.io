@@ -82,7 +82,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'is_embedded': True,
             })
 
-            # Setup a view ourselves to avoid all the junk DRF throws in
+            # Set up a view ourselves to avoid all the junk DRF throws in
             # v is a function that hides everything v.cls is the actual view class
             view = v.cls()
             view.args = view_args
@@ -226,7 +226,7 @@ class LinkedNodesRelationship(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPI
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -332,7 +332,7 @@ class LinkedRegistrationsRelationship(JSONAPIBaseView, generics.RetrieveUpdateDe
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -674,7 +674,7 @@ class WaterButlerMixin:
             }
 
             # Dataverse provides us two sets of files with the same path, so we disambiguate the paths, this
-            # preserves legacy behavior by distingishing them by version (Draft/Published).
+            # preserves legacy behavior by distinguishing them by version (Draft/Published).
             if attrs['provider'] == 'dataverse':
                 query.update({'_history__0__extra__datasetVersion': attrs['extra']['datasetVersion']})
 

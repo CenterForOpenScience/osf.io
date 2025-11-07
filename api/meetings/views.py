@@ -168,7 +168,7 @@ class MeetingSubmissionList(BaseMeetingSubmission, generics.ListAPIView, ListFil
 
     def annotate_queryset_with_author_name(self, queryset):
         """
-        Annotates queryset with author_name_category - it is the family_name if it exists, otherwise,
+        Annotates queryset with author_name_category - it is the family_name if it exists; otherwise,
         the fullname is used
         """
         # Setup author name subquery (really first bibliographic contributor)

@@ -162,7 +162,7 @@
                     </li>
                     <li data-bind="visible: social.github">
                         <a data-bind="attr: {href: social.github}">
-                            <i class="fa fa-github-alt social-icons" data-toggle="tooltip" title="Github"></i>
+                            <i class="fa fa-github-alt social-icons" data-toggle="tooltip" title="GitHub"></i>
                         </a>
                     </li>
                     <li data-bind="visible: social.linkedIn">

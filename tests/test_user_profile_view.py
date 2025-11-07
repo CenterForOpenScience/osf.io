@@ -740,4 +740,4 @@ class TestUserAccount(OsfTestCase):
         self.user.save()
         unconfirmed_emails = self.user.get_unconfirmed_emails_exclude_external_identity()
         assert 'james@steward.com' in unconfirmed_emails
-        assert 'steward@james.com'not in unconfirmed_emails
+        assert 'steward@james.com' not in unconfirmed_emails

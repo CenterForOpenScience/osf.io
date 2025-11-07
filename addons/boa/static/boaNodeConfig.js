@@ -16,7 +16,7 @@ function ViewModel(url) {
     self.url = url;
     self.urls = ko.observable();
 
-    // Non-Oauth fields:
+    // Non-OAuth fields:
     self.username = ko.observable('');
     self.password = ko.observable('');
 

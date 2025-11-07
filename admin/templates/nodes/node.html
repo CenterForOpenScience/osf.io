@@ -43,6 +43,28 @@
                         <td>{{ node.guid }}</td>
                     </tr>
                     <tr>
+                        <td>Created</td>
+                        <td>{{ node.created }}</td>
+                    </tr>
+                    {% if node.is_registration %}
+                    <tr>
+                        <td>Registered Date</td>
+                        <td>{{ node.registered_date }}</td>
+                    </tr>
+                        {% if registration_date_form %}
+                        <tr>
+                            <td></td>
+                            <td>
+                                <form method="post" action="{% url 'nodes:update-registration-date' guid=node.guid %}">
+                                    {% csrf_token %}
+                                    {{ registration_date_form.as_p }}
+                                    <button type="submit" class="btn btn-primary">Update Date</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endif %}
+                    <tr>
                         <td>Title</td>
                         <td>{{ node.title }}</td>
                     </tr>

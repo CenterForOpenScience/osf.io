@@ -362,7 +362,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'scholar': <google scholar identifier>,
     #     'ssrn': <SSRN username>,
     #     'researchGate': <researchGate username>,
-    #     'baiduScholar': <bauduScholar username>,
+    #     'baiduScholar': <baiduScholar username>,
     #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
@@ -1102,7 +1102,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if external_identity:
             user.external_identity.update(external_identity)
         if campaign:
-            # needed to prevent cirular import
+            # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
@@ -1188,7 +1188,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Verify that the password reset token for this user is valid.
 
         :param token: the token in verification key
-        :return `True` if valid, otherwise `False`
+        :return `True` if valid; otherwise, `False`
         """
 
         if token and self.verification_key_v2:
@@ -1201,7 +1201,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
+        a given node which they were added as an unregistered contributor for.
         """
         try:
             record = self.get_unclaimed_record(project_id)
@@ -1227,7 +1227,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user
 
     def update_guessed_names(self):
-        """Updates the CSL name fields inferred from the the full name.
+        """Updates the CSL name fields inferred from the full name.
         """
         parsed = impute_names(self.fullname)
         self.given_name = parsed['given']
@@ -2053,7 +2053,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         Args:
         - resources: A queryset of resources probably of AbstractNode or DraftRegistration.
-        - hard_delete: A boolean indicating whether the resource should be permentently deleted or just marked as such.
+        - hard_delete: A boolean indicating whether the resource should be permanently deleted or just marked as such.
         """
         model = resources.query.model
 

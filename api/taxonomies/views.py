@@ -13,7 +13,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 
 class TaxonomyList(DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/taxonomies_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -54,7 +54,7 @@ class TaxonomyList(DeprecatedView, JSONAPIBaseView, generics.ListAPIView, ListFi
 
 
 class TaxonomyDetail(JSONAPIBaseView, generics.RetrieveAPIView):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/taxonomies_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/taxonomies_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
