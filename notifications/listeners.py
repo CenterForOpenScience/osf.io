@@ -24,7 +24,9 @@ def subscribe_creator(resource):
                 object_id=user.id,
                 content_type=ContentType.objects.get_for_model(user),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
@@ -35,7 +37,9 @@ def subscribe_creator(resource):
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
-                message_frequency='instantly',
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
@@ -50,23 +54,32 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
         if resource.is_collection or resource.is_deleted:
             return None
 
-    if contributor.is_registered:
-        NotificationSubscription.objects.bulk_create([
-            NotificationSubscription(
-                user=contributor,
-                notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
-                object_id=contributor.id,
-                content_type=ContentType.objects.get_for_model(contributor),
-                _is_digest=True,
-            ),
-            NotificationSubscription(
-                user=contributor,
-                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
-                object_id=resource.id,
-                content_type=ContentType.objects.get_for_model(resource),
-                _is_digest=True,
-            )
-        ], ignore_conflicts=True)
+    try:
+        NotificationSubscription.objects.get_or_create(
+            user=contributor,
+            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=contributor.id,
+            content_type=ContentType.objects.get_for_model(contributor),
+            _is_digest=True,
+            defaults={
+                'message_frequency': 'instantly',
+            }
+        )
+    except NotificationSubscription.MultipleObjectsReturned:
+        pass
+    try:
+        NotificationSubscription.objects.get_or_create(
+            user=contributor,
+            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+            object_id=resource.id,
+            content_type=ContentType.objects.get_for_model(resource),
+            _is_digest=True,
+            defaults={
+                'message_frequency': 'instantly',
+            }
+        )
+    except NotificationSubscription.MultipleObjectsReturned:
+        pass
 
 
 # Handle email notifications to notify moderators of new submissions.
