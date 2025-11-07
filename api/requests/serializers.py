@@ -200,6 +200,8 @@ class NodeRequestCreateSerializer(NodeRequestSerializer):
                     'comment': comment,
                     'domain': settings.DOMAIN,
                     'institution_name': institution.name if institution else None,
+                    'logo': settings.OSF_LOGO,
+
                 },
                 email_context={
                     'bcc_addr': [sender.username] if validated_data['bcc_sender'] else None,

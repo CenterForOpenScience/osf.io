@@ -14,7 +14,7 @@ from osf.models import CitationStyle, NotificationType
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_PREPRINTS_LOGO
 
 
 class ProviderSerializer(JSONAPISerializer):
@@ -365,6 +365,11 @@ class ModeratorSerializer(JSONAPISerializer):
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
         context['provider_url'] = f'{provider.domain or DOMAIN}preprints/{(provider._id if not provider.domain else '').strip('/')}',
+        if self.provider._id == 'osf':
+            logo = OSF_PREPRINTS_LOGO
+        else:
+            logo = provider._id
+        context['logo'] = logo
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization

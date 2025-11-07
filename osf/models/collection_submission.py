@@ -148,7 +148,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 'is_request_email': False,
                 'is_initiator': self.creator == user,
-                'profile_image_url': user.profile_image_url()
+                'profile_image_url': user.profile_image_url(),
+                'logo': self.collection.provider._id if
+                not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
             },
             is_digest=True,
         )
@@ -189,6 +191,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                         'is_initiator': self.creator == contributor,
+                        'logo': self.collection.provider._id if
+                        not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                     },
                 )
 
@@ -228,6 +232,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'logo': self.collection.provider._id if
+                    not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                 },
             )
 
@@ -271,6 +277,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'logo': self.collection.provider._id if
+            not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
         }
 
         if removed_due_to_privacy and self.collection.provider:
@@ -405,6 +413,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'message': '',
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                    'logo': self.collection.provider._id if
+                    not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                 },
             )
 
