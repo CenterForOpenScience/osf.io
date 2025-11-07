@@ -22,7 +22,7 @@
     request before the embargo is lifted and the registration is made public.
     </p>
     <p>
-    To approve this requst: <a href="${approval_link}">Click here</a>.<br>
+    To approve this reqeust: <a href="${approval_link}">Click here</a>.<br>
     To cancel this request: <a href="${disapproval_link}">Click here</a>
     </p>
     <p>
