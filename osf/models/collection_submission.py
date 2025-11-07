@@ -185,7 +185,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'collection_provider_name': self.collection.provider.name,
                         'collection_provider__id': self.collection.provider._id,
                         'node_title': self.guid.referent.title,
-                        'node_absolute_url': self.guid.referent.get_absolute_url(),
+                        'node_absolute_url': self.guid.referent.absolute_url,
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                         'is_initiator': self.creator == contributor,
