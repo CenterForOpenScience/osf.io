@@ -40,7 +40,13 @@ from osf.external.gravy_valet import (
     translations as gv_translations,
 )
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, UserStateError
+from osf.exceptions import (
+    reraise_django_validation_errors,
+    UserStateError,
+    InvalidTagError,
+    TagNotFoundError
+)
+
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
@@ -531,12 +537,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return Tag.all_tags.filter(osfuser=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -1599,6 +1609,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if not self.all_tags.filter(id=tag_instance.id).exists():
             self.tags.add(tag_instance)
         return tag_instance
+
+    def remove_tag(self, tag, auth, save=True):
+        if not tag:
+            raise InvalidTagError
+
+        tag_instance = self.all_tags.filter(name=tag).first()
+        if not tag_instance:
+            raise TagNotFoundError
+
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+
+        # because system tags are hidden by default TagManager
+        tag_instance.delete()
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
 
     def get_recently_added(self):
         return (

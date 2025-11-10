@@ -992,12 +992,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return Tag.all_tags.filter(abstractnode_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
@@ -1019,10 +1023,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
-        elif not self.tags.filter(name=tag).exists():
+
+        tag_obj = self.tags.filter(name=tag).first() or self.all_tags.filter(name=tag).first()
+        if not tag_obj:
             raise TagNotFoundError
+
+        if tag_obj.system:
+            # because system tags are hidden by default TagManager
+            tag_obj.delete()
         else:
-            tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -1034,10 +1043,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
-            if save:
-                self.save()
-            self.update_search()
-            return True
+
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
 
     def remove_tags(self, tags, auth, save=True):
         """
