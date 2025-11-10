@@ -365,7 +365,7 @@ class ModeratorSerializer(JSONAPISerializer):
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
         context['provider_url'] = f'{provider.domain or DOMAIN}preprints/{(provider._id if not provider.domain else '').strip('/')}',
-        if self.provider._id == 'osf':
+        if provider._id == 'osf':
             logo = OSF_PREPRINTS_LOGO
         else:
             logo = provider._id
