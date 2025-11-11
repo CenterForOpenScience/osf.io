@@ -148,7 +148,7 @@ class NodeView(NodeMixin, GuidView):
             'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
-            'has_update_permission': node.is_admin_contributor(self.request.user),
+            'has_update_permission': self.request.user.has_perm('osf.change_node'),
             'duplicates': detailed_duplicates
         })
 
