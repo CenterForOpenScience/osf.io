@@ -83,7 +83,7 @@ class PreprintView(PreprintMixin, GuidView):
             'change_provider_form': ChangeProviderForm(instance=preprint),
             'change_machine_state_form': MachineStateForm(instance=preprint),
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
-            'has_update_permission': preprint.is_admin_contributor(self.request.user)
+            'has_update_permission': self.request.user.has_perm('osf.change_preprint')
         }, **kwargs)
 
 
