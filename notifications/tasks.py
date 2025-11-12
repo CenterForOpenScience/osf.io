@@ -175,6 +175,7 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
 
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
             user=user,
+            subscribed_object=subscribed_object,
             event_context=event_context,
         )
 
