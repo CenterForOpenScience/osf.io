@@ -108,7 +108,7 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
         first_notification = notifications_qs.select_related('subscription').first()
         subscription = first_notification.subscription if first_notification else None
-        provider = getattr(subscription, 'subscribed_object', None) if subscription else None
+        subscribed_object = getattr(subscription, 'subscribed_object', None) if subscription else None
         rendered_notifications = [notification.render() for notification in notifications_qs]
         if not rendered_notifications:
             log_message(f"No notifications to send for moderator user {user._id}")
@@ -116,8 +116,15 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
             email_task.save()
             return
 
+        if subscribed_object is None:
+            log_message(f"subscribed_object fpr {subscribed_object} does not exist")
+            email_task.status = 'OBJECT NOT FOUND'
+            email_task.save()
+            return
+
+        provider = getattr(subscribed_object, 'provider', None)
         if provider is None:
-            log_message(f"Provider fpr {subscription} does not exist")
+            log_message(f"subscribed_object fpr {subscribed_object} does not exist")
             email_task.status = 'PROVIDER NOT FOUND'
             email_task.save()
             return
@@ -168,6 +175,7 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
 
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
             user=user,
+            subscribed_object=subscribed_object,
             event_context=event_context,
         )
 
