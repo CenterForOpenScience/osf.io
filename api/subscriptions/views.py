@@ -73,6 +73,11 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
                     then=Value(f'{user_guid}_global_file_updated'),
                 ),
+                When(
+                    Q(notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance) &
+                    Q(content_type=provider_ct),
+                    then=Value('new_pending_submissions'),
+                ),
             ),
             legacy_id=Case(
                 When(
@@ -143,7 +148,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
         if event != 'global':
             if subscription_obj is None:
-                subscription_obj = AbstractProvider.objects.get(_id=guid_id)
+                subscription_obj = PreprintProvider.objects.get(_id=guid_id)
             obj_filter = Q(
                 object_id=getattr(subscription_obj, 'id', None),
                 content_type=ContentType.objects.get_for_model(subscription_obj.__class__),
