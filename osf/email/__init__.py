@@ -143,6 +143,8 @@ NOTIFY_BASE_DEFAULTS = {
     'ns_url': '',
     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
     'provider_name': '',
+    'osf_logo_list': settings.OSF_LOGO_LIST,
+    'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
 }
 
 def _render_email_html(notification_type, ctx: dict) -> str:
