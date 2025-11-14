@@ -545,13 +545,17 @@ class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestro
         return context
 
     def perform_destroy(self, instance):
-        node = self.get_resource()
+        node: Node = self.get_resource()
         auth = get_user_auth(self.request)
         if node.visible_contributors.count() == 1 and instance.visible:
             raise ValidationError('Must have at least one visible contributor')
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError('Must have at least one registered admin contributor')
+        propagate = self.request.query_params.get('propagate_to_children') == 'true'
+        if propagate:
+            for child_node in node.get_nodes(_contributors__in=[instance.user]):
+                child_node.remove_contributor(instance, auth)
 
 
 class NodeImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
