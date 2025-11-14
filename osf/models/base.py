@@ -604,7 +604,7 @@ class VersionedGuidMixin(GuidMixin):
         """A helper for getting the base guid
         """
         return self.versioned_guids.first().guid
-    
+
     def get_versioned_absolute_api_v2_url(self, version):
         raise NotImplementedError
 

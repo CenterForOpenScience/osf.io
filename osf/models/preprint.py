@@ -797,7 +797,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
 
     def get_absolute_url(self):
         return self.absolute_api_v2_url
-    
+
     def get_versioned_absolute_api_v2_url(self, version):
         if self.guids.first().versions.filter(version=version).exists():
             path = f'/preprints/{self.guids.first()._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}/'
