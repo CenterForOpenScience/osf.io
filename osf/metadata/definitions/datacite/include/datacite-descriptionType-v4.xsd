@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-descriptionType-v4.xsd -->
+<!-- this file retrieved on 2025-11-13 from https://schema.datacite.org/meta/kernel-4.6/include/datacite-descriptionType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
      2013-05 v3.0: Addition of ID to simpleType element, addition of value "Methods"
      2015-02-12 v4.0: Addition of value "TechnicalInfo"-->
