@@ -4,6 +4,7 @@ from addons.osfstorage.models import OsfStorageFile
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
     AuthUserFactory,
+    PreprintFactory,
     ProjectFactory,
     RegistrationFactory,
     CommentFactory,
@@ -27,6 +28,18 @@ class TestGuidDetail:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
+    
+    @pytest.fixture()
+    def versioned_preprint(self, user):
+        preprint = PreprintFactory(reviews_workflow='pre-moderation')
+        PreprintFactory.create_version(
+            create_from=preprint,
+            creator=user,
+            final_machine_state='accepted',
+            is_published=True,
+            set_doi=False
+        )
+        return preprint
 
     def test_redirects(self, app, project, registration, user):
         # test_redirect_to_node_view
@@ -122,6 +135,38 @@ class TestGuidDetail:
         res = app.get(url, auth=AuthUserFactory().auth)
         redirect_url = '{}{}comments/{}/?view_only={}'.format(
             API_DOMAIN, API_BASE, comment._id, view_only_link.key)
+        assert res.status_code == 302
+        assert res.location == redirect_url
+
+    def test_redirects_with_version_for_versionable_objects(self, app, versioned_preprint, user):
+        # if you go to the guids endpoint with just the guid without version number
+        url = f'/{API_BASE}guids/{versioned_preprint.versioned_guids.first().guid._id}/'
+        res = app.get(url, auth=user.auth)
+        redirect_url = f'{API_DOMAIN}{API_BASE}preprints/{versioned_preprint.versioned_guids.first().guid._id}_v2/'
+        assert res.status_code == 302
+        assert res.location == redirect_url
+
+        # if you go to the guids endpoint with just the guid with a version number
+        url = f'/{API_BASE}guids/{versioned_preprint.versioned_guids.first().guid._id}_v2/'
+        res = app.get(url, auth=user.auth)
+        redirect_url = f'{API_DOMAIN}{API_BASE}preprints/{versioned_preprint.versioned_guids.first().guid._id}_v2/'
+        assert res.status_code == 302
+        assert res.location == redirect_url
+
+        url = f'/{API_BASE}guids/{versioned_preprint.versioned_guids.first().guid._id}_v1/'
+        res = app.get(url, auth=user.auth)
+        redirect_url = f'{API_DOMAIN}{API_BASE}preprints/{versioned_preprint.versioned_guids.first().guid._id}_v1/'
+        assert res.status_code == 302
+        assert res.location == redirect_url
+
+        url = f'/{API_BASE}guids/{versioned_preprint.versioned_guids.first().guid._id}_v3/'
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        assert res.status_code == 404
+    
+    def test_redirects_with_version_for_unversionable_objects(self, app, project, user):
+        url = f'/{API_BASE}guids/{project._id}_v12/'
+        res = app.get(url, auth=user.auth, expect_errors=True)
+        redirect_url = f'{API_DOMAIN}{API_BASE}nodes/{project._id}/'
         assert res.status_code == 302
         assert res.location == redirect_url
 
