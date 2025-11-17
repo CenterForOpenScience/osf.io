@@ -170,7 +170,8 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
             'reviews_submissions_url': submissions_url,
             'provider_type': provider_type,
             'additional_context': additional_context,
-            'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists()
+            'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
+            'logo': provider._id if not provider.is_default else settings.OSF_PREPRINTS_LOGO,
         }
 
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
