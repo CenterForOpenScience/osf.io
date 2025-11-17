@@ -364,7 +364,7 @@ class ModeratorSerializer(JSONAPISerializer):
         context['provider__id'] = provider._id
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
-        context['provider_url'] = f'{provider.domain or DOMAIN}preprints/{(provider._id if not provider.domain else '').strip('/')}',
+        context['provider_url'] = f'{provider.domain or DOMAIN}preprints/{(provider._id if not provider.domain else '').strip('/')}'
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
