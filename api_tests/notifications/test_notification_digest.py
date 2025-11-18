@@ -63,6 +63,7 @@ class TestNotificationDigestTasks:
                 'osf_logo_list': 'osf_logo_list',
                 'destination_node_parent_node_title': 'test parent node title',
                 'destination_node_title': 'test node title',
+                'domain': 'test domain',
             }
         )
         user.save()
@@ -234,6 +235,7 @@ class TestNotificationDigestTasks:
                 'destination_node_title': 'test node title',
                 'nessage': 'test message',
                 'localized_timestamp': 'test timestamp',
+                'domain': 'test domain',
             },
         )
         user.save()
