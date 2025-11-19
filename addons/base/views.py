@@ -596,6 +596,7 @@ def create_waterbutler_log(payload, **kwargs):
                         'logo': settings.OSF_LOGO,
                         'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
                         'OSF_LOGO': settings.OSF_LOGO,
+                        'domain': settings.DOMAIN,
                     }
                 )
             if payload.get('errors'):

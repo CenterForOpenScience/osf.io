@@ -145,6 +145,7 @@ NOTIFY_BASE_DEFAULTS = {
     'provider_name': '',
     'osf_logo_list': settings.OSF_LOGO_LIST,
     'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
+    'domain': settings.DOMAIN,
 }
 
 def _render_email_html(notification_type, ctx: dict) -> str:
