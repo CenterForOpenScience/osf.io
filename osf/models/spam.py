@@ -68,7 +68,7 @@ class SpamMixin(models.Model):
         default=dict, blank=True, validators=[_validate_reports]
     )
 
-    def flag_spam(self):
+    def flag_spam(self, **kwargs):
         # If ham and unedited then tell user that they should read it again
         if self.spam_status == SpamStatus.UNKNOWN:
             self.spam_status = SpamStatus.FLAGGED
