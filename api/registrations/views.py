@@ -275,7 +275,7 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return context
 
 
-class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
+class RegistrationContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
     """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_contributors_list).
     """
     view_category = 'registrations'
@@ -310,6 +310,20 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
     def get_default_queryset(self):
         node = self.get_resource()
         return node.contributor_set.all().prefetch_related('user__guids')
+
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset = queryset.filter(user__guids___id__in=contrib_ids)
+        return queryset
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
