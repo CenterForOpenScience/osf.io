@@ -103,6 +103,29 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
     """
     Return statements used only for debugging and recording keeping
     """
+    from osf.models import OSFUser, AbstractNode, Preprint
+
+    def set_found_spam_info(resource, client, details):
+        if not resource.spam_data.get('who_flagged'):
+            resource.spam_data['who_flagged'] = client.NAME
+        elif resource.spam_data['who_flagged'] != client.NAME:
+            resource.spam_data['who_flagged'] = 'both'
+
+        if client.NAME == 'akismet':
+            resource.spam_pro_tip = details
+        if client.NAME == 'oopspam':
+            resource.spam_data['oopspam_data'] = details
+
+    def set_collected_info(resource):
+        resource.spam_data['headers'] = {
+            'Remote-Addr': request_kwargs.get('remote_addr'),
+            'User-Agent': request_kwargs.get('user_agent'),
+            'Referer': request_kwargs.get('referer'),
+        }
+        resource.spam_data['content'] = content
+        resource.spam_data['author'] = author
+        resource.spam_data['author_email'] = author_email
+
     any_is_spam = False
 
     kwargs = dict(
@@ -115,6 +138,10 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
         content=content,
     )
 
+    creator = OSFUser.objects.get(username=author_email)
+    nodes_to_flag = creator.nodes.filter(is_public=True, is_deleted=False)
+    preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
+
     spam_clients = []
     if settings.AKISMET_ENABLED:
         spam_clients.append(AkismetClient())
@@ -123,28 +150,43 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
 
     for client in spam_clients:
         is_spam, details = client.check_content(**kwargs)
-        if is_spam:
-            any_is_spam = True
-            if not resource.spam_data.get('who_flagged'):
-                resource.spam_data['who_flagged'] = client.NAME
-            elif resource.spam_data['who_flagged'] != client.NAME:
-                resource.spam_data['who_flagged'] = 'both'
+        if not is_spam:
+            continue
 
-            if client.NAME == 'akismet':
-                resource.spam_pro_tip = details
-            if client.NAME == 'oopspam':
-                resource.spam_data['oopspam_data'] = details
+        any_is_spam = True
 
-    if any_is_spam:
-        resource.spam_data['headers'] = {
-            'Remote-Addr': request_kwargs.get('remote_addr'),
-            'User-Agent': request_kwargs.get('user_agent'),
-            'Referer': request_kwargs.get('referer'),
-        }
-        resource.spam_data['content'] = content
-        resource.spam_data['author'] = author
-        resource.spam_data['author_email'] = author_email
-        resource.flag_spam()
+        set_found_spam_info(resource, client, details)
+
+        if not isinstance(resource, OSFUser):
+            set_found_spam_info(creator, client, details)
+
+        for node in nodes_to_flag:
+            set_found_spam_info(node, client, details)
+
+        for preprint in preprints_to_flag:
+            set_found_spam_info(preprint, client, details)
+
+    if not any_is_spam:
+        return any_is_spam
+
+    set_collected_info(resource)
+    resource.flag_spam(skip_user_suspension=True)
+
+    # set spam_data but don't flag the creator because it'll happen at the end of check_resource_for_spam_postcommit
+    if not isinstance(resource, OSFUser):
+        set_collected_info(creator)
+        creator.save()
+
+    for node in nodes_to_flag:
+        set_collected_info(node)
+        node.flag_spam(skip_user_suspension=True)
+
+    for preprint in preprints_to_flag:
+        set_collected_info(preprint)
+        preprint.flag_spam(skip_user_suspension=True)
+
+    AbstractNode.objects.bulk_update(nodes_to_flag, ['spam_status', 'spam_data', 'spam_pro_tip'], batch_size=100)
+    Preprint.objects.bulk_update(preprints_to_flag, ['spam_status', 'spam_data', 'spam_pro_tip'], batch_size=100)
 
     return any_is_spam
 
@@ -183,7 +225,7 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
 
     if hasattr(resource, 'check_spam_user'):
         user = OSFUser.objects.get(username=author_email)
-        resource.check_spam_user(user)
+        resource.check_spam_user(user, domains=list(spammy_domains))
 
 
 @celery_app.task(ignore_results=False, max_retries=5, default_retry_delay=60)
