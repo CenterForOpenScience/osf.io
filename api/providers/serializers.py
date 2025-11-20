@@ -366,12 +366,14 @@ class ModeratorSerializer(JSONAPISerializer):
 
         if isinstance(provider, RegistrationProvider):
             provider_type_word = 'registries'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
         elif isinstance(provider, CollectionProvider):
             provider_type_word = 'collections'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
         else:
             provider_type_word = 'preprints'
+            context['notification_settings_url'] = f'{DOMAIN}preprints/{provider._id}/moderation/notifications'
 
-        context['notification_settings_url'] = f'{DOMAIN}reviews/{provider_type_word}/{provider._id}/notifications'
         context['provider_url'] = f'{provider.domain or DOMAIN}{provider_type_word}/{(provider._id if not provider.domain else '').strip('/')}'
 
         if provider._id == 'osf':
