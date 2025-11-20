@@ -138,15 +138,19 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
         content=content,
     )
 
-    creator = OSFUser.objects.get(username=author_email)
-    nodes_to_flag = creator.nodes.filter(is_public=True, is_deleted=False)
-    preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
-
     spam_clients = []
     if settings.AKISMET_ENABLED:
         spam_clients.append(AkismetClient())
     if settings.OOPSPAM_ENABLED:
         spam_clients.append(OOPSpamClient())
+
+    if isinstance(resource, OSFUser):
+        creator = resource
+    else:
+        creator = OSFUser.objects.get(username=author_email)
+
+    nodes_to_flag = creator.nodes.filter(is_public=True, is_deleted=False)
+    preprints_to_flag = creator.preprints.filter(is_public=True, deleted__isnull=True)
 
     for client in spam_clients:
         is_spam, details = client.check_content(**kwargs)
@@ -156,7 +160,6 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
         any_is_spam = True
 
         set_found_spam_info(resource, client, details)
-
         if not isinstance(resource, OSFUser):
             set_found_spam_info(creator, client, details)
 
