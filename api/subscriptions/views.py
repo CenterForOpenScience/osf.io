@@ -167,7 +167,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
     def update(self, request, *args, **kwargs):
         """
-        Update a notification subscription's channels.
+        Update a notification subscription
         """
         ret = super().update(request, *args, **kwargs)
         # Copy global_reviews subscription changes to new_pending_submissions subscriptions [ENG-9666]

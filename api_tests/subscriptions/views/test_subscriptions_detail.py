@@ -29,8 +29,8 @@ class TestSubscriptionDetail:
         )
 
     @pytest.fixture()
-    def url(self, notification):
-        return f'/{API_BASE}subscriptions/{notification._id}/'
+    def url(self, user):
+        return f'/{API_BASE}subscriptions/{user._id}_global_file_updated/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -119,8 +119,9 @@ class TestSubscriptionDetail:
             url,
             payload_invalid,
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
+
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == ('"invalid-frequency" is not a valid choice.')
 
@@ -151,6 +152,7 @@ class TestSubscriptionDetail:
     def test_subscription_detail_patch(
         self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
     ):
+
         res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['frequency'] == 'none'
