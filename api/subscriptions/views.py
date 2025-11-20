@@ -24,8 +24,6 @@ from osf.models import (
     RegistrationProvider,
     AbstractProvider,
     AbstractNode,
-    Preprint,
-    OSFUser,
 )
 from osf.models.notification_type import NotificationType
 from osf.models.notification_subscription import NotificationSubscription
@@ -48,10 +46,6 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         user_guid = self.request.user._id
         provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
 
-        provider_subquery = AbstractProvider.objects.filter(
-            id=Cast(OuterRef('object_id'), IntegerField()),
-        ).values('_id')[:1]
-
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
@@ -66,17 +60,17 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         ).annotate(
             event_name=Case(
                 When(
-                    notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+                    notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
                     then=Value('files_updated'),
                 ),
                 When(
                     notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
-                    then=Value(f'{user_guid}_global_file_updated'),
+                    then=Value('global_file_updated'),
                 ),
                 When(
                     Q(notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance) &
                     Q(content_type=provider_ct),
-                    then=Value('new_pending_submissions'),
+                    then=Value('global_reviews'),
                 ),
             ),
             legacy_id=Case(
@@ -91,7 +85,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                 When(
                     Q(notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance) &
                     Q(content_type=provider_ct),
-                    then=Concat(Subquery(provider_subquery), Value('_new_pending_submissions')),
+                    then=Value(f'{user_guid}_global_reviews'),
                 ),
             ),
         )
@@ -133,41 +127,17 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
         node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
 
-        provider_subquery = AbstractProvider.objects.filter(
-            id=Cast(OuterRef('object_id'), IntegerField()),
-        ).values('_id')[:1]
-
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        guid_id, *event_parts = subscription_id.split('_')
-        event = '_'.join(event_parts) if event_parts else ''
-
-        subscription_obj = AbstractNode.load(guid_id) or Preprint.load(guid_id) or OSFUser.load(guid_id)
-
-        if event != 'global':
-            if subscription_obj is None:
-                subscription_obj = PreprintProvider.objects.get(_id=guid_id)
-            obj_filter = Q(
-                object_id=getattr(subscription_obj, 'id', None),
-                content_type=ContentType.objects.get_for_model(subscription_obj.__class__),
-                notification_type__in=[
-                    NotificationType.Type.USER_FILE_UPDATED.instance,
-                    NotificationType.Type.NODE_FILE_UPDATED.instance,
-                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
-                ],
-            )
-        else:
-            obj_filter = Q()
-
         try:
-            obj = NotificationSubscription.objects.annotate(
+            annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
                 legacy_id=Case(
                     When(
                         notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                         content_type=node_ct,
-                        then=Concat(Subquery(node_subquery), Value('_file_updated')),
+                        then=Concat(Subquery(node_subquery), Value('_files_updated')),
                     ),
                     When(
                         notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
@@ -176,12 +146,13 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                     When(
                         notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
                         content_type=provider_ct,
-                        then=Concat(Subquery(provider_subquery), Value('_new_pending_submissions')),
+                        then=Value(f'{user_guid}_global_reviews'),
                     ),
                     default=Value(f'{user_guid}_global'),
                     output_field=CharField(),
                 ),
-            ).filter(obj_filter)
+            )
+            obj = annotated_obj_qs.filter(legacy_id=subscription_id)
 
         except ObjectDoesNotExist:
             raise NotFound
@@ -193,6 +164,28 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
 
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update a notification subscription
+        """
+        ret = super().update(request, *args, **kwargs)
+        # Copy global_reviews subscription changes to new_pending_submissions subscriptions [ENG-9666]
+        if self.get_object().notification_type.name == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value:
+            qs = NotificationSubscription.objects.filter(
+                user=self.request.user,
+                notification_type__name__in=[
+                    NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+                    NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+                    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                    NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+                ],
+            )
+            for instance in qs:
+                serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+        return ret
 
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):

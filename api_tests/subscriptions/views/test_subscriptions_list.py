@@ -73,7 +73,7 @@ class TestSubscriptionList:
         # There should only be 3 notifications: users' global, node's file updates and provider's preprint added.
         assert len(notification_ids) == 3
         assert f'{user._id}_global_file_updated' in notification_ids
-        assert f'{provider._id}_new_pending_submissions' in notification_ids
+        assert f'{user._id}_global_reviews' in notification_ids
         assert f'{node._id}_file_updated' in notification_ids
 
     def test_unauthenticated(self, app, url):
@@ -122,5 +122,5 @@ class TestSubscriptionList:
 
         # Confirm it’s the expected subscription object
         attributes = data[0]['attributes']
-        assert attributes['event_name'] is None  # event names are legacy
+        assert attributes['event_name'] == 'files_updated'  # event names are legacy
         assert attributes['frequency'] in ['instantly', 'daily', 'none']
