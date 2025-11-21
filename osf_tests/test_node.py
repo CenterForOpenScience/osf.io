@@ -2579,6 +2579,108 @@ class TestCheckResourceForSpamPostcommit:
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
     @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_because_of_spammy_domains(self, mock_check_domains, user, project, preprint):
+        user.date_confirmed = timezone.now()
+        user.save()
+
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = ['spam_domain.com']
+
+        project.set_privacy('public')
+
+        spam_tasks.check_resource_for_spam_postcommit(
+            guid=user._id,
+            content='Check me for spam at spam_domain.com',
+            author=user.fullname,
+            author_email=user.username,
+            request_headers={}
+        )
+        user.reload()
+        project.reload()
+        preprint.reload()
+
+        assert user.spam_status == SpamStatus.HAM
+        assert user.spam_data == {}
+
+        assert preprint.spam_status == SpamStatus.UNKNOWN
+        assert preprint.spam_data == {}
+
+        assert project.spam_status == SpamStatus.UNKNOWN
+        assert project.spam_data == {}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_creator_is_not_spammed_because_of_spammy_domains_in_node(self, mock_check_domains, user, project, preprint):
+        user.date_confirmed = timezone.now()
+        user.save()
+
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = ['spam_domain.com']
+
+        project.set_privacy('public')
+
+        spam_tasks.check_resource_for_spam_postcommit(
+            guid=project._id,
+            content='Check me for spam at spam_domain.com',
+            author=user.fullname,
+            author_email=user.username,
+            request_headers={}
+        )
+        user.reload()
+        project.reload()
+        preprint.reload()
+
+        assert user.spam_status == SpamStatus.HAM
+        assert user.spam_data == {}
+
+        assert preprint.spam_status == SpamStatus.UNKNOWN
+        assert preprint.spam_data == {}
+
+        assert project.spam_status == SpamStatus.SPAM
+        assert project.spam_data['domains'] == ['spam_domain.com']
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_creator_is_not_spammed_because_of_spammy_domains_in_preprint(self, mock_check_domains, user, project, preprint):
+        user.date_confirmed = timezone.now()
+        user.save()
+
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = ['spam_domain.com']
+
+        project.set_privacy('public')
+
+        spam_tasks.check_resource_for_spam_postcommit(
+            guid=preprint._id,
+            content='Check me for spam at spam_domain.com',
+            author=user.fullname,
+            author_email=user.username,
+            request_headers={}
+        )
+        user.reload()
+        project.reload()
+        preprint.reload()
+
+        assert user.spam_status == SpamStatus.HAM
+        assert user.spam_data == {}
+
+        assert preprint.spam_status == SpamStatus.SPAM
+        assert preprint.spam_data['domains'] == ['spam_domain.com']
+
+        assert project.spam_status == SpamStatus.UNKNOWN
+        assert project.spam_data == {}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
     def test_spammed_user_shares_spam_data_with_nodes_and_preprints(self, mock_check_domains, user, project, preprint):
         user.date_confirmed = timezone.now()
         user.save()
@@ -2686,6 +2788,419 @@ class TestCheckResourceForSpamPostcommit:
 
         assert user.spam_status == SpamStatus.FLAGGED
         assert user.spam_data['domains'] == ['again_spam.com']
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_detected_spam(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'spam_data')
+                mock_oops_check_content.return_value = (False, {})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=user._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_pro_tip is None
+                assert preprint.spam_data == {}
+
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_pro_tip is None
+                assert project.spam_data == {}
+
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_detected_spam_in_node(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'spam_data')
+                mock_oops_check_content.return_value = (False, {})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=project._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_pro_tip is None
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_pro_tip == 'spam_data'
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_pro_tip == 'spam_data'
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_pro_tip == 'spam_data'
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_detected_spam_in_preprint(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'spam_data')
+                mock_oops_check_content.return_value = (False, {})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=preprint._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_pro_tip is None
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_pro_tip == 'spam_data'
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_pro_tip == 'spam_data'
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_pro_tip == 'spam_data'
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_oops_detected_spam(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (False, '')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=user._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_data == {}
+
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_data == {}
+
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_data == {}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_oops_detected_spam_in_node(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (False, '')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=project._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_oops_detected_spam_in_preprint(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (False, '')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=preprint._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_and_oops_detected_spam(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'akismet spam data')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=user._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_pro_tip is None
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.UNKNOWN
+                assert preprint.spam_pro_tip is None
+                assert preprint.spam_data == {}
+
+                assert project.spam_status == SpamStatus.UNKNOWN
+                assert project.spam_pro_tip is None
+                assert project.spam_data == {}
+
+                assert project2.spam_status == SpamStatus.UNKNOWN
+                assert project2.spam_pro_tip is None
+                assert project2.spam_data == {}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_and_oops_detected_spam_in_node(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'akismet spam data')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=project._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_pro_tip is None
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_pro_tip == 'akismet spam data'
+                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_pro_tip == 'akismet spam data'
+                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_pro_tip == 'akismet spam data'
+                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+    @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
+    @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
+    @mock.patch.object(settings, 'AKISMET_ENABLED', True)
+    @mock.patch.object(settings, 'OOPSPAM_ENABLED', True)
+    @mock.patch('osf.external.spam.tasks._check_resource_for_domains')
+    def test_ham_user_is_not_spammed_when_akismet_and_oops_detected_spam_in_preprint(
+        self, mock_check_domains, user, project, project2, project3, preprint, request_headers
+    ):
+        user.spam_status = SpamStatus.HAM
+        user.save()
+
+        mock_check_domains.return_value = []
+
+        project.set_privacy('public')
+        project2.set_privacy('public')
+
+        with mock.patch('osf.external.spam.tasks.AkismetClient.check_content') as mock_akismet_check_content:
+            with mock.patch('osf.external.spam.tasks.OOPSpamClient.check_content') as mock_oops_check_content:
+                mock_akismet_check_content.return_value = (True, 'akismet spam data')
+                mock_oops_check_content.return_value = (True, {'reason': 'spam'})
+                spam_tasks.check_resource_for_spam_postcommit(
+                    guid=preprint._id,
+                    content='Check me for spam at again_spam.com',
+                    author=user.fullname,
+                    author_email=user.username,
+                    request_headers={}
+                )
+                user.reload()
+                project.reload()
+                project2.reload()
+                preprint.reload()
+
+                assert user.spam_status == SpamStatus.HAM
+                assert user.spam_pro_tip is None
+                assert user.spam_data == {}
+
+                assert preprint.spam_status == SpamStatus.FLAGGED
+                assert preprint.spam_pro_tip == 'akismet spam data'
+                assert preprint.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project.spam_status == SpamStatus.FLAGGED
+                assert project.spam_pro_tip == 'akismet spam data'
+                assert project.spam_data['oopspam_data'] == {'reason': 'spam'}
+
+                assert project2.spam_status == SpamStatus.FLAGGED
+                assert project2.spam_pro_tip == 'akismet spam data'
+                assert project2.spam_data['oopspam_data'] == {'reason': 'spam'}
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
     @mock.patch.object(settings, 'SPAM_SERVICES_ENABLED', True)
