@@ -160,7 +160,7 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
         any_is_spam = True
 
         set_found_spam_info(resource, client, details)
-        if not isinstance(resource, OSFUser):
+        if not isinstance(resource, OSFUser) and not creator.is_hammy:
             set_found_spam_info(creator, client, details)
 
         for node in nodes_to_flag:
@@ -172,11 +172,16 @@ def check_resource_with_spam_services(resource, content, author, author_email, r
     if not any_is_spam:
         return any_is_spam
 
+    sentry.log_message(
+        f"Spam data detected by akismet/oops for {resource._id}:"
+        f"{resource.spam_pro_tip or resource.spam_data.get('oopspam_data')}"
+    )
+
     set_collected_info(resource)
     resource.flag_spam(skip_user_suspension=True)
 
     # set spam_data but don't flag the creator because it'll happen at the end of check_resource_for_spam_postcommit
-    if not isinstance(resource, OSFUser):
+    if not isinstance(resource, OSFUser) and not creator.is_hammy:
         set_collected_info(creator)
         creator.save()
 
@@ -203,6 +208,10 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
     if not resource:
         return f'{guid} not found'
 
+    if isinstance(resource, OSFUser) and resource.is_hammy:
+        sentry.log_message(f"User {guid} is not checked for spam because of ham status")
+        return
+
     spammy_domains = _check_resource_for_domains(resource, content)
     if spammy_domains:
         sentry.log_message(f"Spammy domains detected for {guid}: {spammy_domains}")
@@ -226,8 +235,8 @@ def check_resource_for_spam_postcommit(guid, content, author, author_email, requ
 
     resource.save()
 
-    if hasattr(resource, 'check_spam_user'):
-        user = OSFUser.objects.get(username=author_email)
+    user = OSFUser.objects.get(username=author_email)
+    if hasattr(resource, 'check_spam_user') and not user.is_hammy:
         resource.check_spam_user(user, domains=list(spammy_domains))
 
 
