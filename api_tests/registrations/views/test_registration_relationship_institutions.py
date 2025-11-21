@@ -71,7 +71,7 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
         res = app.put_json_api(
             node_institutions_url,
             self.create_payload([institution_one]),
-            expect_errors=True,
+            expect_errors=False,
             auth=user.auth
         )
 
@@ -92,7 +92,7 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
             node_institutions_url,
             self.create_payload([institution_one]),
             auth=user.auth,
-            expect_errors=True
+            expect_errors=False
         )
 
         assert res.status_code == 204
@@ -110,7 +110,7 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
                 ]
             },
             auth=write_contrib.auth,
-            expect_errors=True
+            expect_errors=False
         )
         assert res.status_code == 201
         assert write_contrib_institution in node.affiliated_institutions.all()
@@ -130,7 +130,7 @@ class TestRegistrationRelationshipInstitutions(RelationshipInstitutionsTestMixin
                 ]
             },
             auth=write_contrib.auth,
-            expect_errors=True
+            expect_errors=False
         )
         assert res.status_code == 204
         assert write_contrib_institution not in node.affiliated_institutions.all()
