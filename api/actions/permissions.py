@@ -48,23 +48,17 @@ class ReviewActionPermission(drf_permissions.BasePermission):
             is_node_admin = target is not None and target.has_permission(auth.user, osf_permissions.ADMIN)
             is_write_contributor = target is not None and target.has_permission(auth.user, osf_permissions.WRITE)
 
-            provisional_write_allowed = False
-            if is_write_contributor:
-                try:
-                    serializer = view.get_serializer(data=request.data)
-                    serializer.is_valid(raise_exception=True)
-                    trigger = serializer.validated_data.get('trigger')
-                    provisional_write_allowed = trigger == ReviewTriggers.SUBMIT.value
-                except Exception:
-                    provisional_write_allowed = False
+            # Validate serializer once and extract trigger
+            serializer = view.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            trigger = serializer.validated_data.get('trigger')
+
+            provisional_write_allowed = is_write_contributor and trigger == ReviewTriggers.SUBMIT.value
 
             if not (is_node_admin or auth.user.has_perm('view_submissions', provider) or provisional_write_allowed):
                 return False
 
             # User can trigger state changes on this reviewable, but can they use this trigger in particular?
-            serializer = view.get_serializer(data=request.data)
-            serializer.is_valid(raise_exception=True)
-            trigger = serializer.validated_data.get('trigger')
             permission = TRIGGER_PERMISSIONS[trigger]
             if permission is None and is_write_contributor and trigger == ReviewTriggers.SUBMIT.value:
                 return True
