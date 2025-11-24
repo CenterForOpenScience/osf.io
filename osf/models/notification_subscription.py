@@ -120,12 +120,27 @@ class NotificationSubscription(BaseModel):
         """
         Legacy subscription id for API compatibility.
         """
-        match  self.notification_type.name:
-            case NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value:
-                return f'{self.subscribed_object._id}_new_pending_submissions'
-            case NotificationType.Type.USER_FILE_UPDATED.value:
-                return f'{self.user._id}_file_updated'
-            case NotificationType.Type.NODE_FILE_UPDATED.value:
-                return f'{self.subscribed_object._id}_file_updated'
-            case _:
-                raise NotImplementedError()
+        _global_file_updated = [
+            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+        ]
+        _global_reviews = [
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        ]
+        if self.notification_type.name in _global_file_updated:
+            return f'{self.user._id}_file_updated'
+        elif self.notification_type.name in _global_reviews:
+            return f'{self.user._id}_global_reviews'
+        elif self.notification_type.name == NotificationType.Type.NODE_FILE_UPDATED.value:
+            return f'{self.subscribed_object._id}_file_updated'
+        raise NotImplementedError()
