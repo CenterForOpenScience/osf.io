@@ -157,10 +157,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         except ObjectDoesNotExist:
             raise NotFound
 
-        try:
-            obj = obj.filter(user=self.request.user).first()
-        except ObjectDoesNotExist:
-            raise PermissionDenied
+        obj = obj.filter(user=self.request.user).first()
         if not obj:
             raise PermissionDenied
 
@@ -215,8 +212,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 self.perform_update(serializer)
             return Response(serializer.data)
         else:
-            ret = super().update(request, *args, **kwargs)
-            return ret
+            return super().update(request, *args, **kwargs)
 
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):
