@@ -140,7 +140,7 @@ class TestSpam:
 
         user.do_check_spam(
             author='test-author',
-            author_email='test@test.com',
+            author_email=user.username,
             content='test',
             request_headers=request_headers
         )
@@ -148,7 +148,7 @@ class TestSpam:
         data = parse_qs(mock_akismet.calls[0].request.body)
 
         assert data['comment_author'] == ['test-author']
-        assert data['comment_author_email'] == ['test@test.com']
+        assert data['comment_author_email'] == [user.username]
         assert data['blog'] == [settings.DOMAIN]
 
         user.refresh_from_db()
