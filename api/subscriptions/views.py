@@ -161,6 +161,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             obj = obj.filter(user=self.request.user).first()
         except ObjectDoesNotExist:
             raise PermissionDenied
+        if not obj:
+            raise PermissionDenied
 
         self.check_object_permissions(self.request, obj)
         return obj
@@ -184,6 +186,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                     NotificationType.Type.FOLDER_CREATED.value,
                 ],
             )
+            if not qs.exists():
+                raise PermissionDenied
+
             for instance in qs:
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
@@ -201,6 +206,9 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                     NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
                 ],
             )
+            if not qs.exists():
+                raise PermissionDenied
+
             for instance in qs:
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
