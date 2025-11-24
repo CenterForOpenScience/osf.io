@@ -6,7 +6,7 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-
+from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
@@ -88,7 +88,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
             ),
-        )
+        ).distinct('legacy_id')
 
         # Apply manual filter for legacy_id if requested
         filter_id = self.request.query_params.get('filter[id]')
@@ -157,9 +157,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         except ObjectDoesNotExist:
             raise NotFound
 
-        try:
-            obj = obj.filter(user=self.request.user).get()
-        except ObjectDoesNotExist:
+        obj = obj.filter(user=self.request.user).first()
+        if not obj:
             raise PermissionDenied
 
         self.check_object_permissions(self.request, obj)
@@ -169,23 +168,51 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         """
         Update a notification subscription
         """
-        ret = super().update(request, *args, **kwargs)
-        # Copy global_reviews subscription changes to new_pending_submissions subscriptions [ENG-9666]
-        if self.get_object().notification_type.name == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value:
+        if '_global_file_updated' in self.kwargs['subscription_id']:
+            # Copy _global_file_updated subscription changes to all file subscriptions
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 notification_type__name__in=[
+                    NotificationType.Type.USER_FILE_UPDATED.value,
+                    NotificationType.Type.FILE_ADDED.value,
+                    NotificationType.Type.FILE_REMOVED.value,
+                    NotificationType.Type.ADDON_FILE_COPIED.value,
+                    NotificationType.Type.ADDON_FILE_RENAMED.value,
+                    NotificationType.Type.ADDON_FILE_MOVED.value,
+                    NotificationType.Type.ADDON_FILE_REMOVED.value,
+                    NotificationType.Type.FOLDER_CREATED.value,
+                ],
+            )
+            if not qs.exists():
+                raise PermissionDenied
+
+            for instance in qs:
+                serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            return Response(serializer.data)
+        elif '_global_reviews' in self.kwargs['subscription_id']:
+            # Copy global_reviews subscription changes to all provider subscriptions [ENG-9666]
+            qs = NotificationSubscription.objects.filter(
+                user=self.request.user,
+                notification_type__name__in=[
+                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
                     NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
                     NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
                     NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
                     NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
                 ],
             )
+            if not qs.exists():
+                raise PermissionDenied
+
             for instance in qs:
                 serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
-        return ret
+            return Response(serializer.data)
+        else:
+            return super().update(request, *args, **kwargs)
 
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):
