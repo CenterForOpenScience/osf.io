@@ -28,7 +28,7 @@ class TestGuidDetail:
     @pytest.fixture()
     def registration(self):
         return RegistrationFactory()
-    
+
     @pytest.fixture()
     def versioned_preprint(self, user):
         preprint = PreprintFactory(reviews_workflow='pre-moderation')
@@ -162,7 +162,7 @@ class TestGuidDetail:
         url = f'/{API_BASE}guids/{versioned_preprint.versioned_guids.first().guid._id}_v3/'
         res = app.get(url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
-    
+
     def test_redirects_with_version_for_unversionable_objects(self, app, project, user):
         url = f'/{API_BASE}guids/{project._id}_v12/'
         res = app.get(url, auth=user.auth, expect_errors=True)

@@ -801,7 +801,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def get_versioned_absolute_api_v2_url(self, version):
         if self.guids.first().versions.filter(version=version).exists():
             path = f'/preprints/{self.guids.first()._id}{VersionedGuidMixin.GUID_VERSION_DELIMITER}{version}/'
-            return api_v2_url(path) 
+            return api_v2_url(path)
         return None
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True, request=None, should_hide=False):
