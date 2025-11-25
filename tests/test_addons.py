@@ -46,7 +46,7 @@ from dateutil.parser import parse as parse_date
 from framework import sentry
 from api.base.settings.defaults import API_BASE
 from tests.json_api_test_app import JSONAPITestApp
-from website.settings import EXTERNAL_EMBER_APPS
+from website.settings import EXTERNAL_WEB_APPS
 from waffle.testutils import override_flag
 from django.conf import settings as django_conf_settings
 
@@ -1360,7 +1360,7 @@ class TestAddonFileViews(OsfTestCase):
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
-    @mock.patch('website.views.stream_emberapp')
+    @mock.patch('website.views.stream_web_app')
     @pytest.mark.enable_bookmark_creation
     def test_action_view_calls_view_file(self, mock_ember):
         self.user.reload()
@@ -1374,10 +1374,10 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_ember.call_args
         assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
+        assert args[0] == EXTERNAL_WEB_APPS['ember_osf_web']['server']
+        assert args[1] == EXTERNAL_WEB_APPS['ember_osf_web']['path'].rstrip('/')
 
-    @mock.patch('website.views.stream_emberapp')
+    @mock.patch('website.views.stream_web_app')
     @pytest.mark.enable_bookmark_creation
     def test_no_action_calls_view_file(self, mock_ember):
         self.user.reload()
@@ -1391,8 +1391,8 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_ember.call_args
         assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
+        assert args[0] == EXTERNAL_WEB_APPS['ember_osf_web']['server']
+        assert args[1] == EXTERNAL_WEB_APPS['ember_osf_web']['path'].rstrip('/')
 
     def test_download_create_guid(self):
         file_node = self.get_test_file()
@@ -1462,7 +1462,7 @@ class TestAddonFileViews(OsfTestCase):
         )
         assert resp.status_code == 400
 
-    @mock.patch('website.views.stream_emberapp')
+    @mock.patch('website.views.stream_web_app')
     def test_head_returns_url_and_redriect(self, mock_ember):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
@@ -1473,8 +1473,8 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_ember.call_args
         assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
+        assert args[0] == EXTERNAL_WEB_APPS['ember_osf_web']['server']
+        assert args[1] == EXTERNAL_WEB_APPS['ember_osf_web']['path'].rstrip('/')
 
 
     def test_head_returns_url_with_version_and_redirect(self):
