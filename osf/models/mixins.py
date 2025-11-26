@@ -2399,10 +2399,7 @@ class SpamOverrideMixin(SpamMixin):
                 }
             )
 
-        user.flag_spam()
-        if domains:
-            user.spam_data['domains'] = list(set(user.spam_data.get('domains', []) + domains))
-
+        user.confirm_spam(domains=domains or [], save=False, skip_resources_spam=True)
         user.save()
 
         # Make public nodes private from this contributor
