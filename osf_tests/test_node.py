@@ -2742,8 +2742,7 @@ class TestCheckResourceForSpamPostcommit:
         assert preprint.spam_status == SpamStatus.SPAM
         assert preprint.spam_data['domains'] == ['again_spam.com']
 
-        # when user isn't a direct resource of spam, it's suspected to be spammed
-        assert user.spam_status == SpamStatus.FLAGGED
+        assert user.spam_status == SpamStatus.SPAM
         assert user.spam_data['domains'] == ['again_spam.com']
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -2786,7 +2785,7 @@ class TestCheckResourceForSpamPostcommit:
         assert preprint2.spam_status == SpamStatus.SPAM
         assert preprint2.spam_data['domains'] == ['again_spam.com']
 
-        assert user.spam_status == SpamStatus.FLAGGED
+        assert user.spam_status == SpamStatus.SPAM
         assert user.spam_data['domains'] == ['again_spam.com']
 
     @mock.patch.object(settings, 'SPAM_ACCOUNT_SUSPENSION_ENABLED', True)
@@ -3312,7 +3311,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = project
         akismet_spam_data = 'some spam found'
         oops_spam_data = {}
-        objects_to_be_spammed = [project2, preprint]
+        objects_to_be_spammed = [user, project2, preprint]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
@@ -3332,7 +3331,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = project
         akismet_spam_data = ''
         oops_spam_data = {'reason': 'some spam info'}
-        objects_to_be_spammed = [project2, preprint]
+        objects_to_be_spammed = [user, project2, preprint]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
@@ -3352,7 +3351,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = project
         akismet_spam_data = 'it is a real spam!!!'
         oops_spam_data = {'reason': 'some spam info'}
-        objects_to_be_spammed = [project2, preprint]
+        objects_to_be_spammed = [user, project2, preprint]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
@@ -3372,7 +3371,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = preprint
         akismet_spam_data = 'some spam found'
         oops_spam_data = {}
-        objects_to_be_spammed = [project2, project]
+        objects_to_be_spammed = [user, project2, project]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
@@ -3392,7 +3391,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = preprint
         akismet_spam_data = ''
         oops_spam_data = {'reason': 'some spam info'}
-        objects_to_be_spammed = [project2, project]
+        objects_to_be_spammed = [user, project2, project]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
@@ -3412,7 +3411,7 @@ class TestCheckResourceForSpamPostcommit:
         spam_object = preprint
         akismet_spam_data = 'it is a real spam!!!'
         oops_spam_data = {'reason': 'some spam info'}
-        objects_to_be_spammed = [project2, project]
+        objects_to_be_spammed = [user, project2, project]
         self.run_akismet_and_oops_tests(
             mock_check_domains, user, project, project2, project3, preprint, request_headers,
             spam_object, akismet_spam_data, oops_spam_data, objects_to_be_spammed
