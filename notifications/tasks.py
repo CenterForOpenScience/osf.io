@@ -1,7 +1,7 @@
 import itertools
 from calendar import monthrange
 from datetime import date
-
+from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.utils import timezone
 
@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 
 from framework.postcommit_tasks.handlers import run_postcommit
 from osf.models import OSFUser, Notification, NotificationType, EmailTask, RegistrationProvider, \
-    CollectionProvider
+    CollectionProvider, AbstractProvider
 from framework.sentry import log_message
 from osf.registrations.utils import get_registration_provider_submissions_url
 from osf.utils.permissions import ADMIN
@@ -18,6 +18,24 @@ from website import settings
 from django.apps import apps
 
 logger = get_task_logger(__name__)
+
+
+def safe_render_notification(notifications, email_task):
+    """Helper to safely render notification, updating email_task on failure."""
+    rendered_notifications = []
+    failed_notifications = []
+    for notification in notifications:
+        try:
+            rendered = notification.render()
+        except Exception as e:
+            email_task.error_message = f'Error rendering notification {notification.id}: {str(e)} \n'
+            email_task.save()
+            failed_notifications.append(notification.id)
+            continue
+
+        rendered_notifications.append(rendered)
+
+    return rendered_notifications, failed_notifications
 
 
 def get_user_and_email_task(task_id, user_id):
@@ -47,7 +65,7 @@ def get_user_and_email_task(task_id, user_id):
 
     return user, email_task
 
-@celery_app.task(bind=True)
+@celery_app.task(bind=True, max_retries=5)
 def send_user_email_task(self, user_id, notification_ids, **kwargs):
     user, email_task = get_user_and_email_task(self.request.id, user_id)
     if not user:
@@ -55,9 +73,12 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
 
     try:
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
-        rendered_notifications = [n.render() for n in notifications_qs]
+        rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
+        notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            if email_task.error_message:
+                logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
             email_task.status = 'SUCCESS'
             email_task.save()
             return
@@ -71,68 +92,83 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         NotificationType.Type.USER_DIGEST.instance.emit(
             user=user,
             event_context=event_context,
+            save=False
         )
 
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
         email_task.save()
+
+        if email_task.error_message:
+            logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+
     except Exception as e:
-        try:
-            user = OSFUser.objects.get(
-                guids___id=user_id,
-                deleted__isnull=True
-            )
-        except OSFUser.DoesNotExist:
-            logger.error(f'OSFUser with id {user_id} does not exist')
-            email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
-            email_task.status = 'NO_USER_FOUND'
-            email_task.error_message = 'User not found or disabled'
+        retry_count = self.request.retries
+        max_retries = self.max_retries
+
+        if retry_count >= max_retries:
+            email_task.status = 'FAILURE'
+            email_task.error_message = email_task.error_message + f'Max retries reached: {str(e)} \n'
             email_task.save()
+            logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
             return
+
         email_task, _ = EmailTask.objects.get_or_create(task_id=self.request.id)
         email_task.user = user
         email_task.status = 'RETRY'
-        email_task.error_message = str(e)
+        email_task.error_message = f'{str(e)} \n'
+        email_task.error_message = email_task.error_message + f'Retry {retry_count}: {str(e)} \n'
         email_task.save()
-        logger.exception('Retrying send_user_email_task due to exception')
         raise self.retry(exc=e)
 
-@celery_app.task(bind=True)
-def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
+@celery_app.task(bind=True, max_retries=5)
+def send_moderator_email_task(self, user_id, notification_ids, provider_content_type_id, provider_id, **kwargs):
     user, email_task = get_user_and_email_task(self.request.id, user_id)
     if not user:
         return
-
     try:
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
-        first_notification = notifications_qs.select_related('subscription').first()
-        subscription = first_notification.subscription if first_notification else None
-        subscribed_object = getattr(subscription, 'subscribed_object', None) if subscription else None
-        rendered_notifications = [notification.render() for notification in notifications_qs]
+        rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
+        notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
+
         if not rendered_notifications:
-            log_message(f"No notifications to send for moderator user {user._id}")
+            if email_task.error_message:
+                logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
             email_task.status = 'SUCCESS'
             email_task.save()
             return
 
-        if subscribed_object is None:
-            log_message(f"subscribed_object fpr {subscribed_object} does not exist")
-            email_task.status = 'OBJECT NOT FOUND'
+        ProviderModel = ContentType.objects.get_for_id(provider_content_type_id).model_class()
+        try:
+            provider = ProviderModel.objects.get(id=provider_id)
+        except AbstractProvider.DoesNotExist:
+            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            email_task.status = 'FAILURE'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
+            email_task.save()
+            return
+        except AttributeError as err:
+            log_message(f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}')
+            email_task.status = 'FAILURE'
+            email_task.error_message = f'Error retrieving provider with id {provider_id} for model {ProviderModel.name}: {err}'
             email_task.save()
             return
 
-        provider = getattr(subscribed_object, 'provider', None)
         if provider is None:
-            log_message(f"subscribed_object fpr {subscribed_object} does not exist")
-            email_task.status = 'PROVIDER NOT FOUND'
+            log_message(f'Provider with id {provider_id} does not exist for model {ProviderModel.name}')
+            email_task.status = 'FAILURE'
+            email_task.error_message = f'Provider with id {provider_id} does not exist for model {ProviderModel.name}'
             email_task.save()
             return
 
         current_moderators = provider.get_group('moderator')
         if current_moderators is None or not current_moderators.user_set.filter(id=user.id).exists():
             log_message(f"User is not a moderator for provider {provider._id} - skipping email")
-            email_task.status = 'NOT MODERATOR'
+            email_task.status = 'FAILURE'
+            email_task.error_message = f'User is not a moderator for provider {provider._id}'
+            email_task.save()
+            return
 
         additional_context = {}
         if isinstance(provider, RegistrationProvider):
@@ -145,6 +181,8 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+            else:
+                logo = settings.OSF_REGISTRIES_LOGO
         elif isinstance(provider, CollectionProvider):
             provider_type = 'collection'
             submissions_url = f'{settings.DOMAIN}collections/{provider._id}/moderation/'
@@ -155,11 +193,14 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
                     'logo_url': provider.brand.hero_logo_image,
                     'top_bar_color': provider.brand.primary_color
                 }
+            else:
+                logo = settings.OSF_REGISTRIES_LOGO
         else:
             provider_type = 'preprint'
             submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}'
             withdrawals_url = ''
             notification_settings_url = f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications'
+            logo = provider._id if not provider.is_default else settings.OSF_PREPRINTS_LOGO
 
         event_context = {
             'notifications': rendered_notifications,
@@ -171,13 +212,14 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
             'provider_type': provider_type,
             'additional_context': additional_context,
             'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
-            'logo': provider._id if not provider.is_default else settings.OSF_PREPRINTS_LOGO,
+            'logo': logo,
         }
 
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
             user=user,
-            subscribed_object=subscribed_object,
+            subscribed_object=user,
             event_context=event_context,
+            save=False
         )
 
         notifications_qs.update(sent=timezone.now())
@@ -185,11 +227,23 @@ def send_moderator_email_task(self, user_id, notification_ids, **kwargs):
         email_task.status = 'SUCCESS'
         email_task.save()
 
+        if email_task.error_message:
+            logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+
     except Exception as e:
+        retry_count = self.request.retries
+        max_retries = self.max_retries
+
+        if retry_count >= max_retries:
+            email_task.status = 'FAILURE'
+            email_task.error_message = email_task.error_message + f'\nMax retries reached: {str(e)}'
+            email_task.save()
+            logger.error(f'Max retries reached for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            return
+
         email_task.status = 'RETRY'
-        email_task.error_message = str(e)
+        email_task.error_message = email_task.error_message + f'Retry {retry_count}: {str(e)} \n'
         email_task.save()
-        logger.exception('Retrying send_moderator_email_task due to exception')
         raise self.retry(exc=e)
 
 @celery_app.task(name='notifications.tasks.send_users_digest_email')
@@ -224,9 +278,11 @@ def send_moderators_digest_email(dry_run=False):
         grouped_emails = get_moderators_emails(freq)
         for group in grouped_emails:
             user_id = group['user_id']
+            provider_id = group['provider_id']
+            provider_content_type_id = group['provider_content_type_id']
             notification_ids = [msg['notification_id'] for msg in group['info']]
             if not dry_run:
-                send_moderator_email_task.delay(user_id, notification_ids)
+                send_moderator_email_task.delay(user_id, notification_ids, provider_content_type_id, provider_id)
 
 def get_moderators_emails(message_freq: str):
     """Get all emails for reviews moderators that need to be sent, grouped by users AND providers.
@@ -237,6 +293,8 @@ def get_moderators_emails(message_freq: str):
         SELECT
             json_build_object(
                 'user_id', osf_guid._id,
+                'provider_id', ns.object_id,
+                'provider_content_type_id', ns.content_type_id,
                 'info', json_agg(
                     json_build_object(
                         'notification_id', n.id
@@ -250,19 +308,22 @@ def get_moderators_emails(message_freq: str):
         WHERE n.sent IS NULL
             AND ns.message_frequency = %s
             AND nt.name IN (%s, %s)
+            AND nt.name NOT IN (%s, %s)
             AND osf_guid.content_type_id = (
                 SELECT id FROM django_content_type WHERE model = 'osfuser'
             )
-        GROUP BY osf_guid._id, (n.event_context ->> 'provider_id')
+        GROUP BY osf_guid._id, ns.object_id, ns.content_type_id
         ORDER BY osf_guid._id ASC
-        """
+    """
 
     with connection.cursor() as cursor:
         cursor.execute(sql,
             [
                 message_freq,
                 NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value
+                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
+                NotificationType.Type.USER_DIGEST.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -288,7 +349,7 @@ def get_users_emails(message_freq):
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL
             AND ns.message_frequency = %s
-            AND nt.name NOT IN (%s, %s)
+            AND nt.name NOT IN (%s, %s, %s, %s)
             AND osf_guid.content_type_id = (
                 SELECT id FROM django_content_type WHERE model = 'osfuser'
             )
@@ -301,7 +362,9 @@ def get_users_emails(message_freq):
             [
                 message_freq,
                 NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value
+                NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
+                NotificationType.Type.USER_DIGEST.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -349,6 +412,8 @@ def send_moderators_instant_digest_email(self, dry_run=False, **kwargs):
     grouped_emails = get_moderators_emails('instantly')
     for group in grouped_emails:
         user_id = group['user_id']
+        provider_id = group['provider_id']
+        provider_content_type_id = group['provider_content_type_id']
         notification_ids = [msg['notification_id'] for msg in group['info']]
         if not dry_run:
-            send_moderator_email_task.delay(user_id, notification_ids)
+            send_moderator_email_task.delay(user_id, notification_ids, provider_content_type_id, provider_id)
