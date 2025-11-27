@@ -18,8 +18,9 @@ def reviews_notification(self, creator, template, context, action):
         context['has_psyarxiv_chronos_text'] = action.target.has_permission(recipient, ADMIN) and 'psyarxiv' in action.target.provider.name.lower()
         template.instance.emit(
             user=recipient,
-            subscribed_object=action.target,
+            subscribed_object=recipient,
             event_context=context,
+            is_digest=True,
         )
 
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect

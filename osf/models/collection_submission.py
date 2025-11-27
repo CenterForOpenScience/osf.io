@@ -137,7 +137,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         user = event_data.kwargs.get('user', None)
         NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=user,
-            subscribed_object=self.guid.referent,
+            subscribed_object=self.collection.provider,
             event_context={
                 'provider_id': self.collection.provider.id,
                 'submitter_fullname': self.creator.fullname,

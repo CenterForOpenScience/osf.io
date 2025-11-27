@@ -1081,13 +1081,14 @@ class ReviewProviderMixin(GuardianMixin):
         else:
             raise TypeError(f"Unsupported group type: {type(group)}")
 
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            content_type=ContentType.objects.get_for_model(self),
-            object_id=self.id,
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
-            _is_digest=True
-        )
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                object_id=self.id,
+                notification_type=subscription.instance,
+                _is_digest=True
+            )
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
@@ -1100,6 +1101,8 @@ class ReviewProviderMixin(GuardianMixin):
                 NotificationSubscription.objects.filter(
                     notification_type=subscription.instance,
                     user=user,
+                    content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                    object_id=self.id,
                 ).delete()
 
         return _group.user_set.remove(user)

@@ -128,7 +128,7 @@ def notify_reject_withdraw_request(resource, action, *args, **kwargs):
         context['contributor_fullname'] = contributor.fullname
         context['is_requester'] = action.creator == contributor
         context['comment'] = action.comment
-        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_APPROVED.instance.emit(
+        NotificationType.Type.NODE_WITHDRAWAl_REQUEST_REJECTED.instance.emit(
             user=contributor,
             event_context={
                 'is_requester': contributor == action.creator,

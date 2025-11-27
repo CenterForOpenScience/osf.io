@@ -1,5 +1,5 @@
 import logging
-
+from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -32,13 +32,13 @@ class NotificationSubscription(BaseModel):
     object_id = models.CharField(max_length=255, null=True, blank=True)
     subscribed_object = GenericForeignKey('content_type', 'object_id')
 
+    # mark if subscription is for digest use only (instant subscriptions are sent every 5 minutes)
     _is_digest = models.BooleanField(default=False)
 
     def clean(self):
         ct = self.notification_type.object_content_type
-
         if ct:
-            if self.content_type != ct:
+            if self.content_type != ct and 'provider' not in self.notification_type.name.lower():
                 raise ValidationError('Subscribed object must match type\'s content_type.')
             if not self.object_id:
                 raise ValidationError('Subscribed object ID is required.')
@@ -94,7 +94,14 @@ class NotificationSubscription(BaseModel):
             )
             if save:
                 notification.save()
-            if not self._is_digest:  # instant digests are sent every 5 minutes.
+            else:
+                notification.send(
+                    destination_address=destination_address,
+                    email_context=email_context,
+                    save=save,
+                )
+                return
+            if not self._is_digest:
                 notification.send(
                     destination_address=destination_address,
                     email_context=email_context,
@@ -103,7 +110,8 @@ class NotificationSubscription(BaseModel):
         else:
             Notification.objects.create(
                 subscription=self,
-                event_context=event_context
+                event_context=event_context,
+                sent=None if self.message_frequency != 'none' else timezone.now(),
             )
 
     @property
@@ -122,6 +130,7 @@ class NotificationSubscription(BaseModel):
         """
         _global_file_updated = [
             NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
             NotificationType.Type.FILE_ADDED.value,
             NotificationType.Type.FILE_REMOVED.value,
             NotificationType.Type.ADDON_FILE_COPIED.value,
@@ -137,10 +146,20 @@ class NotificationSubscription(BaseModel):
             NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
             NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
         ]
+        _node_file_updated = [
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+        ]
         if self.notification_type.name in _global_file_updated:
             return f'{self.user._id}_file_updated'
         elif self.notification_type.name in _global_reviews:
             return f'{self.user._id}_global_reviews'
-        elif self.notification_type.name == NotificationType.Type.NODE_FILE_UPDATED.value:
+        elif self.notification_type.name in _node_file_updated:
             return f'{self.subscribed_object._id}_file_updated'
         raise NotImplementedError()

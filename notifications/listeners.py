@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 @project_created.connect
 def subscribe_creator(resource):
-    from osf.models import NotificationSubscription, NotificationType
+    from osf.models import NotificationSubscription, NotificationType, Preprint
 
     from django.contrib.contenttypes.models import ContentType
 
@@ -30,24 +30,25 @@ def subscribe_creator(resource):
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
-        try:
-            NotificationSubscription.objects.get_or_create(
-                user=user,
-                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
-                object_id=resource.id,
-                content_type=ContentType.objects.get_for_model(resource),
-                _is_digest=True,
-                defaults={
-                    'message_frequency': 'instantly',
-                }
-            )
-        except NotificationSubscription.MultipleObjectsReturned:
-            pass
+        if not isinstance(resource, Preprint):
+            try:
+                NotificationSubscription.objects.get_or_create(
+                    user=user,
+                    notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                    object_id=resource.id,
+                    content_type=ContentType.objects.get_for_model(resource),
+                    _is_digest=True,
+                    defaults={
+                        'message_frequency': 'instantly',
+                    }
+                )
+            except NotificationSubscription.MultipleObjectsReturned:
+                pass
 
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     from django.contrib.contenttypes.models import ContentType
-    from osf.models import NotificationSubscription, NotificationType
+    from osf.models import NotificationSubscription, NotificationType, Preprint
 
     from osf.models import Node
     if isinstance(resource, Node):
@@ -67,19 +68,20 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
         )
     except NotificationSubscription.MultipleObjectsReturned:
         pass
-    try:
-        NotificationSubscription.objects.get_or_create(
-            user=contributor,
-            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
-            object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource),
-            _is_digest=True,
-            defaults={
-                'message_frequency': 'instantly',
-            }
-        )
-    except NotificationSubscription.MultipleObjectsReturned:
-        pass
+    if not isinstance(resource, Preprint):
+        try:
+            NotificationSubscription.objects.get_or_create(
+                user=contributor,
+                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                object_id=resource.id,
+                content_type=ContentType.objects.get_for_model(resource),
+                _is_digest=True,
+                defaults={
+                    'message_frequency': 'instantly',
+                }
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
 
 
 # Handle email notifications to notify moderators of new submissions.
