@@ -320,7 +320,7 @@ class AffiliatedInstitutionMixin(models.Model):
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,
-                            'node_absolute_url': self.get_absolute_url(),
+                            'node_absolute_url': self.absolute_url,
                         }
                     )
         if log:
@@ -362,7 +362,7 @@ class AffiliatedInstitutionMixin(models.Model):
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,
-                            'node_absolute_url': self.get_absolute_url(),
+                            'node_absolute_url': self.absolute_url,
                         }
                     )
 
