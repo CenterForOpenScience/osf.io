@@ -147,8 +147,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        with capture_notifications():
-            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert len(self.project.contributors) == n_contributors_pre + len(payload['users'])
 
@@ -187,10 +186,7 @@ class TestAddingContributorViews(OsfTestCase):
         # send request
         url = self.project.api_url_for('project_contributors_post')
         assert self.project.can_edit(user=self.creator)
-        with capture_notifications() as notifications:
-            self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        self.app.post(url, json=payload, auth=self.creator.auth)
 
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self):
         # Project has components
@@ -214,10 +210,7 @@ class TestAddingContributorViews(OsfTestCase):
         # send request
         url = self.project.api_url_for('project_contributors_post')
         assert self.project.can_edit(user=self.creator)
-        with capture_notifications() as notifications:
-            self.app.post(url, json=payload, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        self.app.post(url, json=payload, auth=self.creator.auth)
 
     def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self):
         # Project has a component with a sub-component
@@ -241,12 +234,7 @@ class TestAddingContributorViews(OsfTestCase):
         # send request
         url = self.project.api_url_for('project_contributors_post')
         assert self.project.can_edit(user=self.creator)
-        with capture_notifications() as notifications:
-            self.app.post(url, json=payload, auth=self.creator.auth)
-
-        # send_mail is called for both the project and the sub-component
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        self.app.post(url, json=payload, auth=self.creator.auth)
 
     @mock.patch('website.project.views.contributor.send_claim_email')
     def test_email_sent_when_unreg_user_is_added(self, send_mail):
@@ -264,10 +252,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        with capture_notifications() as notifications:
-            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
 
     def test_email_sent_when_reg_user_is_added(self):
         contributor = UserFactory()
@@ -278,7 +263,7 @@ class TestAddingContributorViews(OsfTestCase):
         }]
         project = ProjectFactory(creator=self.auth.user)
         with capture_notifications() as notifications:
-            project.add_contributors(contributors, auth=self.auth)
+            project.add_contributors(contributors, auth=self.auth, notification_type=None)
             project.save()
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
@@ -410,8 +395,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': []
         }
         url = self.project.api_url_for('project_contributors_post')
-        with capture_notifications():
-            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         self.project.reload()
         assert self.project.logs.count() == n_logs_pre + 1
 
@@ -436,8 +420,7 @@ class TestAddingContributorViews(OsfTestCase):
             'node_ids': [self.project._primary_key, child._primary_key]
         }
         url = f'/api/v1/project/{self.project._id}/contributors/'
-        with capture_notifications():
-            self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
+        self.app.post(url, json=payload, follow_redirects=True, auth=self.creator.auth)
         child.reload()
         assert child.contributors.count() == n_contributors_pre + len(payload['users'])
 

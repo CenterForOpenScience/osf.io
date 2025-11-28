@@ -1660,8 +1660,7 @@ class TestNodeCreate:
                 }
             }
         }
-        with capture_notifications():
-            res = app.post_json_api(url, component_data, auth=user_one.auth)
+        res = app.post_json_api(url, component_data, auth=user_one.auth)
         assert res.status_code == 201
         json_data = res.json['data']
 

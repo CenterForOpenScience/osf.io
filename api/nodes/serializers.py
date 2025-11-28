@@ -28,7 +28,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
-from osf.models import Tag, CollectionSubmission, NotificationType, OSFUser
+from osf.models import Tag, CollectionSubmission
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 from addons.base.exceptions import InvalidAuthError, InvalidFolderError
@@ -1269,19 +1269,9 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         if email_pref not in self.email_preferences:
             raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
 
-        is_published = getattr(resource, 'is_published', False)
-        notification_type = {
-            'false': False,
-            'default': NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT,
-            'draft_registration': NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT,
-            'preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT if is_published else False,
-        }.get(email_pref, False)
-        contributor = OSFUser.load(user_id)
-        notification_type = notification_type if email or (contributor and contributor.is_registered) else False
-
         try:
             contributor_dict = {
-                'auth': auth, 'user_id': user_id, 'email': email, 'full_name': full_name, 'notification_type': notification_type,
+                'auth': auth, 'user_id': user_id, 'email': email, 'full_name': full_name, 'notification_type': False if email_pref == 'false' else None,
                 'bibliographic': bibliographic, 'index': index, 'permissions': permissions,
             }
             contributor_obj = resource.add_contributor_registered_or_not(**contributor_dict)
