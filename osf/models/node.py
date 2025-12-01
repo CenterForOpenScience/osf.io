@@ -1258,6 +1258,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         'domain': settings.DOMAIN,
                         'nid': self._id,
                         'project_title': self.title,
+                        'node_absolute_url': self.absolute_url,
                     },
                     save=False
                 )

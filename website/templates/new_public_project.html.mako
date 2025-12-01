@@ -5,7 +5,7 @@
         <br>
         Hello ${user_fullname},
         <br><br>
-        Congratulations on making a public project on OSF! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
+        Congratulations on making a public project on OSF! Now that your project <a href="${node_absolute_url}">${project_title}</a> is public, you’ll be able to take advantage of more OSF features:
         <ul>
             <li><a href="${domain}${nid}/files/">The number of downloads of your files will be automatically logged for you</a></li>
             <li><a href="${domain}${nid}/analytics/">You can see analytics on how many others are accessing your projects</a></li>
