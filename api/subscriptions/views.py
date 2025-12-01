@@ -121,6 +121,10 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         if filter_id:
             qs = qs.filter(legacy_id=filter_id)
             # convert to list comprehension because legacy_id is an annotation, not in DB
+        # Apply manual filter for event_name if requested
+        filter_event_name = self.request.query_params.get('filter[event_name]')
+        if filter_event_name:
+            qs = qs.filter(event_name__in=filter_event_name.split(','))
 
         return qs
 
