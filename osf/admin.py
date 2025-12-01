@@ -320,6 +320,7 @@ class NotificationSubscriptionForm(forms.ModelForm):
 class NotificationSubscriptionAdmin(admin.ModelAdmin):
     list_display = ('user', 'notification_type', 'message_frequency', 'subscribed_object', 'preview_button')
     form = NotificationSubscriptionForm
+    search_fields = ('notification_type__name', 'user__username')
 
     class Media:
         js = ['admin/notification_subscription.js']
@@ -361,7 +362,7 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
 class EmailTaskAdmin(admin.ModelAdmin):
     list_display = ('task_id', 'user', 'status', 'created_at', 'updated_at')
     list_filter = ('status',)
-    search_fields = ('task_id', 'user__email')
+    search_fields = ('task_id', 'user__username')
 
 
 @admin.register(Notification)
