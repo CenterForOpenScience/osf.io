@@ -13,7 +13,7 @@ from django.contrib.admin import SimpleListFilter
 import waffle
 
 from osf.external.spam.tasks import reclassify_domain_references
-from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask
+from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask, Notification
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
@@ -362,6 +362,21 @@ class EmailTaskAdmin(admin.ModelAdmin):
     list_display = ('task_id', 'user', 'status', 'created_at', 'updated_at')
     list_filter = ('status',)
     search_fields = ('task_id', 'user__email')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'notification_type_name', 'sent', 'seen', 'event_context')
+    list_filter = ('sent',)
+    search_fields = ('subscription__notification_type__name', 'subscription__user__username')
+
+    def notification_type_name(self, obj):
+        return obj.subscription.notification_type.name
+    notification_type_name.short_description = 'Notification Type'
+
+    def user(self, obj):
+        return obj.subscription.user.username
+    user.short_description = 'User'
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)
