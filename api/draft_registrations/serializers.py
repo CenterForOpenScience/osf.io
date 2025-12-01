@@ -98,6 +98,7 @@ class DraftRegistrationSerializer(DraftRegistrationLegacySerializer, Taxonomizab
     )
 
     has_project = ser.SerializerMethodField()
+    default_license_id = ser.CharField(source='provider.default_license._id', read_only=True, default='')
 
     def get_has_project(self, obj):
         return obj.has_project
@@ -163,6 +164,8 @@ class DraftRegistrationDetailSerializer(DraftRegistrationSerializer, DraftRegist
     links = LinksField({
         'self': 'get_self_url',
     })
+
+    default_license_id = ser.CharField(source='provider.default_license._id', read_only=True, default='')
 
     def get_self_url(self, obj):
         return absolute_reverse(
