@@ -110,6 +110,13 @@ class CeleryConfig(defaults.CeleryConfig):
     # result_backend = 'amqp://'
 
 
+    ## Schedule overrides example
+    # from celery.schedules import crontab
+    # beat_schedule = defaults.CeleryConfig.beat_schedule.copy()
+    # beat_schedule["send_moderators_digest_email"]["schedule"] = crontab(minute='0')  # Hourly
+    # beat_schedule["send_users_digest_email"]["schedule"] = crontab(minute='0')  # Hourly
+
+
 USE_CDN_FOR_CLIENT_LIBS = False
 
 # Example of extending default settings
