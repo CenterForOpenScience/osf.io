@@ -91,7 +91,7 @@ class TestSubscriptionList:
         assert delete_res.status_code == 405
 
     def test_multiple_values_filter(self, app, url, user):
-        res = app.get(url + '?filter[event_name]=comments,file_updated', auth=user.auth)
+        res = app.get(url + '?filter[event_name]=global_file_updated,files_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:
             subscription['attributes']['event_name'] in ['global', 'comments']

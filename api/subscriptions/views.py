@@ -99,6 +99,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     notification_type__name__in=_global_reviews,
                     then=Value('global_reviews'),
                 ),
+                default=Value('notification_type__name'),
             ),
             legacy_id=Case(
                 When(
@@ -113,6 +114,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
                     notification_type__name__in=_global_reviews,
                     then=Value(f'{user_guid}_global_reviews'),
                 ),
+                default=Value('notification_type__name'),
             ),
         ).distinct('legacy_id')
 
