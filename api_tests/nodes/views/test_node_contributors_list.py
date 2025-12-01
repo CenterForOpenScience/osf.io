@@ -1311,7 +1311,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             )
             assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
     @mock.patch('website.project.signals.unreg_contributor_added.send')
     def test_add_unregistered_contributor_signal_if_default(
@@ -1333,7 +1333,7 @@ class TestNodeContributorCreateEmail(NodeCRUDTestCase):
             )
             assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
 
     def test_add_unregistered_contributor_signal_preprint_email_disallowed(
         self, app, user, url_project_contribs

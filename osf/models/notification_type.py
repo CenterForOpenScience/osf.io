@@ -66,7 +66,7 @@ class NotificationType(models.Model):
         USER_PENDING_INVITE = 'user_pending_invite'  # unused
         USER_FORWARD_INVITE = 'user_forward_invite'
         USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
-        USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'  # unused same as DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
         USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'  # unused
         USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'  # unused

@@ -1499,7 +1499,7 @@ class ContributorMixin(models.Model):
             auth=None,
             log=True,
             save=False,
-            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            notification_type=False,
     ):
         """Add multiple contributors
 
@@ -1592,6 +1592,19 @@ class ContributorMixin(models.Model):
             else:
                 raise e
 
+        if notification_type is None:
+            from osf.models import AbstractNode, Preprint, DraftRegistration
+
+            if isinstance(self, AbstractNode):
+                notification_type = NotificationType.Type.USER_INVITE_DEFAULT
+            elif isinstance(self, Preprint):
+                if self.provider.is_default:
+                    notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
+                else:
+                    notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+            elif isinstance(self, DraftRegistration):
+                notification_type = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
+
         self.add_contributor(
             contributor,
             permissions=permissions,
@@ -1610,7 +1623,7 @@ class ContributorMixin(models.Model):
                                           user_id=None,
                                           full_name=None,
                                           email=None,
-                                          notification_type=None,
+                                          notification_type=False,
                                           permissions=None,
                                           bibliographic=True,
                                           index=None):

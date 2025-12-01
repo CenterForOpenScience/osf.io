@@ -348,7 +348,7 @@ def capture_notifications(
     if expect_none:
         if captured['emits']:
             raise AssertionError(
-                f'{len(captured['emails'])} notifications were emitted. '
+                f'{len(captured['emits'])} notifications were emitted. '
                 'Expected at 0'
             )
         return

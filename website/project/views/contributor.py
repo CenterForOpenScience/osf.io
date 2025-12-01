@@ -560,6 +560,7 @@ def send_claim_email(
         destination_address=email,
         event_context={
             'user_fullname': referrer.id,
+            'referrer_name': referrer.fullname,
             'referrer_fullname': referrer.fullname,
             'fullname': unclaimed_record['name'],
             'node_url': node.url,
@@ -620,6 +621,8 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
     """
     if not notification_type:
         return
+    if not contributor.email:
+        return
 
     logo = settings.OSF_LOGO
     if getattr(resource, 'has_linked_published_preprints', None):
@@ -629,6 +632,10 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
     throttle = kwargs.get('throttle', settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE)
     if notification_type and check_email_throttle(contributor, notification_type, throttle=throttle):
         return
+
+    claim_url = None
+    if not contributor.is_confirmed:
+        claim_url = contributor.get_claim_url(resource._primary_key, external=True)
     referrer_name = getattr(getattr(auth, 'user', None), 'fullname', '') if auth else ''
     notification_type.instance.emit(
         user=contributor,
@@ -651,7 +658,8 @@ def notify_added_contributor(resource, contributor, notification_type, auth=None
             'can_change_preferences': False,
             'logo': logo,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
-            'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(resource, user=None)) if isinstance(resource, Node) else '- (none)\n'
+            'preprint_list': ''.join(f"- {p['absolute_url']}\n" for p in serialize_preprints(resource, user=None)) if isinstance(resource, Node) else '- (none)\n',
+            'claim_url': claim_url,
         }
     )
 

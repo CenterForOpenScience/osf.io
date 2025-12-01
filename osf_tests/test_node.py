@@ -916,7 +916,8 @@ class TestContributorMethods:
                     {'user': user1, 'permissions': ADMIN, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': False}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         last_log = node.logs.all().order_by('-date')[0]
         assert (
@@ -1114,7 +1115,8 @@ class TestContributorMethods:
                     {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
                     {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         assert user1 in node.contributors
         assert user2 in node.contributors
@@ -1232,7 +1234,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1241,7 +1243,7 @@ class TestNodeAddContributorRegisteredOrNot:
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname, notification_type=None)
 
         contributor = contributor_obj.user
         assert contributor in node.contributors
@@ -1260,14 +1262,14 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_fullname_email(self, user, node):
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications(expect_none=True):
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
@@ -1275,7 +1277,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1284,7 +1286,7 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         secondary_email = 'secondary@test.test'
         Email.objects.create(address=secondary_email, user=registered_user)
-        with capture_notifications():
+        with capture_notifications(expect_none=True):
             contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
         contributor = contributor_obj.user
         assert contributor == registered_user
@@ -1295,7 +1297,7 @@ class TestNodeAddContributorRegisteredOrNot:
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email, notification_type=None)
         contributor = contributor_obj.user
         assert contributor == unregistered_user
         assert contributor in node.contributors
@@ -1345,8 +1347,7 @@ class TestContributorAddedSignal:
             'permissions': permissions.WRITE
         }]
         with capture_signals() as mock_signals:
-            with capture_notifications():
-                node.add_contributors(contributors=contributors, auth=auth)
+            node.add_contributors(contributors=contributors, auth=auth)
             node.save()
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == {contributor_added}
@@ -2612,7 +2613,8 @@ class TestManageContributors:
                 [
                     {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
                     {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-                ]
+                ],
+                notification_type=None
             )
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
@@ -3364,7 +3366,8 @@ class TestContributorOrdering:
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
 
         user_contrib_id = node.contributor_set.get(user=user).id

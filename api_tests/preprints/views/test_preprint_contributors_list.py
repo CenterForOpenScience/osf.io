@@ -1463,7 +1463,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
                 auth=user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
         assert res.status_code == 201
 
     def test_add_unregistered_contributor_signal_if_preprint(self, app, user, url_preprint_contribs):
@@ -1483,7 +1483,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
 
     def test_add_contributor_invalid_send_email_param(self, app, user, url_preprint_contribs):
         url = f'{url_preprint_contribs}?send_email=true'
@@ -1564,23 +1564,7 @@ class TestPreprintContributorCreateEmail(NodeCRUDTestCase):
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT
-
-    def test_contributor_added_not_sent_if_unpublished(self, app, user, preprint_unpublished):
-        res = app.post_json_api(
-            f'/{API_BASE}preprints/{preprint_unpublished._id}/contributors/?send_email=preprint',
-            {
-                'data': {
-                    'type': 'contributors',
-                    'attributes': {
-                        'full_name': 'Jalen Hurt',
-                        'email': 'one@eagles.com'
-                    }
-                }
-            },
-            auth=user.auth
-        )
-        assert res.status_code == 201
+        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
 
 @pytest.mark.django_db
 class TestPreprintContributorBulkCreate(NodeCRUDTestCase):

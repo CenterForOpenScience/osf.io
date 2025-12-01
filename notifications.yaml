@@ -109,14 +109,14 @@ notification_types:
     tests: ['osf_tests/test_institution.py']
     template: 'website/templates/institution_deactivation.html.mako'
 
-  - name: user_invite_preprints_osf
+  - name: user_invite_osf_preprint
     subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
     tests: []
     template: 'website/templates/invite_preprints_osf.html.mako'
 
-  - name: user_invite_preprints
+  - name: provider_user_invite_preprint
     subject: 'You have been invited to contribute to a preprint'
     __docs__: ...
     object_content_type_model_name: osfuser

@@ -5,14 +5,14 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},
     <p>
-    ${referrer_fullname} has added you as a contributor on
-    % if not node.title or node.title == 'Untitled':
+    ${referrer_name} has added you as a contributor on
+    % if not node_title or node_title == 'Untitled':
       <a href="${node_absolute_url}">a new registration draft</a>
     % else:
       a new registration draft titled <a href="${node_absolute_url}">${node_title}</a>
     % endif
     to be submitted for inclusion in the
-	<a href="${domain}/registries/${node_provider__id if node.provider else 'osf'}">${registry_text}</a>.
+	<a href="${domain}/registries/${branded_service__id if branded_service__id else 'osf'}">${registry_text}</a>.
     </p>
     <p>
     <a href="${claim_url}">Click here</a> to set a password for your account.
@@ -24,7 +24,7 @@
     </p>
     <p>
     If you are not ${user_fullname} or if you have been erroneously associated with
-    % if not node.title or node.title == 'Untitled':
+    % if not node_title or node_title == 'Untitled':
 	  this registration draft
     % else:
       "${node_title}"

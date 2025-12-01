@@ -348,7 +348,8 @@ class TestDraftRegistrationContributorMethods():
                     {'user': user1, 'permissions': ADMIN, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': False}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         last_log = draft_registration.logs.all().order_by('-created')[0]
         assert (
@@ -510,7 +511,8 @@ class TestDraftRegistrationContributorMethods():
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         assert user1 in draft_registration.contributors
         assert user2 in draft_registration.contributors
