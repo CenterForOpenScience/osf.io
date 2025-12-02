@@ -197,9 +197,9 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
                 logo = settings.OSF_REGISTRIES_LOGO
         else:
             provider_type = 'preprint'
-            submissions_url = f'{settings.DOMAIN}reviews/preprints/{provider._id}'
-            withdrawals_url = ''
-            notification_settings_url = f'{settings.DOMAIN}reviews/{provider_type}s/{provider._id}/notifications'
+            submissions_url = f'{settings.DOMAIN}preprints/{provider._id}/moderation/submissions'
+            withdrawals_url = f'{settings.DOMAIN}preprints/{provider._id}/moderation/withdrawals?status=pending'
+            notification_settings_url = f'{settings.DOMAIN}preprints/{provider._id}/moderation/notifications'
             logo = provider._id if not provider.is_default else settings.OSF_PREPRINTS_LOGO
 
         event_context = {
