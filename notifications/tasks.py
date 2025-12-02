@@ -164,7 +164,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
 
         current_moderators = provider.get_group('moderator')
         if current_moderators is None or not current_moderators.user_set.filter(id=user.id).exists():
-            current_admins = provider.get_group('admins')
+            current_admins = provider.get_group('admin')
             if current_admins is None or not current_admins.user_set.filter(id=user.id).exists():
                 log_message(f"User is not a moderator for provider {provider._id} - skipping email")
                 email_task.status = 'FAILURE'

@@ -33,16 +33,17 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
     context['provider_id'] = provider.id
-    for recipient in provider.get_group('moderator').user_set.all():
-        context['user_fullname'] = recipient.fullname
-        context['recipient_fullname'] = recipient.fullname
+    for group_name in ['moderator', 'admin']:
+        for recipient in provider.get_group(group_name).user_set.all():
+            context['user_fullname'] = recipient.fullname
+            context['recipient_fullname'] = recipient.fullname
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
-            user=recipient,
-            subscribed_object=provider,
-            event_context=context,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+                user=recipient,
+                subscribed_object=provider,
+                event_context=context,
+                is_digest=True,
+            )
 
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
@@ -57,16 +58,17 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
 
     context['provider_id'] = preprint.provider.id
-    for recipient in preprint.provider.get_group('moderator').user_set.all():
-        context['user_fullname'] = recipient.fullname
-        context['recipient_fullname'] = recipient.fullname
+    for group_name in ['moderator', 'admin']:
+        for recipient in preprint.provider.get_group(group_name).user_set.all():
+            context['user_fullname'] = recipient.fullname
+            context['recipient_fullname'] = recipient.fullname
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
-            user=recipient,
-            event_context=context,
-            subscribed_object=preprint.provider,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+                user=recipient,
+                event_context=context,
+                subscribed_object=preprint.provider,
+                is_digest=True,
+            )
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, timestamp, resource, context):
@@ -105,18 +107,19 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
     context['localized_timestamp'] = str(timezone.now())
 
-    for recipient in resource.provider.get_group('moderator').user_set.all():
-        context['recipient_fullname'] = recipient.fullname
-        context['user_fullname'] = recipient.fullname
-        context['requester_fullname'] = recipient.fullname
-        context['is_request_email'] = False
+    for group_name in ['moderator', 'admin']:
+        for recipient in resource.provider.get_group(group_name).user_set.all():
+            context['recipient_fullname'] = recipient.fullname
+            context['user_fullname'] = recipient.fullname
+            context['requester_fullname'] = recipient.fullname
+            context['is_request_email'] = False
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
-            user=recipient,
-            subscribed_object=provider,
-            event_context=context,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+                user=recipient,
+                subscribed_object=provider,
+                event_context=context,
+                is_digest=True,
+            )
 
 
 @reviews_signals.reviews_email_submit.connect
