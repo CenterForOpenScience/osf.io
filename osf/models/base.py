@@ -605,6 +605,9 @@ class VersionedGuidMixin(GuidMixin):
         """
         return self.versioned_guids.first().guid
 
+    def get_versioned_absolute_api_v2_url(self, version):
+        raise NotImplementedError
+
     def get_semantic_iri(self):
         """Override `get_semantic_iri()` in `GuidMixin` so that all versions of the same object have the same semantic
         iri using only the base guid str.

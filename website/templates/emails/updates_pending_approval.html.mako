@@ -19,7 +19,7 @@
       submitted updates. Decisions must be made within
       ${int(settings.REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)} hours.
     % else:
-      <a href="${update_url}">Click here</a> to review the submited updates.
+      <a href="${update_url}">Click here</a> to review the submitted updates.
       Admins have up to ${int(settings.REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)} hours
       to make their decision.
     % endif

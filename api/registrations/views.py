@@ -130,7 +130,7 @@ class RegistrationMixin(NodeMixin):
 
 
 class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.BulkUpdateJSONAPIView, NodesFilterMixin, DraftMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -236,7 +236,7 @@ class RegistrationList(JSONAPIBaseView, generics.ListCreateAPIView, bulk_views.B
 
 
 class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, RegistrationMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -275,8 +275,8 @@ class RegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, Regist
         return context
 
 
-class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_list).
+class RegistrationContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, mixins.CreateModelMixin, RegistrationMixin, UserMixin):
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_contributors_list).
     """
     view_category = 'registrations'
     view_name = 'registration-contributors'
@@ -311,6 +311,20 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
         node = self.get_resource()
         return node.contributor_set.all().prefetch_related('user__guids')
 
+    def get_queryset(self):
+        queryset = self.get_queryset_from_request()
+        if is_bulk_request(self.request):
+            contrib_ids = []
+            for item in self.request.data:
+                try:
+                    contrib_ids.append(item['id'].split('-')[1])
+                except AttributeError:
+                    raise ValidationError('Contributor identifier not provided.')
+                except IndexError:
+                    raise ValidationError('Contributor identifier incorrectly formatted.')
+            queryset = queryset.filter(user__guids___id__in=contrib_ids)
+        return queryset
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['resource'] = self.get_resource()
@@ -319,7 +333,7 @@ class RegistrationContributorsList(BaseContributorList, mixins.CreateModelMixin,
 
 
 class RegistrationContributorDetail(BaseContributorDetail, mixins.UpdateModelMixin, mixins.DestroyModelMixin, RegistrationMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_contributors_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_contributors_read).
     """
     view_category = 'registrations'
     view_name = 'registration-contributor-detail'
@@ -396,7 +410,7 @@ class RegistrationImplicitContributorsList(JSONAPIBaseView, generics.ListAPIView
 
 
 class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_children_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_children_list).
     """
     view_category = 'registrations'
     view_name = 'registration-children'
@@ -423,7 +437,7 @@ class RegistrationChildrenList(BaseChildrenList, generics.ListAPIView, Registrat
 
 
 class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_citations_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_citations_list).
     """
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
 
@@ -432,7 +446,7 @@ class RegistrationCitationDetail(NodeCitationDetail, RegistrationMixin):
 
 
 class RegistrationCitationStyleDetail(NodeCitationStyleDetail, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_citation_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_citation_read).
     """
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
 
@@ -441,13 +455,13 @@ class RegistrationCitationStyleDetail(NodeCitationStyleDetail, RegistrationMixin
 
 
 class RegistrationForksList(NodeForksList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_forks_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_forks_list).
     """
     view_category = 'registrations'
     view_name = 'registration-forks'
 
 class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_comments_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_comments_list).
     """
     serializer_class = RegistrationCommentSerializer
     view_category = 'registrations'
@@ -461,14 +475,14 @@ class RegistrationCommentsList(NodeCommentsList, RegistrationMixin):
 
 
 class RegistrationLogList(NodeLogList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_logs_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_logs_list).
     """
     view_category = 'registrations'
     view_name = 'registration-logs'
 
 
 class RegistrationStorageProvidersList(NodeStorageProvidersList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_providers_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_providers_list).
     """
     serializer_class = RegistrationStorageProviderSerializer
 
@@ -629,7 +643,7 @@ class RegistrationRegistrationsList(NodeRegistrationsList, RegistrationMixin):
 
 
 class RegistrationFilesList(NodeFilesList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_files_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_files_list).
     """
     view_category = 'registrations'
     view_name = 'registration-files'
@@ -639,7 +653,7 @@ class RegistrationFilesList(NodeFilesList, RegistrationMixin):
 
 
 class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_files_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_files_read).
     """
     view_category = 'registrations'
     view_name = 'registration-file-detail'
@@ -647,14 +661,14 @@ class RegistrationFileDetail(NodeFileDetail, RegistrationMixin):
 
 
 class RegistrationInstitutionsList(NodeInstitutionsList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_institutions_list).
     """
     view_category = 'registrations'
     view_name = 'registration-institutions'
 
 
 class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_subjects_list).
     """
     view_category = 'registrations'
     view_name = 'registration-subjects'
@@ -663,7 +677,7 @@ class RegistrationSubjectsList(NodeSubjectsList, RegistrationMixin):
 
 
 class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_subjects_relationship).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_subjects_relationship).
     """
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -674,7 +688,7 @@ class RegistrationSubjectsRelationship(NodeSubjectsRelationship, RegistrationMix
 
 
 class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_institutions_relationship).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_institutions_relationship).
     """
     view_category = 'registrations'
     view_name = 'registration-relationships-institutions'
@@ -687,7 +701,7 @@ class RegistrationInstitutionsRelationship(NodeInstitutionsRelationship, Registr
 
 
 class RegistrationWikiList(NodeWikiList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_wikis_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_wikis_list).
     """
     view_category = 'registrations'
     view_name = 'registration-wikis'
@@ -696,7 +710,7 @@ class RegistrationWikiList(NodeWikiList, RegistrationMixin):
 
 
 class RegistrationLinkedNodesList(LinkedNodesList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_linked_nodes_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_linked_nodes_list).
     """
     view_category = 'registrations'
     view_name = 'linked-nodes'
@@ -850,7 +864,7 @@ class RegistrationLinkedRegistrationsList(NodeLinkedRegistrationsList, Registrat
 
 
 class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_view_only_links_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_view_only_links_list).
     """
     required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
     required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
@@ -860,7 +874,7 @@ class RegistrationViewOnlyLinksList(NodeViewOnlyLinksList, RegistrationMixin):
 
 
 class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_view_only_links_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_view_only_links_read).
     """
     required_read_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_READ]
     required_write_scopes = [CoreScopes.REGISTRATION_VIEW_ONLY_LINKS_WRITE]
@@ -870,7 +884,7 @@ class RegistrationViewOnlyLinkDetail(NodeViewOnlyLinkDetail, RegistrationMixin):
 
 
 class RegistrationIdentifierList(RegistrationMixin, NodeIdentifierList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/registrations_identifiers_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/registrations_identifiers_list).
     """
 
     serializer_class = RegistrationIdentifierSerializer
@@ -918,7 +932,7 @@ class RegistrationActionList(JSONAPIBaseView, ListFilterMixin, generics.ListCrea
         self.check_object_permissions(self.request, target)
 
         if not target.provider.is_reviewed:
-            raise Conflict(f'{target.provider.name} is an umoderated provider. If you believe this is an error, contact OSF Support.')
+            raise Conflict(f'{target.provider.name} is an unmoderated provider. If you believe this is an error, contact OSF Support.')
 
         serializer.save(user=self.request.user)
 
@@ -1087,7 +1101,7 @@ class RegistrationCallbackView(JSONAPIBaseView, generics.UpdateAPIView, Registra
                     errors=errors,
                 )
             else:
-                # Dataverse requires two seperate targets, one
+                # Dataverse requires two separate targets, one
                 # for draft files and one for published files
                 if src_provider == 'dataverse':
                     src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())

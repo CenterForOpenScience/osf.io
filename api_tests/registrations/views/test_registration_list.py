@@ -1899,7 +1899,7 @@ class TestRegistrationBulkUpdate:
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'Registrations can only be turned from private to public.'
 
-        # Confirm no changes have occured
+        # Confirm no changes have occurred
         registration_one.refresh_from_db()
         registration_two.refresh_from_db()
 

@@ -162,9 +162,9 @@ mock_responses = {
                           },
                   'keywords': [
                             'Collaborative filtering',
-                            'Extensions to recommander systems',
+                            'Extensions to recommender systems',
                             'Rating estimation methods',
-                            'Recommander systems'
+                            'Recommender systems'
                           ],
                   'created': '2015-02-13T18:17:48.000Z',
                   'profile_id': '53f383b4-1100-30d5-9473-2dde614dfcaa',

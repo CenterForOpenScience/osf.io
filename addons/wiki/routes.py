@@ -30,7 +30,7 @@ page_routes = {
             OsfWebRenderer('edit.mako', trust=False, template_dir=TEMPLATE_DIR)
         ),
 
-        # View (Id) | GET
+        # View (ID) | GET
         Rule(
             [
                 '/project/<pid>/wiki/id/<wid>/',

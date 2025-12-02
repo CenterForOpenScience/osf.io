@@ -1,5 +1,6 @@
 from furl import furl
 from django import http
+from osf.models.base import VersionedGuidMixin
 from rest_framework.exceptions import NotFound
 from rest_framework import permissions as drf_permissions
 from rest_framework import generics
@@ -70,11 +71,17 @@ class GuidDetail(JSONAPIBaseView, generics.RetrieveAPIView):
         raise NotFound
 
     def get_redirect_url(self, **kwargs):
-        guid = Guid.load(kwargs['guids'])
-        if guid:
-            referent = guid.referent
+        guid_str, version_number = Guid.split_guid(kwargs['guids'])
+        guid = Guid.load(guid_str)
+        if not guid:
+            return None
+        referent = guid.referent
+        if version_number and isinstance(referent, VersionedGuidMixin):
+            # if the guid string contains a version number and referent is versionable
+            return referent.get_versioned_absolute_api_v2_url(version_number)
+        else:
+            # if the guid string doesn't have a version number or the referent is not versionable
             if getattr(referent, 'absolute_api_v2_url', None):
                 return referent.absolute_api_v2_url
             else:
                 raise EndpointNotImplementedError()
-        return None

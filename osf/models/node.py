@@ -992,12 +992,16 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         return Tag.all_tags.filter(abstractnode_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     # Override Taggable
     def add_tag_log(self, tag, auth):
@@ -1019,10 +1023,15 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
     def remove_tag(self, tag, auth, save=True):
         if not tag:
             raise InvalidTagError
-        elif not self.tags.filter(name=tag).exists():
+
+        tag_obj = self.tags.filter(name=tag).first() or self.all_tags.filter(name=tag).first()
+        if not tag_obj:
             raise TagNotFoundError
+
+        if tag_obj.system:
+            # because system tags are hidden by default TagManager
+            tag_obj.delete()
         else:
-            tag_obj = Tag.objects.get(name=tag)
             self.tags.remove(tag_obj)
             self.add_log(
                 action=NodeLog.TAG_REMOVED,
@@ -1034,10 +1043,12 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 auth=auth,
                 save=False,
             )
-            if save:
-                self.save()
-            self.update_search()
-            return True
+
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
 
     def remove_tags(self, tags, auth, save=True):
         """
@@ -1310,7 +1321,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             return self
 
     def find_readable_antecedent(self, auth):
-        """ Returns first antecendant node readable by <user>.
+        """ Returns first antecedent node readable by <user>.
         """
         next_parent = self.parent_node
         while next_parent:
@@ -1319,7 +1330,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             next_parent = next_parent.parent_node
 
     def copy_contributors_from(self, resource):
-        """Copies the contibutors from node (including permissions and visibility) into this node."""
+        """Copies the contributors from node (including permissions and visibility) into this node."""
         contribs = []
         current_contributors = self.contributor_set.values_list('user_id', flat=True)
         for contrib in resource.contributor_set.all():
@@ -1821,7 +1832,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
     def next_descendants(self, auth, condition=lambda auth, node: True):
         """
-        Recursively find the first set of descedants under a given node that meet a given condition
+        Recursively find the first set of descendents under a given node that meet a given condition
 
         returns a list of [(node, [children]), ...]
         """
@@ -1997,7 +2008,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
+        # Title hasn't changed after sanitization, bail out
         if original_title == new_title:
             return False
         self.title = new_title
@@ -2020,7 +2031,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the description and log the event.
 
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.description
@@ -2047,7 +2058,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the category and log the event.
 
         :param str category: The new category
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.category
@@ -2074,7 +2085,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         """Set the article_doi and log the event.
 
         :param str article_doi: The new article doi
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.article_doi
@@ -2152,8 +2163,8 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                         # This is in place because historically projects and components
                         # live on different ElasticSearch indexes, and at the time of Node.save
                         # there is no reliable way to check what the old Node.category
-                        # value was. When the cateogory changes it is possible to have duplicate/dead
-                        # search entries, so always delete the ES doc on categoryt change
+                        # value was. When the category changes it is possible to have duplicate/dead
+                        # search entries, so always delete the ES doc on category change
                         # TODO: consolidate Node indexes into a single index, refactor search
                         if key == 'category':
                             self.delete_search_entry()

@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 def main(dry_run=True):
     # find all emails to be sent, pops the top one for each user(to obey the once
     # a week requirement), checks to see if one has been sent this week, and if
-    # not send the email, otherwise leave it in the queue
+    # not send the email; otherwise, leave it in the queue
 
     user_queue = {}
     for email in find_queued_mails_ready_to_be_sent():

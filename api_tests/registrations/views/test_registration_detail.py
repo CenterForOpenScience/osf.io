@@ -1243,7 +1243,7 @@ class TestProviderSpecificMetadata():
         expected_metadata = [{'field_name': 'foo', 'field_value': ''}]
         assert resp.json['data']['attributes']['provider_specific_metadata'] == expected_metadata
 
-    def test_get_provider_metadata_no_addtional_fields_or_additional_metadata(self, app):
+    def test_get_provider_metadata_no_additional_fields_or_additional_metadata(self, app):
         provider = RegistrationProviderFactory()
         registration = RegistrationFactory()
         registration.provider = provider
@@ -1266,7 +1266,7 @@ class TestProviderSpecificMetadata():
         assert resp.status_code == 200
 
         registration.refresh_from_db()
-        # Only previder-relevant metadata should be changed
+        # Only provider-relevant metadata should be changed
         assert registration.additional_metadata == {'foo': 'buzz', 'fizz': 'buzz'}
 
         resp = app.get(self.get_registration_detail_url(registration))

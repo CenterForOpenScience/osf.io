@@ -26,7 +26,7 @@ from conftest import start_mock_send_grid
 @pytest.mark.usefixtures('mock_send_grid')
 class TestMailHog:
 
-    def test_mailhog_recived_mail(self, mock_send_grid):
+    def test_mailhog_received_mail(self, mock_send_grid):
         with override_switch(features.ENABLE_MAILHOG, active=True):
             mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
             mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
@@ -53,7 +53,7 @@ class TestAuthMailhog(OsfTestCase):
 
         self.mock_send_grid = start_mock_send_grid(self)
 
-    def test_recived_confirmation(self):
+    def test_received_confirmation(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
         mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'

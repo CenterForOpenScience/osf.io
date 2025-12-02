@@ -272,7 +272,7 @@ class Institution(DirtyFieldsMixin, Loggable, ObjectIDMixin, BaseModel, Guardian
             return self.ror_uri
         if self.identifier_domain:  # if not ROR, at least URI
             return self.identifier_domain
-        # fallback to a url on osf
+        # fall back to a url on osf
         return self.absolute_url
 
     def get_semantic_iris(self) -> Iterable[str]:

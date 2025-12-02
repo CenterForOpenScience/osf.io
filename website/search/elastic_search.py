@@ -323,7 +323,7 @@ def load_parent(parent_id):
             'title': parent.title,
             'url': parent.url,
             'id': parent._id,
-            'is_registation': parent.is_registration,
+            'is_registration': parent.is_registration,
         }
     return None
 
@@ -436,7 +436,7 @@ def serialize_preprint(preprint, category):
         'tags': list(preprint.tags.filter(system=False).values_list('name', flat=True)),
         'description': preprint.description,
         'url': preprint.url,
-        'date_created': preprint.created,
+        'date_created': preprint.date_created_first_version,
         'license': serialize_node_license_record(preprint.license),
         'boost': 2,  # More relevant than a registration
         'extra_search_terms': clean_splitters(preprint.title),
