@@ -83,8 +83,8 @@ def _reset_password_get(auth, uid=None, token=None, institutional=False):
         }
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data=error_data)
 
-    # override routes.py login_url to redirect to dashboard
-    service_url = web_url_for('dashboard', _absolute=True)
+    # override routes.py login_url to redirect to myprojects
+    service_url = web_url_for('my_projects', _absolute=True)
 
     return {
         'uid': user_obj._id,
@@ -174,9 +174,9 @@ def forgot_password_get(auth):
     if auth.logged_in:
         return auth_logout(redirect_url=request.url)
 
-    #overriding the routes.py sign in url to redirect to the dashboard after login
+    #overriding the routes.py sign in url to redirect to the myprojects after login
     context = {}
-    context['login_url'] = web_url_for('dashboard', _absolute=True)
+    context['login_url'] = web_url_for('my_projects', _absolute=True)
 
     return context
 
@@ -326,7 +326,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
             # unlike other campaigns, institution login serves as an alternative for authentication
             if campaign == 'institution':
                 if next_url is None:
-                    next_url = web_url_for('dashboard', _absolute=True)
+                    next_url = web_url_for('my_projects', _absolute=True)
                 data['status_code'] = http_status.HTTP_302_FOUND
                 if auth.logged_in:
                     data['next_url'] = next_url
@@ -393,7 +393,7 @@ def login_and_register_handler(auth, login=True, campaign=None, next_url=None, l
         # `/login/` or `/register/` without any parameter
         if auth.logged_in:
             data['status_code'] = http_status.HTTP_302_FOUND
-        data['next_url'] = web_url_for('dashboard', _absolute=True)
+        data['next_url'] = web_url_for('my_projects', _absolute=True)
 
     return data
 
@@ -410,7 +410,7 @@ def auth_login(auth):
         if campaign and logged out, go to campaign register page (with next_url if presents)
         if next_url and logged in, go to next url
         if next_url and logged out, go to cas login page with current request url as service parameter
-        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
+        if none, go to `/myprojects` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: redirects
@@ -437,7 +437,7 @@ def auth_register(auth):
         if next_url and logged in, go to next url
         if next_url and logged out, go to cas login page with current request url as service parameter
         if next_url and logout flag, log user out first and then go to the next_url
-        if none, go to `/dashboard` which is decorated by `@must_be_logged_in`
+        if none, go to `/myprojects` which is decorated by `@must_be_logged_in`
 
     :param auth: the auth context
     :return: land, redirect or `auth_logout`
@@ -547,7 +547,7 @@ def auth_email_logout(token, user):
     When a user is adding an email or merging an account, add the email to the user and log them out.
     """
 
-    redirect_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=web_url_for('index', _absolute=True)))
+    redirect_url = cas.get_logout_url(service_url=cas.get_login_url(service_url=web_url_for('auth_login', _absolute=True)))
     try:
         unconfirmed_email = user.get_unconfirmed_email_for_token(token)
     except InvalidTokenError:
@@ -616,7 +616,7 @@ def external_login_confirm_email_get(auth, uid, token):
             return redirect(campaign_url)
         if new:
             status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
-        return redirect(web_url_for('dashboard'))
+        return redirect(web_url_for('my_projects'))
 
     # token is invalid
     if token not in user.email_verifications:
@@ -999,7 +999,7 @@ def resend_confirmation_post(auth):
                     try:
                         send_confirm_email(user, clean_email, renew=True)
                     except KeyError:
-                        # already confirmed, redirect to dashboard
+                        # already confirmed, redirect to myprojects
                         status_message = f'This email {clean_email} has already been confirmed.'
                         kind = 'warning'
                     user.email_last_sent = timezone.now()
@@ -1059,7 +1059,7 @@ def external_login_email_post():
     service_url = session.get('service_url', None)
 
     # TODO: @cslzchen use user tags instead of destination
-    destination = 'dashboard'
+    destination = 'my_projects'
     for campaign in campaigns.get_campaigns():
         if campaign != 'institution':
             # Handle different url encoding schemes between `furl` and `urlparse/urllib`.

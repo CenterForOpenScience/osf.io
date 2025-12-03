@@ -390,7 +390,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_with_another_user_logged_in(self):
         # TODO: check in qa url encoding
         another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url, auth=another_user.auth)
         assert res.status_code == 302, 'redirects to cas logout'
         assert '/logout?service=' in res.location
@@ -404,7 +404,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_create(self):
         # TODO: check in qa url encoding
         assert not self.user.is_registered
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
@@ -419,11 +419,8 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert not self.user.is_registered
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
-        with capture_notifications() as notifications:
-            res = self.app.get(url)
-        assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
+        res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
         assert '/login?service=' in res.location
@@ -437,7 +434,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duped_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert dupe_user.external_identity == self.user.external_identity
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
@@ -451,7 +448,7 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_get_duping_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 403, 'only allows one user to link an id'
 

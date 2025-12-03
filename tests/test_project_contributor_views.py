@@ -432,7 +432,7 @@ class TestProjectContributorViews(OsfTestCase):
         self.project.reload()
         self.project2.reload()
         assert self.user2._id not in self.project.contributors
-        assert '/dashboard/' not in res.json
+        assert '/my_projects/' not in res.json
 
         assert self.user2._id not in self.project2.contributors
         # A log event was added
@@ -453,7 +453,7 @@ class TestProjectContributorViews(OsfTestCase):
         )
         self.project.reload()
         assert res.status_code == 200
-        assert res.json['redirectUrl'] == '/dashboard/'
+        assert res.json['redirectUrl'] == '/my_projects/'
         assert self.user2._id not in self.project.contributors
 
     def test_public_project_remove_self_not_admin(self):

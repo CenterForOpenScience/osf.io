@@ -642,7 +642,7 @@ def component_remove(auth, node, **kwargs):
     if parent and parent.can_view(auth):
         redirect_url = node.parent_node.url
     else:
-        redirect_url = '/dashboard/'
+        redirect_url = '/my_projects/'
 
     return {
         'url': redirect_url,
