@@ -8,9 +8,9 @@ logger = logging.getLogger(__name__)
 
 def reindex_versioned_preprints(dry_run=False, batch_size=100, provider_id=None, guids=None):
     if guids:
-        preprints = Preprint.objects.filter(guids___id__in=guids)
+        preprints = Preprint.objects.filter(versioned_guids__guid___id__in=guids)
     else:
-        preprints = Preprint.objects.filter(versioned_guids__isnull=False).distinct()
+        preprints = Preprint.objects.filter(versioned_guids__isnull=False)
 
         if provider_id:
             preprints = preprints.filter(provider___id=provider_id)
@@ -38,12 +38,6 @@ def reindex_versioned_preprints(dry_run=False, batch_size=100, provider_id=None,
         else:
             try:
                 preprint.update_search()
-                if processed % 10 == 0:
-                    logger.info(
-                        f'Re-indexed preprint {preprint._id} '
-                        f'(version {preprint.versioned_guids.first().version if preprint.versioned_guids.exists() else "N/A"}) '
-                        f'[{processed}/{total_count}]'
-                    )
             except Exception as e:
                 logger.error(f'Failed to re-index preprint {preprint._id}: {e}')
 
@@ -100,5 +94,5 @@ class Command(BaseCommand):
             dry_run=dry_run,
             batch_size=batch_size,
             provider_id=provider_id,
-            guids=guids
+            guids=[guids]
         )

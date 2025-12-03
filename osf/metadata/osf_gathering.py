@@ -419,6 +419,8 @@ def gather_flexible_types(focus):
 def gather_created(focus):
     if focus.rdftype == OSF.Registration:
         yield (DCTERMS.created, getattr(focus.dbmodel, 'registered_date', None))
+    elif focus.rdftype == OSF.Preprint:
+        yield (DCTERMS.created, focus.dbmodel.date_created_first_version)
     else:
         yield (DCTERMS.created, getattr(focus.dbmodel, 'created', None))
 
