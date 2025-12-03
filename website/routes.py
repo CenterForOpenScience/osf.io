@@ -231,7 +231,7 @@ def sitemap_file(path):
 
 def goodbye():
     # Redirect to dashboard if logged in
-    redirect_url = util.web_url_for('index')
+    redirect_url = util.web_url_for('auth_login')
     if _get_current_user():
         return redirect(redirect_url)
     else:

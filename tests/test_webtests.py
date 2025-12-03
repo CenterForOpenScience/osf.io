@@ -88,7 +88,7 @@ class TestAUser(OsfTestCase):
         res = self.app.get(self.user.url, follow_redirects=True)
         assert self.user.url in res.text
 
-    # `GET /login/` without parameters is redirected to `/dashboard/` page which has `@must_be_logged_in` decorator
+    # `GET /login/` without parameters is redirected to `/myprojects/` page which has `@must_be_logged_in` decorator
     # if user is not logged in, she/he is further redirected to CAS login page
     def test_is_redirected_to_cas_if_not_logged_in_at_login_page(self):
         res = self.app.resolve_redirect(self.app.get('/login/'))
@@ -96,19 +96,19 @@ class TestAUser(OsfTestCase):
         location = res.headers.get('Location')
         assert 'login?service=' in location
 
-    def test_is_redirected_to_dashboard_if_already_logged_in_at_login_page(self):
+    def test_is_redirected_to_myprojects_if_already_logged_in_at_login_page(self):
         res = self.app.get('/login/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'dashboard' in res.headers.get('Location')
+        assert 'myprojects' in res.headers.get('Location')
 
     def test_register_page(self):
         res = self.app.get('/register/')
         assert res.status_code == 200
 
-    def test_is_redirected_to_dashboard_if_already_logged_in_at_register_page(self):
+    def test_is_redirected_to_myprojects_if_already_logged_in_at_register_page(self):
         res = self.app.get('/register/', auth=self.user.auth)
         assert res.status_code == 302
-        assert 'dashboard' in res.headers.get('Location')
+        assert 'myprojects' in res.headers.get('Location')
 
     def test_sees_projects_in_her_dashboard(self):
         # the user already has a project

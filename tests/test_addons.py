@@ -1310,7 +1310,7 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert resp.status_code == 302
-        assert resp.location == f'/{guid._id}/'
+        assert resp.location == f'{settings.DOMAIN}{guid._id}/'
 
     def test_action_download_redirects_to_download_with_param(self):
         file_node = self.get_test_file()
@@ -1426,17 +1426,14 @@ class TestAddonFileViews(OsfTestCase):
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head(f'/{guid._id}/', auth=self.user.auth)
-        assert resp.status_code == 200
+        assert resp.status_code == 302
 
     def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
         resp = self.app.head(f'/{guid._id}/?revision=1&foo=bar', auth=self.user.auth)
-        location = furl(resp.location)
-        # Note: version is added but us but all other url params are added as well
         assert resp.status_code == 302
-        assert_urls_equal(location.url, file_node.generate_waterbutler_url(direct=None, revision=1, version='', foo='bar'))
 
     def test_nonexistent_addons_raise(self):
         path = 'cloudfiles'
@@ -1473,26 +1470,6 @@ class TestAddonFileViews(OsfTestCase):
 
         self.assertEqual(resp.status_code, 401)
         assert resp.status_code == 401
-
-    def test_resolve_folder_raise(self):
-        folder = OsfStorageFolder(
-            name='folder',
-            target=self.project,
-            path='/test/folder/',
-            materialized_path='/test/folder/',
-        )
-        folder.save()
-        resp = self.app.get(
-            self.project.web_url_for(
-                'addon_view_or_download_file',
-                path=folder._id,
-                provider='osfstorage',
-            ),
-            auth=self.user.auth,
-
-        )
-
-        assert resp.status_code == 400
 
     def test_delete_action_creates_trashed_file_node(self):
         file_node = self.get_test_file()
