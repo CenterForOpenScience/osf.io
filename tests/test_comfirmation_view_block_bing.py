@@ -152,7 +152,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         create_url = user.get_confirmation_url(
             user.username,
             external_id_provider='service',
-            destination='dashboard'
+            destination='my_projects'
         )
 
         res = self.app.get(
@@ -179,7 +179,7 @@ class TestConfirmationViewBlockBingPreview(OsfTestCase):
         link_url = user.get_confirmation_url(
             user.username,
             external_id_provider='service',
-            destination='dashboard'
+            destination='my_projects'
         )
 
         res = self.app.get(
