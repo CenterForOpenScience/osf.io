@@ -35,8 +35,6 @@ from osf.models.provider import PreprintProvider
 from osf.models.tag import Tag
 from osf.utils.requests import check_select_for_update
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
-from website.ember_osf_web.decorators import ember_flag_is_active
-from osf import features
 
 
 @block_bing_preview
@@ -421,7 +419,6 @@ def auth_login(auth):
 
 
 @collect_auth
-@ember_flag_is_active(features.EMBER_AUTH_REGISTER)
 def auth_register(auth):
     """
     View for OSF register. Land on the register page, redirect or go to `auth_logout`

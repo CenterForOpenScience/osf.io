@@ -15,7 +15,6 @@ from osf.models import AbstractNode, Node, Conference, OSFUser
 from website import settings
 from website.conferences import utils
 from website.conferences.message import ConferenceMessage, ConferenceError
-from website.ember_osf_web.decorators import ember_flag_is_active
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED, CONFERENCE_DEPRECATION
 from website.mails import send_mail
 from website.util import web_url_for
@@ -282,7 +281,6 @@ def serialize_conference(conf):
         'talk': conf.talk,
     }
 
-@ember_flag_is_active(features.EMBER_MEETING_DETAIL)
 def conference_results(meeting):
     """Return the data for the grid view for a conference.
     :param str meeting: Endpoint name for a conference.
@@ -313,7 +311,6 @@ def conference_submissions(**kwargs):
     """
     return {'success': True}
 
-@ember_flag_is_active(features.EMBER_MEETINGS)
 def conference_view(**kwargs):
     meetings = []
     for conf in Conference.objects.all():
