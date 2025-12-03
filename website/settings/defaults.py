@@ -445,7 +445,6 @@ class CeleryConfig:
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
-        'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
@@ -575,7 +574,6 @@ class CeleryConfig:
         'osf.management.commands.deactivate_requested_accounts',
         'osf.management.commands.check_crossref_dois',
         'osf.management.commands.find_spammy_files',
-        'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
@@ -717,10 +715,6 @@ class CeleryConfig:
             'check_crossref_doi': {
                 'task': 'management.commands.check_crossref_dois',
                 'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
-            },
-            'update_institution_project_counts': {
-                'task': 'management.commands.update_institution_project_counts',
-                'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
             },
 #            'archive_registrations_on_IA': {
 #                'task': 'osf.management.commands.archive_registrations_on_IA',

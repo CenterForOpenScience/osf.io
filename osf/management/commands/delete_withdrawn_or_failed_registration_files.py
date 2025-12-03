@@ -21,7 +21,7 @@ def mark_withdrawn_files_as_deleted(batch_size, dry_run=False):
     for node in withdrawn_registrations.annotate(fc=Count('files')).filter(fc__gte=1)[:batch_size]:
         files_to_be_deleted = node.files.all()
         logger.info(
-            f'{"[DRY-RUN]" if dry_run else ""} There are {files_to_be_deleted.count()} files deleted from withrawn node ({node._id})')
+            f'{"[DRY-RUN]" if dry_run else ""} There are {files_to_be_deleted.count()} files deleted from withdrawn node ({node._id})')
         for file in files_to_be_deleted:
             if not dry_run:
                 file.delete()

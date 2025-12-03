@@ -630,7 +630,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
-        claim_registered_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
+        claim_registered_url = f'/legacy/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
         assert res.status_code == 302
         assert claim_registered_url in res.headers.get('Location')
 
@@ -672,7 +672,7 @@ class TestClaimViews(OsfTestCase):
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
-        claim_registered_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
+        claim_registered_url = f'/legacy/user/{unregistered_user._id}/{self.project._id}/claim/verify/{token}/'
         assert res.status_code == 302
         assert claim_registered_url in res.headers.get('Location')
 
@@ -797,7 +797,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         # TODO: check in qa url encoding
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
-        url = f'/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
+        url = f'/legacy/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
         # logged out user gets redirected to cas login
         res1 = self.app.get(url)
         assert res1.status_code == 302
@@ -820,7 +820,7 @@ class TestClaimViews(OsfTestCase):
         url_with_service_ticket = f'{url}?ticket={service_ticket}'
         res = self.app.get(url_with_service_ticket)
         # The response of this request is expected to be a 302 with `Location`.
-        # And the redirect URL must equal to the originial service URL
+        # And the redirect URL must equal to the original service URL
         assert res.status_code == 302
         redirect_url = res.headers['Location']
         assert redirect_url == url
@@ -938,7 +938,7 @@ class TestClaimViews(OsfTestCase):
         assert self.mock_send_grid.called
 
     def test_claim_user_post_if_email_is_different_from_given_email(self):
-        email = fake_email()  # email that is different from the one the referrer gave
+        email = fake_email()  # email that is different from the one given by the referrer
         url = f'/api/v1/user/{self.user._primary_key}/{self.project._primary_key}/claim/email/'
         self.app.post(url, json={'value': email, 'pk': self.user._primary_key} )
         assert self.mock_send_grid.called
@@ -958,7 +958,7 @@ class TestClaimViews(OsfTestCase):
         assert res.status_code == 400
 
     def test_cannot_claim_user_with_user_who_is_already_contributor(self):
-        # user who is already a contirbutor to the project
+        # user who is already a contributor to the project
         contrib = AuthUserFactory()
         self.project.add_contributor(contrib, auth=Auth(self.project.creator))
         self.project.save()

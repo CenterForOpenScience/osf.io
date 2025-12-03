@@ -211,7 +211,7 @@
 		"help_text": "To improve explanatory power, one may want to model pre-exposure patient characteristics that are risk factors for the study outcome. To reduce confounding in the absence of baseline randomization one may want to adjust for patient characteristics that are also associated exposure.",
 		"block_type": "question-label",
 		"display_text": "Patient Characteristics to be used in the analysis",
-		"example_text": "Age, sex, pre-existing dementia, BMI, Hb A1c measurement, \u2026..",
+		"example_text": "Age, sex, preexisting dementia, BMI, Hb A1c measurement, \u2026..",
 		"required": false
 	}, {
 		"help_text": "",

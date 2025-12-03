@@ -17,4 +17,4 @@ CHRONOS_USERNAME = <ask a dev for staging creds to put here>
 CHRONOS_PASSWORD =  <ask a dev for staging creds to put here>
 CHRONOS_API_KEY =  <ask a dev for staging creds to put here>
 
-The link 'Submit to an APA-published journal' should appear when looking at a accepted preprint in the provider you've added to config/environment.js.
+The link 'Submit to an APA-published journal' should appear when looking at an accepted preprint in the provider you've added to config/environment.js.

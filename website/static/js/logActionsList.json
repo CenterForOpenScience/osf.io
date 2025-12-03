@@ -95,6 +95,7 @@
     "subjects_updated": "${user} updated the subjects on ${node}",
     "view_only_link_added": "${user} created ${anonymous_link} view-only link to ${node}",
     "view_only_link_removed": "${user} removed ${anonymous_link} view-only link to ${node}",
+    "registration_date_updated": "${user} updated registration date of ${node} from ${last_date} to ${new_date}",
     "has_coi_updated": "${user} changed the conflict of interest statement availability for ${preprint}.",
     "coi_statement_updated": "${user} changed the conflict of interest statement for ${preprint}.",
     "has_data_links_updated": "${user} has updated the has links to data field to ${value}",

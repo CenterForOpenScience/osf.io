@@ -240,7 +240,7 @@ def requirements(ctx, base=False, addons=False, release=False, dev=True, all=Tru
         inv requirements
         inv requirements --all
 
-    You should use --all for updating your developement environment.
+    You should use --all for updating your development environment.
     --all will install (in order): addons, dev and the base requirements.
 
     By default, base requirements will run. However, if any set of addons, release, or dev are chosen, base
@@ -372,7 +372,6 @@ API_TESTS3 = [
     'api_tests/guids',
     'api_tests/meetings',
     'api_tests/metadata_records',
-    'api_tests/osf_groups',
     'api_tests/reviews',
     'api_tests/regions',
     'api_tests/search',
@@ -629,7 +628,7 @@ def bower_install(ctx):
 def docker_init(ctx):
     """Initial docker setup"""
     print('You will be asked for your sudo password to continue...')
-    if platform.system() == 'Darwin':  # Mac OSX
+    if platform.system() == 'Darwin':  # macOS
         ctx.run('sudo ifconfig lo0 alias 192.168.168.167')
     else:
         print('Your system is not recognized, you will have to setup docker manually')
@@ -666,7 +665,7 @@ def hotfix(ctx, name, finish=False, push=False):
     """Rename hotfix branch to hotfix/<next-patch-version> and optionally
     finish hotfix.
     """
-    print('Checking out master to calculate curent version')
+    print('Checking out master to calculate current version')
     ctx.run('git checkout master')
     latest_version = latest_tag_info()['current_version']
     print(f'Current version is: {latest_version}')
@@ -877,7 +876,7 @@ def set_maintenance(ctx, message='', level=1, start=None, end=None):
     """Display maintenance notice across OSF applications (incl. preprints, registries, etc.)
 
     start - Start time for the maintenance period
-    end - End time for the mainteance period
+    end - End time for the maintenance period
         NOTE: If no start or end values are provided, default to starting now
         and ending 24 hours from now.
     message - Message to display. If omitted, will be:

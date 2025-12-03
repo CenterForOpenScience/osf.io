@@ -41,7 +41,7 @@ def create_mock_github(user='octo-cat', private=False):
         ...   u'url': u'https://api.github.com/repos/octocat/mock-repo/commits/c6eaaf6708561c3d4439c0c8dd99c2e33525b1e6'},
         ...  u'name': u'no-bundle'}]
 
-    :param str user: Github username.
+    :param str user: GitHub username.
     :param bool private: Whether repo is private.
     :return: An autospecced GitHub Mock object
     """

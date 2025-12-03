@@ -885,11 +885,11 @@ var InstitutionMetrics = function() {
     });
     renderMetric("#total-institutional-users", "metric", institutional_user_count, defaultHeight);
 
-    // Total Instutional Users / Total OSF Users
+    // Total Institutional Users / Total OSF Users
     renderCalculationBetweenTwoQueries(institutional_user_count, activeUsersQuery,
                                        "#percentage-institutional-users", null, 'percentage');
 
-    // Insitutional Nodes!
+    // Institutional Nodes!
     var yesterdaysInstUserCount = new MetricParams({
         eventCollection: "institution_summary",
         timeframe: "previous_1_day",

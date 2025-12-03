@@ -58,7 +58,7 @@ class TestSubjectTreeValidation(OsfTestCase):
         self.invalid_root_leaf = [self.outside_root._id, self.parent_subj_0._id, self.child_subj_00._id]
         self.invalid_ids = ['notarealsubjectid', 'thisisalsoafakeid']
 
-    def test_hiarachy_property(self):
+    def test_hierarchy_property(self):
         assert self.child_subj_00.hierarchy == [self.root_subject._id, self.parent_subj_0._id, self.child_subj_00._id]
         assert self.two_level_parent.hierarchy == [self.two_level_root._id, self.two_level_parent._id]
         assert self.one_level_root.hierarchy == [self.one_level_root._id]

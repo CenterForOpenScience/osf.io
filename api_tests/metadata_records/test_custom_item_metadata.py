@@ -351,6 +351,7 @@ class TestCustomItemMetadataRecordDetail:
                     resource_type_general='book-chapter',
                 ),
                 auth=anybody_with_write_permission.auth,
+                expect_errors=True,
             )
             assert res.status_code == 400
             expected.assert_expectations(db_record=db_record, api_record=None)  # db unchanged

@@ -102,6 +102,7 @@ class TestNodeView(AdminTestCase):
         node = ProjectFactory()
         guid = node._id
         request = RequestFactory().get('/fake_path')
+        request.user = AuthUserFactory()
         view = NodeView()
         view = setup_view(view, request, guid=guid)
         temp_object = view.get_object()
@@ -749,7 +750,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert from_draft.deleted is None
         assert from_draft.registered_node is None
 
-    def test_all_previous_data_is_restored_after_revertion(self):
+    def test_all_previous_data_is_restored_after_reversion(self):
         self.approve_version(self.get_current_version(self.registration))
 
         draft = DraftRegistration.objects.get(registered_node=self.registration)
@@ -775,7 +776,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
         assert draft.contributors.count() == 4
         assert draft.tags.count() == 2
 
-    def test_contributors_approvals_are_reset_after_revertion(self):
+    def test_contributors_approvals_are_reset_after_reversion(self):
         contributors = self.pre_moderation_registration.contributors.all()
         for contributor in contributors:
             self.pre_moderation_registration.require_approval(contributor)
@@ -871,7 +872,7 @@ class TestRegistrationRevertToDraft(AdminTestCase):
 
         assert self.registration.sanction is None
 
-    def test_embargo_is_reset_after_revertion(self):
+    def test_embargo_is_reset_after_reversion(self):
         self.no_moderation_draft = DraftRegistrationFactory(
             title='embargo-registration',
             description='some description',

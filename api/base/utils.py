@@ -178,7 +178,7 @@ def default_node_permission_queryset(user, model_cls):
 def default_node_list_permission_queryset(user, model_cls, **annotations):
     # **DO NOT** change the order of the querysets below.
     # If get_roots() is called on default_node_list_qs & default_node_permission_qs,
-    # Django's alaising will break and the resulting QS will be empty and you will be sad.
+    # Django's aliasing will break and the resulting QS will be empty and you will be sad.
     qs = default_node_permission_queryset(user, model_cls) & default_node_list_queryset(model_cls)
     if annotations:
         qs = qs.annotate(**annotations)
@@ -264,27 +264,6 @@ def assert_resource_type(obj, resource_tuple):
 
     a_or_an = 'an' if error_message[0].lower() in 'aeiou' else 'a'
     assert isinstance(obj, resource_tuple), f'obj must be {a_or_an} {error_message}; got {obj}'
-
-
-class MockQueryset(list):
-    """
-    This class is meant to convert a simple list into a filterable queryset look-a-like.
-    """
-
-    def __init__(self, items, search, default_attrs=None, **kwargs):
-        self.search = search
-
-        for item in items:
-            if default_attrs:
-                item.update(default_attrs)
-            self.add_dict_as_item(item)
-
-    def __len__(self):
-        return self.search.count()
-
-    def add_dict_as_item(self, dict):
-        item = type('item', (object,), dict)
-        self.append(item)
 
 
 def toggle_view_by_flag(flag_name, old_view, new_view):

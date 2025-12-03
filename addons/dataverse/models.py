@@ -27,7 +27,7 @@ class DataverseFileNode(BaseFileNode):
         version = query_params.get('version', None)
         if version not in {'latest', 'latest-published'}:
             raise addon_errors.QueryError(
-                'Dataverse requires a "version" query paramater. '
+                'Dataverse requires a "version" query parameter. '
                 'Acceptable options are "latest" or "latest-published"'
             )
 
