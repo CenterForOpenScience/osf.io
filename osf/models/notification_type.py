@@ -3,7 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
 from enum import Enum
-from osf.utils.caching import cached_property
+from osf.utils.caching import ttl_cached_property
 
 
 def get_default_frequency_choices():
@@ -153,7 +153,7 @@ class NotificationType(models.Model):
 
         DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
-        @cached_property
+        @ttl_cached_property(ttl=60 * 60 * 24)  # 24 hours
         def instance(self):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
