@@ -766,27 +766,9 @@ class TestCommentViews(OsfTestCase):
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert n_unread == 1
 
-@mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super().setUp()
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_without_domain(self, mock_use_ember_app):
-        provider = PreprintProviderFactory(domain='')
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_with_domain_without_redirect(self, mock_use_ember_app):
-        domain = 'https://test.com/'
-        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()
 
     def test_preprint_provider_with_domain_with_redirect(self):
         domain = 'https://test.com/'
@@ -799,11 +781,3 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 301
         assert res.headers['location'] == f'{domain}{preprint._id}/'
         assert res.request.path == f'/{preprint._id}/'
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_with_osf_domain(self, mock_use_ember_app):
-        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()

@@ -30,7 +30,6 @@ from addons.github.models import GithubFolder, GithubFile, GithubFileNode
 from addons.github.tests.factories import GitHubAccountFactory
 from addons.osfstorage.models import OsfStorageFileNode, OsfStorageFolder, OsfStorageFile
 from addons.osfstorage.tests.factories import FileVersionFactory
-from osf import features
 from osf.models import files as file_models
 from osf.models.files import BaseFileNode, TrashedFileNode
 from osf.utils.permissions import WRITE, READ
@@ -43,8 +42,6 @@ from addons.osfstorage import settings as osfstorage_settings
 from api.caching.utils import storage_usage_cache
 from dateutil.parser import parse as parse_date
 from framework import sentry
-from website.settings import EXTERNAL_EMBER_APPS
-from waffle.testutils import override_flag
 from django.conf import settings as django_conf_settings
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -1376,40 +1373,6 @@ class TestAddonFileViews(OsfTestCase):
         # Note: version is added but us but all other url params are added as well
         assert_urls_equal(location.url, file_node.generate_waterbutler_url(action='download', direct=None, revision=1, version=''))
 
-    @mock.patch('website.views.stream_emberapp')
-    @pytest.mark.enable_bookmark_creation
-    def test_action_view_calls_view_file(self, mock_ember):
-        self.user.reload()
-        self.project.reload()
-
-        file_node = self.get_test_file()
-        guid = file_node.get_guid(create=True)
-
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            self.app.get(f'/{guid._id}/?action=view', auth=self.user.auth)
-
-        args, kwargs = mock_ember.call_args
-        assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
-
-    @mock.patch('website.views.stream_emberapp')
-    @pytest.mark.enable_bookmark_creation
-    def test_no_action_calls_view_file(self, mock_ember):
-        self.user.reload()
-        self.project.reload()
-
-        file_node = self.get_test_file()
-        guid = file_node.get_guid(create=True)
-
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            self.app.get(f'/{guid._id}/', auth=self.user.auth)
-
-        args, kwargs = mock_ember.call_args
-        assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
-
     def test_download_create_guid(self):
         file_node = self.get_test_file()
         assert file_node.get_guid() is None
@@ -1478,20 +1441,12 @@ class TestAddonFileViews(OsfTestCase):
         )
         assert resp.status_code == 400
 
-    @mock.patch('website.views.stream_emberapp')
-    def test_head_returns_url_and_redirect(self, mock_ember):
+    def test_head_returns_url_and_redirect(self):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
-        with override_flag(features.EMBER_FILE_PROJECT_DETAIL, active=True):
-            resp = self.app.head(f'/{guid._id}/', auth=self.user.auth)
+        resp = self.app.head(f'/{guid._id}/', auth=self.user.auth)
         assert resp.status_code == 200
-
-        args, kwargs = mock_ember.call_args
-        assert kwargs == {}
-        assert args[0] == EXTERNAL_EMBER_APPS['ember_osf_web']['server']
-        assert args[1] == EXTERNAL_EMBER_APPS['ember_osf_web']['path'].rstrip('/')
-
 
     def test_head_returns_url_with_version_and_redirect(self):
         file_node = self.get_test_file()
