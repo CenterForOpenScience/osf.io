@@ -1,7 +1,5 @@
 import os
 from rest_framework import status as http_status
-import requests
-from urllib.parse import urljoin
 import json
 
 import waffle
@@ -9,8 +7,6 @@ from waffle.utils import get_setting
 
 from flask import request
 from flask import send_from_directory
-from flask import Response
-from flask import stream_with_context
 from flask import g
 from django.conf import settings as api_settings
 from django.utils.encoding import smart_str
@@ -30,7 +26,7 @@ from framework.routing import render_mako_string
 from framework.auth.core import _get_current_user
 
 from osf import features
-from osf.models import Institution, Preprint
+from osf.models import Institution
 from osf.utils import sanitize
 from osf.utils import permissions
 from website import util
@@ -54,13 +50,9 @@ from website.conferences import views as conference_views
 from website.policies import views as policy_views
 from website.preprints import views as preprint_views
 from website.registries import views as registries_views
-from website.reviews import views as reviews_views
-from website.institutions import views as institution_views
 from website.notifications import views as notification_views
-from website.ember_osf_web import views as ember_osf_web_views
 from website.closed_challenges import views as closed_challenges_views
 from website.identifiers import views as identifier_views
-from website.settings import EXTERNAL_EMBER_APPS, EXTERNAL_EMBER_SERVER_TIMEOUT
 
 from api.waffle.utils import flag_is_active
 
@@ -237,55 +229,6 @@ def sitemap_file(path):
         mimetype=mime
     )
 
-def ember_app(path=None):
-    """Serve the contents of the ember application"""
-    ember_app_folder = None
-    fp = path or 'index.html'
-
-    ember_app = None
-
-    for k in EXTERNAL_EMBER_APPS.keys():
-        if request.path.strip('/').startswith(k):
-            ember_app = EXTERNAL_EMBER_APPS[k]
-            if k == 'preprints':
-                # If a valid guid is provided w/o version, find and redirect to the latest version. This only applies
-                # to route preprints/<provider_id>/<preprint_id>: e.g. /preprints/osf/abcde -> /preprints/osf/abcde_v3
-                if path:
-                    path_values = path.split('/')
-                    guid_str = path_values[1] if len(path_values) > 1 else None
-                    if guid_str:
-                        preprint = Preprint.load(guid_str)
-                        if preprint and preprint._id != guid_str:
-                            return redirect(f"{settings.DOMAIN}preprints/{path_values[0]}/{preprint._id}", code=302)
-                # For all other cases, let ember app handle it
-                ember_app = EXTERNAL_EMBER_APPS.get('ember_osf_web', False) or ember_app
-            break
-
-    if not ember_app:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    if settings.PROXY_EMBER_APPS:
-        path = request.path[len(ember_app['path']):]
-        url = urljoin(ember_app['server'], path)
-        resp = requests.get(url, stream=True, timeout=EXTERNAL_EMBER_SERVER_TIMEOUT, headers={'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'})
-        excluded_headers = ['content-encoding', 'content-length', 'transfer-encoding', 'connection']
-        headers = [(name, value) for (name, value) in resp.raw.headers.items() if name.lower() not in excluded_headers]
-        return Response(resp.content, resp.status_code, headers)
-
-    ember_app_folder = os.path.abspath(os.path.join(os.getcwd(), ember_app['path']))
-
-    if not ember_app_folder:
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    if not os.path.abspath(os.path.join(ember_app_folder, fp)).startswith(ember_app_folder):
-        # Prevent accessing files outside of the ember build dir
-        raise HTTPError(http_status.HTTP_404_NOT_FOUND)
-
-    if not os.path.isfile(os.path.join(ember_app_folder, fp)):
-        fp = 'index.html'
-
-    return send_from_directory(ember_app_folder, fp)
-
 def goodbye():
     # Redirect to dashboard if logged in
     redirect_url = util.web_url_for('index')
@@ -348,70 +291,10 @@ def make_url_map(app):
         Rule('/sitemaps/<path>', 'get', sitemap_file, json_renderer),
     ])
 
-    # Ember Applications
-    if settings.USE_EXTERNAL_EMBER:
-        # Routes that serve up the Ember application. Hide behind feature flag.
-        for prefix in EXTERNAL_EMBER_APPS.keys():
-            process_rules(app, [
-                Rule(
-                    [
-                        '/<provider>/<guid>/download',
-                        '/<provider>/<guid>/download/',
-                    ],
-                    ['get', 'post', 'put', 'patch', 'delete'],
-                    website_views.resolve_guid_download,
-                    notemplate,
-                    endpoint_suffix='__' + prefix
-                ),
-            ], prefix='/' + prefix)
-
-            process_rules(app, [
-                Rule(
-                    [
-                        '/',
-                        '/<path:path>',
-                    ],
-                    'get',
-                    ember_app,
-                    json_renderer,
-                    endpoint_suffix='__' + prefix
-                ),
-            ], prefix='/' + prefix)
-
-        if EXTERNAL_EMBER_APPS.get('ember_osf_web'):
-            process_rules(app, [
-                Rule(
-                    ember_osf_web_views.routes,
-                    'get',
-                    ember_osf_web_views.use_ember_app,
-                    notemplate
-                )
-            ])
-            if 'routes' in EXTERNAL_EMBER_APPS['ember_osf_web']:
-                for route in EXTERNAL_EMBER_APPS['ember_osf_web']['routes']:
-                    process_rules(app, [
-                        Rule(
-                            [
-                                '/',
-                                '/<path:path>',
-                            ],
-                            'get',
-                            ember_osf_web_views.use_ember_app,
-                            notemplate,
-                            endpoint_suffix='__' + route
-                        )
-                    ], prefix='/' + route)
-
     ### Base ###
 
     process_rules(app, [
 
-        Rule(
-            '/dashboard/',
-            'get',
-            website_views.dashboard,
-            notemplate
-        ),
         Rule(
             '/metadata/<guid>/',
             'get',
@@ -519,26 +402,6 @@ def make_url_map(app):
             'get',
             closed_challenges_views.erpc_landing_page,
             OsfWebRenderer('erpc_landing_page.mako', trust=False)
-        ),
-        Rule(
-            '/preprints/',
-            'get',
-            preprint_views.preprint_landing_page,
-            OsfWebRenderer('public/pages/preprint_landing.mako', trust=False),
-        ),
-
-        Rule(
-            '/registries/',
-            'get',
-            registries_views.registries_landing_page,
-            OsfWebRenderer('public/pages/registries_landing.mako', trust=False),
-        ),
-
-        Rule(
-            '/reviews/',
-            'get',
-            reviews_views.reviews_landing_page,
-            OsfWebRenderer('public/pages/reviews_landing.mako', trust=False),
         ),
 
         Rule(
@@ -1116,28 +979,9 @@ def make_url_map(app):
 
     ], prefix='/api/v1')
 
-    # Institution
-
-    process_rules(app, [
-        Rule('/institutions/<inst_id>/', 'get', institution_views.view_institution, notemplate)
-    ])
-
-    process_rules(app, [
-        Rule([
-            '/institutions/<inst_id>/dashboard/',
-        ],
-            'get',
-            institution_views.view_institution_dashboard,
-            notemplate)
-    ])
-
-    # Project
-
     # Web
 
     process_rules(app, [
-        Rule('/', 'get', website_views.index, notemplate),
-
         Rule('/goodbye/', 'get', goodbye, notemplate),
 
         Rule(
@@ -1801,8 +1645,3 @@ def make_url_map(app):
         @app.route('/assets/<filename>')
         def provider_static(filename):
             return send_from_directory(directory=provider_static_path, path=filename)
-
-        @app.route('/ember-cli-live-reload.js')
-        def ember_cli_live_reload():
-            req = requests.get(f'{settings.LIVE_RELOAD_DOMAIN}/ember-cli-live-reload.js', stream=True)
-            return Response(stream_with_context(req.iter_content()), content_type=req.headers['content-type'])

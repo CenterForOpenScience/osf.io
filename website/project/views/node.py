@@ -18,7 +18,6 @@ from framework.flask import redirect  # VOL-aware redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from osf.external.gravy_valet.request_helpers import get_gv_citation_url_list_for_project
 from osf.external.gravy_valet.translations import EphemeralAddonConfig
-from website.ember_osf_web.decorators import ember_flag_is_active
 from api.waffle.utils import flag_is_active, storage_i18n_flag_active, storage_usage_flag_active
 from framework.exceptions import HTTPError
 from osf.models.nodelog import NodeLog
@@ -31,7 +30,6 @@ from osf import features
 from website import language
 
 from website.util import rubeus
-from website.ember_osf_web.views import use_ember_app
 from osf.exceptions import NodeStateError
 from website.project import new_node, new_private_link
 from website.project.decorators import (
@@ -269,7 +267,6 @@ def project_before_template(auth, node, **kwargs):
 def node_registrations(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect(f'/{node._id}/registrations/')
-    return use_ember_app()
 
 
 @must_be_valid_project
@@ -278,18 +275,13 @@ def node_registrations(auth, node, **kwargs):
 def node_forks(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/forks/')
-    return use_ember_app()
 
 
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_be_logged_in
 @must_have_permission(READ)
-@ember_flag_is_active(features.EMBER_PROJECT_SETTINGS)
 def node_setting(auth, node, **kwargs):
-    if node.is_registration and flag_is_active(request, features.EMBER_REGISTRIES_DETAIL_PAGE):
-        # Registration settings page obviated during redesign
-        return redirect(node.url)
     auth.user.update_affiliated_institutions_by_email_domain()
     auth.user.save()
     ret = _view_project(node, auth, primary=True)
@@ -324,7 +316,6 @@ def node_setting(auth, node, **kwargs):
 @must_not_be_registration
 @must_be_logged_in
 @must_have_permission(WRITE)
-@ember_flag_is_active(features.ENABLE_GV)
 def node_addons(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
 
@@ -410,7 +401,6 @@ def node_choose_addons(auth, node, **kwargs):
 @must_be_valid_project
 @must_not_be_retracted_registration
 @must_have_permission(READ)
-@ember_flag_is_active(features.EMBER_PROJECT_CONTRIBUTORS)
 def node_contributors(auth, node, **kwargs):
     ret = _view_project(node, auth, primary=True)
     ret['contributors'] = utils.serialize_contributors(node.contributors, node)
@@ -458,7 +448,6 @@ def make_citation_widget_data(addon_name: str):
 @process_token_or_pass
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
-@ember_flag_is_active(features.EMBER_PROJECT_DETAIL)
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth,
@@ -576,7 +565,6 @@ def project_reorder_components(node, **kwargs):
 def project_statistics(auth, node, **kwargs):
     if request.path.startswith('/project/'):
         return redirect('/' + node._id + '/analytics/')
-    return use_ember_app()
 
 
 ###############################################################################
