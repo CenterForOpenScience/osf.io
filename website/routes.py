@@ -294,6 +294,13 @@ def make_url_map(app):
     ### Base ###
 
     process_rules(app, [
+        Rule('/', 'get', website_views.index, notemplate),
+        Rule(
+            '/dashboard/',
+            'get',
+            website_views.dashboard,
+            notemplate
+        ),
 
         Rule(
             '/metadata/<guid>/',
