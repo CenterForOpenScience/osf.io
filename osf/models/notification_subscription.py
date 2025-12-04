@@ -94,10 +94,10 @@ class NotificationSubscription(BaseModel):
             try:
                 validator(destination_address)
             except ValidationError:
-                destination_address = self.user.emails.first().address
                 try:
+                    destination_address = self.user.emails.first().address
                     validator(destination_address)
-                except ValidationError:
+                except (ValidationError, AttributeError):
                     return
 
         if self.message_frequency == 'instantly':

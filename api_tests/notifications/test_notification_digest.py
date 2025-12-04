@@ -1,7 +1,7 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
-from osf.models import Notification, NotificationType, EmailTask
+from osf.models import Notification, NotificationType, EmailTask, Email
 from notifications.tasks import (
     send_user_email_task,
     send_moderator_email_task,
@@ -298,3 +298,25 @@ class TestNotificationDigestTasks:
         send_moderator_email_task.apply(args=(user._id, notification_ids, reg_provider_content_type.id, provider.id)).get()
         email_task = EmailTask.objects.filter(user_id=user.id).first()
         assert email_task.status == 'SUCCESS'
+
+    def test_user_no_email_failure(self):
+        user = AuthUserFactory(fullname='Admin User')
+        user.username = 'username'
+        user.save()
+        Email.objects.filter(user=user).delete()
+        provider = RegistrationProviderFactory()
+        reg_provider_content_type = ContentType.objects.get_for_model(provider)
+        RegistrationFactory(provider=provider)
+
+        notification_ids = []
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        add_notification_subscription(
+            user,
+            notification_type,
+            'daily',
+            subscribed_object=provider
+        )
+        send_moderator_email_task.apply(args=(user._id, notification_ids, reg_provider_content_type.id, provider.id)).get()
+        email_task = EmailTask.objects.filter(user_id=user.id).first()
+        assert email_task.status == 'Failure'
+        assert email_task.error_message == f'User {user._id} has an invalid email address.'
