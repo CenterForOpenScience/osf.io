@@ -716,7 +716,7 @@ def confirm_email_get(token, auth=None, **kwargs):
                 status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True, id='welcome_message')
             if token in auth.user.email_verifications:
                 status.push_status_message(language.CONFIRM_ALTERNATE_EMAIL_ERROR, kind='danger', trust=True, id='alternate_email_error')
-            return redirect(web_url_for('index'))
+            return redirect(web_url_for('my_projects'))
 
         status.push_status_message(language.MERGE_COMPLETE, kind='success', trust=False)
         return redirect(web_url_for('user_account'))

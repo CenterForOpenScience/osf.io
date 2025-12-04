@@ -96,7 +96,8 @@ class TestAuthUtils(OsfTestCase):
         res = self.app.resolve_redirect(res)
 
         assert res.status_code == 302
-        assert '/' == urlparse(res.location).path
+        assert '/myprojects/' == urlparse(res.location).path
+        assert len(self.mock_send_grid.call_args_list) == 0
         # assert len(get_session()['status']) == 1
 
     def test_get_user_by_id(self):
