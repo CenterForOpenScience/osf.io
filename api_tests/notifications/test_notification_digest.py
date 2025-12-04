@@ -278,3 +278,23 @@ class TestNotificationDigestTasks:
         assert notifications['emits'][0]['type'] == NotificationType.Type.DIGEST_REVIEWS_MODERATORS
         email_task = EmailTask.objects.filter(user_id=user.id).first()
         assert email_task.status == 'SUCCESS'
+
+    def test_user_invalid_username_success(self):
+        user = AuthUserFactory(fullname='Admin User')
+        user.username = 'username'
+        user.save()
+        provider = RegistrationProviderFactory()
+        reg_provider_content_type = ContentType.objects.get_for_model(provider)
+        RegistrationFactory(provider=provider)
+
+        notification_ids = []
+        notification_type = NotificationType.objects.get(name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS)
+        add_notification_subscription(
+            user,
+            notification_type,
+            'daily',
+            subscribed_object=provider
+        )
+        send_moderator_email_task.apply(args=(user._id, notification_ids, reg_provider_content_type.id, provider.id)).get()
+        email_task = EmailTask.objects.filter(user_id=user.id).first()
+        assert email_task.status == 'SUCCESS'
