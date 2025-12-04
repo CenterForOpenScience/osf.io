@@ -164,6 +164,14 @@ def paginate(items, total, page, size):
     return paginated_items, pages
 
 
+def index():
+    return redirect('/myprojects/')
+
+
+def dashboard():
+    return redirect('/myprojects/')
+
+
 def reproducibility():
     return redirect('/ezcuj/wiki')
 
