@@ -4,6 +4,8 @@ from datetime import date
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.utils import timezone
+from django.core.validators import EmailValidator
+from django.core.exceptions import ValidationError
 
 from framework.celery_tasks import app as celery_app
 from celery.utils.log import get_task_logger
@@ -71,6 +73,22 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
     if not user:
         return
 
+    destination_address = user.email
+    validator = EmailValidator()
+    try:
+        validator(destination_address)
+    except ValidationError:
+        destination_address = user.emails.first().address
+        try:
+            validator(destination_address)
+        except ValidationError:
+            Notification.objects.filter(id__in=notification_ids).update(sent=timezone.now())
+            logger.error(f'User {user_id} has an invalid email address.')
+            email_task.status = 'Failure'
+            email_task.error_message = f'User {user_id} has an invalid email address.'
+            email_task.save()
+            return
+
     try:
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)
@@ -127,6 +145,23 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
     user, email_task = get_user_and_email_task(self.request.id, user_id)
     if not user:
         return
+
+    destination_address = user.email
+    validator = EmailValidator()
+    try:
+        validator(destination_address)
+    except ValidationError:
+        destination_address = user.emails.first().address
+        try:
+            validator(destination_address)
+        except ValidationError:
+            Notification.objects.filter(id__in=notification_ids).update(sent=timezone.now())
+            logger.error(f'User {user_id} has an invalid email address.')
+            email_task.status = 'Failure'
+            email_task.error_message = f'User {user_id} has an invalid email address.'
+            email_task.save()
+            return
+
     try:
         notifications_qs = Notification.objects.filter(id__in=notification_ids)
         rendered_notifications, failed_notifications = safe_render_notification(notifications_qs, email_task)

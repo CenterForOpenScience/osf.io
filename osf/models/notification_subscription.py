@@ -8,6 +8,7 @@ from osf.models.notification_type import get_default_frequency_choices, Notifica
 from osf.models.notification import Notification
 from api.base import settings
 from api.base.utils import absolute_reverse
+from django.core.validators import EmailValidator
 
 from .base import BaseModel
 
@@ -85,8 +86,20 @@ class NotificationSubscription(BaseModel):
                 f"\nmessage_frequency={self.message_frequency}"
                 f"\nevent_context={event_context}"
                 f"\nemail_context={email_context}"
-
             )
+
+        if not destination_address:
+            destination_address = self.user.email
+            validator = EmailValidator()
+            try:
+                validator(destination_address)
+            except ValidationError:
+                destination_address = self.user.emails.first().address
+                try:
+                    validator(destination_address)
+                except ValidationError:
+                    return
+
         if self.message_frequency == 'instantly':
             notification = Notification(
                 subscription=self,
