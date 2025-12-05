@@ -2,7 +2,7 @@ import pytest
 
 from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import NodeRequestTestMixin
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 
 from osf_tests.factories import NodeFactory, NodeRequestFactory, InstitutionFactory
 from osf.utils.workflows import DefaultStates, NodeRequestTypes
@@ -90,8 +90,8 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
             res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
 
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED
         assert res.status_code == 201
 
     def test_email_not_sent_to_parent_admins_on_submit(self, app, project, noncontrib, url, create_payload, second_admin):
@@ -105,7 +105,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
                 auth=noncontrib.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED
         assert res.status_code == 201
         assert component.parent_admin_contributors.count() == 1
         assert component.contributors.count() == 1
@@ -156,7 +156,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         # Create the first request a basic request_type == `institutional_request` request
         app.post_json_api(url, create_payload, auth=noncontrib.auth)
         node_request = project.requests.get()
-        with assert_notification(type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST, user=node_request.creator):
+        with assert_notification(type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST, user=node_request.creator):
             node_request.run_accept(project.creator, 'test comment2')
         node_request.refresh_from_db()
         assert node_request.machine_state == 'accepted'
@@ -166,7 +166,7 @@ class TestNodeRequestListCreate(NodeRequestTestMixin):
         create_payload['data']['attributes']['request_type'] = NodeRequestTypes.ACCESS.value
 
         # Attempt to create a second request, refresh and update as institutional
-        with assert_notification(type=NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED, user=project.creator):
+        with assert_notification(type=NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED, user=project.creator):
             res = app.post_json_api(url, create_payload, auth=noncontrib.auth)
         assert res.status_code == 201
         node_request.refresh_from_db()

@@ -16,7 +16,7 @@ from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmiss
 
 from website import settings
 from osf.utils.machines import CollectionSubmissionMachine
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -103,7 +103,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 assert str(e) == f'No unclaimed record for user {contributor._id} on node {self.guid.referent._id}'
                 claim_url = None
 
-            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.instance.emit(
+            NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED.instance.emit(
                 is_digest=True,
                 user=contributor,
                 subscribed_object=self,
@@ -135,7 +135,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderators_pending(self, event_data):
         user = event_data.kwargs.get('user', None)
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+        NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=user,
             subscribed_object=self.collection.provider,
             event_context={
@@ -164,7 +164,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
     def _notify_accepted(self, event_data):
         if self.collection.provider:
             for contributor in self.guid.referent.contributors:
-                NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED.instance.emit(
+                NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED.instance.emit(
                     user=contributor,
                     subscribed_object=self,
                     event_context={
@@ -208,7 +208,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
 
     def _notify_moderated_rejected(self, event_data):
         for contributor in self.guid.referent.contributors:
-            NotificationType.Type.COLLECTION_SUBMISSION_REJECTED.instance.emit(
+            NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED.instance.emit(
                 user=contributor,
                 subscribed_object=self,
                 event_context={
@@ -281,7 +281,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         if removed_due_to_privacy and self.collection.provider:
             if self.is_moderated:
                 for moderator in self.collection.moderators:
-                    NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
+                    NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                         user=moderator,
                         event_context={
                             **event_context_base,
@@ -290,7 +290,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         },
                     )
             for contributor in node.contributors.all():
-                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
+                NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_PRIVATE.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,
@@ -300,7 +300,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 )
         elif is_moderator and self.collection.provider:
             for contributor in node.contributors.all():
-                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR.instance.emit(
+                NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,
@@ -318,7 +318,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 )
         elif is_admin and self.collection.provider:
             for contributor in node.contributors.all():
-                NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN.instance.emit(
+                NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN.instance.emit(
                     user=contributor,
                     event_context={
                         **event_context_base,
@@ -369,7 +369,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             collection_provider_name = self.collection.title
 
         for contributor in node.contributors.all():
-            NotificationType.Type.COLLECTION_SUBMISSION_CANCEL.instance.emit(
+            NotificationTypeEnum.COLLECTION_SUBMISSION_CANCEL.instance.emit(
                 user=contributor,
                 subscribed_object=self.collection,
                 event_context={

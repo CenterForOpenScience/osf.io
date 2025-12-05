@@ -1,6 +1,6 @@
 import pytest
 
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.user_message import MessageTypes, UserMessage
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import (
@@ -221,7 +221,7 @@ class TestUserMessageInstitutionalAccess:
                 auth=institutional_admin.auth,
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INSTITUTIONAL_ACCESS_REQUEST
         assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
         user_message = UserMessage.objects.get()
@@ -235,7 +235,7 @@ class TestUserMessageInstitutionalAccess:
         with capture_notifications() as notifications:
             res = app.post_json_api(url_with_affiliation, payload, auth=institutional_admin.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INSTITUTIONAL_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INSTITUTIONAL_ACCESS_REQUEST
         assert notifications['emits'][0]['kwargs']['user'].username == user_with_affiliation.username
         assert res.status_code == 201
 

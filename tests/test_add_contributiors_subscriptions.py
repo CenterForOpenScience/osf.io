@@ -1,6 +1,6 @@
 import pytest
 from framework.auth import Auth
-from osf.models import NotificationType, NotificationSubscription
+from osf.models import NotificationTypeEnum, NotificationSubscription
 from osf_tests.factories import ProjectFactory, UserFactory
 from tests.utils import capture_notifications
 from framework.auth import register_unconfirmed
@@ -39,7 +39,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.NODE_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.NODE_FILE_UPDATED
 
         subs = NotificationSubscription.objects.filter(
             user=user,
@@ -51,7 +51,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.USER_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.USER_FILE_UPDATED
 
     def test_only_one_subscription_for_unregistered_user(self):
         """Adding the same unregistered contributor multiple times creates only one subscription."""
@@ -91,7 +91,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.NODE_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.NODE_FILE_UPDATED
 
         subs = NotificationSubscription.objects.filter(
             user=unreg_user,
@@ -103,7 +103,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.USER_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.USER_FILE_UPDATED
 
     def test_only_one_subscription_for_creator(self):
         """Ensure the project creator only has one NotificationSubscription for their own node."""
@@ -134,7 +134,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.NODE_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.NODE_FILE_UPDATED
 
         subs = NotificationSubscription.objects.filter(
             user=creator,
@@ -146,7 +146,7 @@ class TestNodeContributorNotificationUniqueness:
             f"found {subs.count()}"
         )
         sub = subs.first()
-        assert sub.notification_type.name == NotificationType.Type.USER_FILE_UPDATED
+        assert sub.notification_type.name == NotificationTypeEnum.USER_FILE_UPDATED
 
     def test_unregistered_contributor_then_registered_user_only_one_subscription(self):
         """When an unregistered contributor later registers, their subscriptions merge correctly."""
@@ -178,7 +178,7 @@ class TestNodeContributorNotificationUniqueness:
         assert subs_node.count() == 1, (
             f"Expected one NODE_FILE_UPDATED subscription after registration, found {subs_node.count()}"
         )
-        assert subs_node.first().notification_type.name == NotificationType.Type.NODE_FILE_UPDATED
+        assert subs_node.first().notification_type.name == NotificationTypeEnum.NODE_FILE_UPDATED
 
         subs_user = NotificationSubscription.objects.filter(
             user=registered_user,
@@ -188,7 +188,7 @@ class TestNodeContributorNotificationUniqueness:
         assert subs_user.count() == 1, (
             f"Expected one USER_FILE_UPDATED subscription after registration, found {subs_user.count()}"
         )
-        assert subs_user.first().notification_type.name == NotificationType.Type.USER_FILE_UPDATED
+        assert subs_user.first().notification_type.name == NotificationTypeEnum.USER_FILE_UPDATED
 
     def test_contributor_removed_then_readded_only_one_subscription(self):
         """Removing a contributor and re-adding them should not duplicate subscriptions."""
@@ -216,7 +216,7 @@ class TestNodeContributorNotificationUniqueness:
         assert subs_node.count() == 1, (
             f"Expected one NODE_FILE_UPDATED subscription after re-adding, found {subs_node.count()}"
         )
-        assert subs_node.first().notification_type.name == NotificationType.Type.NODE_FILE_UPDATED
+        assert subs_node.first().notification_type.name == NotificationTypeEnum.NODE_FILE_UPDATED
 
         subs_user = NotificationSubscription.objects.filter(
             user=user,
@@ -226,4 +226,4 @@ class TestNodeContributorNotificationUniqueness:
         assert subs_user.count() == 1, (
             f"Expected one USER_FILE_UPDATED subscription after re-adding, found {subs_user.count()}"
         )
-        assert subs_user.first().notification_type.name == NotificationType.Type.USER_FILE_UPDATED
+        assert subs_user.first().notification_type.name == NotificationTypeEnum.USER_FILE_UPDATED

@@ -65,7 +65,7 @@ from .nodelog import NodeLog
 from .notable_domain import NotableDomain, DomainReference
 from .notifications import NotificationSubscriptionLegacy
 from .notification_subscription import NotificationSubscription
-from .notification_type import NotificationType
+from .notification_type import NotificationType, NotificationTypeEnum
 from .notification import Notification
 
 from .oauth import (

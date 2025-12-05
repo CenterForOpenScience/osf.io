@@ -19,7 +19,7 @@ from osf.utils.datetime_aware_jsonfield import DateTimeAwareJSONField
 from osf.utils import tokens
 from osf.utils.machines import ApprovalsMachine
 from osf.utils.workflows import ApprovalStates, SanctionTypes
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 
 VIEW_PROJECT_URL_TEMPLATE = osf_settings.DOMAIN + '{node_id}/'
 
@@ -462,8 +462,8 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo'
     SHORT_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -662,8 +662,8 @@ class Retraction(EmailApprovableSanction):
     DISPLAY_NAME = 'Retraction'
     SHORT_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_RETRACTION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -800,8 +800,8 @@ class RegistrationApproval(SanctionCallbackMixin, EmailApprovableSanction):
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'
@@ -980,8 +980,8 @@ class EmbargoTerminationApproval(EmailApprovableSanction):
     DISPLAY_NAME = 'Embargo Termination Request'
     SHORT_NAME = 'embargo_termination_approval'
 
-    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationType.Type.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_EMBARGO_TERMINATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TYPE = NotificationTypeEnum.NODE_PENDING_EMBARGO_TERMINATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
     APPROVE_URL_TEMPLATE = osf_settings.DOMAIN + 'token_action/{node_id}/?token={token}'

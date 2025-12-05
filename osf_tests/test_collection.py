@@ -5,7 +5,7 @@ from django.db import IntegrityError
 
 from framework.auth import Auth
 
-from osf.models import Collection, NotificationType
+from osf.models import Collection, NotificationTypeEnum
 from osf.exceptions import NodeStateError
 from tests.utils import capture_notifications
 from website.views import find_bookmark_collection
@@ -134,7 +134,7 @@ class TestImplicitRemoval:
         with capture_notifications() as notifications:
             provider_collected_node.set_privacy('private', auth=auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_PRIVATE
 
     @mock.patch('osf.models.node.Node.check_privacy_change_viability', mock.Mock())  # mocks the storage usage limits
     def test_node_removed_from_collection_on_privacy_change_no_provider(self, auth, collected_node, bookmark_collection):

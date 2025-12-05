@@ -26,7 +26,7 @@ from framework.postcommit_tasks.handlers import enqueue_postcommit_task
 from framework.sessions.utils import remove_sessions_for_user
 from framework.sessions import get_session
 from framework.utils import throttle_period_expired
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from osf.utils.sanitize import strip_html
 from website import settings, language
 from website.util import web_url_for
@@ -208,7 +208,7 @@ def forgot_password_post():
     """Dispatches to ``_forgot_password_post`` passing non-institutional user mail template
     and reset action."""
     return _forgot_password_post(
-        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD,
+        notificaton_type=NotificationTypeEnum.USER_FORGOT_PASSWORD,
         reset_route='reset_password_get'
     )
 
@@ -217,7 +217,7 @@ def forgot_password_institution_post():
     """Dispatches to `_forgot_password_post` passing institutional user mail template, reset
     action, and setting the ``institutional`` flag."""
     return _forgot_password_post(
-        notificaton_type=NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION,
+        notificaton_type=NotificationTypeEnum.USER_FORGOT_PASSWORD_INSTITUTION,
         reset_route='reset_password_institution_get',
         institutional=True
     )
@@ -657,7 +657,7 @@ def external_login_confirm_email_get(auth, uid, token):
     if external_status == 'CREATE':
         service_url += '&{}'.format(urlencode({'new': 'true'}))
     elif external_status == 'LINK':
-        NotificationType.Type.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
+        NotificationTypeEnum.USER_EXTERNAL_LOGIN_LINK_SUCCESS.instance.emit(
             user=user,
             event_context={
                 'user_fullname': user.fullname,
@@ -836,9 +836,9 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
     if external_id_provider and external_id:
         # First time login through external identity provider, link or create an OSF account confirmation
         if user.external_identity[external_id_provider][external_id] == 'CREATE':
-            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
+            notification_type = NotificationTypeEnum.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_CREATE
         elif user.external_identity[external_id_provider][external_id] == 'LINK':
-            notification_type = NotificationType.Type.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
+            notification_type = NotificationTypeEnum.USER_EXTERNAL_LOGIN_CONFIRM_EMAIL_LINK
         else:
             raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={})
     elif merge_target:
@@ -848,18 +848,18 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             'user_username': user.username,
             'email': merge_target.email,
         }
-        notification_type = NotificationType.Type.USER_CONFIRM_MERGE
+        notification_type = NotificationTypeEnum.USER_CONFIRM_MERGE
         logout_query = '?logout=1'
     elif user.is_active:
         # Add email confirmation
-        notification_type = NotificationType.Type.USER_CONFIRM_EMAIL
+        notification_type = NotificationTypeEnum.USER_CONFIRM_EMAIL
         logout_query = '?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         notification_type = campaigns.email_template_for_campaign(campaign)
     else:
         # Account creation confirmation: from OSF
-        notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
+        notification_type = NotificationTypeEnum.USER_INITIAL_CONFIRM_EMAIL
 
     notification_type.instance.emit(
         destination_address=email,

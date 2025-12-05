@@ -5,7 +5,7 @@ from api.providers.tasks import bulk_create_registrations
 
 from osf.exceptions import RegistrationBulkCreationContributorError, RegistrationBulkCreationRowError
 from osf.models import RegistrationBulkUploadJob, RegistrationBulkUploadRow, RegistrationProvider, RegistrationSchema, \
-    NotificationType
+    NotificationTypeEnum
 from osf.models.registration_bulk_upload_job import JobState
 from osf.models.registration_bulk_upload_row import RegistrationBulkUploadContributors
 from osf.utils.permissions import ADMIN, READ, WRITE
@@ -331,7 +331,7 @@ class TestBulkUploadTasks:
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_full.id, dry_run=False)
         notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL in notification_types
+        assert NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL in notification_types
         upload_job_done_full.reload()
         assert upload_job_done_full.state == JobState.DONE_FULL
         assert upload_job_done_full.email_sent
@@ -359,7 +359,7 @@ class TestBulkUploadTasks:
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_partial.id, dry_run=False)
         notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL in notification_types
+        assert NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL in notification_types
         upload_job_done_partial.reload()
         assert upload_job_done_partial.state == JobState.DONE_PARTIAL
         assert upload_job_done_partial.email_sent
@@ -387,7 +387,7 @@ class TestBulkUploadTasks:
         with capture_notifications() as notifications:
             bulk_create_registrations(upload_job_done_error.id, dry_run=False)
         notification_types = [notifications['type'] for notifications in notifications['emits']]
-        assert NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL in notification_types
+        assert NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL in notification_types
 
         upload_job_done_error.reload()
         assert upload_job_done_error.state == JobState.DONE_ERROR

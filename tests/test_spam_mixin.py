@@ -10,7 +10,7 @@ from framework.auth import Auth
 
 from tests.base import DbTestCase
 from osf_tests.factories import UserFactory, CommentFactory, ProjectFactory, PreprintFactory, RegistrationFactory, AuthUserFactory
-from osf.models import NotableDomain, SpamStatus, NotificationType
+from osf.models import NotableDomain, SpamStatus, NotificationTypeEnum
 from tests.utils import capture_notifications
 from website import settings
 
@@ -27,7 +27,7 @@ def test_throttled_autoban():
             proj.save()
             projects.append(proj)
     assert len(notifications['emits']) == 1
-    assert notifications['emits'][0]['type'] == NotificationType.Type.USER_SPAM_BANNED
+    assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_SPAM_BANNED
     user.reload()
     assert user.is_disabled
     for project in projects:
