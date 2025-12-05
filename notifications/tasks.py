@@ -78,10 +78,12 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
     try:
         validator(destination_address)
     except ValidationError:
+        emails_qs = self.user.emails
+        if emails_qs.exists():
+            destination_address = emails_qs.first().address
         try:
-            destination_address = user.emails.first().address
             validator(destination_address)
-        except (ValidationError, AttributeError):
+        except (ValidationError):
             Notification.objects.filter(id__in=notification_ids).update(sent=timezone.now())
             logger.error(f'User {user_id} has an invalid email address.')
             email_task.status = 'Failure'
@@ -151,10 +153,12 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
     try:
         validator(destination_address)
     except ValidationError:
+        emails_qs = user.emails
+        if emails_qs.exists():
+            destination_address = emails_qs.first().address
         try:
-            destination_address = user.emails.first().address
             validator(destination_address)
-        except (ValidationError, AttributeError):
+        except (ValidationError):
             Notification.objects.filter(id__in=notification_ids).update(sent=timezone.now())
             logger.error(f'User {user_id} has an invalid email address.')
             email_task.status = 'Failure'
