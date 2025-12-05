@@ -10,7 +10,7 @@ from tests.base import OsfTestCase
 from tests.utils import run_celery_tasks, capture_notifications
 
 from osf_tests.factories import UserFactory
-from osf.models import EmailTask, NotificationType
+from osf.models import EmailTask, NotificationTypeEnum
 
 from scripts.triggered_mails import (
     find_inactive_users_without_enqueued_or_sent_no_login,
@@ -87,7 +87,7 @@ class TestTriggeredMails(OsfTestCase):
 
         # Force the emit call to raise to exercise failure branch
         with mock.patch.object(
-            NotificationType.Type.USER_NO_LOGIN.instance,
+            NotificationTypeEnum.USER_NO_LOGIN.instance,
             'emit',
             side_effect=RuntimeError('kaboom'),
         ), run_celery_tasks():

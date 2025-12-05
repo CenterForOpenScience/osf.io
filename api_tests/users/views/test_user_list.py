@@ -10,7 +10,7 @@ from uuid import UUID
 
 from api.base.settings.defaults import API_BASE
 from framework.auth.cas import CasResponse
-from osf.models import OSFUser, ApiOAuth2PersonalToken, NotificationType
+from osf.models import OSFUser, ApiOAuth2PersonalToken, NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     UserFactory,
@@ -320,7 +320,7 @@ class TestUsersCreate:
                 data
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
 
@@ -359,7 +359,7 @@ class TestUsersCreate:
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed
@@ -519,7 +519,7 @@ class TestUsersCreate:
                 headers={'Authorization': f'Bearer {token.token_id}'}
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
 
         assert res.status_code == 201
         assert res.json['data']['attributes']['username'] == email_unconfirmed

@@ -188,7 +188,7 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" ema
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
 NOTIFICATIONS_CLEANUP_AGE = timedelta(weeks=52)  # 1 month to clean up old notifications and email tasks
 
-# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+# Configuration for "We miss you at OSF" email (`NotificationTypeEnum.USER_NO_LOGIN`)
 # Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
 # have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
 # already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.

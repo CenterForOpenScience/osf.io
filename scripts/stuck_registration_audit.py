@@ -14,7 +14,7 @@ from website import settings
 from framework.auth import Auth
 from framework.celery_tasks import app as celery_app
 from osf.management.commands import force_archive as fa
-from osf.models import Registration, NotificationType
+from osf.models import Registration, NotificationTypeEnum
 from website.settings import ADDONS_REQUESTED
 
 from scripts import utils as scripts_utils
@@ -95,7 +95,7 @@ def main():
         dict_writer.writeheader()
         dict_writer.writerows(broken_registrations)
 
-        NotificationType.Type.DESK_ARCHIVE_REGISTRATION_STUCK.instance.emit(
+        NotificationTypeEnum.DESK_ARCHIVE_REGISTRATION_STUCK.instance.emit(
             destination_address=settings.OSF_SUPPORT_EMAIL,
             event_context={
                 'broken_registrations_count': len(broken_registrations),

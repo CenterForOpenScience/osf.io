@@ -2,7 +2,7 @@ from waffle.testutils import override_switch
 from osf import features
 
 from framework.auth.core import Auth
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     ProjectFactory,
     AuthUserFactory,
@@ -32,7 +32,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         with capture_notifications(passthrough=True) as notifications:
             self.preprint.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         messages = get_mailhog_messages()
         assert_emails(messages, notifications)
 
@@ -40,7 +40,7 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         with capture_notifications(passthrough=True) as notifications:
             self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         messages = get_mailhog_messages()
         assert_emails(messages, notifications)
 

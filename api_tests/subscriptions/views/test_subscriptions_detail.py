@@ -2,7 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     NotificationSubscriptionFactory
@@ -22,7 +22,7 @@ class TestSubscriptionDetail:
     @pytest.fixture()
     def notification(self, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
             object_id=user.id,
             content_type_id=ContentType.objects.get_for_model(user).id,
             user=user
