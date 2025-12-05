@@ -2,7 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -31,7 +31,7 @@ class TestSubscriptionList:
     @pytest.fixture()
     def global_user_notification(self, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
             object_id=user.id,
             content_type_id=ContentType.objects.get_for_model(user).id,
             user=user,
@@ -40,7 +40,7 @@ class TestSubscriptionList:
     @pytest.fixture()
     def file_updated_notification(self, node, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.NODE_FILE_UPDATED.instance,
             object_id=node.id,
             content_type_id=ContentType.objects.get_for_model(node).id,
             user=user,
@@ -49,7 +49,7 @@ class TestSubscriptionList:
     @pytest.fixture()
     def provider_notification(self, provider, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            notification_type=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
             object_id=provider.id,
             content_type_id=ContentType.objects.get_for_model(provider).id,
             subscribed_object=provider,

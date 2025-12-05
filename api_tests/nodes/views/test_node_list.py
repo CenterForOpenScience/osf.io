@@ -8,7 +8,7 @@ from api.caching.utils import storage_usage_cache
 from api_tests.nodes.filters.test_filters import NodesListFilteringMixin, NodesListDateFilteringMixin
 from api_tests.subjects.mixins import SubjectsFilterMixin
 from framework.auth.core import Auth
-from osf.models import AbstractNode, Node, NodeLog, NotificationType
+from osf.models import AbstractNode, Node, NodeLog, NotificationTypeEnum
 from osf.models.licenses import NodeLicense
 from osf.utils.sanitize import strip_html
 from osf.utils import permissions
@@ -1428,7 +1428,7 @@ class TestNodeCreate:
 
     def test_creates_public_project_logged_in(
             self, app, user_one, public_project, url, institution_one):
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one):
+        with assert_notification(type=NotificationTypeEnum.NODE_AFFILIATION_CHANGED, user=user_one):
             res = app.post_json_api(
                 url, public_project,
                 auth=user_one.auth
@@ -1531,7 +1531,7 @@ class TestNodeCreate:
                 auth=user_without_permissions.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
 
     def test_non_contributor_create_project_from_private_template_no_permission_fails(self, app, user_one, category, url):
@@ -1576,7 +1576,7 @@ class TestNodeCreate:
                 auth=user_without_permissions.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.READ)
 
@@ -1593,7 +1593,7 @@ class TestNodeCreate:
                 auth=user_without_permissions.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.WRITE)
 
@@ -1610,7 +1610,7 @@ class TestNodeCreate:
                 auth=user_without_permissions.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         assert res.status_code == 201
         assert template_from.has_permission(user_without_permissions, permissions.ADMIN)
 
@@ -1759,7 +1759,7 @@ class TestNodeCreate:
                 }
             }
         }
-        with assert_notification(type=NotificationType.Type.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
+        with assert_notification(type=NotificationTypeEnum.NODE_AFFILIATION_CHANGED, user=user_one, times=2):
             res = app.post_json_api(
                 url,
                 private_project,

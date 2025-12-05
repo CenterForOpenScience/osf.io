@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction, connection
 
-from osf.models import NotificationType, NotificationSubscription
+from osf.models import NotificationType, NotificationTypeEnum, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
 from osf.management.commands.populate_notification_types import populate_notification_types
 from tqdm import tqdm
@@ -25,26 +25,26 @@ FREQ_MAP = {
 
 EVENT_NAME_TO_NOTIFICATION_TYPE = {
     # Provider notifications
-    'new_pending_withdraw_requests': NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
-    'contributor_added_preprint': NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT,
-    'new_pending_submissions': NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-    'moderator_added': NotificationType.Type.PROVIDER_MODERATOR_ADDED,
-    'reviews_submission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
-    'reviews_resubmission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
-    'confirm_email_moderation': NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION,
-    'global_reviews': NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
+    'new_pending_withdraw_requests': NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
+    'contributor_added_preprint': NotificationTypeEnum.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT,
+    'new_pending_submissions': NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS,
+    'moderator_added': NotificationTypeEnum.PROVIDER_MODERATOR_ADDED,
+    'reviews_submission_confirmation': NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
+    'reviews_resubmission_confirmation': NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
+    'confirm_email_moderation': NotificationTypeEnum.PROVIDER_CONFIRM_EMAIL_MODERATION,
+    'global_reviews': NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS,
 
     # Node notifications
-    'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
+    'file_updated': NotificationTypeEnum.NODE_FILE_UPDATED,
 
     # Collection submissions
-    'collection_submission_submitted': NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
-    'collection_submission_accepted': NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED,
-    'collection_submission_rejected': NotificationType.Type.COLLECTION_SUBMISSION_REJECTED,
-    'collection_submission_removed_admin': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN,
-    'collection_submission_removed_moderator': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
-    'collection_submission_removed_private': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
-    'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
+    'collection_submission_submitted': NotificationTypeEnum.COLLECTION_SUBMISSION_SUBMITTED,
+    'collection_submission_accepted': NotificationTypeEnum.COLLECTION_SUBMISSION_ACCEPTED,
+    'collection_submission_rejected': NotificationTypeEnum.COLLECTION_SUBMISSION_REJECTED,
+    'collection_submission_removed_admin': NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_ADMIN,
+    'collection_submission_removed_moderator': NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
+    'collection_submission_removed_private': NotificationTypeEnum.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
+    'collection_submission_cancel': NotificationTypeEnum.COLLECTION_SUBMISSION_CANCEL,
 }
 
 
@@ -151,7 +151,7 @@ def migrate_legacy_notification_subscriptions(
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
             if subscribed_object == legacy.user and event_name == 'global_file_updated':
-                notif_enum = NotificationType.Type.USER_FILE_UPDATED
+                notif_enum = NotificationTypeEnum.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
                 continue

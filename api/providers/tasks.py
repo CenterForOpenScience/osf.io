@@ -27,7 +27,7 @@ from osf.models import (
     RegistrationProvider,
     RegistrationSchema,
     Subject,
-    NotificationType,
+    NotificationTypeEnum,
 )
 from osf.models.licenses import NodeLicense
 from osf.models.registration_bulk_upload_job import JobState
@@ -137,7 +137,7 @@ def prepare_for_registration_bulk_creation(payload_hash, initiator_id, provider_
     # Cancel the preparation task if duplicates are found in the CSV and/or in DB
     if draft_error_list:
         upload.delete()
-        NotificationType.Type.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES.instance.emit(
+        NotificationTypeEnum.REGISTRATION_BULK_UPLOAD_FAILURE_DUPLICATES.instance.emit(
             user=initiator,
             event_context={
                 'user_fullname': initiator.fullname,
@@ -639,11 +639,11 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
     if not dry_run:
         upload.save()
         if upload.state == JobState.DONE_FULL:
-            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL
+            notification_type = NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL
         elif upload.state == JobState.DONE_PARTIAL:
-            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL
+            notification_type = NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL
         elif upload.state == JobState.DONE_ERROR:
-            notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
+            notification_type = NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
         else:
             logger.error(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
             sentry.log_message(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
@@ -680,7 +680,7 @@ def handle_internal_error(initiator=None, provider=None, message=None, dry_run=T
 
     if not dry_run:
         if initiator:
-            NotificationType.Type.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE.instance.emit(
+            NotificationTypeEnum.DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE.instance.emit(
                 user=initiator,
                 event_context={
                     'initiator_fullname': initiator.fullname,
@@ -700,7 +700,7 @@ def inform_product_of_errors(initiator=None, provider=None, message=None):
     user_info = f'{initiator._id}, {initiator.fullname}, {initiator.username}' if initiator else 'UNIDENTIFIED'
     provider_name = provider.name if provider else 'UNIDENTIFIED'
 
-    NotificationType.Type.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER.instance.emit(
+    NotificationTypeEnum.DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER.instance.emit(
         destination_address=email,
         event_context={
             'user': user_info,

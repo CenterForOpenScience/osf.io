@@ -6,7 +6,7 @@ from api.providers.workflows import Workflows
 from framework.auth import Auth
 
 from osf.exceptions import InvalidTransitionError
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.preprintlog import PreprintLog
 from osf.models.action import ReviewAction, NodeRequestAction, PreprintRequestAction
 from osf.utils import permissions
@@ -192,7 +192,7 @@ class ReviewsMachine(BaseMachine):
             if context.get('requester_fullname', None):
                 context['is_requester'] = requester == contributor
 
-            NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_APPROVED.instance.emit(
+            NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_APPROVED.instance.emit(
                 user=contributor,
                 subscribed_object=self.machineable,
                 event_context={
@@ -234,7 +234,7 @@ class NodeRequestMachine(BaseMachine):
                 make_curator = self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value
                 visible = False if make_curator else ev.kwargs.get('visible', True)
                 if self.machineable.request_type in (NodeRequestTypes.ACCESS.value, NodeRequestTypes.INSTITUTIONAL_REQUEST.value):
-                    notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+                    notification_type = NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
                 else:
                     notification_type = None
 
@@ -265,7 +265,7 @@ class NodeRequestMachine(BaseMachine):
 
         if not self.machineable.request_type == NodeRequestTypes.INSTITUTIONAL_REQUEST.value:
             for admin in self.machineable.target.get_users_with_perm(permissions.ADMIN):
-                NotificationType.Type.NODE_REQUEST_ACCESS_SUBMITTED.instance.emit(
+                NotificationTypeEnum.NODE_REQUEST_ACCESS_SUBMITTED.instance.emit(
                     user=admin,
                     subscribed_object=self.machineable,
                     event_context={
@@ -286,7 +286,7 @@ class NodeRequestMachine(BaseMachine):
         if ev.event.name == DefaultTriggers.REJECT.value:
             context = self.get_context()
 
-            NotificationType.Type.NODE_REQUEST_ACCESS_DENIED.instance.emit(
+            NotificationTypeEnum.NODE_REQUEST_ACCESS_DENIED.instance.emit(
                 user=self.machineable.creator,
                 subscribed_object=self.machineable,
                 event_context=context
@@ -344,7 +344,7 @@ class PreprintRequestMachine(BaseMachine):
             context['comment'] = self.action.comment
             context['contributor_fullname'] = self.machineable.creator.fullname
 
-            NotificationType.Type.PREPRINT_REQUEST_WITHDRAWAL_DECLINED.instance.emit(
+            NotificationTypeEnum.PREPRINT_REQUEST_WITHDRAWAL_DECLINED.instance.emit(
                 user=self.machineable.creator,
                 subscribed_object=self.machineable,
                 event_context=context

@@ -33,7 +33,7 @@ from osf.models import (
     DraftRegistrationContributor,
     DraftRegistration,
     DraftNode,
-    UserSessionMap, NotificationType,
+    UserSessionMap, NotificationTypeEnum,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
@@ -912,7 +912,7 @@ class TestChangePassword:
             user.save()
 
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PASSWORD_RESET
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PASSWORD_RESET
 
     def test_set_password_no_notify(self, user):
         old_password = 'password'

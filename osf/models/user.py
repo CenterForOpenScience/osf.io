@@ -61,7 +61,7 @@ from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.utils.requests import string_type_request_headers
 
 
@@ -1059,7 +1059,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             raise ChangePasswordError(['Password cannot be the same as your email address'])
         super().set_password(raw_password)
         if had_existing_password and notify:
-            NotificationType.Type.USER_PASSWORD_RESET.instance.emit(
+            NotificationTypeEnum.USER_PASSWORD_RESET.instance.emit(
                 subscribed_object=self,
                 user=self,
                 message_frequency='instantly',

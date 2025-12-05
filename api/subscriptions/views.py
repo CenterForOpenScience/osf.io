@@ -26,7 +26,7 @@ from osf.models import (
     AbstractNode,
     Guid,
 )
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from osf.models.notification_subscription import NotificationSubscription
 
 
@@ -51,38 +51,38 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
         ).values('guids___id')[:1]
 
         _global_file_updated = [
-            NotificationType.Type.USER_FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.USER_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
         _global_reviews = [
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
         ]
         _node_file_updated = [
-            NotificationType.Type.NODE_FILE_UPDATED.value,
-            NotificationType.Type.FILE_ADDED.value,
-            NotificationType.Type.FILE_REMOVED.value,
-            NotificationType.Type.ADDON_FILE_COPIED.value,
-            NotificationType.Type.ADDON_FILE_RENAMED.value,
-            NotificationType.Type.ADDON_FILE_MOVED.value,
-            NotificationType.Type.ADDON_FILE_REMOVED.value,
-            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationTypeEnum.NODE_FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_ADDED.value,
+            NotificationTypeEnum.FILE_REMOVED.value,
+            NotificationTypeEnum.ADDON_FILE_COPIED.value,
+            NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+            NotificationTypeEnum.ADDON_FILE_MOVED.value,
+            NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+            NotificationTypeEnum.FOLDER_CREATED.value,
         ]
 
         qs = NotificationSubscription.objects.filter(
             notification_type__name__in=[
-                NotificationType.Type.USER_FILE_UPDATED.value,
-                NotificationType.Type.NODE_FILE_UPDATED.value,
-                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                NotificationTypeEnum.USER_FILE_UPDATED.value,
+                NotificationTypeEnum.NODE_FILE_UPDATED.value,
+                NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
             ] + _global_reviews + _global_file_updated + _node_file_updated,
             user=self.request.user,
         ).annotate(
@@ -167,16 +167,16 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
                 legacy_id=Case(
                     When(
-                        notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+                        notification_type__name=NotificationTypeEnum.NODE_FILE_UPDATED.value,
                         content_type=node_ct,
                         then=Concat(Subquery(node_subquery), Value('_files_updated')),
                     ),
                     When(
-                        notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+                        notification_type__name=NotificationTypeEnum.USER_FILE_UPDATED.value,
                         then=Value(f'{user_guid}_global_file_updated'),
                     ),
                     When(
-                        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                        notification_type__name=NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
                         content_type=provider_ct,
                         then=Value(f'{user_guid}_global_reviews'),
                     ),
@@ -205,14 +205,14 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 notification_type__name__in=[
-                    NotificationType.Type.USER_FILE_UPDATED.value,
-                    NotificationType.Type.FILE_ADDED.value,
-                    NotificationType.Type.FILE_REMOVED.value,
-                    NotificationType.Type.ADDON_FILE_COPIED.value,
-                    NotificationType.Type.ADDON_FILE_RENAMED.value,
-                    NotificationType.Type.ADDON_FILE_MOVED.value,
-                    NotificationType.Type.ADDON_FILE_REMOVED.value,
-                    NotificationType.Type.FOLDER_CREATED.value,
+                    NotificationTypeEnum.USER_FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_ADDED.value,
+                    NotificationTypeEnum.FILE_REMOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_COPIED.value,
+                    NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+                    NotificationTypeEnum.ADDON_FILE_MOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+                    NotificationTypeEnum.FOLDER_CREATED.value,
                 ],
             ).exclude(content_type=ContentType.objects.get_for_model(AbstractNode))
             if not qs.exists():
@@ -228,11 +228,11 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             qs = NotificationSubscription.objects.filter(
                 user=self.request.user,
                 notification_type__name__in=[
-                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                    NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
-                    NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
-                    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-                    NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+                    NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                    NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+                    NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+                    NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                    NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS.value,
                 ],
             )
             if not qs.exists():
@@ -252,14 +252,14 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 content_type=ContentType.objects.get_for_model(AbstractNode),
                 object_id=node_id,
                 notification_type__name__in=[
-                    NotificationType.Type.NODE_FILE_UPDATED.value,
-                    NotificationType.Type.FILE_ADDED.value,
-                    NotificationType.Type.FILE_REMOVED.value,
-                    NotificationType.Type.ADDON_FILE_COPIED.value,
-                    NotificationType.Type.ADDON_FILE_RENAMED.value,
-                    NotificationType.Type.ADDON_FILE_MOVED.value,
-                    NotificationType.Type.ADDON_FILE_REMOVED.value,
-                    NotificationType.Type.FOLDER_CREATED.value,
+                    NotificationTypeEnum.NODE_FILE_UPDATED.value,
+                    NotificationTypeEnum.FILE_ADDED.value,
+                    NotificationTypeEnum.FILE_REMOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_COPIED.value,
+                    NotificationTypeEnum.ADDON_FILE_RENAMED.value,
+                    NotificationTypeEnum.ADDON_FILE_MOVED.value,
+                    NotificationTypeEnum.ADDON_FILE_REMOVED.value,
+                    NotificationTypeEnum.FOLDER_CREATED.value,
                 ],
             )
             if not qs.exists():

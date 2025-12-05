@@ -3,7 +3,7 @@ from osf_tests.factories import (
     AuthUserFactory,
     NotificationTypeFactory
 )
-from osf.models import Notification, NotificationType, NotificationSubscription
+from osf.models import Notification, NotificationTypeEnum, NotificationSubscription
 from tests.utils import capture_notifications
 from django.db import reset_queries, connection
 
@@ -24,9 +24,9 @@ class TestNotificationTypeDBTransaction:
         )
 
     def test_notification_type_cache(self):
-        NotificationType.Type.NODE_FILE_UPDATED.instance
+        NotificationTypeEnum.NODE_FILE_UPDATED.instance
         reset_queries()
-        NotificationType.Type.NODE_FILE_UPDATED.instance
+        NotificationTypeEnum.NODE_FILE_UPDATED.instance
         assert len(connection.queries) == 0
 
     def test_emit_without_saving(self, user_one, test_notification_type):

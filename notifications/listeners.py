@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 @project_created.connect
 def subscribe_creator(resource):
-    from osf.models import NotificationSubscription, NotificationType, Preprint
+    from osf.models import NotificationSubscription, NotificationTypeEnum, Preprint
 
     from django.contrib.contenttypes.models import ContentType
 
@@ -20,7 +20,7 @@ def subscribe_creator(resource):
         try:
             NotificationSubscription.objects.get_or_create(
                 user=user,
-                notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+                notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
                 object_id=user.id,
                 content_type=ContentType.objects.get_for_model(user),
                 _is_digest=True,
@@ -34,7 +34,7 @@ def subscribe_creator(resource):
             try:
                 NotificationSubscription.objects.get_or_create(
                     user=user,
-                    notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                    notification_type=NotificationTypeEnum.NODE_FILE_UPDATED.instance,
                     object_id=resource.id,
                     content_type=ContentType.objects.get_for_model(resource),
                     _is_digest=True,
@@ -48,7 +48,7 @@ def subscribe_creator(resource):
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     from django.contrib.contenttypes.models import ContentType
-    from osf.models import NotificationSubscription, NotificationType, Preprint
+    from osf.models import NotificationSubscription, NotificationTypeEnum, Preprint
 
     from osf.models import Node
     if isinstance(resource, Node):
@@ -58,7 +58,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     try:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
-            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            notification_type=NotificationTypeEnum.USER_FILE_UPDATED.instance,
             object_id=contributor.id,
             content_type=ContentType.objects.get_for_model(contributor),
             _is_digest=True,
@@ -72,7 +72,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
         try:
             NotificationSubscription.objects.get_or_create(
                 user=contributor,
-                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                notification_type=NotificationTypeEnum.NODE_FILE_UPDATED.instance,
                 object_id=resource.id,
                 content_type=ContentType.objects.get_for_model(resource),
                 _is_digest=True,
@@ -88,7 +88,7 @@ def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     from website.settings import DOMAIN
-    from osf.models import NotificationType
+    from osf.models import NotificationTypeEnum
 
     provider = resource.provider
     context['provider_id'] = provider.id
@@ -97,7 +97,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     # Set submission url
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
     context['localized_timestamp'] = str(timestamp)
-    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+    NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
         subscribed_object=provider,
         user=user,
         event_context=context

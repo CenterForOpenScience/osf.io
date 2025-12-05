@@ -10,7 +10,7 @@ from framework.exceptions import HTTPError
 from framework.flask import redirect
 from osf.models import (
     OSFUser,
-    Tag, NotificationType,
+    Tag, NotificationTypeEnum,
 )
 from osf_tests.factories import (
     fake_email,
@@ -98,8 +98,8 @@ class TestClaimViews(OsfTestCase):
                 }
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE
 
         # set unregistered record email since we are mocking send_claim_email()
         unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
@@ -147,8 +147,8 @@ class TestClaimViews(OsfTestCase):
                 }
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE
 
         # set unregistered record email since we are mocking send_claim_email()
         unclaimed_record = unregistered_user.get_unclaimed_record(self.project._primary_key)
@@ -236,8 +236,8 @@ class TestClaimViews(OsfTestCase):
                     node=self.project,
                 )
                 assert len(notifications['emits']) == 2
-                assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
-                assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
+                assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE_REGISTERED
+                assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION_REGISTERED
         # second call raises error because it was called before throttle period
         with pytest.raises(HTTPError):
                 send_claim_registered_email(
@@ -433,7 +433,7 @@ class TestClaimViews(OsfTestCase):
             )
         assert res.json['fullname'] == self.given_name
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_INVITE_DEFAULT
 
     def test_claim_user_post_if_email_is_different_from_given_email(self):
         email = fake_email()  # email that is different from the one the referrer gave
@@ -446,9 +446,9 @@ class TestClaimViews(OsfTestCase):
                 }
             )
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_PENDING_VERIFICATION
         assert notifications['emits'][0]['kwargs']['user'].username == self.given_email
-        assert notifications['emits'][1]['type'] == NotificationType.Type.USER_FORWARD_INVITE
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.USER_FORWARD_INVITE
         assert notifications['emits'][1]['kwargs']['destination_address'] == email
 
     def test_claim_url_with_bad_token_returns_400(self):

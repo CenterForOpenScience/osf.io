@@ -20,7 +20,7 @@ from framework import sentry
 from framework.auth import Auth
 from framework.exceptions import PermissionsError, UnpublishedPendingPreprintVersionExists
 from framework.auth import oauth_scopes
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 
 from .subject import Subject
 from .tag import Tag
@@ -1026,7 +1026,7 @@ class Preprint(DirtyFieldsMixin, VersionedGuidMixin, IdentifierMixin, Reviewable
     def _send_preprint_confirmation(self, auth):
         # Send creator confirmation email
         recipient = self.creator
-        NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.instance.emit(
+        NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.instance.emit(
             subscribed_object=self.provider,
             user=recipient,
             event_context={

@@ -9,7 +9,7 @@ from urllib.error import HTTPError
 from addons.boa import settings as boa_settings
 from addons.boa.boa_error_code import BoaErrorCode
 from addons.boa.tasks import submit_to_boa, submit_to_boa_async, handle_boa_error
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import AuthUserFactory, ProjectFactory
 from tests.base import OsfTestCase
 from tests.utils import capture_notifications
@@ -66,7 +66,7 @@ class TestBoaErrorHandling(OsfTestCase):
                         job_id=self.job_id
                     )
                 assert len(notifications['emits']) == 1
-                assert notifications['emits'][0]['type'] == NotificationType.Type.ADDONS_BOA_JOB_FAILURE
+                assert notifications['emits'][0]['type'] == NotificationTypeEnum.ADDONS_BOA_JOB_FAILURE
                 mock_sentry_log_message.assert_called_with(self.error_message, skip_session=True)
                 mock_logger_error.assert_called_with(self.error_message)
                 assert return_value == BoaErrorCode.UNKNOWN

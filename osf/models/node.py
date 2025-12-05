@@ -35,7 +35,7 @@ from framework.celery_tasks.handlers import enqueue_task, get_task_from_queue
 from framework.exceptions import PermissionsError, HTTPError
 from framework.sentry import log_exception
 from osf.exceptions import InvalidTagError, NodeStateError, TagNotFoundError, ValidationError
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .contributor import Contributor
 from .collection_submission import CollectionSubmission
 
@@ -1250,7 +1250,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             self.save()
         if auth and permissions == 'public':
             for contributor in self.contributors:
-                NotificationType.Type.NODE_NEW_PUBLIC_PROJECT.instance.emit(
+                NotificationTypeEnum.NODE_NEW_PUBLIC_PROJECT.instance.emit(
                     user=contributor,
                     subscribed_object=self,
                     event_context={
@@ -1564,7 +1564,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
         :return: Forked node
         """
         if notification_type is None:
-            notification_type = NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            notification_type = NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
         Registration = apps.get_model('osf.Registration')
         PREFIX = 'Fork of '
         user = auth.user
@@ -1792,7 +1792,7 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
             new,
             contributor=auth.user,
             auth=auth,
-            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
+            notification_type=NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_ACCESS_REQUEST
         )
 
         # Log the creation

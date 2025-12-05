@@ -1,7 +1,7 @@
 from unittest import mock
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 
 from tests.base import ApiTestCase
 from osf_tests.factories import AuthUserFactory, ProjectFactory
@@ -131,7 +131,7 @@ class TestAddContributorEmailThrottle(ApiTestCase):
                 auth=self.user.auth
             )
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_CONTRIBUTOR_ADDED_DEFAULT
         assert res.status_code == 201
         assert mock_allow.call_count == 1
 

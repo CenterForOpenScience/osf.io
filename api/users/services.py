@@ -2,7 +2,7 @@ from furl import furl
 from django.utils import timezone
 
 from framework.auth.core import generate_verification_key
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from website import settings
 
 
@@ -15,8 +15,8 @@ def send_password_reset_email(user, email, verification_type='password', institu
     user.save()
 
     reset_link = furl(settings.DOMAIN).add(path=f'resetpassword/{user._id}/{user.verification_key_v2["token"]}').url
-    notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION if institutional \
-        else NotificationType.Type.USER_FORGOT_PASSWORD
+    notification_type = NotificationTypeEnum.USER_FORGOT_PASSWORD_INSTITUTION if institutional \
+        else NotificationTypeEnum.USER_FORGOT_PASSWORD
 
     notification_type.instance.emit(
         destination_address=email,

@@ -18,7 +18,7 @@ from osf_tests.factories import (
 
 from tests.base import get_default_metaschema
 
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 
 from osf.migrations import update_provider_auth_groups
 from tests.utils import capture_notifications, get_mailhog_messages, delete_mailhog_messages
@@ -82,8 +82,8 @@ class TestRegistriesModerationSubmissions:
             resp = app.get(registration_actions_url, auth=moderator.auth)
 
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS
         messages = get_mailhog_messages()
         assert messages['count'] == 1
         assert messages['items'][0]['Content']['Headers']['To'][0] == registration.creator.username
@@ -116,8 +116,8 @@ class TestRegistriesModerationSubmissions:
             resp = app.get(provider_actions_url, auth=moderator.auth)
 
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
-        assert notifications['emits'][1]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         send_users_instant_digest_email.delay()
         messages = get_mailhog_messages()
         assert messages['count'] == 1

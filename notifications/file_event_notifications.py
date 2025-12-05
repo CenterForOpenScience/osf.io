@@ -15,6 +15,7 @@ import markupsafe
 
 from osf.models import (
     NotificationType,
+    NotificationTypeEnum,
     AbstractNode,
     NodeLog,
     Preprint,
@@ -96,13 +97,13 @@ def file_updated(self, target=None, user=None, event_type=None, payload=None):
         return
 
     event = {
-        NodeLog.FILE_RENAMED: NotificationType.Type.ADDON_FILE_RENAMED,
-        NodeLog.FILE_COPIED: NotificationType.Type.ADDON_FILE_COPIED,
-        NodeLog.FILE_ADDED: NotificationType.Type.FILE_ADDED,
-        NodeLog.FILE_MOVED: NotificationType.Type.ADDON_FILE_MOVED,
-        NodeLog.FILE_REMOVED: NotificationType.Type.FILE_REMOVED,
-        NodeLog.FILE_UPDATED: NotificationType.Type.FILE_UPDATED,
-        NodeLog.FOLDER_CREATED: NotificationType.Type.FOLDER_CREATED,
+        NodeLog.FILE_RENAMED: NotificationTypeEnum.ADDON_FILE_RENAMED,
+        NodeLog.FILE_COPIED: NotificationTypeEnum.ADDON_FILE_COPIED,
+        NodeLog.FILE_ADDED: NotificationTypeEnum.FILE_ADDED,
+        NodeLog.FILE_MOVED: NotificationTypeEnum.ADDON_FILE_MOVED,
+        NodeLog.FILE_REMOVED: NotificationTypeEnum.FILE_REMOVED,
+        NodeLog.FILE_UPDATED: NotificationTypeEnum.FILE_UPDATED,
+        NodeLog.FOLDER_CREATED: NotificationTypeEnum.FOLDER_CREATED,
     }[event_type]
 
     if event not in event_registry:
@@ -268,7 +269,7 @@ class AddonFileRenamed(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.Type.ADDON_FILE_RENAMED.instance.emit(
+        NotificationTypeEnum.ADDON_FILE_RENAMED.instance.emit(
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,
@@ -305,7 +306,7 @@ class AddonFileMoved(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.Type.ADDON_FILE_MOVED.instance.emit(
+        NotificationTypeEnum.ADDON_FILE_MOVED.instance.emit(
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,
@@ -325,7 +326,7 @@ class AddonFileCopied(ComplexFileEvent):
             super().perform()
             return
 
-        NotificationType.Type.ADDON_FILE_COPIED.instance.emit(
+        NotificationTypeEnum.ADDON_FILE_COPIED.instance.emit(
             user=self.user,
             event_context={
                 'user_fullname': self.user.fullname,

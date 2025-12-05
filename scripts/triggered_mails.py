@@ -6,7 +6,7 @@ from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationTypeEnum
 from website.app import init_app
 from website import settings
 
@@ -112,7 +112,7 @@ def send_no_login_email(email_task_id: int):
             email_task.save()
             logger.warning(f'EmailTask {email_task.id}: user {user.id} is not active')
             return
-        NotificationType.Type.USER_NO_LOGIN.instance.emit(
+        NotificationTypeEnum.USER_NO_LOGIN.instance.emit(
             user=user,
             event_context={
                 'user_fullname': user.fullname,

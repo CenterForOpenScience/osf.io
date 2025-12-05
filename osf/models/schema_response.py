@@ -9,7 +9,7 @@ from django.utils import timezone
 from framework.exceptions import PermissionsError
 
 from osf.exceptions import PreviousSchemaResponseError, SchemaResponseStateError, SchemaResponseUpdateError
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .base import BaseModel, ObjectIDMixin
 from .metaschema import RegistrationSchemaBlock
 from .schema_response_block import SchemaResponseBlock
@@ -488,10 +488,10 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             )
 
         notification_type = {
-            'create': NotificationType.Type.NODE_SCHEMA_RESPONSE_INITIATED.instance,
-            'submit': NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED.instance,
-            'accept': NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED.instance,
-            'reject': NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED.instance,
+            'create': NotificationTypeEnum.NODE_SCHEMA_RESPONSE_INITIATED.instance,
+            'submit': NotificationTypeEnum.NODE_SCHEMA_RESPONSE_SUBMITTED.instance,
+            'accept': NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED.instance,
+            'reject': NotificationTypeEnum.NODE_SCHEMA_RESPONSE_REJECTED.instance,
         }.get(event)
         if not notification_type:
             return

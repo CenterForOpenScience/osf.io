@@ -34,7 +34,7 @@ from osf.models import (
     NodeRelation,
     Registration,
     DraftRegistration,
-    CollectionSubmission, NotificationType
+    CollectionSubmission, NotificationTypeEnum
 )
 
 from addons.wiki.models import WikiPage, WikiVersion
@@ -2150,7 +2150,7 @@ class TestSetPrivacy:
         with capture_notifications() as notifications:
             node.set_privacy('public', auth=auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_NEW_PUBLIC_PROJECT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_NEW_PUBLIC_PROJECT
         assert node.logs.first().action == NodeLog.MADE_PUBLIC
         assert last_logged_before_method_call != node.last_logged
         node.save()
@@ -2171,7 +2171,7 @@ class TestSetPrivacy:
             node.set_privacy('private', auth=auth)
             node.set_privacy('public', auth=auth, meeting_creation=False)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_NEW_PUBLIC_PROJECT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_NEW_PUBLIC_PROJECT
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)

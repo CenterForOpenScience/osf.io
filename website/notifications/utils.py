@@ -5,7 +5,6 @@ from django.db.models import Q
 
 from osf.utils.permissions import READ
 from website.notifications import constants
-from website.notifications.exceptions import InvalidSubscriptionError
 from website.project import signals
 
 class NotificationsDict(dict):
@@ -401,56 +400,6 @@ def subscribe_user_to_global_notifications(user):
         subscription, created = NotificationSubscription.objects.get_or_create(_id=user_event_id, user=user, event_name=user_event)
         subscription.add_user_to_subscription(user, notification_type)
         subscription.save()
-
-
-def subscribe_user_to_notifications(node, user):
-    """ Update the notification settings for the creator or contributors
-    :param user: User to subscribe to notifications
-    """
-    NotificationSubscription = apps.get_model('osf.NotificationSubscription')
-    Preprint = apps.get_model('osf.Preprint')
-    DraftRegistration = apps.get_model('osf.DraftRegistration')
-    if isinstance(node, Preprint):
-        raise InvalidSubscriptionError('Preprints are invalid targets for subscriptions at this time.')
-
-    if isinstance(node, DraftRegistration):
-        raise InvalidSubscriptionError('DraftRegistrations are invalid targets for subscriptions at this time.')
-
-    if node.is_collection:
-        raise InvalidSubscriptionError('Collections are invalid targets for subscriptions')
-
-    if node.is_deleted:
-        raise InvalidSubscriptionError('Deleted Nodes are invalid targets for subscriptions')
-
-    if getattr(node, 'is_registration', False):
-        raise InvalidSubscriptionError('Registrations are invalid targets for subscriptions')
-
-    events = constants.NODE_SUBSCRIPTIONS_AVAILABLE
-    notification_type = 'email_transactional'
-    target_id = node._id
-
-    if user.is_registered:
-        for event in events:
-            event_id = to_subscription_key(target_id, event)
-            global_event_id = to_subscription_key(user._id, 'global_' + event)
-            global_subscription = NotificationSubscription.load(global_event_id)
-
-            subscription = NotificationSubscription.load(event_id)
-
-            # If no subscription for component and creator is the user, do not create subscription
-            # If no subscription exists for the component, this means that it should adopt its
-            # parent's settings
-            if not (node and node.parent_node and not subscription and node.creator == user):
-                if not subscription:
-                    subscription = NotificationSubscription(_id=event_id, owner=node, event_name=event)
-                    # Need to save here in order to access m2m fields
-                    subscription.save()
-                if global_subscription:
-                    global_notification_type = get_global_notification_type(global_subscription, user)
-                    subscription.add_user_to_subscription(user, global_notification_type)
-                else:
-                    subscription.add_user_to_subscription(user, notification_type)
-                subscription.save()
 
 
 def format_user_and_project_subscriptions(user):

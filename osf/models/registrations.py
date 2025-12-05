@@ -23,7 +23,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
-from osf.models.notification_type import NotificationType
+from osf.models.notification_type import NotificationTypeEnum
 from .action import RegistrationAction
 from .archive import ArchiveJob
 from .contributor import DraftRegistrationContributor
@@ -1332,7 +1332,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
             node=None,
             data=None,
             provider=None,
-            notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+            notification_type=NotificationTypeEnum.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
     ):
         if not provider:
             provider = RegistrationProvider.get_default()
