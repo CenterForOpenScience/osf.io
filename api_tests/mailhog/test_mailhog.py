@@ -12,7 +12,7 @@ from tests.base import (
     fake
 )
 from framework import auth
-from osf.models import OSFUser, NotificationType
+from osf.models import OSFUser, NotificationType, NotificationTypeEnum
 from tests.base import (
     OsfTestCase,
 )
@@ -28,7 +28,7 @@ class TestMailHog:
     def test_mailhog_received_mail(self):
         delete_mailhog_messages()
 
-        NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL.instance.emit(
+        NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL.instance.emit(
             message_frequency='instantly',
             destination_address='to_addr@mail.com',
             event_context={
@@ -44,7 +44,7 @@ class TestMailHog:
         assert res['count'] == 1
         assert res['items'][0]['Content']['Headers']['To'][0] == 'to_addr@mail.com'
         assert res['items'][0]['Content']['Headers']['Subject'][0] == NotificationType.objects.get(
-            name=NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
+            name=NotificationTypeEnum.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
         ).subject
         delete_mailhog_messages()
 

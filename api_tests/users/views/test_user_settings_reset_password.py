@@ -3,7 +3,7 @@ import urllib
 
 from api.base.settings.defaults import API_BASE
 from api.base.settings import CSRF_COOKIE_NAME
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     UserFactory,
 )
@@ -49,7 +49,7 @@ class TestResetPassword:
         with capture_notifications() as notifications:
             res = app.get(url)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORGOT_PASSWORD
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.USER_FORGOT_PASSWORD
         assert res.status_code == 200
         user_one.reload()
 

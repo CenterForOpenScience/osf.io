@@ -26,7 +26,7 @@ from addons.osfstorage.models import OsfStorageFile
 from addons.base import views
 from admin_tests.utilities import setup_view
 from api.preprints.views import PreprintContributorDetail
-from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, NotificationType
+from osf.models import Tag, Preprint, PreprintLog, PreprintContributor, NotificationTypeEnum
 from osf.exceptions import PreprintStateError, ValidationError, ValidationValueError
 from osf_tests.factories import (
     ProjectFactory,
@@ -2014,12 +2014,12 @@ class TestPreprintConfirmationEmails(OsfTestCase):
         with capture_notifications() as notifications:
             self.preprint.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
         with capture_notifications() as notifications:
             self.preprint_branded.set_published(True, auth=Auth(self.user), save=True)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
 
 class TestPreprintOsfStorage(OsfTestCase):
     def setUp(self):

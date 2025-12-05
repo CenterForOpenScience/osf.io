@@ -27,7 +27,7 @@ def reviews_notification(self, creator, template, context, action):
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     context['referrer_fullname'] = user.fullname
     provider = resource.provider
-    from osf.models import NotificationType
+    from osf.models import NotificationTypeEnum
 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
@@ -38,7 +38,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
             context['user_fullname'] = recipient.fullname
             context['recipient_fullname'] = recipient.fullname
 
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
                 user=recipient,
                 subscribed_object=provider,
                 event_context=context,
@@ -51,7 +51,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     context['reviewable_absolute_url'] = preprint.absolute_url
     context['reviewable_title'] = preprint.title
     context['reviewable__id'] = preprint._id
-    from osf.models import NotificationType
+    from osf.models import NotificationTypeEnum
 
     preprint_word = preprint.provider.preprint_word
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
@@ -63,7 +63,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
             context['user_fullname'] = recipient.fullname
             context['recipient_fullname'] = recipient.fullname
 
-            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
                 user=recipient,
                 event_context=context,
                 subscribed_object=preprint.provider,
@@ -103,7 +103,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
         else:
             context['message'] = f'submitted "{resource.title}".'
 
-    from osf.models import NotificationType
+    from osf.models import NotificationTypeEnum
     context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
     context['localized_timestamp'] = str(timezone.now())
 
@@ -114,7 +114,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
             context['requester_fullname'] = recipient.fullname
             context['is_request_email'] = False
 
-            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+            NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
                 user=recipient,
                 subscribed_object=provider,
                 event_context=context,

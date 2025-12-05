@@ -75,7 +75,7 @@ class CeleryConfig(defaults.CeleryConfig):
     result_backend = 'cache'
     cache_backend = 'memory'
 
-# Configuration for NO_LOGIN_EMAIL (NotificationType.Type.USER_NO_LOGIN)
+# Configuration for NO_LOGIN_EMAIL (NotificationTypeEnum.USER_NO_LOGIN)
 MAX_DAILY_NO_LOGIN_EMAILS = None
 NO_LOGIN_EMAIL_CUTOFF = None
 
