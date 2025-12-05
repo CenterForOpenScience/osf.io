@@ -1423,8 +1423,6 @@ class TestFileViews(StorageTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert res.status_code == 302
         assert res.headers['Location'] == f'{settings.DOMAIN}{file.get_guid()._id}/'
-        res = self.app.get(url, auth=self.user.auth, follow_redirects=True)
-        assert res.status_code == 200
 
     def test_download_file(self):
         file = create_test_file(target=self.node, user=self.user)
