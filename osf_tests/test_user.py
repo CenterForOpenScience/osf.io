@@ -470,8 +470,8 @@ class TestOSFUser:
     def test_get_confirmation_url_for_external_service(self, random_string):
         random_string.return_value = 'abcde'
         u = UnconfirmedUserFactory()
-        assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='dashboard') ==
-               f'{settings.DOMAIN}confirm/external/{u._id}/abcde/?destination=dashboard')
+        assert (u.get_confirmation_url(u.username, external_id_provider='service', destination='my_projects') ==
+               f'{settings.DOMAIN}confirm/external/{u._id}/abcde/?destination=my_projects')
 
     @mock.patch('website.security.random_string')
     def test_get_confirmation_token(self, random_string):

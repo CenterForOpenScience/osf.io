@@ -394,7 +394,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_with_another_user_logged_in(self):
         # TODO: check in qa url encoding
         another_user = AuthUserFactory()
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url, auth=another_user.auth)
         assert res.status_code == 302, 'redirects to cas logout'
         assert '/logout?service=' in res.location
@@ -408,7 +408,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_create(self):
         # TODO: check in qa url encoding
         assert not self.user.is_registered
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert '/login?service=' in res.location
@@ -425,7 +425,7 @@ class TestExternalAuthViews(OsfTestCase):
         self.user.external_identity['orcid'][self.provider_id] = 'LINK'
         self.user.save()
         assert not self.user.is_registered
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
@@ -442,7 +442,7 @@ class TestExternalAuthViews(OsfTestCase):
     def test_external_login_confirm_email_get_duped_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'CREATE'}})
         assert dupe_user.external_identity == self.user.external_identity
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 302, 'redirects to cas login'
         assert 'You should be redirected automatically' in str(res.html)
@@ -458,7 +458,7 @@ class TestExternalAuthViews(OsfTestCase):
 
     def test_external_login_confirm_email_get_duping_id(self):
         dupe_user = UserFactory(external_identity={'orcid': {self.provider_id: 'VERIFIED'}})
-        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='dashboard')
+        url = self.user.get_confirmation_url(self.user.username, external_id_provider='orcid', destination='my_projects')
         res = self.app.get(url)
         assert res.status_code == 403, 'only allows one user to link an id'
 
@@ -775,27 +775,9 @@ class TestCommentViews(OsfTestCase):
         n_unread = Comment.find_n_unread(user=user, node=project, page='node')
         assert n_unread == 1
 
-@mock.patch('website.views.PROXY_EMBER_APPS', False)
 class TestResolveGuid(OsfTestCase):
     def setUp(self):
         super().setUp()
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_without_domain(self, mock_use_ember_app):
-        provider = PreprintProviderFactory(domain='')
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_with_domain_without_redirect(self, mock_use_ember_app):
-        domain = 'https://test.com/'
-        provider = PreprintProviderFactory(_id='test', domain=domain, domain_redirect_enabled=False)
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()
 
     def test_preprint_provider_with_domain_with_redirect(self):
         domain = 'https://test.com/'
@@ -808,11 +790,3 @@ class TestResolveGuid(OsfTestCase):
         assert res.status_code == 301
         assert res.headers['location'] == f'{domain}{preprint._id}/'
         assert res.request.path == f'/{preprint._id}/'
-
-    @mock.patch('website.views.use_ember_app')
-    def test_preprint_provider_with_osf_domain(self, mock_use_ember_app):
-        provider = PreprintProviderFactory(_id='osf', domain='https://osf.io/')
-        preprint = PreprintFactory(provider=provider)
-        url = web_url_for('resolve_guid', _guid=True, guid=preprint._id)
-        res = self.app.get(url)
-        mock_use_ember_app.assert_called_with()

@@ -26,21 +26,6 @@ PREPRINT_PROVIDER_DOMAINS = {
     'prefix': 'http://local.',
     'suffix': ':4201/'
 }
-USE_EXTERNAL_EMBER = True
-EXTERNAL_EMBER_APPS = {
-    'ember_osf_web': {
-        'server': 'http://localhost:4200',
-        'path': os.environ.get('HOME') + 'website/ember_osf_web/'
-    },
-    'preprints': {
-        'server': 'http://localhost:4201',
-        'path': os.environ.get('HOME') + '/preprints/'
-    },
-    'registries': {
-        'server': 'http://localhost:4202/',
-        'path': os.environ.get('HOME') + '/registries/'
-    }
-}
 
 SEARCH_ENGINE = 'elastic'
 

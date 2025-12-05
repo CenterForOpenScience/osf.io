@@ -9,7 +9,7 @@
 # 3. Use the admin app to enable/disable the flag/switch at your convenience
 # 4. When feature is complete add the activity status (active or everyone) to the value it will have in production until
 # the old flipping code can be removed.
-# 5. When a flag name is no longer referenced anywhere in this repo or in the Ember app remove it from this list.
+# 5. When a flag name is no longer referenced anywhere in this repo remove it from this list.
 flags:
 
   - flag_name: MANUAL_DOI_AND_GUID
@@ -21,18 +21,7 @@ flags:
   - flag_name: ENABLE_GV
     name: gravy_waffle
     note: This is used to enable GravyValet, the system responsible for addons, this will remove the files widget on the
-          project overview page. Will be used with EMBER_USER_SETTINGS_ADDONS and EMBER_NODE_SETTINGS_ADDONS to flip all
-          UI elements to the new addons system.
-    everyone: true
-
-  - flag_name: EMBER_FILE_PROJECT_DETAIL
-    name: ember_file_project_detail_page
-    note: This is part of the upcoming files page redesign
-    everyone: true
-
-  - flag_name: EMBER_PROJECT_FILES
-    name: ember_project_files_page
-    note: This is part of the upcoming files page redesign
+          project overview page.
     everyone: true
 
   - flag_name: STORAGE_USAGE
@@ -59,136 +48,6 @@ flags:
     name: egap_admins
     note: Indicates whether EGAP admins have special access to custom schemas
     everyone: true
-
-  - flag_name: EMBER_AUTH_REGISTER
-    name: ember_auth_register
-    note: This indicates whether this view is routed for OSF register, redirect or go to `auth_logout`
-    everyone: true
-
-  - flag_name: EMBER_PROJECT_DETAIL
-    name: ember_project_detail_page
-    note: This flag controls whether the project overview page is routed to the ember app
-    everyone: false
-
-  - flag_name: EMBER_CREATE_DRAFT_REGISTRATION
-    name: ember_create_draft_registration_page
-    note: This flag controls whether POST requests to /project/<pid>/registrations/ and
-          /project/<pid>/node/<nid>/registrations/ are routed to the ember app
-    everyone: false
-
-  - flag_name: EMBER_MEETING_DETAIL
-    name: ember_meeting_detail_page
-    note: This flag controls whether the `conference_results` view routes to the Ember app
-    everyone: true
-
-  - flag_name: EMBER_MY_PROJECTS
-    name: ember_my_projects_page
-    note: This flag controls whether the `My Projects Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_PROJECT_CONTRIBUTORS
-    name: ember_project_contributors_page
-    note: This flag controls whether the `Node Contributor Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_PROJECT_SETTINGS
-    name: ember_project_settings_page
-    note: This flag controls whether the `Node Settings Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_PROJECT_WIKI
-    name: ember_project_wiki_page
-    note: This flag controls whether the `Project Wiki Home Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_REGISTRATION_FORM_DETAIL
-    name: ember_registration_form_detail_page
-    note: This flag controls whether the `Node Register Template Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_SEARCH_PAGE
-    name: ember_search_page
-    note: This flag controls whether the `Search Page` view routes to the Ember app
-    everyone: true
-
-  - flag_name: EMBER_USER_PROFILE
-    name: ember_user_profile_page
-    note: This flag controls whether the `User Profile Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_USER_SETTINGS
-    name: ember_user_settings_page
-    note: This flag controls whether the `User Settings Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_USER_SETTINGS_NOTIFICATIONS
-    name: ember_user_settings_notifications_page
-    note: This flag controls whether the `User Notifications Page` view routes to the Ember app
-    everyone: false
-
-  - flag_name: EMBER_MEETINGS
-    name: ember_meetings_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_EDIT_DRAFT_REGISTRATION
-    name: ember_edit_draft_registration_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_FILE_REGISTRATION_DETAIL
-    name: ember_file_registration_detail_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_REGISTRATION_FILES
-    name: ember_registration_files_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_REGISTRIES_DETAIL_PAGE
-    name: ember_registries_detail_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_USER_SETTINGS_ACCOUNTS
-    name: ember_user_settings_account_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_USER_SETTINGS_APPS
-    name: ember_user_settings_apps_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_USER_SETTINGS_TOKENS
-    name: ember_user_settings_tokens_page
-    note: This is complete and should be permanently on.
-    everyone: true
-
-  - flag_name: EMBER_AB_TESTING_HOME_PAGE_VERSION_B
-    name: ab_testing_home_page_version_b
-    note: This is no longer used.
-
-  - flag_name: EMBER_AB_TESTING_HOME_PAGE_HERO_TEXT_VERSION_B
-    name: ab_testing_home_page_hero_text_version_b
-    note: This is no longer used.
-    everyone: true
-
-  - flag_name: EMBER_PROJECT_ANALYTICS
-    name: ember_project_analytics_page
-    note: This is no longer used.
-    everyone: false
-
-  - flag_name: EMBER_PROJECT_FORKS
-    name: ember_project_forks_page
-    note: This is no longer used.
-    everyone: false
-
-  - flag_name: EMBER_PROJECT_REGISTRATIONS
-    name: ember_project_registrations_page
-    note: This is no longer used.
-    everyone: false
 
   - flag_name: ENABLE_CHRONOS
     name: enable_chronos

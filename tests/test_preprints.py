@@ -2732,17 +2732,3 @@ class TestPreprintVersionWithModeration:
         assert v2.date_created_first_version != v2_created
 
         assert v1.date_created_first_version == v1_created
-
-
-class TestEmberRedirect(OsfTestCase):
-
-    def test_ember_redirect_to_versioned_guid(self):
-        pp = PreprintFactory(filename='test.pdf', finish=True)
-        res = self.app.get(f'preprints/provider/{pp.get_guid()._id}/')
-        guid_with_version = pp._id
-        assert res.status_code == 302
-        assert res.location.endswith(f'{guid_with_version}')
-        guid_with_no_version = guid_with_version.split('_')[0]
-        location_with_no_guid = res.location.replace(guid_with_version, '')
-        # check if location has not wrong format https://osf.io/preprints/socarxiv/3rhyz/3rhyz_v1
-        assert location_with_no_guid == location_with_no_guid.replace(guid_with_no_version, '')

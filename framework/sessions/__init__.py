@@ -216,7 +216,7 @@ def before_request():
         try:
             user_session = flask_get_session_from_cookie(cookie)
         except InvalidCookieOrSessionError:
-            response = redirect(web_url_for('index'))
+            response = redirect(web_url_for('auth_login'))
             response.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
             return response
         # Case 1: anonymous session that is used for first time external (e.g. ORCiD) login only

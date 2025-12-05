@@ -551,25 +551,25 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # login: user with auth
         data = login_and_register_handler(self.auth)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_osf_login_without_auth(self):
         # login: user without auth
         data = login_and_register_handler(self.no_auth)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_osf_register_with_auth(self):
         # register: user with auth
         data = login_and_register_handler(self.auth, login=False)
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_osf_register_without_auth(self):
         # register: user without auth
         data = login_and_register_handler(self.no_auth, login=False)
         assert data.get('status_code') == http_status.HTTP_200_OK
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_next_url_login_with_auth(self):
         # next_url login: user with auth
@@ -603,13 +603,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # institution login: user with auth
         data = login_and_register_handler(self.auth, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_institution_login_without_auth(self):
         # institution login: user without auth
         data = login_and_register_handler(self.no_auth, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == cas.get_login_url(web_url_for('dashboard', _absolute=True),
+        assert data.get('next_url') == cas.get_login_url(web_url_for('my_projects', _absolute=True),
                                                          campaign='institution')
 
     def test_institution_login_next_url_with_auth(self):
@@ -628,13 +628,13 @@ class TestAuthLoginAndRegisterLogic(OsfTestCase):
         # institution register: user with auth
         data = login_and_register_handler(self.auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == web_url_for('dashboard', _absolute=True)
+        assert data.get('next_url') == web_url_for('my_projects', _absolute=True)
 
     def test_institution_register_without_auth(self):
         # institution register: user without auth
         data = login_and_register_handler(self.no_auth, login=False, campaign='institution')
         assert data.get('status_code') == http_status.HTTP_302_FOUND
-        assert data.get('next_url') == cas.get_login_url(web_url_for('dashboard', _absolute=True), campaign='institution')
+        assert data.get('next_url') == cas.get_login_url(web_url_for('my_projects', _absolute=True), campaign='institution')
 
     def test_campaign_login_with_auth(self):
         for campaign in get_campaigns():
@@ -775,7 +775,7 @@ class TestAuthLogout(OsfTestCase):
         super().setUp()
         self.goodbye_url = web_url_for('goodbye', _absolute=True)
         self.redirect_url = web_url_for('forgot_password_get', _absolute=True)
-        self.valid_next_url = web_url_for('dashboard', _absolute=True)
+        self.valid_next_url = web_url_for('my_projects', _absolute=True)
         self.invalid_next_url = 'http://localhost:1234/abcde'
         self.auth_user = AuthUserFactory()
 
