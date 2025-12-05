@@ -94,7 +94,9 @@ class NotificationSubscription(BaseModel):
             try:
                 validator(destination_address)
             except ValidationError:
-                destination_address = self.user.emails.first().address
+                emails_qs = self.user.emails
+                if emails_qs.exists():
+                    destination_address = emails_qs.first().address
                 try:
                     validator(destination_address)
                 except ValidationError:
