@@ -32,8 +32,8 @@ def main(dry_run: bool = True):
         logger.info('No users matched inactivity criteria.')
         return
 
-    if settings.MAX_DAILY_NO_LOGIN:
-        users = users[:settings.MAX_DAILY_NO_LOGIN]
+    if settings.MAX_DAILY_NO_LOGIN_EMAILS:
+        users = users[:settings.MAX_DAILY_NO_LOGIN_EMAILS]
 
     for user in users:
         if dry_run:
