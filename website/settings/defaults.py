@@ -2122,3 +2122,5 @@ USE_COLOR = False
 # path to newrelic.ini config file
 # newrelic is only enabled when DEBUG_MODE is False
 NEWRELIC_INI_PATH = None
+
+TTL_CACHE_LIFETIME = 60 * 60 * 2  # 2 hours

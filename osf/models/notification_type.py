@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
+from website import settings
 from enum import Enum
 from osf.utils.caching import ttl_cached_property
 
@@ -22,7 +23,6 @@ class NotificationType(models.Model):
         DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
         DESK_REQUEST_EXPORT = 'desk_request_export'
         DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
-        DESK_OSF_SUPPORT_EMAIL = 'desk_osf_support_email'  # unused same as DESK_CROSSREF_ERROR
         DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
         DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = 'desk_user_registration_bulk_upload_unexpected_failure'
         DESK_ARCHIVE_JOB_EXCEEDED = 'desk_archive_job_exceeded'
@@ -41,19 +41,17 @@ class NotificationType(models.Model):
         USER_INSTITUTION_DEACTIVATION = 'user_institution_deactivation'
         USER_FORGOT_PASSWORD = 'user_forgot_password'
         USER_FORGOT_PASSWORD_INSTITUTION = 'user_forgot_password_institution'
-        USER_REQUEST_EXPORT = 'user_request_export'  # unused no template
         USER_DUPLICATE_ACCOUNTS_OSF4I = 'user_duplicate_accounts_osf4i'
         USER_EXTERNAL_LOGIN_LINK_SUCCESS = 'user_external_login_link_success'
         USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = 'user_registration_bulk_upload_success_partial'
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = 'user_registration_bulk_upload_success_all'
-        USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'  # unused no template
+        USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'
         USER_WELCOME_OSF4I = 'user_welcome_osf4i'
         USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
         USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
-        # USER_COMMENT_REPLIES = 'user_comment_replies'  # unused
-        USER_FILE_UPDATED = 'user_file_updated'  # unused
+        USER_FILE_UPDATED = 'user_file_updated'
         USER_FILE_OPERATION_SUCCESS = 'user_file_operation_success'
         USER_FILE_OPERATION_FAILED = 'user_file_operation_failed'
         USER_PASSWORD_RESET = 'user_password_reset'
@@ -63,15 +61,12 @@ class NotificationType(models.Model):
         USER_CONFIRM_EMAIL = 'user_confirm_email'
         USER_INITIAL_CONFIRM_EMAIL = 'user_initial_confirm_email'
         USER_INVITE_DEFAULT = 'user_invite_default'
-        USER_PENDING_INVITE = 'user_pending_invite'  # unused
         USER_FORWARD_INVITE = 'user_forward_invite'
         USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
         USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
-        USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'  # unused
-        USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'  # unused
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
-        USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'  # confirm behavior
+        USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
         USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE = 'user_campaign_confirm_email_agu_conference'
@@ -83,8 +78,8 @@ class NotificationType(models.Model):
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
 
         # Node notifications
-        NODE_FILE_UPDATED = 'node_file_updated'  # unused
-        NODE_FILES_UPDATED = 'node_files_updated'  # unused
+        NODE_FILE_UPDATED = 'node_file_updated'
+        NODE_FILES_UPDATED = 'node_files_updated'
         NODE_AFFILIATION_CHANGED = 'node_affiliation_changed'
         NODE_REQUEST_ACCESS_SUBMITTED = 'node_request_access_submitted'
         NODE_REQUEST_ACCESS_DENIED = 'node_request_access_denied'
@@ -115,22 +110,16 @@ class NotificationType(models.Model):
         ADDON_FILE_COPIED = 'addon_file_copied'
         ADDON_FILE_RENAMED = 'addon_file_renamed'
         ADDON_FILE_MOVED = 'addon_file_moved'
-        ADDON_FILE_REMOVED = 'addon_file_removed'  # unused
+        ADDON_FILE_REMOVED = 'addon_file_removed'
         FOLDER_CREATED = 'folder_created'
 
         # Provider notifications
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
         PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
         PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
-        PROVIDER_REVIEWS_MODERATOR_SUBMISSION_CONFIRMATION = 'provider_reviews_moderator_submission_confirmation'  # unused
-        PROVIDER_REVIEWS_REJECT_CONFIRMATION = 'provider_reviews_reject_confirmation'  # unused
-        PROVIDER_REVIEWS_ACCEPT_CONFIRMATION = 'provider_reviews_accept_confirmation'  # unused
         PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION = 'provider_reviews_resubmission_confirmation'
-        PROVIDER_REVIEWS_COMMENT_EDITED = 'provider_reviews_comment_edited'  # unused
-        PROVIDER_CONTRIBUTOR_ADDED_PREPRINT = 'provider_contributor_added_preprint'  # unused
         PROVIDER_CONFIRM_EMAIL_MODERATION = 'provider_confirm_email_moderation'
         PROVIDER_MODERATOR_ADDED = 'provider_moderator_added'
-        PROVIDER_CONFIRM_EMAIL_PREPRINTS = 'provider_confirm_email_preprints'  # unused
         PROVIDER_USER_INVITE_PREPRINT = 'provider_user_invite_preprint'
 
         # Preprint notifications
@@ -138,7 +127,6 @@ class NotificationType(models.Model):
         PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
         PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
         PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
-        PREPRINT_PENDING_RETRACTION_ADMIN = 'preprint_pending_retraction_admin'  # unused
 
         # Collections Submission notifications
         COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
@@ -153,7 +141,7 @@ class NotificationType(models.Model):
 
         DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
-        @ttl_cached_property(ttl=60 * 60 * 24)  # 24 hours
+        @ttl_cached_property(ttl=settings.TTL_CACHE_LIFETIME)
         def instance(self):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
