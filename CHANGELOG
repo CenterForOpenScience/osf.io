@@ -2,6 +2,21 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+25.18.1 (2025-12-10)
+====================
+
+- Add missing migrations
+
+25.18.0
+=======
+
+- TODO: add date and notes
+
+25.17.7 ~ 25.17.10
+==================
+
+- TODO: add date and notes
+
 25.17.6 (2025-10-11)
 ====================
 
