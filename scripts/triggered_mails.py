@@ -9,6 +9,8 @@ from framework.celery_tasks import app as celery_app
 from osf.models import OSFUser, NotificationType
 from website.app import init_app
 from website import settings
+from osf import features
+from waffle import switch_is_active
 
 from osf.models import EmailTask
 
@@ -21,10 +23,17 @@ NO_LOGIN_PREFIX = 'no_login:'  # used to namespace this email type in task_id
 
 
 def main(dry_run: bool = True):
+    if not switch_is_active(features.ENABLE_NO_LOGIN_EMAILS):
+        logger.warning('No-login emails are DISABLED via Waffle switch')
+        return
+
     users = find_inactive_users_without_enqueued_or_sent_no_login()
     if not users.exists():
         logger.info('No users matched inactivity criteria.')
         return
+
+    if settings.MAX_DAILY_NO_LOGIN_EMAILS:
+        users = users[:settings.MAX_DAILY_NO_LOGIN_EMAILS]
 
     for user in users:
         if dry_run:
@@ -58,8 +67,11 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
         task_id__startswith=NO_LOGIN_PREFIX,
         status__in=['PENDING', 'STARTED', 'RETRY', 'SUCCESS'],
     )
-
-    base_q = OSFUser.objects.filter(is_active=True).filter(
+    cutoff_query = Q(date_last_login__gte=settings.NO_LOGIN_EMAIL_CUTOFF - settings.NO_LOGIN_WAIT_TIME) if settings.NO_LOGIN_EMAIL_CUTOFF else Q()
+    base_q = OSFUser.objects.filter(
+        cutoff_query,
+        is_active=True,
+    ).filter(
         Q(
             date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME,
             # NOT tagged osf4m

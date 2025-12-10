@@ -248,3 +248,8 @@ switches:
     note: This is used to enable the MailHog email testing service, this will allow emails to be sent to the
           MailHog service before sending them to real email addresses.
     active: false
+
+  - flag_name: ENABLE_NO_LOGIN_EMAILS
+    name: enable_no_login_emails
+    note: This is used to enable no-login email reminders to users who have not logged in for a specified period.
+    active: true
