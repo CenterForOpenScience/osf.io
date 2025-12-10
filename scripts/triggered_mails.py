@@ -81,7 +81,7 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
             date_last_login__lt=timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME,
             tags__name='osf4m'
         )
-    )
+    ).distinct()
 
     # Exclude users who already have a task for this email type
     return base_q.annotate(_has_task=Exists(existing_no_login)).filter(_has_task=False)
