@@ -363,7 +363,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
+            NotificationType.Type.USER_ADD_SSO_EMAIL_OSF4I.instance.emit(
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,

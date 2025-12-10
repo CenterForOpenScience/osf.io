@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
+from website import settings
 from enum import Enum
 from osf.utils.caching import ttl_cached_property
 
@@ -45,6 +46,7 @@ class NotificationType(models.Model):
         USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_PARTIAL = 'user_registration_bulk_upload_success_partial'
         USER_REGISTRATION_BULK_UPLOAD_SUCCESS_ALL = 'user_registration_bulk_upload_success_all'
+        USER_ADD_SSO_EMAIL_OSF4I = 'user_add_sso_email_osf4i'
         USER_WELCOME_OSF4I = 'user_welcome_osf4i'
         USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
@@ -139,7 +141,7 @@ class NotificationType(models.Model):
 
         DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
-        @ttl_cached_property(ttl=60)  # 24 hours
+        @ttl_cached_property(ttl=settings.TTL_CACHE_LIFETIME)
         def instance(self):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
