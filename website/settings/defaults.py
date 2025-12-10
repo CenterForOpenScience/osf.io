@@ -190,6 +190,8 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
+MAX_DAILY_NO_LOGIN = None
+NO_LOGIN_EMAIL_CUTOFF = None
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
