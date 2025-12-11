@@ -76,6 +76,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             NotificationType.Type.ADDON_FILE_MOVED.value,
             NotificationType.Type.ADDON_FILE_REMOVED.value,
             NotificationType.Type.FOLDER_CREATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
         ]
 
         qs = NotificationSubscription.objects.filter(
@@ -206,6 +207,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 user=self.request.user,
                 notification_type__name__in=[
                     NotificationType.Type.USER_FILE_UPDATED.value,
+                    NotificationType.Type.FILE_UPDATED.value,
                     NotificationType.Type.FILE_ADDED.value,
                     NotificationType.Type.FILE_REMOVED.value,
                     NotificationType.Type.ADDON_FILE_COPIED.value,
@@ -253,6 +255,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 object_id=node_id,
                 notification_type__name__in=[
                     NotificationType.Type.NODE_FILE_UPDATED.value,
+                    NotificationType.Type.FILE_UPDATED.value,
                     NotificationType.Type.FILE_ADDED.value,
                     NotificationType.Type.FILE_REMOVED.value,
                     NotificationType.Type.ADDON_FILE_COPIED.value,
