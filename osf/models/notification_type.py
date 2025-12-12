@@ -241,7 +241,7 @@ class NotificationType(models.Model):
         verbose_name_plural = 'Notification Types'
 
     def get_group_frequency_or_default(self, user, subscribed_object, content_type):
-        from osf.models.notification_subscription import NotificationSubscription
+        from osf.models import NotificationSubscription, AbstractNode
 
         _global_file_updated = [
             NotificationType.Type.USER_FILE_UPDATED.value,
@@ -263,6 +263,7 @@ class NotificationType(models.Model):
         ]
         _node_file_updated = [
             NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
             NotificationType.Type.FILE_ADDED.value,
             NotificationType.Type.FILE_REMOVED.value,
             NotificationType.Type.ADDON_FILE_COPIED.value,
@@ -272,7 +273,7 @@ class NotificationType(models.Model):
             NotificationType.Type.FOLDER_CREATED.value,
         ]
 
-        if self.name in _global_file_updated:
+        if self.name in _global_file_updated and subscribed_object != ContentType.objects.get_for_model(AbstractNode):
             frequency_data = NotificationSubscription.objects.filter(
                 user=user,
                 content_type=content_type,
