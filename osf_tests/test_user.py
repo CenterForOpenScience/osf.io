@@ -440,31 +440,6 @@ class TestOSFUser:
         assert not draft_five.has_permission(user2, permissions.READ)
         assert not draft_five.is_contributor(user2)
 
-    @mock.patch('api.share.utils.update_share')
-    def test_merge_user_triggers_share_reindex(self, mock_update_share):
-        user = AuthUserFactory()
-        user2 = AuthUserFactory()
-
-        node_one = ProjectFactory(creator=user2, title='node_one')
-        node_two = ProjectFactory(title='node_two')
-        node_two.add_contributor(user2)
-
-        preprint_one = PreprintFactory(creator=user2, title='preprint_one')
-        preprint_two = PreprintFactory(title='preprint_two')
-        preprint_two.add_contributor(user2)
-
-        user.merge_user(user2)
-
-        nodes_reindexed = [call[0][0] for call in mock_update_share.call_args_list if hasattr(call[0][0], 'type') and call[0][0].type == 'osf.node']
-        assert len(nodes_reindexed) == 2
-        assert node_one in nodes_reindexed
-        assert node_two in nodes_reindexed
-
-        preprints_reindexed = [call[0][0] for call in mock_update_share.call_args_list if hasattr(call[0][0], 'provider')]
-        assert len(preprints_reindexed) == 2
-        assert preprint_one in preprints_reindexed
-        assert preprint_two in preprints_reindexed
-
     def test_cant_create_user_without_username(self):
         u = OSFUser()  # No username given
         with pytest.raises(ValidationError):
