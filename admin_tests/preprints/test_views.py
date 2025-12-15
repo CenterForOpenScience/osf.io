@@ -944,7 +944,6 @@ class TestPreprintReVersionView:
             'Rheisen Dennis',
             'reason@gmail.com',
             auth=Auth(preprint_admin),
-            save=True
         )
 
         # osf admin recreates a new version 1 that forces to add unregistered contributors
