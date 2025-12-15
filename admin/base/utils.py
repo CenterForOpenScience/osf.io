@@ -30,12 +30,12 @@ def reverse_qs(view, urlconf=None, args=None, kwargs=None, current_app=None, que
 
 
 def osf_staff_check(user):
-    return user.is_authenticated and user.is_staff
+    return user and user.is_authenticated and user.is_staff
 
 
 def get_subject_rules(subjects_selected):
     """
-    Take a list of subjects, and parse them into rules consistent with preprpint provider
+    Take a list of subjects, and parse them into rules consistent with preprint provider
     rules and subjects. A "rule" consists of a hierarchy of Subject _ids, and a boolean value
     describing if the rest of the descendants of the last subject in the list are included or not.
 

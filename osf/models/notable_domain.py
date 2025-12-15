@@ -14,7 +14,7 @@ class NotableDomain(BaseModel):
         ASSUME_HAM_UNTIL_REPORTED = 1
         UNKNOWN = 2
         IGNORED = 3
-        UNVERIFIED = 4  # Timedout couldn't determine
+        UNVERIFIED = 4  # Timed out couldn't determine
 
         @classmethod
         def choices(cls):

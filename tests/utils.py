@@ -206,7 +206,17 @@ mock_auth = lambda user: mock.patch(
 
 def unique(factory):
     """
+<<<<<<< HEAD
     Turn a factory function into one that guarantees unique return values.
+=======
+    Turns a factory function into a new factory function that guarantees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
+>>>>>>> upstream/hotfix/25.18.1
     """
     used = []
     @functools.wraps(factory)
@@ -214,8 +224,13 @@ def unique(factory):
         item = factory()
         attempts = 0
         while item in used:
+<<<<<<< HEAD
             if attempts > 100:
                 raise RuntimeError('Tried 100 times to generate a unique value, stopping.')
+=======
+            if over > 100:
+                raise RuntimeError('Tried 100 times to generate an unique value, stopping.')
+>>>>>>> upstream/hotfix/25.18.1
             item = factory()
             attempts += 1
         used.append(item)

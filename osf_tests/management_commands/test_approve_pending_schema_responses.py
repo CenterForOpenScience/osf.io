@@ -49,6 +49,7 @@ class TestApprovePendingSchemaResponses:
         [(False, ApprovalStates.APPROVED), (True, ApprovalStates.PENDING_MODERATION)]
     )
     def test_auto_approval(self, control_response, is_moderated, expected_state):
+<<<<<<< HEAD
         with capture_notifications():
             with mock.patch(
                 'osf.models.schema_response.SchemaResponse.is_moderated',
@@ -56,6 +57,14 @@ class TestApprovePendingSchemaResponses:
             ) as mock_is_moderated:
                 mock_is_moderated.return_value = is_moderated
                 count = approve_pending_schema_responses()
+=======
+        with mock.patch(
+            'osf.models.schema_response.SchemaResponse.is_moderated',
+            new_callable=mock.PropertyMock
+        ) as mock_is_moderated:
+            mock_is_moderated.return_value = is_moderated
+            count = approve_pending_schema_responses()
+>>>>>>> upstream/hotfix/25.18.1
 
         assert count == 1
 

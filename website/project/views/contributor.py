@@ -314,7 +314,7 @@ def project_manage_contributors(auth, node, **kwargs):
         raise HTTPError(http_status.HTTP_400_BAD_REQUEST, data={'message_long': error.args[0]})
     except IntegrityError as error:
         status.push_status_message(
-            'You can not make an institutional curator a bibliographic contributor.',
+            'You cannot make an institutional curator a bibliographic contributor.',
             kind='error',
             trust=False
         )
@@ -405,7 +405,7 @@ def project_remove_contributor(auth, **kwargs):
 
 def send_claim_registered_email(claimer, unclaimed_user, node, throttle=24 * 3600):
     """
-    A registered user claiming the unclaimed user account as an contributor to a project.
+    A registered user claiming the unclaimed user account as a contributor to a project.
     Send an email for claiming the account to the referrer and notify the claimer.
 
     :param claimer: the claimer
@@ -482,7 +482,23 @@ def send_claim_email(
     notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
 ):
     """
+<<<<<<< HEAD
     Send a claim email to an unregistered contributor or the referrer, depending on the scenario.
+=======
+    Unregistered user claiming a user account as a contributor to a project. Send an email for claiming the account.
+    Either sends to the given email or the referrer's email, depending on the email address provided.
+
+    :param str email: The address given in the claim user form
+    :param User unclaimed_user: The User record to claim.
+    :param Node node: The node where the user claimed their account.
+    :param bool notify: If True and an email is sent to the referrer, an email
+        will also be sent to the invited user about their pending verification.
+    :param int throttle: Time period (in seconds) after the referrer is
+        emailed during which the referrer will not be emailed again.
+    :param str email_template: the email template to use
+    :return
+    :raise http_status.HTTP_400_BAD_REQUEST
+>>>>>>> upstream/hotfix/25.18.1
 
     Args:
         email (str): Email address provided for claim.

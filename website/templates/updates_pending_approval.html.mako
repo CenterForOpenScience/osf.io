@@ -18,8 +18,13 @@
       submitted updates. Decisions must be made within
       ${registration_approval_time} hours.
     % else:
+<<<<<<< HEAD:website/templates/updates_pending_approval.html.mako
       <a href="${update_url}">Click here</a> to review the submited updates.
       Admins have up to ${registration_update_approval_time} hours
+=======
+      <a href="${update_url}">Click here</a> to review the submitted updates.
+      Admins have up to ${int(settings.REGISTRATION_UPDATE_APPROVAL_TIME.total_seconds() / 3600)} hours
+>>>>>>> upstream/hotfix/25.18.1:website/templates/emails/updates_pending_approval.html.mako
       to make their decision.
     % endif
     <p>

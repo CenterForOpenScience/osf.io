@@ -91,7 +91,7 @@ class PreprintOldVersionsImmutableMixin:
         preprint = self.get_preprint(check_object_permissions=False)
         if PreprintOldVersionsImmutableMixin.is_edit_allowed(preprint):
             return method(request, *args, **kwargs)
-        message = f'User can not edit previous versions of a preprint: [_id={preprint._id}]'
+        message = f'User cannot edit previous versions of a preprint: [_id={preprint._id}]'
         sentry.log_message(message)
         raise Conflict(detail=message)
 
@@ -158,12 +158,16 @@ class PreprintMixin(NodeMixin):
             or preprint.machine_state == ReviewStates.WITHDRAWN.value,
         )
         if not preprint_is_public and not user_is_contributor and not user_is_reviewer:
+            if preprint.is_pending_moderation:
+                raise PermissionDenied(
+                    detail='This preprint is pending moderation and is not yet publicly available.',
+                )
             raise NotFound
 
         return preprint
 
 class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreateAPIView, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_list).
     """
     # These permissions are not checked for the list of preprints, permissions handled by the query
     permission_classes = (
@@ -202,7 +206,7 @@ class PreprintList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.ListCreat
         # Permissions on the list objects are handled by the query
         public_only = self.metrics_requested
         queryset = self.preprints_queryset(Preprint.objects.all(), auth_user, public_only=public_only)
-        # Use get_metrics_queryset to return an queryset with annotated metrics
+        # Use get_metrics_queryset to return a queryset with annotated metrics
         # iff ?metrics query param is present
         if self.metrics_requested:
             return self.get_metrics_queryset(queryset)
@@ -290,7 +294,7 @@ class PreprintVersionsList(PreprintMetricsViewMixin, JSONAPIBaseView, generics.L
 
 
 class PreprintDetail(PreprintOldVersionsImmutableMixin, PreprintMetricsViewMixin, JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, PreprintMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_read).
 
     Note: The resource now exposes a `versions` relationship pointing to
     `/v2/preprints/{preprint_id}/versions/` for listing or creating versions.
@@ -374,7 +378,7 @@ class PreprintNodeRelationship(PreprintOldVersionsImmutableMixin, JSONAPIBaseVie
 
 
 class PreprintCitationDetail(PreprintOldVersionsImmutableMixin, JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -399,7 +403,7 @@ class PreprintCitationDetail(PreprintOldVersionsImmutableMixin, JSONAPIBaseView,
 
 
 class PreprintCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprints_citation_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprints_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -600,7 +604,7 @@ class PreprintBibliographicContributorsList(PreprintContributorsList):
 
 
 class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_subjects_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -620,7 +624,7 @@ class PreprintSubjectsList(BaseResourceSubjectsList, PreprintMixin):
 
 
 class PreprintSubjectsRelationship(PreprintOldVersionsImmutableMixin, SubjectRelationshipBaseView, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_subjects_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -814,7 +818,7 @@ class PreprintRequestListCreate(JSONAPIBaseView, generics.ListCreateAPIView, Lis
 
 
 class PreprintInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, PreprintMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/preprint_institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/preprint_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

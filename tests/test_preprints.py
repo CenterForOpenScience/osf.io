@@ -369,7 +369,7 @@ class TestContributorMethods:
         preprint.save()
         assert len(preprint.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, preprint, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, preprint, auth):
         new_user = preprint.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         preprint.save()
@@ -2736,6 +2736,38 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_retracted is True
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.WITHDRAWN.value
+
+    def test_date_created_first_version_with_rejected_v1(self, creator, moderator):
+        v1 = PreprintFactory(reviews_workflow='pre-moderation', is_published=False, creator=creator)
+        v1.run_submit(creator)
+        v1.run_reject(moderator, 'Rejecting v1')
+        v1.reload()
+
+        assert v1.machine_state == ReviewStates.REJECTED.value
+        assert v1.versioned_guids.first().is_rejected is True
+        v1_created = v1.created
+
+        v2 = PreprintFactory.create_version(
+            create_from=v1,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        v2.run_submit(creator)
+        v2.run_accept(moderator, 'Accepting v2')
+        v2.reload()
+
+        assert v2.machine_state == ReviewStates.ACCEPTED.value
+        assert v2.is_published is True
+        v2_created = v2.created
+
+        assert v2_created > v1_created
+
+        assert v2.date_created_first_version == v1_created
+        assert v2.date_created_first_version != v2_created
+
+        assert v1.date_created_first_version == v1_created
 
 
 class TestEmberRedirect(OsfTestCase):

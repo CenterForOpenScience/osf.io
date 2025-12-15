@@ -67,7 +67,7 @@ def test_goodbasket():
     mock_gatherers[BLARG.hork].assert_called_once()
 
     # __getitem__
-    assert set(basket[BLARG.somethin_else]) == set()
+    assert set(basket[BLARG.something_else]) == set()
     # path:
     assert set(basket[BLARG.bork / BLARG.lork]) == {BLARG.borklorked}
     # explicit subject:

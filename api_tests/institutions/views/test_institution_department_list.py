@@ -1,4 +1,3 @@
-import time
 import pytest
 import datetime
 
@@ -7,7 +6,8 @@ from osf_tests.factories import (
     InstitutionFactory,
     AuthUserFactory,
 )
-from osf.metrics import UserInstitutionProjectCounts
+from osf.metrics.reports import InstitutionalUserReport
+from osf.metrics.utils import YearMonth
 
 
 @pytest.mark.es_metrics
@@ -37,50 +37,55 @@ class TestInstitutionDepartmentList:
     @pytest.fixture()
     def populate_counts(self, user, user2, user3, user4, admin, institution):
         # This represents a Department that had a user, but no longer has any users, so does not appear in results.
-        UserInstitutionProjectCounts.record(
+        InstitutionalUserReport(
+            report_yearmonth=YearMonth(2017, 2),
             user_id=user._id,
             institution_id=institution._id,
-            department='Old Department',
+            department_name='Old Department',
             public_project_count=1,
             private_project_count=1,
-            timestamp=datetime.date(2017, 2, 4)
-        ).save()
+        ).save(refresh=True)
+
+        _this_month = YearMonth.from_date(datetime.date.today())
 
         # The user has left the department
-        UserInstitutionProjectCounts.record(
+        InstitutionalUserReport(
+            report_yearmonth=_this_month,
             user_id=user._id,
             institution_id=institution._id,
-            department='New Department',
+            department_name='New Department',
             public_project_count=1,
             private_project_count=1,
-        ).save()
+        ).save(refresh=True)
 
         # A second user entered the department
-        UserInstitutionProjectCounts.record(
+        InstitutionalUserReport(
+            report_yearmonth=_this_month,
             user_id=user2._id,
             institution_id=institution._id,
-            department='New Department',
+            department_name='New Department',
             public_project_count=1,
-            private_project_count=1
-        ).save()
+            private_project_count=1,
+        ).save(refresh=True)
 
         # A new department with a single user to test sorting
-        UserInstitutionProjectCounts.record(
+        InstitutionalUserReport(
+            report_yearmonth=_this_month,
             user_id=user3._id,
             institution_id=institution._id,
-            department='Smaller Department',
+            department_name='Smaller Department',
             public_project_count=1,
-            private_project_count=1
-        ).save()
+            private_project_count=1,
+        ).save(refresh=True)
 
         # A user with no department
-        UserInstitutionProjectCounts.record(
+        InstitutionalUserReport(
+            report_yearmonth=_this_month,
             user_id=user4._id,
             institution_id=institution._id,
             public_project_count=1,
-            private_project_count=1
-        ).save()
-        time.sleep(5)  # ES is slow
+            private_project_count=1,
+        ).save(refresh=True)
 
     @pytest.fixture()
     def admin(self, institution):
@@ -117,15 +122,7 @@ class TestInstitutionDepartmentList:
                 'name': 'New Department',
                 'number_of_users': 2
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
-        }, {
-            'id': f'{institution._id}-Smaller-Department',
-            'type': 'institution-departments',
-            'attributes': {
-                'name': 'Smaller Department',
-                'number_of_users': 1
-            },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
+            'links': {},
         }, {
             'id': f'{institution._id}-{DEFAULT_ES_NULL_VALUE}',
             'type': 'institution-departments',
@@ -133,7 +130,15 @@ class TestInstitutionDepartmentList:
                 'name': DEFAULT_ES_NULL_VALUE,
                 'number_of_users': 1
             },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
+            'links': {},
+        }, {
+            'id': f'{institution._id}-Smaller-Department',
+            'type': 'institution-departments',
+            'attributes': {
+                'name': 'Smaller Department',
+                'number_of_users': 1
+            },
+            'links': {},
         }]
 
         # Tests CSV Export
@@ -148,33 +153,10 @@ class TestInstitutionDepartmentList:
         rows = response_body.split('\r\n')
         header_row = rows[0].split(',')
         new_department_row = rows[1].split(',')
-        smaller_department_row = rows[2].split(',')
-        na_row = rows[3].split(',')
+        na_row = rows[2].split(',')
+        smaller_department_row = rows[3].split(',')
 
-        assert header_row == ['id', 'name', 'number_of_users', 'type']
-        assert new_department_row == [f'{institution._id}-New-Department', 'New Department', '2', 'institution-departments']
-        assert smaller_department_row == [f'{institution._id}-Smaller-Department', 'Smaller Department', '1', 'institution-departments']
-        assert na_row == [f'{institution._id}-N/A', 'N/A', '1', 'institution-departments']
-
-    def test_pagination(self, app, url, admin, institution, populate_counts):
-        resp = app.get(f'{url}?filter[name]=New Department', auth=admin.auth)
-
-        assert resp.json['data'] == [{
-            'id': '{}-{}'.format(institution._id, 'New-Department'),
-            'type': 'institution-departments',
-            'attributes': {
-                'name': 'New Department',
-                'number_of_users': 2
-            },
-            'links': {'self': f'http://localhost:8000/v2/institutions/{institution._id}/metrics/departments/'}
-        }]
-
-        resp = app.get(f'{url}?page[size]=2', auth=admin.auth)
-        assert len(resp.json['data']) == 2
-        assert resp.json['links']['meta']['per_page'] == 2
-        assert resp.json['links']['meta']['total'] == 3
-
-        resp = app.get(f'{url}?page[size]=2&page=2', auth=admin.auth)
-        assert len(resp.json['data']) == 1
-        assert resp.json['links']['meta']['per_page'] == 2
-        assert resp.json['links']['meta']['total'] == 3
+        assert header_row == ['name', 'number_of_users']
+        assert new_department_row == ['New Department', '2']
+        assert smaller_department_row == ['Smaller Department', '1']
+        assert na_row == ['N/A', '1']

@@ -145,7 +145,7 @@
 					"title": "Background and explanation of rationale.",
 					"format": "textarea",
 					"required": true,
-					"description": "Brief description of goals of project. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of the project background."
+					"description": "Brief description of goals of project. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of the project background."
 				},
 				{
 					"qid": "q16",
@@ -153,7 +153,7 @@
 					"title": "What are the hypotheses to be tested/quantities of interest to be estimated?",
 					"format": "textarea",
 					"required": true,
-					"description": "Please list the hypotheses including hypotheses on heterogeneous effects. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project hypotheses."
+					"description": "Please list the hypotheses including hypotheses on heterogeneous effects. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project hypotheses."
 				},
 				{
 					"qid": "q17",
@@ -161,7 +161,7 @@
 					"title": "How will these hypotheses be tested?",
 					"format": "textarea",
 					"required": true,
-					"description": "Brief description of your methodology. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please also avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project methodology."
+					"description": "Brief description of your methodology. If you are also attaching a pre-analysis plan, please refrain from simply copying and pasting a section from your plan here. If possible, please avoid saying \"see attached pre-analysis plan,\" as it renders the search functionality less useful. Rather, please provide a short (1-2 paragraph) summary of project methodology."
 				},
 				{
 					"qid": "q18",
@@ -340,7 +340,7 @@
 				"nav": "Certification",
 				"type": "choose",
 				"format": "singleselect",
-				"description": "By submitting this form and accompanying documents with EGAP, I confirm that I have rights to put this information in the public domain and I understand that this information will remain on the EGAP registry in perpetuity, regardless of whether the research is subsequently implemented or not.",
+				"description": "By submitting this form and accompanying documents with EGAP, I confirm that I have rights to put this information in the public domain and I understand that this information will remain on the EGAP registry in perpetuity, regardless of whether or not the research is subsequently implemented.",
 				"options": [
 					"Agree"
 				],

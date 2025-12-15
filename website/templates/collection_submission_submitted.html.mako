@@ -6,8 +6,13 @@
         <br>
         <p>
             % if is_initiator:
+<<<<<<< HEAD:website/templates/collection_submission_submitted.html.mako
                 You just started a request to add <a href="${node_absolute_url}">${node_title}</a>
                 to <a href="${collections_link}">${collection_provider_name}</a>.
+=======
+                You just started a request to add <a href="${node.absolute_url}">${node.title}</a>
+                to <a href="${settings.DOMAIN + 'collections/' + collection.provider._id}">${collection.provider.name}</a>.
+>>>>>>> upstream/hotfix/25.18.1:website/templates/emails/collection_submission_submitted.html.mako
                 All admins and contributors will be notified via email.
             % elif is_registered_contrib:
                  <a href="${submitter_absolute_url}">${submitter_fullname}</a> just included you in <a href="${node_absolute_url}">${node_title}</a> to a request to add

@@ -682,7 +682,7 @@ class TestNodeSearch(OsfTestCase):
 
     @unittest.skip('Elasticsearch latency seems to be causing theses tests to fail randomly.')
     @retry_assertion(retries=10)
-    def test_node_license_propogates_to_children(self):
+    def test_node_license_propagates_to_children(self):
         docs = query(self.query)['results']
         child = [d for d in docs if d['title'] == self.public_child.title][0]
         assert 'license' in child
@@ -1081,7 +1081,7 @@ class TestAddContributor(OsfTestCase):
         contribs = search.search_contributor(self.name4)
         assert len(contribs['users']) == 0
 
-    def test_search_firstname_special_charcter(self):
+    def test_search_firstname_special_character(self):
         # Searching for a first name with a special character yields
         # exactly one result.
         contribs = search.search_contributor(self.name3.split(' ')[0])
@@ -1092,7 +1092,7 @@ class TestAddContributor(OsfTestCase):
 
     def test_search_partial_special_character(self):
         # Searching for a partial name with a special character yields
-        # exctly one result.
+        # exactly one result.
         contribs = search.search_contributor(self.name3.split(' ')[0][:-1])
         assert len(contribs['users']) == 1
 
@@ -1231,7 +1231,7 @@ class TestUserSearchResults(OsfTestCase):
             self.user_five
         ]
 
-    @unittest.skip('Cannot guarentee always passes')
+    @unittest.skip('Cannot guarantee always passes')
     def test_current_job_first_in_results(self):
         results = query_user('Star Fleet')['results']
         result_names = [r['names']['fullname'] for r in results]

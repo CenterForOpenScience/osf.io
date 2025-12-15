@@ -125,7 +125,7 @@ class MeetingSubmissionSerializer(NodeSerializer):
 
     def get_meeting_category(self, obj):
         """
-        Returns the existance of a certain tag on the node.  If the first submission type tag exists,
+        Returns the existence of a certain tag on the node.  If the first submission type tag exists,
         return that.  Otherwise, return the second submission type tag as a default.
         """
         if getattr(obj, 'meeting_category', None):

@@ -63,7 +63,7 @@ class FileMixin:
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -108,7 +108,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_versions).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_versions).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -140,7 +140,7 @@ def node_from_version(request, view, obj):
 
 
 class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_version_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_version_detail).
     """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (

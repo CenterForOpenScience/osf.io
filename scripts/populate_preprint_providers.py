@@ -482,7 +482,7 @@ def main(env):
                         <li><b>Khelif Karima</b>, Institut National de la Recherche Agronomique d'Algérie</li>
                         <li><b>Kuldeep Singh Jadon</b>, Central Arid Zone Research Institute</li>
                         <li><b>Paraj Shukla</b>, King Saud University</li>
-                        <li><b>Sridhar Gutam</b>,  ICAR RCER Research Centre/Open Access India</li>
+                        <li><b>Sridhar Gutam</b>, ICAR RCER Research Centre/Open Access India</li>
                         <li><b>Sumant Vyas</b>, National Research Centre on Camel</li>
                         <li><b>Susmita Das</b>, Bangladesh Agricultural Research Council</li>
                     </ul>
@@ -1029,7 +1029,7 @@ def main(env):
                 (['Social and Behavioral Sciences', 'Organization Development', 'Health Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Infrastructure'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Policy Design, Analysis, and Evaluation'], False),
-                (['Social and Behavioral Sciences', 'Organization Development', 'Policy History, Theory, and Methosd'], False),
+                (['Social and Behavioral Sciences', 'Organization Development', 'Policy History, Theory, and Methods'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Science and Technology Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Social Policy'], False),
                 (['Social and Behavioral Sciences', 'Organization Development', 'Social Welfare'], False),

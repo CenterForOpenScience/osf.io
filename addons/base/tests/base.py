@@ -13,7 +13,7 @@ class AddonTestCase:
         - ADDON_SHORT_NAME (class variable)
         - set_user_settings(self, settings): Method that makes any modifications
             to the UserSettings object, e.g. setting access_token
-        - set_node_settings(self, settings): Metehod that makes any modifications
+        - set_node_settings(self, settings): Method that makes any modifications
             to the NodeSettings object.
 
     This will give you:

@@ -23,10 +23,18 @@ from tests.utils import get_mailhog_messages, delete_mailhog_messages
 @pytest.mark.django_db
 class TestMailHog:
 
+<<<<<<< HEAD
     @override_switch(features.ENABLE_MAILHOG, active=True)
     @mock.patch('website.settings.DEV_MODE', True)
     def test_mailhog_received_mail(self):
         delete_mailhog_messages()
+=======
+    def test_mailhog_received_mail(self, mock_send_grid):
+        with override_switch(features.ENABLE_MAILHOG, active=True):
+            mailhog_v1 = f'{settings.MAILHOG_API_HOST}/api/v1/messages'
+            mailhog_v2 = f'{settings.MAILHOG_API_HOST}/api/v2/messages'
+            requests.delete(mailhog_v1)
+>>>>>>> upstream/hotfix/25.18.1
 
         NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL.instance.emit(
             message_frequency='instantly',
@@ -57,7 +65,12 @@ class TestAuthMailhog(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
+<<<<<<< HEAD
     @override_switch(features.ENABLE_MAILHOG, active=True)
+=======
+        self.mock_send_grid = start_mock_send_grid(self)
+
+>>>>>>> upstream/hotfix/25.18.1
     def test_received_confirmation(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'

@@ -20,7 +20,7 @@ flags:
 
   - flag_name: ENABLE_GV
     name: gravy_waffle
-    note: This is used to enable GravyValet, the system responible for addons, this will remove the files widget on the
+    note: This is used to enable GravyValet, the system responsible for addons, this will remove the files widget on the
           project overview page. Will be used with EMBER_USER_SETTINGS_ADDONS and EMBER_NODE_SETTINGS_ADDONS to flip all
           UI elements to the new addons system.
     everyone: true
@@ -67,63 +67,63 @@ flags:
 
   - flag_name: EMBER_PROJECT_DETAIL
     name: ember_project_detail_page
-    note: This flag controls wheter the project overview page is routed to the ember app
+    note: This flag controls whether the project overview page is routed to the ember app
     everyone: false
 
   - flag_name: EMBER_CREATE_DRAFT_REGISTRATION
     name: ember_create_draft_registration_page
-    note: This flag controls wheter POST requests to /project/<pid>/registrations/ and
+    note: This flag controls whether POST requests to /project/<pid>/registrations/ and
           /project/<pid>/node/<nid>/registrations/ are routed to the ember app
     everyone: false
 
   - flag_name: EMBER_MEETING_DETAIL
     name: ember_meeting_detail_page
-    note: This flag controls wheter the `conference_results` view routes to the Ember app
+    note: This flag controls whether the `conference_results` view routes to the Ember app
     everyone: true
 
   - flag_name: EMBER_MY_PROJECTS
     name: ember_my_projects_page
-    note: This flag controls wheter the `My Projects Page` view routes to the Ember app
+    note: This flag controls whether the `My Projects Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_PROJECT_CONTRIBUTORS
     name: ember_project_contributors_page
-    note: This flag controls wheter the `Node Contributor Page` view routes to the Ember app
+    note: This flag controls whether the `Node Contributor Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_PROJECT_SETTINGS
     name: ember_project_settings_page
-    note: This flag controls wheter the `Node Settings Page` view routes to the Ember app
+    note: This flag controls whether the `Node Settings Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_PROJECT_WIKI
     name: ember_project_wiki_page
-    note: This flag controls wheter the `Project Wiki Home Page` view routes to the Ember app
+    note: This flag controls whether the `Project Wiki Home Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_REGISTRATION_FORM_DETAIL
     name: ember_registration_form_detail_page
-    note: This flag controls wheter the `Node Register Template Page` view routes to the Ember app
+    note: This flag controls whether the `Node Register Template Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_SEARCH_PAGE
     name: ember_search_page
-    note: This flag controls wheter the `Search Page` view routes to the Ember app
+    note: This flag controls whether the `Search Page` view routes to the Ember app
     everyone: true
 
   - flag_name: EMBER_USER_PROFILE
     name: ember_user_profile_page
-    note: This flag controls wheter the `User Profile Page` view routes to the Ember app
+    note: This flag controls whether the `User Profile Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_USER_SETTINGS
     name: ember_user_settings_page
-    note: This flag controls wheter the `User Settings Page` view routes to the Ember app
+    note: This flag controls whether the `User Settings Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_USER_SETTINGS_NOTIFICATIONS
     name: ember_user_settings_notifications_page
-    note: This flag controls wheter the `User Notifications Page` view routes to the Ember app
+    note: This flag controls whether the `User Notifications Page` view routes to the Ember app
     everyone: false
 
   - flag_name: EMBER_MEETINGS
@@ -195,24 +195,20 @@ flags:
     note: This is not used
     everyone: true
 
-  - flag_name: INSTITUTIONAL_DASHBOARD_2024
-    name: institutional_dashboard_2024
-    note: whether to surface older or updated (in 2024) institutional metrics
-
   - flag_name: DISABLE_COMMENTS
     name: disable_comments
-    note: This flag controls wheter users can create or interact with comments via BE or FE.
+    note: This flag controls whether users can create or interact with comments via BE or FE.
     everyone: false
 
   - flag_name: DISABLE_MEETINGS
     name: disable_meetings
-    note: This flag controls wheter users can create or interact with meetings via BE or FE.
+    note: This flag controls whether users can create or interact with meetings via BE or FE.
     everyone: false
 
 switches:
   - flag_name: DISABLE_ENGAGEMENT_EMAILS
     name: disable_engagement_emails
-    note: if set to true, prevents engagment emails from being sent
+    note: if set to true, prevents engagement emails from being sent
     active: false
 
   - flag_name: ELASTICSEARCH_METRICS
@@ -227,7 +223,7 @@ switches:
 
   - flag_name: ENABLE_RAW_METRICS
     name: enable_raw_metrics
-    note: allows for raw queries againest our ES metrics database
+    note: allows for raw queries against our ES metrics database
     active: false
 
   - flag_name: OSF_PREREGISTRATION

@@ -18,11 +18,11 @@ class TestUserSpamOOPSpam:
     def user(self, mock_spam_head_request):
         test_user = AuthUserFactory()
         test_user.schools = [
-            {'insitution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
+            {'institution': fake.company(), 'department': 'engineering', 'degree': fake.catch_phrase()}
             for _ in range(2)
         ]
         test_user.jobs = [
-            {'insitution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
+            {'institution': fake.company(), 'department': 'QA', 'title': fake.catch_phrase()}
             for _ in range(2)
         ]
         test_user.social['profileWebsites'] = ['osf.io', 'cos.io']

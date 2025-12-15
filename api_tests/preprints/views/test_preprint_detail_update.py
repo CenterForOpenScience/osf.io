@@ -782,7 +782,7 @@ class TestPreprintUpdate:
         assert log.action == PreprintLog.UPDATE_DATA_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'data_links': 'malformed payload'})
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -928,7 +928,7 @@ class TestPreprintUpdate:
         assert log.action == PreprintLog.UPDATE_PREREG_LINKS
         assert log.params == {'user': user._id, 'preprint': preprint._id}
 
-        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'maformed payload'})
+        update_payload = build_preprint_update_payload(preprint._id, attributes={'prereg_links': 'malformed payload'})
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
@@ -962,12 +962,12 @@ class TestPreprintUpdate:
 
         update_payload = build_preprint_update_payload(
             preprint._id,
-            attributes={'prereg_link_info': 'maformed payload'}
+            attributes={'prereg_link_info': 'malformed payload'}
         )
         res = app.patch_json_api(url, update_payload, auth=user.auth, expect_errors=True)
 
         assert res.status_code == 400
-        assert res.json['errors'][0]['detail'] == '"maformed payload" is not a valid choice.'
+        assert res.json['errors'][0]['detail'] == '"malformed payload" is not a valid choice.'
 
     def test_update_has_coi_false_with_null_conflict_statement(self, app, user, preprint, url):
         update_payload = build_preprint_update_payload(
