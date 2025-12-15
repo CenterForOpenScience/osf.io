@@ -99,11 +99,8 @@ from osf.models import (
     OSFUser,
     Email,
     Tag,
-<<<<<<< HEAD
     NotificationType,
-=======
     PreprintProvider,
->>>>>>> upstream/hotfix/25.18.1
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler

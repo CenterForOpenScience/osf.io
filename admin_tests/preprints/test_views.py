@@ -8,12 +8,8 @@ from django.contrib.auth.models import Permission, Group, AnonymousUser
 from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
-<<<<<<< HEAD
 from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationType
-=======
 from framework.auth import Auth
-from osf.models import Preprint, PreprintLog, PreprintRequest
->>>>>>> upstream/hotfix/25.18.1
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,

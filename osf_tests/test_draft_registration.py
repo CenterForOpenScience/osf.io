@@ -381,19 +381,13 @@ class TestDraftRegistrationContributorMethods():
         draft_registration.save()
         assert len(draft_registration.contributors) == 2
 
-<<<<<<< HEAD
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, draft_registration, auth):
         new_user = draft_registration.add_unregistered_contributor(
             fullname='David Davidson',
             email='david@davidson.com',
             auth=auth,
             notification_type=False
         )
-=======
-    def test_remove_unregistered_contributor_removes_unclaimed_record(self, draft_registration, auth):
-        new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
->>>>>>> upstream/hotfix/25.18.1
         draft_registration.save()
         assert draft_registration.is_contributor(new_user)  # sanity check
         assert draft_registration._primary_key in new_user.unclaimed_records

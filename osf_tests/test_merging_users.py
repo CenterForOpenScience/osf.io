@@ -284,14 +284,7 @@ class TestUserMerging(OsfTestCase):
         assert self.user.is_invited is True
         assert self.user in self.project_with_unreg_contrib.contributors
 
-<<<<<<< HEAD
     def test_merge_doesnt_send_signal(self):
-=======
-    @mock.patch('website.project.views.contributor.mails.send_mail')
-    def test_merge_doesnt_send_signal(self, mock_notify):
-        #Explicitly reconnect signal as it is disconnected by default for test
-        contributor_added.connect(notify_added_contributor)
->>>>>>> upstream/hotfix/25.18.1
         other_user = UserFactory()
         with override_flag(ENABLE_GV, active=True):
             self.user.merge_user(other_user)

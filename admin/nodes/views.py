@@ -21,12 +21,8 @@ from django.urls import reverse_lazy
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-<<<<<<< HEAD
 from admin.notifications.views import delete_selected_notifications
-=======
-from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
->>>>>>> upstream/hotfix/25.18.1
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -135,13 +131,6 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
-<<<<<<< HEAD
-=======
-        detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
-        if isinstance(node, Registration):
-            context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
-
->>>>>>> upstream/hotfix/25.18.1
         children = node.get_nodes(is_node_link=False)
         # Annotate guid because django templates prohibit accessing attributes that start with underscores
         children = AbstractNode.objects.filter(
@@ -154,12 +143,8 @@ class NodeView(NodeMixin, GuidView):
             # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
             'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
-<<<<<<< HEAD
-=======
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
-            'duplicates': detailed_duplicates
->>>>>>> upstream/hotfix/25.18.1
         })
 
         return context

@@ -247,12 +247,9 @@ class TestClaimUser:
                 auth=claimer.auth
             )
         assert res.status_code == 204
-<<<<<<< HEAD
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_FORWARD_INVITE_REGISTERED
         assert notifications['emits'][1]['type'] == NotificationType.Type.USER_PENDING_VERIFICATION_REGISTERED
-=======
-        assert mock_send_grid.call_count == 2
 
 
 @pytest.mark.django_db
@@ -280,7 +277,6 @@ class TestConfirmClaimUser:
             'David Davidson',
             'david@david.son',
             auth=Auth(referrer),
-            save=True
         )
 
     @pytest.fixture()
@@ -345,4 +341,3 @@ class TestConfirmClaimUser:
         )
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == 'User has already been claimed.'
->>>>>>> upstream/hotfix/25.18.1

@@ -2739,8 +2739,9 @@ class TestPreprintVersionWithModeration:
 
     def test_date_created_first_version_with_rejected_v1(self, creator, moderator):
         v1 = PreprintFactory(reviews_workflow='pre-moderation', is_published=False, creator=creator)
-        v1.run_submit(creator)
-        v1.run_reject(moderator, 'Rejecting v1')
+        with capture_notifications():
+            v1.run_submit(creator)
+            v1.run_reject(moderator, 'Rejecting v1')
         v1.reload()
 
         assert v1.machine_state == ReviewStates.REJECTED.value
@@ -2754,8 +2755,9 @@ class TestPreprintVersionWithModeration:
             is_published=False,
             set_doi=False
         )
-        v2.run_submit(creator)
-        v2.run_accept(moderator, 'Accepting v2')
+        with capture_notifications():
+            v2.run_submit(creator)
+            v2.run_accept(moderator, 'Accepting v2')
         v2.reload()
 
         assert v2.machine_state == ReviewStates.ACCEPTED.value

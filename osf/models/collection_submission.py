@@ -106,7 +106,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.instance.emit(
                 is_digest=True,
                 user=contributor,
-<<<<<<< HEAD
                 subscribed_object=self,
                 event_context={
                     'requester_contributor_names': ''.join(
@@ -132,17 +131,6 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}'
                 },
-=======
-                submitter=user,
-                is_initiator=self.creator == contributor,
-                is_admin=self.guid.referent.has_permission(contributor, ADMIN),
-                is_registered_contrib=contributor.is_registered,
-                collection=self.collection,
-                claim_url=claim_url,
-                node=self.guid.referent,
-                domain=settings.DOMAIN,
-                osf_contact_email=settings.OSF_CONTACT_EMAIL,
->>>>>>> upstream/hotfix/25.18.1
             )
 
     def _notify_moderators_pending(self, event_data):

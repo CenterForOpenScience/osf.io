@@ -31,13 +31,8 @@ from osf.models import (
     NotableDomain,
     PreprintContributor,
     DraftRegistrationContributor,
-<<<<<<< HEAD
-    DraftRegistration,
-    DraftNode,
-    UserSessionMap, NotificationType,
-=======
     UserSessionMap,
->>>>>>> upstream/hotfix/25.18.1
+    NotificationType,
 )
 from osf.models.institution_affiliation import get_user_by_institution_identity
 from addons.github.tests.factories import GitHubAccountFactory
