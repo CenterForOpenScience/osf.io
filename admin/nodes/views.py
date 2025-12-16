@@ -269,7 +269,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 auth=request,
                 user_id=contributor_user._id,
                 permissions=permission,
-                save=True
+                notification_type=None
             )
             messages.success(self.request, f'User with email {email} was successfully added.')
 
