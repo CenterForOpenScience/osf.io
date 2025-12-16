@@ -391,6 +391,12 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/no_login.html.mako'
 
+  - name: user_no_addon
+    subject: 'Link an add-on to your OSF project'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/no_addon.html.mako'
+
   #### PROVIDER
   - name: provider_new_pending_submissions
     subject: 'New Pending Submissions'

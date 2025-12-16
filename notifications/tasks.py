@@ -349,7 +349,7 @@ def get_moderators_emails(message_freq: str):
         WHERE n.sent IS NULL
             AND ns.message_frequency = %s
             AND nt.name IN (%s, %s)
-            AND nt.name NOT IN (%s, %s)
+            AND nt.name NOT IN (%s, %s, %s)
             AND osf_guid.content_type_id = (
                 SELECT id FROM django_content_type WHERE model = 'osfuser'
             )
@@ -365,6 +365,7 @@ def get_moderators_emails(message_freq: str):
                 NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
                 NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
                 NotificationType.Type.USER_DIGEST.value,
+                NotificationType.Type.USER_NO_ADDON.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -390,7 +391,7 @@ def get_users_emails(message_freq):
         LEFT JOIN osf_guid ON ns.user_id = osf_guid.object_id
         WHERE n.sent IS NULL
             AND ns.message_frequency = %s
-            AND nt.name NOT IN (%s, %s, %s, %s)
+            AND nt.name NOT IN (%s, %s, %s, %s, %s)
             AND osf_guid.content_type_id = (
                 SELECT id FROM django_content_type WHERE model = 'osfuser'
             )
@@ -406,6 +407,7 @@ def get_users_emails(message_freq):
                 NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
                 NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
                 NotificationType.Type.USER_DIGEST.value,
+                NotificationType.Type.USER_NO_ADDON.value,
             ]
         )
         return itertools.chain.from_iterable(cursor.fetchall())
@@ -458,3 +460,25 @@ def send_moderators_instant_digest_email(self, dry_run=False, **kwargs):
         notification_ids = [msg['notification_id'] for msg in group['info']]
         if not dry_run:
             send_moderator_email_task.delay(user_id, notification_ids, provider_content_type_id, provider_id)
+
+@celery_app.task(bind=True, name='notifications.tasks.send_no_addon_email')
+def send_no_addon_email(self, dry_run=False, **kwargs):
+    """Send NO_ADDON emails.
+    :return:
+    """
+    notification_qs = Notification.objects.filter(
+        sent__isnull=True,
+        subscription__notification_type__name=NotificationType.Type.USER_NO_ADDON.value,
+        created__lte=timezone.now() - settings.NO_ADDON_WAIT_TIME
+    )
+    for notification in notification_qs:
+        user = notification.subscription.user
+        if not dry_run:
+            if len([addon for addon in user.get_addons() if addon.config.short_name != 'osfstorage']) == 0:
+                try:
+                    notification.send()
+                except Exception as e:
+                    logger.error(f'Error sending NO_ADDON email to user {user.id}: {str(e)}')
+                    pass
+            else:
+                notification.mark_sent()
