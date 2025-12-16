@@ -110,6 +110,7 @@ from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
 from website.project.views.contributor import _add_related_claimed_tag_to_user
 from website.util import api_v2_url
+from framework.auth import signals
 
 
 class UserMixin:
@@ -767,6 +768,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 external_id_provider=external_id_provider,
                 external_id=external_id,
             )
+            signals.unconfirmed_user_created.send(user)
 
         else:
             # 1. create unconfirmed user with pending status
@@ -789,6 +791,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 external_id_provider=external_id_provider,
                 external_id=external_id,
             )
+            signals.unconfirmed_user_created.send(user)
 
         # Don't go anywhere
         return JsonResponse(
