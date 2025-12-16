@@ -9,6 +9,7 @@ from django.contrib.messages.storage.fallback import FallbackStorage
 
 from tests.base import AdminTestCase
 from osf.models import Preprint, PreprintLog, PreprintRequest, NotificationType
+from framework.auth import Auth
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintFactory,
@@ -359,7 +360,7 @@ class TestPreprintView:
 class TestPreprintReindex:
 
     def test_reindex_preprint_share(self, preprint, req, mock_update_share):
-        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trenchcoat in the summer'
+        preprint.provider.access_token = 'totally real access token I bought from a guy wearing a trench coat in the summer'
         preprint.provider.save()
 
         count = AdminLogEntry.objects.count()
@@ -409,6 +410,82 @@ class TestPreprintDeleteView(AdminTestCase):
         self.preprint.reload()
         assert self.preprint.deleted is None
         assert AdminLogEntry.objects.count() == count + 1
+
+
+class TestPreprintHardDeleteView(AdminTestCase):
+    def setUp(self):
+        super().setUp()
+        self.user = AuthUserFactory()
+        self.user.is_staff = True
+        self.user.save()
+        self.preprint = PreprintFactory(creator=self.user, machine_state=DefaultStates.INITIAL.value)
+        self.plain_view = views.PreprintHardDeleteView
+
+    def test_hard_delete_initial_draft(self):
+        self.preprint.machine_state = DefaultStates.INITIAL.value
+        self.preprint.save()
+
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        patch_messages(request)
+
+        assert Preprint.objects.filter(id=self.preprint.id).exists()
+        assert self.preprint.machine_state == DefaultStates.INITIAL.value
+
+        view = setup_log_view(self.plain_view(), request, guid=self.preprint._id)
+        view.post(request)
+
+        assert not Preprint.objects.filter(id=self.preprint.id).exists()
+
+    def test_hard_delete_non_initial_state_fails(self):
+        self.preprint.machine_state = DefaultStates.PENDING.value
+        self.preprint.save()
+
+        versioned_guid = f"{self.preprint._id}_v{self.preprint.version}"
+
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        patch_messages(request)
+
+        view = setup_log_view(self.plain_view(), request, guid=versioned_guid)
+        view.post(request)
+        assert Preprint.objects.filter(id=self.preprint.id).exists()
+
+    def test_hard_delete_with_previous_versions(self):
+        published_preprint = PreprintFactory(creator=self.user, is_published=True)
+        published_preprint.machine_state = DefaultStates.ACCEPTED.value
+        published_preprint.save()
+
+        draft_preprint, _ = Preprint.create_version(
+            create_from_guid=published_preprint._id,
+            auth=Auth(published_preprint.creator),
+            ignore_permission=True
+        )
+        draft_preprint.machine_state = DefaultStates.INITIAL.value
+        draft_preprint.save()
+
+        base_guid = published_preprint.get_guid()
+        versions = base_guid.versions.all()
+        assert versions.count() == 2
+
+        assert base_guid.referent == draft_preprint
+
+        request = RequestFactory().post('/fake_path')
+        request.user = self.user
+        patch_messages(request)
+
+        view = setup_log_view(self.plain_view(), request, guid=base_guid._id)
+        view.post(request)
+
+        assert not Preprint.objects.filter(id=draft_preprint.id).exists()
+        assert Preprint.objects.filter(id=published_preprint.id).exists()
+
+        base_guid.refresh_from_db()
+        assert base_guid.referent == published_preprint
+
+        versions = base_guid.versions.all()
+        assert versions.count() == 1
+        assert versions.first().referent == published_preprint
 
 
 class TestRemoveContributor(AdminTestCase):
@@ -839,6 +916,44 @@ class TestPreprintReVersionView:
         admin_group = Group.objects.get(name='osf_admin')
         admin_group.permissions.add(Permission.objects.get(codename='change_node'))
         user.groups.add(admin_group)
+
+        plain_view.as_view()(request, guid=preprint._id)
+        preprint.refresh_from_db()
+
+        assert len(preprint.get_preprint_versions()) == 2
+
+    def test_osf_admin_can_create_new_version_with_unregistered_contributors(self, plain_view):
+        # user isn't admin contributor in the preprint
+        osf_admin = AuthUserFactory()
+        admin_group = Group.objects.get(name='osf_admin')
+        admin_group.permissions.add(Permission.objects.get(codename='change_node'))
+        osf_admin.groups.add(admin_group)
+
+        user = AuthUserFactory()
+        preprint_admin = AuthUserFactory()
+        preprint = PreprintFactory(creator=user)
+
+        preprint.add_permission(
+            preprint_admin,
+            ADMIN,
+            save=True
+        )
+
+        # assume admin contributor added an unregistered contributor
+        preprint.add_unregistered_contributor(
+            'Rheisen Dennis',
+            'reason@gmail.com',
+            auth=Auth(preprint_admin),
+        )
+
+        # osf admin recreates a new version 1 that forces to add unregistered contributors
+        # to this preprint
+        request = RequestFactory().post(
+            reverse('preprints:re-version-preprint',
+            kwargs={'guid': preprint._id}),
+            data={'file_versions': ['1']}
+        )
+        request.user = osf_admin
 
         plain_view.as_view()(request, guid=preprint._id)
         preprint.refresh_from_db()

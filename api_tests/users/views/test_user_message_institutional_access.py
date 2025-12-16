@@ -116,7 +116,7 @@ class TestUserMessageInstitutionalAccess:
         payload
     ):
         """
-        Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` witch has 'institutional_request_access_enabled' as False
+        Ensure an institutional admin cannot create a `UserMessage` with a `message` and `institution` which has 'institutional_request_access_enabled' as False
         """
 
         # Use pytest.raises to explicitly expect the 403 error

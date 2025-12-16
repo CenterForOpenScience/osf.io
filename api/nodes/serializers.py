@@ -583,7 +583,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
             return obj.can_comment(auth)
 
     def get_preprint(self, obj):
-        # Whether the node has supplemental material for a preprint the user can view
+        # Whether the node has supplemental material for a preprint that the user can view
         if hasattr(obj, 'has_viewable_preprints'):
             # if queryset has been annotated with "has_viewable_preprints", use this value
             return obj.has_viewable_preprints
@@ -628,7 +628,7 @@ class NodeSerializer(TaxonomizableSerializerMixin, JSONAPISerializer):
     def get_node_count(self, obj):
         """
         Returns the count of a node's direct children that the user has permission to view.
-        Implict admin and group membership are factored in when determining perms.
+        Implicit admin and group membership are factored in when determining perms.
         """
         auth = get_user_auth(self.context['request'])
         user_id = getattr(auth.user, 'id', None)
@@ -1913,7 +1913,7 @@ class NodeSettingsUpdateSerializer(NodeSettingsSerializer):
 
     def enable_or_disable_addon(self, obj, should_enable, addon_name, auth):
         """
-        Returns addon, if exists, otherwise returns None
+        Returns addon, if exists; otherwise, returns None
         """
         addon = obj.get_or_add_addon(addon_name, auth=auth) if should_enable else obj.delete_addon(addon_name, auth)
         if isinstance(addon, bool):

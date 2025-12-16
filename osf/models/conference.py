@@ -60,7 +60,7 @@ class Conference(ObjectIDMixin, BaseModel):
     poster = models.BooleanField(default=True)
     talk = models.BooleanField(default=True)
     # field_names are used to customize the text on the conference page, the categories
-    # of submissions, and the email adress to send material to.
+    # of submissions, and the email address to send material to.
     field_names = DateTimeAwareJSONField(default=get_default_field_names)
 
     auto_check_spam = models.BooleanField(default=True)

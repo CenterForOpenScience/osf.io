@@ -206,7 +206,13 @@ mock_auth = lambda user: mock.patch(
 
 def unique(factory):
     """
-    Turn a factory function into one that guarantees unique return values.
+    Turns a factory function into a new factory function that guarantees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
     """
     used = []
     @functools.wraps(factory)

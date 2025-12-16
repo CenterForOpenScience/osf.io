@@ -587,7 +587,7 @@ function Search(selector, url, appURL) {
         scrollTop: 0,
         filter: $osf.urlParams().filter
     };
-    //Ensure our state keeps its URL paramaters
+    //Ensure our state keeps its URL parameters
     history.replaceState(data, 'OSF | Search', location.search);
     //Set out observables from the newly replaced state
     self.viewModel.loadState();

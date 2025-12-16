@@ -114,7 +114,7 @@ class WikiDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, WikiMix
 
         self:  the canonical api endpoint of this wiki
         info: the canonical api endpoint of this wiki
-        download: the link to retrive the contents of the wiki page
+        download: the link to retrieve the contents of the wiki page
 
     ##Query Params
 

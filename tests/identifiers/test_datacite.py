@@ -127,7 +127,7 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Dataset'
 
-    def test_datcite_format_contributors(self, datacite_client):
+    def test_datacite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
         visible_contrib2.given_name = 'ヽ༼ ಠ益ಠ ༽ﾉ'
@@ -153,7 +153,7 @@ class TestDataCiteClient:
         assert f'<creatorName nameType="Personal">{invisible_contrib.fullname}</creatorName>' not in metadata_xml
 
     def test_datacite_format_related_resources(self, datacite_client):
-        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='10.31219/FK2osf.io/test!')
+        registration = RegistrationFactory(is_public=True, has_doi=True, article_doi='10.pub/lication')
         outcome = Outcome.objects.for_registration(registration, create=True)
         data_artifact = outcome.artifact_metadata.create(
             identifier=IdentifierFactory(category='doi'), artifact_type=ArtifactTypes.DATA, finalized=True
@@ -177,7 +177,7 @@ class TestDataCiteClient:
                 'relationType': 'References',
             },
             {
-                'relatedIdentifier': '10.31219/FK2osf.io/test!',
+                'relatedIdentifier': '10.pub/lication',
                 'relatedIdentifierType': 'DOI',
                 'relationType': 'References',
             },

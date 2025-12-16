@@ -640,7 +640,7 @@ class TestRegistrationMixin:
         assert registration_metadata == veer_condensed
 
 @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
-class TestRegistationModerationStates:
+class TestRegistrationModerationStates:
 
     @pytest.fixture
     def embargo(self):

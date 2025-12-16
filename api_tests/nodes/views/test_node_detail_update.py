@@ -144,7 +144,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_make_project_private_over_storage_limit(
         self, app, url_public, project_public, user
     ):
-        # If the public node exceeds the the private storage limit
+        # If the public node exceeds the private storage limit
         key = cache_settings.STORAGE_USAGE_KEY.format(target_id=project_public._id)
         storage_usage_cache.set(key, (settings.STORAGE_LIMIT_PRIVATE + 1) * settings.GBs, settings.STORAGE_USAGE_CACHE_TIMEOUT)
         res = app.patch_json_api(url_public, {

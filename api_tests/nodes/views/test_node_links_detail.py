@@ -296,7 +296,7 @@ class TestDeleteNodeLink:
             public_project.reload()  # Update the model to reflect changes made by post request
             assert res.status_code == 204
 
-        # check that deleted pointer can not be returned
+        # check that deleted pointer cannot be returned
         res = app.get(public_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
@@ -307,7 +307,7 @@ class TestDeleteNodeLink:
             private_project.reload()  # Update the model to reflect changes made by post request
             assert res.status_code == 204
 
-        # check that deleted pointer can not be returned
+        # check that deleted pointer cannot be returned
         res = app.get(private_url, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 

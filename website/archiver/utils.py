@@ -202,7 +202,7 @@ def aggregate_file_tree_metadata(addon_short_name, fileobj_metadata, user):
     :param src_addon: AddonNodeSettings instance of addon being examined
     :param fileobj_metadata: file or folder metadata of current point of reference
     in file tree
-    :param user: archive initatior
+    :param user: archive initiator
     :return: top-most recursive call returns AggregateStatResult containing addon file tree metadata
     """
     disk_usage = fileobj_metadata.get('size')
@@ -259,7 +259,7 @@ def _memoize_get_file_map(func):
 @_memoize_get_file_map
 def get_file_map(node, file_map):
     """
-    note:: file_map is injected implictly by the decorator; this method is called like:
+    note:: file_map is injected implicitly by the decorator; this method is called like:
 
     get_file_map(node)
     """

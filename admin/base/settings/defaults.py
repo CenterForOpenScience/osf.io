@@ -4,7 +4,7 @@ Django settings for the admin project.
 
 from django.contrib import messages
 from api.base.settings import *  # noqa
-# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRRIDEN
+# TODO ALL SETTINGS FROM API WILL BE IMPORTED AND WILL NEED TO BE OVERRIDDEN
 # TODO THIS IS A STEP TOWARD INTEGRATING ADMIN & API INTO ONE PROJECT
 
 # import local  # Build own local.py (used with postgres)
@@ -60,7 +60,7 @@ USE_L10N = False
 # Email settings. Account created for testing. Password shouldn't be hardcoded
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-# Sendgrid Email Settings - Using OSF credentials.
+# SendGrid Email Settings - Using OSF credentials.
 # Add settings references to local.py
 
 EMAIL_HOST = osf_settings.MAIL_SERVER

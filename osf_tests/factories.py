@@ -420,7 +420,7 @@ class RegistrationFactory(BaseNodeFactory):
         if not draft_registration:
             draft_registration = DraftRegistrationFactory(
                 branched_from=project,
-                initator=user,
+                initiator=user,
                 registration_schema=schema,
                 provider=provider,
             )
@@ -727,7 +727,7 @@ class PreprintFactory(DjangoModelFactory):
         update_task_patcher = mock.patch('website.preprints.tasks.on_preprint_updated.si')
         update_task_patcher.start()
 
-        # Step 1: create prerpint, guid and versioned guid
+        # Step 1: create preprint, guid and versioned guid
         instance = cls._build(target_class, *args, **kwargs)
         instance.save(guid_ready=False)
         # If use_guid is passed, use that guid instead of creating a new one

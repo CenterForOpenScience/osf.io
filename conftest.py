@@ -211,7 +211,7 @@ def mock_akismet():
 @pytest.fixture
 def mock_datacite(registration):
     """
-    This should be used to mock our our datacite client.
+    This should be used to mock our datacite client.
     Relevant endpoints:
     f'{DATACITE_URL}/metadata'
     f'{DATACITE_URL}/doi'
@@ -241,7 +241,7 @@ def mock_datacite(registration):
 @pytest.fixture
 def mock_crossref():
     """
-    This should be used to mock our our crossref integration.
+    This should be used to mock our crossref integration.
     Relevant endpoints:
     """
     with mock.patch.object(website_settings, 'CROSSREF_URL', 'https://test.crossref.org/servlet/deposit'):
@@ -315,7 +315,7 @@ def mock_spam_head_request():
         yield mock_spam_head_request
 
 
-def rolledback_transaction(loglabel):
+def rolled_back_transaction(loglabel):
     class ExpectedRollback(Exception):
         pass
     try:
@@ -340,7 +340,7 @@ def _class_scoped_db(django_db_setup, django_db_blocker):
     referencing directly.
     """
     with django_db_blocker.unblock():
-        yield from rolledback_transaction('class_transaction')
+        yield from rolled_back_transaction('class_transaction')
 
 
 @pytest.fixture(scope='function')
@@ -358,7 +358,7 @@ def with_class_scoped_db(_class_scoped_db):
             return HelpfulThingFactory()
     ```
     """
-    yield from rolledback_transaction('function_transaction')
+    yield from rolled_back_transaction('function_transaction')
 
 
 @pytest.fixture

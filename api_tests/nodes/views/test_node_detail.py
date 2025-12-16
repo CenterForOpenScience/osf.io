@@ -339,7 +339,7 @@ class TestNodeDetail:
         assert 'collected_in' in res.json['data']['relationships']
 
     def test_preprint_field(self, app, user, user_two, project_public, url_public):
-        # Returns true if project holds supplemental material for a preprint a user can view
+        # Returns true if project holds supplemental material for a preprint that a user can view
         # Published preprint, admin_contrib
         preprint = PreprintFactory(project=project_public, creator=user)
         res = app.get(url_public, auth=user.auth)

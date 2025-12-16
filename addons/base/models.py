@@ -455,7 +455,7 @@ class BaseNodeSettings(BaseAddonSettings):
         """Return warning text to display if user auth will be copied to a
         fork.
         :param Node node:
-        :param Uder user
+        :param User user
         :returns Alert message
         """
 

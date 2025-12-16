@@ -40,7 +40,7 @@ class GitLabClient:
         https://docs.gitlab.com/ce/api/projects.html#get-single-project
 
         :param str repo_id: GitLab repository id
-        :return: gitlab.Project a object representing the repo
+        :return: gitlab.Project an object representing the repo
         """
 
         try:
@@ -58,8 +58,8 @@ class GitLabClient:
             return self.gitlab.projects.list(membership=True, all=all)
         except gitlab.GitlabAuthenticationError:
             raise HTTPError(http_status.HTTP_403_FORBIDDEN, data={
-                'message_long': 'Your Gitlab token is deleted or invalid you may disconnect your Gitlab account and '
-                                'reconnect with a valid token <a href="/settings/addons/">here</a>.'
+                'message_long': 'Your GitLab token is deleted or invalid you may <a href="/settings/addons/">disconnect '
+                                'your GitLab account and reconnect with a valid token</a>.'
             })
 
     def branches(self, repo_id, branch=None):
