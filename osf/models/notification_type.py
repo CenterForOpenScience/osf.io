@@ -76,6 +76,7 @@ class NotificationType(models.Model):
         USER_DIGEST = 'user_digest'
         USER_NO_LOGIN = 'user_no_login'
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
+        USER_NO_ADDON = 'user_no_addon'
 
         # Node notifications
         NODE_FILE_UPDATED = 'node_file_updated'
