@@ -620,7 +620,7 @@ class CeleryConfig:
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
             'kwargs': {'dry_run': False},
         },
-        'no_login_mails': {
+        'no_addon_emails': {
             'task': 'notifications.tasks.send_no_addon_email',
             'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m
             'kwargs': {'dry_run': False},
