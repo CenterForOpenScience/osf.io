@@ -154,7 +154,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
+    FIELDS_TO_CHECK.update({'password', 'date_last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
