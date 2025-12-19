@@ -131,6 +131,9 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
+        if isinstance(node, Registration):
+            context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
+
         children = node.get_nodes(is_node_link=False)
         # Annotate guid because django templates prohibit accessing attributes that start with underscores
         children = AbstractNode.objects.filter(
