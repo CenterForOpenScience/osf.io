@@ -1,3 +1,4 @@
+import sys
 import yaml
 from django.apps import apps
 from waffle import switch_is_active
@@ -20,8 +21,9 @@ FREQ_MAP = {
 
 def populate_notification_types(*args, **kwargs):
     if not switch_is_active(features.AUTO_POPULATE_NOTIFICATION_TYPES):
-        logger.info('AUTO_POPULATE_NOTIFICATION_TYPES switch is off; skipping population of notification types.')
-        return
+        if 'pytest' not in sys.modules:
+            logger.info('AUTO_POPULATE_NOTIFICATION_TYPES switch is off; skipping population of notification types.')
+            return
     logger.info('Populating notification types...')
     from django.contrib.contenttypes.models import ContentType
     from osf.models.notification_type import NotificationType
