@@ -1,5 +1,7 @@
 import yaml
 from django.apps import apps
+from waffle import switch_is_active
+from osf import features
 
 from django.db.utils import ProgrammingError
 from website import settings
@@ -17,6 +19,10 @@ FREQ_MAP = {
 }
 
 def populate_notification_types(*args, **kwargs):
+    if not switch_is_active(features.AUTO_POPULATE_NOTIFICATION_TYPES):
+        logger.info('AUTO_POPULATE_NOTIFICATION_TYPES switch is off; skipping population of notification types.')
+        return
+    logger.info('Populating notification types...')
     from django.contrib.contenttypes.models import ContentType
     from osf.models.notification_type import NotificationType
     try:
@@ -71,6 +77,7 @@ def populate_notification_types(*args, **kwargs):
             nt.save()
     except ProgrammingError:
         logger.info('Notification types failed potential side effect of reverse migration')
+    logger.info('Finished populating notification types.')
 
 
 class Command(BaseCommand):
