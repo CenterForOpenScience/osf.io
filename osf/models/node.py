@@ -1225,6 +1225,30 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                     # Embargoed registrations can be made public early
                     self.request_embargo_termination(auth.user)
                     return False
+
+                if not self.get_identifier_value('doi'):
+                    try:
+                        doi = self.request_identifier('doi')['doi']
+                        self.set_identifier_value('doi', doi)
+                    except Exception as e:
+                        from osf.models.admin_log_entry import update_admin_log, DOI_CREATION_FAILED
+                        logger.exception(
+                            f'Failed to create DOI for registration {self._id} during set_privacy. '
+                            f'Registration cannot be made public without a DOI.'
+                        )
+                        if auth and auth.user:
+                            update_admin_log(
+                                user_id=auth.user.id,
+                                object_id=self._id,
+                                object_repr=f'Registration {self.title}',
+                                message=f'DOI creation failed during make public: {str(e)}. DataCite may be unavailable.',
+                                action_flag=DOI_CREATION_FAILED
+                            )
+                        raise NodeStateError(
+                            'Unable to make registration public: DOI creation failed. '
+                            'This may be due to a temporary DataCite service outage. '
+                            'Please try again later or contact support if the issue persists.'
+                        )
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo and not force:
@@ -1244,12 +1268,24 @@ class AbstractNode(DirtyFieldsMixin, TypedModel, AddonModelMixin, IdentifierMixi
                 if message:
                     status.push_status_message(message, kind='info', trust=False)
 
-        # Update existing identifiers
+        # Update existing identifiers metadata
         if self.get_identifier_value('doi'):
-            update_doi_metadata_on_change(self._id)
-        elif self.is_registration:
-            doi = self.request_identifier('doi')['doi']
-            self.set_identifier_value('doi', doi)
+            try:
+                update_doi_metadata_on_change(self._id)
+            except Exception as e:
+                from osf.models.admin_log_entry import update_admin_log, DOI_UPDATE_FAILED
+                logger.exception(
+                    f'Failed to update DOI metadata for {self._id} during set_privacy. '
+                )
+                # Log DOI metadata update failures for tracking
+                if auth and auth.user and self.is_registration:
+                    update_admin_log(
+                        user_id=auth.user.id,
+                        object_id=self._id,
+                        object_repr=f'Registration {self.title}',
+                        message=f'DOI metadata update failed: {str(e)}. DataCite may be unavailable.',
+                        action_flag=DOI_UPDATE_FAILED
+                    )
 
         if log:
             action = NodeLog.MADE_PUBLIC if permissions == 'public' else NodeLog.MADE_PRIVATE
