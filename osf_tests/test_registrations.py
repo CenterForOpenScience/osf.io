@@ -411,7 +411,8 @@ class TestRegisterNode:
 
         mock_update_doi.side_effect = Exception('DataCite metadata update failed')
 
-        result = registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
+        with capture_notifications():
+            result = registration.set_privacy(Node.PUBLIC, auth=auth, log=False)
 
         assert registration.is_public is True
         assert result is True
