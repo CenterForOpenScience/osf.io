@@ -253,4 +253,4 @@ switches:
   - flag_name: AUTO_POPULATE_NOTIFICATION_TYPES
     name: auto_populate_notification_types
     note: This is used to enable auto population of notification types.
-    active: true
+    active: false
