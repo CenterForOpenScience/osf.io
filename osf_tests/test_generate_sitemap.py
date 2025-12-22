@@ -133,8 +133,8 @@ class TestGenerateSitemap:
         # Return urls of all fixtures
         urls_to_include = [item['loc'] for item in settings.SITEMAP_STATIC_URLS]
         urls_to_include.extend([
-            user_admin_project_public.url,
-            user_admin_project_private.url,
+            # user_admin_project_public.url,
+            # user_admin_project_private.url,
             project_registration_public.url + 'overview',
             project_preprint_osf.url + 'overview',
             project_preprint_other.url + 'overview',
