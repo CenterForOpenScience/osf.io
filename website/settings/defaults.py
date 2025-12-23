@@ -180,7 +180,7 @@ MAILCHIMP_LIST_MAP = {
 }
 NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
-#Triggered emails
+# Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
 PREREG_AGE_LIMIT = timedelta(weeks=12)
 PREREG_WAIT_TIME = timedelta(weeks=2)
@@ -190,8 +190,10 @@ NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
-MAX_DAILY_NO_LOGIN_EMAILS = None
-NO_LOGIN_EMAIL_CUTOFF = None
+
+# Newly created configs for no-login emails
+MAX_DAILY_NO_LOGIN_EMAILS = 1000
+NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 1)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
