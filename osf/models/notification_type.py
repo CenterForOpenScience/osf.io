@@ -15,6 +15,7 @@ def get_default_frequency_choices():
 class NotificationType(models.Model):
 
     class Type(str, Enum):
+        EMPTY = 'empty'
         # Desk notifications
         REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
         ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
@@ -77,6 +78,8 @@ class NotificationType(models.Model):
         USER_NO_LOGIN = 'user_no_login'
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
         USER_NO_ADDON = 'user_no_addon'
+        USER_SPAM_FILES_DETECTED = 'user_spam_files_detected'
+        USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
 
         # Node notifications
         NODE_FILE_UPDATED = 'node_file_updated'

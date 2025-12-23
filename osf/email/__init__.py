@@ -7,6 +7,7 @@ import sys
 from html import unescape
 from typing import Optional
 from mako.template import Template as MakoTemplate
+import base64
 
 
 import waffle
@@ -278,6 +279,20 @@ def send_email_with_send_grid(to_addr, notification_type, context, email_context
     if cats:
         payload['categories'] = cats
 
+    if email_context:
+        attachment_name = email_context.get('attachment_name')
+        attachment_content = email_context.get('attachment_content')
+        if attachment_name and attachment_content:
+
+            encoded = base64.b64encode(attachment_content).decode('ascii')
+
+            item = {
+                'content': encoded,
+                'filename': attachment_name,
+                'disposition': 'attachment',
+            }
+
+            payload['attachments'] = [item]
     try:
         sg = SendGridAPIClient(settings.SENDGRID_API_KEY)
         resp = sg.client.mail.send.post(request_body=payload)

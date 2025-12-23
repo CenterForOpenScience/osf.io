@@ -904,3 +904,10 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/add_sso_email_osf4i.html.mako'
     tests: []
+
+  - name: empty
+    subject: '{subject}'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/empty.html.mako'
+    tests: []
