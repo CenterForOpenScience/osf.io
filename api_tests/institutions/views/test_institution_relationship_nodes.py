@@ -289,7 +289,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
         assert institution not in node_one.affiliated_institutions.all()
 
-    def test_delete_user_is_read_write(self, app, node_private, user, url_institution_nodes, institution):
+    def test_delete_user_is_read_write_and_affiliated(self, app, node_private, user, url_institution_nodes, institution):
         node_private.add_contributor(user)
         node_private.save()
 
@@ -302,6 +302,22 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 204
         assert institution not in node_private.affiliated_institutions.all()
+
+    def test_delete_user_is_read_write_but_not_affiliated(self, app, node_private, url_institution_nodes, institution):
+        user_not_affiliated = AuthUserFactory()
+        node_private.add_contributor(user_not_affiliated, permissions=permissions.WRITE)
+        node_private.save()
+
+        res = app.delete_json_api(
+            url_institution_nodes,
+            make_payload(node_private._id),
+            auth=user_not_affiliated.auth,
+            expect_errors=True
+        )
+        node_private.reload()
+
+        assert res.status_code == 403
+        assert institution in node_private.affiliated_institutions.all()
 
     def test_delete_user_is_read_only(self, node_private, user, app, url_institution_nodes, institution):
         node_private.add_contributor(user, permissions=permissions.READ)
