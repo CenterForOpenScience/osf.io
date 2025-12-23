@@ -191,7 +191,7 @@ WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
 WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
-# Newly created configs for no-login emails
+# Configuration for NO_LOGIN_EMAIL (NotificationType.Type.USER_NO_LOGIN)
 MAX_DAILY_NO_LOGIN_EMAILS = 1000
 NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 1)
 

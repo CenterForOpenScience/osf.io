@@ -1,9 +1,5 @@
-'''Example settings/local.py file.
-These settings override what's in website/settings/defaults.py
-
-NOTE: local.py will not be added to source control.
-'''
-import inspect
+"""local.py for GitHub Actions
+"""
 import logging
 
 from . import defaults
@@ -78,6 +74,10 @@ class CeleryConfig(defaults.CeleryConfig):
     # In-memory result backend
     result_backend = 'cache'
     cache_backend = 'memory'
+
+# Configuration for NO_LOGIN_EMAIL (NotificationType.Type.USER_NO_LOGIN)
+MAX_DAILY_NO_LOGIN_EMAILS = None
+NO_LOGIN_EMAIL_CUTOFF = None
 
 USE_CDN_FOR_CLIENT_LIBS = False
 
