@@ -249,3 +249,8 @@ switches:
     name: enable_no_login_emails
     note: This is used to enable no-login email reminders to users who have not logged in for a specified period.
     active: true
+
+  - flag_name: POPULATE_NOTIFICATION_TYPES
+    name: populate_notification_types
+    note: This is used to enable auto population of notification types.
+    active: false

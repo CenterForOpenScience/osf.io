@@ -71,5 +71,6 @@ class AppConfig(BaseAppConfig):
         )
         post_migrate.connect(
             populate_notification_types,
+            sender=self,  # run only once
             dispatch_uid='osf.apps.populate_notification_types'
         )
