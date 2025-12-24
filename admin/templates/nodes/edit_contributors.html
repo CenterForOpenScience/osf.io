@@ -1,0 +1,137 @@
+<a data-toggle="modal" data-target="#editContributors" class="btn btn-info">
+    Edit Contributors
+</a>
+<div class="modal" id="editContributors" style="width: 100%;">
+    <div class="modal-dialog" style="width: 60vw; margin: 50px 20vw;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" onclick="resetModal()" data-dismiss="modal">x</button>
+                <h3>Edit Contributors</h3>
+            </div>
+            {% if resource.type == 'osf.node' or resource.type == 'osf.registration' %}
+                <form action="{% url 'nodes:update-permissions' guid=resource.guid %}" method="post" id="contributors-form">
+            {% else %}
+                <form action="{% url 'preprints:update-permissions' guid=resource.guid %}" method="post" id="contributors-form">
+            {% endif %}
+                {% csrf_token %}
+                <table class="table table-bordered table-hover" id="contributors-table">
+                    <thead>
+                        <tr>
+                            <td>Email</td>
+                            <td>Name</td>
+                            <td>Permission</td>
+                            <td></td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for contributor in contributors %}
+                            <tr>
+                                <td><a href="{% url 'users:user' guid=contributor.guid %}">{{ contributor.user.email }}</a></td>
+                                <td>{{ contributor.user.fullname }}</td>
+                                <td style="padding: 10px; margin: 0; text-align: center; align-items: center; display: grid;">
+                                    <select name="updated-permissions">
+                                        {% for permission in permissions %}
+                                            {% if contributor.permission == permission %}
+                                                <option value="{{ contributor.guid }}-{{ permission }}" selected>{{ permission }}</option>
+                                            {% else %}
+                                                <option value="{{ contributor.guid }}-{{ permission }}">{{ permission }}</option>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                {% if has_update_permission %}
+                                    <td style="text-align: center;">
+                                        <a data-toggle="modal" data-target="#{{ contributor.user.id }}Modal" class="btn btn-danger">Remove</a>
+                                        <div class="modal" id="{{ contributor.user.id }}Modal">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <button type="button" class="close" data-dismiss="modal">x</button>
+                                                        <h3>Removing contributor: {{ contributor.user.username }}</h3>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        User will be removed. Currently only an admin on this node type will be able to add them back.
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" onclick="resetModal()" name="remove-user" value="{{ contributor.user.id }}" class="btn btn-danger">Delete</button>
+                                                        <button type="button" onclick="resetModal()" name="{{ contributor.user.id }}" class="btn btn-default" data-dismiss="modal">
+                                                            Cancel
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                {% endif %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <div class="modal-footer" style="display: grid; grid-template: 'left right'; grid-template-columns: 1fr 5fr;">
+                    <div class="left-button" style="grid-area: left; display: flex">
+                        <input name="add-contributor" class="btn btn-success" onclick="addRow()" type="button" value="Add Contributor" />
+                    </div>
+                    <div class="right-buttons" style="grid-area: right">
+                        <button type="button" class="btn btn-default" onclick="resetModal()" data-dismiss="modal">
+                            Cancel
+                        </button>
+                        <input class="btn btn-success" type="submit" value="Save" />
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let new_rows_counter = 0;
+
+    function addRow() {
+        const tableBody = document.getElementById("contributors-table").getElementsByTagName('tbody')[0];
+        const newRow = document.createElement("tr");
+        newRow.id = `new-contributor-row-${new_rows_counter}`;
+        new_rows_counter += 1;
+        const cell1 = document.createElement("td");
+        const cell2 = document.createElement("td");
+        const cell3 = document.createElement("td");
+        const cell4 = document.createElement("td");
+
+        cell1.innerHTML = '<input type="email" required name="new-emails" placeholder="Add email">'
+        cell3.innerHTML = `
+        <select name="new-permissions">
+            {% for permission in permissions %}
+                {% if contributor.permission == permission %}
+                    <option value="{{ permission }}" selected>{{ permission }}</option>
+                {% else %}
+                    <option value="{{ permission }}">{{ permission }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+        `;
+        cell3.style="padding: 10px; margin: 0; text-align: center; align-items: center; display: grid;"
+        cell4.innerHTML = `<button type="button" class="btn btn-danger" onclick="removeRow('${newRow.id}')" data-dismiss="modal">Remove row</button>`;
+        cell4.style = 'text-align: center;'
+
+        newRow.appendChild(cell1);
+        newRow.appendChild(cell2);
+        newRow.appendChild(cell3);
+        newRow.appendChild(cell4)
+
+        tableBody.appendChild(newRow);
+    }
+
+    function removeRow(id) {
+        try {
+            document.getElementById(id).remove();
+        } catch {};
+    }
+
+    function resetModal() {
+        const table = document.getElementById("contributors-form");
+        table.reset();
+        for (let i = 0; i < new_rows_counter; i++) {
+            removeRow(`new-contributor-row-${i}`);
+        }
+        new_rows_counter = 0;
+    }
+</script>

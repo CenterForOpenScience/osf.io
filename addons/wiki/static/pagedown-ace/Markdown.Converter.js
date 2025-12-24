@@ -19,10 +19,10 @@ else
 //
 // More importantly, Showdown behaves like markdown.pl in most
 // edge cases.  So web applications can do client-side preview
-// in Javascript, and then build identical HTML on the server.
+// in JavaScript, and then build identical HTML on the server.
 //
 // This port needs the new RegExp functionality of ECMA 262,
-// 3rd Edition (i.e. Javascript 1.5).  Most modern web browsers
+// 3rd Edition (i.e. JavaScript 1.5).  Most modern web browsers
 // should do fine.  Even with the new regular expression features,
 // We do a lot of work to emulate Perl's regex functionality.
 // The tricky changes in this file mostly have the "attacklab:"
@@ -172,7 +172,7 @@ else
 
             // attacklab: Replace ~ with ~T
             // This lets us use tilde as an escape char to avoid md5 hashes
-            // The choice of character is arbitray; anything that isn't
+            // The choice of character is arbitrary; anything that isn't
             // magic in Markdown will work.
             text = text.replace(/~/g, "~T");
 
@@ -804,7 +804,7 @@ else
             // http://bugs.webkit.org/show_bug.cgi?id=11231
             text += "~0";
 
-            // Re-usable pattern to match any entirel ul or ol list:
+            // Re-usable pattern to match any entire ul or ol list:
 
             /*
             var whole_list = /
@@ -944,7 +944,7 @@ else
                         // Recursion for sub-lists:
                         item = _DoLists(_Outdent(item), /* isInsideParagraphlessListItem= */ true);
                         item = item.replace(/\n$/, ""); // chomp(item)
-                        if (!isInsideParagraphlessListItem) // only the outer-most item should run this, otherwise it's run multiple times for the inner ones
+                        if (!isInsideParagraphlessListItem) // only the outer-most item should run this; otherwise, it's run multiple times for the inner ones
                             item = _RunSpanGamut(item);
                     }
                     last_item_had_a_double_newline = ends_with_double_newline;
@@ -1021,7 +1021,7 @@ else
             //      <p>Just type <code>foo `bar` baz</code> at the prompt.</p>
             //
             //   There's no arbitrary limit to the number of backticks you
-            //   can use as delimters. If you need three consecutive backticks
+            //   can use as delimiters. If you need three consecutive backticks
             //   in your code, use four for delimiters, etc.
             //
             // * You can use spaces to get literal backticks at the edges:

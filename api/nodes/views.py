@@ -242,7 +242,7 @@ class DraftMixin:
 
 
 class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodesFilterMixin, WaterButlerMixin, NodeOptimizationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -364,7 +364,7 @@ class NodeList(JSONAPIBaseView, bulk_views.BulkUpdateJSONAPIView, bulk_views.Bul
 
 
 class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, WaterButlerMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -413,7 +413,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
 
 
 class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_contributors_list).
     """
     permission_classes = (
         AdminOrPublic,
@@ -521,7 +521,7 @@ class NodeContributorsList(BaseContributorList, bulk_views.BulkUpdateJSONAPIView
         return super().patch(request, *args, **kwargs)
 
 class NodeContributorDetail(BaseContributorDetail, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_contributors_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_contributors_read).
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -639,7 +639,7 @@ class NodeBibliographicContributorsList(BaseContributorList, NodeMixin):
 
 class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_list).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_draft_registrations_list).
     This endpoint supports the older registries submission workflow and will soon be deprecated.
     Use DraftRegistrationsList endpoint instead.
     """
@@ -676,7 +676,7 @@ class NodeDraftRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, No
 
 class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, DraftMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_draft_registrations_read).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_draft_registrations_read).
     This endpoint supports the older registries submission workflow and will soon be deprecated.
     Use DraftRegistrationDetail endpoint instead.
     """
@@ -708,7 +708,7 @@ class NodeDraftRegistrationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestro
 
 
 class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, DraftMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_registrations_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_registrations_list).
     """
     permission_classes = (
         AdminContributorOrPublic,
@@ -757,7 +757,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMix
 
 
 class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_children_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_children_list).
     """
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -790,7 +790,7 @@ class NodeChildrenList(BaseChildrenList, bulk_views.ListBulkCreateJSONAPIView, N
 
 
 class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_citation_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -812,7 +812,7 @@ class NodeCitationDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
         return node.csl
 
 class NodeCitationStyleDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """ The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_citation_read).
+    """ See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_citation_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1025,7 +1025,7 @@ class NodeLinksDetail(BaseNodeLinksDetail, generics.RetrieveDestroyAPIView, Node
 
 
 class NodeForksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_forks_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_forks_list).
     """
     permission_classes = (
         IsPublic,
@@ -1145,7 +1145,7 @@ class NodeLinkedByRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeM
 
 
 class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_files_list).
 
     """
     permission_classes = (
@@ -1189,7 +1189,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
         if field_name == 'path':
             operation['source_field_name'] = '_path'
         # NOTE: This is potentially fragile, if we ever add filtering on provider
-        # we're going to have to get a bit tricky. get_default_queryset should ramain filtering on BaseFileNode, for now
+        # we're going to have to get a bit tricky. get_default_queryset should retain filtering on BaseFileNode, for now
         if field_name == 'kind':
             if operation['value'].lower() == 'folder':
                 kind = Folder
@@ -1246,7 +1246,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
 
 
 class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_files_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_files_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1285,7 +1285,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
 
 
 class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_addons_list).
 
     """
 
@@ -1320,7 +1320,7 @@ class NodeAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, Node
 
 
 class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, generics.CreateAPIView, NodeMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addon_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_addon_read).
     """
 
     permission_classes = (
@@ -1373,7 +1373,7 @@ class NodeAddonDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, ge
 
 
 class NodeAddonFolderList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_addons_folders_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_addons_folders_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1463,7 +1463,7 @@ class NodeStorageProvider:
 
 
 class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_providers_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1498,7 +1498,7 @@ class NodeStorageProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin)
 
 
 class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_providers_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_providers_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1520,7 +1520,7 @@ class NodeStorageProviderDetail(JSONAPIBaseView, generics.RetrieveAPIView, NodeM
 
 
 class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_logs_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_logs_list).
     """
 
     serializer_class = NodeLogSerializer
@@ -1554,7 +1554,7 @@ class NodeLogList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, ListFilterMi
 
 
 class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_comments_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_comments_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1630,7 +1630,7 @@ class NodeCollectionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin
 
 
 class NodeInstitutionsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1790,7 +1790,7 @@ class NodeStorage(JSONAPIBaseView, generics.RetrieveAPIView, NodeMixin):
 
 
 class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_subjects_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_subjects_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1809,7 +1809,7 @@ class NodeSubjectsList(BaseResourceSubjectsList, NodeMixin):
 
 
 class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/node_subjects_relationship).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/node_subjects_relationship).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1831,7 +1831,7 @@ class NodeSubjectsRelationship(SubjectRelationshipBaseView, NodeMixin):
 
 
 class NodeWikiList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_wikis_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_wikis_list).
     """
 
     permission_classes = (
@@ -1907,7 +1907,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
     node identifiers. This will replace the contents of the node_links for this collection with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this collection
 
     ###Destroy
@@ -1932,7 +1932,7 @@ class NodeLinkedNodesRelationship(LinkedNodesRelationship, NodeMixin):
 
 
 class LinkedNodesList(BaseLinkedList, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_linked_nodes_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_linked_nodes_list).
     """
     serializer_class = NodeSerializer
     view_category = 'nodes'
@@ -1996,7 +1996,7 @@ class NodeLinkedRegistrationsRelationship(LinkedRegistrationsRelationship, NodeM
     node identifiers. This will replace the contents of the node_links for this node with
     the contents of the request. It will delete all node links that don't have a node_id in the data
     array, create node links for the node_ids that don't currently have a node id, and do nothing
-    for node_ids that already have a corresponding node_link. This means a update request with
+    for node_ids that already have a corresponding node_link. This means an update request with
     {"data": []} will remove all node_links in this node.
 
     ###Destroy
@@ -2102,7 +2102,7 @@ class NodeLinkedRegistrationsList(BaseLinkedList, NodeMixin):
 
 
 class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_view_only_links_list).
     """
     permission_classes = (
         IsAdmin,
@@ -2128,7 +2128,7 @@ class NodeViewOnlyLinksList(JSONAPIBaseView, generics.ListCreateAPIView, ListFil
 
 
 class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_view_only_links_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_view_only_links_read).
     """
 
     permission_classes = (
@@ -2165,7 +2165,7 @@ class NodeViewOnlyLinkDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIV
         # enqueue_postcommit_task(ban_url, (self.get_node(),), {}, celery=False, once_per_request=True)
 
 class NodeIdentifierList(NodeMixin, IdentifierList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_identifiers_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_identifiers_list).
     """
 
     serializer_class = NodeIdentifierSerializer
@@ -2196,7 +2196,7 @@ class NodeIdentifierList(NodeMixin, IdentifierList):
 
 
 class NodePreprintsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/nodes_preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/nodes_preprints_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -2409,9 +2409,9 @@ class NodeReorderComponents(JSONAPIBaseView, generics.UpdateAPIView, NodeMixin):
             node_id = node_pos.get('id')
 
             if node_order > len(node_relations) - 1:
-                errors.append(f"Item {node_id} has _order {node_order} which is higher than the list length.")
+                errors.append(f"Item {node_id} has _order {node_order} which exceeds the list length.")
             if node_order < 0:
-                errors.append(f"Item {node_id} has _order {node_order} which is lower than zero.")
+                errors.append(f"Item {node_id} has _order {node_order} which is less than zero.")
 
             try:
                 child_node_id = self.get_node(node_id=node_id).id

@@ -5,16 +5,15 @@
         <br>
         Hello ${user_fullname},
         <br><br>
-        We’ve noticed it’s been a while since you used the OSF. We are constantly adding and improving features, so we thought it might be time to check in with you.
-        Most researchers begin using the OSF by creating a project to organize their files and notes. Projects are equipped with powerful features to help you manage your research:
+        We’ve noticed it’s been a while since you used the OSF. We have recently updated our User Interface with a new look for the User Profile page, <a href="https://help.osf.io/article/390-profile-and-account#Edit-Your-Profile-ZuHIE">go update your profile now</a>.
+        Starting a new Research Project? Create a Research plan by <a href="https://help.osf.io/article/330-welcome-to-registrations#Create-a-Registration-_4D6l">submitting a Registration or Pre-registration</a>:
         <br>
         <ul>
-            <li>You can keep your work private, or make it public and share it with others</li>
-            <li>You can use the wiki to live-edit content with your collaborators</li>
-            <li>You can connect to third-party services like Dropbox or Google Drive</li>
+            <li>If you plan on submitting your work for peer-review, make sure you <a href="https://help.osf.io/article/330-welcome-to-registrations#Privacy-Settings-t-8n2">embargo your Registration</a>.</li>
+            <li>Come back and add research outputs to an existing Registration using <a href="https://help.osf.io/article/330-welcome-to-registrations#Add-Resources-to-your-Registration-wvpiz">Open Practice Badges</a>.</li>
         </ul>
-        To get started now, visit your dashboard and click on “Create a project.”
-        Need help getting started with a project? Check out the <a href="https://help.osf.io/article/383-creating-a-project">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
+        To get started now, visit your “My Registrations” page and click on “Add a Registration”
+        Need help getting started? Check out the <a href="https://help.osf.io/article/353-welcome-to-projects">OSF Help Guides</a> or one of our recent <a href="https://www.youtube.com/channel/UCGPlVf8FsQ23BehDLFrQa-g">OSF 101 webinars</a>.
         <br><br>
         Sincerely,
         <br>

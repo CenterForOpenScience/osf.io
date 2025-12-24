@@ -26,7 +26,7 @@ FREQ_MAP = {
 EVENT_NAME_TO_NOTIFICATION_TYPE = {
     # Provider notifications
     'new_pending_withdraw_requests': NotificationTypeEnum.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
-    'contributor_added_preprint': NotificationTypeEnum.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT,
+    'contributor_added_preprint': NotificationTypeEnum.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
     'new_pending_submissions': NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS,
     'moderator_added': NotificationTypeEnum.PROVIDER_MODERATOR_ADDED,
     'reviews_submission_confirmation': NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,

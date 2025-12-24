@@ -34,7 +34,7 @@ class TestDraftRegistrations:
     def test_request_early_termination_too_late(self, registration, user):
         """
         This is for an edge case test for where embargos are frozen and never expire when the user requests they be
-        terminated with embargo with less then 48 hours before it would expire anyway.
+        terminated with embargo with less than 48 hours before it would expire anyway.
         """
         with capture_notifications():
             registration.request_embargo_termination(user)

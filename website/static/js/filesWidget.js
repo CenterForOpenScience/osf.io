@@ -10,7 +10,7 @@ var Fangorn = require('js/fangorn').Fangorn;
  * Modularized files widget
  *
  * @param {String} divID id of target div
- * @param {String} filesUrl url to fecth files data for during init
+ * @param {String} filesUrl url to fetch files data for during init
  * @param {Object} opts optional overrides to Treebeard options
  **/
 var FilesWidget = function(divID, filesUrl, opts) {

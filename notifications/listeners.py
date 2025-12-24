@@ -4,6 +4,7 @@ from django.apps import apps
 
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
 from website.reviews import signals as reviews_signals
+from framework.auth import signals as auth_signals
 
 logger = logging.getLogger(__name__)
 
@@ -144,3 +145,21 @@ def remove_supplemental_node(node):
     from notifications.tasks import remove_supplemental_node_from_preprints
 
     remove_supplemental_node_from_preprints(node._id)
+
+@auth_signals.unconfirmed_user_created.connect
+def queue_no_addon_email(user):
+    """Queue an email for user who has not connected an addon after
+    `settings.NO_ADDON_WAIT_TIME` months of signing up for the OSF.
+    """
+    from website.settings import DOMAIN
+    from osf.models import NotificationTypeEnum
+
+    NotificationTypeEnum.USER_NO_ADDON.instance.emit(
+        subscribed_object=user,
+        user=user,
+        event_context={
+            'user_fullname': user.fullname,
+            'domain': DOMAIN,
+        },
+        is_digest=True,
+    )

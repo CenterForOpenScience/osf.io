@@ -312,7 +312,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.
         If revisions is None the created version is NOT and should NOT be saved
-        as there is no identifing information to tell if it needs to be updated or not.
+        as there is no identifying information to tell if it needs to be updated or not.
         Hits Waterbutler's metadata endpoint and saves the returned data.
         If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
         renderable HTML will be returned.
@@ -320,7 +320,7 @@ class BaseFileNode(TypedModel, CommentableMixin, OptionalGuidMixin, Taggable, Ob
         :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
-        # Resvolve primary key on first touch
+        # Resolve primary key on first touch
         self.save()
         # For backwards compatibility
         revision = revision or kwargs.get(self.version_identifier)
@@ -489,7 +489,7 @@ class File(models.Model):
         return 'file'
 
     def update(self, revision, data, user=None, save=True):
-        """Using revision and data update all data pretaining to self
+        """Using revision and data update all data pertaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata received from waterbutler
         :returns: FileVersion
@@ -500,7 +500,7 @@ class File(models.Model):
         version = FileVersion(identifier=revision)
         version.update_metadata(data, save=False)
 
-        # Transform here so it can be sortted on later
+        # Transform here so it can be sorted on later
         if data['modified'] is not None and data['modified'] != '':
             data['modified'] = parse_date(
                 data['modified'],
@@ -517,7 +517,7 @@ class File(models.Model):
         for entry in self.history:
             # Some entry might have an undefined modified field
             if data['modified'] is not None and entry['modified'] is not None and data['modified'] < entry['modified']:
-                sentry.log_message('update() receives metatdata older than the newest entry in file history.')
+                sentry.log_message('update() receives metadata older than the newest entry in file history.')
             if ('etag' in entry and 'etag' in data) and (entry['etag'] == data['etag']):
                 break
         else:
@@ -574,7 +574,7 @@ class File(models.Model):
 
     @property
     def _hashes(self):
-        """ Hook for sublasses to return file hashes, commit SHAs, etc.
+        """ Hook for subclasses to return file hashes, commit SHAs, etc.
         Returns dict or None
         """
         return None
@@ -780,7 +780,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
     """
     # Note on fields:
     # `created`: Date version record was created. This is the date displayed to the user.
-    # `modified`: Date this object was last modified. Distinct from the date the file associated
+    # `modified`: Date this object was last modified. Distinct from the date that the file associated
     #       with this object was last modified
     # `external_modified`: Date file modified on third-party backend. Not displayed to user, since
     #       this date may be earlier than the date of upload if the file already
@@ -854,7 +854,7 @@ class FileVersion(ObjectIDMixin, BaseModel):
         return self.location_hash == other.location_hash
 
     def get_basefilenode_version(self, file):
-        # Returns the throughtable object  - the record that links this version
+        # Returns the through table object  - the record that links this version
         # to the given file.
         return self.basefileversionsthrough_set.filter(basefilenode=file).first()
 

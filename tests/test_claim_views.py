@@ -294,7 +294,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         # TODO: check in qa url encoding
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
-        url = f'/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
+        url = f'/legacy/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
         # logged out user gets redirected to cas login
         res1 = self.app.get(url)
         assert res1.status_code == 302

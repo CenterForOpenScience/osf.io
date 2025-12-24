@@ -1479,7 +1479,7 @@ class TestAddonFileViews(OsfTestCase):
         assert resp.status_code == 400
 
     @mock.patch('website.views.stream_emberapp')
-    def test_head_returns_url_and_redriect(self, mock_ember):
+    def test_head_returns_url_and_redirect(self, mock_ember):
         file_node = self.get_test_file()
         guid = file_node.get_guid(create=True)
 
@@ -1668,7 +1668,7 @@ class TestAddonFileViews(OsfTestCase):
         file_node.update(revision=None, user=None, data=data)
         mock_set_context.return_value.__enter__.return_value.set_extra.assert_called_once_with('session', {})
         mock_capture.assert_called_with(
-            'update() receives metatdata older than the newest entry in file history.',
+            'update() receives metadata older than the newest entry in file history.',
             level='error',
         )
 
@@ -1844,7 +1844,7 @@ class TestViewUtils(OsfTestCase):
 
     @mock.patch('addons.github.models.NodeSettings.get_folders', return_value=[])
     def test_include_template_json(self, mock_folders):
-        """ Some addons (github, gitlab) need more specialized template infomation so we want to
+        """ Some addons (github, gitlab) need more specialized template information so we want to
         ensure we get those extra variables that when the addon is enabled.
         """
         addon_dicts = serialize_addons(self.node, self.auth_obj)

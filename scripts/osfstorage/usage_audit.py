@@ -3,7 +3,7 @@ Find all users and projects where their total usage (current file + deleted file
 Projects or users can have their GUID whitelisted via `usage_audit whitelist [GUID ...]`
 User usage is defined as the total usage of all projects they have > READ access on
 Project usage is defined as the total usage of it and all its children
-total usage is defined as the sum of the size of all verions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
+total usage is defined as the sum of the size of all versions associated with X via OsfStorageFileNode and OsfStorageTrashedFileNode
 """
 
 import os
@@ -19,7 +19,7 @@ from tqdm import tqdm
 
 
 from framework.celery_tasks import app as celery_app
-from osf.models import TrashedFile, Node
+from osf.models import TrashedFile, Node, NotificationTypeEnum
 
 from website.app import init_app
 from website.settings.defaults import GBs
@@ -110,7 +110,13 @@ def main(send_email=False):
     if lines:
         if send_email:
             logger.info('Sending email...')
-            send_mail('support+scripts@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit', can_change_preferences=False,)
+            NotificationTypeEnum.EMPTY.instance.emit(
+                destination_address='support+scripts@osf.io',
+                event_context={
+                    'body': '\n'.join(lines),
+                    'subject': 'Script: OsfStorage usage audit',
+                },
+            )
         else:
             logger.info(f'send_email is False, not sending email')
         logger.info(f'{len(lines)} offending project(s) and user(s) found')

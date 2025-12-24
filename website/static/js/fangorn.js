@@ -50,7 +50,7 @@ var STATE_MAP = {
 var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 var READ_ONLY_ADDONS = ['bitbucket', 'gitlab'];
 var MOVE_INTERVAL;
-var MILLSECOND_PER_MOVE_REQUEST = 500;
+var MILLISECOND_PER_MOVE_REQUEST = 500;
 
 var CONFLICT_INFO = {
     skip: {
@@ -1057,7 +1057,7 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
 }
 
 /**
- * Click event for when upload buttonin Action Column, it essentially runs the hiddenFileInput.click
+ * Click event for when upload button in Action Column, it essentially runs the hiddenFileInput.click
  * @param event DOM event object for click
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
  * @param {Object} col Information pertinent to that column where this upload event is run from
@@ -1491,7 +1491,7 @@ function _fangornLazyLoadError (item) {
 }
 
 /**
- * Applies the positionining and initialization of tooltips for file names
+ * Applies the positioning and initialization of tooltips for file names
  * @private
  */
 function reapplyTooltips () {
@@ -1577,7 +1577,7 @@ function gotoFileEvent (item, toUrl) {
 /**
  * Defines the contents of the title column (does not include the toggle and folder sections
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Options for this particulat column
+ * @param {Object} col Options for this particular column
  * @this Treebeard.controller
  * @returns {Array} Returns an array of mithril template objects using m()
  * @private
@@ -2549,7 +2549,7 @@ var copyMode = null;
 
 /**
  * Hook for the drag start event on jquery
- * @param event jQuery UI drggable event object
+ * @param event jQuery UI draggable event object
  * @param ui jQuery UI draggable ui object
  * @private
  */
@@ -2715,7 +2715,7 @@ function _dropLogic(event, items, folder) {
                 } else {
                     MOVE_INTERVAL = clearInterval(MOVE_INTERVAL);
                 }
-            }, MILLSECOND_PER_MOVE_REQUEST);
+            }, MILLISECOND_PER_MOVE_REQUEST);
         }
     }
 
@@ -3054,10 +3054,10 @@ tbOptions = {
             }
         });
     },
-    movecheck : function (to, from) { //This method gives the users an option to do checks and define their return
+    movecheck : function (to, from) { //This method gives users an option to do checks and define their return
         return true;
     },
-    movefail : function (to, from) { //This method gives the users an option to do checks and define their return
+    movefail : function (to, from) { //This method gives users an option to do checks and define their return
         return true;
     },
     addcheck : function (treebeard, item, file) {

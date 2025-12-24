@@ -552,12 +552,12 @@ class TestQueryPatternRegex(TestCase):
         match = self.filter_regex.match(filter_str)
         assert not match
 
-    def test_single_field_filter_non_match(self):
-        filter_str = 'fitler[name]'
+    def test_single_field_filter_misspelled(self):
+        filter_str = 'filter_[name]'
         match = self.filter_regex.match(filter_str)
         assert not match
 
     def test_single_field_non_alphanumeric_character(self):
-        filter_str = 'fitler[<name>]'
+        filter_str = 'filter[<name>]'
         match = self.filter_regex.match(filter_str)
         assert not match

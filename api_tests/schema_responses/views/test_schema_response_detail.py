@@ -229,7 +229,7 @@ class TestSchemaResponseDetailGETPermissions:
 
 @pytest.mark.django_db
 class TestSchemaResponseDetailGETBehavior:
-    '''Confirms behavior of GET requests agaisnt the SchemaResponseList Endpoint.
+    '''Confirms behavior of GET requests against the SchemaResponseList Endpoint.
 
     GET should return a serialized instance of the SchemaResponse with the requested ID
     as it exists in the database at the time of the call.
@@ -423,7 +423,7 @@ class TestSchemaResponseDetailPATCHBehavior:
     the SchemaResponse should appear in the list of "updated_response_keys".
 
     Requests that pass an unsupported key in "revision_responses" should return a 400 error,
-    while requests against a SchemaResponse in a state other than IN_PROGRESS shoudl 409.
+    while requests against a SchemaResponse in a state other than IN_PROGRESS should 409.
     '''
 
     @pytest.fixture()

@@ -1,6 +1,8 @@
 # tests/test_triggered_mails.py
 from datetime import timedelta
 from unittest import mock
+from waffle.testutils import override_switch
+from osf import features
 
 from django.utils import timezone
 
@@ -28,6 +30,7 @@ def _recent_time():
     return timezone.now() - timedelta(seconds=10)
 
 
+@override_switch(features.ENABLE_NO_LOGIN_EMAILS, active=True)
 class TestTriggeredMails(OsfTestCase):
     def setUp(self):
         super().setUp()
@@ -129,3 +132,15 @@ class TestTriggeredMails(OsfTestCase):
         users = list(find_inactive_users_without_enqueued_or_sent_no_login())
         ids = {u.id for u in users}
         assert ids == {u1.id}  # u2 excluded because of existing task
+
+    @override_switch(features.ENABLE_NO_LOGIN_EMAILS, active=False)
+    def test_disable_task(self):
+        u1 = UserFactory(fullname='Jalen Hurts')
+        u2 = UserFactory(fullname='Jason Kelece')
+        u1.date_last_login = _inactive_time()
+        u2.date_last_login = _inactive_time()
+        u1.save()
+        u2.save()
+
+        with capture_notifications(expect_none=True), run_celery_tasks():
+            main(dry_run=False)

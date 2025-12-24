@@ -52,7 +52,7 @@ class TestUpdateNodeWiki(OsfTestCase):
     def test_wiki_content(self):
         # Wiki has correct content
         assert WikiVersion.objects.get_for_node(self.project, 'home').content == 'Hello world'
-        # user updates the wiki a second time
+        # user updates the wiki again
         self.wiki_page.update(self.user, 'Hola mundo')
         # Both versions have the expected content
         assert WikiVersion.objects.get_for_node(self.project, 'home', 2).content == 'Hola mundo'
@@ -61,7 +61,7 @@ class TestUpdateNodeWiki(OsfTestCase):
     def test_current(self):
         # Wiki is current
         assert WikiVersion.objects.get_for_node(self.project, 'home', 1).is_current is True
-        # user updates the wiki a second time
+        # user updates the wiki again
         self.wiki_page.update(self.user, 'Hola mundo')
         # New version is current, old version is not
         assert WikiVersion.objects.get_for_node(self.project, 'home', 2).is_current is True
@@ -70,7 +70,7 @@ class TestUpdateNodeWiki(OsfTestCase):
     def test_update_log(self):
         # Updates are logged
         assert self.project.logs.latest().action == 'wiki_updated'
-        # user updates the wiki a second time
+        # user updates the wiki again
         self.wiki_page.update(self.user, 'Hola mundo')
         # There are two update logs
         assert self.project.logs.filter(action='wiki_updated').count() == 2

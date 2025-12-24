@@ -760,7 +760,7 @@ class TestNodeSettingsModel:
 
     def test_fork_reverts_to_node_storage_region(self, user2, region, region2, node, child_node_with_different_region):
         """
-        Despite different user regions defaults, the forked node always stay in the same region as it's orginal node.
+        Despite different user regions defaults, the forked node always stay in the same region as it's original node.
         """
         with capture_notifications():
             fork = node.fork_node(Auth(user2))

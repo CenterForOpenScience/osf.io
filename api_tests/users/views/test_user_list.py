@@ -303,7 +303,7 @@ class TestUsersCreate:
         assert res.status_code == 401
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
 
-    @pytest.mark.skip  # failing locally post converision
+    @pytest.mark.skip  # failing locally post conversion
     def test_cookied_requests_can_create_and_email(
             self, app, user, email_unconfirmed, data, url_base):
         # NOTE: skipped tests are not tested during session refactor, only updated to fix import
@@ -324,7 +324,7 @@ class TestUsersCreate:
         assert res.status_code == 201
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
 
-    @pytest.mark.skip  # failing locally post converision
+    @pytest.mark.skip  # failing locally post conversion
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -365,7 +365,7 @@ class TestUsersCreate:
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
 
-    @pytest.mark.skip  # failing locally post converision
+    @pytest.mark.skip  # failing locally post conversion
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -405,7 +405,7 @@ class TestUsersCreate:
         assert res.json['data']['attributes']['username'] == email_unconfirmed
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 1
 
-    @pytest.mark.skip  # failing locally post converision
+    @pytest.mark.skip  # failing locally post conversion
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(
@@ -484,7 +484,7 @@ class TestUsersCreate:
         assert res.status_code == 403
         assert OSFUser.objects.filter(username=email_unconfirmed).count() == 0
 
-    @pytest.mark.skip  # failing locally post converision
+    @pytest.mark.skip  # failing locally post conversion
     @mock.patch('api.base.authentication.drf.OSFCASAuthentication.authenticate')
     # TODO: Remove when available outside of DEV_MODE
     @unittest.skipIf(

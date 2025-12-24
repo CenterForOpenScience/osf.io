@@ -38,7 +38,7 @@ class BaseMachine(Machine):
 
     def __init__(self, machineable, state_attr='machine_state'):
         """
-        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, prerprints etc,
+        Welcome to the machine, this is our attempt at a state machine. It was written for nodes, preprints etc,
         but sometimes applies to sanctions, it may be to applied to anything that wants to have states and transitions.
 
         The general idea behind this is that we are instantiating the machine object as part of the model and it will
@@ -383,7 +383,7 @@ class ApprovalsMachine(Machine):
     The valid machine states for a Sanction object are defined in Workflows.ApprovalStates.
     The valid transitions between these states are defined in Workflows.APPROVAL_TRANSITIONS.
 
-    The ApprovaslMachine can be used by by instantiating an ApprovalsMachine and attaching the
+    The ApprovalsMachine can be used by by instantiating an ApprovalsMachine and attaching the
     desired model with the 'model' kwarg. Attached models will inherit the 'trigger' functions
     named in the APPROVAL_TRANSITIONS dictionary (submit, approve, accept, and reject).
 
@@ -394,9 +394,9 @@ class ApprovalsMachine(Machine):
     4) Update the state field of the Sanction object via the approval_stage setter
     5) Call Sanction member functions listed in the 'after' key of the dictionary
 
-    Attached models must define the callbacks used by the ApprvalsMachine:
+    Attached models must define the callbacks used by the ApprovalsMachine:
     * is_moderated: Determines what transition to follow from `accept` and `reject` triggers
-    * revisable: Determines what transiition to follow on a 'reject' trigger
+    * revisable: Determines what transition to follow on a 'reject' trigger
     * `_on_submit', '_on_approve', '_on_complete', and '_on_reject': Define any custom per-trigger logic
     * _save_transition': Defines any global, post-transition logic
 

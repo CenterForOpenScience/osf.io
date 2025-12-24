@@ -932,7 +932,7 @@ ListViewModel.prototype.addContent = function() {
 };
 
 ListViewModel.prototype.removeContent = function(content) {
-    // If there is more then one model, then delete it.  If there is only one, then delete it and add another
+    // If there is more than one model, then delete it.  If there is only one, then delete it and add another
     // to preserve the fields in the view.
     var idx = this.contents().indexOf(content);
     var self = this;
