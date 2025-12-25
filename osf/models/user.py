@@ -2079,8 +2079,12 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             logger.info(f'Removing {self._id} as a contributor to {resource.__class__.__name__} (pk:{resource.pk})...')
             resource.remove_contributor(self, auth=Auth(self), log=False)
 
-        # Delete all personal entities
-        for entity in personal_resources.all():
+        # Delete all personal entities (excluding public registrations)
+        personal_to_delete = personal_resources
+        if hasattr(model, 'is_public') and hasattr(model, 'type'):
+            personal_to_delete = personal_to_delete.exclude(is_public=True, type='osf.registration')
+
+        for entity in personal_to_delete.all():
             if hard_delete:
                 logger.info(f'Hard-deleting {entity.__class__.__name__} (pk: {entity.pk})...')
                 entity.delete()
