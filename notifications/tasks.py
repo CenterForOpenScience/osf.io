@@ -212,6 +212,7 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
                 return
 
         additional_context = {}
+        logo = None
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
             submissions_url = get_registration_provider_submissions_url(provider)
@@ -251,9 +252,9 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
             'reviews_withdrawal_url': withdrawals_url,
             'reviews_submissions_url': submissions_url,
             'provider_type': provider_type,
-            'additional_context': additional_context,
             'is_admin': provider.get_group(ADMIN).user_set.filter(id=user.id).exists(),
             'logo': logo,
+            **additional_context,
         }
 
         NotificationType.Type.DIGEST_REVIEWS_MODERATORS.instance.emit(
