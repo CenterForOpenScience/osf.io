@@ -35,6 +35,7 @@ from website.app import init_addons
 from osf.models import (
     ArchiveJob,
     AbstractNode,
+    Registration,
     DraftRegistration,
 )
 from osf import features
@@ -370,3 +371,29 @@ def archive_success(self, dst_pk, job_pk):
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
     dst.update_search()
+
+
+@celery_app.task(bind=True)
+def force_archive(self, registration_id, permissible_addons, allow_unconfigured=False, skip_collisions=False, delete_collisions=False):
+    from osf.management.commands.force_archive import archive
+
+    create_app_context()
+
+    try:
+        registration = AbstractNode.load(registration_id)
+        if not registration or not isinstance(registration, Registration):
+            return f'Registration {registration_id} not found'
+
+        archive(
+            registration,
+            permissible_addons=set(permissible_addons),
+            allow_unconfigured=allow_unconfigured,
+            skip_collisions=skip_collisions,
+            delete_collisions=delete_collisions,
+        )
+        return f'Registration {registration_id} archive completed'
+
+    except Exception as exc:
+        sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
+        sentry.log_exception(exc)
+        return f'{exc.__class__.__name__}: {str(exc)}'
