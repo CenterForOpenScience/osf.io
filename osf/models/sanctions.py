@@ -412,7 +412,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return
         for contrib, node in group:
             if contrib._id in self.approval_state:
-                return self.AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
+                self.AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
                     subscribed_object=node,
                     event_context=self._email_template_context(
@@ -422,7 +422,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
                     )
                 )
             else:
-                return self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
+                self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
                     subscribed_object=node,
                     event_context=self._email_template_context(contrib, node)
