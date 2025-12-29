@@ -15,6 +15,14 @@
                 <a class="btn btn-primary" href={% url 'collection_providers:export' collection_provider.id %}>Export collection provider metadata</a>
                 <a class="btn btn-danger" href={% url 'collection_providers:delete' collection_provider.id %}>Delete collection provider</a>
                 <a class="btn btn-primary" href={% url 'collection_providers:add_admin_or_moderator' collection_provider.id %}>Manage Admins and Moderators</a>
+                {% if perms.osf.view_submissions %}
+                <a class="btn btn-info" href="{% url 'collection_providers:moderate-submissions' collection_provider.id %}">
+                    Moderate Submissions
+                    {% if pending_submissions_count > 0 %}
+                    <span class="badge">{{ pending_submissions_count }}</span>
+                    {% endif %}
+                </a>
+                {% endif %}
             </div>
         </div>
         <div class="row">

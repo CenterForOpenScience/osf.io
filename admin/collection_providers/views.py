@@ -2,6 +2,7 @@ import json
 
 from django.http import HttpResponse
 from django.core import serializers, exceptions
+from django.core.exceptions import PermissionDenied
 from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from django.views.generic import View, CreateView, ListView, DetailView, UpdateView, DeleteView, TemplateView
@@ -11,11 +12,16 @@ from django.forms.models import model_to_dict
 from admin.collection_providers.forms import CollectionProviderForm
 from admin.base import settings
 from admin.base.forms import ImportFileForm
+from admin.base.utils import update_admin_log
 from osf.models import (
     Collection,
     CollectionProvider,
+    CollectionSubmission,
     NodeLicense
 )
+from osf.models.admin_log_entry import COLLECTION_ACCEPT, COLLECTION_REJECT
+from osf.utils.workflows import CollectionSubmissionStates
+from framework.exceptions import PermissionsError
 from admin.preprint_providers.views import ImportProviderView
 from django.contrib import messages
 from admin.providers.views import AddAdminOrModerator, RemoveAdminsAndModerators
@@ -259,6 +265,13 @@ class CollectionProviderDisplay(PermissionRequiredMixin, DetailView):
         # set api key for tinymce
         kwargs['tinymce_apikey'] = settings.TINYMCE_APIKEY
 
+        # Add pending submissions count for the moderation badge
+        if collection_provider.primary_collection:
+            kwargs['pending_submissions_count'] = CollectionSubmission.objects.filter(
+                collection=collection_provider.primary_collection,
+                machine_state=CollectionSubmissionStates.PENDING
+            ).count()
+
         return kwargs
 
 
@@ -433,3 +446,103 @@ class CollectionRemoveAdminsAndModerators(RemoveAdminsAndModerators):
     provider_class = CollectionProvider
     url_namespace = 'collection_providers'
     raise_exception = True
+
+
+class CollectionSubmissionModeration(PermissionRequiredMixin, ListView):
+    paginate_by = 25
+    paginate_orphans = 1
+    template_name = 'collection_providers/moderate_submissions.html'
+    ordering = '-created'
+    permission_required = 'osf.view_submissions'
+    raise_exception = True
+
+    def get_queryset(self):
+        provider_id = self.kwargs.get('collection_provider_id')
+        provider = CollectionProvider.objects.get(id=provider_id)
+
+        status_filter = self.request.GET.get('status', 'pending')
+
+        queryset = CollectionSubmission.objects.filter(
+            collection=provider.primary_collection
+        ).select_related(
+            'guid',
+            'creator',
+            'collection'
+        ).prefetch_related(
+            'guid__referent'
+        ).order_by(self.ordering)
+
+        if status_filter == 'pending':
+            queryset = queryset.filter(machine_state=CollectionSubmissionStates.PENDING)
+        elif status_filter == 'accepted':
+            queryset = queryset.filter(machine_state=CollectionSubmissionStates.ACCEPTED)
+        elif status_filter == 'rejected':
+            queryset = queryset.filter(machine_state=CollectionSubmissionStates.REJECTED)
+
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        query_set = kwargs.pop('object_list', self.object_list)
+        page_size = self.get_paginate_by(query_set)
+        paginator, page, query_set, is_paginated = self.paginate_queryset(query_set, page_size)
+
+        provider_id = self.kwargs.get('collection_provider_id')
+        provider = CollectionProvider.objects.get(id=provider_id)
+
+        return {
+            'submissions': query_set,
+            'page': page,
+            'provider': provider,
+            'status_filter': self.request.GET.get('status', 'pending'),
+        }
+
+    def post(self, request, *args, **kwargs):
+        action = request.POST.get('action')
+        provider_id = self.kwargs.get('collection_provider_id')
+        provider = CollectionProvider.objects.get(id=provider_id)
+
+        if action == 'accept':
+            if not request.user.has_perm('accept_submissions', provider):
+                raise PermissionDenied("You don't have permission to accept submissions.")
+        elif action == 'reject':
+            if not request.user.has_perm('reject_submissions', provider):
+                raise PermissionDenied("You don't have permission to reject submissions.")
+        else:
+            return HttpResponse('Invalid action', status=400)
+
+        data = dict(request.POST)
+        data.pop('action', None)
+        data.pop('csrfmiddlewaretoken', None)
+        comment = data.pop('comment', [''])[0]
+
+        submission_ids = list(data.keys())
+        submissions = CollectionSubmission.objects.filter(id__in=submission_ids)
+
+        for submission in submissions:
+            try:
+                if action == 'accept':
+                    submission.accept(user=request.user, comment=comment)
+                    action_msg = 'Accepted'
+                elif action == 'reject':
+                    submission.reject(user=request.user, comment=comment)
+                    action_msg = 'Rejected'
+
+                update_admin_log(
+                    user_id=request.user.id,
+                    object_id=submission.id,
+                    object_repr='CollectionSubmission',
+                    message=f'{action_msg} collection submission {submission._id} for project {submission.guid._id}',
+                    action_flag=COLLECTION_ACCEPT if action == 'accept' else COLLECTION_REJECT
+                )
+
+                messages.success(
+                    request,
+                    f'{action_msg} submission for {submission.guid.referent.title}'
+                )
+            except PermissionsError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f'Error processing {submission.guid._id}: {str(e)}')
+
+        return redirect('collection_providers:moderate-submissions',
+                       collection_provider_id=provider_id)
