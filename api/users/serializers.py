@@ -71,6 +71,7 @@ class UserSerializer(JSONAPISerializer):
         'middle_names',
         'family_name',
         'id',
+        'username',
     ])
     writeable_method_fields = frozenset([
         'accepted_terms_of_service',
@@ -97,6 +98,10 @@ class UserSerializer(JSONAPISerializer):
     allow_indexing = ShowIfCurrentUser(ser.BooleanField(required=False, allow_null=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
+
+    # Expose a username field for filtering only. It maps to the OSFUser.username.
+    # Marked write_only so it does not appear in responses.
+    username = ser.CharField(write_only=True, required=False)
 
     links = HideIfDisabled(
         LinksField(
