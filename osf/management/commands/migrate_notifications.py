@@ -25,26 +25,13 @@ FREQ_MAP = {
 
 EVENT_NAME_TO_NOTIFICATION_TYPE = {
     # Provider notifications
-    'new_pending_withdraw_requests': NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
-    'contributor_added_preprint': NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
-    'new_pending_submissions': NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-    'moderator_added': NotificationType.Type.PROVIDER_MODERATOR_ADDED,
-    'reviews_submission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
-    'reviews_resubmission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
-    'confirm_email_moderation': NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION,
     'global_reviews': NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
 
     # Node notifications
     'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
 
-    # Collection submissions
-    'collection_submission_submitted': NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
-    'collection_submission_accepted': NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED,
-    'collection_submission_rejected': NotificationType.Type.COLLECTION_SUBMISSION_REJECTED,
-    'collection_submission_removed_admin': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN,
-    'collection_submission_removed_moderator': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
-    'collection_submission_removed_private': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
-    'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
+    # User notifications
+    'global_file_updated': NotificationType.Type.USER_FILE_UPDATED,
 }
 
 
@@ -110,11 +97,25 @@ def migrate_legacy_notification_subscriptions(
 ):
     logger.info('Starting legacy notification subscription migration...')
 
-    legacy_qs = NotificationSubscriptionLegacy.objects.filter(id__gte=start_id).order_by('id')
-    total = legacy_qs.count()
-    if total == 0:
+    legacy_qs = NotificationSubscriptionLegacy.objects.filter(id__gte=start_id, event_name__in=EVENT_NAME_TO_NOTIFICATION_TYPE.keys()).order_by('id')
+    legacy_qs_ids = legacy_qs.values_list('id', flat=True)
+    if legacy_qs_ids.count() != 0:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_none where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            none_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_email_digest where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            digest_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_email_transactional where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            transactional_count = cursor.fetchone()[0]
+
+        legacy_expanded_total = none_count + digest_count + transactional_count
+    else:
+        legacy_expanded_total = 0
+
+    if legacy_expanded_total == 0:
         logger.info('No legacy subscriptions to migrate.')
         return
+    logger.info(f"Total legacy subscriptions to process: {legacy_expanded_total}")
 
     notiftype_map = dict(NotificationType.objects.values_list('name', 'id'))
     existing_keys = build_existing_keys()
@@ -128,7 +129,7 @@ def migrate_legacy_notification_subscriptions(
     for batch_range in tqdm(list(iter_batches(first_id, last_id, batch_size)), desc='Processing', unit='batch'):
         batch = list(
             NotificationSubscriptionLegacy.objects
-            .filter(id__range=batch_range)
+            .filter(id__range=batch_range, event_name__in=EVENT_NAME_TO_NOTIFICATION_TYPE.keys())
             .order_by('id')
             .select_related('provider', 'node', 'user')
         )

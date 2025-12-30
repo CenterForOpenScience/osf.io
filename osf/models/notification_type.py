@@ -277,7 +277,7 @@ class NotificationType(models.Model):
             NotificationType.Type.FOLDER_CREATED.value,
         ]
 
-        if self.name in _global_file_updated and subscribed_object != ContentType.objects.get_for_model(AbstractNode):
+        if self.name in _global_file_updated and content_type != ContentType.objects.get_for_model(AbstractNode):
             frequency_data = NotificationSubscription.objects.filter(
                 user=user,
                 content_type=content_type,
@@ -289,7 +289,6 @@ class NotificationType(models.Model):
         elif self.name in _global_reviews:
             frequency_data = NotificationSubscription.objects.filter(
                 user=user,
-                content_type=content_type,
                 notification_type__name__in=_global_reviews,
             ).distinct('message_frequency').values_list('message_frequency', flat=True)
             if frequency_data.exists() and len(frequency_data) == 1:
