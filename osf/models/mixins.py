@@ -1432,7 +1432,7 @@ class ContributorMixin(models.Model):
             # Add default contributor permissions
             permissions = permissions or self.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-            self.add_permission(contrib_to_add, permissions, save=True)
+            self.add_permission(contrib_to_add, permissions, save=False)
             if make_curator:
                 contributor_obj.is_curator = True
             contributor_obj.save()
@@ -1482,11 +1482,13 @@ class ContributorMixin(models.Model):
         :param log: Add log to self
         :param save: Save after adding contributor
         """
+        users = []
         for contrib in contributors:
             self.add_contributor(
                 contributor=contrib['user'], permissions=contrib['permissions'],
                 visible=contrib['visible'], auth=auth, log=False, save=False,
             )
+            users.append(contrib['user'])
         if log and contributors:
             params = self.log_params
             params['contributors'] = [
@@ -1502,8 +1504,11 @@ class ContributorMixin(models.Model):
         if save:
             self.save()
 
+        return self.contributor_set.filter(user__in=users)
+
     def add_unregistered_contributor(self, fullname, email, auth, send_email=None,
-                                     visible=True, permissions=None, save=False, existing_user=None):
+                                     visible=True, permissions=None, save=True, existing_user=None,
+                                     log=True):
         """Add a non-registered contributor to the project.
 
         :param str fullname: The full name of the person.
@@ -1551,20 +1556,22 @@ class ContributorMixin(models.Model):
 
         self.add_contributor(
             contributor, permissions=permissions, auth=auth,
-            visible=visible, send_email=send_email, log=True, save=False
+            visible=visible, send_email=send_email, log=log, save=False
         )
         self._add_related_source_tags(contributor)
-        self.save()
+        if save:
+            self.save()
         return contributor
 
     def add_contributor_registered_or_not(self, auth, user_id=None,
                                           full_name=None, email=None, send_email=None,
-                                          permissions=None, bibliographic=True, index=None, save=False):
+                                          permissions=None, bibliographic=True, index=None, save=True,
+                                          user=None, log=True):
         OSFUser = apps.get_model('osf.OSFUser')
         send_email = send_email or self.contributor_email_template
 
         if user_id:
-            contributor = OSFUser.load(user_id)
+            contributor = user or OSFUser.load(user_id)
             if not contributor:
                 raise ValueError(f'User with id {user_id} was not found.')
 
@@ -1573,7 +1580,7 @@ class ContributorMixin(models.Model):
 
             if contributor.is_registered:
                 contributor = self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                                   permissions=permissions, send_email=send_email, save=True)
+                                                   permissions=permissions, send_email=send_email, save=save, log=log)
             else:
                 if not full_name:
                     raise ValueError(
@@ -1583,7 +1590,7 @@ class ContributorMixin(models.Model):
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=contributor.username, auth=auth,
                     send_email=send_email, permissions=permissions,
-                    visible=bibliographic, existing_user=contributor, save=True
+                    visible=bibliographic, existing_user=contributor, save=save, log=log
                 )
 
         else:
@@ -1592,23 +1599,79 @@ class ContributorMixin(models.Model):
                 raise ValidationValueError(f'{contributor.fullname} is already a contributor.')
 
             if contributor and contributor.is_registered:
-                self.add_contributor(contributor=contributor, auth=auth, visible=bibliographic,
-                                     send_email=send_email, permissions=permissions, save=True)
+                self.add_contributor(
+                    contributor=contributor,
+                    auth=auth,
+                    visible=bibliographic,
+                    send_email=send_email,
+                    permissions=permissions,
+                    save=save,
+                    log=log,
+                )
             else:
                 contributor = self.add_unregistered_contributor(
                     fullname=full_name, email=email, auth=auth,
                     send_email=send_email, permissions=permissions,
-                    visible=bibliographic, save=True
+                    visible=bibliographic, save=save, log=log
                 )
 
         auth.user.email_last_sent = timezone.now()
         auth.user.save()
 
         if index is not None:
-            self.move_contributor(contributor=contributor, index=index, auth=auth, save=True)
+            self.move_contributor(contributor=contributor, index=index, auth=auth, save=save)
 
         contributor_obj = self.contributor_set.get(user=contributor)
         return contributor_obj
+
+    def add_contributors_registered_or_not(self, contributors, auth=None, log=True, save=False):
+        """Add multiple contributors using the unified registered-or-not path.
+
+        Each item should be a dictionary with keys compatible with
+        `add_contributor_registered_or_not`, e.g.:
+            {
+                'user_id': '<user guid>',
+                'user': '<OSFUser>' or None,
+                'email': '<email>' or None,
+                'full_name': '<full name>' or None,
+                'send_email': '<email preference>' or None,
+                'permissions': <permission string>,
+                'bibliographic': <bool>,
+                'index': <int or None>,
+            }
+        """
+        results = []
+
+        for item in contributors:
+            contributor_obj = self.add_contributor_registered_or_not(
+                auth=auth,
+                user_id=item.get('user_id'),
+                user=item.get('user'),
+                full_name=item.get('full_name'),
+                email=item.get('email'),
+                send_email=item.get('send_email') or getattr(self, 'contributor_email_template', None),
+                permissions=item.get('permissions'),
+                bibliographic=item.get('bibliographic', True),
+                index=item.get('index'),
+                save=False,
+                log=False,
+            )
+            results.append(contributor_obj)
+
+        if log and results:
+            params = self.log_params
+            params['contributors'] = [c.user._id for c in results]
+            self.add_log(
+                action=self.log_class.CONTRIB_ADDED,
+                params=params,
+                auth=auth,
+                save=False,
+            )
+
+        if save:
+            self.save()
+
+        return results
 
     def replace_contributor(self, old, new):
         """
