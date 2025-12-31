@@ -82,12 +82,13 @@ def license():
 def make_complex_draft_registration(title, institution, description, category,
         write_contrib, license, subject, user):
     def make_draft_registration(node=None):
-        draft_registration = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data={},
-            node=node if node else None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data={},
+                node=node if node else None
+            )
         user.add_or_update_affiliated_institution(institution)
         draft_registration.set_title(title, Auth(user))
         draft_registration.set_description(description, Auth(user))

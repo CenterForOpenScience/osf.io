@@ -4,6 +4,7 @@ from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory
 from scripts.fix_registration_unclaimed_records import main as fix_records_script
 from osf_tests.utils import mock_archive
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -12,10 +13,6 @@ class TestFixRegistrationUnclaimedRecords:
     @pytest.fixture()
     def user(self):
         return UserFactory()
-
-    @pytest.fixture()
-    def project(self, user, auth, fake):
-        return ret
 
     @pytest.fixture()
     def auth(self, user):
@@ -49,8 +46,9 @@ class TestFixRegistrationUnclaimedRecords:
 
     @pytest.fixture()
     def registration(self, project, contributor_unregistered, contributor_unregistered_no_email):
-        with mock_archive(project, autoapprove=True) as registration:
-            return registration
+        with capture_notifications():
+            with mock_archive(project, autoapprove=True) as registration:
+                return registration
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_migrate_bad_data(self, user, project, registration, contributor_unregistered, contributor_unregistered_no_email):
