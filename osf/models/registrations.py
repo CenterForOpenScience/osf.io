@@ -1374,13 +1374,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not node:
             draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
-            initiator_permissions = draft.contributor_set.get(user=user).permission
+
+        current_contributors = draft.contributor_set.all()
+        for contributor in current_contributors:
             signals.contributor_added.send(
                 draft,
-                contributor=user,
-                auth=None,
-                notification_type=notification_type,
-                permissions=initiator_permissions
+                contributor=contributor.user,
+                auth=Auth(user) if user != contributor.user else None,
+                notification_type=notification_type if contributor.user.is_confirmed else NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION,
+                permissions=contributor.permission
             )
 
         return draft
