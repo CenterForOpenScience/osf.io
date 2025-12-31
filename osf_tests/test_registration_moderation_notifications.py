@@ -140,7 +140,7 @@ class TestRegistrationMachineNotification:
         assert notification['emits'][1]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert notification['emits'][1]['kwargs']['user'] == contrib
         assert notification['emits'][2]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
-        assert NotificationSubscription.objects.count() == 6
+        assert NotificationSubscription.objects.count() == 7
         digest = NotificationSubscription.objects.last()
         assert digest.user == moderator
 
