@@ -4,6 +4,7 @@ from framework.auth.core import Auth
 from osf_tests.factories import PreprintFactory, UserFactory, ProjectFactory
 from scripts.fix_registration_unclaimed_records import main as fix_records_script
 from osf_tests.utils import mock_archive
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -12,10 +13,6 @@ class TestFixRegistrationUnclaimedRecords:
     @pytest.fixture()
     def user(self):
         return UserFactory()
-
-    @pytest.fixture()
-    def project(self, user, auth, fake):
-        return ret
 
     @pytest.fixture()
     def auth(self, user):
@@ -27,21 +24,33 @@ class TestFixRegistrationUnclaimedRecords:
 
     @pytest.fixture()
     def contributor_unregistered(self, user, auth, project):
-        ret = project.add_unregistered_contributor(fullname='Johnny Git Gud', email='ford.prefect@hitchhikers.com', auth=auth)
+        ret = project.add_unregistered_contributor(
+            fullname='Jason Kelece',
+            email='burds@eagles.com',
+            auth=auth,
+            notification_type=False
+        )
         project.save()
         return ret
 
     @pytest.fixture()
     def contributor_unregistered_no_email(self, user, auth, project):
-        ret = project.add_unregistered_contributor(fullname='Johnny B. Bard', email='', auth=auth)
+        ret = project.add_unregistered_contributor(
+            fullname='Big Play Slay',
+            email='',
+            auth=auth,
+            notification_type=False
+        )
         project.save()
         return ret
 
     @pytest.fixture()
     def registration(self, project, contributor_unregistered, contributor_unregistered_no_email):
-        with mock_archive(project, autoapprove=True) as registration:
-            return registration
+        with capture_notifications():
+            with mock_archive(project, autoapprove=True) as registration:
+                return registration
 
+    @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_migrate_bad_data(self, user, project, registration, contributor_unregistered, contributor_unregistered_no_email):
         contributor_unregistered.refresh_from_db()
         contributor_unregistered_no_email.refresh_from_db()

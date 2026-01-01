@@ -18,6 +18,7 @@ from osf_tests.factories import (
     RegistrationProviderFactory,
 )
 from osf_tests.utils import mock_archive
+from tests.utils import capture_notifications
 from website import settings
 from website.search import elastic_search
 from website.search import search
@@ -849,13 +850,14 @@ class TestSearchCollections(ApiSearchTestCase):
             node_with_abstract, node_private, registration_collection, registration_one, registration_two,
             registration_private, reg_with_abstract):
 
-        collection_public.collect_object(node_one, user)
-        collection_public.collect_object(node_two, user)
-        collection_public.collect_object(node_private, user)
+        with capture_notifications():
+            collection_public.collect_object(node_one, user)
+            collection_public.collect_object(node_two, user)
+            collection_public.collect_object(node_private, user)
 
-        registration_collection.collect_object(registration_one, user)
-        registration_collection.collect_object(registration_two, user)
-        registration_collection.collect_object(registration_private, user)
+            registration_collection.collect_object(registration_one, user)
+            registration_collection.collect_object(registration_two, user)
+            registration_collection.collect_object(registration_private, user)
 
         # test_search_collections_no_auth
         res = app.get(url_collection_search)
@@ -889,8 +891,9 @@ class TestSearchCollections(ApiSearchTestCase):
         assert total == num_results == 2
 
         # test_search_collections_by_submission_abstract
-        collection_public.collect_object(node_with_abstract, user)
-        registration_collection.collect_object(reg_with_abstract, user)
+        with capture_notifications():
+            collection_public.collect_object(node_with_abstract, user)
+            registration_collection.collect_object(reg_with_abstract, user)
         url = '{}?q={}'.format(url_collection_search, 'KHADJA')
         res = app.get(url)
         assert res.status_code == 200
@@ -909,15 +912,16 @@ class TestSearchCollections(ApiSearchTestCase):
             self, app, url_collection_search, user, node_one, node_two, collection_public,
             node_with_abstract, node_private, registration_collection, registration_one,
             registration_two, registration_private, reg_with_abstract):
-        collection_public.collect_object(node_one, user, status='asdf', issue='0', volume='1', program_area='asdf')
-        collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
-        collection_public.collect_object(node_with_abstract, user, status='asdf', grade_levels='super')
-        collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
+        with capture_notifications():
+            collection_public.collect_object(node_one, user, status='asdf', issue='0', volume='1', program_area='asdf')
+            collection_public.collect_object(node_two, user, collected_type='asdf', status='lkjh')
+            collection_public.collect_object(node_with_abstract, user, status='asdf', grade_levels='super')
+            collection_public.collect_object(node_private, user, status='asdf', collected_type='asdf')
 
-        registration_collection.collect_object(registration_one, user, status='asdf')
-        registration_collection.collect_object(registration_two, user, collected_type='asdf', status='lkjh')
-        registration_collection.collect_object(reg_with_abstract, user, status='asdf')
-        registration_collection.collect_object(registration_private, user, status='asdf', collected_type='asdf')
+            registration_collection.collect_object(registration_one, user, status='asdf')
+            registration_collection.collect_object(registration_two, user, collected_type='asdf', status='lkjh')
+            registration_collection.collect_object(reg_with_abstract, user, status='asdf')
+            registration_collection.collect_object(registration_private, user, status='asdf', collected_type='asdf')
 
         # test_search_empty
         payload = self.post_payload()
@@ -1015,8 +1019,9 @@ class TestSearchCollections(ApiSearchTestCase):
             node_with_abstract, node_private, registration_collection, registration_one,
             registration_two, registration_private, reg_with_abstract):
 
-        collection_public.collect_object(node_one, user, disease='illness', data_type='realness')
-        collection_public.collect_object(node_two, user, data_type='realness')
+        with capture_notifications():
+            collection_public.collect_object(node_one, user, disease='illness', data_type='realness')
+            collection_public.collect_object(node_two, user, data_type='realness')
 
         payload = self.post_payload(disease='illness')
         res = app.post_json_api(url_collection_search, payload)

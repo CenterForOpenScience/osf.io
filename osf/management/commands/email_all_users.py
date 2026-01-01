@@ -3,6 +3,7 @@
 #   2. It takes a long time to run and the site doesn't need to be down that long.
 
 import logging
+import json
 
 
 import django
@@ -11,15 +12,13 @@ django.setup()
 from django.core.management.base import BaseCommand
 from framework import sentry
 
-from website import mails
-
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 
 logger = logging.getLogger(__name__)
 
 OFFSET = 500000
 
-def email_all_users(email_template, dry_run=False, ids=None, start_id=0, offset=OFFSET):
+def email_all_users(email_template, dry_run=False, ids=None, start_id=0, offset=OFFSET, context=None):
 
     if ids:
         active_users = OSFUser.objects.filter(id__in=ids)
@@ -36,18 +35,18 @@ def email_all_users(email_template, dry_run=False, ids=None, start_id=0, offset=
 
     logger.info(f'About to send an email to {total_active_users} users.')
 
-    template = getattr(mails, email_template, None)
-    if not template:
+    template = NotificationType.objects.filter(name=email_template)
+    if not template.exists():
         raise RuntimeError('Invalid email template specified!')
+    template = template.first()
 
     total_sent = 0
     for user in active_users.iterator():
         logger.info(f'Sending email to {user.id}')
         try:
-            mails.send_mail(
-                to_addr=user.email,
-                mail=template,
-                given_name=user.given_name or user.fullname,
+            template.emit(
+                user=user,
+                event_context=context
             )
         except Exception as e:
             logger.error(f'Exception encountered sending email to {user.id}')
@@ -103,12 +102,19 @@ class Command(BaseCommand):
             help=f'How many users to email in this run, default is {OFFSET}'
         )
 
+        parser.add_argument(
+            '--context',
+            type=json.loads,
+            help='JSON dict with extra context'
+        )
+
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         template = options.get('template')
         start_id = options.get('start_id')
         ids = options.get('ids')
         offset = options.get('offset', OFFSET)
-        email_all_users(template, dry_run, start_id=start_id, ids=ids, offset=offset)
+        context = options.get('context', {})
+        email_all_users(template, dry_run, start_id=start_id, ids=ids, offset=offset, context=context)
         if dry_run:
             raise RuntimeError('Dry run, only superusers emailed')

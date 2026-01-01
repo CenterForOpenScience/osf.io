@@ -2,7 +2,7 @@ import logging
 
 
 from tests.base import OsfTestCase
-from website.models import PreprintProvider
+from osf.models import PreprintProvider
 from scripts.update_taxonomies import main as taxonomy_main
 from scripts.populate_preprint_providers import main as populate_main
 from scripts.populate_preprint_providers import STAGING_PREPRINT_PROVIDERS, PROD_PREPRINT_PROVIDERS
