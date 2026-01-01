@@ -26,9 +26,6 @@ class Notification(models.Model):
             email_context=None,
             save=True,
     ):
-        """
-
-        """
         recipient_address = destination_address or self.subscription.user.email or self.subscription.user.emails.first().address
         if not api_settings.CI_ENV:
             logging.info(
