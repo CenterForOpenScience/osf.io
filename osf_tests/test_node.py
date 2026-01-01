@@ -2565,12 +2565,13 @@ class TestPrivateLinks:
         user = proj.creator
         schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            node=proj,
-            user=user,
-            schema=schema,
-            data=data,
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=proj,
+                user=user,
+                schema=schema,
+                data=data,
+            )
         assert user == draft.initiator
         assert schema == draft.registration_schema
         assert data == draft.registration_metadata

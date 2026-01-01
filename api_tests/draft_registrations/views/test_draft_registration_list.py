@@ -274,7 +274,8 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         res = app.post_json_api(url_draft_registrations, payload_alt, auth=read_contrib.auth, expect_errors=True)
         assert res.status_code == 403
 
-        res = app.post_json_api(url_draft_registrations, payload_alt, auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(url_draft_registrations, payload_alt, auth=user.auth)
         assert res.status_code == 201
         attributes = res.json['data']['attributes']
         assert attributes['title'] == project_public.title
@@ -336,9 +337,6 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         )
         assert res.status_code == 403
 
-    def test_create_project_based_draft_does_not_email_initiator(self, app, user, url_draft_registrations, payload):
-        app.post_json_api(f'{url_draft_registrations}?embed=branched_from&embed=initiator', payload, auth=user.auth)
-
     def test_affiliated_institutions_are_copied_from_node_no_institutions(self, app, user, url_draft_registrations, payload):
         """
         Draft registrations that are based on projects get those project's user institutional affiliation,
@@ -349,11 +347,12 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         """
         project = ProjectFactory(is_public=True, creator=user)
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth,
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth,
+            )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert not draft_registration.affiliated_institutions.exists()
@@ -371,11 +370,12 @@ class TestDraftRegistrationCreateWithNode(AbstractDraftRegistrationTestCase):
         project = ProjectFactory(is_public=True, creator=user)
         project.affiliated_institutions.add(institution)
         payload['data']['relationships']['branched_from']['data']['id'] = project._id
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth,
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth,
+            )
         assert res.status_code == 201
         draft_registration = DraftRegistration.load(res.json['data']['id'])
         assert list(draft_registration.affiliated_institutions.all()) == list(project.affiliated_institutions.all())

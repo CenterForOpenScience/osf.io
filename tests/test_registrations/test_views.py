@@ -174,7 +174,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = target.web_url_for('new_draft_registration')
 
-        res = self.app.post(url, data=payload, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, data=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_302_FOUND
         target.reload()
         draft = DraftRegistration.objects.get(branched_from=target)

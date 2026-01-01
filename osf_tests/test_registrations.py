@@ -447,8 +447,9 @@ class TestRegisterNodeContributors:
 
     @pytest.fixture()
     def registration(self, project_two, component, contributor_unregistered, contributor_unregistered_no_email):
-        with mock_archive(project_two, autoapprove=True) as registration:
-            return registration
+        with capture_notifications():
+            with mock_archive(project_two, autoapprove=True) as registration:
+                return registration
 
     @pytest.mark.usefixtures('mock_gravy_valet_get_verified_links')
     def test_unregistered_contributors_unclaimed_records_get_copied(self, user, project, component, registration, contributor_unregistered, contributor_unregistered_no_email):

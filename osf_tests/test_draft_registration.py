@@ -221,12 +221,12 @@ class TestDraftRegistrations:
         node.set_subjects([[subject._id]], auth=Auth(node.creator))
         node.affiliated_institutions.add(institution)
         node.save()
-
-        draft = DraftRegistration.create_from_node(
-            node=node,
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=node,
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         # Assert existing metadata-like node attributes are copied to the draft
         assert draft.title == title
@@ -292,15 +292,15 @@ class TestDraftRegistrations:
         write_contrib = factories.UserFactory()
         read_contrib = factories.UserFactory()
         non_contrib = factories.UserFactory()
-
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            node=project,
-            schema=factories.get_default_metaschema()
-        )
-        project.add_contributor(non_contrib, ADMIN, save=True)
-        draft.add_contributor(write_contrib, WRITE, save=True)
-        draft.add_contributor(read_contrib, READ, save=True)
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                node=project,
+                schema=factories.get_default_metaschema()
+            )
+            project.add_contributor(non_contrib, ADMIN, save=True)
+            draft.add_contributor(write_contrib, WRITE, save=True)
+            draft.add_contributor(read_contrib, READ, save=True)
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]
