@@ -11,7 +11,7 @@ import re
 
 from tests.base import ApiTestCase, DbTestCase
 from osf_tests import factories
-from tests.utils import make_drf_request_with_version
+from tests.utils import make_drf_request_with_version, capture_notifications
 
 from osf.models import RegistrationSchema
 
@@ -142,7 +142,8 @@ class TestSerializerMetaType(ApiTestCase):
                 }
             }
         }
-        res = self.app.post_json_api(url, payload, auth=user_auth.auth)
+        with capture_notifications():
+            res = self.app.post_json_api(url, payload, auth=user_auth.auth)
         assert res.json['data']['type'] == 'draft-registrations'
         assert res.json['meta']['warning'] == 'As of API Version {0}, all types are now Kebab-case. {0} will accept snake_case, but this will be deprecated in future versions.'.format(KEBAB_CASE_VERSION)
 

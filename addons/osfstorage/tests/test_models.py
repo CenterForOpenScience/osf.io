@@ -9,7 +9,7 @@ from django.conf import settings as django_conf_settings
 
 from framework.auth import Auth
 from addons.osfstorage.models import OsfStorageFile, OsfStorageFileNode, OsfStorageFolder
-from osf.models import BaseFileNode
+from osf.models import BaseFileNode, NotificationType
 from osf.exceptions import ValidationError
 from osf.utils.permissions import WRITE, ADMIN
 
@@ -24,6 +24,7 @@ import datetime
 from osf import models
 from addons.osfstorage import utils
 from addons.osfstorage import settings
+from tests.utils import capture_notifications
 from website.files.exceptions import FileNodeCheckedOutError, FileNodeIsPrimaryFile
 
 SessionStore = import_module(django_conf_settings.SESSION_ENGINE).SessionStore
@@ -745,7 +746,11 @@ class TestNodeSettingsModel:
             version = factories.FileVersionFactory()
             record.add_version(version)
 
-        fork = node.fork_node(auth_obj)
+        with capture_notifications() as notifications:
+            fork = node.fork_node(auth_obj)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
         fork_node_settings = fork.get_addon('osfstorage')
         fork_node_settings.reload()
 
@@ -757,7 +762,8 @@ class TestNodeSettingsModel:
         """
         Despite different user regions defaults, the forked node always stay in the same region as it's original node.
         """
-        fork = node.fork_node(Auth(user2))
+        with capture_notifications():
+            fork = node.fork_node(Auth(user2))
         assert fork.get_addon('osfstorage').region_id == region.id
 
         # don't inherit or override region
