@@ -129,6 +129,57 @@ class TestDataCiteClient:
         assert resource_type.text == 'Pre-registration'
         assert resource_type.attrib['resourceTypeGeneral'] == 'Dataset'
 
+    def test_datacite_creators_follow_osf_contributor_order(self, datacite_client):
+        registration = RegistrationFactory(is_public=True)
+        first = registration.creator
+        second = AuthUserFactory()
+        third = AuthUserFactory()
+        registration.add_contributor(third, visible=True)
+        registration.add_contributor(second, visible=True)
+        registration.save()
+
+        visible_contributors = list(registration.visible_contributors)
+        correct_order = [u.fullname for u in visible_contributors]
+        assert correct_order == [
+            first.fullname,
+            third.fullname,
+            second.fullname,
+        ]
+
+        metadata_xml = datacite_client.build_metadata(registration)
+        parser = lxml.etree.XMLParser(ns_clean=True, recover=True, encoding='utf-8')
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        creators_el = root.find('{%s}creators' % schema40.ns[None])
+        creator_elems = creators_el.findall('{%s}creator' % schema40.ns[None])
+        xml_creator_names = [
+            c.find('{%s}creatorName' % schema40.ns[None]).text
+            for c in creator_elems
+        ]
+        assert xml_creator_names == correct_order
+
+        auth = Auth(first)
+        registration.move_contributor(first, auth=auth, index=2, save=True)
+        registration.refresh_from_db()
+
+        visible_contributors = list(registration.visible_contributors)
+        new_correct_order = [u.fullname for u in visible_contributors]
+        assert new_correct_order == [
+            third.fullname,
+            second.fullname,
+            first.fullname,
+        ]
+
+        metadata_xml = datacite_client.build_metadata(registration)
+        root = lxml.etree.fromstring(metadata_xml, parser=parser)
+        creators_el = root.find('{%s}creators' % schema40.ns[None])
+        creator_elems = creators_el.findall('{%s}creator' % schema40.ns[None])
+        xml_creator_names = [
+            c.find('{%s}creatorName' % schema40.ns[None]).text
+            for c in creator_elems
+        ]
+
+        assert xml_creator_names == new_correct_order
+
     def test_datacite_format_contributors(self, datacite_client):
         visible_contrib = AuthUserFactory()
         visible_contrib2 = AuthUserFactory()
