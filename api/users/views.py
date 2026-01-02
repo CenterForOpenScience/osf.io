@@ -853,7 +853,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
-                reset_link = f'{settings.DOMAIN}passwordreset/{user_obj._id}/{user_obj.verification_key_v2['token']}/'
+                reset_link = f'{settings.DOMAIN}resetpassword/{user_obj._id}/{user_obj.verification_key_v2["token"]}/'
                 if institutional:
                     notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
                 else:
