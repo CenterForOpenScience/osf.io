@@ -182,14 +182,10 @@ NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
 # Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
-PREREG_AGE_LIMIT = timedelta(weeks=12)
-PREREG_WAIT_TIME = timedelta(weeks=2)
 WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
-WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
-WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
 
 # Configuration for NO_LOGIN_EMAIL (NotificationType.Type.USER_NO_LOGIN)
 MAX_DAILY_NO_LOGIN_EMAILS = 1000
