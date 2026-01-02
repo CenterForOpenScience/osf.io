@@ -828,6 +828,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         destination=destination
     )
 
+    logout_query = ''
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
     except OSFUser.DoesNotExist:
@@ -851,9 +852,11 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
             'email': merge_target.email,
         }
         notification_type = NotificationType.Type.USER_CONFIRM_MERGE
+        logout_query = '?logout=1'
     elif user.is_active:
         # Add email confirmation
         notification_type = NotificationType.Type.USER_CONFIRM_EMAIL
+        logout_query = '?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         notification_type = campaigns.email_template_for_campaign(campaign)
@@ -865,7 +868,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         destination_address=email,
         event_context={
             'user_fullname': user.fullname,
-            'confirmation_url': f'{confirmation_url}?logout=1',
+            'confirmation_url': f'{confirmation_url}{logout_query}',
             'can_change_preferences': False,
             'external_id_provider': external_id_provider,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
