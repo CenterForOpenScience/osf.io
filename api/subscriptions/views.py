@@ -92,7 +92,7 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
             NotificationTypeEnum.ADDON_FILE_MOVED.value,
             NotificationTypeEnum.ADDON_FILE_REMOVED.value,
             NotificationTypeEnum.FOLDER_CREATED.value,
-            NotificationTypeEnum.Type.FILE_UPDATED.value,
+            NotificationTypeEnum.FILE_UPDATED.value,
         ]
 
         full_set_of_types = _global_reviews_provider + _global_reviews_user + _global_file_updated + _node_file_updated
