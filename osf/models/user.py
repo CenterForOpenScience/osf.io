@@ -961,6 +961,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
+    @property
+    def gdpr_deleted(self):
+        if not self.is_disabled:
+            return False
+        if self.fullname != 'Deleted user':
+            return False
+        return not self.emails.exists()
+
     def deactivate_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user

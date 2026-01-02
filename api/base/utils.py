@@ -148,6 +148,8 @@ def get_object_or_error(model_or_qs, query_or_pk=None, request=None, display_nam
     # users who are unconfirmed or unregistered, but not users who have been
     # disabled.
     if model_cls is OSFUser and obj.is_disabled:
+        if getattr(obj, 'gdpr_deleted', False):
+            raise NotFound
         raise UserGone(user=obj)
     if check_deleted and (model_cls is not OSFUser and not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False) or getattr(obj, 'deleted', False)):
         if display_name is None:
