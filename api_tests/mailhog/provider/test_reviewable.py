@@ -1,7 +1,7 @@
 import pytest
 from waffle.testutils import override_switch
 from osf import features
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf.utils.workflows import DefaultStates
 from osf_tests.factories import PreprintFactory, AuthUserFactory
 from tests.utils import get_mailhog_messages, delete_mailhog_messages, capture_notifications, assert_emails
@@ -20,7 +20,7 @@ class TestReviewable:
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_submit(user)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
         delete_mailhog_messages()
 
@@ -30,7 +30,7 @@ class TestReviewable:
             preprint.run_reject(user, 'comment')
 
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.REVIEWS_SUBMISSION_STATUS
         assert preprint.machine_state == DefaultStates.REJECTED.value
 
         massages = get_mailhog_messages()
@@ -41,7 +41,7 @@ class TestReviewable:
         with capture_notifications(passthrough=True) as notifications:
             preprint.run_submit(user)  # Resubmission alerts users and moderators
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION
         assert preprint.machine_state == DefaultStates.PENDING.value
 
         messages = get_mailhog_messages()

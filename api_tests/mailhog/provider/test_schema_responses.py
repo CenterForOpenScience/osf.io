@@ -2,7 +2,7 @@ import pytest
 from waffle.testutils import override_switch
 from osf import features
 from api.providers.workflows import Workflows
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf.models import schema_response  # import module for mocking purposes
 from osf.utils.workflows import ApprovalStates
 from osf_tests.factories import AuthUserFactory, ProjectFactory, RegistrationFactory, RegistrationProviderFactory
@@ -125,9 +125,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.submit(user=admin_user, required_approvers=[admin_user])
         assert len(notifications['emits']) == 3
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_SUBMITTED
+        assert notifications['emits'][2]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_SUBMITTED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -145,9 +145,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.approve(user=alternate_user)
         assert len(notifications['emits']) == 3
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][2]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -164,9 +164,9 @@ class TestUnmoderatedSchemaResponseApprovalFlows:
         with capture_notifications(passthrough=True) as notifications:
             revised_response.reject(user=admin_user)
         assert len(notifications['emits']) == 3
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
-        assert notifications['emits'][2]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_REJECTED
+        assert notifications['emits'][2]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_REJECTED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -207,9 +207,9 @@ class TestModeratedSchemaResponseApprovalFlows:
             revised_response.approve(user=admin_user)
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == moderator
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications['emits'][1]['kwargs']['user'] == admin_user
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)
@@ -226,9 +226,9 @@ class TestModeratedSchemaResponseApprovalFlows:
             revised_response.approve(user=admin_user)
         assert len(notifications['emits']) == 2
         assert notifications['emits'][0]['kwargs']['user'] == moderator
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_NEW_PENDING_SUBMISSIONS
         assert notifications['emits'][1]['kwargs']['user'] == admin_user
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_SCHEMA_RESPONSE_APPROVED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_SCHEMA_RESPONSE_APPROVED
         massages = get_mailhog_messages()
         assert massages['count'] == len(notifications['emails'])
         assert_emails(massages, notifications)

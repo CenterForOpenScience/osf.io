@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     RegistrationFactory,
     InstitutionFactory,
@@ -409,7 +409,7 @@ class TestInstitutionRelationshipNodes:
 
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
 
     def test_email_sent_on_affiliation_removal(self, app, admin, institution, node_public, url_institution_nodes):
         current_institution = InstitutionFactory()
@@ -432,7 +432,7 @@ class TestInstitutionRelationshipNodes:
         assert res.status_code == 204
 
         assert len(notifications['emits']) == 2
-        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert notifications['emits'][0]['kwargs']['user'] == node_public.creator
-        assert notifications['emits'][1]['type'] == NotificationType.Type.NODE_AFFILIATION_CHANGED
+        assert notifications['emits'][1]['type'] == NotificationTypeEnum.NODE_AFFILIATION_CHANGED
         assert notifications['emits'][1]['kwargs']['user'] == admin

@@ -9,7 +9,7 @@ from rest_framework import status as http_status
 from addons.github.tests.factories import GitHubAccountFactory
 from framework.celery_tasks import handlers
 from osf.external.spam import tasks as spam_tasks
-from osf.models import NotableDomain, NotificationType
+from osf.models import NotableDomain, NotificationTypeEnum
 from osf_tests.factories import (
     fake_email,
     ApiOAuth2ApplicationFactory,
@@ -728,7 +728,7 @@ class TestUserAccount(OsfTestCase):
         with capture_notifications() as notifications:
             self.app.post(url, auth=self.user.auth)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_REQUEST_EXPORT
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.DESK_REQUEST_EXPORT
 
         res = self.app.post(url, auth=self.user.auth)
         assert res.status_code == 400

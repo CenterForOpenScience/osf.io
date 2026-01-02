@@ -1,7 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
-from osf.models import NotificationType
+from osf.models import NotificationTypeEnum
 from osf_tests.factories import (
     AuthUserFactory,
     PreprintProviderFactory,
@@ -89,7 +89,7 @@ class ProviderModeratorListTestClass:
         assert res.json['data']['id'] == nonmoderator._id
         assert res.json['data']['attributes']['permission_group'] == 'moderator'
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        assert notifications['emits'][0]['type'] == NotificationTypeEnum.PROVIDER_MODERATOR_ADDED
 
     def test_list_post_admin_failure_existing_moderator(self, app, url, moderator, admin):
         payload = self.create_payload(user_id=moderator._id, permission_group='moderator')

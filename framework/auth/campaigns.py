@@ -4,7 +4,7 @@ import threading
 from django.utils import timezone
 
 from website import settings
-from osf.models import PreprintProvider, NotificationType
+from osf.models import PreprintProvider, NotificationTypeEnum
 from website.settings import DOMAIN, CAMPAIGN_REFRESH_THRESHOLD
 from website.util.metrics import OsfSourceTags, OsfClaimedTags, CampaignSourceTags, CampaignClaimedTags, provider_source_tag
 from framework.utils import throttle_period_expired
@@ -26,7 +26,7 @@ def get_campaigns():
                 'erpc': {
                     'system_tag': CampaignSourceTags.ErpChallenge.value,
                     'redirect_url': furl(DOMAIN).add(path='erpc/').url,
-                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_ERPC,
+                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_ERPC,
                     'login_type': 'native',
                 },
             }
@@ -44,12 +44,12 @@ def get_campaigns():
             preprint_providers = PreprintProvider.objects.all()
             for provider in preprint_providers:
                 if provider._id == 'osf':
-                    confirmation_email_template = NotificationType.Type.USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF
+                    confirmation_email_template = NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF
                     name = 'OSF'
                     url_path = 'preprints/'
                     external_url = None
                 else:
-                    confirmation_email_template = NotificationType.Type.USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED
+                    confirmation_email_template = NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED
 
                     name = provider.name
                     url_path = f'preprints/{provider._id}'
@@ -85,7 +85,7 @@ def get_campaigns():
                 'osf-registered-reports': {
                     'system_tag': CampaignSourceTags.OsfRegisteredReports.value,
                     'redirect_url': furl(DOMAIN).add(path='rr/').url,
-                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF,
+                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF,
                     'login_type': 'proxy',
                     'provider': 'osf',
                     'logo': settings.OSF_REGISTRIES_LOGO
@@ -96,7 +96,7 @@ def get_campaigns():
                 'agu_conference_2023': {
                     'system_tag': CampaignSourceTags.AguConference2023.value,
                     'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023,
+                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE_2023,
                     'login_type': 'native',
                 }
             })
@@ -105,7 +105,7 @@ def get_campaigns():
                 'agu_conference': {
                     'system_tag': CampaignSourceTags.AguConference.value,
                     'redirect_url': furl(DOMAIN).add(path='dashboard/').url,
-                    'confirmation_email_template': NotificationType.Type.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE,
+                    'confirmation_email_template': NotificationTypeEnum.USER_CAMPAIGN_CONFIRM_EMAIL_AGU_CONFERENCE,
                     'login_type': 'native',
                 }
             })
