@@ -2,6 +2,15 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.1.1 (2026-01-02)
+===================
+
+- Notifications Refactor Phase 2 - UAT Hotfix Part 1
+  * Fix reset password url
+  * Fix logout query for new user confirmation url
+  * Fix new user default notification subscription
+  * Clean-up / Sync settings
+
 26.1.0 (2026-01-01)
 ===================
 
