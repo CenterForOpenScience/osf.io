@@ -869,6 +869,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
         signals.user_account_merged.send(user)
 
+        from api.share.utils import update_share
+
+        for node in user.contributed:
+            try:
+                update_share(node)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
+
+        for preprint in user.preprints.all():
+            try:
+                update_share(preprint)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
