@@ -708,6 +708,12 @@ class NodeReindexShare(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         update_share(node)
+        messages.success(
+            request,
+            'Reindex request has been sent to SHARE. '
+            'Changes typically appear in OSF Search within about 5 minutes, '
+            'subject to background queue load and SHARE availability.'
+        )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
