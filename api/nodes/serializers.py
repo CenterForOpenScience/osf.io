@@ -1,3 +1,5 @@
+import functools
+
 from django.db import connection
 from packaging.version import Version
 
@@ -1221,15 +1223,37 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
 
+    def _parse_payload_item(self, item, user_map):
+        uid = item.get('_id')
+        user = user_map.get(uid)
+        email = item.get('user', {}).get('email', None)
+        full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
+        if not uid and not full_name:
+            raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
+        return {
+            'user_id': uid,
+            'user': user,
+            'email': email,
+            'full_name': full_name,
+            'send_email': self.context['request'].GET.get('send_email') or self.context['default_email'],
+            'permissions': osf_permissions.get_contributor_proposed_permissions(item),
+            'bibliographic': item.get('bibliographic'),
+            'index': item.get('_order') if '_order' in item else None,
+        }
+
+    def _add_contributors_to_node(self, node, payload, auth):
+        try:
+            return node.add_contributors_registered_or_not(payload, auth=auth, save=True)
+        except ValidationError as e:
+            raise exceptions.ValidationError(detail=e.messages[0])
+        except ValueError as e:
+            raise exceptions.NotFound(detail=e.args[0])
+
     def create(self, validated_data):
         request = self.context['request']
         node = self.context['resource']
         auth = Auth(request.user)
 
-        def _perm(item):
-            return osf_permissions.get_contributor_proposed_permissions(item)
-
-        send_email_default = request.GET.get('send_email') or self.context['default_email']
         # Preload users once and pass through to the bulk method (also reused for children)
         user_ids = {item.get('_id') for item in validated_data if item.get('_id')}
         user_map = {}
@@ -1237,31 +1261,10 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
             for u in OSFUser.objects.filter(guids___id__in=user_ids):
                 user_map[u._id] = u
 
-        payload = []
-        for item in validated_data:
-            uid = item.get('_id')
-            user = user_map.get(uid)
-            email = item.get('user', {}).get('email', None)
-            full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
-            if not uid and not full_name:
-                raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
-            payload.append({
-                'user_id': uid,
-                'user': user,
-                'email': email,
-                'full_name': full_name,
-                'send_email': send_email_default,
-                'permissions': _perm(item),
-                'bibliographic': item.get('bibliographic'),
-                'index': item.get('_order') if '_order' in item else None,
-            })
+        _parse_payload_item = functools.partial(self._parse_payload_item, user_map=user_map)
 
-        try:
-            contribs = node.add_contributors_registered_or_not(payload, auth=auth, save=True)
-        except ValidationError as e:
-            raise exceptions.ValidationError(detail=e.messages[0])
-        except ValueError as e:
-            raise exceptions.NotFound(detail=e.args[0])
+        payload = list(map(_parse_payload_item, validated_data))
+        contribs = self._add_contributors_to_node(node, payload, auth)
 
         child_to_items = {}
         for item in validated_data:
@@ -1274,30 +1277,8 @@ class NodeContributorsBulkCreateListSerializer(JSONAPIListSerializer):
             child = AbstractNode.load(child_id)
             if not child:
                 continue
-            child_payload = []
-            for item in items:
-                uid = item.get('_id')
-                user = user_map.get(uid)
-                email = item.get('user', {}).get('email', None)
-                full_name = item.get('full_name') or (user.fullname if user and not user.is_registered else None)
-                if not uid and not full_name:
-                    raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
-                child_payload.append({
-                    'user_id': uid,
-                    'user': user,
-                    'email': email,
-                    'full_name': full_name,
-                    'send_email': send_email_default,
-                    'permissions': _perm(item),
-                    'bibliographic': item.get('bibliographic'),
-                    'index': item.get('_order') if '_order' in item else None,
-                })
-            try:
-                child.add_contributors_registered_or_not(child_payload, auth=auth, save=True)
-            except ValidationError as e:
-                raise exceptions.ValidationError(detail=e.messages[0])
-            except ValueError as e:
-                raise exceptions.NotFound(detail=e.args[0])
+            child_payload = list(map(_parse_payload_item, items))
+            self._add_contributors_to_node(child, child_payload, auth)
 
         return contribs
 
