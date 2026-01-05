@@ -180,16 +180,19 @@ MAILCHIMP_LIST_MAP = {
 }
 NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
-# Triggered emails
+# Triggered emails - updated by Notification Refactor release
 OSF_HELP_LIST = 'Open Science Framework Help'
-WAIT_BETWEEN_MAILS = timedelta(days=7)
-NO_ADDON_WAIT_TIME = timedelta(weeks=8)
-NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
-NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+WAIT_BETWEEN_MAILS = timedelta(days=7)  # Deprecated setting, used by deprecated `scripts.send_queued_mails`
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)  # 2 months for "Link an add-on to your OSF project" email
+NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" email
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
 
-# Configuration for NO_LOGIN_EMAIL (NotificationType.Type.USER_NO_LOGIN)
+# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+# Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
+# have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
+# already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.
 MAX_DAILY_NO_LOGIN_EMAILS = 1000
-NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 1)
+NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 5)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
