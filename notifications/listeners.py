@@ -93,6 +93,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
 
     provider = resource.provider
     context['provider_id'] = provider.id
+    context['referrer_fullname'] = user.fullname
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
