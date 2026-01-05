@@ -1166,6 +1166,7 @@ groups = ["main"]
 files = [
     {file = "django-sendgrid-v5-1.2.3.tar.gz", hash = "sha256:3887aafbb10d5b808efc2c1031dcd96fd357d542eb5affe38fef07cc0f3cfae9"},
     {file = "django_sendgrid_v5-1.2.3-py2.py3-none-any.whl", hash = "sha256:2d2fa8a085d21c95e5f97fc60b61f199ccc57a27df8da90cd3f29a5702346dc6"},
+    {file = "django_sendgrid_v5-1.2.3-py3-none-any.whl", hash = "sha256:f6a44ee37c1c3cc7d683a43c55ead530417be1849a8a41bde02b158009559d9d"},
 ]
 
 [package.dependencies]
@@ -4502,7 +4503,7 @@ name = "waitress"
 version = "3.0.1"
 description = "Waitress WSGI server"
 optional = false
-python-versions = ">=3.8.0"
+python-versions = ">=3.9.0"
 groups = ["dev"]
 files = [
     {file = "waitress-3.0.1-py3-none-any.whl", hash = "sha256:26cdbc593093a15119351690752c99adc13cbc6786d75f7b6341d1234a3730ac"},
@@ -4714,4 +4715,4 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "70977c258a9b04b3dc91d6bb3dc12f0f5cd9782813ddb9fc381255c4562b0579"
+content-hash = "2bc7e95f03d05e8b3335514e887b590acdab5cb2a44fc47bde870bdf8e465bf2"
