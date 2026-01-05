@@ -26,6 +26,7 @@ from website import settings
 
 from django.contrib.messages.storage.fallback import FallbackStorage
 from osf.migrations import update_provider_auth_groups
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -318,7 +319,8 @@ class TestEditModerators:
         messages = FallbackStorage(req)
         setattr(req, '_messages', messages)
 
-        res = add_moderator_view.post(req)
+        with capture_notifications():
+            res = add_moderator_view.post(req)
         assert res.status_code == 302
         assert user in provider.get_group('moderator').user_set.all()
 

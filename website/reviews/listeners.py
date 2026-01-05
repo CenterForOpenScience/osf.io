@@ -26,6 +26,7 @@ def reviews_notification(self, creator, template, context, action):
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
     context['referrer_fullname'] = user.fullname
+    context['requester_fullname'] = user.fullname
     provider = resource.provider
     from osf.models import NotificationType
 

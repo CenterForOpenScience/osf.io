@@ -2,6 +2,15 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.1.2 (2026-01-05)
+===================
+
+- Notifications Refactor Phase 2 - UAT Hotfix Part 2
+  * Fix adding moderator email in admin
+  * Fix preprint/registration withdrawal request email in digest
+  * Fix subjects for schema response update emails
+  * Update defauls for triggered emails
+
 26.1.1 (2026-01-02)
 ===================
 

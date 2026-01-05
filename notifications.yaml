@@ -583,28 +583,28 @@ notification_types:
     tests: ['api_tests/nodes/views/test_node_forks_list.py']
 
   - name: node_schema_response_initiated
-    subject: 'Schema Response Initiated'
+    subject: 'Updates for {resource_type} {title} are in progress'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_initiated.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_submitted
-    subject: 'Schema Response Submitted'
+    subject: 'Updates for {resource_type} {title} are pending Admin approval'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_pending_approval.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_approved
-    subject: 'Schema Response Approved'
+    subject: 'The updates for {resource_type} {title} have been approved'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_approved.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_rejected
-    subject: 'Schema Response Rejected'
+    subject: 'The updates for {resource_type} {title} were not accepted'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_rejected.html.mako'
