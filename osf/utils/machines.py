@@ -335,6 +335,7 @@ class PreprintRequestMachine(BaseMachine):
         context = self.get_context()
         if not self.auto_approval_allowed():
             context['reviewable'] = self.machineable.target
+            context['requester_fullname'] = self.machineable.creator.fullname
             reviews_signals.email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
             reviews_signals.reviews_email_withdrawal_requests.send(timestamp=timezone.now(), context=context)
 
