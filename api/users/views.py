@@ -131,6 +131,8 @@ class UserMixin:
             contrib_id, contrib = list(self.request.parents[Contributor].items())[0]
             user = contrib.user
             if user.is_disabled:
+                if getattr(user, 'gdpr_deleted', False):
+                    raise NotFound
                 raise UserGone(user=user)
             # Make sure that the contributor ID is correct
             if user._id == key:

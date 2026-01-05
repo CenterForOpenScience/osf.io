@@ -169,18 +169,18 @@ class Sitemap:
             progress.increment()
         progress.stop()
 
-        # User urls
-        objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
-        progress.start(objs.count(), 'USER: ')
-        for obj in objs:
-            try:
-                config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urljoin(settings.DOMAIN, f'/{obj}/')
-                self.add_url(config)
-            except Exception as e:
-                self.log_errors('USER', obj, e)
-            progress.increment()
-        progress.stop()
+        # # User urls
+        # objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
+        # progress.start(objs.count(), 'USER: ')
+        # for obj in objs:
+        #     try:
+        #         config = settings.SITEMAP_USER_CONFIG
+        #         config['loc'] = urljoin(settings.DOMAIN, f'/{obj}/')
+        #         self.add_url(config)
+        #     except Exception as e:
+        #         self.log_errors('USER', obj, e)
+        #     progress.increment()
+        # progress.stop()
 
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects

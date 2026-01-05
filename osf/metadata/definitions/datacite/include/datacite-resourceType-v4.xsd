@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- this file retrieved on 2024-02-02 from https://schema.datacite.org/meta/kernel-4.5/include/datacite-resourceType-v4.xsd -->
+<!-- this file retrieved on 2025-11-13 from https://schema.datacite.org/meta/kernel-4.6/include/datacite-resourceType-v4.xsd -->
 <!-- Version 1.0 - Created 2011-01-13 - FZ, TIB, Germany
      2013-05 v3.0: Addition of ID to simpleType element; added values "Audiovisual", "Workflow" & "Other"; deleted value "Film"
      2017-10-23 v4.1: Addition of value "DataPaper"
      2020-01-14 v4.4: Addition of values "Book", "Book Chapter", "ComputationalNotebook", "ConferencePaper", "ConferenceProceeding".
-       "Dissertation", "Journal", "JournalArticle", "OutputManagementPlan", "PeerReview", "Preprint", "Report" -->
+       "Dissertation", "Journal", "JournalArticle", "OutputManagementPlan", "PeerReview", "Preprint", "Report"
+    2024-12-05 v4.6: Addition of values "Award", "Project" -->
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns="http://datacite.org/schema/kernel-4" targetNamespace="http://datacite.org/schema/kernel-4" elementFormDefault="qualified">
   <xs:simpleType name="resourceType" id="resourceType">
     <xs:annotation>
@@ -12,6 +13,7 @@
     </xs:annotation>
     <xs:restriction base="xs:string">
       <xs:enumeration value="Audiovisual" />
+      <xs:enumeration value="Award"/>
       <xs:enumeration value="Book" />
       <xs:enumeration value="BookChapter" />
       <xs:enumeration value="Collection" />
@@ -32,6 +34,7 @@
       <xs:enumeration value="PeerReview" />
       <xs:enumeration value="PhysicalObject" />
       <xs:enumeration value="Preprint" />
+      <xs:enumeration value="Project"/>
       <xs:enumeration value="Report" />
       <xs:enumeration value="Service" />
       <xs:enumeration value="Software" />

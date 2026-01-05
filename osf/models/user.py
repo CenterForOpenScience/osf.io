@@ -154,7 +154,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
+    FIELDS_TO_CHECK.update({'password', 'date_last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -869,6 +869,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
         signals.user_account_merged.send(user)
 
+        from api.share.utils import update_share
+
+        for node in user.contributed:
+            try:
+                update_share(node)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
+
+        for preprint in user.preprints.all():
+            try:
+                update_share(preprint)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
@@ -960,6 +974,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
+
+    @property
+    def gdpr_deleted(self):
+        if not self.is_disabled:
+            return False
+        if self.fullname != 'Deleted user':
+            return False
+        return not self.emails.exists()
 
     def deactivate_account(self):
         """

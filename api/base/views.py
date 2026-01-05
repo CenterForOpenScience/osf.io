@@ -38,7 +38,7 @@ from api.nodes.permissions import ReadOnlyIfRegistration
 from api.nodes.permissions import ExcludeWithdrawals
 from api.users.serializers import UserSerializer
 from framework.auth.oauth_scopes import CoreScopes
-from osf.models import Contributor, MaintenanceState, BaseFileNode
+from osf.models import Contributor, MaintenanceState, BaseFileNode, AbstractNode
 from osf.utils.permissions import API_CONTRIBUTOR_PERMISSIONS, READ, WRITE, ADMIN
 from waffle.models import Flag, Switch, Sample
 from waffle import sample_is_active
@@ -600,7 +600,7 @@ class BaseNodeLinksList(JSONAPIBaseView, generics.ListAPIView):
         )
 
 
-class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
+class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -618,11 +618,9 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
     view_name = None
 
     ordering = ('-modified',)
+    model_class = AbstractNode
 
-    # TODO: This class no longer exists
-    # model_class = Pointer
-
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = get_user_auth(self.request)
         from api.resources import annotations as resource_annotations
 
@@ -638,6 +636,9 @@ class BaseLinkedList(JSONAPIBaseView, generics.ListAPIView):
             .can_view(user=auth.user, private_link=auth.private_link)
             .order_by('-modified')
         )
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class WaterButlerMixin:
