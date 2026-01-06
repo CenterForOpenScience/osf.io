@@ -14,8 +14,8 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_SECONDS = 3600  # 60 minutes timeout
-BATCH_SIZE = 1000       # Default batch size
+TIMEOUT_SECONDS = 36000  # 10 hours timeout
+BATCH_SIZE = 10000       # Default batch size
 
 FREQ_MAP = {
     'none': 'none',
