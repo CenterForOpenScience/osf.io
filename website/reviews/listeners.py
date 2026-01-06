@@ -25,8 +25,9 @@ def reviews_notification(self, creator, template, context, action):
 
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
-    context['referrer_fullname'] = user.fullname
+    from website.profile.utils import get_profile_image_url
     context['requester_fullname'] = user.fullname
+    context['profile_image_url'] = get_profile_image_url(resource.creator)
     provider = resource.provider
     from osf.models import NotificationType
 
@@ -38,6 +39,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
         for recipient in provider.get_group(group_name).user_set.all():
             context['user_fullname'] = recipient.fullname
             context['recipient_fullname'] = recipient.fullname
+            context['localized_timestamp'] = str(timestamp)
 
             NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
                 user=recipient,
@@ -48,7 +50,9 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
 
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
+    from website.profile.utils import get_profile_image_url
     preprint = context.pop('reviewable')
+    context['profile_image_url'] = get_profile_image_url(preprint.creator)
     context['reviewable_absolute_url'] = preprint.absolute_url
     context['reviewable_title'] = preprint.title
     context['reviewable__id'] = preprint._id
@@ -63,6 +67,7 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
         for recipient in preprint.provider.get_group(group_name).user_set.all():
             context['user_fullname'] = recipient.fullname
             context['recipient_fullname'] = recipient.fullname
+            context['localized_timestamp'] = str(timestamp)
 
             NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
                 user=recipient,
