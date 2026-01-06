@@ -11,8 +11,8 @@ from django.db.models.functions import Cast
 from osf.models import OSFUser, Node, NotificationSubscription, NotificationType
 
 
-@celery_app.task(name='scripts.populate_subscriptions')
-def populate_subscriptions():
+@celery_app.task(name='scripts.populate_notification_subscriptions')
+def populate_notification_subscriptions():
     created = 0
     user_file_nt = NotificationType.Type.USER_FILE_UPDATED.instance
     review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
@@ -44,33 +44,50 @@ def populate_subscriptions():
                 node_notifications_sq,
                 output_field=IntegerField(),
             ),
-        )
-        .exclude(contributors_count=F('notifications_count'))
+        ).exclude(contributors_count=F('notifications_count'))
     )
 
-    for user in reviews_qs:
-        _, is_created = NotificationSubscription.objects.get_or_create(
-            notification_type=review_nt,
-            user=user,
-            content_type=user_ct,
-            object_id=user.id,
-            message_frequency='instantly',
-        )
-        if is_created:
-            created += 1
+    print(f"Creating REVIEWS_SUBMISSION_STATUS subscriptions for {reviews_qs.count()} users.")
+    for id, user in enumerate(reviews_qs, 1):
+        print(f"Processing user {id} / {reviews_qs.count()}")
+        try:
+            _, is_created = NotificationSubscription.objects.get_or_create(
+                notification_type=review_nt,
+                user=user,
+                content_type=user_ct,
+                object_id=user.id,
+                defaults={
+                    'message_frequency': 'none',
+                },
+            )
+            if is_created:
+                created += 1
+        except Exception as exeption:
+            print(exeption)
+            continue
 
-    for user in files_qs:
-        _, is_created = NotificationSubscription.objects.get_or_create(
-            notification_type=user_file_nt,
-            user=user,
-            content_type=user_ct,
-            object_id=user.id,
-            message_frequency='instantly',
-        )
-        if is_created:
-            created += 1
+    print(f"Creating USER_FILE_UPDATED subscriptions for {files_qs.count()} users.")
+    for id, user in enumerate(files_qs, 1):
+        print(f"Processing user {id} / {files_qs.count()}")
+        try:
+            _, is_created = NotificationSubscription.objects.get_or_create(
+                notification_type=user_file_nt,
+                user=user,
+                content_type=user_ct,
+                object_id=user.id,
+                defaults={
+                        'message_frequency': 'none',
+                    },
+            )
+            if is_created:
+                created += 1
+        except Exception as exeption:
+            print(exeption)
+            continue
 
-    for node in nodes_qs:
+    print(f"Creating NODE_FILE_UPDATED subscriptions for {nodes_qs.count()} nodes.")
+    for id, node in enumerate(nodes_qs, 1):
+        print(f"Processing node {id} / {nodes_qs.count()}")
         for contributor in node.contributors.all():
             try:
                 _, is_created = NotificationSubscription.objects.get_or_create(
@@ -79,15 +96,16 @@ def populate_subscriptions():
                     content_type=node_ct,
                     object_id=node.id,
                     defaults={
-                        'message_frequency': 'instantly',
+                        'message_frequency': 'none',
                     },
                 )
                 if is_created:
                     created += 1
-            except Exception:
+            except Exception as exeption:
+                print(exeption)
                 continue
 
     print(f"Created {created} subscriptions")
 
 if __name__ == '__main__':
-    populate_subscriptions.delay()
+    populate_notification_subscriptions.delay()

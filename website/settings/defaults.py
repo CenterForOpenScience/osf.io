@@ -450,7 +450,7 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
         'osf.metrics.reporters',
-        'scripts.populate_subscriptions',
+        'scripts.populate_notification_subscriptions',
     }
 
     med_pri_modules = {
@@ -579,7 +579,7 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
         'api.share.utils',
-        'scripts.populate_subscriptions',
+        'scripts.populate_notification_subscriptions',
     )
 
     # Modules that need metrics and release requirements
