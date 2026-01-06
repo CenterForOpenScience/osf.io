@@ -1,8 +1,8 @@
 [//]: # (
-    * Before submit your Pull Request, make sure you've picked the right branch and your code is up-to-date with it.
-        * For critical hot-fixes, select "master" as the target branch.
-        * For bug-fixes, improvements and new features, select "develop" as the target branch.
-        * If your PR is part of a project/team, select project/team's dedicated feature branch.
+    * Before submitting your Pull Request, make sure you've picked the right branch and your code is up-to-date with it.
+        * For critical hotfixes, select "master" as the target branch.
+        * For bugfixes, improvements and new features, select "develop" as the target branch.
+        * If your PR is part of a project/team, select project/team's dedicated feature branch as the target.
     * If you have a JIRA ticket, prefix the ticket number [ENG-*****] to the PR title.
 )
 
@@ -38,11 +38,10 @@
 
 [//]: # (
     * Any server configuration and deployment notes for CE?
-        * Is model migration required?
-        * Is data migration/backfill/popualation required?
-        * If there is migration, is it reversible and is there roll-back plan?
+        * Is model migration required? Is data migration/backfill/population required?
+            * If so, is it reversible? Is there a roll-back plan?
         * Does server settings needs to be updated?
-        * If there are settings update, have you checked existing settings for affected servers with CE?
+            * If so, have you checked with CE on existing settings for affected servers?
         * Are there any deployment dependencies to other services?
     * If you have a JIRA ticket, make sure the ticket also contains the CE notes.
 )
