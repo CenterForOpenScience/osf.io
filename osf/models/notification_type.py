@@ -241,10 +241,10 @@ class NotificationType(models.Model):
                     object_id=subscribed_object.pk if subscribed_object else None,
                     defaults={'message_frequency': message_frequency},
                     _is_digest=is_digest,
-                )
+                ).order_by('id')
                 sentry.log_exception(e)
-                sentry.log_message(f'Multiple {subscriptions_qs.count()} notification subscriptions found for user {user._id} and notification type {self.name}.')
-                subscription = subscriptions_qs.first()
+                subscription = subscriptions_qs.last()
+                sentry.log_message(f'Multiple {subscriptions_qs.count()} notification subscriptions found for user {user._id} and notification type {self.name}. Using {subscription.id}.')
 
         subscription.emit(
             destination_address=destination_address,
