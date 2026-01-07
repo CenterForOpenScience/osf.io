@@ -5,6 +5,7 @@ import pytest
 from api.base.settings.defaults import API_BASE
 from osf_tests.factories import RegistrationFactory
 from framework.auth import signing
+from tests.utils import capture_notifications
 
 
 @pytest.mark.django_db
@@ -42,7 +43,8 @@ class TestRegistrationCallbacks:
 
     def test_registration_callback(self, app, payload, url):
         data = self.sign_payload(payload)
-        res = app.put_json(url, data)
+        with capture_notifications():
+            res = app.put_json(url, data)
         assert res.status_code == 200
 
     def test_signature_expired(self, app, payload, url):

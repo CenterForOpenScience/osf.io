@@ -7,6 +7,7 @@ from django.test import TestCase
 
 from api_tests.utils import create_test_file
 from osf import models as osfdb
+from osf.management.commands.populate_notification_types import populate_notification_types
 from osf.metrics.reports import InstitutionalUserReport
 from osf.metrics.reporters import InstitutionalUsersReporter
 from osf.metrics.utils import YearMonth
@@ -28,6 +29,7 @@ def _patch_now(fakenow: datetime.datetime):
 class TestInstiUsersReporter(TestCase):
     @classmethod
     def setUpTestData(cls):
+        populate_notification_types()
         cls._yearmonth = YearMonth(2012, 7)
         cls._now = datetime.datetime(
             cls._yearmonth.year,

@@ -1,10 +1,7 @@
-'''Example settings/local.py file.
-These settings override what's in website/settings/defaults.py
-
-NOTE: local.py will not be added to source control.
-'''
-import inspect
+"""local.py for GitHub Actions
+"""
 import logging
+from datetime import timedelta
 
 from . import defaults
 import os
@@ -44,13 +41,17 @@ EXTERNAL_EMBER_APPS = {
 
 SEARCH_ENGINE = 'elastic'
 
-USE_EMAIL = False
 USE_CELERY = False
 
 # Email
-MAIL_SERVER = 'localhost:1025'  # For local testing
 MAIL_USERNAME = 'osf-smtp'
 MAIL_PASSWORD = 'CHANGEME'
+MAIL_SERVER = 'localhost'  # For local testing
+MAIL_PORT = 1025  # For local testing
+
+MAILHOG_HOST = 'localhost'
+MAILHOG_PORT = 1025
+MAILHOG_API_HOST = 'http://localhost:8025'
 
 MAILHOG_HOST = 'localhost'
 MAILHOG_PORT = 1025
@@ -75,6 +76,15 @@ class CeleryConfig(defaults.CeleryConfig):
     result_backend = 'cache'
     cache_backend = 'memory'
 
+# Triggered emails
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)
+NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
+
+# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+MAX_DAILY_NO_LOGIN_EMAILS = None
+NO_LOGIN_EMAIL_CUTOFF = None
+
 USE_CDN_FOR_CLIENT_LIBS = False
 
 SENTRY_DSN = None
@@ -96,3 +106,4 @@ SHARE_ENABLED = False
 DATACITE_ENABLED = False
 IA_ARCHIVE_ENABLED = False
 USE_COLOR = False
+NEW_AND_NOTEWORTHY_LINKS_NODE = 'nguid'

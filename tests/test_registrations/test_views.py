@@ -17,6 +17,7 @@ from framework.exceptions import HTTPError
 from osf.migrations import update_provider_auth_groups
 from osf.models import RegistrationSchema, DraftRegistration
 from osf.utils import permissions
+from tests.utils import capture_notifications
 from website.project.metadata.schemas import _name_to_id
 from website.util import api_url_for
 from website.project.views import drafts as draft_views
@@ -173,7 +174,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = target.web_url_for('new_draft_registration')
 
-        res = self.app.post(url, data=payload, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, data=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_302_FOUND
         target.reload()
         draft = DraftRegistration.objects.get(branched_from=target)
@@ -524,7 +526,8 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of the pending registration
         # in order to determine whether to give approval
-        embargoed_registration.embargo.accept()
+        with capture_notifications():
+            embargoed_registration.embargo.accept()
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'pending'
 
@@ -535,8 +538,9 @@ class TestModeratorRegistrationViews:
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration
         # to determine if there is a need to withdraw before it becomes public
-        embargoed_registration.embargo.accept()
-        embargoed_registration.embargo.accept(user=moderator)
+        with capture_notifications():
+            embargoed_registration.embargo.accept()
+            embargoed_registration.embargo.accept(user=moderator)
         embargoed_registration.refresh_from_db()
         assert embargoed_registration.moderation_state == 'embargo'
 

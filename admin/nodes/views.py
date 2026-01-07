@@ -21,7 +21,7 @@ from django.urls import reverse_lazy
 from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
-from admin.notifications.views import detect_duplicate_notifications, delete_selected_notifications
+from admin.notifications.views import delete_selected_notifications
 from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
 
 from api.share.utils import update_share
@@ -132,7 +132,6 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
-        detailed_duplicates = detect_duplicate_notifications(node_id=node.id)
         if isinstance(node, Registration):
             context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
 
@@ -150,7 +149,6 @@ class NodeView(NodeMixin, GuidView):
             'children': children,
             'permissions': API_CONTRIBUTOR_PERMISSIONS,
             'has_update_permission': self.request.user.has_perm('osf.change_node'),
-            'duplicates': detailed_duplicates
         })
 
         return context
@@ -275,7 +273,7 @@ class NodeUpdatePermissionsView(NodeMixin, View):
                 auth=request,
                 user_id=contributor_user._id,
                 permissions=permission,
-                save=True
+                notification_type=None
             )
             messages.success(self.request, f'User with email {email} was successfully added.')
 

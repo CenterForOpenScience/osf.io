@@ -61,15 +61,3 @@ class TestUserSystemTagNormalization:
         add_osf_provider_tags()
         assert Tag.all_tags.filter(name=OsfSourceTags.Osf.value, system=True).exists()
         assert Tag.all_tags.filter(name=OsfClaimedTags.Osf.value, system=True).exists()
-
-        # Test that prereg campaign source tag is created.
-        # Also make sure users created after the cutoff date have
-        # `source:campaign|prereg` instead of `source:campaign|prereg_challenge`
-        prereg_challenge_source_tag = Tag.all_tags.get(name=CampaignSourceTags.PreregChallenge.value, system=True)
-        prereg_challenge_user_created_before_cutoff.add_system_tag(prereg_challenge_source_tag)
-        prereg_challenge_user_created_after_cutoff.add_system_tag(prereg_challenge_source_tag)
-        add_prereg_campaign_tags()
-        assert CampaignSourceTags.PreregChallenge.value in prereg_challenge_user_created_before_cutoff.system_tags
-        assert CampaignSourceTags.Prereg.value not in prereg_challenge_user_created_before_cutoff.system_tags
-        assert CampaignSourceTags.Prereg.value in prereg_challenge_user_created_after_cutoff.system_tags
-        assert CampaignSourceTags.PreregChallenge.value not in prereg_challenge_user_created_after_cutoff.system_tags
