@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from website import settings
 from enum import Enum
 from osf.utils.caching import ttl_cached_property
+from framework import sentry
 
 
 def get_default_frequency_choices():
@@ -222,14 +223,29 @@ class NotificationType(models.Model):
                 _is_digest=is_digest,
             )
         else:
-            subscription, created = NotificationSubscription.objects.get_or_create(
-                notification_type=self,
-                user=user,
-                content_type=content_type,
-                object_id=subscribed_object.pk if subscribed_object else None,
-                defaults={'message_frequency': message_frequency},
-                _is_digest=is_digest,
-            )
+            try:
+                subscription, created = NotificationSubscription.objects.get_or_create(
+                    notification_type=self,
+                    user=user,
+                    content_type=content_type,
+                    object_id=subscribed_object.pk if subscribed_object else None,
+                    defaults={'message_frequency': message_frequency},
+                    _is_digest=is_digest,
+                )
+            except NotificationSubscription.MultipleObjectsReturned as e:
+                # In case of multiple subscriptions, get the first one
+                subscriptions_qs = NotificationSubscription.objects.filter(
+                    notification_type=self,
+                    user=user,
+                    content_type=content_type,
+                    object_id=subscribed_object.pk if subscribed_object else None,
+                    defaults={'message_frequency': message_frequency},
+                    _is_digest=is_digest,
+                )
+                sentry.log_exception(e)
+                sentry.log_message(f'Multiple {subscriptions_qs.count()} notification subscriptions found for user {user._id} and notification type {self.name}.')
+                subscription = subscriptions_qs.first()
+
         subscription.emit(
             destination_address=destination_address,
             event_context=event_context,
