@@ -233,7 +233,7 @@ class NotificationType(models.Model):
                     _is_digest=is_digest,
                 )
             except NotificationSubscription.MultipleObjectsReturned as e:
-                # In case of multiple subscriptions, get the first one
+                # Temporary fix before we deduplicate and add constraints: use the last created one if duplicates found
                 subscriptions_qs = NotificationSubscription.objects.filter(
                     notification_type=self,
                     user=user,
@@ -243,8 +243,10 @@ class NotificationType(models.Model):
                     _is_digest=is_digest,
                 ).order_by('id')
                 sentry.log_exception(e)
+                count = subscriptions_qs.count()
                 subscription = subscriptions_qs.last()
-                sentry.log_message(f'Multiple {subscriptions_qs.count()} notification subscriptions found for user {user._id} and notification type {self.name}. Using {subscription.id}.')
+                sentry.log_message(f'Multiple notification subscriptions found, using the last created one: '
+                                   f'[count={count}, user={user._id}, type={self.name}, last={subscription.id}]')
 
         subscription.emit(
             destination_address=destination_address,
