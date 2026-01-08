@@ -3,7 +3,6 @@ from osf_tests.factories import (
     AuthUserFactory,
     NotificationTypeFactory
 )
-from datetime import datetime
 from osf.models import Notification, NotificationType, NotificationSubscription
 from tests.utils import capture_notifications
 from django.db import reset_queries, connection
@@ -54,5 +53,5 @@ class TestNotificationTypeDBTransaction:
         )
         assert Notification.objects.filter(
             subscription__notification_type=test_notification_type,
-            sent=datetime(1000, 1, 1)
+            fake_sent=True
         ).exists()

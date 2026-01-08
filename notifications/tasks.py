@@ -97,9 +97,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -118,10 +119,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
@@ -172,9 +173,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -205,10 +207,11 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         if current_moderators is None or not current_moderators.user_set.filter(id=user.id).exists():
             current_admins = provider.get_group('admin')
             if current_admins is None or not current_admins.user_set.filter(id=user.id).exists():
-                log_message(f"User is not a moderator for provider {provider._id} - skipping email")
-                email_task.status = 'FAILURE'
+                log_message(f"User is not a moderator for provider {provider._id} - notifications will not be sent.")
+                email_task.status = 'AUTO_FIXED'
                 email_task.error_message = f'User is not a moderator for provider {provider._id}'
                 email_task.save()
+                notifications_qs.update(sent=timezone.now(), fake_sent=True)
                 return
 
         additional_context = {}
@@ -267,10 +270,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries

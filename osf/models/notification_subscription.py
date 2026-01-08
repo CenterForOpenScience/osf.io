@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -59,6 +59,7 @@ class NotificationSubscription(BaseModel):
         verbose_name = 'Notification Subscription'
         verbose_name_plural = 'Notification Subscriptions'
         db_table = 'osf_notificationsubscription_v2'
+        unique_together = ('notification_type', 'user', 'content_type', 'object_id', '_is_digest')
 
     def emit(
             self,
@@ -126,7 +127,8 @@ class NotificationSubscription(BaseModel):
             Notification.objects.create(
                 subscription=self,
                 event_context=event_context,
-                sent=None if self.message_frequency != 'none' else datetime(1000, 1, 1),
+                sent=timezone.now() if self.message_frequency == 'none' else None,
+                fake_sent=True if self.message_frequency == 'none' else False,
             )
 
     @property

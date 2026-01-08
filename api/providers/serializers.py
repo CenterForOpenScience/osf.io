@@ -401,7 +401,7 @@ class ModeratorSerializer(JSONAPISerializer):
             return instance
 
         try:
-            provider.remove_from_group(instance, instance.permission_group, unsubscribe=False)
+            provider.remove_from_group(instance, instance.permission_group, unsubscribe=True)
         except ValueError as e:
             raise ValidationError(str(e))
         provider.add_to_group(instance, perm_group)
