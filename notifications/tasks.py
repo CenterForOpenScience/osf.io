@@ -207,10 +207,11 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         if current_moderators is None or not current_moderators.user_set.filter(id=user.id).exists():
             current_admins = provider.get_group('admin')
             if current_admins is None or not current_admins.user_set.filter(id=user.id).exists():
-                log_message(f"User is not a moderator for provider {provider._id} - skipping email")
-                email_task.status = 'FAILURE'
+                log_message(f"User is not a moderator for provider {provider._id} - notifications will not be sent.")
+                email_task.status = 'AUTO_FIXED'
                 email_task.error_message = f'User is not a moderator for provider {provider._id}'
                 email_task.save()
+                notifications_qs.update(sent=timezone.now(), fake_sent=True)
                 return
 
         additional_context = {}
