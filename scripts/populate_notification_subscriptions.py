@@ -76,8 +76,9 @@ def populate_notification_subscriptions():
                 content_type=user_ct,
                 object_id=user.id,
                 defaults={
-                        'message_frequency': 'none',
-                    },
+                    '_is_digest': True,
+                    'message_frequency': 'none',
+                },
             )
             if is_created:
                 created += 1
@@ -96,6 +97,7 @@ def populate_notification_subscriptions():
                     content_type=node_ct,
                     object_id=node.id,
                     defaults={
+                        '_is_digest': True,
                         'message_frequency': 'none',
                     },
                 )
