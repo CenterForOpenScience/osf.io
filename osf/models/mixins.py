@@ -1087,6 +1087,7 @@ class ReviewProviderMixin(GuardianMixin):
                 content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
                 object_id=self.id,
                 notification_type=subscription.instance,
+                message_frequency='instantly',
                 _is_digest=True
             )
 
