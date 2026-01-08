@@ -61,6 +61,10 @@ def get_admin_read_permissions():
         'view_registration',
         'view_registrationapproval',
         'view_registrationschema',
+        'view_notification',
+        'view_notificationtype',
+        'view_notificationsubscription',
+        'view_emailtask',
     ])
 
 
