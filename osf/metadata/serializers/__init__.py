@@ -7,6 +7,7 @@ and add it to METADATA_SERIALIZER_REGISTRY with a unique key
 from osf import exceptions
 from osf.metadata import gather
 from .datacite import DataciteJsonMetadataSerializer, DataciteXmlMetadataSerializer
+from .datapackage import DatapackageSerializer
 from .google_dataset_json_ld import GoogleDatasetJsonLdSerializer
 from .turtle import TurtleMetadataSerializer
 
@@ -15,6 +16,7 @@ METADATA_SERIALIZER_REGISTRY = {
     'turtle': TurtleMetadataSerializer,
     'datacite-json': DataciteJsonMetadataSerializer,
     'datacite-xml': DataciteXmlMetadataSerializer,
+    'datapackage.json': DatapackageSerializer,
     'google-dataset-json-ld': GoogleDatasetJsonLdSerializer,
 }
 
