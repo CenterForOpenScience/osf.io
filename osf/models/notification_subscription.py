@@ -59,6 +59,7 @@ class NotificationSubscription(BaseModel):
         verbose_name = 'Notification Subscription'
         verbose_name_plural = 'Notification Subscriptions'
         db_table = 'osf_notificationsubscription_v2'
+        unique_together = ('notification_type', 'user', 'content_type', 'object_id', '_is_digest')
 
     def emit(
             self,
