@@ -9,6 +9,7 @@ class EmailTask(models.Model):
         ('SUCCESS', 'Success'),
         ('FAILURE', 'Failure'),
         ('RETRY', 'Retry'),
+        ('PARTIAL_SUCCESS', 'Partial Success'),
     )
 
     task_id = models.CharField(max_length=255, unique=True)
