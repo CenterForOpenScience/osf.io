@@ -102,9 +102,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -123,10 +124,10 @@ def send_user_email_task(self, user_id, notification_ids, **kwargs):
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_user_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
@@ -177,9 +178,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs = notifications_qs.exclude(id__in=failed_notifications)
 
         if not rendered_notifications:
+            email_task.status = 'SUCCESS'
             if email_task.error_message:
                 logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
-            email_task.status = 'SUCCESS'
+                email_task.status = 'PARTIAL_SUCCESS'
             email_task.save()
             return
 
@@ -274,10 +276,10 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         notifications_qs.update(sent=timezone.now())
 
         email_task.status = 'SUCCESS'
-        email_task.save()
-
         if email_task.error_message:
             logger.error(f'Partial success for send_moderator_email_task for user {user_id}. Task id: {self.request.id}. Errors: {email_task.error_message}')
+            email_task.status = 'PARTIAL_SUCCESS'
+        email_task.save()
 
     except Exception as e:
         retry_count = self.request.retries
