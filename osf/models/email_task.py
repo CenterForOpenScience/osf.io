@@ -10,6 +10,7 @@ class EmailTask(models.Model):
         ('FAILURE', 'Failure'),
         ('RETRY', 'Retry'),
         ('PARTIAL_SUCCESS', 'Partial Success'),
+        ('AUTO_FIXED', 'Auto Fixed'),
     )
 
     task_id = models.CharField(max_length=255, unique=True)
