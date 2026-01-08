@@ -5,8 +5,8 @@ from django.utils import timezone
 from osf_tests.factories import UserFactory
 
 from osf.management.commands.email_all_users import email_all_users
+from tests.utils import capture_notifications
 
-@pytest.mark.usefixtures('mock_send_grid')
 class TestEmailAllUsers:
 
     @pytest.fixture()
@@ -41,25 +41,27 @@ class TestEmailAllUsers:
         return UserFactory(is_registered=False)
 
     @pytest.mark.django_db
-    def test_email_all_users_dry(self, mock_send_grid, superuser):
-        email_all_users('TOU_NOTIF', dry_run=True)
+    def test_email_all_users_dry(self, superuser):
+        with capture_notifications() as notifications:
+            email_all_users('empty', dry_run=True, context={'subject': 'Test Dry Run', 'body': 'This is a test dry run email.'})
 
-        mock_send_grid.assert_called()
+        assert len(notifications['emits']) == 1
 
     @pytest.mark.django_db
     def test_dont_email_inactive_users(
-            self, mock_send_grid, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
-
-        email_all_users('TOU_NOTIF')
-
-        mock_send_grid.assert_not_called()
+            self, deleted_user, inactive_user, unconfirmed_user, unregistered_user):
+        with capture_notifications(expect_none=True):
+            email_all_users('empty')
 
     @pytest.mark.django_db
-    def test_email_all_users_offset(self, mock_send_grid, user, user2):
-        email_all_users('TOU_NOTIF', offset=1, start_id=0)
+    def test_email_all_users_offset(self, user, user2):
+        with capture_notifications() as notifications:
+            email_all_users('empty', offset=1, start_id=0, context={'subject': 'Test offset', 'body': 'This is a test offset email.'})
+        assert len(notifications['emits']) == 1
 
-        email_all_users('TOU_NOTIF', offset=1, start_id=1)
+        with capture_notifications() as notifications:
+            email_all_users('empty', offset=1, start_id=1, context={'subject': 'Test offset', 'body': 'This is a test offset email.'})
+        assert len(notifications['emits']) == 1
 
-        email_all_users('TOU_NOTIF', offset=1, start_id=2)
-
-        assert mock_send_grid.call_count == 2
+        with capture_notifications(expect_none=True):
+            email_all_users('empty', offset=1, start_id=2, context={'subject': 'Test offset', 'body': 'This is a test offset email.'})

@@ -10,6 +10,7 @@ from osf_tests.factories import (
 from osf.utils import permissions as osf_permissions
 
 from api_tests.reviews.mixins.filter_mixins import ReviewActionFilterMixin
+from tests.utils import capture_notifications
 
 
 class TestReviewActionFilters(ReviewActionFilterMixin):
@@ -103,7 +104,8 @@ class TestReviewActionCreateRelated:
         assert res.status_code == 403
 
         # Node admin can submit
-        res = app.post_json_api(url, submit_payload, auth=node_admin.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, submit_payload, auth=node_admin.auth)
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'pending'
@@ -145,7 +147,8 @@ class TestReviewActionCreateRelated:
         assert not preprint.is_published
 
         # Moderator can accept
-        res = app.post_json_api(url, accept_payload, auth=moderator.auth)
+        with capture_notifications():
+            res = app.post_json_api(url, accept_payload, auth=moderator.auth)
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'accepted'
@@ -258,9 +261,12 @@ class TestReviewActionCreateRelated:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                res = app.post_json_api(url, payload, auth=moderator.auth)
+                if trigger in ['submit', 'reject', 'accept']:
+                    with capture_notifications():
+                        res = app.post_json_api(url, payload, auth=moderator.auth)
+                else:
+                    res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
-
                 action = preprint.actions.order_by('-created').first()
                 assert action.trigger == trigger
 

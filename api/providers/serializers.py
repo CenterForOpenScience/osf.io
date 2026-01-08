@@ -10,12 +10,11 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
-from osf.models import CitationStyle
+from osf.models import CitationStyle, NotificationType, RegistrationProvider, CollectionProvider
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
-from website import mails
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_PREPRINTS_LOGO
 
 
 class ProviderSerializer(JSONAPISerializer):
@@ -321,12 +320,11 @@ class ModeratorSerializer(JSONAPISerializer):
         address = validated_data.pop('email', '')
         provider = self.context['provider']
         context = {
-            'referrer': auth.user,
+            'referrer_fullname': auth.user.fullname,
         }
         if user_id and address:
             raise ValidationError('Cannot specify both "id" and "email".')
 
-        user = None
         if user_id:
             user = OSFUser.load(user_id)
         elif address:
@@ -352,30 +350,47 @@ class ModeratorSerializer(JSONAPISerializer):
 
         if not user:
             raise ValidationError('Unable to find specified user.')
-        context['user'] = user
-        context['provider'] = provider
+        context['user_fullname'] = user.fullname
+        context['provider_name'] = provider.name
 
         if bool(get_perms(user, provider)):
             raise ValidationError('Specified user is already a moderator.')
-        if 'claim_url' in context:
-            template = mails.CONFIRM_EMAIL_MODERATION(provider)
-        else:
-            template = mails.MODERATOR_ADDED(provider)
 
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in REVIEW_GROUPS:
             raise ValidationError('Unrecognized permission_group')
-        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
         context['provider_name'] = provider.name
+        context['provider__id'] = provider._id
         context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
 
+        if isinstance(provider, RegistrationProvider):
+            provider_type_word = 'registries'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        elif isinstance(provider, CollectionProvider):
+            provider_type_word = 'collections'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        else:
+            provider_type_word = 'preprints'
+            context['notification_settings_url'] = f'{DOMAIN}preprints/{provider._id}/moderation/notifications'
+
+        context['provider_url'] = f'{provider.domain or DOMAIN}{provider_type_word}/{(provider._id if not provider.domain else '').strip('/')}'
+
+        if provider._id == 'osf':
+            logo = OSF_PREPRINTS_LOGO
+        else:
+            logo = provider._id
+        context['logo'] = logo
+
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization
-        mails.send_mail(
-            user.username,
-            template,
-            **context,
+        if 'claim_url' in context:
+            notification_type = NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION
+        else:
+            notification_type = NotificationType.Type.PROVIDER_MODERATOR_ADDED
+        notification_type.instance.emit(
+            user=user,
+            event_context=context,
         )
         return user
 

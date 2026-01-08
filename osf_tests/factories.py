@@ -6,7 +6,7 @@ from random import randint
 from unittest import mock
 
 from factory import SubFactory
-from factory.fuzzy import FuzzyDateTime, FuzzyAttribute, FuzzyChoice
+from factory.fuzzy import FuzzyDateTime, FuzzyChoice
 from unittest.mock import patch, Mock
 
 import pytz
@@ -20,7 +20,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from faker import Factory, Faker
 from waffle.models import Flag, Sample, Switch
-from website.notifications.constants import NOTIFICATION_TYPES
 from osf.utils import permissions
 from website.archiver import ARCHIVER_SUCCESS
 from website.settings import FAKE_EMAIL_NAME, FAKE_EMAIL_DOMAIN
@@ -573,6 +572,7 @@ class DraftRegistrationFactory(DjangoModelFactory):
             schema=registration_schema,
             data=registration_metadata,
             provider=provider,
+            notification_type=False
         )
         if title:
             draft.title = title
@@ -797,7 +797,12 @@ class PreprintFactory(DjangoModelFactory):
             instance.set_subjects(subjects, auth=auth)
             if license_details:
                 instance.set_preprint_license(license_details, auth=auth)
-            instance.set_published(is_published, auth=auth)
+            from tests.utils import capture_notifications
+            if is_published:
+                with capture_notifications():
+                    instance.set_published(is_published, auth=auth)
+            else:
+                instance.set_published(is_published, auth=auth)
             create_task_patcher = mock.patch('website.identifiers.utils.request_identifiers')
             mock_create_identifier = create_task_patcher.start()
             if is_published and set_doi:
@@ -1040,9 +1045,20 @@ class MockOAuth2Provider(models.ExternalProvider):
         }
 
 
+class NotificationSubscriptionLegacyFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationSubscriptionLegacy
+
+
 class NotificationSubscriptionFactory(DjangoModelFactory):
     class Meta:
         model = models.NotificationSubscription
+    notification_type = factory.LazyAttribute(lambda o: NotificationTypeFactory())
+
+
+class NotificationTypeFactory(DjangoModelFactory):
+    class Meta:
+        model = models.NotificationType
 
 
 def make_node_lineage():
@@ -1052,18 +1068,6 @@ def make_node_lineage():
     node4 = NodeFactory(parent=node3)
 
     return [node1._id, node2._id, node3._id, node4._id]
-
-
-class NotificationDigestFactory(DjangoModelFactory):
-    timestamp = FuzzyDateTime(datetime.datetime(1970, 1, 1, tzinfo=pytz.UTC))
-    node_lineage = FuzzyAttribute(fuzzer=make_node_lineage)
-    user = factory.SubFactory(UserFactory)
-    send_type = FuzzyChoice(choices=NOTIFICATION_TYPES.keys())
-    message = fake.text(max_nb_chars=2048)
-    event = fake.text(max_nb_chars=50)
-    class Meta:
-        model = models.NotificationDigest
-
 
 class ConferenceFactory(DjangoModelFactory):
     class Meta:
@@ -1320,7 +1324,10 @@ class SchemaResponseFactory(DjangoModelFactory):
             ).get()
             previous_schema_response.approvals_state_machine.set_state(ApprovalStates.APPROVED)
             previous_schema_response.save()
-            return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
+            from tests.utils import capture_notifications
+
+            with capture_notifications():
+                return SchemaResponse.create_from_previous_response(initiator, previous_schema_response, justification)
 
 
 class SchemaResponseActionFactory(DjangoModelFactory):

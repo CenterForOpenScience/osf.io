@@ -2,13 +2,13 @@ from django.db import transaction
 import hashlib
 import mailchimp3
 from mailchimp3.mailchimpclient import MailChimpError
-
+from django.contrib.contenttypes.models import ContentType
 from framework import sentry
 from framework.celery_tasks import app
 from framework.celery_tasks.handlers import queued_task
 from framework.auth.signals import user_confirmed
 from osf.exceptions import OSFError
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationSubscription, NotificationType
 from website import settings
 
 
@@ -119,3 +119,20 @@ def subscribe_on_confirm(user):
     # Subscribe user to general OSF mailing list upon account confirmation
     if settings.ENABLE_EMAIL_SUBSCRIPTIONS:
         subscribe_mailchimp_async(settings.MAILCHIMP_GENERAL_LIST, user._id)
+
+    # Subscribe user to default notification subscriptions
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance,
+        content_type=ContentType.objects.get_for_model(user),
+        object_id=user.id,
+        defaults={'message_frequency': 'instantly'},
+    )
+
+    NotificationSubscription.objects.get_or_create(
+        user=user,
+        notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+        content_type=ContentType.objects.get_for_model(user),
+        object_id=user.id,
+        defaults={'message_frequency': 'instantly'},
+    )

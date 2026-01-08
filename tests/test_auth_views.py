@@ -12,7 +12,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from flask import request
 from rest_framework import status as http_status
-from tests.utils import run_celery_tasks
+from tests.utils import run_celery_tasks, capture_notifications
 
 from framework import auth
 from framework.auth import Auth, cas
@@ -25,7 +25,7 @@ from framework.auth.campaigns import (
 )
 from framework.auth.exceptions import InvalidTokenError
 from framework.auth.views import login_and_register_handler
-from osf.models import OSFUser, NotableDomain
+from osf.models import OSFUser, NotableDomain, NotificationType
 from osf_tests.factories import (
     fake_email,
     AuthUserFactory,
@@ -38,14 +38,11 @@ from tests.base import (
     fake,
     OsfTestCase,
 )
-from website import mails, settings
+from website import settings
 from website.util import api_url_for, web_url_for
-from conftest import start_mock_send_grid
 
 pytestmark = pytest.mark.django_db
 
-@mock.patch('website.mails.settings.USE_EMAIL', True)
-@mock.patch('website.mails.settings.USE_CELERY', False)
 class TestAuthViews(OsfTestCase):
 
     def setUp(self):
@@ -53,20 +50,19 @@ class TestAuthViews(OsfTestCase):
         self.user = AuthUserFactory()
         self.auth = self.user.auth
 
-        self.mock_send_grid = start_mock_send_grid(self)
-
     def test_register_ok(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.fullname == name
         assert user.accepted_terms_of_service is None
@@ -74,47 +70,50 @@ class TestAuthViews(OsfTestCase):
     def test_register_email_case_insensitive(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': str(email).upper(),
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': str(email).upper(),
+                    'password': password,
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.fullname == name
 
     def test_register_email_with_accepted_tos(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-                'acceptedTermsOfService': True
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                    'acceptedTermsOfService': True
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service
 
     def test_register_email_without_accepted_tos(self):
         url = api_url_for('register_user')
         name, email, password = fake.name(), fake_email(), 'underpressure'
-        self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-                'acceptedTermsOfService': False
-            }
-        )
+        with capture_notifications():
+            self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                    'acceptedTermsOfService': False
+                }
+            )
         user = OSFUser.objects.get(username=email)
         assert user.accepted_terms_of_service is None
 
@@ -123,15 +122,16 @@ class TestAuthViews(OsfTestCase):
         url = api_url_for('register_user')
         name = "<i>Eunice</i> O' \"Cornwallis\"<script type='text/javascript' src='http://www.cornify.com/js/cornify.js'></script><script type='text/javascript'>cornify_add()</script>"
         email, password = fake_email(), 'underpressure'
-        res = self.app.post(
-            url,
-            json={
-                'fullName': name,
-                'email1': email,
-                'email2': email,
-                'password': password,
-            }
-        )
+        with capture_notifications():
+            res = self.app.post(
+                url,
+                json={
+                    'fullName': name,
+                    'email1': email,
+                    'email2': email,
+                    'password': password,
+                }
+            )
 
         expected_scrub_username = "Eunice O' \"Cornwallis\"cornify_add()"
         user = OSFUser.objects.get(username=email)
@@ -200,16 +200,17 @@ class TestAuthViews(OsfTestCase):
         name, email, password = fake.name(), fake_email(), 'underpressure'
         captcha = 'some valid captcha'
         with mock.patch.object(settings, 'RECAPTCHA_SITE_KEY', 'some_value'):
-            resp = self.app.post(
-                url,
-                json={
-                    'fullName': name,
-                    'email1': email,
-                    'email2': str(email).upper(),
-                    'password': password,
-                    'g-recaptcha-response': captcha,
-                }
-            )
+            with capture_notifications():
+                resp = self.app.post(
+                    url,
+                    json={
+                        'fullName': name,
+                        'email1': email,
+                        'email2': str(email).upper(),
+                        'password': password,
+                        'g-recaptcha-response': captcha,
+                    }
+                )
             validate_recaptcha.assert_called_with(captcha, remote_ip='127.0.0.1')
             assert resp.status_code == http_status.HTTP_200_OK
             user = OSFUser.objects.get(username=email)
@@ -283,7 +284,8 @@ class TestAuthViews(OsfTestCase):
             'password': password,
         }
         # Send registration request
-        self.app.post(url, json=payload)
+        with capture_notifications():
+            self.app.post(url, json=payload)
 
         new_user.reload()
 
@@ -320,8 +322,11 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
-        self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
-        assert self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
+
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
 
         self.user.reload()
         assert token != self.user.get_confirmation_token(email)
@@ -497,8 +502,10 @@ class TestAuthViews(OsfTestCase):
         self.user.save()
         url = api_url_for('resend_confirmation')
         header = {'address': email, 'primary': False, 'confirmed': False}
-        self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
-        assert self.mock_send_grid.called
+        with capture_notifications() as notifications:
+            self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_EMAIL
         # 2nd call does not send email because throttle period has not expired
         res = self.app.put(url, json={'id': self.user._id, 'email': header}, auth=self.user.auth)
         assert res.status_code == 400
@@ -875,7 +882,8 @@ class TestResetPassword(OsfTestCase):
         form = res.get_form('resetPasswordForm')
         form['password'] = 'newpassword'
         form['password2'] = 'newpassword'
-        res = form.submit(self.app)
+        with capture_notifications():
+            res = form.submit(self.app)
 
         # check request URL is /resetpassword with username and new verification_key_v2 token
         request_url_path = res.request.path

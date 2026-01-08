@@ -270,6 +270,12 @@
       ```bash
       docker compose run --rm web python3 -m scripts.parse_citation_styles
       ```
+- Populate Notification Types
+  - Needed for notifications.
+      ```bash
+      docker compose run --rm web python3 manage.py populate_notification_types
+      ```
+  - _NOTE: The waffle switch `POPULATE_NOTIFICATION_TYPES` needs to be turned on.
 - Start ember_osf_web
   - Needed for ember app:
     - `docker-compose up -d ember_osf_web`

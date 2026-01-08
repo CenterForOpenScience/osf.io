@@ -23,6 +23,7 @@ from osf.utils.permissions import ADMIN, READ, WRITE
 from osf.exceptions import NodeStateError, DraftRegistrationStateError
 from osf.external.internet_archive.tasks import archive_to_ia, update_ia_metadata
 from osf.metrics import RegistriesModerationMetrics
+from osf.models.notification_type import NotificationType
 from .action import RegistrationAction
 from .archive import ArchiveJob
 from .contributor import DraftRegistrationContributor
@@ -661,7 +662,10 @@ class Registration(AbstractNode):
                     f'User {user} does not have moderator privileges on Provider {self.provider}')
 
         retraction = self._initiate_retraction(
-            user, justification, moderator_initiated=moderator_initiated)
+            user,
+            justification,
+            moderator_initiated=moderator_initiated
+        )
         self.retraction = retraction
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
@@ -1015,7 +1019,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}/review'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
@@ -1246,11 +1250,6 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         ).order_by(self.order_by_contributor_field)
 
     @property
-    def contributor_email_template(self):
-        # Override for ContributorMixin
-        return 'draft_registration'
-
-    @property
     def institutions_url(self):
         # For NodeInstitutionsRelationshipSerializer
         path = f'/draft_registrations/{self._id}/institutions/'
@@ -1330,7 +1329,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return self.system_tags_objects.values_list('name', flat=True)
 
     @classmethod
-    def create_from_node(cls, user, schema, node=None, data=None, provider=None):
+    def create_from_node(
+            cls,
+            user,
+            schema,
+            node=None,
+            data=None,
+            provider=None,
+            notification_type=NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+    ):
         if not provider:
             provider = RegistrationProvider.get_default()
 
@@ -1367,13 +1374,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not node:
             draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
-            initiator_permissions = draft.contributor_set.get(user=user).permission
+
+        current_contributors = draft.contributor_set.all()
+        for contributor in current_contributors:
             signals.contributor_added.send(
                 draft,
-                contributor=user,
-                auth=None,
-                email_template='draft_registration',
-                permissions=initiator_permissions
+                contributor=contributor.user,
+                auth=Auth(user) if user != contributor.user else None,
+                notification_type=notification_type if contributor.user.is_confirmed else NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION,
+                permissions=contributor.permission
             )
 
         return draft

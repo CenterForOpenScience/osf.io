@@ -16,6 +16,7 @@ from osf_tests.factories import (
 from osf.utils import permissions
 from website.project.metadata.utils import create_jsonschema_from_metaschema
 from website import settings
+from tests.utils import capture_notifications
 
 OPEN_ENDED_SCHEMA_VERSION = 3
 SCHEMA_VERSION = 2
@@ -334,11 +335,12 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
     def test_admin_can_create_draft(
         self, app, user, project_public, url_draft_registrations, payload, metaschema_open_ended
     ):
-        res = app.post_json_api(
-            f'{url_draft_registrations}&embed=branched_from&embed=initiator',
-            payload,
-            auth=user.auth
-        )
+        with capture_notifications():
+            res = app.post_json_api(
+                f'{url_draft_registrations}&embed=branched_from&embed=initiator',
+                payload,
+                auth=user.auth
+            )
         assert res.status_code == 201
         data = res.json['data']
         assert metaschema_open_ended._id in data['relationships']['registration_schema']['links']['related']['href']
@@ -407,11 +409,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         assert res.status_code == 400
 
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
-
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload,
-            auth=user.auth)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload,
+                auth=user.auth)
         assert res.status_code == 201
 
         # Non-Default provider does not accept everything
@@ -590,10 +592,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
             'datacompletion': 'No, data collection has not begun',
             'comments': ''
         }
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
 
         attributes = res.json['data']['attributes']
         assert attributes['registration_responses'] == {
@@ -641,10 +644,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = 'No, data collection has not begun'
 
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration your response to the \'Data collection status\' field' \
@@ -661,10 +665,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'incorrect_key': 'No, data collection has not begun'}
 
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration your response to the \'Data collection status\' ' \
@@ -682,10 +687,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
             'value': 'No, data collection has not begun'
         }
 
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration the \'datacompletion\' field is extraneous and not' \
@@ -701,11 +707,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['attributes']['registration_metadata'] = {}
         payload['data']['attributes']['registration_metadata']['datacompletion'] = {
             'value': 'Nope, data collection has not begun'}
-
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration your response to the \'Data collection status\'' \
@@ -733,10 +739,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['datacompletion'] = {'value': 'No, data collection has not begun'}
 
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\' field' \
@@ -752,10 +759,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['q11'] = 'No, data collection has not begun'
 
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'Additional properties are not allowed (\'q11\' was unexpected)'
@@ -769,11 +777,11 @@ class TestDraftRegistrationCreate(AbstractDraftRegistrationTestCase):
         payload['data']['relationships']['registration_schema']['data']['id'] = schema._id
         payload['data']['attributes']['registration_responses'] = {}
         payload['data']['attributes']['registration_responses']['datacompletion'] = 'Nope, data collection has not begun'
-
-        res = app.post_json_api(
-            url_draft_registrations,
-            payload, auth=user.auth,
-            expect_errors=True)
+        with capture_notifications():
+            res = app.post_json_api(
+                url_draft_registrations,
+                payload, auth=user.auth,
+                expect_errors=True)
         errors = res.json['errors'][0]
         assert res.status_code == 400
         assert errors['detail'] == 'For your registration, your response to the \'Data collection status\'' \

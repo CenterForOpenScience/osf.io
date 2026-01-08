@@ -3,6 +3,7 @@ from faker import Faker
 from osf_tests.factories import PreprintFactory, AuthUserFactory, PreprintProviderFactory
 from osf.models import Preprint
 from framework.auth import Auth
+from tests.utils import capture_notifications
 
 fake = Faker()
 
@@ -96,7 +97,8 @@ class TestPreprintFactory:
         assert original_guid is not None
         assert original_guid.versions.count() == 1
 
-        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(create_from=original_preprint)
         assert new_preprint is not None
         assert original_guid.versions.count() == 2
 
@@ -109,7 +111,8 @@ class TestPreprintFactory:
         description = 'Original description.'
         original_preprint = PreprintFactory(title=title, description=description)
 
-        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(create_from=original_preprint)
 
         assert new_preprint.title == title
         assert new_preprint.description == description
@@ -120,7 +123,8 @@ class TestPreprintFactory:
         original_preprint = PreprintFactory()
         original_subjects = [[subject._id] for subject in original_preprint.subjects.all()]
 
-        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(create_from=original_preprint)
 
         new_subjects = [[subject._id] for subject in new_preprint.subjects.all()]
         assert original_subjects == new_subjects
@@ -131,7 +135,8 @@ class TestPreprintFactory:
             original_preprint.contributor_set.exclude(user=original_preprint.creator).values_list('user_id', flat=True)
         )
 
-        new_preprint = PreprintFactory.create_version(create_from=original_preprint)
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(create_from=original_preprint)
 
         contributors_after = list(
             new_preprint.contributor_set.exclude(user=new_preprint.creator).values_list('user_id', flat=True)
@@ -140,18 +145,20 @@ class TestPreprintFactory:
 
     def test_create_version_with_machine_state(self):
         original_preprint = PreprintFactory()
-        new_preprint = PreprintFactory.create_version(
-            create_from=original_preprint, final_machine_state='accepted'
-        )
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(
+                create_from=original_preprint, final_machine_state='accepted'
+            )
 
         assert new_preprint.machine_state == 'accepted'
 
     def test_create_version_published_flag(self):
         original_preprint = PreprintFactory(is_published=True)
         original_guid = original_preprint.guids.first()
-        new_preprint = PreprintFactory.create_version(
-            create_from=original_preprint, is_published=True
-        )
+        with capture_notifications():
+            new_preprint = PreprintFactory.create_version(
+                create_from=original_preprint, is_published=True
+            )
         original_guid.refresh_from_db()
         assert new_preprint.is_published is True
         assert original_guid.referent == new_preprint
@@ -159,7 +166,10 @@ class TestPreprintFactory:
     def test_create_version_unpublished(self):
         original_preprint = PreprintFactory(is_published=True)
         new_preprint = PreprintFactory.create_version(
-            create_from=original_preprint, is_published=False, set_doi=False, final_machine_state='pending'
+            create_from=original_preprint,
+            is_published=False,
+            set_doi=False,
+            final_machine_state='pending'
         )
         assert new_preprint.is_published is False
         assert new_preprint.machine_state == 'pending'

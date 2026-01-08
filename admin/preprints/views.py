@@ -184,6 +184,12 @@ class PreprintReindexShare(PreprintMixin, View):
     def post(self, request, *args, **kwargs):
         preprint = self.get_object()
         update_share(preprint)
+        messages.success(
+            request,
+            'Reindex request has been sent to SHARE. '
+            'Changes typically appear in OSF Search within about 5 minutes, '
+            'subject to background queue load and SHARE availability.'
+        )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=preprint._id,

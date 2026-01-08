@@ -10,6 +10,7 @@ from osf_tests.test_node import TestNodeEditableFieldsMixin, TestTagging, TestNo
 from osf_tests.test_node_license import TestNodeLicenses
 from django.utils import timezone
 
+from tests.utils import capture_notifications
 from website import settings
 
 from . import factories
@@ -181,7 +182,7 @@ class TestDraftRegistrations:
         project = factories.ProjectFactory()
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
-        assert draft.url == settings.DOMAIN + f'registries/drafts/{draft._id}'
+        assert draft.url == settings.DOMAIN + f'registries/drafts/{draft._id}/review'
 
     def test_create_from_node_existing(self, user):
         node = factories.ProjectFactory(creator=user)
@@ -220,12 +221,12 @@ class TestDraftRegistrations:
         node.set_subjects([[subject._id]], auth=Auth(node.creator))
         node.affiliated_institutions.add(institution)
         node.save()
-
-        draft = DraftRegistration.create_from_node(
-            node=node,
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=node,
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         # Assert existing metadata-like node attributes are copied to the draft
         assert draft.title == title
@@ -249,10 +250,11 @@ class TestDraftRegistrations:
         assert draft.branched_from == node
 
     def test_create_from_node_draft_node(self, user):
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         assert draft.title == ''
         assert draft.description == ''
@@ -290,15 +292,15 @@ class TestDraftRegistrations:
         write_contrib = factories.UserFactory()
         read_contrib = factories.UserFactory()
         non_contrib = factories.UserFactory()
-
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            node=project,
-            schema=factories.get_default_metaschema()
-        )
-        project.add_contributor(non_contrib, ADMIN, save=True)
-        draft.add_contributor(write_contrib, WRITE, save=True)
-        draft.add_contributor(read_contrib, READ, save=True)
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                node=project,
+                schema=factories.get_default_metaschema()
+            )
+            project.add_contributor(non_contrib, ADMIN, save=True)
+            draft.add_contributor(write_contrib, WRITE, save=True)
+            draft.add_contributor(read_contrib, READ, save=True)
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]
@@ -340,13 +342,15 @@ class TestDraftRegistrationContributorMethods():
     def test_add_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': ADMIN, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': False}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': ADMIN, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': False}
+                ],
+                auth=auth,
+                notification_type=None
+            )
         last_log = draft_registration.logs.all().order_by('-created')[0]
         assert (
             last_log.params['contributors'] ==
@@ -378,8 +382,12 @@ class TestDraftRegistrationContributorMethods():
         assert len(draft_registration.contributors) == 2
 
     def test_remove_unregistered_contributor_removes_unclaimed_record(self, draft_registration, auth):
-        new_user = draft_registration.add_unregistered_contributor(fullname='David Davidson',
-            email='david@davidson.com', auth=auth)
+        new_user = draft_registration.add_unregistered_contributor(
+            fullname='David Davidson',
+            email='david@davidson.com',
+            auth=auth,
+            notification_type=False
+        )
         draft_registration.save()
         assert draft_registration.is_contributor(new_user)  # sanity check
         assert draft_registration._primary_key in new_user.unclaimed_records
@@ -410,7 +418,11 @@ class TestDraftRegistrationContributorMethods():
 
     def test_non_visible_initiator(self, project, user):
         invisible_user = factories.UserFactory()
-        project.add_contributor(contributor=invisible_user, permissions=ADMIN, visible=False)
+        project.add_contributor(
+            contributor=invisible_user,
+            permissions=ADMIN,
+            visible=False,
+        )
         invisible_project_contributor = project.contributor_set.get(user=invisible_user)
         assert invisible_project_contributor.visible is False
 
@@ -493,13 +505,15 @@ class TestDraftRegistrationContributorMethods():
     def test_remove_contributors(self, draft_registration, auth):
         user1 = factories.UserFactory()
         user2 = factories.UserFactory()
-        draft_registration.add_contributors(
-            [
-                {'user': user1, 'permissions': WRITE, 'visible': True},
-                {'user': user2, 'permissions': WRITE, 'visible': True}
-            ],
-            auth=auth
-        )
+        with capture_notifications():
+            draft_registration.add_contributors(
+                [
+                    {'user': user1, 'permissions': WRITE, 'visible': True},
+                    {'user': user2, 'permissions': WRITE, 'visible': True}
+                ],
+                auth=auth,
+                notification_type=None
+            )
         assert user1 in draft_registration.contributors
         assert user2 in draft_registration.contributors
         assert draft_registration.has_permission(user1, WRITE)

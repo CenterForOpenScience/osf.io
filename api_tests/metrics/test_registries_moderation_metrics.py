@@ -6,6 +6,7 @@ from osf import features
 from osf_tests.factories import RegistrationFactory, AuthUserFactory
 from osf.utils.workflows import RegistrationModerationStates, RegistrationModerationTriggers
 from osf.metrics import RegistriesModerationMetrics
+from tests.utils import capture_notifications
 
 pytestmark = pytest.mark.django_db
 
@@ -24,12 +25,13 @@ class TestRegistrationModerationMetrics:
 
     @pytest.mark.es_metrics
     def test_record_transitions(self, registration):
-        registration._write_registration_action(
-            RegistrationModerationStates.INITIAL,
-            RegistrationModerationStates.PENDING,
-            registration.creator,
-            'Metrics is easy'
-        )
+        with capture_notifications():
+            registration._write_registration_action(
+                RegistrationModerationStates.INITIAL,
+                RegistrationModerationStates.PENDING,
+                registration.creator,
+                'Metrics is easy'
+            )
         time.sleep(1)
 
         assert RegistriesModerationMetrics.search().count() == 1
@@ -72,12 +74,13 @@ class TestRegistrationModerationMetricsView:
 
     @pytest.mark.es_metrics
     def test_registries_moderation_view(self, app, user, base_url, registration):
-        registration._write_registration_action(
-            RegistrationModerationStates.INITIAL,
-            RegistrationModerationStates.PENDING,
-            registration.creator,
-            'Metrics is easy'
-        )
+        with capture_notifications():
+            registration._write_registration_action(
+                RegistrationModerationStates.INITIAL,
+                RegistrationModerationStates.PENDING,
+                registration.creator,
+                'Metrics is easy'
+            )
         time.sleep(1)
 
         res = app.get(base_url, auth=user.auth, expect_errors=True)

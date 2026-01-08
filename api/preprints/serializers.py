@@ -49,6 +49,7 @@ from osf.models import (
     PreprintProvider,
     Node,
     NodeLicense,
+    NotificationType,
 )
 from osf.utils import permissions as osf_permissions
 from osf.utils.workflows import DefaultStates
@@ -325,6 +326,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
 
         updated_has_prereg_links = validated_data.get('has_prereg_links', preprint.has_prereg_links)
         updated_why_no_prereg = validated_data.get('why_no_prereg', preprint.why_no_prereg)
+        prereg_links = validated_data.get('prereg_links', preprint.prereg_links)
 
         if updated_has_coi is False and updated_conflict_statement:
             raise exceptions.ValidationError(
@@ -341,7 +343,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                 detail='Cannot provide data links when has_data_links is set to "no".',
             )
 
-        if updated_has_prereg_links != 'no' and updated_why_no_prereg:
+        if updated_has_prereg_links != 'no' and (updated_why_no_prereg and not prereg_links):
             raise exceptions.ValidationError(
                 detail='You cannot edit this statement while your prereg links availability is set to true or is unanswered.',
             )
@@ -477,7 +479,7 @@ class PreprintSerializer(TaxonomizableSerializerMixin, MetricsSerializerMixin, J
                         preprint,
                         contributor=author,
                         auth=auth,
-                        email_template='preprint',
+                        notification_type=NotificationType.Type.PREPRINT_CONTRIBUTOR_ADDED_DEFAULT,
                     )
 
         return preprint

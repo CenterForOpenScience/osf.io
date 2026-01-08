@@ -9,8 +9,8 @@ django.setup()
 
 from framework import sentry
 from framework.celery_tasks import app as celery_app
-from osf.models import Guid, Preprint
-from website import mails, settings
+from osf.models import Guid, Preprint, NotificationType
+from website import settings
 
 
 logger = logging.getLogger(__name__)
@@ -123,12 +123,13 @@ def report_stuck_dois(dry_run=True):
     if preprints_with_pending_dois:
         guids = ', '.join(preprints_with_pending_dois.values_list('guids___id', flat=True))
         if not dry_run:
-            mails.send_mail(
-                to_addr=settings.OSF_SUPPORT_EMAIL,
-                mail=mails.CROSSREF_DOIS_PENDING,
-                pending_doi_count=preprints_with_pending_dois.count(),
-                time_since_published=time_since_published.days,
-                guids=guids,
+            NotificationType.Type.USER_CROSSREF_DOI_PENDING.instance.emit(
+                destination_address=settings.OSF_SUPPORT_EMAIL,
+                event_context={
+                    'pending_doi_count': preprints_with_pending_dois.count(),
+                    'time_since_published': time_since_published.days,
+                    'guids': guids,
+                }
             )
         else:
             logger.info('DRY RUN')
@@ -136,7 +137,7 @@ def report_stuck_dois(dry_run=True):
         logger.info(f'There were {preprints_with_pending_dois.count()} stuck registrations for CrossRef, email sent to help desk')
 
 
-@celery_app.task(name='management.commands.check_crossref_dois')
+@celery_app.task(name='osf.management.commands.check_crossref_dois')
 def main(dry_run=False):
     check_crossref_dois(dry_run=dry_run)
     report_stuck_dois(dry_run=dry_run)

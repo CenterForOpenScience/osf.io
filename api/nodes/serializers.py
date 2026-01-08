@@ -1242,41 +1242,39 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     def get_proposed_permissions(self, validated_data):
         return validated_data.get('permission') or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
-    def validate_data(self, node, user_id=None, full_name=None, email=None, index=None, child_nodes=None):
+    def validate_data(self, resource, user_id=None, full_name=None, email=None, index=None, child_nodes=None):
         if not user_id and not full_name:
             raise exceptions.ValidationError(detail='A user ID or full name must be provided to add a contributor.')
         if user_id and email:
             raise exceptions.ValidationError(detail='Do not provide an email when providing this user_id.')
-        if index is not None and index > len(node.contributors):
-            raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {node._id}')
-        if child_nodes and (not_children := set(child_nodes) - set(node.node_ids)):
-            raise exceptions.ValidationError(detail=f'Nodes {', '.join(not_children)} are not children of node with id {node._id}')
+        if index is not None and index > len(resource.contributors):
+            raise exceptions.ValidationError(detail=f'{index} is not a valid contributor index for node with id {resource._id}')
+        if child_nodes and (not_children := set(child_nodes) - set(resource.node_ids)):
+            raise exceptions.ValidationError(detail=f'Nodes {', '.join(not_children)} are not children of node with id {resource._id}')
 
     def create(self, validated_data):
-        id = validated_data.get('_id')
-        email = validated_data.get('user', {}).get('email', None)
-        index = None
-        if '_order' in validated_data:
-            index = validated_data.pop('_order')
-        node = self.context['resource']
+        user_id = validated_data.get('_id')
+        email = validated_data.get('user', {}).get('email')
+        index = validated_data.pop('_order', None)
+        resource = self.context['resource']
         auth = Auth(self.context['request'].user)
         full_name = validated_data.get('full_name')
         bibliographic = validated_data.get('bibliographic')
-        send_email = self.context['request'].GET.get('send_email') or self.context['default_email']
+
+        email_pref = self.context['request'].GET.get('send_email') or self.context['default_email']
         child_nodes = validated_data.get('child_nodes')
         permissions = self.get_proposed_permissions(validated_data)
+        self.validate_data(resource, user_id=user_id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
 
-        self.validate_data(node, user_id=id, full_name=full_name, email=email, index=index, child_nodes=child_nodes)
-
-        if send_email not in self.email_preferences:
-            raise exceptions.ValidationError(detail=f'{send_email} is not a valid email preference.')
+        if email_pref not in self.email_preferences:
+            raise exceptions.ValidationError(f'{email_pref} is not a valid email preference.')
 
         try:
             contributor_dict = {
-                'auth': auth, 'user_id': id, 'email': email, 'full_name': full_name, 'send_email': send_email,
-                'bibliographic': bibliographic, 'index': index, 'save': True, 'permissions': permissions,
+                'auth': auth, 'user_id': user_id, 'email': email, 'full_name': full_name, 'notification_type': False if email_pref == 'false' else None,
+                'bibliographic': bibliographic, 'index': index, 'permissions': permissions,
             }
-            contributor_obj = node.add_contributor_registered_or_not(**contributor_dict)
+            contributor_obj = resource.add_contributor_registered_or_not(**contributor_dict)
             if child_nodes:
                 for child in AbstractNode.objects.filter(guids___id__in=child_nodes):
                     child.add_contributor_registered_or_not(**contributor_dict)
@@ -1285,7 +1283,6 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
         except ValueError as e:
             raise exceptions.NotFound(detail=e.args[0])
         return contributor_obj
-
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
