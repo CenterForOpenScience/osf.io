@@ -26,6 +26,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/get_reset_password/$', views.GetPasswordResetLink.as_view(), name='get-reset-password'),
     re_path(r'^(?P<guid>[a-z0-9]+)/reindex_elastic_user/$', views.UserReindexElastic.as_view(),
         name='reindex-elastic-user'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/add_email/$', views.UserAddEmail.as_view(), name='add-email'),
     re_path(r'^(?P<guid>[a-z0-9]+)/reindex_share_user/$', views.UserShareReindex.as_view(),
         name='reindex-share-user'),
     re_path(r'^(?P<guid>[a-z0-9]+)/merge_accounts/$', views.UserMergeAccounts.as_view(), name='merge-accounts'),

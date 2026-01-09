@@ -11,18 +11,20 @@ from django.views.generic import (
 from django.contrib import messages
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.urls import reverse
+from django.utils import timezone
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 
-from osf.exceptions import UserStateError
+from osf.exceptions import UserStateError, BlockedEmailError
 from osf.models.base import Guid
-from osf.models.user import OSFUser
+from osf.models.user import OSFUser, Email
 from osf.models.spam import SpamStatus
 from osf.models.notification_type import NotificationType
 from framework.auth import get_user
 from framework.auth.core import generate_verification_key
+from framework.auth.views import send_confirm_email_async
 
 from website import search
 from website.settings import EXTERNAL_IDENTITY_PROFILE
@@ -44,7 +46,8 @@ from osf.models.admin_log_entry import (
 from admin.users.forms import (
     EmailResetForm,
     UserSearchForm,
-    MergeUserForm
+    MergeUserForm,
+    AddEmailForm
 )
 from admin.nodes.views import NodeAddSystemTag, NodeRemoveSystemTag
 from admin.base.views import GuidView
@@ -403,6 +406,44 @@ class UserRemoveSystemTag(UserMixin, NodeRemoveSystemTag):
     """ Allows authorized users to remove system tags from a user.
     """
     permission_required = 'osf.change_osfuser'
+
+
+class UserAddEmail(UserMixin, FormView):
+    """Allows authorized users to add an email to a user's account and trigger confirmation."""
+    permission_required = 'osf.change_osfuser'
+    raise_exception = True
+    form_class = AddEmailForm
+
+    def form_valid(self, form):
+
+        user = self.get_object()
+        address = form.cleaned_data['new_email'].strip().lower()
+
+        existing_email = Email.objects.filter(address=address).first()
+        if existing_email:
+            if existing_email.user == user:
+                messages.error(self.request, f'Email {address} is already confirmed for this user.')
+            else:
+                messages.error(self.request, f'Email {address} already exists in the system and is associated with another user.')
+            return super().form_valid(form)
+
+        if address in user.unconfirmed_emails:
+            messages.error(self.request, f'Email {address} is already pending confirmation for this user.')
+            return super().form_valid(form)
+
+        try:
+            user.add_unconfirmed_email(address)
+
+            send_confirm_email_async(user, email=address)
+            user.email_last_sent = timezone.now()
+            user.save()
+            messages.success(self.request, f'Added unconfirmed email {address} and sent confirmation email.')
+        except (ValidationError, ValueError) as e:
+            messages.error(self.request, f'Invalid email: {getattr(e, "message", str(e))}')
+        except BlockedEmailError:
+            messages.error(self.request, 'This email address domain is blocked.')
+
+        return super().form_valid(form)
 
 
 class UserMergeAccounts(UserMixin, FormView):
