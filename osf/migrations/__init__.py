@@ -107,7 +107,15 @@ def get_admin_write_permissions():
         'change_notabledomain',
         'delete_notabledomain',
         'change_cedarmetadatatemplate',
-        'change_registrationapproval'
+        'change_registrationapproval',
+        'change_notification',
+        'delete_notification',
+        'change_notificationtype',
+        'delete_notificationtype',
+        'change_notificationsubscription',
+        'delete_notificationsubscription',
+        'change_emailtask',
+        'delete_emailtask',
     ])
 
 
