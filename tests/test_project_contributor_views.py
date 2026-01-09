@@ -136,7 +136,7 @@ class TestProjectContributorViews(OsfTestCase):
         url = self.child_project.web_url_for('view_project')
         res = self.app.get(url, auth=self.auth)
         assert 'Private Project' not in res.text
-        assert 'parent project'in res.text
+        assert 'parent project' in res.text
 
     def test_edit_description(self):
         self.app.post(
@@ -189,7 +189,7 @@ class TestProjectContributorViews(OsfTestCase):
             }
         )
 
-        with capture_notifications():
+        with capture_notifications(expect_none=True):
             self.app.post(
                 f'/api/v1/project/{project._id}/contributors/',
                 json={
@@ -325,7 +325,8 @@ class TestProjectContributorViews(OsfTestCase):
                 [
                     {'user': reg_user1, 'permissions': permissions.ADMIN, 'visible': True},
                     {'user': reg_user2, 'permissions': permissions.ADMIN, 'visible': False},
-                ]
+                ],
+                notification_type=None,
             )
         # Add a non-registered user
         unregistered_user = project.add_unregistered_contributor(
@@ -550,7 +551,8 @@ class TestProjectContributorViews(OsfTestCase):
                         'permissions': permissions.ADMIN,
                         'visible': True
                     },
-                ]
+                ],
+                notification_type=None,
             )
 
         # add an unregistered contributor

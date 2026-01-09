@@ -1,4 +1,4 @@
-from django.db.models import Value, When, Case, F, Q, OuterRef, Subquery
+from django.db.models import Value, When, Case, OuterRef, Subquery
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
 from django.contrib.contenttypes.models import ContentType
@@ -6,7 +6,7 @@ from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
-
+from rest_framework.response import Response
 from framework.auth.oauth_scopes import CoreScopes
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
@@ -24,8 +24,7 @@ from osf.models import (
     RegistrationProvider,
     AbstractProvider,
     AbstractNode,
-    Preprint,
-    OSFUser,
+    Guid,
 )
 from osf.models.notification_type import NotificationType
 from osf.models.notification_subscription import NotificationSubscription
@@ -46,48 +45,91 @@ class SubscriptionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
     def get_queryset(self):
         user_guid = self.request.user._id
-        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
-
-        provider_subquery = AbstractProvider.objects.filter(
-            id=Cast(OuterRef('object_id'), IntegerField()),
-        ).values('_id')[:1]
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        return NotificationSubscription.objects.filter(user=self.request.user).annotate(
+        _global_file_updated = [
+            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+        ]
+        _global_reviews = [
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        ]
+        _node_file_updated = [
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+        ]
+
+        qs = NotificationSubscription.objects.filter(
+            notification_type__name__in=[
+                NotificationType.Type.USER_FILE_UPDATED.value,
+                NotificationType.Type.NODE_FILE_UPDATED.value,
+                NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            ] + _global_reviews + _global_file_updated + _node_file_updated,
+            user=self.request.user,
+        ).annotate(
             event_name=Case(
                 When(
-                    notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                    notification_type__name__in=_node_file_updated,
                     then=Value('files_updated'),
                 ),
                 When(
-                    notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+                    notification_type__name__in=_global_file_updated,
                     then=Value('global_file_updated'),
                 ),
-                default=F('notification_type__name'),
-                output_field=CharField(),
+                When(
+                    notification_type__name__in=_global_reviews,
+                    then=Value('global_reviews'),
+                ),
+                default=Value('notification_type__name'),
             ),
             legacy_id=Case(
                 When(
-                    notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                    notification_type__name__in=_node_file_updated,
                     then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
                 When(
-                    notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
-                    then=Value(f'{user_guid}_global'),
+                    notification_type__name__in=_global_file_updated,
+                    then=Value(f'{user_guid}_global_file_updated'),
                 ),
                 When(
-                    Q(notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value) &
-                    Q(content_type=provider_ct),
-                    then=Concat(Subquery(provider_subquery), Value('_new_pending_submissions')),
+                    notification_type__name__in=_global_reviews,
+                    then=Value(f'{user_guid}_global_reviews'),
                 ),
-                default=F('notification_type__name'),
-                output_field=CharField(),
+                default=Value('notification_type__name'),
             ),
-        )
+        ).distinct('legacy_id')
 
+        # Apply manual filter for legacy_id if requested
+        filter_id = self.request.query_params.get('filter[id]')
+        if filter_id:
+            qs = qs.filter(legacy_id=filter_id)
+            # convert to list comprehension because legacy_id is an annotation, not in DB
+        # Apply manual filter for event_name if requested
+        filter_event_name = self.request.query_params.get('filter[event_name]')
+        if filter_event_name:
+            qs = qs.filter(event_name__in=filter_event_name.split(','))
+
+        return qs
 
 class AbstractProviderSubscriptionList(SubscriptionList):
     def get_queryset(self):
@@ -118,62 +160,122 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
         node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
 
-        provider_subquery = AbstractProvider.objects.filter(
-            id=Cast(OuterRef('object_id'), IntegerField()),
-        ).values('_id')[:1]
-
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
-        guid_id, *event_parts = subscription_id.split('_')
-        event = '_'.join(event_parts) if event_parts else ''
-
-        subscription_obj = AbstractNode.load(guid_id) or Preprint.load(guid_id) or OSFUser.load(guid_id)
-
-        if event != 'global':
-            if subscription_obj is None:
-                subscription_obj = AbstractProvider.objects.get(_id=guid_id)
-            obj_filter = Q(
-                object_id=getattr(subscription_obj, 'id', None),
-                content_type=ContentType.objects.get_for_model(subscription_obj.__class__),
-                notification_type__name__icontains=event,
-            )
-        else:
-            obj_filter = Q()
-
         try:
-            obj = NotificationSubscription.objects.annotate(
+            annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
                 legacy_id=Case(
                     When(
-                        notification_type__name=NotificationType.Type.NODE_FILES_UPDATED.value,
+                        notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                         content_type=node_ct,
-                        then=Concat(Subquery(node_subquery), Value('_file_updated')),
+                        then=Concat(Subquery(node_subquery), Value('_files_updated')),
                     ),
                     When(
                         notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
-                        then=Value(f'{user_guid}_global'),
+                        then=Value(f'{user_guid}_global_file_updated'),
                     ),
                     When(
                         notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
                         content_type=provider_ct,
-                        then=Concat(Subquery(provider_subquery), Value('_new_pending_submissions')),
+                        then=Value(f'{user_guid}_global_reviews'),
                     ),
                     default=Value(f'{user_guid}_global'),
                     output_field=CharField(),
                 ),
-            ).filter(obj_filter)
+            )
+            obj = annotated_obj_qs.filter(legacy_id=subscription_id)
 
         except ObjectDoesNotExist:
             raise NotFound
 
-        try:
-            obj = obj.filter(user=self.request.user).get()
-        except ObjectDoesNotExist:
+        obj = obj.filter(user=self.request.user).first()
+        if not obj:
             raise PermissionDenied
 
         self.check_object_permissions(self.request, obj)
         return obj
+
+    def update(self, request, *args, **kwargs):
+        """
+        Update a notification subscription
+        """
+        if '_global_file_updated' in self.kwargs['subscription_id']:
+            # Copy _global_file_updated subscription changes to all file subscriptions
+            qs = NotificationSubscription.objects.filter(
+                user=self.request.user,
+                notification_type__name__in=[
+                    NotificationType.Type.USER_FILE_UPDATED.value,
+                    NotificationType.Type.FILE_UPDATED.value,
+                    NotificationType.Type.FILE_ADDED.value,
+                    NotificationType.Type.FILE_REMOVED.value,
+                    NotificationType.Type.ADDON_FILE_COPIED.value,
+                    NotificationType.Type.ADDON_FILE_RENAMED.value,
+                    NotificationType.Type.ADDON_FILE_MOVED.value,
+                    NotificationType.Type.ADDON_FILE_REMOVED.value,
+                    NotificationType.Type.FOLDER_CREATED.value,
+                ],
+            ).exclude(content_type=ContentType.objects.get_for_model(AbstractNode))
+            if not qs.exists():
+                raise PermissionDenied
+
+            for instance in qs:
+                serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            return Response(serializer.data)
+        elif '_global_reviews' in self.kwargs['subscription_id']:
+            # Copy global_reviews subscription changes to all provider subscriptions [ENG-9666]
+            qs = NotificationSubscription.objects.filter(
+                user=self.request.user,
+                notification_type__name__in=[
+                    NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                    NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+                    NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+                    NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+                    NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+                ],
+            )
+            if not qs.exists():
+                raise PermissionDenied
+
+            for instance in qs:
+                serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            return Response(serializer.data)
+        elif '_files_updated' in self.kwargs['subscription_id']:
+            # Copy _files_updated subscription changes to all node file subscriptions
+            node_id = Guid.load(self.kwargs['subscription_id'].split('_files_updated')[0]).object_id
+
+            qs = NotificationSubscription.objects.filter(
+                user=self.request.user,
+                content_type=ContentType.objects.get_for_model(AbstractNode),
+                object_id=node_id,
+                notification_type__name__in=[
+                    NotificationType.Type.NODE_FILE_UPDATED.value,
+                    NotificationType.Type.FILE_UPDATED.value,
+                    NotificationType.Type.FILE_ADDED.value,
+                    NotificationType.Type.FILE_REMOVED.value,
+                    NotificationType.Type.ADDON_FILE_COPIED.value,
+                    NotificationType.Type.ADDON_FILE_RENAMED.value,
+                    NotificationType.Type.ADDON_FILE_MOVED.value,
+                    NotificationType.Type.ADDON_FILE_REMOVED.value,
+                    NotificationType.Type.FOLDER_CREATED.value,
+                ],
+            )
+            if not qs.exists():
+                raise PermissionDenied
+
+            for instance in qs:
+                serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            return Response(serializer.data)
+
+        else:
+            return super().update(request, *args, **kwargs)
 
 
 class AbstractProviderSubscriptionDetail(SubscriptionDetail):

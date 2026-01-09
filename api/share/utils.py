@@ -6,6 +6,7 @@ from http import HTTPStatus
 import logging
 
 from django.apps import apps
+from celery.utils.time import get_exponential_backoff_interval
 import requests
 
 from framework.celery_tasks import app as celery_app
@@ -97,6 +98,20 @@ def task__update_share(self, guid: str, is_backfill=False, osfmap_partition_name
         _response.raise_for_status()
     except Exception as e:
         log_exception(e)
+        if _response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            retry_after = _response.headers.get('Retry-After')
+            try:
+                countdown = int(retry_after)
+            except (TypeError, ValueError):
+                retries = getattr(self.request, 'retries', 0)
+                countdown = get_exponential_backoff_interval(
+                    factor=4,
+                    retries=retries,
+                    maximum=2 * 60,
+                    full_jitter=True,
+                )
+            raise self.retry(exc=e, countdown=countdown)
+
         if HTTPStatus(_response.status_code).is_server_error:
             raise self.retry(exc=e)
     else:  # success response

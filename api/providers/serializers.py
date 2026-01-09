@@ -10,11 +10,11 @@ from api.collections_providers.fields import CollectionProviderRelationshipField
 from api.preprints.serializers import PreprintProviderRelationshipField
 from api.providers.workflows import Workflows
 from api.base.metrics import MetricsSerializerMixin
-from osf.models import CitationStyle, NotificationType
+from osf.models import CitationStyle, NotificationType, RegistrationProvider, CollectionProvider
 from osf.models.user import Email, OSFUser
 from osf.models.validators import validate_email
 from osf.utils.permissions import REVIEW_GROUPS, ADMIN
-from website.settings import DOMAIN
+from website.settings import DOMAIN, OSF_PREPRINTS_LOGO
 
 
 class ProviderSerializer(JSONAPISerializer):
@@ -359,13 +359,28 @@ class ModeratorSerializer(JSONAPISerializer):
         perm_group = validated_data.pop('permission_group', '')
         if perm_group not in REVIEW_GROUPS:
             raise ValidationError('Unrecognized permission_group')
-        context['notification_settings_url'] = f'{DOMAIN}reviews/preprints/{provider._id}/notifications'
         context['provider_name'] = provider.name
         context['provider__id'] = provider._id
         context['is_reviews_moderator_notification'] = True
-        context['referrer_fullname'] = user.fullname
-        context['is_reviews_moderator_notification'] = True
         context['is_admin'] = perm_group == ADMIN
+
+        if isinstance(provider, RegistrationProvider):
+            provider_type_word = 'registries'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        elif isinstance(provider, CollectionProvider):
+            provider_type_word = 'collections'
+            context['notification_settings_url'] = f'{DOMAIN}registries/{provider._id}/moderation/settings'
+        else:
+            provider_type_word = 'preprints'
+            context['notification_settings_url'] = f'{DOMAIN}preprints/{provider._id}/moderation/notifications'
+
+        context['provider_url'] = f'{provider.domain or DOMAIN}{provider_type_word}/{(provider._id if not provider.domain else '').strip('/')}'
+
+        if provider._id == 'osf':
+            logo = OSF_PREPRINTS_LOGO
+        else:
+            logo = provider._id
+        context['logo'] = logo
 
         provider.add_to_group(user, perm_group)
         setattr(user, 'permission_group', perm_group)  # Allows reserialization

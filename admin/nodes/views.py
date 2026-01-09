@@ -23,6 +23,7 @@ from admin.base.utils import change_embargo_date
 from admin.base.views import GuidView
 from admin.base.forms import GuidForm
 from admin.notifications.views import delete_selected_notifications
+from admin.nodes.forms import AddSystemTagForm, RegistrationDateForm
 
 from api.share.utils import update_share
 from api.caching.tasks import update_storage_usage_cache
@@ -51,11 +52,12 @@ from osf.models.admin_log_entry import (
     REINDEX_SHARE,
     REINDEX_ELASTIC,
 )
-from osf.utils.permissions import ADMIN
+from osf.utils.permissions import ADMIN, API_CONTRIBUTOR_PERMISSIONS
 
 from scripts.approve_registrations import approve_past_pendings
 
 from website import settings, search
+from website.archiver.tasks import force_archive
 
 
 class NodeMixin(PermissionRequiredMixin):
@@ -93,6 +95,36 @@ class NodeMixin(PermissionRequiredMixin):
         return reverse('nodes:node', kwargs={'guid': self.kwargs['guid']})
 
 
+class RegistrationUpdateDateView(NodeMixin, View):
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        node = self.get_object()
+        form = RegistrationDateForm(request.POST)
+        if form.is_valid():
+            last_date = node.registered_date
+            new_date = form.cleaned_data['registered_date']
+            node.registered_date = new_date
+            node.created = new_date
+            node.save()
+
+            node.add_log(
+                action=NodeLog.REGISTRATION_DATE_UPDATED,
+                auth=request,
+                params={
+                    'last_date': str(last_date),
+                    'new_date': str(new_date)
+                },
+                log_date=timezone.now(),
+                should_hide=False,
+            )
+            messages.success(request, 'Registration date updated successfully.')
+        else:
+            messages.error(request, 'Please enter a valid date.')
+        return redirect(self.get_success_url())
+
+
 class NodeView(NodeMixin, GuidView):
     """ Allows authorized users to view node info.
     """
@@ -104,6 +136,9 @@ class NodeView(NodeMixin, GuidView):
         context = super().get_context_data(**kwargs)
         node = self.get_object()
 
+        if isinstance(node, Registration):
+            context['registration_date_form'] = RegistrationDateForm(initial={'registered_date': node.registered_date})
+
         children = node.get_nodes(is_node_link=False)
         # Annotate guid because django templates prohibit accessing attributes that start with underscores
         children = AbstractNode.objects.filter(
@@ -113,10 +148,15 @@ class NodeView(NodeMixin, GuidView):
             'SPAM_STATUS': SpamStatus,
             'STORAGE_LIMITS': settings.StorageLimits,
             'node': node,
+            # to edit contributors we should have guid as django prohibits _id usage as it starts with an underscore
+            'annotated_contributors': node.contributor_set.prefetch_related('user__guids').annotate(guid=F('user__guids___id')),
             'children': children,
+            'permissions': API_CONTRIBUTOR_PERMISSIONS,
+            'has_update_permission': self.request.user.has_perm('osf.change_node'),
         })
 
         return context
+
 
 class NodeRemoveNotificationView(View):
     def post(self, request, *args, **kwargs):
@@ -197,6 +237,76 @@ class NodeRemoveContributorView(NodeMixin, View):
             date=timezone.now(),
             should_hide=True,
         ).save()
+
+
+class NodeUpdatePermissionsView(NodeMixin, View):
+    permission_required = ('osf.view_node', 'osf.change_node')
+    raise_exception = True
+    redirect_view = NodeRemoveContributorView
+
+    def post(self, request, *args, **kwargs):
+        data = dict(request.POST)
+        contributor_id_to_remove = data.get('remove-user')
+        resource = self.get_object()
+
+        if contributor_id_to_remove:
+            contributor_id = contributor_id_to_remove[0]
+            # html renders form into form incorrectly,
+            # so this view handles contributors deletion and permissions update
+            return self.redirect_view(
+                request=request,
+                kwargs={'guid': resource.guid, 'user_id': contributor_id}
+            ).post(request, user_id=contributor_id)
+
+        new_emails_to_add = data.get('new-emails', [])
+        new_permissions_to_add = data.get('new-permissions', [])
+
+        new_permission_indexes_to_remove = []
+        for email, permission in zip(new_emails_to_add, new_permissions_to_add):
+            contributor_user = OSFUser.objects.filter(emails__address=email.lower()).first()
+            if not contributor_user:
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
+                messages.error(self.request, f'Email {email} is not registered in OSF.')
+                continue
+            elif resource.is_contributor(contributor_user):
+                new_permission_indexes_to_remove.append(new_emails_to_add.index(email))
+                messages.error(self.request, f'User with email {email} is already a contributor.')
+                continue
+
+            resource.add_contributor_registered_or_not(
+                auth=request,
+                user_id=contributor_user._id,
+                permissions=permission,
+                notification_type=None
+            )
+            messages.success(self.request, f'User with email {email} was successfully added.')
+
+        # should remove permissions of invalid emails because
+        # admin can make all existing contributors non admins
+        # and enter an invalid email with the only admin permission
+        for permission_index in new_permission_indexes_to_remove:
+            new_permissions_to_add.pop(permission_index)
+
+        updated_permissions = data.get('updated-permissions', [])
+        all_permissions = updated_permissions + new_permissions_to_add
+        has_admin = list(filter(lambda permission: ADMIN in permission, all_permissions))
+        if not has_admin:
+            messages.error(self.request, 'Must be at least one admin on this node.')
+            return redirect(self.get_success_url())
+
+        for contributor_permission in updated_permissions:
+            guid, permission = contributor_permission.split('-')
+            user = OSFUser.load(guid)
+            resource.update_contributor(
+                user,
+                permission,
+                resource.get_visible(user),
+                request,
+                save=True,
+                skip_permission=True
+            )
+
+        return redirect(self.get_success_url())
 
 
 class NodeDeleteView(NodeMixin, View):
@@ -319,7 +429,7 @@ class RegistrationListView(PermissionRequiredMixin, ListView):
 
 
 class StuckRegistrationListView(RegistrationListView):
-    """ Allows authorized users to view a list of registrations the have been archiving files by more then 24 hours.
+    """ Allows authorized users to view a list of registrations that have been archiving files for more than 24 hours.
     """
 
     def get_queryset(self):
@@ -600,6 +710,12 @@ class NodeReindexShare(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         node = self.get_object()
         update_share(node)
+        messages.success(
+            request,
+            'Reindex request has been sent to SHARE. '
+            'Changes typically appear in OSF Search within about 5 minutes, '
+            'subject to background queue load and SHARE availability.'
+        )
         update_admin_log(
             user_id=self.request.user.id,
             object_id=node._id,
@@ -755,7 +871,7 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
 
     def get(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import check
+        from osf.management.commands.force_archive import check, DEFAULT_PERMISSIBLE_ADDONS
 
         registration = self.get_object()
 
@@ -763,8 +879,11 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
             messages.success(request, f"Registration {registration._id} is archived.")
             return redirect(self.get_success_url())
 
+        addons = set(registration.registered_from.get_addon_names())
+        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+
         try:
-            archive_status = check(registration)
+            archive_status = check(registration, permissible_addons=addons)
             messages.success(request, archive_status)
         except RegistrationStuckError as exc:
             messages.error(request, str(exc))
@@ -785,7 +904,7 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
     def post(self, request, *args, **kwargs):
         # Prevents circular imports that cause admin app to hang at startup
-        from osf.management.commands.force_archive import verify, archive, DEFAULT_PERMISSIBLE_ADDONS
+        from osf.management.commands.force_archive import verify, DEFAULT_PERMISSIBLE_ADDONS
 
         registration = self.get_object()
         force_archive_params = request.POST
@@ -810,18 +929,14 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
         if dry_mode:
             messages.success(request, f"Registration {registration._id} can be archived.")
         else:
-            try:
-                archive(
-                    registration,
-                    permissible_addons=addons,
-                    allow_unconfigured=allow_unconfigured,
-                    skip_collisions=skip_collision,
-                    delete_collisions=delete_collision,
-                )
-                messages.success(request, 'Registration archive process has finished.')
-            except Exception as exc:
-                messages.error(request, f'This registration cannot be archived due to {exc.__class__.__name__}: {str(exc)}. '
-                                        f'If the problem persists get a developer to fix it.')
+            force_archive_task = force_archive.delay(
+                str(registration._id),
+                permissible_addons=list(addons),
+                allow_unconfigured=allow_unconfigured,
+                skip_collisions=skip_collision,
+                delete_collisions=delete_collision,
+            )
+            messages.success(request, f'Registration archive process has started. Task id: {force_archive_task.id}.')
 
         return redirect(self.get_success_url())
 
@@ -843,4 +958,33 @@ class NodeRevertToDraft(NodeMixin, View):
     def post(self, request, *args, **kwargs):
         registration = self.get_object()
         registration.to_draft()
+        return redirect(self.get_success_url())
+
+
+class NodeAddSystemTag(NodeMixin, FormView):
+    """ Allows authorized users to add system tags to a node.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+    form_class = AddSystemTagForm
+
+    def form_valid(self, form):
+        resource = self.get_object()
+        system_tag_to_add = form.cleaned_data['system_tag_to_add']
+        resource.add_system_tag(system_tag_to_add)
+        resource.save()
+
+        return super().form_valid(form)
+
+
+class NodeRemoveSystemTag(NodeMixin, View):
+    """ Allows authorized users to remove system tags from a node.
+    """
+    permission_required = 'osf.change_node'
+    raise_exception = True
+
+    def post(self, request, *args, **kwargs):
+        resource = self.get_object()
+        tag = resource.system_tags_objects.get(id=kwargs['tag_id'])
+        resource.remove_tag(tag.name, auth=request.user)
         return redirect(self.get_success_url())

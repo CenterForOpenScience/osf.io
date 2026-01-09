@@ -13,7 +13,7 @@ from website import settings
 class GoogleDatasetJsonLdSerializer(_base.MetadataSerializer):
     mediatype = 'application/ld+json'
 
-    # Descriptions must innclude the 50 minimum characters for Google Dataset Discovery to accept the item as valid
+    # Descriptions must include the 50 minimum characters for Google Dataset Discovery to accept the item as valid
     DEFAULT_DESCRIPTION = 'No description was included in this Dataset collected from the OSF'
 
     def filename_for_itemid(self, itemid: str):
@@ -79,9 +79,9 @@ def format_creators(basket):
     for creator_iri in basket[DCTERMS.creator]:
         creator_data.append({
             '@type': 'Person',
-            'name': next(basket[creator_iri:FOAF.name]),
-            'givenName': next(basket[creator_iri:FOAF.givenName]),
-            'familyName': next(basket[creator_iri:FOAF.familyName]),
+            'name': next(basket[creator_iri:FOAF.name], None),
+            'givenName': next(basket[creator_iri:FOAF.givenName], None),
+            'familyName': next(basket[creator_iri:FOAF.familyName], None),
         })
     return creator_data
 

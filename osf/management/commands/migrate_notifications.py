@@ -5,7 +5,7 @@ from contextlib import contextmanager
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand, CommandError
-from django.db import transaction
+from django.db import transaction, connection
 
 from osf.models import NotificationType, NotificationSubscription
 from osf.models.notifications import NotificationSubscriptionLegacy
@@ -14,38 +14,46 @@ from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
-TIMEOUT_SECONDS = 3600  # 60 minutes timeout
-BATCH_SIZE = 1000       # Default batch size
+TIMEOUT_SECONDS = 36000  # 10 hours timeout
+BATCH_SIZE = 10000       # Default batch size
 
 FREQ_MAP = {
     'none': 'none',
-    'email_digest': 'weekly',
+    'email_digest': 'daily',
     'email_transactional': 'instantly',
 }
 
 EVENT_NAME_TO_NOTIFICATION_TYPE = {
     # Provider notifications
-    'new_pending_withdraw_requests': NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS,
-    'contributor_added_preprint': NotificationType.Type.PROVIDER_CONTRIBUTOR_ADDED_PREPRINT,
-    'new_pending_submissions': NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS,
-    'moderator_added': NotificationType.Type.PROVIDER_MODERATOR_ADDED,
-    'reviews_submission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION,
-    'reviews_resubmission_confirmation': NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION,
-    'confirm_email_moderation': NotificationType.Type.PROVIDER_CONFIRM_EMAIL_MODERATION,
+    'global_reviews': NotificationType.Type.REVIEWS_SUBMISSION_STATUS,
 
     # Node notifications
     'file_updated': NotificationType.Type.NODE_FILE_UPDATED,
 
-    # Collection submissions
-    'collection_submission_submitted': NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED,
-    'collection_submission_accepted': NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED,
-    'collection_submission_rejected': NotificationType.Type.COLLECTION_SUBMISSION_REJECTED,
-    'collection_submission_removed_admin': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN,
-    'collection_submission_removed_moderator': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR,
-    'collection_submission_removed_private': NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_PRIVATE,
-    'collection_submission_cancel': NotificationType.Type.COLLECTION_SUBMISSION_CANCEL,
+    # User notifications
+    'global_file_updated': NotificationType.Type.USER_FILE_UPDATED,
 }
 
+
+def get_legacy_subscribed_users_and_frequency(legacy):
+    none = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_none where notificationsubscription_id = %s'
+    email_digest = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_email_digest where notificationsubscription_id = %s'
+    email_transactional = 'SELECT osfuser_id from osf_notificationsubscriptionlegacy_email_transactional where notificationsubscription_id = %s'
+    with connection.cursor() as cursor:
+        cursor.execute(none, [legacy.id])
+        none_users = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(email_digest, [legacy.id])
+        digest_users = [row[0] for row in cursor.fetchall()]
+
+        cursor.execute(email_transactional, [legacy.id])
+        transactional_users = [row[0] for row in cursor.fetchall()]
+
+    return {
+        'none': none_users,
+        'email_digest': digest_users,
+        'email_transactional': transactional_users
+    }
 
 @contextmanager
 def time_limit(seconds):
@@ -85,16 +93,29 @@ def build_existing_keys():
 def migrate_legacy_notification_subscriptions(
     dry_run=False,
     batch_size=BATCH_SIZE,
-    default_frequency='none',
     start_id=0,
 ):
     logger.info('Starting legacy notification subscription migration...')
 
-    legacy_qs = NotificationSubscriptionLegacy.objects.filter(id__gte=start_id).order_by('id')
-    total = legacy_qs.count()
-    if total == 0:
+    legacy_qs = NotificationSubscriptionLegacy.objects.filter(id__gte=start_id, event_name__in=EVENT_NAME_TO_NOTIFICATION_TYPE.keys()).order_by('id')
+    legacy_qs_ids = legacy_qs.values_list('id', flat=True)
+    if legacy_qs_ids.count() != 0:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_none where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            none_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_email_digest where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            digest_count = cursor.fetchone()[0]
+            cursor.execute('SELECT COUNT(*) FROM osf_notificationsubscriptionlegacy_email_transactional where notificationsubscription_id IN %s', [tuple(legacy_qs_ids)])
+            transactional_count = cursor.fetchone()[0]
+
+        legacy_expanded_total = none_count + digest_count + transactional_count
+    else:
+        legacy_expanded_total = 0
+
+    if legacy_expanded_total == 0:
         logger.info('No legacy subscriptions to migrate.')
         return
+    logger.info(f"Total legacy subscriptions to process: {legacy_expanded_total}")
 
     notiftype_map = dict(NotificationType.objects.values_list('name', 'id'))
     existing_keys = build_existing_keys()
@@ -108,7 +129,7 @@ def migrate_legacy_notification_subscriptions(
     for batch_range in tqdm(list(iter_batches(first_id, last_id, batch_size)), desc='Processing', unit='batch'):
         batch = list(
             NotificationSubscriptionLegacy.objects
-            .filter(id__range=batch_range)
+            .filter(id__range=batch_range, event_name__in=EVENT_NAME_TO_NOTIFICATION_TYPE.keys())
             .order_by('id')
             .select_related('provider', 'node', 'user')
         )
@@ -130,6 +151,8 @@ def migrate_legacy_notification_subscriptions(
             content_type = content_type_cache[model_class]
 
             notif_enum = EVENT_NAME_TO_NOTIFICATION_TYPE.get(event_name)
+            if subscribed_object == legacy.user and event_name == 'global_file_updated':
+                notif_enum = NotificationType.Type.USER_FILE_UPDATED
             if not notif_enum:
                 skipped += 1
                 continue
@@ -139,29 +162,31 @@ def migrate_legacy_notification_subscriptions(
                 skipped += 1
                 continue
 
-            key = (
-                legacy.user_id,
-                content_type.id,
-                int(subscribed_object.id),
-                notification_type_id,
-            )
-            if key in existing_keys:
-                skipped += 1
-                continue
+            frequency_data = get_legacy_subscribed_users_and_frequency(legacy)
 
-            frequency = 'weekly' if getattr(legacy, 'email_digest', False) else default_frequency
-
-            if dry_run:
-                created += 1
-            else:
-                subscriptions_to_create.append(NotificationSubscription(
-                    notification_type_id=notification_type_id,
-                    user_id=legacy.user_id,
-                    content_type=content_type,
-                    object_id=subscribed_object.id,
-                    message_frequency=frequency,
-                ))
-                existing_keys.add(key)
+            for frequency_key, value in frequency_data.items():
+                for user_id in value:
+                    key = (
+                        user_id,
+                        content_type.id,
+                        int(subscribed_object.id),
+                        notification_type_id,
+                    )
+                    if key in existing_keys:
+                        skipped += 1
+                        continue
+                    frequency = FREQ_MAP[frequency_key]
+                    if dry_run:
+                        created += 1
+                    else:
+                        subscriptions_to_create.append(NotificationSubscription(
+                            notification_type_id=notification_type_id,
+                            user_id=user_id,
+                            content_type=content_type,
+                            object_id=subscribed_object.id,
+                            message_frequency=frequency,
+                        ))
+                    existing_keys.add(key)
 
         if not dry_run and subscriptions_to_create:
             with transaction.atomic():

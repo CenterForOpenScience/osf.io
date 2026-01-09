@@ -17,7 +17,7 @@
                 <tr>
                     <th colspan="2" style="padding: 0px 15px 0 15px">
                         <h3 style="padding: 0 15px 5px 15px; margin: 30px 0 0 0;border: none;list-style: none;font-weight: 300; border-bottom: 1px solid #eee; text-align: left;">
-                            Hello ${name},
+                            Hello ${user_fullname},
                             <p>
                             Below are the recent submissions
                             % if reviews_withdrawal_url:
@@ -39,7 +39,7 @@
             <tr>
                 <td style="border-collapse: collapse;">
                     %for item in d:
-                        ${item['message']}
+                        ${item}
                     %endfor
                 </td>
             </tr>
@@ -55,7 +55,7 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    ${build_message(message)}
+    ${build_message(notifications)}
   </td>
 </tr>
 </%def>

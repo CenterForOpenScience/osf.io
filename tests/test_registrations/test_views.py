@@ -79,7 +79,7 @@ class TestRegistrationViews(RegistrationsTestBase):
         assert res.status_code == http_status.HTTP_200_OK
 
     @mock.patch('framework.celery_tasks.handlers.enqueue_task', mock.Mock())
-    def test_register_template_page_backwards_comptability(self):
+    def test_register_template_page_backwards_compatibility(self):
         # Historically metaschema's were referenced by a slugified version
         # of their name.
         reg = self.draft.register(
@@ -174,7 +174,8 @@ class TestDraftRegistrationViews(RegistrationsTestBase):
         }
         url = target.web_url_for('new_draft_registration')
 
-        res = self.app.post(url, data=payload, auth=self.user.auth)
+        with capture_notifications():
+            res = self.app.post(url, data=payload, auth=self.user.auth)
         assert res.status_code == http_status.HTTP_302_FOUND
         target.reload()
         draft = DraftRegistration.objects.get(branched_from=target)
@@ -533,7 +534,7 @@ class TestModeratorRegistrationViews:
         resp = app.get(registration_subpath, auth=moderator.auth)
         assert resp.status_code == 200
 
-    def test_moderator_can_viw_subpath_of_embargoed_registration(
+    def test_moderator_can_view_subpath_of_embargoed_registration(
         self, app, embargoed_registration, moderator, registration_subpath):
         # Moderators may need to see details of an embargoed registration
         # to determine if there is a need to withdraw before it becomes public

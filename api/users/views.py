@@ -100,6 +100,7 @@ from osf.models import (
     Email,
     Tag,
     NotificationType,
+    PreprintProvider,
 )
 from osf.utils.tokens import TokenHandler
 from osf.utils.tokens.handlers import sanction_handler
@@ -107,6 +108,9 @@ from website import settings, language
 from website.project.views.contributor import send_claim_email, send_claim_registered_email
 from website.util.metrics import CampaignClaimedTags, CampaignSourceTags
 from framework.auth import exceptions
+from website.project.views.contributor import _add_related_claimed_tag_to_user
+from website.util import api_v2_url
+from framework.auth import signals
 
 
 class UserMixin:
@@ -128,6 +132,8 @@ class UserMixin:
             contrib_id, contrib = list(self.request.parents[Contributor].items())[0]
             user = contrib.user
             if user.is_disabled:
+                if getattr(user, 'gdpr_deleted', False):
+                    raise NotFound
                 raise UserGone(user=user)
             # Make sure that the contributor ID is correct
             if user._id == key:
@@ -165,7 +171,7 @@ class UserMixin:
 
 
 class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -192,7 +198,7 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -228,7 +234,7 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
 
 class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_addons_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -252,7 +258,7 @@ class UserAddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, User
 
 
 class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_addons_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_addons_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -272,7 +278,7 @@ class UserAddonDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, Addo
 
 
 class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/Users_addon_accounts_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -293,7 +299,7 @@ class UserAddonAccountList(JSONAPIBaseView, generics.ListAPIView, UserMixin, Add
         return self.get_addon_settings(check_object_permissions=False).external_accounts
 
 class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixin, AddonSettingsMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/Users_addon_accounts_read).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/Users_addon_accounts_read).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -319,7 +325,7 @@ class UserAddonAccountDetail(JSONAPIBaseView, generics.RetrieveAPIView, UserMixi
 
 
 class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilterMixin, NodeOptimizationMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_nodes_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_nodes_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -358,7 +364,7 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, UserNodesFilte
 
 
 class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_preprints_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_preprints_list).
     """
 
     permission_classes = (
@@ -393,7 +399,7 @@ class UserPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFi
 
 
 class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, PreprintFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/).
+    """See [documentation for this endpoint](https://developer.osf.io/).
     """
 
     permission_classes = (
@@ -423,7 +429,7 @@ class UserDraftPreprints(JSONAPIBaseView, generics.ListAPIView, UserMixin, Prepr
 
 
 class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -448,7 +454,7 @@ class UserInstitutions(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 
 class UserRegistrations(JSONAPIBaseView, generics.ListAPIView, UserMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/users_registrations_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/users_registrations_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -554,7 +560,7 @@ class UserInstitutionsRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
 
 class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_list).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/external_identities_list).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -582,7 +588,7 @@ class UserIdentitiesList(JSONAPIBaseView, generics.ListAPIView, UserMixin):
 
 class UserIdentitiesDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, UserMixin):
     """
-    The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/external_identities_detail).
+    See [documentation for this endpoint](https://developer.osf.io/#operation/external_identities_detail).
     """
     permission_classes = (
         base_permissions.TokenHasScope,
@@ -764,6 +770,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 external_id_provider=external_id_provider,
                 external_id=external_id,
             )
+            signals.unconfirmed_user_created.send(user)
 
         else:
             # 1. create unconfirmed user with pending status
@@ -786,6 +793,7 @@ class ExternalLogin(JSONAPIBaseView, generics.CreateAPIView):
                 external_id_provider=external_id_provider,
                 external_id=external_id,
             )
+            signals.unconfirmed_user_created.send(user)
 
         # Don't go anywhere
         return JsonResponse(
@@ -847,7 +855,7 @@ class ResetPassword(JSONAPIBaseView, generics.ListCreateAPIView):
                 user_obj.verification_key_v2 = generate_verification_key(verification_type='password')
                 user_obj.email_last_sent = timezone.now()
                 user_obj.save()
-                reset_link = f'{settings.RESET_PASSWORD_URL}{user_obj._id}/{user_obj.verification_key_v2['token']}/'
+                reset_link = f'{settings.DOMAIN}resetpassword/{user_obj._id}/{user_obj.verification_key_v2["token"]}/'
                 if institutional:
                     notification_type = NotificationType.Type.USER_FORGOT_PASSWORD_INSTITUTION
                 else:
@@ -1037,6 +1045,86 @@ class ClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+class ConfirmClaimUser(JSONAPIBaseView, generics.CreateAPIView, UserMixin):
+
+    view_category = 'users'
+    view_name = 'confirm-claim-user'
+
+    def verify_claim_token(self, user, token, pid):
+        """View helper that checks that a claim token for a given user and node ID
+        is valid. If not valid, throws an error with custom error messages.
+        """
+        # if token is invalid, throw an error
+        if not user.verify_claim_token(token=token, project_id=pid):
+            if user.is_registered:
+                raise ValidationError('User has already been claimed.')
+            else:
+                return False
+        return True
+
+    def post(self, request, *args, **kwargs):
+        """
+        View for setting the password for a claimed user.
+        Sets the user's password.
+        HTTP Method: POST
+        **URL:**  /v2/users/<user_id>/confirm_claim/
+        **Body (JSON):**
+        {
+            "data": {
+                "type": "users",
+                "attributes": {
+                    "guid": "node/preprint guid",
+                    "token": "token",
+                    "password": "password",
+                    "accepted_terms_of_service": bool
+                }
+            }
+        }
+        """
+
+        uid = kwargs['user_id']
+        token = request.data.get('token')
+        guid = request.data.get('guid')
+        password = request.data.get('password')
+        accepted_terms_of_service = request.data.get('accepted_terms_of_service', False)
+        user = OSFUser.load(uid)
+
+        # If unregistered user is not in database, or url bears an invalid token raise HTTP 400 error
+        if not user or not self.verify_claim_token(user, token, guid):
+            raise ValidationError('Claim user does not exists, the token in the URL is invalid or has expired.')
+
+        # If user is logged in, need to use 'confirm_claim_registered' view
+        if request.user.is_authenticated:
+            raise ValidationError('You are already logged in. Please log out before trying to claim a user via this view.')
+
+        unclaimed_record = user.unclaimed_records[guid]
+        user.fullname = unclaimed_record['name']
+        user.update_guessed_names()
+        username = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
+
+        user.register(username=username, password=password, accepted_terms_of_service=accepted_terms_of_service)
+        # Clear unclaimed records
+        user.unclaimed_records = {}
+        user.verification_key = generate_verification_key()
+        user.save()
+        provider = PreprintProvider.load(guid)
+        redirect_url = None
+        if provider:
+            redirect_url = api_v2_url('auth_login', next=provider.landing_url, _absolute=True)
+        else:
+            # Add related claimed tags to user
+            _add_related_claimed_tag_to_user(guid, user)
+            redirect_url = api_v2_url('resolve_guid', guid=guid, _absolute=True)
+
+        data = {
+            'firstname': user.given_name,
+            'email': username if username else '',
+            'fullname': user.fullname,
+            'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'next': redirect_url,
+        }
+
+        return Response(status=status.HTTP_200_OK, data=data)
 
 class ConfirmEmailView(generics.CreateAPIView):
     """
@@ -1052,7 +1140,7 @@ class ConfirmEmailView(generics.CreateAPIView):
     }
 
     On success returns a response with a 201 status code with a JSONAPI payload that includes the `redirect_url`
-    attritbute.
+    attribute.
     """
     permission_classes = (
         base_permissions.TokenHasScope,

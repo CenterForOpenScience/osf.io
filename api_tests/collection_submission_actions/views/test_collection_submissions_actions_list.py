@@ -5,7 +5,7 @@ from osf_tests.factories import AuthUserFactory
 from django.utils import timezone
 from osf_tests.factories import NodeFactory, CollectionFactory, CollectionProviderFactory
 
-from osf.models import CollectionSubmission
+from osf.models import CollectionSubmission, NotificationType
 from osf.utils.workflows import CollectionSubmissionsTriggers, CollectionSubmissionStates
 from tests.utils import capture_notifications
 
@@ -33,8 +33,7 @@ def node(collection_provider):
 def collection(collection_provider):
     collection = CollectionFactory()
     collection.provider = collection_provider
-    with capture_notifications():
-        collection.save()
+    collection.save()
     return collection
 
 
@@ -122,10 +121,21 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
         collection_submission.state_machine.set_state(CollectionSubmissionStates.PENDING)
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
-        resp = app.post_json_api(POST_URL, make_payload(
-            collection_submission=collection_submission,
-            trigger=moderator_trigger.db_name
-        ), auth=test_auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            resp = app.post_json_api(
+                POST_URL,
+                make_payload(
+                    collection_submission=collection_submission,
+                    trigger=moderator_trigger.db_name
+                ),
+                auth=test_auth,
+                expect_errors=True
+            )
+        assert len(notifications['emits']) == 1
+        if moderator_trigger is CollectionSubmissionsTriggers.ACCEPT:
+            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+        if moderator_trigger is CollectionSubmissionsTriggers.REJECT:
+            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
         assert resp.status_code == 201
 
     @pytest.mark.parametrize('moderator_trigger', [CollectionSubmissionsTriggers.ACCEPT, CollectionSubmissionsTriggers.REJECT])
@@ -158,11 +168,27 @@ class TestCollectionSubmissionsActionsListPOSTPermissions:
         collection_submission.state_machine.set_state(CollectionSubmissionStates.ACCEPTED)
         collection_submission.save()
         test_auth = configure_test_auth(node, user_role)
-        resp = app.post_json_api(POST_URL, make_payload(
-            collection_submission=collection_submission,
-            trigger=CollectionSubmissionsTriggers.REMOVE.db_name
-        ), auth=test_auth, expect_errors=True)
+        with capture_notifications() as notifications:
+            resp = app.post_json_api(
+                POST_URL,
+                make_payload(
+                    collection_submission=collection_submission,
+                    trigger=CollectionSubmissionsTriggers.REMOVE.db_name
+                ),
+                auth=test_auth,
+                expect_errors=True
+            )
         assert resp.status_code == 201
+        if user_role == UserRoles.MODERATOR:
+            assert len(notifications['emits']) == 1
+            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
+            assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
+        else:
+            assert len(notifications['emits']) == 2
+            assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+            assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
+            assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_ADMIN
+            assert notifications['emits'][1]['kwargs']['user'] == node.contributors.last()
 
 
 @pytest.mark.django_db
@@ -182,11 +208,14 @@ class TestSubmissionsActionsListPOSTBehavior:
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.ACCEPT.db_name)
-        app.post_json_api(POST_URL, payload, auth=test_auth)
+        with capture_notifications() as notifications:
+            app.post_json_api(POST_URL, payload, auth=test_auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
+
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
-
         assert action.trigger == CollectionSubmissionsTriggers.ACCEPT
         assert action.creator == user
         assert action.from_state == CollectionSubmissionStates.PENDING
@@ -198,11 +227,14 @@ class TestSubmissionsActionsListPOSTBehavior:
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.REJECT.db_name)
-        app.post_json_api(POST_URL, payload, auth=test_auth)
+        with capture_notifications() as notifications:
+            app.post_json_api(POST_URL, payload, auth=test_auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REJECTED
+
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
-
         assert action.trigger == CollectionSubmissionsTriggers.REJECT
         assert action.creator == user
         assert action.from_state == CollectionSubmissionStates.PENDING
@@ -214,7 +246,14 @@ class TestSubmissionsActionsListPOSTBehavior:
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.ADMIN_USER)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.CANCEL.db_name)
-        app.post_json_api(POST_URL, payload, auth=test_auth)
+        with capture_notifications() as notifications:
+            app.post_json_api(POST_URL, payload, auth=test_auth)
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
+        assert notifications['emits'][0]['kwargs']['user'] == collection_submission.creator
+        assert notifications['emits'][1]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_CANCEL
+        assert notifications['emits'][0]['kwargs']['user'] == node.creator
+
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
 
@@ -229,7 +268,10 @@ class TestSubmissionsActionsListPOSTBehavior:
         collection_submission.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
         payload = make_payload(collection_submission, trigger=CollectionSubmissionsTriggers.REMOVE.db_name)
-        app.post_json_api(POST_URL, payload, auth=test_auth)
+        with capture_notifications() as notifications:
+            app.post_json_api(POST_URL, payload, auth=test_auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_REMOVED_MODERATOR
         user = collection_submission.collection.provider.get_group('moderator').user_set.first()
         collection_submission.refresh_from_db()
         action = collection_submission.actions.last()
@@ -269,15 +311,18 @@ class TestSubmissionsActionsListPOSTBehavior:
         collection.is_public = False
         collection.save()
         test_auth = configure_test_auth(node, UserRoles.MODERATOR)
-        resp = app.post_json_api(
-            POST_URL,
-            make_payload(
-                collection_submission,
-                trigger=CollectionSubmissionsTriggers.ACCEPT.db_name
-            ),
-            auth=test_auth,
-            expect_errors=True
-        )
+        with capture_notifications() as notifications:
+            resp = app.post_json_api(
+                POST_URL,
+                make_payload(
+                    collection_submission,
+                    trigger=CollectionSubmissionsTriggers.ACCEPT.db_name
+                ),
+                auth=test_auth,
+                expect_errors=True
+            )
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.COLLECTION_SUBMISSION_ACCEPTED
         assert resp.status_code == 201
 
 

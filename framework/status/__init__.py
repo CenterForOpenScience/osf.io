@@ -28,36 +28,37 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True, j
     :param jumbotron: Should this be in a jumbotron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
-    try:
-        current_session = get_session()
-        statuses = current_session.get('status', None)
-    except RuntimeError as e:
-        exception_message = str(e)
-        if 'Working outside of request context.' in exception_message:
-            # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
-            # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
-            if kind == 'error':
-                #  If it's an error, then the call should fail with the error message. I do not know of any cases where
-                # this branch will be hit, but I'd like to avoid a silent failure.
-                from rest_framework.exceptions import ValidationError
-                raise ValidationError(message)
-            return
-        else:
-            raise
-    if not statuses:
-        statuses = []
-    if not extra:
-        extra = {}
-    css_class = TYPE_MAP.get(kind, 'warning')
-    statuses.append(Status(message=message,
-                           jumbotron=jumbotron,
-                           css_class=css_class,
-                           dismissible=dismissible,
-                           id=id,
-                           extra=extra,
-                           trust=trust))
-    current_session['status'] = statuses
-    current_session.save()
+    # try:
+    #     current_session = get_session()
+    #     statuses = current_session.get('status', None)
+    # except RuntimeError as e:
+    #     exception_message = str(e)
+    #     if 'Working outside of request context.' in exception_message:
+    #         # Working outside of request context, so should be a DRF issue. Status messages are not appropriate there.
+    #         # If it's any kind of notification, then it doesn't make sense to send back to the API routes.
+    #         if kind == 'error':
+    #             #  If it's an error, then the call should fail with the error message. I do not know of any cases where
+    #             # this branch will be hit, but I'd like to avoid a silent failure.
+    #             from rest_framework.exceptions import ValidationError
+    #             raise ValidationError(message)
+    #         return
+    #     else:
+    #         raise
+    # if not statuses:
+    #     statuses = []
+    # if not extra:
+    #     extra = {}
+    # css_class = TYPE_MAP.get(kind, 'warning')
+    # statuses.append(Status(message=message,
+    #                        jumbotron=jumbotron,
+    #                        css_class=css_class,
+    #                        dismissible=dismissible,
+    #                        id=id,
+    #                        extra=extra,
+    #                        trust=trust))
+    # current_session['status'] = statuses
+    # current_session.save()
+    pass
 
 
 def pop_status_messages(level=0):

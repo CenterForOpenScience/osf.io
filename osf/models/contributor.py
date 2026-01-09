@@ -103,11 +103,15 @@ def get_contributor_permission(contributor, resource):
     """
     Returns a contributor's permissions - perms through contributorship only. No permissions through osf group membership.
     """
+    return get_user_permission(contributor.user, resource)
+
+
+def get_user_permission(user, resource):
     read = resource.format_group(permissions.READ)
     write = resource.format_group(permissions.WRITE)
     admin = resource.format_group(permissions.ADMIN)
     # Checking for django group membership allows you to also get the intended permissions of unregistered contributors
-    user_groups = contributor.user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
+    user_groups = user.groups.filter(name__in=[read, write, admin]).values_list('name', flat=True)
     if admin in user_groups:
         return permissions.ADMIN
     elif write in user_groups:

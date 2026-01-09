@@ -111,7 +111,7 @@ class TestClaimViews(OsfTestCase):
 
         # claim link for the now registered email is accessed while not logged in
         token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
-        claim_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
+        claim_url = f'/legacy/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
@@ -162,7 +162,7 @@ class TestClaimViews(OsfTestCase):
 
         # claim link for the now registered email is accessed while not logged in
         token = unregistered_user.get_unclaimed_record(self.project._primary_key)['token']
-        claim_url = f'/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
+        claim_url = f'/legacy/user/{unregistered_user._id}/{self.project._id}/claim/?token={token}'
         res = self.app.get(claim_url)
 
         # should redirect to 'claim_user_registered' view
@@ -294,7 +294,7 @@ class TestClaimViews(OsfTestCase):
     def test_claim_user_when_user_is_registered_with_orcid(self, mock_response_from_ticket):
         # TODO: check in qa url encoding
         token = self.user.get_unclaimed_record(self.project._primary_key)['token']
-        url = f'/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
+        url = f'/legacy/user/{self.user._id}/{self.project._id}/claim/verify/{token}/'
         # logged out user gets redirected to cas login
         res1 = self.app.get(url)
         assert res1.status_code == 302
@@ -351,7 +351,7 @@ class TestClaimViews(OsfTestCase):
     def test_invalid_claim_form_raise_400(self):
         uid = self.user._primary_key
         pid = self.project._primary_key
-        url = f'/user/{uid}/{pid}/claim/?token=badtoken'
+        url = f'/legacy/user/{uid}/{pid}/claim/?token=badtoken'
         res = self.app.get(url, follow_redirects=True)
         assert res.status_code == 400
 

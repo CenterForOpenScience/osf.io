@@ -301,3 +301,4 @@ class TestUserMerging(OsfTestCase):
             send_confirm_email(merger, target_email)
         assert len(notifications['emits']) == 1
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_CONFIRM_MERGE
+        assert notifications['emits'][0]['kwargs']['destination_address'] == target_email

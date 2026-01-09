@@ -346,7 +346,7 @@ class Registration(AbstractNode):
     def updatable(self):
         '''Boolean that tells whether a Registration should support adding new SchemaResponses.
 
-        By convention, in order to allow internal flexiblity, this is used to limit creation of
+        By convention, in order to allow internal flexibility, this is used to limit creation of
         SchemaResponses through the API but not on the models.
         '''
         if self.deleted or self.is_retracted:
@@ -386,8 +386,8 @@ class Registration(AbstractNode):
     def provider_specific_metadata(self):
         """Surfaces the additional_metadata fields supported by the provider.
 
-        Also formats the reults to inherit any additional field descriptors defined
-        by the provider and to simplify consumpption by the APIt.
+        Also formats the results to inherit any additional field descriptors defined
+        by the provider and to simplify consumption by the API.
         """
         additional_metadata = self.additional_metadata or {}
 
@@ -762,7 +762,7 @@ class Registration(AbstractNode):
         if trigger is None:
             return  # Not a moderated event, no need to write an action
 
-        # IF fegistration is moving into moderation, "creator" should reflect the
+        # IF registration is moving into moderation, "creator" should reflect the
         # Registration Admin who initiated the Registration/Withdrawal
         if not initiated_by or trigger in [
                 RegistrationModerationTriggers.SUBMIT,
@@ -875,7 +875,7 @@ class Registration(AbstractNode):
             if save:
                 self.save()
 
-        if self.root_id == self.id:  # only create SchemaResposnes on the root registration
+        if self.root_id == self.id:  # only create SchemaResponses on the root registration
             schema_response = SchemaResponse.create_initial_response(
                 self.creator,
                 self,
@@ -1019,7 +1019,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         'node_license',
     ]
 
-    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}'
+    URL_TEMPLATE = settings.DOMAIN + 'registries/drafts/{draft_id}/review'
 
     # Overrides EditableFieldsMixin to make title not required
     title = models.TextField(validators=[validate_title], blank=True, default='')
@@ -1317,12 +1317,16 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
         return Tag.all_tags.filter(draftregistration_tagged=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this draft registration. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     @classmethod
     def create_from_node(
@@ -1370,13 +1374,15 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
         if not node:
             draft.affiliated_institutions.add(*draft.creator.get_affiliated_institutions())
-            initiator_permissions = draft.contributor_set.get(user=user).permission
+
+        current_contributors = draft.contributor_set.all()
+        for contributor in current_contributors:
             signals.contributor_added.send(
                 draft,
-                contributor=user,
-                auth=None,
-                notification_type=notification_type,
-                permissions=initiator_permissions
+                contributor=contributor.user,
+                auth=Auth(user) if user != contributor.user else None,
+                notification_type=notification_type if contributor.user.is_confirmed else NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION,
+                permissions=contributor.permission
             )
 
         return draft
@@ -1386,7 +1392,7 @@ class DraftRegistration(ObjectIDMixin, RegistrationResponseMixin, DirtyFieldsMix
 
     def copy_contributors_from(self, resource):
         """
-        Copies the contibutors from the resource (including permissions and visibility)
+        Copies the contributors from the resource (including permissions and visibility)
         into this draft registration.
         Visibility, order, draft, and user are stored in DraftRegistrationContributor table.
         Permissions are stored in guardian tables (use add_permission)

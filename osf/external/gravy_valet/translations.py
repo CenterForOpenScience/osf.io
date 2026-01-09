@@ -244,8 +244,7 @@ class EphemeralNodeSettings:
                  authentication information has been deleted.
             '''
             if not auth or auth.user != removed:
-                url = node.web_url_for('node_addons')
-                message += f' You can re-authenticate on the <u><a href="{url}">addons</a></u> page.'
+                message += ' You can re-authenticate on the <u>addons</u> page.'
             return message
 
     def before_fork(self, node, user):

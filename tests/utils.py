@@ -1,3 +1,4 @@
+import re, html as html_lib, difflib
 import copy
 from collections import Counter
 import datetime
@@ -205,7 +206,13 @@ mock_auth = lambda user: mock.patch(
 
 def unique(factory):
     """
-    Turn a factory function into one that guarantees unique return values.
+    Turns a factory function into a new factory function that guarantees unique return
+    values. Note this uses regular item equivalence to check uniqueness, so this may not
+    behave as expected with factories with complex return values.
+
+    Example use:
+    unique_name_factory = unique(fake.name)
+    unique_name = unique_name_factory()
     """
     used = []
     @functools.wraps(factory)
@@ -226,8 +233,6 @@ def unique(factory):
 def run_celery_tasks():
     yield
     celery_teardown_request()
-
-import re, html as html_lib, difflib
 
 
 # Matches a wide range of ISO-like datetimes (with optional microseconds and timezone)
@@ -256,10 +261,26 @@ def _canon_html(s: str) -> str:
     return s
 
 @contextlib.contextmanager
-def capture_notifications(capture_email: bool = True, passthrough: bool = False):
+def capture_notifications(
+    capture_email: bool = True,
+    passthrough: bool = False,
+    expect_none: bool = False,
+    allow_none: bool = False,
+):
     """
     Capture NotificationType.emit calls and (optionally) email sends.
-    Surfaces helpful template errors if rendering fails.
+
+    By default, this asserts that at least one NotificationType.emit occurred.
+
+    You can relax this behavior by setting either:
+      - allow_none=True  → silently allow zero emits
+      - expect_none=True → explicitly expect zero emits (will raise if any are emitted)
+
+    Args:
+        capture_email (bool): Whether to capture email send calls (default True).
+        passthrough (bool): If True, calls real emit/send methods as well.
+        expect_none (bool): Explicitly expect zero emits; raises if any occur.
+        allow_none (bool): Allow zero emits without raising an error.
     """
     try:
         from osf.email import _extract_vars as _extract_template_vars
@@ -330,12 +351,20 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
             stack.enter_context(p)
         yield captured
 
+    if expect_none:
+        if captured['emits']:
+            raise AssertionError(
+                f'{len(captured['emits'])} notifications were emitted. '
+                'Expected at 0'
+            )
+        return
     if not captured['emits']:
-        raise AssertionError(
-            'No notifications were emitted. '
-            'Expected at least one call to NotificationType.emit. '
-            'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
-        )
+        if not allow_none:
+            raise AssertionError(
+                'No notifications were emitted. '
+                'Expected at least one call to NotificationType.emit. '
+                'Tip: ensure your code path triggers an emit and that patches did not get overridden.'
+            )
 
     # Validate each captured emit renders (to catch missing template vars early)
     for idx, rec in enumerate(captured.get('emits', []), start=1):
@@ -382,7 +411,6 @@ def capture_notifications(capture_email: bool = True, passthrough: bool = False)
                 f'Email render returned the raw template (no interpolation) for '
                 f'"{getattr(nt, "name", "(unknown)")}"; template rendering likely failed.'
             )
-
 
 def get_mailhog_messages():
     """Fetch messages from MailHog API."""
@@ -472,42 +500,46 @@ def _notif_type_name(t: Any) -> str:
     return str(t).strip().lower()
 
 
-def _safe_user_id(u: Any) -> Optional[str]:
-    """Normalize user object to stable identifier."""
-    if u is None:
+def _safe_user_id(user: Any) -> Optional[str]:
+    """Normalize a user object to a stable identifier."""
+    if user is None:
         return None
+
     for attr in ('_id', 'id', 'guids', 'guid', 'pk'):
-        if hasattr(u, attr):
+        if hasattr(user, attr):
             try:
-                val = getattr(u, attr)
-                if hasattr(val, 'first'):
-                    g = val.first()
-                    if g and hasattr(g, '_id'):
-                        return g._id
-                if isinstance(val, (str, int)):
-                    return str(val)
+                value = getattr(user, attr)
+                if hasattr(value, 'first'):
+                    guid = value.first()
+                    if guid and hasattr(guid, '_id'):
+                        return guid._id
+                if isinstance(value, (str, int)):
+                    return str(value)
             except Exception:
                 pass
-    return f'obj:{id(u)}'
+
+    return f'obj:{id(user)}'
 
 
-def _safe_obj_id(o: Any) -> Optional[str]:
-    """Normalize object to stable identifier."""
-    if o is None:
+def _safe_obj_id(obj: Any) -> Optional[str]:
+    """Normalize an object to a stable identifier."""
+    if obj is None:
         return None
+
     for attr in ('_id', 'id', 'guid', 'guids', 'pk'):
-        if hasattr(o, attr):
+        if hasattr(obj, attr):
             try:
-                val = getattr(o, attr)
-                if hasattr(val, 'first'):
-                    g = val.first()
-                    if g and hasattr(g, '_id'):
-                        return g._id
-                if isinstance(val, (str, int)):
-                    return str(val)
+                value = getattr(obj, attr)
+                if hasattr(value, 'first'):
+                    guid = value.first()
+                    if guid and hasattr(guid, '_id'):
+                        return guid._id
+                if isinstance(value, (str, int)):
+                    return str(value)
             except Exception:
                 pass
-    return f'obj:{id(o)}'
+
+    return f'obj:{id(obj)}'
 
 
 @contextlib.contextmanager

@@ -5,9 +5,9 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_text}} as a contributor to the preprint "${node_title}" on the Open Science Framework: ${node_absolute_url}<br>
+    ${referrer_text} to the preprint <a href="${node_absolute_url}">${node_title}</a> on the Open Science Framework.<br>
     <br>
-    If you are erroneously being associated with "${node_title}," then you may visit the preprint and remove yourself as a contributor.<br>
+    If you are erroneously being associated with <a href="${node_absolute_url}">${node_title}</a>, then you may visit the preprint and remove yourself as a contributor.<br>
     <br>
     Sincerely,<br>
     <br>

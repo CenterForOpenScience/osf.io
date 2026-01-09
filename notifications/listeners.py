@@ -4,12 +4,13 @@ from django.apps import apps
 
 from website.project.signals import contributor_added, project_created, node_deleted, contributor_removed
 from website.reviews import signals as reviews_signals
+from framework.auth import signals as auth_signals
 
 logger = logging.getLogger(__name__)
 
 @project_created.connect
 def subscribe_creator(resource):
-    from osf.models import NotificationSubscription, NotificationType
+    from osf.models import NotificationSubscription, NotificationType, Preprint
 
     from django.contrib.contenttypes.models import ContentType
 
@@ -21,43 +22,67 @@ def subscribe_creator(resource):
             NotificationSubscription.objects.get_or_create(
                 user=user,
                 notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+                object_id=user.id,
+                content_type=ContentType.objects.get_for_model(user),
                 _is_digest=True,
+                defaults={
+                    'message_frequency': 'instantly',
+                }
             )
         except NotificationSubscription.MultipleObjectsReturned:
             pass
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            notification_type=NotificationType.Type.FILE_UPDATED.instance,
-            object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource),
-            _is_digest=True,
-        )
+        if not isinstance(resource, Preprint):
+            try:
+                NotificationSubscription.objects.get_or_create(
+                    user=user,
+                    notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                    object_id=resource.id,
+                    content_type=ContentType.objects.get_for_model(resource),
+                    _is_digest=True,
+                    defaults={
+                        'message_frequency': 'instantly',
+                    }
+                )
+            except NotificationSubscription.MultipleObjectsReturned:
+                pass
 
 @contributor_added.connect
 def subscribe_contributor(resource, contributor, auth=None, *args, **kwargs):
     from django.contrib.contenttypes.models import ContentType
-    from osf.models import NotificationSubscription, NotificationType
+    from osf.models import NotificationSubscription, NotificationType, Preprint
 
     from osf.models import Node
     if isinstance(resource, Node):
         if resource.is_collection or resource.is_deleted:
             return None
 
-    if contributor.is_registered:
+    try:
         NotificationSubscription.objects.get_or_create(
             user=contributor,
             notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
             object_id=contributor.id,
             content_type=ContentType.objects.get_for_model(contributor),
             _is_digest=True,
+            defaults={
+                'message_frequency': 'instantly',
+            }
         )
-        NotificationSubscription.objects.get_or_create(
-            user=contributor,
-            notification_type=NotificationType.Type.FILE_UPDATED.instance,
-            object_id=resource.id,
-            content_type=ContentType.objects.get_for_model(resource),
-            _is_digest=True,
-        )
+    except NotificationSubscription.MultipleObjectsReturned:
+        pass
+    if not isinstance(resource, Preprint):
+        try:
+            NotificationSubscription.objects.get_or_create(
+                user=contributor,
+                notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+                object_id=resource.id,
+                content_type=ContentType.objects.get_for_model(resource),
+                _is_digest=True,
+                defaults={
+                    'message_frequency': 'instantly',
+                }
+            )
+        except NotificationSubscription.MultipleObjectsReturned:
+            pass
 
 
 # Handle email notifications to notify moderators of new submissions.
@@ -67,6 +92,8 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     from osf.models import NotificationType
 
     provider = resource.provider
+    context['provider_id'] = provider.id
+    context['requester_fullname'] = user.fullname
     # Set message
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     # Set submission url
@@ -119,3 +146,21 @@ def remove_supplemental_node(node):
     from notifications.tasks import remove_supplemental_node_from_preprints
 
     remove_supplemental_node_from_preprints(node._id)
+
+@auth_signals.unconfirmed_user_created.connect
+def queue_no_addon_email(user):
+    """Queue an email for user who has not connected an addon after
+    `settings.NO_ADDON_WAIT_TIME` months of signing up for the OSF.
+    """
+    from website.settings import DOMAIN
+    from osf.models import NotificationType
+
+    NotificationType.Type.USER_NO_ADDON.instance.emit(
+        subscribed_object=user,
+        user=user,
+        event_context={
+            'user_fullname': user.fullname,
+            'domain': DOMAIN,
+        },
+        is_digest=True,
+    )

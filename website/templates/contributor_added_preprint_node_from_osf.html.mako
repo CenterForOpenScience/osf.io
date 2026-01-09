@@ -5,7 +5,7 @@
   <td style="border-collapse: collapse;">
     Hello ${user_fullname},<br>
     <br>
-    ${referrer_text} as a contributor to the project "${node_title}" on the Open Science Framework: ${node_absolute_url}<br>
+    ${referrer_text} to the project "${node_title}" on the Open Science Framework: ${node_absolute_url}<br>
     <br>
     This project also contains the supplemental files for the following preprint(s):
     <br>

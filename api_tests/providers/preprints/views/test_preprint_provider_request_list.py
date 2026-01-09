@@ -4,7 +4,7 @@ from api.base.settings.defaults import API_BASE
 from api_tests.requests.mixins import PreprintRequestTestMixin
 
 @pytest.mark.django_db
-class TestPreprintProviderWithdrawalRequstList(PreprintRequestTestMixin):
+class TestPreprintProviderWithdrawalRequestList(PreprintRequestTestMixin):
     def url(self, provider):
         return f'/{API_BASE}providers/preprints/{provider._id}/withdraw_requests/'
 

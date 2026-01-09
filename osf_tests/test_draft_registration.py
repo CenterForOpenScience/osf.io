@@ -182,7 +182,7 @@ class TestDraftRegistrations:
         project = factories.ProjectFactory()
         draft = factories.DraftRegistrationFactory(branched_from=project)
 
-        assert draft.url == settings.DOMAIN + f'registries/drafts/{draft._id}'
+        assert draft.url == settings.DOMAIN + f'registries/drafts/{draft._id}/review'
 
     def test_create_from_node_existing(self, user):
         node = factories.ProjectFactory(creator=user)
@@ -221,12 +221,12 @@ class TestDraftRegistrations:
         node.set_subjects([[subject._id]], auth=Auth(node.creator))
         node.affiliated_institutions.add(institution)
         node.save()
-
-        draft = DraftRegistration.create_from_node(
-            node=node,
-            user=user,
-            schema=factories.get_default_metaschema(),
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=node,
+                user=user,
+                schema=factories.get_default_metaschema(),
+            )
 
         # Assert existing metadata-like node attributes are copied to the draft
         assert draft.title == title
@@ -292,15 +292,15 @@ class TestDraftRegistrations:
         write_contrib = factories.UserFactory()
         read_contrib = factories.UserFactory()
         non_contrib = factories.UserFactory()
-
-        draft = DraftRegistration.create_from_node(
-            user=user,
-            node=project,
-            schema=factories.get_default_metaschema()
-        )
-        project.add_contributor(non_contrib, ADMIN, save=True)
-        draft.add_contributor(write_contrib, WRITE, save=True)
-        draft.add_contributor(read_contrib, READ, save=True)
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                user=user,
+                node=project,
+                schema=factories.get_default_metaschema()
+            )
+            project.add_contributor(non_contrib, ADMIN, save=True)
+            draft.add_contributor(write_contrib, WRITE, save=True)
+            draft.add_contributor(read_contrib, READ, save=True)
 
         assert draft.get_permissions(user) == [READ, WRITE, ADMIN]
         assert draft.get_permissions(write_contrib) == [READ, WRITE]
@@ -348,7 +348,8 @@ class TestDraftRegistrationContributorMethods():
                     {'user': user1, 'permissions': ADMIN, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': False}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         last_log = draft_registration.logs.all().order_by('-created')[0]
         assert (
@@ -380,7 +381,7 @@ class TestDraftRegistrationContributorMethods():
         draft_registration.save()
         assert len(draft_registration.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, draft_registration, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, draft_registration, auth):
         new_user = draft_registration.add_unregistered_contributor(
             fullname='David Davidson',
             email='david@davidson.com',
@@ -510,7 +511,8 @@ class TestDraftRegistrationContributorMethods():
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         assert user1 in draft_registration.contributors
         assert user2 in draft_registration.contributors
@@ -582,7 +584,7 @@ class TestDraftRegistrationContributorMethods():
             )
         assert str(exc_info.value) == f"{admin_user.fullname} is the only admin."
 
-        # user should be able to remove their own admin permission if there're 2+ admin contributors
+        # user should be able to remove their own admin permission if there are 2+ admin contributors
         new_contrib = factories.AuthUserFactory()
         draft_registration.add_contributor(new_contrib, permissions=ADMIN, auth=auth)
         assert draft_registration.has_permission(new_contrib, ADMIN) is True

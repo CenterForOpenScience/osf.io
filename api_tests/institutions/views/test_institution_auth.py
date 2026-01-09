@@ -410,7 +410,7 @@ class TestInstitutionAuth:
 
         username, fullname, password = 'user_inactive@osf.edu', 'Foo Bar', 'FuAsKeEr'
         user = make_user(username, fullname)
-        with capture_notifications() as mock_signals:
+        with capture_notifications():
             user.set_password(password)
         # User must be saved before deactivation
         user.save()
@@ -492,7 +492,7 @@ class TestInstitutionAuth:
 
         user = OSFUser.objects.filter(username=username).first()
         assert user
-        # User remains untouched, including affiliation, external identity email verifcaitons
+        # User remains untouched, including affiliation, external identity email verifications
         assert user.fullname == fullname
         assert user.given_name == 'Foo'
         assert user.family_name == 'Bar'

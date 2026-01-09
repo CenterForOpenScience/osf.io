@@ -67,7 +67,7 @@ prereg_registration_responses = {
     'q14': '',
     'q17': 'this is my explanation of randomization',
     'q10': 'this is my stopping rule',
-    'q11.question': 'these are my maniuplated variables',
+    'q11.question': 'these are my manipulated variables',
     'q16.uploader': [],
     'q19.question': 'ANOVA',
     'q13.uploader': [],
@@ -253,7 +253,7 @@ prereg_registration_metadata = {
         'value': {
             'question': {
                 'comments': [],
-                'value': 'these are my maniuplated variables',
+                'value': 'these are my manipulated variables',
                 'extra': []
             },
             'uploader': {
@@ -546,7 +546,7 @@ prereg_registration_metadata_built = {
         'value': {
             'question': {
                 'comments': [],
-                'value': 'these are my maniuplated variables',
+                'value': 'these are my manipulated variables',
                 'extra': []
             },
             'uploader': {
@@ -681,7 +681,7 @@ veer_registration_metadata = {
                 'value': {
                     'question4b': {
                         'comments': [],
-                        'value': 'these are the preselection rults',
+                        'value': 'these are the preselection rules',
                         'extra': []
                     },
                     'question7b': {
@@ -743,7 +743,7 @@ veer_registration_metadata = {
                     },
                     'question10c': {
                         'comments': [],
-                        'value': 'assumptions of analysses',
+                        'value': 'assumptions of analyses',
                         'extra': []
                     }
                 },
@@ -791,7 +791,7 @@ veer_registration_metadata = {
                     },
                     'question2c': {
                         'comments': [],
-                        'value': 'this is the statistical technicque',
+                        'value': 'this is the statistical technique',
                         'extra': []
                     },
                     'question3c': {
@@ -1176,7 +1176,7 @@ veer_condensed = {
                 'value': {
                     'question4b': {
                         'comments': [],
-                        'value': 'these are the preselection rults',
+                        'value': 'these are the preselection rules',
                         'extra': []
                     },
                     'question7b': {
@@ -1234,7 +1234,7 @@ veer_condensed = {
                     },
                     'question10c': {
                         'comments': [],
-                        'value': 'assumptions of analysses',
+                        'value': 'assumptions of analyses',
                         'extra': []
                     }
                 },
@@ -1276,7 +1276,7 @@ veer_condensed = {
                     },
                     'question2c': {
                         'comments': [],
-                        'value': 'this is the statistical technicque',
+                        'value': 'this is the statistical technique',
                         'extra': []
                     },
                     'question3c': {
@@ -1506,11 +1506,11 @@ veer_registration_responses = {
     'description-methods.design.question3b': 'These variables are acting as covariates.',
     'confirmatory-analyses-further.further.question2c': 'i used a common statistical technique',
     'description-methods.exclusion-criteria.question8b': 'these are failing check-tests',
-    'description-methods.planned-sample.question4b': 'these are the preselection rults',
+    'description-methods.planned-sample.question4b': 'these are the preselection rules',
     'confirmatory-analyses-second.second.question3c': 'it was the covariate',
     'dataCollectionDates': '2020 - 2030',
     'recommended-analysis.specify.question6c': 'I used a method of correction for multiple tests',
-    'confirmatory-analyses-first.first.question2c': 'this is the statistical technicque',
+    'confirmatory-analyses-first.first.question2c': 'this is the statistical technique',
     'description-methods.procedure.question10b': 'describe all manipulations',
     'recommended-analysis.specify.question11c': [],
     'recommended-methods.procedure.question9b': 'set fail-safe levels of exclusions',
@@ -1562,7 +1562,7 @@ veer_registration_responses = {
     'confirmatory-analyses-first.first.question3c': 'this is each variable role',
     'description-hypothesis.question3a': 'predictions for successful checks',
     'confirmatory-analyses-further.further.question5c': 'also Bayesian',
-    'recommended-analysis.specify.question10c': 'assumptions of analysses',
+    'recommended-analysis.specify.question10c': 'assumptions of analyses',
     'recommended-methods.procedure.question9b-file': [],
     'description-hypothesis.question1a': 'These are the essential elements',
     'description-methods.planned-sample.question7b': 'here is my data collection termination rule',
@@ -1751,7 +1751,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['q14'] == ''
         assert responses['q17'] == 'this is my explanation of randomization'
         assert responses['q10'] == 'this is my stopping rule'
-        assert responses['q11.question'] == 'these are my maniuplated variables'
+        assert responses['q11.question'] == 'these are my manipulated variables'
         assert responses['q16.uploader'] == []
         assert responses['q19.question'] == 'ANOVA'
         assert responses['q13.uploader'] == []
@@ -1780,10 +1780,10 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['description-methods.design.question3b'] == 'These variables are acting as covariates.'
         assert responses['confirmatory-analyses-second.second.question1c'] == 'how 2nd prediction calculated'
         assert responses['description-methods.exclusion-criteria.question8b'] == 'these are failing check-tests'
-        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rults'
+        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rules'
         assert responses['confirmatory-analyses-second.second.question3c'] == 'it was the covariate'
         assert responses['recommended-analysis.specify.question6c'] == 'I used a method of correction for multiple tests'
-        assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technicque'
+        assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technique'
         assert responses['description-methods.procedure.question10b'] == 'describe all manipulations'
         assert responses['recommended-analysis.specify.question11c'] == []
         assert responses['recommended-methods.procedure.question9b'] == 'set fail-safe levels of exclusions'
@@ -1838,7 +1838,7 @@ class TestMigrateDraftRegistrationRegistrationResponses:
         assert responses['description-hypothesis.question3a'] == 'predictions for successful checks'
         assert responses['confirmatory-analyses-further.further.question2c'] == 'i used a common statistical technique'
         assert responses['confirmatory-analyses-further.further.question5c'] == 'also Bayesian'
-        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analysses'
+        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analyses'
         assert responses['recommended-methods.procedure.question9b-file'] == []
         assert responses['description-hypothesis.question1a'] == 'These are the essential elements'
         assert responses['description-methods.planned-sample.question7b'] == 'here is my data collection termination rule'
@@ -1984,7 +1984,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['q14'] == ''
         assert responses['q17'] == 'this is my explanation of randomization'
         assert responses['q10'] == 'this is my stopping rule'
-        assert responses['q11.question'] == 'these are my maniuplated variables'
+        assert responses['q11.question'] == 'these are my manipulated variables'
         assert responses['q16.uploader'] == []
         assert responses['q19.question'] == 'ANOVA'
         assert responses['q13.uploader'] == []
@@ -2013,10 +2013,10 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['description-methods.design.question3b'] == 'These variables are acting as covariates.'
         assert responses['confirmatory-analyses-second.second.question1c'] == 'how 2nd prediction calculated'
         assert responses['description-methods.exclusion-criteria.question8b'] == 'these are failing check-tests'
-        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rults'
+        assert responses['description-methods.planned-sample.question4b'] == 'these are the preselection rules'
         assert responses['confirmatory-analyses-second.second.question3c'] == 'it was the covariate'
         assert responses['recommended-analysis.specify.question6c'] == 'I used a method of correction for multiple tests'
-        assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technicque'
+        assert responses['confirmatory-analyses-first.first.question2c'] == 'this is the statistical technique'
         assert responses['description-methods.procedure.question10b'] == 'describe all manipulations'
         assert responses['recommended-analysis.specify.question11c'] == []
         assert responses['recommended-methods.procedure.question9b'] == 'set fail-safe levels of exclusions'
@@ -2071,7 +2071,7 @@ class TestMigrateRegistrationRegistrationResponses:
         assert responses['description-hypothesis.question3a'] == 'predictions for successful checks'
         assert responses['confirmatory-analyses-further.further.question2c'] == 'i used a common statistical technique'
         assert responses['confirmatory-analyses-further.further.question5c'] == 'also Bayesian'
-        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analysses'
+        assert responses['recommended-analysis.specify.question10c'] == 'assumptions of analyses'
         assert responses['recommended-methods.procedure.question9b-file'] == []
         assert responses['description-hypothesis.question1a'] == 'These are the essential elements'
         assert responses['description-methods.planned-sample.question7b'] == 'here is my data collection termination rule'

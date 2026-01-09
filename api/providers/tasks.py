@@ -531,7 +531,7 @@ def bulk_upload_create_draft_registration(auth, initiator, schema, node, data, p
             for contributor in contributor_set:
                 if initiator != contributor.user:
                     is_removed = draft.remove_contributor(contributor, auth)
-                    assert is_removed, 'Removal of an non-initiator contributor from the draft has failed'
+                    assert is_removed, 'Removal of a non-initiator contributor from the draft has failed'
             draft.save()
         assert len(draft.contributor_set.all()) == 1, 'Draft should only have one contributor upon creation.'
         # Remove the initiator from the citation list
@@ -646,6 +646,7 @@ def bulk_upload_finish_job(upload, row_count, success_count, draft_errors, appro
             notification_type = NotificationType.Type.USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL
         else:
             logger.error(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
+            sentry.log_message(f'Unexpected job state for upload [{upload.id}]: {upload.state.name}')
             return
 
         notification_type.instance.emit(

@@ -40,7 +40,13 @@ from osf.external.gravy_valet import (
     translations as gv_translations,
 )
 from osf.utils.requests import get_current_request
-from osf.exceptions import reraise_django_validation_errors, UserStateError
+from osf.exceptions import (
+    reraise_django_validation_errors,
+    UserStateError,
+    InvalidTagError,
+    TagNotFoundError
+)
+
 from .base import BaseModel, GuidMixin, GuidMixinQuerySet
 from .notable_domain import NotableDomain
 from .contributor import Contributor, RecentlyAddedContributor
@@ -61,8 +67,9 @@ from website import filters
 from website.project import new_bookmark_collection
 from website.util.metrics import OsfSourceTags, unregistered_created_source_tag
 from importlib import import_module
-from osf.utils.requests import get_headers_from_request
 from osf.models.notification_type import NotificationType
+from osf.utils.requests import string_type_request_headers
+
 
 SessionStore = import_module(settings.SESSION_ENGINE).SessionStore
 
@@ -149,7 +156,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     # Overrides DirtyFieldsMixin, Foreign Keys checked by '<attribute_name>_id' rather than typical name.
     FIELDS_TO_CHECK = SEARCH_UPDATE_FIELDS.copy()
-    FIELDS_TO_CHECK.update({'password', 'last_login', 'merged_by_id', 'username'})
+    FIELDS_TO_CHECK.update({'password', 'date_last_login', 'merged_by_id', 'username'})
 
     # TODO: Add SEARCH_UPDATE_NODE_FIELDS, for fields that should trigger a
     #   search update for all nodes to which the user is a contributor.
@@ -343,7 +350,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     #     'scholar': <google scholar identifier>,
     #     'ssrn': <SSRN username>,
     #     'researchGate': <researchGate username>,
-    #     'baiduScholar': <bauduScholar username>,
+    #     'baiduScholar': <baiduScholar username>,
     #     'academiaProfileID': <profile identifier for academia.edu>
     # }
 
@@ -518,12 +525,16 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return Tag.all_tags.filter(osfuser=self)
 
     @property
+    def system_tags_objects(self):
+        return self.all_tags.filter(system=True)
+
+    @property
     def system_tags(self):
         """The system tags associated with this node. This currently returns a list of string
         names for the tags, for compatibility with v1. Eventually, we can just return the
         QuerySet.
         """
-        return self.all_tags.filter(system=True).values_list('name', flat=True)
+        return self.system_tags_objects.values_list('name', flat=True)
 
     @property
     def csl_given_name(self):
@@ -846,6 +857,20 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         user.save()
         signals.user_account_merged.send(user)
 
+        from api.share.utils import update_share
+
+        for node in user.contributed:
+            try:
+                update_share(node)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
+
+        for preprint in user.preprints.all():
+            try:
+                update_share(preprint)
+            except Exception as e:
+                logger.exception(f'Failed to SHARE reindex preprint {preprint._id} during user merge: {e}')
+
     def _merge_users_preprints(self, user):
         """
         Preprints use guardian.  The PreprintContributor table stores order and bibliographic information.
@@ -938,6 +963,14 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             draft_reg.remove_permission(user, user_perms)
             draft_reg.save()
 
+    @property
+    def gdpr_deleted(self):
+        if not self.is_disabled:
+            return False
+        if self.fullname != 'Deleted user':
+            return False
+        return not self.emails.exists()
+
     def deactivate_account(self):
         """
         Disables user account, making is_disabled true, while also unsubscribing user
@@ -1013,7 +1046,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         ret = super().save(*args, **kwargs)  # must save BEFORE spam check, as user needs guid.
         if set(self.SPAM_USER_PROFILE_FIELDS.keys()).intersection(dirty_fields):
             request = get_current_request()
-            headers = get_headers_from_request(request)
+            headers = string_type_request_headers(request)
             self.check_spam(dirty_fields, request_headers=headers)
 
         dirty_fields = set(dirty_fields)
@@ -1083,7 +1116,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if external_identity:
             user.external_identity.update(external_identity)
         if campaign:
-            # needed to prevent cirular import
+            # needed to prevent circular import
             from framework.auth.campaigns import system_tag_for_campaign  # skipci
             # User needs to be saved before adding system tags (due to m2m relationship)
             user.save()
@@ -1169,7 +1202,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         Verify that the password reset token for this user is valid.
 
         :param token: the token in verification key
-        :return `True` if valid, otherwise `False`
+        :return `True` if valid; otherwise, `False`
         """
 
         if token and self.verification_key_v2:
@@ -1182,7 +1215,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
     def verify_claim_token(self, token, project_id):
         """Return whether or not a claim token is valid for this user for
-        a given node which they were added as a unregistered contributor for.
+        a given node which they were added as an unregistered contributor for.
         """
         try:
             record = self.get_unclaimed_record(project_id)
@@ -1208,7 +1241,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         return user
 
     def update_guessed_names(self):
-        """Updates the CSL name fields inferred from the the full name.
+        """Updates the CSL name fields inferred from the full name.
         """
         parsed = impute_names(self.fullname)
         self.given_name = parsed['given']
@@ -1591,6 +1624,25 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             self.tags.add(tag_instance)
         return tag_instance
 
+    def remove_tag(self, tag, auth, save=True):
+        if not tag:
+            raise InvalidTagError
+
+        tag_instance = self.all_tags.filter(name=tag).first()
+        if not tag_instance:
+            raise TagNotFoundError
+
+        if not tag_instance.system:
+            raise ValueError('Non-system tag passed to add_system_tag')
+
+        # because system tags are hidden by default TagManager
+        tag_instance.delete()
+        if save:
+            self.save()
+
+        self.update_search()
+        return True
+
     def get_recently_added(self):
         return (
             each.contributor
@@ -1692,7 +1744,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         base_url = website_settings.DOMAIN if external else '/'
         unclaimed_record = self.get_unclaimed_record(project_id)
         token = unclaimed_record['token']
-        return f'{base_url}user/{uid}/{project_id}/claim/?token={token}'
+        return f'{base_url}legacy/user/{uid}/{project_id}/claim/?token={token}'
 
     def is_affiliated_with_institution(self, institution):
         """Return if this user is affiliated with the given ``institution``."""
@@ -1979,13 +2031,34 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     def _validate_no_public_entities(self):
         """
         Ensure that the user doesn't have any public facing resources like Registrations or Preprints
-        """
-        from osf.models import Preprint
+        that would be left with other contributors after this deletion.
 
-        if self.nodes.filter(deleted__isnull=True, type='osf.registration').exists():
+        Allow GDPR deletion if the user is the sole contributor on a public Registration or Preprint.
+        """
+        from osf.models import Preprint, AbstractNode
+
+        registrations_with_others = AbstractNode.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            deleted__isnull=True,
+            type='osf.registration',
+            contrib_count__gt=1
+        ).exists()
+
+        if registrations_with_others:
             raise UserStateError('You cannot delete this user because they have one or more registrations.')
 
-        if Preprint.objects.filter(_contributors=self, ever_public=True, deleted__isnull=True).exists():
+        preprints_with_others = Preprint.objects.annotate(
+            contrib_count=Count('_contributors', distinct=True),
+        ).filter(
+            _contributors=self,
+            ever_public=True,
+            deleted__isnull=True,
+            contrib_count__gt=1
+        ).exists()
+
+        if preprints_with_others:
             raise UserStateError('You cannot delete this user because they have one or more preprints.')
 
     def _validate_and_remove_resource_for_gdpr_delete(self, resources, hard_delete):
@@ -1994,7 +2067,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         Args:
         - resources: A queryset of resources probably of AbstractNode or DraftRegistration.
-        - hard_delete: A boolean indicating whether the resource should be permentently deleted or just marked as such.
+        - hard_delete: A boolean indicating whether the resource should be permanently deleted or just marked as such.
         """
         model = resources.query.model
 

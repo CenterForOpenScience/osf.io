@@ -18,6 +18,7 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/logs/$', views.AdminNodeLogView.as_view(), name='node-logs'),
     re_path(r'^(?P<guid>[a-z0-9]+)/schema_responses/$', views.AdminNodeSchemaResponseView.as_view(),
         name='schema-responses'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/update_registration_date/$', views.RegistrationUpdateDateView.as_view(), name='update-registration-date'),
     re_path(r'^(?P<guid>[a-z0-9]+)/update_embargo/$', views.RegistrationUpdateEmbargoView.as_view(), name='update-embargo'),
     re_path(r'^(?P<guid>[a-z0-9]+)/change_provider/$', views.RegistrationChangeProviderView.as_view(), name='change-provider'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove/$', views.NodeDeleteView.as_view(), name='remove'),
@@ -46,5 +47,8 @@ urlpatterns = [
     re_path(r'^(?P<guid>[a-z0-9]+)/update_moderation_state/$', views.NodeUpdateModerationStateView.as_view(), name='node-update-mod-state'),
     re_path(r'^(?P<guid>[a-z0-9]+)/resync_datacite/$', views.NodeResyncDataCiteView.as_view(), name='resync-datacite'),
     re_path(r'^(?P<guid>[a-z0-9]+)/revert/$', views.NodeRevertToDraft.as_view(), name='revert-to-draft'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/add/$', views.NodeAddSystemTag.as_view(), name='add-system-tag'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/system_tags/(?P<tag_id>[a-z0-9]+)/remove/$', views.NodeRemoveSystemTag.as_view(), name='remove-system-tag'),
+    re_path(r'^(?P<guid>[a-z0-9]+)/update_permissions/$', views.NodeUpdatePermissionsView.as_view(), name='update-permissions'),
     re_path(r'^(?P<guid>[a-z0-9]+)/remove_file/$', views.NodeRemoveFileView.as_view(), name='remove-file'),
 ]

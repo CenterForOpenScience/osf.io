@@ -55,6 +55,7 @@ class Event:
             name=self.action
         ).emit(
             user=self.user,
+            subscribed_object=self.node,
             event_context={
                 'user_fullname': self.user.fullname,
                 'profile_image_url': self.profile_image_url,

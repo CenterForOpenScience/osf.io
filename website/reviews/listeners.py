@@ -18,33 +18,41 @@ def reviews_notification(self, creator, template, context, action):
         context['has_psyarxiv_chronos_text'] = action.target.has_permission(recipient, ADMIN) and 'psyarxiv' in action.target.provider.name.lower()
         template.instance.emit(
             user=recipient,
-            subscribed_object=action.target,
+            subscribed_object=recipient,
             event_context=context,
+            is_digest=True,
         )
 
 @reviews_signals.reviews_withdraw_requests_notification_moderators.connect
 def reviews_withdraw_requests_notification_moderators(self, timestamp, context, user, resource):
-    context['referrer_fullname'] = user.fullname
+    from website.profile.utils import get_profile_image_url
+    context['requester_fullname'] = user.fullname
+    context['profile_image_url'] = get_profile_image_url(resource.creator)
     provider = resource.provider
     from osf.models import NotificationType
 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/registries/{provider._id}/{resource._id}'
 
-    for recipient in provider.get_group('moderator').user_set.all():
-        context['user_fullname'] = recipient.fullname
-        context['recipient_fullname'] = recipient.fullname
+    context['provider_id'] = provider.id
+    for group_name in ['moderator', 'admin']:
+        for recipient in provider.get_group(group_name).user_set.all():
+            context['user_fullname'] = recipient.fullname
+            context['recipient_fullname'] = recipient.fullname
+            context['localized_timestamp'] = str(timestamp)
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
-            user=recipient,
-            subscribed_object=provider,
-            event_context=context,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+                user=recipient,
+                subscribed_object=provider,
+                event_context=context,
+                is_digest=True,
+            )
 
 @reviews_signals.reviews_email_withdrawal_requests.connect
 def reviews_withdrawal_requests_notification(self, timestamp, context):
+    from website.profile.utils import get_profile_image_url
     preprint = context.pop('reviewable')
+    context['profile_image_url'] = get_profile_image_url(preprint.creator)
     context['reviewable_absolute_url'] = preprint.absolute_url
     context['reviewable_title'] = preprint.title
     context['reviewable__id'] = preprint._id
@@ -54,16 +62,19 @@ def reviews_withdrawal_requests_notification(self, timestamp, context):
     context['message'] = f'has requested withdrawal of the {preprint_word} "{preprint.title}".'
     context['reviews_submission_url'] = f'{DOMAIN}reviews/preprints/{preprint.provider._id}/{preprint._id}'
 
-    for recipient in preprint.provider.get_group('moderator').user_set.all():
-        context['user_fullname'] = recipient.fullname
-        context['recipient_fullname'] = recipient.fullname
+    context['provider_id'] = preprint.provider.id
+    for group_name in ['moderator', 'admin']:
+        for recipient in preprint.provider.get_group(group_name).user_set.all():
+            context['user_fullname'] = recipient.fullname
+            context['recipient_fullname'] = recipient.fullname
+            context['localized_timestamp'] = str(timestamp)
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
-            user=recipient,
-            event_context=context,
-            subscribed_object=preprint.provider,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.instance.emit(
+                user=recipient,
+                event_context=context,
+                subscribed_object=preprint.provider,
+                is_digest=True,
+            )
 
 @reviews_signals.reviews_email_submit_moderators_notifications.connect
 def reviews_submit_notification_moderators(self, timestamp, resource, context):
@@ -73,6 +84,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     # imports moved here to avoid AppRegistryNotReady error
 
     provider = resource.provider
+    context['provider_id'] = provider.id
     context['reviews_submission_url'] = (
         f'{DOMAIN}reviews/preprints/{provider._id}/{resource._id}'
     )
@@ -101,18 +113,19 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     context['requester_contributor_names'] = ''.join(resource.contributors.values_list('fullname', flat=True))
     context['localized_timestamp'] = str(timezone.now())
 
-    for recipient in resource.provider.get_group('moderator').user_set.all():
-        context['recipient_fullname'] = recipient.fullname
-        context['user_fullname'] = recipient.fullname
-        context['requester_fullname'] = recipient.fullname
-        context['is_request_email'] = False
+    for group_name in ['moderator', 'admin']:
+        for recipient in resource.provider.get_group(group_name).user_set.all():
+            context['recipient_fullname'] = recipient.fullname
+            context['user_fullname'] = recipient.fullname
+            context['requester_fullname'] = recipient.fullname
+            context['is_request_email'] = False
 
-        NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
-            user=recipient,
-            subscribed_object=provider,
-            event_context=context,
-            is_digest=True,
-        )
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
+                user=recipient,
+                subscribed_object=provider,
+                event_context=context,
+                is_digest=True,
+            )
 
 
 @reviews_signals.reviews_email_submit.connect

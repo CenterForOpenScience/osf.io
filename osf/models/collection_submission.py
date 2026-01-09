@@ -115,7 +115,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'submitter_fullname': user.fullname,
                     'requester_fullname': self.creator.fullname,
                     'profile_image_url': user.profile_image_url(),
-                    'submitter_absolute_url': user.get_absolute_url(),
+                    'submitter_absolute_url': user.absolute_url,
                     'collections_link': settings.DOMAIN + 'collections/' + self.collection.provider._id,
                     'collections_title': self.collection.title,
                     'collection_provider_name': self.collection.provider.name,
@@ -124,7 +124,7 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'is_registered_contrib': contributor.is_registered,
                     'claim_url': claim_url,
                     'node_title': self.guid.referent.title,
-                    'node_absolute_url': self.guid.referent.get_absolute_url(),
+                    'node_absolute_url': self.guid.referent.absolute_url,
                     'domain': settings.DOMAIN,
                     'is_request_email': True,
                     'message': f'submitted "{self.guid.referent.title}".',
@@ -137,8 +137,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
         user = event_data.kwargs.get('user', None)
         NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance.emit(
             user=user,
-            subscribed_object=self.guid.referent,
+            subscribed_object=self.collection.provider,
             event_context={
+                'provider_id': self.collection.provider.id,
                 'submitter_fullname': self.creator.fullname,
                 'requester_fullname': event_data.kwargs.get('user').fullname,
                 'requester_contributor_names': ''.join(self.guid.referent.contributors.values_list('fullname', flat=True)),
@@ -147,7 +148,9 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                 'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                 'is_request_email': False,
                 'is_initiator': self.creator == user,
-                'profile_image_url': user.profile_image_url()
+                'profile_image_url': user.profile_image_url(),
+                'logo': self.collection.provider._id if
+                self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
             },
             is_digest=True,
         )
@@ -184,10 +187,12 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                         'collection_provider_name': self.collection.provider.name,
                         'collection_provider__id': self.collection.provider._id,
                         'node_title': self.guid.referent.title,
-                        'node_absolute_url': self.guid.referent.get_absolute_url(),
+                        'node_absolute_url': self.guid.referent.absolute_url,
                         'domain': settings.DOMAIN,
                         'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                         'is_initiator': self.creator == contributor,
+                        'logo': self.collection.provider._id if
+                        self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                     },
                 )
 
@@ -227,6 +232,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
                     'rejection_justification': event_data.kwargs.get('comment'),
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+                    'logo': self.collection.provider._id if
+                    self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                 },
             )
 
@@ -270,6 +277,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
             'profile_image_url': user.profile_image_url(),
             'domain': settings.DOMAIN,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
+            'logo': self.collection.provider._id if
+            self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
         }
 
         if removed_due_to_privacy and self.collection.provider:
@@ -404,6 +413,8 @@ class CollectionSubmission(TaxonomizableMixin, BaseModel):
                     'message': '',
                     'osf_contact_email': settings.OSF_CONTACT_EMAIL,
                     'reviews_submission_url': f'{DOMAIN}reviews/registries/{self.guid.referent._id}/{self.guid.referent._id}',
+                    'logo': self.collection.provider._id if
+                    self.collection.provider and not self.collection.provider.is_default else settings.OSF_PREPRINTS_LOGO,
                 },
             )
 

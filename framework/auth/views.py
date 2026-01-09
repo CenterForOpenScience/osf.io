@@ -828,6 +828,7 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         destination=destination
     )
 
+    logout_query = ''
     try:
         merge_target = OSFUser.objects.get(emails__address=email)
     except OSFUser.DoesNotExist:
@@ -847,13 +848,15 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         # Merge account confirmation
         merge_account_data = {
             'merge_target_fullname': merge_target.fullname or merge_target.username,
-            'user_username': user.fullname,
+            'user_username': user.username,
             'email': merge_target.email,
         }
         notification_type = NotificationType.Type.USER_CONFIRM_MERGE
+        logout_query = '?logout=1'
     elif user.is_active:
         # Add email confirmation
         notification_type = NotificationType.Type.USER_CONFIRM_EMAIL
+        logout_query = '?logout=1'
     elif campaign:
         # Account creation confirmation: from campaign
         notification_type = campaigns.email_template_for_campaign(campaign)
@@ -862,17 +865,17 @@ def send_confirm_email(user, email, renew=False, external_id_provider=None, exte
         notification_type = NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
 
     notification_type.instance.emit(
-        user=user,
-        subscribed_object=user,
+        destination_address=email,
         event_context={
             'user_fullname': user.fullname,
-            'confirmation_url': confirmation_url,
+            'confirmation_url': f'{confirmation_url}{logout_query}',
             'can_change_preferences': False,
             'external_id_provider': external_id_provider,
             'osf_contact_email': settings.OSF_CONTACT_EMAIL,
             'osf_support_email': settings.OSF_SUPPORT_EMAIL,
             **merge_account_data,
         },
+        save=False
     )
 
 def send_confirm_email_async(user, email, renew=False, external_id_provider=None, external_id=None, destination=None):
@@ -894,7 +897,7 @@ def register_user(**kwargs):
     """
 
     # Verify that email address match.
-    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users can not submit the form
+    # Note: Both `landing.mako` and `register.mako` already have this check on the form. Users cannot submit the form
     # if emails do not match. However, this check should not be removed given we may use the raw api call directly.
     json_data = request.get_json()
     if str(json_data['email1']).lower() != str(json_data['email2']).lower():
@@ -978,39 +981,41 @@ def resend_confirmation_post(auth):
     View for user to submit resend confirmation form.
     HTTP Method: POST
     """
+    try:
+        # If user is already logged in, log user out
+        if auth.logged_in:
+            return auth_logout(redirect_url=request.url)
 
-    # If user is already logged in, log user out
-    if auth.logged_in:
-        return auth_logout(redirect_url=request.url)
+        form = ResendConfirmationForm(request.form)
 
-    form = ResendConfirmationForm(request.form)
-
-    if form.validate():
-        clean_email = form.email.data
-        user = get_user(email=clean_email)
-        status_message = (
-            f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
-            'a confirmation email has been resent to it. If you do not receive an email and believe '
-            'you should have, please contact OSF Support.'
-        )
-        kind = 'success'
-        if user:
-            if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
-                try:
-                    send_confirm_email(user, clean_email, renew=True)
-                except KeyError:
-                    # already confirmed, redirect to dashboard
-                    status_message = f'This email {clean_email} has already been confirmed.'
-                    kind = 'warning'
-                user.email_last_sent = timezone.now()
-                user.save()
-            else:
-                status_message = ('You have recently requested to resend your confirmation email. '
-                                 'Please wait a few minutes before trying again.')
-                kind = 'error'
-        status.push_status_message(status_message, kind=kind, trust=False)
-    else:
-        forms.push_errors_to_status(form.errors)
+        if form.validate():
+            clean_email = form.email.data
+            user = get_user(email=clean_email)
+            status_message = (
+                f'If there is an OSF account associated with this unconfirmed email address {clean_email}, '
+                'a confirmation email has been resent to it. If you do not receive an email and believe '
+                'you should have, please contact OSF Support.'
+            )
+            kind = 'success'
+            if user:
+                if throttle_period_expired(user.email_last_sent, settings.SEND_EMAIL_THROTTLE):
+                    try:
+                        send_confirm_email(user, clean_email, renew=True)
+                    except KeyError:
+                        # already confirmed, redirect to dashboard
+                        status_message = f'This email {clean_email} has already been confirmed.'
+                        kind = 'warning'
+                    user.email_last_sent = timezone.now()
+                    user.save()
+                else:
+                    status_message = ('You have recently requested to resend your confirmation email. '
+                                    'Please wait a few minutes before trying again.')
+                    kind = 'error'
+            status.push_status_message(status_message, kind=kind, trust=False)
+        else:
+            forms.push_errors_to_status(form.errors)
+    except Exception as err:
+        sentry.log_exception(f'Async email confirmation failed because of the error: {err}')
 
     # Don't go anywhere
     return {'form': form}
@@ -1078,6 +1083,8 @@ def external_login_email_post():
                 destination = campaign
                 break
 
+    status_message = None
+    error_list = []
     if form.validate():
         clean_email = form.email.data
         user = get_user(email=clean_email)
@@ -1110,11 +1117,11 @@ def external_login_email_post():
                 destination=destination
             )
             # 3. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
             # 4. Clear session data
             clear_external_first_login_anonymous_session_data(session)
         else:
@@ -1140,22 +1147,26 @@ def external_login_email_post():
                 destination=destination
             )
             # 4. notify user
-            message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+            status_message = language.EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS.format(
+                fullname=fullname,
                 external_id_provider=external_id_provider,
                 email=user.username
             )
-            kind = 'success'
-            # 5. Clear session data
+            # 5. clear session data
             clear_external_first_login_anonymous_session_data(session)
-        status.push_status_message(message, kind=kind, trust=False)
     else:
-        forms.push_errors_to_status(form.errors)
+        form_errors = form.errors
+        for field, _ in form_errors.items():
+            for error in form_errors[field]:
+                error_list.append(error)
 
     # Don't go anywhere
     return {
         'form': form,
         'external_id_provider': external_id_provider,
-        'auth_user_fullname': fullname
+        'auth_user_fullname': fullname,
+        'status_message': status_message,
+        'error_list': error_list,
     }
 
 

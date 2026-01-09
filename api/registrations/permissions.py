@@ -7,10 +7,10 @@ class ContributorOrModerator(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
+        is_admin = obj.provider.get_group('admin').user_set.filter(id=auth.user.id).exists()
+        is_moderator = obj.provider.get_group('moderator').user_set.filter(id=auth.user.id).exists()
 
-        # If a user has perms on the provider, they must be a moderator or admin
-        is_moderator = bool(get_perms(auth.user, obj.provider))
-        return obj.is_admin_contributor(auth.user) or is_moderator
+        return obj.is_admin_contributor(auth.user) or is_moderator or is_admin
 
 
 class ContributorOrModeratorOrPublic(permissions.BasePermission):

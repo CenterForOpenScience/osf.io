@@ -8,17 +8,15 @@
     %>
     Hello ${user_fullname},<br>
     <br>
-    You have been added by ${referrer_fullname} as a contributor to the project "${node_title}" on the Open Science Framework. To set a password for your account, visit:<br>
+    You have been added by ${referrer_name} as a contributor to the project <a href="${node_absolute_url}">${node_title}</a> on the Open Science Framework.<br>
     <br>
-    ${claim_url}<br>
+    <a href="${claim_url}">Click here</a> to set a password for your account.<br>
     <br>
-    Once you have set a password, you will be able to make contributions to "${node_title}" and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user settings: ${domain + "settings/notifications/"}<br>
-    <br>
-    To preview "${node_title}" click the following link: ${node_absolute_url}<br>
+    Once you have set a password, you will be able to make contributions to <a href="${node_absolute_url}">${node_title}</a> and create your own projects. You will automatically be subscribed to notification emails for this project. To change your email notification preferences, visit your project or your user <a href="${domain + "settings/notifications/"}">settings</a><br>
     <br>
     (NOTE: if this project is private, you will not be able to view it until you have confirmed your account)<br>
     <br>
-    If you are not ${user_fullname} or you are erroneously being associated with "${node_title}" then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
+    If you are not ${user_fullname} or you are erroneously being associated with <a href="${node_absolute_url}">${node_title}</a> then email ${osf_contact_email} with the subject line "Claiming Error" to report the problem.<br>
     <br>
     Sincerely,<br>
     <br>

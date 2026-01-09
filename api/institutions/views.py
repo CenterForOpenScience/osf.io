@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import F
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
@@ -8,10 +9,7 @@ from rest_framework.settings import api_settings
 
 from framework.auth.oauth_scopes import CoreScopes
 
-import osf.features
-from osf.metrics import InstitutionProjectCounts
 from osf.models import OSFUser, Node, Institution, Registration
-from osf.metrics import UserInstitutionProjectCounts
 from osf.metrics.reports import InstitutionalUserReport, InstitutionMonthlySummaryReport
 from osf.metrics.utils import YearMonth
 from osf.utils import permissions as osf_permissions
@@ -22,18 +20,12 @@ from api.base.filters import ListFilterMixin
 from api.base.views import JSONAPIBaseView
 from api.base.serializers import JSONAPISerializer
 from api.base.utils import get_object_or_error, get_user_auth
-from api.base.pagination import JSONAPIPagination, MaxSizePagination
+from api.base.pagination import MaxSizePagination, JSONAPINoPagination
 from api.base.parsers import (
     JSONAPIRelationshipParser,
     JSONAPIRelationshipParserForRegularJSON,
 )
-from api.base.settings import MAX_SIZE_OF_ES_QUERY
 from api.base.exceptions import RelationshipPostMakesNoChanges
-from api.base.utils import (
-    MockQueryset,
-    toggle_view_by_flag,
-)
-from api.base.settings import DEFAULT_ES_NULL_VALUE
 from api.metrics.permissions import IsInstitutionalMetricsUser
 from api.metrics.renderers import (
     MetricsReportsCsvRenderer,
@@ -50,14 +42,11 @@ from api.institutions.serializers import (
     InstitutionSerializer,
     InstitutionNodesRelationshipSerializer,
     InstitutionRegistrationsRelationshipSerializer,
-    InstitutionSummaryMetricSerializer,
     InstitutionDepartmentMetricsSerializer,
-    NewInstitutionUserMetricsSerializer,
-    OldInstitutionUserMetricsSerializer,
-    NewInstitutionSummaryMetricsSerializer,
+    InstitutionUserMetricsSerializer,
+    InstitutionSummaryMetricsSerializer,
 )
 from api.institutions.permissions import UserIsAffiliated
-from api.institutions.renderers import InstitutionDepartmentMetricsCSVRenderer, InstitutionUserMetricsCSVRenderer, MetricsCSVRenderer
 
 
 class InstitutionMixin:
@@ -77,7 +66,7 @@ class InstitutionMixin:
 
 
 class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -104,7 +93,7 @@ class InstitutionList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
 
 
 class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -125,7 +114,7 @@ class InstitutionDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMi
 
 
 class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixin, NodesFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_node_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_node_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -160,7 +149,7 @@ class InstitutionNodeList(JSONAPIBaseView, generics.ListAPIView, InstitutionMixi
 
 
 class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_users_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_users_list).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -187,7 +176,7 @@ class InstitutionUserList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView
 
 
 class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
-    """A dedicated view for institution auth, a.k.a "login through institutions".
+    """A dedicated view for institution auth, a.k.a. "login through institutions".
 
     This view is only used and should only be used by CAS.  Changing it may break the institution
     login feature.  Please check with @longze and @matt before making any changes.
@@ -215,7 +204,7 @@ class InstitutionAuth(JSONAPIBaseView, generics.CreateAPIView):
 
 
 class InstitutionRegistrationList(InstitutionNodeList):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/institutions_registration_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/institutions_registration_list).
     """
     serializer_class = RegistrationSerializer
     view_name = 'institution-registrations'
@@ -349,7 +338,8 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
                        }
         Success:       204
 
-    This requires write permissions in the nodes requested.
+    This requires write permissions in the nodes requested. If the user has admin permissions on the node,
+    the institution does not need to be affiliated in their account.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -378,16 +368,19 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
     def perform_destroy(self, instance):
         data = self.request.data['data']
         user = self.request.user
+        inst = instance['self']
         ids = [datum['id'] for datum in data]
         nodes = []
         for id_ in ids:
             node = Node.load(id_)
             if not node.has_permission(user, osf_permissions.WRITE):
                 raise exceptions.PermissionDenied(detail=f'Write permission on node {id_} required')
+            if not user.is_affiliated_with_institution(inst) and not node.has_permission(user, osf_permissions.ADMIN):
+                raise exceptions.PermissionDenied(detail=f'User needs to be affiliated with {inst.name}')
             nodes.append(node)
 
         for node in nodes:
-            node.remove_affiliated_institution(inst=instance['self'], user=user)
+            node.remove_affiliated_institution(inst=inst, user=user)
             node.save()
 
     def create(self, *args, **kwargs):
@@ -398,155 +391,64 @@ class InstitutionNodesRelationship(JSONAPIBaseView, generics.RetrieveDestroyAPIV
         return ret
 
 
-class _OldInstitutionSummaryMetrics(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        IsInstitutionalMetricsUser,
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
+class InstitutionDepartmentList(InstitutionMixin, ElasticsearchListView):
     view_category = 'institutions'
-    view_name = 'institution-summary-metrics'
-
-    serializer_class = InstitutionSummaryMetricSerializer
-
-    # overrides RetrieveAPIView
-    def get_object(self):
-        institution = self.get_institution()
-        return InstitutionProjectCounts.get_latest_institution_project_document(institution)
-
-
-class InstitutionImpactList(JSONAPIBaseView, ListFilterMixin, generics.ListAPIView, InstitutionMixin):
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-        IsInstitutionalMetricsUser,
-    )
-
-    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
-    required_write_scopes = [CoreScopes.NULL]
-
-    view_category = 'institutions'
-
-    @property
-    def is_csv_export(self):
-        if isinstance(self.request.accepted_renderer, MetricsCSVRenderer):
-            return True
-        return False
-
-    @property
-    def pagination_class(self):
-        if self.is_csv_export:
-            return MaxSizePagination
-        return JSONAPIPagination
-
-    def _format_search(self, search, default_kwargs=None):
-        raise NotImplementedError()
-
-    def _paginate(self, search):
-        if self.pagination_class is MaxSizePagination:
-            return search.extra(size=MAX_SIZE_OF_ES_QUERY)
-
-        page = self.request.query_params.get('page')
-        page_size = self.request.query_params.get('page[size]')
-
-        if page_size:
-            page_size = int(page_size)
-        else:
-            page_size = api_settings.PAGE_SIZE
-
-        if page:
-            search = search.extra(size=int(page) * page_size)
-        return search
-
-    def _make_elasticsearch_results_filterable(self, search, **kwargs) -> MockQueryset:
-        """
-        Since ES returns a list obj instead of a awesome filterable queryset we are faking the filter feature used by
-        querysets by create a mock queryset with limited filterbility.
-
-        :param departments: Dict {'Department Name': 3} means "Department Name" has 3 users.
-        :return: mock_queryset
-        """
-        items = self._format_search(search, default_kwargs=kwargs)
-
-        search = self._paginate(search)
-
-        queryset = MockQueryset(items, search)
-        return queryset
-
-    # overrides RetrieveApiView
-    def get_queryset(self):
-        return self.get_queryset_from_request()
-
-
-class InstitutionDepartmentList(InstitutionImpactList):
     view_name = 'institution-department-metrics'
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        IsInstitutionalMetricsUser,
+    )
+    required_read_scopes = [CoreScopes.INSTITUTION_METRICS_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     serializer_class = InstitutionDepartmentMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionDepartmentMetricsCSVRenderer,)
+    renderer_classes = (
+        *api_settings.DEFAULT_RENDERER_CLASSES,
+        MetricsReportsCsvRenderer,
+        MetricsReportsTsvRenderer,
+        MetricsReportsJsonRenderer,
+    )
+    pagination_class = JSONAPINoPagination
 
-    ordering_fields = ('-number_of_users', 'name')
-    ordering = ('-number_of_users', 'name')
+    def get_default_search(self):
+        _base_search = (
+            InstitutionalUserReport.search()
+            .filter('term', institution_id=self.get_institution()._id)
+        )
+        _yearmonth = InstitutionalUserReport.most_recent_yearmonth(base_search=_base_search)
+        if _yearmonth is None:
+            return None
+        _search = (
+            _base_search
+            .filter('term', report_yearmonth=str(_yearmonth))
+            .exclude('term', user_name='Deleted user')
+        )
+        # add aggregation on department name
+        _search.aggs.bucket(
+            'agg_departments',
+            'terms',
+            field='department_name',
+            missing=settings.DEFAULT_ES_NULL_VALUE,
+            size=settings.MAX_SIZE_OF_ES_QUERY,
+        )
+        return _search
 
-    def _format_search(self, search, default_kwargs=None):
-        results = search.execute()
-
-        if results.aggregations:
-            buckets = results.aggregations['date_range']['departments'].buckets
-            department_data = [{'name': bucket['key'], 'number_of_users': bucket['doc_count']} for bucket in buckets]
-            return department_data
-        else:
+    def get_queryset(self):
+        # execute the search and return a list from the aggregation on department name
+        _search = super().get_queryset()
+        if not _search:
             return []
+        _results = _search[0:0].execute()
+        return [
+            {'name': _bucket['key'], 'number_of_users': _bucket['doc_count']}
+            for _bucket in _results.aggregations['agg_departments'].buckets
+        ]
 
-    def get_default_queryset(self):
-        institution = self.get_institution()
-        search = UserInstitutionProjectCounts.get_department_counts(institution)
-        return self._make_elasticsearch_results_filterable(search, id=institution._id)
 
-
-class _OldInstitutionUserMetricsList(InstitutionImpactList):
+class InstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     '''list view for institution-users metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is NOT active
-    (and should be removed when that flag is permanently active)
-    '''
-    view_name = 'institution-user-metrics'
-
-    serializer_class = OldInstitutionUserMetricsSerializer
-    renderer_classes = tuple(api_settings.DEFAULT_RENDERER_CLASSES) + (InstitutionUserMetricsCSVRenderer,)
-
-    ordering_fields = ('user_name', 'department')
-    ordering = ('user_name',)
-
-    def _format_search(self, search, default_kwargs=None):
-        results = search.execute()
-
-        users = []
-        for user_record in results:
-            record_dict = {}
-            record_dict.update(default_kwargs)
-            record_dict.update(user_record.to_dict())
-            user_id = user_record.user_id
-            fullname = OSFUser.objects.get(guids___id=user_id).fullname
-            record_dict['user_name'] = fullname
-            users.append(record_dict)
-
-        return users
-
-    def get_default_queryset(self):
-        institution = self.get_institution()
-        search = UserInstitutionProjectCounts.get_current_user_metrics(institution)
-        return self._make_elasticsearch_results_filterable(search, id=institution._id, department=DEFAULT_ES_NULL_VALUE)
-
-
-class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
-    '''list view for institution-users metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
-    (and should be renamed without "New" when that flag is permanently active)
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -566,7 +468,7 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
         MetricsReportsJsonRenderer,
     )
 
-    serializer_class = NewInstitutionUserMetricsSerializer
+    serializer_class = InstitutionUserMetricsSerializer
 
     default_ordering = '-storage_byte_count'
     ordering_fields = frozenset((
@@ -585,22 +487,23 @@ class _NewInstitutionUserMetricsList(InstitutionMixin, ElasticsearchListView):
     ))
 
     def get_default_search(self):
-        _yearmonth = InstitutionalUserReport.most_recent_yearmonth()
-        if _yearmonth is None:
+        base_search = InstitutionalUserReport.search().filter(
+            'term',
+            institution_id=self.get_institution()._id,
+        )
+        yearmonth = InstitutionalUserReport.most_recent_yearmonth(base_search=base_search)
+        if yearmonth is None:
             return None
+
         return (
-            InstitutionalUserReport.search()
-            .filter('term', report_yearmonth=str(_yearmonth))
-            .filter('term', institution_id=self.get_institution()._id)
+            base_search
+            .filter('term', report_yearmonth=str(yearmonth))
             .exclude('term', user_name='Deleted user')
         )
 
 
-class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
+class InstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIView, InstitutionMixin):
     '''detail view for institution-summary metrics
-
-    used only when the INSTITUTIONAL_DASHBOARD_2024 feature flag is active
-    (and should be renamed without "New" when that flag is permanently active)
     '''
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -614,7 +517,7 @@ class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIV
     view_category = 'institutions'
     view_name = 'institution-summary-metrics'
 
-    serializer_class = NewInstitutionSummaryMetricsSerializer
+    serializer_class = InstitutionSummaryMetricsSerializer
 
     def get_object(self):
         institution = self.get_institution()
@@ -643,19 +546,3 @@ class _NewInstitutionSummaryMetricsDetail(JSONAPIBaseView, generics.RetrieveAPIV
             'term',
             report_yearmonth=str(yearmonth),
         )
-
-
-institution_summary_metrics_detail_view = toggle_view_by_flag(
-    flag_name=osf.features.INSTITUTIONAL_DASHBOARD_2024,
-    old_view=_OldInstitutionSummaryMetrics.as_view(),
-    new_view=_NewInstitutionSummaryMetricsDetail.as_view(),
-)
-institution_summary_metrics_detail_view.view_name = 'institution-summary-metrics'
-
-
-institution_user_metrics_list_view = toggle_view_by_flag(
-    flag_name=osf.features.INSTITUTIONAL_DASHBOARD_2024,
-    old_view=_OldInstitutionUserMetricsList.as_view(),
-    new_view=_NewInstitutionUserMetricsList.as_view(),
-)
-institution_user_metrics_list_view.view_name = 'institution-user-metrics'

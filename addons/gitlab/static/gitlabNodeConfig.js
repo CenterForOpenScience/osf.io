@@ -18,7 +18,7 @@ var connectExistingAccount = function(accountId) {
                 window.location.reload();
         }).fail(function(){
             $.osf.growl('Error', 'Your account could not be connected, if the problem persists you may need to' +
-             ' reconnect to Gitlab or contact us at ' + $.osf.osfSupportLink() + '.');
+             ' reconnect to GitLab or contact us at ' + $.osf.osfSupportLink() + '.');
             Raven.captureMessage('Unexpected error occurred in JSON request');
         });
 };

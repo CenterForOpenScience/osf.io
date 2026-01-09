@@ -352,7 +352,7 @@ class EmailApprovableSanction(TokenApprovableSanction):
 
     # A flag to conditionally run a callback on complete
     notify_initiator_on_complete = models.BooleanField(default=False)
-    # Store a persistant copy of urls for use when needed outside of a request context.
+    # Store a persistent copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
     # {
@@ -412,8 +412,9 @@ class EmailApprovableSanction(TokenApprovableSanction):
             return
         for contrib, node in group:
             if contrib._id in self.approval_state:
-                return self.AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
+                self.AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
+                    subscribed_object=node,
                     event_context=self._email_template_context(
                         contrib,
                         node,
@@ -421,8 +422,9 @@ class EmailApprovableSanction(TokenApprovableSanction):
                     )
                 )
             else:
-                return self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
+                self.NON_AUTHORIZER_NOTIFY_EMAIL_TYPE.instance.emit(
                     user=contrib,
+                    subscribed_object=node,
                     event_context=self._email_template_context(contrib, node)
                 )
 
@@ -605,7 +607,7 @@ class Embargo(SanctionCallbackMixin, EmailApprovableSanction):
         if not self.for_existing_registration:
             parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
-        # Delete parent registration if it was created at the time the embargo was initiated
+        # Delete parent registration if it was created at the time that the embargo was initiated
         if not self.for_existing_registration:
             parent_registration.is_deleted = True
             parent_registration.deleted = timezone.now()

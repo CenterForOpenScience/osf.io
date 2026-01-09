@@ -35,6 +35,7 @@ from website.app import init_addons
 from osf.models import (
     ArchiveJob,
     AbstractNode,
+    Registration,
     DraftRegistration,
 )
 from osf import features
@@ -118,7 +119,7 @@ class ArchiverTask(celery.Task):
         dst.save()
 
         sentry.log_message(
-            f'An error occured while archiving node: {src._id} and registration: {dst._id}',
+            f'An error occurred while archiving node: {src._id} and registration: {dst._id}',
             extra_data={
                 'source node guid': src._id,
                 'registration node guid': dst._id,
@@ -152,7 +153,7 @@ def stat_addon(addon_short_name, job_pk):
     :param job_pk: primary key of archive_job
     :return: AggregateStatResult containing file tree metadata
     """
-    # Dataverse reqires special handling for draft and
+    # Dataverse requires special handling for draft and
     # published content
     addon_name = addon_short_name
     version = None
@@ -236,7 +237,7 @@ def archive_addon(addon_short_name, job_pk):
     params = {'cookie': cookie}
     rename_suffix = ''
     # The dataverse API will not differentiate between published and draft files
-    # unless expcicitly asked. We need to create seperate folders for published and
+    # unless explicitly asked. We need to create separate folders for published and
     # draft in the resulting archive.
     #
     # Additionally trying to run the archive without this distinction creates a race
@@ -341,7 +342,7 @@ def archive_success(self, dst_pk, job_pk):
     notes about utils.get_file_map: 1) this function memoizes previous results to reduce
     overhead and 2) this function returns a generator that lazily fetches the file metadata
     of child Nodes (it is possible for a selected file to belong to a child Node) using a
-    non-recursive DFS. Combined this allows for a relatively effient implementation with
+    non-recursive DFS. Combined this allows for a relatively efficient implementation with
     seemingly redundant calls.
     """
     create_app_context()
@@ -370,3 +371,29 @@ def archive_success(self, dst_pk, job_pk):
         dst.sanction.ask(dst.get_active_contributors_recursive(unique_users=True))
 
     dst.update_search()
+
+
+@celery_app.task(bind=True)
+def force_archive(self, registration_id, permissible_addons, allow_unconfigured=False, skip_collisions=False, delete_collisions=False):
+    from osf.management.commands.force_archive import archive
+
+    create_app_context()
+
+    try:
+        registration = AbstractNode.load(registration_id)
+        if not registration or not isinstance(registration, Registration):
+            return f'Registration {registration_id} not found'
+
+        archive(
+            registration,
+            permissible_addons=set(permissible_addons),
+            allow_unconfigured=allow_unconfigured,
+            skip_collisions=skip_collisions,
+            delete_collisions=delete_collisions,
+        )
+        return f'Registration {registration_id} archive completed'
+
+    except Exception as exc:
+        sentry.log_message(f'Archive task failed for {registration_id}: {exc}')
+        sentry.log_exception(exc)
+        return f'{exc.__class__.__name__}: {str(exc)}'

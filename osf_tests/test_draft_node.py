@@ -82,12 +82,13 @@ def license():
 def make_complex_draft_registration(title, institution, description, category,
         write_contrib, license, subject, user):
     def make_draft_registration(node=None):
-        draft_registration = DraftRegistration.create_from_node(
-            user=user,
-            schema=get_default_metaschema(),
-            data={},
-            node=node if node else None
-        )
+        with capture_notifications():
+            draft_registration = DraftRegistration.create_from_node(
+                user=user,
+                schema=get_default_metaschema(),
+                data={},
+                node=node if node else None
+            )
         user.add_or_update_affiliated_institution(institution)
         draft_registration.set_title(title, Auth(user))
         draft_registration.set_description(description, Auth(user))
@@ -147,8 +148,7 @@ class TestDraftNode:
 
     def test_draft_registration_fields_are_copied_back_to_draft_node(self, user, institution,
             subject, write_contrib, title, description, category, license, make_complex_draft_registration):
-        with capture_notifications():
-            draft_registration = make_complex_draft_registration()
+        draft_registration = make_complex_draft_registration()
         draft_node = draft_registration.branched_from
 
         with disconnected_from_listeners(after_create_registration):

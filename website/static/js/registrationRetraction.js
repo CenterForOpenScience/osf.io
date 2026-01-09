@@ -40,7 +40,7 @@ var RegistrationRetractionViewModel = oop.extend(
         SUBMIT_ERROR_MESSAGE: 'Error submitting your withdrawal request, please try again. If the problem ' +
                 'persists, email ' + $osf.osfSupportLink(),
         CONFIRMATION_ERROR_MESSAGE: 'Please enter the registration title before clicking Withdraw Registration',
-        JUSTIFICATON_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
+        JUSTIFICATION_ERROR_MESSAGE: 'Your justification is too long, please enter a justification with no more ' +
             'than 2048 characters long.',
         MESSAGE_ERROR_CLASS: 'text-danger',
         onSubmitSuccess: function(response) {
@@ -66,7 +66,7 @@ var RegistrationRetractionViewModel = oop.extend(
                 self.changeMessage(self.CONFIRMATION_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
                 return false;
             } else if (!self.justification.isValid()) {
-                self.changeMessage(self.JUSTIFICATON_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
+                self.changeMessage(self.JUSTIFICATION_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
                 return false;
             } else {
                 // Else Submit

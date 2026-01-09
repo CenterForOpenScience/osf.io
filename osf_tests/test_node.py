@@ -430,7 +430,7 @@ class TestParentNode:
         assert set(project_affiliations) != set(user_affiliations)
         assert set(template_affiliations) == set(user_affiliations)
 
-    def test_teplate_project_child_has_correct_parent(self, template):
+    def test_template_project_child_has_correct_parent(self, template):
         template_child = NodeFactory(parent=template)
         assert template_child.parent_node._id == template._id
 
@@ -916,7 +916,8 @@ class TestContributorMethods:
                     {'user': user1, 'permissions': ADMIN, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': False}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         last_log = node.logs.all().order_by('-date')[0]
         assert (
@@ -958,7 +959,7 @@ class TestContributorMethods:
         node.save()
         assert len(node.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, node, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, node, auth):
         new_user = node.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         node.save()
@@ -1114,7 +1115,8 @@ class TestContributorMethods:
                     {'user': user1, 'permissions': permissions.WRITE, 'visible': True},
                     {'user': user2, 'permissions': permissions.WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         assert user1 in node.contributors
         assert user2 in node.contributors
@@ -1232,7 +1234,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_user_id(self, user, node):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1241,7 +1243,7 @@ class TestNodeAddContributorRegisteredOrNot:
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), email=unregistered_user.email, full_name=unregistered_user.fullname, notification_type=None)
 
         contributor = contributor_obj.user
         assert contributor in node.contributors
@@ -1260,14 +1262,14 @@ class TestNodeAddContributorRegisteredOrNot:
 
     def test_add_contributor_fullname_email(self, user, node):
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, node):
-        with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications(expect_none=True):
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is False
@@ -1275,7 +1277,7 @@ class TestNodeAddContributorRegisteredOrNot:
     def test_add_contributor_fullname_email_already_exists(self, user, node):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in node.contributors
         assert contributor.is_registered is True
@@ -1284,7 +1286,7 @@ class TestNodeAddContributorRegisteredOrNot:
         registered_user = UserFactory()
         secondary_email = 'secondary@test.test'
         Email.objects.create(address=secondary_email, user=registered_user)
-        with capture_notifications():
+        with capture_notifications(expect_none=True):
             contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=secondary_email)
         contributor = contributor_obj.user
         assert contributor == registered_user
@@ -1295,7 +1297,7 @@ class TestNodeAddContributorRegisteredOrNot:
         unregistered_user = UnregUserFactory()
         unregistered_user.save()
         with capture_notifications():
-            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email)
+            contributor_obj = node.add_contributor_registered_or_not(auth=Auth(user), full_name=unregistered_user.fullname, email=unregistered_user.email, notification_type=None)
         contributor = contributor_obj.user
         assert contributor == unregistered_user
         assert contributor in node.contributors
@@ -1345,8 +1347,7 @@ class TestContributorAddedSignal:
             'permissions': permissions.WRITE
         }]
         with capture_signals() as mock_signals:
-            with capture_notifications():
-                node.add_contributors(contributors=contributors, auth=auth)
+            node.add_contributors(contributors=contributors, auth=auth)
             node.save()
             assert node.is_contributor(user)
             assert mock_signals.signals_sent() == {contributor_added}
@@ -2146,8 +2147,10 @@ class TestSetPrivacy:
 
     def test_set_privacy(self, node, auth):
         last_logged_before_method_call = node.last_logged
-        with capture_notifications():
+        with capture_notifications() as notifications:
             node.set_privacy('public', auth=auth)
+        assert len(notifications['emits']) == 1
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_NEW_PUBLIC_PROJECT
         assert node.logs.first().action == NodeLog.MADE_PUBLIC
         assert last_logged_before_method_call != node.last_logged
         node.save()
@@ -2168,7 +2171,7 @@ class TestSetPrivacy:
             node.set_privacy('private', auth=auth)
             node.set_privacy('public', auth=auth, meeting_creation=False)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_NEW_PUBLIC_PROJECT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.NODE_NEW_PUBLIC_PROJECT
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self, node, user, auth):
         registration = RegistrationFactory(project=node)
@@ -2562,12 +2565,13 @@ class TestPrivateLinks:
         user = proj.creator
         schema = RegistrationSchema.objects.first()
         data = {'some': 'data'}
-        draft = DraftRegistration.create_from_node(
-            node=proj,
-            user=user,
-            schema=schema,
-            data=data,
-        )
+        with capture_notifications():
+            draft = DraftRegistration.create_from_node(
+                node=proj,
+                user=user,
+                schema=schema,
+                data=data,
+            )
         assert user == draft.initiator
         assert schema == draft.registration_schema
         assert data == draft.registration_metadata
@@ -2610,7 +2614,8 @@ class TestManageContributors:
                 [
                     {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
                     {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-                ]
+                ],
+                notification_type=None
             )
         with pytest.raises(ValueError) as e:
             node.set_visible(user=reg_user1, visible=False, auth=None)
@@ -3362,7 +3367,8 @@ class TestContributorOrdering:
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
 
         user_contrib_id = node.contributor_set.get(user=user).id

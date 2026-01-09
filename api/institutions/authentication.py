@@ -290,7 +290,7 @@ class InstitutionAuthentication(BaseAuthentication):
                     activation_required = True
                     # Unconfirmed users already have a usable password set by the creator during
                     # sign-up. However, it must be overwritten by a new random one so the creator
-                    # (if he is not the real person) can not access the account after activation.
+                    # (if he is not the real person) cannot access the account after activation.
                     new_password_required = True
                     logger.warning(f'Institution SSO: user status - unconfirmed user {sso_user_info}')
                 else:
@@ -363,7 +363,7 @@ class InstitutionAuthentication(BaseAuthentication):
         if email_to_add:
             assert not is_created and email_to_add == sso_email
             user.emails.create(address=email_to_add)
-            NotificationType.Type.USER_WELCOME_OSF4I.instance.emit(
+            NotificationType.Type.USER_ADD_SSO_EMAIL_OSF4I.instance.emit(
                 user=user,
                 event_context={
                     'user_fullname': user.fullname,

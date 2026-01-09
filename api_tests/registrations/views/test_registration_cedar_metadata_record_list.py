@@ -1,12 +1,12 @@
 import pytest
 
-from .test_registration_cedar_metadata_record import TesRegistrationCedarMetadataRecord
+from .test_registration_cedar_metadata_record import TestRegistrationCedarMetadataRecord
 from osf.utils.permissions import ADMIN, READ, WRITE
 from osf_tests.factories import AuthUserFactory
 
 
 @pytest.mark.django_db
-class TestRegistrationCedarMetadataRecordList(TesRegistrationCedarMetadataRecord):
+class TestRegistrationCedarMetadataRecordList(TestRegistrationCedarMetadataRecord):
 
     def test_record_list_no_auth(self, app, registration, cedar_record_for_registration, cedar_draft_record_for_registration):
         resp = app.get(f'/v2/registrations/{registration._id}/cedar_metadata_records/')

@@ -103,6 +103,7 @@ class UserSerializer(JSONAPISerializer):
             {
                 'html': 'absolute_url',
                 'profile_image': 'profile_image_url',
+                'merged_by': 'get_merged_by_absolute_url',
             },
         ),
     )
@@ -240,6 +241,10 @@ class UserSerializer(JSONAPISerializer):
     def get_accepted_terms_of_service(self, obj):
         return bool(obj.accepted_terms_of_service)
 
+    def get_merged_by_absolute_url(self, obj):
+        if obj.merged_by:
+            return obj.merged_by.absolute_url
+
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
@@ -280,9 +285,9 @@ class UserSerializer(JSONAPISerializer):
         try:
             instance.save()
         except ValidationValueError as e:
-            raise InvalidModelValueError(detail=e.message)
+            raise InvalidModelValueError(detail=str(e))
         except ValidationError as e:
-            raise InvalidModelValueError(e)
+            raise InvalidModelValueError(detail=str(e))
         if set(validated_data.keys()).intersection(set(OSFUser.SPAM_USER_PROFILE_FIELDS.keys())):
             request_headers = string_type_request_headers(self.context['request'])
             instance.check_spam(saved_fields=validated_data, request_headers=request_headers)

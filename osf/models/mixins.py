@@ -178,7 +178,7 @@ class TitleMixin(models.Model):
 
         original_title = self.title
         new_title = sanitize.strip_html(title)
-        # Title hasn't changed after sanitzation, bail out
+        # Title hasn't changed after sanitization, bail out
         if original_title == new_title:
             return False
         self.title = new_title
@@ -216,7 +216,7 @@ class DescriptionMixin(models.Model):
     def set_description(self, description, auth, save=False):
         """Set the description and log the event.
         :param str description: The new description
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.description
@@ -275,7 +275,7 @@ class CategoryMixin(models.Model):
     def set_category(self, category, auth, save=False):
         """Set the category and log the event.
         :param str category: The new category
-        :param auth: All the auth informtion including user, API key.
+        :param auth: All the auth information including user, API key.
         :param bool save: Save self after updating.
         """
         original = self.category
@@ -320,7 +320,7 @@ class AffiliatedInstitutionMixin(models.Model):
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,
-                            'node_absolute_url': self.get_absolute_url(),
+                            'node_absolute_url': self.absolute_url,
                         }
                     )
         if log:
@@ -362,7 +362,7 @@ class AffiliatedInstitutionMixin(models.Model):
                             'user_fullname': user.fullname,
                             'node_title': self.title,
                             'node_id': self._id,
-                            'node_absolute_url': self.get_absolute_url(),
+                            'node_absolute_url': self.absolute_url,
                         }
                     )
 
@@ -520,7 +520,7 @@ class AddonModelMixin(models.Model):
     def get_addons(self, service_type: str | None = None, in_request_context: bool = True, auth=None):
         '''
         This gets all a user's addons whether that user is the model user (self.) or the user making the request (the
-        user signing off on whatever auth mechicanism such as token or basic auth.
+        user signing off on whatever auth mechanism such as token or basic auth.
 
         service_type is the addon type such as "storage" or "citations"
         in_request_context is the addon for the requesting user? or is it outside the request context.
@@ -1081,13 +1081,14 @@ class ReviewProviderMixin(GuardianMixin):
         else:
             raise TypeError(f"Unsupported group type: {type(group)}")
 
-        NotificationSubscription.objects.get_or_create(
-            user=user,
-            content_type=ContentType.objects.get_for_model(self),
-            object_id=self.id,
-            notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
-            _is_digest=True
-        )
+        for subscription in self.DEFAULT_SUBSCRIPTIONS:
+            NotificationSubscription.objects.get_or_create(
+                user=user,
+                content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                object_id=self.id,
+                notification_type=subscription.instance,
+                _is_digest=True
+            )
 
     def remove_from_group(self, user, group, unsubscribe=True):
         _group = self.get_group(group)
@@ -1100,6 +1101,8 @@ class ReviewProviderMixin(GuardianMixin):
                 NotificationSubscription.objects.filter(
                     notification_type=subscription.instance,
                     user=user,
+                    content_type=ContentType.objects.get_for_model(self, for_concrete_model=False),
+                    object_id=self.id,
                 ).delete()
 
         return _group.user_set.remove(user)
@@ -1496,7 +1499,7 @@ class ContributorMixin(models.Model):
             auth=None,
             log=True,
             save=False,
-            notification_type=NotificationType.Type.NODE_CONTRIBUTOR_ADDED_DEFAULT
+            notification_type=False,
     ):
         """Add multiple contributors
 
@@ -1550,7 +1553,7 @@ class ContributorMixin(models.Model):
         :param str fullname: The full name of the person.
         :param str email: The email address of the person.
         :param Auth auth: Auth object for the user adding the contributor.
-        :param User existing_user: the unregister_contributor if it is already created, otherwise None
+        :param User existing_user: the unregister_contributor if it is already created; otherwise, None
         :returns: The added contributor
         :raises: DuplicateEmailError if user with given email is already in the database.
         """
@@ -1589,6 +1592,19 @@ class ContributorMixin(models.Model):
             else:
                 raise e
 
+        if notification_type is None:
+            from osf.models import AbstractNode, Preprint, DraftRegistration
+
+            if isinstance(self, AbstractNode):
+                notification_type = NotificationType.Type.USER_INVITE_DEFAULT
+            elif isinstance(self, Preprint):
+                if self.provider.is_default:
+                    notification_type = NotificationType.Type.USER_INVITE_OSF_PREPRINT
+                else:
+                    notification_type = NotificationType.Type.PROVIDER_USER_INVITE_PREPRINT
+            elif isinstance(self, DraftRegistration):
+                notification_type = NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
+
         self.add_contributor(
             contributor,
             permissions=permissions,
@@ -1607,7 +1623,7 @@ class ContributorMixin(models.Model):
                                           user_id=None,
                                           full_name=None,
                                           email=None,
-                                          notification_type=None,
+                                          notification_type=False,
                                           permissions=None,
                                           bibliographic=True,
                                           index=None):
@@ -1712,7 +1728,7 @@ class ContributorMixin(models.Model):
                 contributor.save()
 
     # TODO: optimize me
-    def update_contributor(self, user, permission, visible, auth, save=False):
+    def update_contributor(self, user, permission, visible, auth, save=False, skip_permission=False):
         """ TODO: this method should be updated as a replacement for the main loop of
         Node#manage_contributors. Right now there are redundancies, but to avoid major
         feature creep this will not be included as this time.
@@ -1721,7 +1737,7 @@ class ContributorMixin(models.Model):
         """
         OSFUser = apps.get_model('osf.OSFUser')
 
-        if not self.has_permission(auth.user, ADMIN):
+        if not skip_permission and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Only admins can modify contributor permissions')
 
         if permission:
@@ -2233,7 +2249,7 @@ class SpamOverrideMixin(SpamMixin):
 
     def _get_spam_content(self, saved_fields=None, include_tags=True):
         """
-        This function retrieves retrieves strings of potential spam from various DB fields. Also here we can follow
+        This function retrieves strings of potential spam from various DB fields. Also here we can follow
         django's typical ORM query structure for example we can grab the redirect link of a node by giving a saved
         field of {'addons_forward_node_settings__url'}.
 

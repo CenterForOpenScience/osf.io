@@ -432,7 +432,7 @@ class IDField(ser.CharField):
                     raise api_exceptions.Conflict(
                         detail=(
                             f'The id you used in the URL, "{id_field}", does not match the id you used in the json'
-                            f' body\'s id field, "{data}". The object "{id_field}" exists, otherwise you\'d get a'
+                            f' body\'s id field, "{data}". The object "{id_field}" exists; otherwise, you\'d get a'
                             f' 404, so most likely you need to change the id field to match.'
                         ),
                     )
@@ -711,7 +711,7 @@ class RelationshipField(ser.Field):
 
     def get_meta_information(self, meta_data, value):
         """
-        For retrieving meta values, otherwise returns {}
+        For retrieving meta values; otherwise, returns {}
         """
         meta = {}
         for key in meta_data or {}:
@@ -990,7 +990,7 @@ class RelationshipField(ser.Field):
 class TypedRelationshipField(RelationshipField):
     """ Overrides get_url to inject a typed namespace.
 
-        Assumption: Namespaces for each type MUST be the same as the dasharized JSONAPI-type
+        Assumption: Namespaces for each type MUST be the same as the dashed JSONAPI-type
     """
 
     def get_url(self, obj, view_name, request, format):
@@ -1182,6 +1182,13 @@ class LinksField(ser.Field):
         if 'info' in ret:
             if hasattr(obj, 'get_absolute_info_url'):
                 ret['info'] = self._extend_url_with_vol_key(obj.get_absolute_info_url())
+
+        request = self.context['request']
+        referer = request.headers.get('Referer', '')
+        if 'html' in ret and 'legacy' in referer:
+            parsed_html_url = urlparse(ret['html'])
+            legacy_url = urlparse(referer)
+            ret['html'] = parsed_html_url._replace(scheme=legacy_url.scheme, netloc=legacy_url.netloc).geturl()
 
         return ret
 
@@ -1474,7 +1481,7 @@ class JSONAPISerializer(BaseAPISerializer):
         return super().to_representation(data)
 
     def run_validation(self, data):
-        # Overrides construtor for validated_data to allow writes to a SerializerMethodField
+        # Overrides constructor for validated_data to allow writes to a SerializerMethodField
         # Validation for writeable SMFs is expected to happen in the model
         _validated_data = super().run_validation(data)
         for field in self.writeable_method_fields:
@@ -1545,7 +1552,7 @@ class JSONAPISerializer(BaseAPISerializer):
                     # if this is a RelationshipField, serialize as a null relationship
                     data['relationships'][field.field_name] = {'data': None}
                 else:
-                    # otherwise, serialize as an null attribute
+                    # otherwise, serialize as a null attribute
                     data['attributes'][field.field_name] = None
             else:
                 try:

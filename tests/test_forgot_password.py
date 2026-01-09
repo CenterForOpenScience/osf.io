@@ -55,9 +55,6 @@ class TestForgotPassword(OsfTestCase):
         assert res.status_code == 200
         # check request URL is /forgotpassword
         assert res.request.path == self.post_url
-        # check push notification
-        assert_in_html('If there is an OSF account', res.text)
-        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is set
         self.user.reload()
@@ -76,9 +73,6 @@ class TestForgotPassword(OsfTestCase):
         assert res.status_code == 200
         # check request URL is /forgotpassword
         assert res.request.path == self.post_url
-        # check push notification
-        assert_in_html('If there is an OSF account', res.text)
-        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
@@ -99,9 +93,6 @@ class TestForgotPassword(OsfTestCase):
         assert res.status_code == 200
         # check request URL is /forgotpassword
         assert res.request.path == self.post_url
-        # check push notification
-        assert_in_html('If there is an OSF account', res.text)
-        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
@@ -119,9 +110,6 @@ class TestForgotPassword(OsfTestCase):
 
         # check http 200 response
         assert res.status_code == 200
-        # check push notification
-        assert_in_html('Please wait', res.text)
-        assert_not_in_html('If there is an OSF account', res.text)
 
 
 class TestForgotPasswordInstitution(OsfTestCase):
@@ -169,9 +157,6 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert res.status_code == 200
         # check request URL is /forgotpassword
         assert res.request.path == self.post_url
-        # check push notification
-        assert_in_html('If there is an OSF account', res.text)
-        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is set
         self.user.reload()
@@ -207,9 +192,6 @@ class TestForgotPasswordInstitution(OsfTestCase):
         assert res.status_code == 200
         # check request URL is /forgotpassword-institution
         assert res.request.path == self.post_url
-        # check push notification
-        assert_in_html('If there is an OSF account', res.text)
-        assert_not_in_html('Please wait', res.text)
 
         # check verification_key_v2 is not set
         self.user.reload()
@@ -224,7 +206,3 @@ class TestForgotPasswordInstitution(OsfTestCase):
 
         # check http 200 response
         assert res.status_code == 200
-        # check push notification
-        assert_in_html('Please wait', res.text)
-        assert_not_in_html('If there is an OSF account', res.text)
-

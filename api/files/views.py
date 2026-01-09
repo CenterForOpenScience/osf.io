@@ -30,7 +30,6 @@ from api.files.serializers import (
     FileDetailSerializer,
     FileVersionSerializer,
 )
-from osf.utils.permissions import ADMIN
 
 
 class FileMixin:
@@ -64,7 +63,7 @@ class FileMixin:
 
 
 class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_detail).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -87,11 +86,11 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        user = utils.get_user_auth(self.request).user
         file = self.get_file()
 
         if self.request.GET.get('create_guid', False):
-            if (self.get_target().has_permission(user, ADMIN) and utils.has_admin_scope(self.request)):
+            auth = utils.get_user_auth(self.request)
+            if self.get_target().can_view(auth):
                 file.get_guid(create=True)
 
         # We normally would pass this through `get_file` as an annotation, but the `select_for_update` feature prevents
@@ -109,7 +108,7 @@ class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
 
 
 class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_versions).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_versions).
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -141,7 +140,7 @@ def node_from_version(request, view, obj):
 
 
 class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/files_version_detail).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/files_version_detail).
     """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (

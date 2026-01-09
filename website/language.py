@@ -57,9 +57,8 @@ TERMS_OF_SERVICE = """
 
 REGISTRATION_SUCCESS = """Registration successful. Please check {email} to confirm your email address."""
 
-EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = """A new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address."""
-
-EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = """Your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action."""
+EXTERNAL_LOGIN_EMAIL_CREATE_SUCCESS = """Hello {fullname}, a new OSF account has been created with your {external_id_provider} profile. Please check {email} to confirm your email address."""
+EXTERNAL_LOGIN_EMAIL_LINK_SUCCESS = """Hello {fullname}, your OSF account has been linked with your {external_id_provider}. Please check {email} to confirm this action."""
 
 # Shown if registration is turned off in website.settings
 REGISTRATION_UNAVAILABLE = 'Registration currently unavailable.'
@@ -71,7 +70,7 @@ BLOCKED_EMAIL = f'Invalid email address. If this should not have occurred, pleas
 
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
-               ' <a href="/resend/">Click here</a> to resend your confirmation email.')
+               ' You can <a href="/resend/">resend your confirmation email</a>.')
 
 # Shown if the user's account is disabled
 DISABLED = """

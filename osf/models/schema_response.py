@@ -182,7 +182,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         On creation, the new SchemaResponses will share all of its response_blocks with the
         previous_version (as no responses have changed). As responses are updated via
-        response.update_responses, new SchemaResponseBlocks will be created/updated as apporpriate.
+        response.update_responses, new SchemaResponseBlocks will be created/updated as appropriate.
 
         A new SchemaResponse cannot be created for a given parent object if it already has another
         SchemaResponse in a non-APPROVED state.
@@ -218,7 +218,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
         answer and added to response_blocks, and the outdated response_block entry for that key
         (inherited from the previous_response) will be removed from response_blocks.
 
-        If a previously updated response is udpated again, the existing entry in response_blocks
+        If a previously updated response is updated again, the existing entry in response_blocks
         for that key will have its "response" field updated to the new value.
 
         If a previously updated response has its answer reverted to the previous_response's answer,
@@ -299,7 +299,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
             )
         super().delete(*args, **kwargs)
 
-# *** Callbcks in support of ApprovalsMachine ***
+# *** Callbacks in support of ApprovalsMachine ***
 
     def _validate_trigger(self, event_data):
         '''Any additional validation to confirm that a trigger is being used correctly.
@@ -335,7 +335,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
                 f'and does not have permission to "submit" SchemaResponse with id [{self._id}]'
             )
 
-        # Only check newly udpated keys, as old keys have previously passed validation
+        # Only check newly updated keys, as old keys have previously passed validation
         invalid_response_keys = [
             block.schema_key for block in self.updated_response_blocks.all() if not block.is_valid()
         ]
@@ -387,7 +387,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('accept_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "accept" SchemaResponse with id [{self._id}]'
             )
 
@@ -408,7 +408,7 @@ class SchemaResponse(ObjectIDMixin, BaseModel):
 
         if not user.has_perm('reject_submissions', self.parent.provider):
             raise PermissionsError(
-                f'User {user} is not a modrator on {self.parent.provider} and does not '
+                f'User {user} is not a moderator on {self.parent.provider} and does not '
                 f'have permission to "reject" SchemaResponse with id [{self._id}]'
             )
 
@@ -535,7 +535,7 @@ def _is_updated_response(response_block, new_response):
     if response_block.source_schema_block.block_type != 'file-input':
         return current_response != new_response
 
-    # `files-input` blocks contain a list of dictinoaries containinf file information in the form
+    # `files-input` blocks contain a list of dictionaries containing file information in the form
     current_file_ids = {entry['file_id'] for entry in current_response}
     new_file_ids = {entry['file_id'] for entry in new_response}
     return current_file_ids != new_file_ids

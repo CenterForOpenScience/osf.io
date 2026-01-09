@@ -172,7 +172,7 @@ def before_request():
     ticket = request.args.get('ticket')
     if ticket:
         service_url = furl(request.url).remove(args=['ticket'])
-        # Attempt to authenticate wih CAS, and return a proper redirect response
+        # Attempt to authenticate with CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
 
     # Request Type 2: Basic Auth with username and password in Authorization headers
@@ -187,7 +187,7 @@ def before_request():
         user_session = get_session(ignore_cookie=True)
         user_session.create()
         # Although the if check is not necessary based on current ``get_session()`` implementation. However, we
-        # keep it here in case ``get_session()`` was changed. It may be removed after we have unit tests for this.
+        # keep it here in case ``get_session()`` is changed. It may be removed after we have unit tests for this.
         if not user_session:
             return
 

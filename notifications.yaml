@@ -109,14 +109,14 @@ notification_types:
     tests: ['osf_tests/test_institution.py']
     template: 'website/templates/institution_deactivation.html.mako'
 
-  - name: user_invite_preprints_osf
+  - name: user_invite_osf_preprint
     subject: 'You have been added as a contributor to an OSF preprint.'
     __docs__: ...
     object_content_type_model_name: osfuser
     tests: []
     template: 'website/templates/invite_preprints_osf.html.mako'
 
-  - name: user_invite_preprints
+  - name: provider_user_invite_preprint
     subject: 'You have been invited to contribute to a preprint'
     __docs__: ...
     object_content_type_model_name: osfuser
@@ -192,13 +192,6 @@ notification_types:
     object_content_type_model_name: osfuser
     template: 'website/templates/storage_cap_exceeded_announcement.html.mako'
     tests: []
-
-  - name: user_add_sso_email_osf4i
-    subject: 'Your OSF Account Email Address'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/add_sso_email_osf4i.html.mako'
-    tests: ['']
 
   - name: user_duplicate_accounts_sso_osf4i
     subject: 'Duplicate Account Detection'
@@ -326,13 +319,6 @@ notification_types:
     template: 'website/templates/archive_uncaught_error_user.html.mako'
     tests: []
 
-  - name: user_new_public_project
-    subject: 'Now, public. Next, impact.'
-    __docs__: ...
-    object_content_type_model_name: osfuser
-    template: 'website/templates/new_public_project.html.mako'
-    tests: ['osf_tests/test_node.py']
-
   - name: user_confirm_email_erpc
     subject: 'OSF Account Verification, Election Research Preacceptance Competition'
     object_content_type_model_name: osfuser
@@ -398,6 +384,18 @@ notification_types:
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/user_message_institutional_access_request.html.mako'
+
+  - name: user_no_login
+    subject: 'We miss you at OSF'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/no_login.html.mako'
+
+  - name: user_no_addon
+    subject: 'Link an add-on to your OSF project'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/no_addon.html.mako'
 
   #### PROVIDER
   - name: provider_new_pending_submissions
@@ -585,28 +583,28 @@ notification_types:
     tests: ['api_tests/nodes/views/test_node_forks_list.py']
 
   - name: node_schema_response_initiated
-    subject: 'Schema Response Initiated'
+    subject: 'Updates for {resource_type} {title} are in progress'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_initiated.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_submitted
-    subject: 'Schema Response Submitted'
+    subject: 'Updates for {resource_type} {title} are pending Admin approval'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_pending_approval.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_approved
-    subject: 'Schema Response Approved'
+    subject: 'The updates for {resource_type} {title} have been approved'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_approved.html.mako'
     tests: ['osf_tests/test_schema_responses.py']
 
   - name: node_schema_response_rejected
-    subject: 'Schema Response Rejected'
+    subject: 'The updates for {resource_type} {title} were not accepted'
     __docs__: ...
     object_content_type_model_name: abstractnode
     template: 'website/templates/updates_rejected.html.mako'
@@ -654,6 +652,14 @@ notification_types:
   - name: node_withdraw_registration_declined
     object_content_type_model_name: abstractnode
     template: 'website/templates/withdrawal_request_declined.html.mako'
+
+  - name: node_new_public_project
+    subject: 'Now, public. Next, impact.'
+    __docs__: ...
+    object_content_type_model_name: osfuser
+    template: 'website/templates/new_public_project.html.mako'
+    tests: ['osf_tests/test_node.py']
+
 
   #### PREPRINT
   - name: preprint_contributor_added_preprint_node_from_osf
@@ -884,3 +890,24 @@ notification_types:
     object_content_type_model_name: abstractnode
     template: 'website/templates/file_updated.html.mako'
     tests: ['tests/test_events.py']
+
+  - name: node_withdrawal_request_rejected
+    subject: 'Your withdrawal request has been declined'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/withdrawal_request_declined.html.mako'
+    tests: []
+
+  - name: user_add_sso_email_osf4i
+    subject: 'Your OSF Account Email Address'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/add_sso_email_osf4i.html.mako'
+    tests: []
+
+  - name: empty
+    subject: '{subject}'
+    __docs__: ...
+    object_content_type_model_name: abstractnode
+    template: 'website/templates/empty.html.mako'
+    tests: []

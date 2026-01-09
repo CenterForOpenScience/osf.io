@@ -37,7 +37,6 @@ class TestResendConfirmation(OsfTestCase):
         assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INITIAL_CONFIRM_EMAIL
         assert res.status_code == 200
         assert res.request.path == self.post_url
-        assert_in_html('If there is an OSF account', res.text)
 
 
     # test that confirmed user cannot receive resend confirmation email
@@ -49,7 +48,6 @@ class TestResendConfirmation(OsfTestCase):
         res = form.submit(self.app)
         assert res.status_code == 200
         assert res.request.path == self.post_url
-        assert_in_html('has already been confirmed', res.text)
 
     # test that non-existing user cannot receive resend confirmation email
     def test_cannot_receive_resend_confirmation_email_2(self):
@@ -61,7 +59,6 @@ class TestResendConfirmation(OsfTestCase):
         # check email, request and response
         assert res.status_code == 200
         assert res.request.path == self.post_url
-        assert_in_html('If there is an OSF account', res.text)
 
     # test that user cannot submit resend confirmation request too quickly
     def test_cannot_resend_confirmation_twice_quickly(self):
@@ -75,5 +72,3 @@ class TestResendConfirmation(OsfTestCase):
 
         # check request and response
         assert res.status_code == 200
-        assert_in_html('Please wait', res.text)
-

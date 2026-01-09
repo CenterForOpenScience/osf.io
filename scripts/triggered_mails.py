@@ -1,17 +1,18 @@
 import logging
 import uuid
 
-from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Q, Exists, OuterRef
 from django.utils import timezone
 
 from framework.celery_tasks import app as celery_app
-from osf.models import OSFUser
+from osf.models import OSFUser, NotificationType
 from website.app import init_app
 from website import settings
+from osf import features
+from waffle import switch_is_active
 
-from osf.models import EmailTask  # <-- new
+from osf.models import EmailTask
 
 from scripts.utils import add_file_logger
 
@@ -22,12 +23,19 @@ NO_LOGIN_PREFIX = 'no_login:'  # used to namespace this email type in task_id
 
 
 def main(dry_run: bool = True):
+    if not switch_is_active(features.ENABLE_NO_LOGIN_EMAILS):
+        logger.warning('No-login emails are DISABLED via Waffle switch')
+        return
+
     users = find_inactive_users_without_enqueued_or_sent_no_login()
     if not users.exists():
         logger.info('No users matched inactivity criteria.')
         return
 
-    for user in users.iterator():
+    if settings.MAX_DAILY_NO_LOGIN_EMAILS:
+        users = users[:settings.MAX_DAILY_NO_LOGIN_EMAILS]
+
+    for user in users:
         if dry_run:
             logger.warning('Dry run mode')
             logger.warning(f'[DRY RUN] Would enqueue no_login email for {user.username}')
@@ -59,8 +67,11 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
         task_id__startswith=NO_LOGIN_PREFIX,
         status__in=['PENDING', 'STARTED', 'RETRY', 'SUCCESS'],
     )
-
-    base_q = OSFUser.objects.filter(is_active=True).filter(
+    cutoff_query = Q(date_last_login__gte=settings.NO_LOGIN_EMAIL_CUTOFF - settings.NO_LOGIN_WAIT_TIME) if settings.NO_LOGIN_EMAIL_CUTOFF else Q()
+    base_q = OSFUser.objects.filter(
+        cutoff_query,
+        is_active=True,
+    ).filter(
         Q(
             date_last_login__lt=timezone.now() - settings.NO_LOGIN_WAIT_TIME,
             # NOT tagged osf4m
@@ -70,7 +81,7 @@ def find_inactive_users_without_enqueued_or_sent_no_login():
             date_last_login__lt=timezone.now() - settings.NO_LOGIN_OSF4M_WAIT_TIME,
             tags__name='osf4m'
         )
-    )
+    ).distinct()
 
     # Exclude users who already have a task for this email type
     return base_q.annotate(_has_task=Exists(existing_no_login)).filter(_has_task=False)
@@ -97,58 +108,37 @@ def send_no_login_email(email_task_id: int):
         return
 
     # Update to STARTED
-    EmailTask.objects.filter(id=email_task.id).update(status='STARTED')
+    email_task.status = 'STARTED'
+    email_task.save()
 
     try:
         user = email_task.user
         if user is None:
-            EmailTask.objects.filter(id=email_task.id).update(status='NO_USER_FOUND')
+            email_task.status = 'NO_USER_FOUND'
+            email_task.save()
             logger.warning(f'EmailTask {email_task.id}: no associated user')
             return
 
         if not user.is_active:
-            EmailTask.objects.filter(id=email_task.id).update(status='USER_DISABLED')
+            email_task.status = 'USER_DISABLED'
+            email_task.save()
             logger.warning(f'EmailTask {email_task.id}: user {user.id} is not active')
             return
-
-        # --- Send the email ---
-        # Replace this with your real templated email system if desired.
-        subject = 'We miss you at OSF'
-        message = (
-            f'Hello {user.fullname},\n\n'
-            'We noticed you haven’t logged into OSF in a while. '
-            'Your projects, registrations, and files are still here whenever you need them.\n\n'
-            f'If you need help, contact us at {settings.OSF_SUPPORT_EMAIL}.\n\n'
-            '— OSF Team'
+        NotificationType.Type.USER_NO_LOGIN.instance.emit(
+            user=user,
+            event_context={
+                'user_fullname': user.fullname,
+                'domain': settings.DOMAIN,
+            }
         )
-        from_email = settings.OSF_SUPPORT_EMAIL
-        recipient_list = [user.username]  # assuming username is the email address
-
-        # If you want HTML email or a template, swap in EmailMultiAlternatives and render_to_string.
-        sent_count = send_mail(
-            subject=subject,
-            message=message,
-            from_email=from_email,
-            recipient_list=recipient_list,
-            fail_silently=False,
-        )
-
-        if sent_count > 0:
-            EmailTask.objects.filter(id=email_task.id).update(status='SUCCESS')
-            logger.info(f'EmailTask {email_task.id}: email sent to {user.username}')
-        else:
-            EmailTask.objects.filter(id=email_task.id).update(
-                status='FAILURE',
-                error_message='send_mail returned 0'
-            )
-            logger.error(f'EmailTask {email_task.id}: send_mail returned 0')
+        email_task.status = 'SUCCESS'
+        email_task.save()
 
     except Exception as exc:  # noqa: BLE001
         logger.exception(f'EmailTask {email_task.id}: error while sending')
-        EmailTask.objects.filter(id=email_task.id).update(
-            status='FAILURE',
-            error_message=str(exc)
-        )
+        email_task.status = 'FAILURE'
+        email_task.error_message = str(exc)
+        email_task.save()
 
 
 @celery_app.task(name='scripts.triggered_mails')  # keep the original entry point for compatibility

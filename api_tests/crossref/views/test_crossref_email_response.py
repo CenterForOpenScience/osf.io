@@ -163,7 +163,7 @@ class TestCrossRefEmailResponse:
         with capture_notifications() as notifications:
             app.post(url, context_data)
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_OSF_SUPPORT_EMAIL
+        assert notifications['emits'][0]['type'] == NotificationType.Type.DESK_CROSSREF_ERROR
         assert not preprint.get_identifier_value('doi')
 
     def test_success_response_sets_doi(self, app, url, preprint, success_xml):
@@ -216,6 +216,7 @@ class TestCrossRefEmailResponse:
         update_xml = self.update_success_xml(preprint)
 
         context_data = self.make_mailgun_payload(crossref_response=update_xml)
-        app.post(url, context_data)
+        with capture_notifications(expect_none=True):
+            app.post(url, context_data)
 
         assert preprint.identifiers.get(category='legacy_doi').deleted

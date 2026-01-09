@@ -180,17 +180,19 @@ MAILCHIMP_LIST_MAP = {
 }
 NOTIFICATION_TYPES_YAML = 'notifications.yaml'
 
-#Triggered emails
+# Triggered emails - updated by Notification Refactor release
 OSF_HELP_LIST = 'Open Science Framework Help'
-PREREG_AGE_LIMIT = timedelta(weeks=12)
-PREREG_WAIT_TIME = timedelta(weeks=2)
-WAIT_BETWEEN_MAILS = timedelta(days=7)
-NO_ADDON_WAIT_TIME = timedelta(weeks=8)
-NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
-WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
-NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=6)
-NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
-WELCOME_OSF4M_WAIT_TIME_GRACE = timedelta(days=12)
+WAIT_BETWEEN_MAILS = timedelta(days=7)  # Deprecated setting, used by deprecated `scripts.send_queued_mails`
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)  # 2 months for "Link an add-on to your OSF project" email
+NO_LOGIN_WAIT_TIME = timedelta(weeks=52)   # 1 year for "We miss you at OSF" email
+NO_LOGIN_OSF4M_WAIT_TIME = timedelta(weeks=52)  # 1 year for "We miss you at OSF" email to users created from OSF4M
+
+# Configuration for "We miss you at OSF" email (`NotificationType.Type.USER_NO_LOGIN`)
+# Note: 1) we can gradually increase `MAX_DAILY_NO_LOGIN_EMAILS` to 10000, 100000, etc. or set it to `None` after we
+# have verified that users are not spammed by this email after NR release. 2) If we want to clean up database for those
+# already sent `USER_NO_LOGIN` emails, we need to adjust the cut-off time to the day we clean the DB.
+MAX_DAILY_NO_LOGIN_EMAILS = 1000
+NO_LOGIN_EMAIL_CUTOFF = datetime.datetime(2026, 1, 5)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
@@ -435,7 +437,6 @@ class CeleryConfig:
         'scripts.generate_sitemap',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.delete_withdrawn_or_failed_registration_files',
-        'osf.management.commands.find_spammy_files',
         'osf.management.commands.migrate_pagecounter_data',
         'osf.management.commands.migrate_deleted_date',
         'osf.management.commands.addon_deleted_date',
@@ -443,13 +444,13 @@ class CeleryConfig:
         'osf.management.commands.sync_doi_metadata',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
-        'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.populate_branched_from',
         'osf.management.commands.spam_metrics',
         'osf.management.commands.daily_reporters_go',
         'osf.management.commands.monthly_reporters_go',
         'osf.management.commands.ingest_cedar_metadata_templates',
         'osf.metrics.reporters',
+        'scripts.populate_notification_subscriptions',
     }
 
     med_pri_modules = {
@@ -567,7 +568,6 @@ class CeleryConfig:
         'scripts.add_missing_identifiers_to_preprints',
         'osf.management.commands.clear_expired_sessions',
         'osf.management.commands.deactivate_requested_accounts',
-        'osf.management.commands.update_institution_project_counts',
         'osf.management.commands.correct_registration_moderation_states',
         'osf.management.commands.sync_collection_provider_indices',
         'osf.management.commands.sync_datacite_doi_metadata',
@@ -579,6 +579,7 @@ class CeleryConfig:
         'osf.management.commands.monthly_reporters_go',
         'osf.external.spam.tasks',
         'api.share.utils',
+        'scripts.populate_notification_subscriptions',
     )
 
     # Modules that need metrics and release requirements
@@ -620,6 +621,11 @@ class CeleryConfig:
         'triggered_mails': {
             'task': 'scripts.triggered_mails',
             'schedule': crontab(minute=0, hour=5),  # Daily 12 a.m
+            'kwargs': {'dry_run': False},
+        },
+        'no_addon_emails': {
+            'task': 'notifications.tasks.send_no_addon_email',
+            'schedule': crontab(minute=0, hour=17),  # Daily 12 p.m
             'kwargs': {'dry_run': False},
         },
         '5-minute-user-emails': {
@@ -672,14 +678,6 @@ class CeleryConfig:
         'deactivate_requested_accounts': {
             'task': 'management.commands.deactivate_requested_accounts',
             'schedule': crontab(minute=0, hour=5),  # Daily 12:00 a.m.
-        },
-        'check_crossref_doi': {
-            'task': 'management.commands.check_crossref_dois',
-            'schedule': crontab(minute=0, hour=4),  # Daily 11:00 p.m.
-        },
-        'update_institution_project_counts': {
-            'task': 'management.commands.update_institution_project_counts',
-            'schedule': crontab(minute=0, hour=9), # Daily 05:00 a.m. EDT
         },
         'delete_withdrawn_or_failed_registration_files': {
             'task': 'management.commands.delete_withdrawn_or_failed_registration_files',
@@ -2123,3 +2121,5 @@ USE_COLOR = False
 # path to newrelic.ini config file
 # newrelic is only enabled when DEBUG_MODE is False
 NEWRELIC_INI_PATH = None
+
+TTL_CACHE_LIFETIME = 60 * 60 * 2  # 2 hours

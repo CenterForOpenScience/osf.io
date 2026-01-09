@@ -337,6 +337,7 @@ class TestContributorMethods:
                     {'user': user2, 'permissions': WRITE, 'visible': False}
                 ],
                 auth=auth,
+                notification_type=None
             )
         last_log = preprint.logs.all().order_by('-created')[0]
         assert (
@@ -368,7 +369,7 @@ class TestContributorMethods:
         preprint.save()
         assert len(preprint.contributors) == 2
 
-    def test_remove_unregistered_conributor_removes_unclaimed_record(self, preprint, auth):
+    def test_remove_unregistered_contributor_removes_unclaimed_record(self, preprint, auth):
         new_user = preprint.add_unregistered_contributor(fullname='David Davidson',
             email='david@davidson.com', auth=auth)
         preprint.save()
@@ -472,7 +473,8 @@ class TestContributorMethods:
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
         assert user1 in preprint.contributors
         assert user2 in preprint.contributors
@@ -571,7 +573,7 @@ class TestPreprintAddContributorRegisteredOrNot:
     def test_add_contributor_user_id(self, user, preprint):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id)
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), user_id=registered_user._id, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
@@ -588,14 +590,14 @@ class TestPreprintAddContributorRegisteredOrNot:
 
     def test_add_contributor_fullname_email(self, user, preprint):
         with capture_notifications():
-            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com')
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', email='jane@doe.com', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
 
     def test_add_contributor_fullname(self, user, preprint):
-        with capture_notifications():
-            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe')
+        with capture_notifications(expect_none=True):
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='Jane Doe', notification_type=None)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is False
@@ -603,7 +605,7 @@ class TestPreprintAddContributorRegisteredOrNot:
     def test_add_contributor_fullname_email_already_exists(self, user, preprint):
         registered_user = UserFactory()
         with capture_notifications():
-            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username)
+            contributor_obj = preprint.add_contributor_registered_or_not(auth=Auth(user), full_name='F Mercury', email=registered_user.username, notification_type=None)
         contributor = contributor_obj.user
         assert contributor in preprint.contributors
         assert contributor.is_registered is True
@@ -1075,7 +1077,8 @@ class TestManageContributors:
                 [
                     {'user': reg_user1, 'permissions': ADMIN, 'visible': True},
                     {'user': reg_user2, 'permissions': ADMIN, 'visible': False},
-                ]
+                ],
+                notification_type=None,
             )
         with pytest.raises(ValueError) as e:
             preprint.set_visible(user=reg_user1, visible=False, auth=None)
@@ -1282,7 +1285,8 @@ class TestContributorOrdering:
                     {'user': user1, 'permissions': WRITE, 'visible': True},
                     {'user': user2, 'permissions': WRITE, 'visible': True}
                 ],
-                auth=auth
+                auth=auth,
+                notification_type=None
             )
 
         user_contrib_id = preprint.preprintcontributor_set.get(user=user).id
@@ -2732,6 +2736,40 @@ class TestPreprintVersionWithModeration:
         assert new_version.is_retracted is True
         assert new_version.is_published is True
         assert new_version.machine_state == ReviewStates.WITHDRAWN.value
+
+    def test_date_created_first_version_with_rejected_v1(self, creator, moderator):
+        v1 = PreprintFactory(reviews_workflow='pre-moderation', is_published=False, creator=creator)
+        with capture_notifications():
+            v1.run_submit(creator)
+            v1.run_reject(moderator, 'Rejecting v1')
+        v1.reload()
+
+        assert v1.machine_state == ReviewStates.REJECTED.value
+        assert v1.versioned_guids.first().is_rejected is True
+        v1_created = v1.created
+
+        v2 = PreprintFactory.create_version(
+            create_from=v1,
+            creator=creator,
+            final_machine_state='initial',
+            is_published=False,
+            set_doi=False
+        )
+        with capture_notifications():
+            v2.run_submit(creator)
+            v2.run_accept(moderator, 'Accepting v2')
+        v2.reload()
+
+        assert v2.machine_state == ReviewStates.ACCEPTED.value
+        assert v2.is_published is True
+        v2_created = v2.created
+
+        assert v2_created > v1_created
+
+        assert v2.date_created_first_version == v1_created
+        assert v2.date_created_first_version != v2_created
+
+        assert v1.date_created_first_version == v1_created
 
 
 class TestEmberRedirect(OsfTestCase):

@@ -2,8 +2,9 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.contrib.contenttypes.models import ContentType
 
+from website import settings
 from enum import Enum
-from osf.utils.caching import cached_property
+from osf.utils.caching import ttl_cached_property
 
 
 def get_default_frequency_choices():
@@ -14,6 +15,7 @@ def get_default_frequency_choices():
 class NotificationType(models.Model):
 
     class Type(str, Enum):
+        EMPTY = 'empty'
         # Desk notifications
         REVIEWS_SUBMISSION_STATUS = 'reviews_submission_status'
         ADDONS_BOA_JOB_FAILURE = 'addon_boa_job_failure'
@@ -22,7 +24,6 @@ class NotificationType(models.Model):
         DESK_ARCHIVE_REGISTRATION_STUCK = 'desk_archive_registration_stuck'
         DESK_REQUEST_EXPORT = 'desk_request_export'
         DESK_REQUEST_DEACTIVATION = 'desk_request_deactivation'
-        DESK_OSF_SUPPORT_EMAIL = 'desk_osf_support_email'
         DESK_REGISTRATION_BULK_UPLOAD_PRODUCT_OWNER = 'desk_registration_bulk_upload_product_owner'
         DESK_USER_REGISTRATION_BULK_UPLOAD_UNEXPECTED_FAILURE = 'desk_user_registration_bulk_upload_unexpected_failure'
         DESK_ARCHIVE_JOB_EXCEEDED = 'desk_archive_job_exceeded'
@@ -41,7 +42,6 @@ class NotificationType(models.Model):
         USER_INSTITUTION_DEACTIVATION = 'user_institution_deactivation'
         USER_FORGOT_PASSWORD = 'user_forgot_password'
         USER_FORGOT_PASSWORD_INSTITUTION = 'user_forgot_password_institution'
-        USER_REQUEST_EXPORT = 'user_request_export'
         USER_DUPLICATE_ACCOUNTS_OSF4I = 'user_duplicate_accounts_osf4i'
         USER_EXTERNAL_LOGIN_LINK_SUCCESS = 'user_external_login_link_success'
         USER_REGISTRATION_BULK_UPLOAD_FAILURE_ALL = 'user_registration_bulk_upload_failure_all'
@@ -52,7 +52,6 @@ class NotificationType(models.Model):
         USER_ARCHIVE_JOB_EXCEEDED = 'user_archive_job_exceeded'
         USER_ARCHIVE_JOB_COPY_ERROR = 'user_archive_job_copy_error'
         USER_ARCHIVE_JOB_FILE_NOT_FOUND = 'user_archive_job_file_not_found'
-        USER_COMMENT_REPLIES = 'user_comment_replies'
         USER_FILE_UPDATED = 'user_file_updated'
         USER_FILE_OPERATION_SUCCESS = 'user_file_operation_success'
         USER_FILE_OPERATION_FAILED = 'user_file_operation_failed'
@@ -63,15 +62,11 @@ class NotificationType(models.Model):
         USER_CONFIRM_EMAIL = 'user_confirm_email'
         USER_INITIAL_CONFIRM_EMAIL = 'user_initial_confirm_email'
         USER_INVITE_DEFAULT = 'user_invite_default'
-        USER_PENDING_INVITE = 'user_pending_invite'
         USER_FORWARD_INVITE = 'user_forward_invite'
         USER_FORWARD_INVITE_REGISTERED = 'user_forward_invite_registered'
         USER_INVITE_DRAFT_REGISTRATION = 'user_invite_draft_registration'
         USER_INVITE_OSF_PREPRINT = 'user_invite_osf_preprint'
-        USER_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'user_contributor_added_preprint_node_from_osf'
-        USER_CONTRIBUTOR_ADDED_ACCESS_REQUEST = 'user_contributor_added_access_request'
         USER_ARCHIVE_JOB_UNCAUGHT_ERROR = 'user_archive_job_uncaught_error'
-        USER_NEW_PUBLIC_PROJECT = 'user_new_public_project'
         USER_INSTITUTIONAL_ACCESS_REQUEST = 'user_institutional_access_request'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_BRANDED = 'user_campaign_confirm_preprint_branded'
         USER_CAMPAIGN_CONFIRM_PREPRINTS_OSF = 'user_campaign_confirm_preprint_osf'
@@ -80,7 +75,11 @@ class NotificationType(models.Model):
         USER_CAMPAIGN_CONFIRM_EMAIL_REGISTRIES_OSF = 'user_campaign_confirm_email_registries_osf'
         USER_CAMPAIGN_CONFIRM_EMAIL_ERPC = 'user_campaign_confirm_email_erpc'
         USER_DIGEST = 'user_digest'
+        USER_NO_LOGIN = 'user_no_login'
         DIGEST_REVIEWS_MODERATORS = 'digest_reviews_moderators'
+        USER_NO_ADDON = 'user_no_addon'
+        USER_SPAM_FILES_DETECTED = 'user_spam_files_detected'
+        USER_CROSSREF_DOI_PENDING = 'user_crossref_doi_pending'
 
         # Node notifications
         NODE_FILE_UPDATED = 'node_file_updated'
@@ -107,6 +106,7 @@ class NotificationType(models.Model):
         NODE_SCHEMA_RESPONSE_INITIATED = 'node_schema_response_initiated'
         NODE_WITHDRAWAl_REQUEST_APPROVED = 'node_withdrawal_request_approved'
         NODE_WITHDRAWAl_REQUEST_REJECTED = 'node_withdrawal_request_rejected'
+        NODE_NEW_PUBLIC_PROJECT = 'node_new_public_project'
 
         FILE_UPDATED = 'file_updated'
         FILE_ADDED = 'file_added'
@@ -121,15 +121,9 @@ class NotificationType(models.Model):
         PROVIDER_NEW_PENDING_SUBMISSIONS = 'provider_new_pending_submissions'
         PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS = 'provider_new_pending_withdraw_requests'
         PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION = 'provider_reviews_submission_confirmation'
-        PROVIDER_REVIEWS_MODERATOR_SUBMISSION_CONFIRMATION = 'provider_reviews_moderator_submission_confirmation'
-        PROVIDER_REVIEWS_REJECT_CONFIRMATION = 'provider_reviews_reject_confirmation'
-        PROVIDER_REVIEWS_ACCEPT_CONFIRMATION = 'provider_reviews_accept_confirmation'
         PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION = 'provider_reviews_resubmission_confirmation'
-        PROVIDER_REVIEWS_COMMENT_EDITED = 'provider_reviews_comment_edited'
-        PROVIDER_CONTRIBUTOR_ADDED_PREPRINT = 'provider_contributor_added_preprint'
         PROVIDER_CONFIRM_EMAIL_MODERATION = 'provider_confirm_email_moderation'
         PROVIDER_MODERATOR_ADDED = 'provider_moderator_added'
-        PROVIDER_CONFIRM_EMAIL_PREPRINTS = 'provider_confirm_email_preprints'
         PROVIDER_USER_INVITE_PREPRINT = 'provider_user_invite_preprint'
 
         # Preprint notifications
@@ -137,7 +131,6 @@ class NotificationType(models.Model):
         PREPRINT_REQUEST_WITHDRAWAL_DECLINED = 'preprint_request_withdrawal_declined'
         PREPRINT_CONTRIBUTOR_ADDED_PREPRINT_NODE_FROM_OSF = 'preprint_contributor_added_preprint_node_from_osf'
         PREPRINT_CONTRIBUTOR_ADDED_DEFAULT = 'preprint_contributor_added_default'
-        PREPRINT_PENDING_RETRACTION_ADMIN = 'preprint_pending_retraction_admin'
 
         # Collections Submission notifications
         COLLECTION_SUBMISSION_REMOVED_ADMIN = 'collection_submission_removed_admin'
@@ -152,7 +145,7 @@ class NotificationType(models.Model):
 
         DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT = 'draft_registration_contributor_added_default'
 
-        @cached_property
+        @ttl_cached_property(ttl=settings.TTL_CACHE_LIFETIME)
         def instance(self):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
@@ -187,7 +180,7 @@ class NotificationType(models.Model):
             user=None,
             destination_address=None,
             subscribed_object=None,
-            message_frequency='instantly',
+            message_frequency=None,
             event_context=None,
             email_context=None,
             is_digest=False,
@@ -202,13 +195,28 @@ class NotificationType(models.Model):
             message_frequency (optional): Initializing message frequency.
             event_context (dict, optional): Context for rendering the notification template.
             email_context (dict, optional): Context for additional email notification information, so as blind cc etc
+            is_digest (bool, optional): is this email part of a larger digest notification?
+            save (bool, optional): save the notification and creates a subscription object if true, otherwise just
+            send the notification with no db transaction, therefore message_frequency should always be 'instantly' when
+            used.
         """
         from osf.models.notification_subscription import NotificationSubscription
+        from osf.models.provider import AbstractProvider
+
+        # use concrete model for AbstractProvider to specifically get the provider content type
+        if isinstance(subscribed_object, AbstractProvider):
+            content_type = ContentType.objects.get_for_model(subscribed_object, for_concrete_model=False) if subscribed_object else None
+        else:
+            content_type = ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None
+
+        if message_frequency is None:
+            message_frequency = self.get_group_frequency_or_default(user, subscribed_object, content_type)
+
         if not save:
             subscription = NotificationSubscription(
                 notification_type=self,
                 user=user,
-                content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+                content_type=content_type,
                 object_id=subscribed_object.pk if subscribed_object else None,
                 message_frequency=message_frequency,
                 _is_digest=is_digest,
@@ -217,7 +225,7 @@ class NotificationType(models.Model):
             subscription, created = NotificationSubscription.objects.get_or_create(
                 notification_type=self,
                 user=user,
-                content_type=ContentType.objects.get_for_model(subscribed_object) if subscribed_object else None,
+                content_type=content_type,
                 object_id=subscribed_object.pk if subscribed_object else None,
                 defaults={'message_frequency': message_frequency},
                 _is_digest=is_digest,
@@ -235,3 +243,65 @@ class NotificationType(models.Model):
     class Meta:
         verbose_name = 'Notification Type'
         verbose_name_plural = 'Notification Types'
+
+    def get_group_frequency_or_default(self, user, subscribed_object, content_type):
+        from osf.models import NotificationSubscription, AbstractNode
+
+        _global_file_updated = [
+            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+        ]
+        _global_reviews = [
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_REVIEWS_RESUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        ]
+        _node_file_updated = [
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.ADDON_FILE_REMOVED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+        ]
+
+        if self.name in _global_file_updated and content_type != ContentType.objects.get_for_model(AbstractNode):
+            frequency_data = NotificationSubscription.objects.filter(
+                user=user,
+                content_type=content_type,
+                notification_type__name__in=_global_file_updated,
+            ).distinct('message_frequency').values_list('message_frequency', flat=True)
+            if frequency_data.exists() and len(frequency_data) == 1:
+                return frequency_data[0]
+
+        elif self.name in _global_reviews:
+            frequency_data = NotificationSubscription.objects.filter(
+                user=user,
+                notification_type__name__in=_global_reviews,
+            ).distinct('message_frequency').values_list('message_frequency', flat=True)
+            if frequency_data.exists() and len(frequency_data) == 1:
+                return frequency_data[0]
+
+        elif self.name in _node_file_updated:
+            frequency_data = NotificationSubscription.objects.filter(
+                user=user,
+                content_type=content_type,
+                object_id=subscribed_object.id,
+                notification_type__name__in=_node_file_updated
+            ).distinct('message_frequency').values_list('message_frequency', flat=True)
+            if frequency_data.exists() and len(frequency_data) == 1:
+                return frequency_data[0]
+
+        return 'instantly'

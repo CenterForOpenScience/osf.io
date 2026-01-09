@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
 from osf.models.notification_type import NotificationType
@@ -31,14 +32,17 @@ class TestSubscriptionList:
     def global_user_notification(self, user):
         return NotificationSubscriptionFactory(
             notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=user.id,
+            content_type_id=ContentType.objects.get_for_model(user).id,
             user=user,
         )
 
     @pytest.fixture()
     def file_updated_notification(self, node, user):
         return NotificationSubscriptionFactory(
-            notification_type=NotificationType.Type.NODE_FILES_UPDATED.instance,
-            subscribed_object=node,
+            notification_type=NotificationType.Type.NODE_FILE_UPDATED.instance,
+            object_id=node.id,
+            content_type_id=ContentType.objects.get_for_model(node).id,
             user=user,
         )
 
@@ -46,6 +50,8 @@ class TestSubscriptionList:
     def provider_notification(self, provider, user):
         return NotificationSubscriptionFactory(
             notification_type=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.instance,
+            object_id=provider.id,
+            content_type_id=ContentType.objects.get_for_model(provider).id,
             subscribed_object=provider,
             user=user,
         )
@@ -60,17 +66,14 @@ class TestSubscriptionList:
             user,
             provider,
             node,
-            global_user_notification,
-            provider_notification,
-            file_updated_notification,
             url
     ):
         res = app.get(url, auth=user.auth)
         notification_ids = [item['id'] for item in res.json['data']]
         # There should only be 3 notifications: users' global, node's file updates and provider's preprint added.
         assert len(notification_ids) == 3
-        assert f'{user._id}_global' in notification_ids
-        assert f'{provider._id}_new_pending_submissions' in notification_ids
+        assert f'{user._id}_global_file_updated' in notification_ids
+        assert f'{user._id}_global_reviews' in notification_ids
         assert f'{node._id}_file_updated' in notification_ids
 
     def test_unauthenticated(self, app, url):
@@ -87,8 +90,37 @@ class TestSubscriptionList:
         assert put_res.status_code == 405
         assert delete_res.status_code == 405
 
-    def test_multiple_values_filter(self, app, url, global_user_notification, file_updated_notification, user):
-        res = app.get(url + '?filter[event_name]=comments,file_updated', auth=user.auth)
+    def test_multiple_values_filter(self, app, url, user):
+        res = app.get(url + '?filter[event_name]=global_file_updated,files_updated', auth=user.auth)
         assert len(res.json['data']) == 2
         for subscription in res.json['data']:
             subscription['attributes']['event_name'] in ['global', 'comments']
+
+    def test_value_filter_id(
+        self,
+        app,
+        url,
+        user,
+        node,
+    ):
+        # Request all subscriptions first, to confirm all are visible
+        res = app.get(url, auth=user.auth)
+        all_ids = [sub['id'] for sub in res.json['data']]
+        assert len(all_ids) == 2
+        assert f'{node._id}_file_updated' in all_ids
+        assert f'{user._id}_global_file_updated' in all_ids
+
+        # Now filter by a specific annotated legacy_id (the node file_updated one)
+        target_id = f'{node._id}_file_updated'
+        filtered_res = app.get(f'{url}?filter[id]={target_id}', auth=user.auth)
+
+        # Response should contain exactly one record matching that legacy_id
+        assert filtered_res.status_code == 200
+        data = filtered_res.json['data']
+        assert len(data) == 1
+        assert data[0]['id'] == target_id
+
+        # Confirm it’s the expected subscription object
+        attributes = data[0]['attributes']
+        assert attributes['event_name'] == 'files_updated'  # event names are legacy
+        assert attributes['frequency'] in ['instantly', 'daily', 'none']

@@ -13,7 +13,7 @@ from django.contrib.admin import SimpleListFilter
 import waffle
 
 from osf.external.spam.tasks import reclassify_domain_references
-from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask
+from osf.models import OSFUser, Node, NotableDomain, NodeLicense, NotificationType, NotificationSubscription, EmailTask, Notification
 from osf.models.notification_type import get_default_frequency_choices
 from osf.models.notable_domain import DomainReference
 
@@ -320,6 +320,7 @@ class NotificationSubscriptionForm(forms.ModelForm):
 class NotificationSubscriptionAdmin(admin.ModelAdmin):
     list_display = ('user', 'notification_type', 'message_frequency', 'subscribed_object', 'preview_button')
     form = NotificationSubscriptionForm
+    search_fields = ('notification_type__name', 'user__username')
 
     class Media:
         js = ['admin/notification_subscription.js']
@@ -361,7 +362,29 @@ class NotificationSubscriptionAdmin(admin.ModelAdmin):
 class EmailTaskAdmin(admin.ModelAdmin):
     list_display = ('task_id', 'user', 'status', 'created_at', 'updated_at')
     list_filter = ('status',)
-    search_fields = ('task_id', 'user__email')
+    search_fields = ('task_id', 'user__username')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'notification_type_name', 'sent', 'seen')
+    list_filter = ('sent',)
+    search_fields = ('subscription__notification_type__name', 'subscription__user__username')
+    list_per_page = 50
+
+    def notification_type_name(self, obj):
+        try:
+            return obj.subscription.notification_type.name
+        except Exception:
+            return '(notification type)'
+    notification_type_name.short_description = 'Notification Type'
+
+    def user(self, obj):
+        try:
+            return obj.subscription.user.username
+        except Exception:
+            return '(username)'
+    user.short_description = 'User'
 
 admin.site.register(OSFUser, OSFUserAdmin)
 admin.site.register(Node, NodeAdmin)

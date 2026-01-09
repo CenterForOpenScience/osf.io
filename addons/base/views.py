@@ -197,7 +197,7 @@ def get_auth(auth, **kwargs):
     Authenticate a request and construct a JWT payload for Waterbutler callbacks.
     When a user interacts with a file OSF sends a request to WB which itself sends a
     request to an external service or Osfstorage, in order to confirm that event has
-    taken place Waterbutler will send this callback to OSF to comfirm the file action was
+    taken place Waterbutler will send this callback to OSF to confirm the file action was
     successful and can be logged.
 
     This function decrypts and decodes the JWT payload from the request, authenticates
@@ -596,6 +596,7 @@ def create_waterbutler_log(payload, **kwargs):
                         'logo': settings.OSF_LOGO,
                         'OSF_LOGO_LIST': settings.OSF_LOGO_LIST,
                         'OSF_LOGO': settings.OSF_LOGO,
+                        'domain': settings.DOMAIN,
                     }
                 )
             if payload.get('errors'):

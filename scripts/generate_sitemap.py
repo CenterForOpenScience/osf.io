@@ -169,18 +169,18 @@ class Sitemap:
             progress.increment()
         progress.stop()
 
-        # User urls
-        objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
-        progress.start(objs.count(), 'USER: ')
-        for obj in objs:
-            try:
-                config = settings.SITEMAP_USER_CONFIG
-                config['loc'] = urljoin(settings.DOMAIN, f'/{obj}/')
-                self.add_url(config)
-            except Exception as e:
-                self.log_errors('USER', obj, e)
-            progress.increment()
-        progress.stop()
+        # # User urls
+        # objs = OSFUser.objects.filter(is_active=True).exclude(date_confirmed__isnull=True).values_list('guids___id', flat=True)
+        # progress.start(objs.count(), 'USER: ')
+        # for obj in objs:
+        #     try:
+        #         config = settings.SITEMAP_USER_CONFIG
+        #         config['loc'] = urljoin(settings.DOMAIN, f'/{obj}/')
+        #         self.add_url(config)
+        #     except Exception as e:
+        #         self.log_errors('USER', obj, e)
+        #     progress.increment()
+        # progress.stop()
 
         # AbstractNode urls (Nodes and Registrations, no Collections)
         objs = (AbstractNode.objects
@@ -191,7 +191,7 @@ class Sitemap:
         for obj in objs:
             try:
                 config = settings.SITEMAP_NODE_CONFIG
-                config['loc'] = urljoin(settings.DOMAIN, '/{}/'.format(obj['guids___id']))
+                config['loc'] = urljoin(settings.DOMAIN, '/{}/overview'.format(obj['guids___id']))
                 config['lastmod'] = obj['modified'].strftime('%Y-%m-%d')
                 self.add_url(config)
             except Exception as e:
@@ -229,8 +229,8 @@ class Sitemap:
                         file_config['loc'] = urljoin(
                             settings.DOMAIN,
                             os.path.join(
-                                obj._id,
                                 'download',
+                                obj._id,
                                 '?format=pdf'
                             )
                         )

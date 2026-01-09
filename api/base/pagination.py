@@ -167,6 +167,23 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             return super().paginate_queryset(queryset, request, view=None)
 
 
+class JSONAPINoPagination(pagination.BasePagination):
+    '''do not accept page params nor paginate the queryset, but (for consistency with
+    JSONAPIPagination) do format the data into a jsonapi doc
+
+    possible future improvement: format jsonapi docs somewhere more reasonable
+    (like the renderer?) and delete this pagination class
+    '''
+    def paginate_queryset(self, queryset, request, view=None):
+        return queryset  # let it be
+
+    def get_paginated_response(self, data):
+        return Response({
+            'data': data,
+            'meta': {'total': len(data)},
+        })
+
+
 class MaxSizePagination(JSONAPIPagination):
     page_size = 1000
     max_page_size = None

@@ -59,7 +59,7 @@ class AddonSettingsMixin:
         return addon_settings
 
 class AddonList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin):
-    """The documentation for this endpoint can be found [here](https://developer.osf.io/#operation/addons_list).
+    """See [documentation for this endpoint](https://developer.osf.io/#operation/addons_list).
     """
     permission_classes = (
         drf_permissions.AllowAny,

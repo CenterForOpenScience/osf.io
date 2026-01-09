@@ -1,6 +1,8 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 from osf_tests.factories import (
     AuthUserFactory,
     NotificationSubscriptionFactory
@@ -19,11 +21,16 @@ class TestSubscriptionDetail:
 
     @pytest.fixture()
     def notification(self, user):
-        return NotificationSubscriptionFactory(user=user)
+        return NotificationSubscriptionFactory(
+            notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
+            object_id=user.id,
+            content_type_id=ContentType.objects.get_for_model(user).id,
+            user=user
+        )
 
     @pytest.fixture()
-    def url(self, notification):
-        return f'/{API_BASE}subscriptions/{notification._id}/'
+    def url(self, user):
+        return f'/{API_BASE}subscriptions/{user._id}_global_file_updated/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -75,7 +82,7 @@ class TestSubscriptionDetail:
         res = app.get(url, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == f'{user._id}_global'
+        assert notification_id == f'{user._id}_global_file_updated'
 
     def test_subscription_detail_invalid_notification_id_no_user(
         self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
@@ -112,8 +119,9 @@ class TestSubscriptionDetail:
             url,
             payload_invalid,
             auth=user.auth,
-            expect_errors=True
+            expect_errors=True,
         )
+
         assert res.status_code == 400
         assert res.json['errors'][0]['detail'] == ('"invalid-frequency" is not a valid choice.')
 
@@ -144,6 +152,7 @@ class TestSubscriptionDetail:
     def test_subscription_detail_patch(
         self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
     ):
+
         res = app.patch_json_api(url, payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['frequency'] == 'none'

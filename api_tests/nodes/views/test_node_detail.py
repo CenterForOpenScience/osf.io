@@ -339,7 +339,7 @@ class TestNodeDetail:
         assert 'collected_in' in res.json['data']['relationships']
 
     def test_preprint_field(self, app, user, user_two, project_public, url_public):
-        # Returns true if project holds supplemental material for a preprint a user can view
+        # Returns true if project holds supplemental material for a preprint that a user can view
         # Published preprint, admin_contrib
         preprint = PreprintFactory(project=project_public, creator=user)
         res = app.get(url_public, auth=user.auth)
@@ -363,11 +363,9 @@ class TestNodeDetail:
         assert res.status_code == 200
         assert res.json['data']['attributes']['preprint'] is False
 
-    def test_shows_access_requests_enabled_field_based_on_version(self, app, user, project_public, url_public):
+    def test_shows_access_requests_enabled_field(self, app, user, project_public, url_public):
         url = url_public + '?version=latest'
         res = app.get(url, auth=user.auth)
-        assert 'access_requests_enabled' not in res.json['data']['attributes']
-        res = app.get(url_public + '?version=2.8', auth=user.auth)
         assert 'access_requests_enabled' in res.json['data']['attributes']
 
     def test_node_shows_correct_templated_from_count(self, app, user, project_public, url_public):

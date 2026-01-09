@@ -46,7 +46,7 @@
                                                      alt="${provider_name} logo"
                                                      style="border:0;height:auto;line-height:100%;outline:none;text-decoration:none;max-height:100px;">
                                             % else:
-                                                <img src="https://osf.io/static/img/${logo}.png"
+                                                <img src="${domain}static/img/${logo}.png"
                                                      alt="${provider_name} logo"
                                                      style="border:0;height:auto;line-height:100%;outline:none;text-decoration:none;max-height:100px;">
                                             % endif

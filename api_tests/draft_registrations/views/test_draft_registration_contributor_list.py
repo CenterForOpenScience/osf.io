@@ -281,7 +281,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_signal_if_default(self, app, user, url_project_contribs):
@@ -300,7 +300,7 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
             )
         assert res.status_code == 201
         assert len(notifications['emits']) == 1
-        assert notifications['emits'][0]['type'] == NotificationType.Type.DRAFT_REGISTRATION_CONTRIBUTOR_ADDED_DEFAULT
+        assert notifications['emits'][0]['type'] == NotificationType.Type.USER_INVITE_DRAFT_REGISTRATION
 
     # Overrides TestNodeContributorCreateEmail
     def test_add_unregistered_contributor_without_email_no_email(self, app, user, url_project_contribs):
@@ -315,7 +315,8 @@ class TestDraftContributorCreateEmail(DraftRegistrationCRUDTestCase, TestNodeCon
         }
 
         with capture_signals() as mock_signal:
-            res = app.post_json_api(url, payload, auth=user.auth)
+            with capture_notifications(expect_none=True):
+                res = app.post_json_api(url, payload, auth=user.auth)
         assert contributor_added in mock_signal.signals_sent()
         assert res.status_code == 201
 
@@ -330,6 +331,30 @@ class TestDraftContributorBulkCreate(DraftRegistrationCRUDTestCase, TestNodeCont
     def url_private(self, project_private):
         return '/{}draft_registrations/{}/contributors/?send_email=false'.format(
             API_BASE, project_private._id)
+
+    def test_bulk_post_new_contributors(
+        self, app, user, project_public, payload_one, payload_two, url_public
+    ):
+        res = app.post_json_api(
+            url_public,
+            {'data': [payload_one, payload_two]},
+            auth=user.auth,
+            bulk=True,
+        )
+        assert res.status_code == 201
+        assert len(res.json['data']) == 2
+        assert [
+            res.json['data'][0]['attributes']['bibliographic'],
+            res.json['data'][1]['attributes']['bibliographic'],
+        ] == [True, False]
+        assert [
+            res.json['data'][0]['attributes']['permission'],
+            res.json['data'][1]['attributes']['permission'],
+        ] == [permissions.ADMIN, permissions.READ]
+        assert res.content_type == 'application/vnd.api+json'
+
+        res = app.get(url_public, auth=user.auth)
+        assert len(res.json['data']) == 3
 
 
 class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeContributorBulkUpdate):
@@ -376,6 +401,32 @@ class TestDraftContributorBulkUpdated(DraftRegistrationCRUDTestCase, TestNodeCon
     def url_private(self, project_private):
         return '/{}draft_registrations/{}/contributors/'.format(
             API_BASE, project_private._id)
+
+    def test_bulk_patch_existing_contributors(
+        self, app, user, project_public, payload_public_one, payload_public_two, url_public
+    ):
+        res = app.patch_json_api(
+            url_public,
+            {'data': [payload_public_one, payload_public_two]},
+            auth=user.auth,
+            bulk=True,
+        )
+        assert res.status_code == 200
+        assert len(res.json['data']) == 2
+        assert [
+            res.json['data'][0]['attributes']['bibliographic'],
+            res.json['data'][1]['attributes']['bibliographic'],
+        ] == [True, False]
+        assert [
+            res.json['data'][0]['attributes']['permission'],
+            res.json['data'][1]['attributes']['permission'],
+        ] == [permissions.ADMIN, permissions.WRITE]
+
+        res = app.get(url_public, auth=user.auth)
+        data = res.json['data']
+        contrib_dict = {contrib['id']: contrib for contrib in data}
+        assert contrib_dict[payload_public_one['id']]['attributes']['permission'] == permissions.ADMIN
+        assert contrib_dict[payload_public_two['id']]['attributes']['permission'] == permissions.WRITE
 
 class TestDraftRegistrationContributorBulkPartialUpdate(DraftRegistrationCRUDTestCase, TestNodeContributorBulkPartialUpdate):
     @pytest.fixture()

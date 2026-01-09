@@ -29,8 +29,7 @@ def node(collection_provider):
 def collection(collection_provider):
     collection = CollectionFactory(is_public=True)
     collection.provider = collection_provider
-    with capture_notifications():
-        collection.save()
+    collection.save()
     return collection
 
 

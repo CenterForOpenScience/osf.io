@@ -1,6 +1,7 @@
 import pytest
 
 from api.base.settings.defaults import API_BASE
+from osf.models import NotificationType
 from osf_tests.factories import (
     PreprintFactory,
     AuthUserFactory,
@@ -189,7 +190,11 @@ class TestReviewActionCreateRoot:
         assert not preprint.is_published
 
         # Moderator can accept
-        res = app.post_json_api(url, accept_payload, auth=moderator.auth)
+        with capture_notifications() as notifications:
+            res = app.post_json_api(url, accept_payload, auth=moderator.auth)
+        assert len(notifications['emits']) == 2
+        assert notifications['emits'][0]['type'] == NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+        assert notifications['emits'][1]['type'] == NotificationType.Type.REVIEWS_SUBMISSION_STATUS
         assert res.status_code == 201
         preprint.refresh_from_db()
         assert preprint.machine_state == 'accepted'
@@ -319,7 +324,7 @@ class TestReviewActionCreateRoot:
                 preprint.date_last_transitioned = None
                 preprint.save()
                 payload = self.create_payload(preprint._id, trigger=trigger)
-                with capture_notifications():
+                with capture_notifications(allow_none=True):  # covers cases where notification are sent and not sent.
                     res = app.post_json_api(url, payload, auth=moderator.auth)
                 assert res.status_code == 201
 

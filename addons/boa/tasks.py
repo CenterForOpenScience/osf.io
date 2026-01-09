@@ -186,7 +186,7 @@ async def submit_to_boa_async(host, username, password, user_guid, project_guid,
     NotificationType.Type.ADDONS_BOA_JOB_COMPLETE.instance.emit(
         user=user,
         event_context={
-            'fullname': user.fullname,
+            'user_fullname': user.fullname,
             'query_file_name': query_file_name,
             'query_file_full_path': file_full_path,
             'output_file_name': output_file_name,
