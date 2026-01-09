@@ -32,7 +32,7 @@ def reviews_withdraw_requests_notification_moderators(self, timestamp, context, 
     from osf.models import NotificationType
 
     context['message'] = f'has requested withdrawal of "{resource.title}".'
-    context['reviews_submission_url'] = f'{DOMAIN}registries/{provider._id}/{resource._id}?mode=moderator'
+    context['reviews_submission_url'] = f'{DOMAIN}{resource._id}?mode=moderator'
 
     context['provider_id'] = provider.id
     for group_name in ['moderator', 'admin']:
@@ -91,7 +91,7 @@ def reviews_submit_notification_moderators(self, timestamp, resource, context):
     if provider.type == 'osf.preprintprovider':
         context['reviews_submission_url'] = f'{DOMAIN}preprints/{provider._id}/{resource._id}?mode=moderator'
     elif provider.type == 'osf.registrationprovider':
-        context['reviews_submission_url'] = f'{DOMAIN}registries/{provider._id}/{resource._id}?mode=moderator'
+        context['reviews_submission_url'] = f'{DOMAIN}/{resource._id}?mode=moderator'
     else:
         raise NotImplementedError(f'unsupported provider type {provider.type}')
 
