@@ -3,7 +3,7 @@
 <%def name="content()">
     <tr>
       <td style="border-collapse: collapse;">
-        Hello ${recipient_fullname},
+        Hello ${recipient_username},
         <p>
             <a href="${sender_absolute_url}">${sender_fullname}</a> has requested access to <a href="${node_absolute_url}">${node_title}</a>.
         </p>
