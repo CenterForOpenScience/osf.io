@@ -63,6 +63,26 @@ class SocialField(ser.DictField):
             value = social
         return super().to_representation(value)
 
+class ExternalIdentityField(ser.DictField):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        if not value or not isinstance(value, dict):
+            return value
+        result = {}
+        for provider, identities in value.items():
+            if not identities or not isinstance(identities, dict):
+                result[provider] = identities
+                continue
+            identity_id, status = next(iter(identities.items()))
+            if status != 'VERIFIED':
+                continue
+            result[provider] = {
+                'id': identity_id,
+                'status': status,
+            }
+        return result
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -97,6 +117,7 @@ class UserSerializer(JSONAPISerializer):
     allow_indexing = ShowIfCurrentUser(ser.BooleanField(required=False, allow_null=True))
     can_view_reviews = ShowIfCurrentUser(ser.SerializerMethodField(help_text='Whether the current user has the `view_submissions` permission to ANY reviews provider.'))
     accepted_terms_of_service = ShowIfCurrentUser(ser.SerializerMethodField())
+    external_identity = HideIfDisabled(ExternalIdentityField(required=False))
 
     links = HideIfDisabled(
         LinksField(
