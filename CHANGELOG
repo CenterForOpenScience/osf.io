@@ -2,6 +2,18 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.1.5 (2026-01-12)
+===================
+
+- Fix authenticated ORCID is not shown on user profile page (BE part)
+- Fix some links in preprint & registration moderation digest emails
+- Enable admin/admin read/write access for NR tables
+- Handle multiple notification subscriptions gracefully in emit()
+- Remove subscription when moderators/admins are removed
+- Set proper default message frequency when adding moderator/admins
+- Add a management command to remove duplicated notifications
+- Fix subscription population script's digest option
+
 26.1.4 (2026-01-06)
 ===================
 
