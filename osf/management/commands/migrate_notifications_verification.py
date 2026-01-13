@@ -23,7 +23,7 @@ class Command(BaseCommand):
         parser.add_argument('--frequencies', action='store_true', help='Check message_frequency values for invalid ones')
         parser.add_argument('--counts', action='store_true', help='Compare legacy M2M total with migrated count')
         parser.add_argument('--distribution', action='store_true', help='Print breakdown summary')
-        parser.add_argument('--unique-digest', action='store_true', default=False, help='Used along with --duplicates to include _is_digest field in unique_together')
+        parser.add_argument('--exclude-is-digest', action='store_true', default=False, help='Used along with --duplicates to exclude _is_digest field in unique_together')
         parser.add_argument('--output-size', type=int, default=10, help='Used along with other options to set the number of found duplicates for output')
 
     def handle(self, *args, **options):
@@ -40,11 +40,12 @@ class Command(BaseCommand):
 
         # 1. Detect duplicates
         if run_all or 'duplicates' in flags:
-            print(f'1) Checking duplicate NotificationSubscription entries (unique-digest:{options['unique_digest']})...')
-            if options['unique_digest']:
+            action_word = 'excludes' if options['exclude_is_digest'] else 'includes'
+            print(f'1) Checking duplicate NotificationSubscription entries (unique_together {action_word} _is_digest)...')
+            if options['exclude_is_digest']:
                 duplicates = (
                     NotificationSubscription.objects.values(
-                        'user_id', 'content_type_id', 'object_id', 'notification_type_id', '_is_digest',
+                        'user_id', 'content_type_id', 'object_id', 'notification_type_id',
                     )
                     .annotate(count=Count('id'))
                     .filter(count__gt=1)
@@ -52,7 +53,7 @@ class Command(BaseCommand):
             else:
                 duplicates = (
                     NotificationSubscription.objects.values(
-                        'user_id', 'content_type_id', 'object_id', 'notification_type_id',
+                        'user_id', 'content_type_id', 'object_id', 'notification_type_id', '_is_digest',
                     )
                     .annotate(count=Count('id'))
                     .filter(count__gt=1)
