@@ -279,15 +279,16 @@ class RegistrationActionSerializer(BaseActionSerializer):
         comment = validated_data.pop('comment', '')
         user = validated_data.pop('user')
 
-        pending_schema_responses = target.schema_responses.filter(
+        pending_schema_response_updates = target.schema_responses.filter(
             reviews_state__in=[
                 ApprovalStates.UNAPPROVED.db_name,
                 ApprovalStates.PENDING_MODERATION.db_name,
             ],
+            previous_response__isnull=False,  # Only updates, not initial submissions
         ).order_by('-created')
 
-        if pending_schema_responses.exists():
-            pending_response = pending_schema_responses.first()
+        if pending_schema_response_updates.exists():
+            pending_response = pending_schema_response_updates.first()
             short_message = 'This registration has a pending update'
             long_message = (
                 f'This registration has a pending schema response update (ID: {pending_response._id}) '
