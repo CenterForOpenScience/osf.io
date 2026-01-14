@@ -26,6 +26,7 @@ from osf.models import (
 )
 
 from osf.utils.workflows import (
+    ApprovalStates,
     DefaultStates,
     DefaultTriggers,
     ReviewStates,
@@ -277,6 +278,30 @@ class RegistrationActionSerializer(BaseActionSerializer):
         target = validated_data.pop('target')
         comment = validated_data.pop('comment', '')
         user = validated_data.pop('user')
+
+        pending_schema_responses = target.schema_responses.filter(
+            reviews_state__in=[
+                ApprovalStates.UNAPPROVED.db_name,
+                ApprovalStates.PENDING_MODERATION.db_name,
+            ],
+        ).order_by('-created')
+
+        if pending_schema_responses.exists():
+            pending_response = pending_schema_responses.first()
+            short_message = 'This registration has a pending update'
+            long_message = (
+                f'This registration has a pending schema response update (ID: {pending_response._id}) '
+                f'that must be moderated. Please use the schema response actions endpoint to approve or reject '
+                f'the update instead of creating a registration action.'
+            )
+            raise HTTPError(
+                http_status.HTTP_400_BAD_REQUEST,
+                data={
+                    'message_short': short_message,
+                    'message_long': long_message,
+                    'schema_response_id': pending_response._id,
+                },
+            )
 
         sanction = target.sanction
 
