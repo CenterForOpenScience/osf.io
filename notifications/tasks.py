@@ -221,8 +221,9 @@ def send_moderator_email_task(self, user_id, notification_ids, provider_content_
         logo = None
         if isinstance(provider, RegistrationProvider):
             provider_type = 'registration'
-            submissions_url = get_registration_provider_submissions_url(provider)
-            withdrawals_url = f'{submissions_url}?state=pending_withdraw'
+            base_submissions_url = get_registration_provider_submissions_url(provider)
+            submissions_url = f'{base_submissions_url}?status=pending'
+            withdrawals_url = f'{base_submissions_url}?status=pending_withdraw'
             notification_settings_url = f'{settings.DOMAIN}registries/{provider._id}/moderation/notifications'
             if provider.brand:
                 additional_context = {
