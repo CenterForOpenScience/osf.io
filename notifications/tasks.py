@@ -33,6 +33,11 @@ def safe_render_notification(notifications, email_task):
             email_task.error_message = f'Error rendering notification {notification.id}: {str(e)} \n'
             email_task.save()
             failed_notifications.append(notification.id)
+            # Mark notifications that failed to render as fake sent
+            # Use 1000/12/31 to distinguish itself from another type of fake sent 1000/1/1
+            log_message(f'Error rendering notification, mark as fake sent: [notification_id={notification.id}]')
+            notification.sent = datetime(1000, 12, 31)
+            notification.save()
             continue
 
         rendered_notifications.append(rendered)
