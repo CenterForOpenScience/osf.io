@@ -2,6 +2,13 @@
 
 We follow the CalVer (https://calver.org/) versioning scheme: YY.MINOR.MICRO.
 
+26.1.6 (2026-01-14)
+===================
+
+- Rework NR verification and de-duplication command
+- Fix the rest of regsitration links in moderator digest email
+- Mark fail-to-render notifications as fake sent
+
 26.1.5 (2026-01-12)
 ===================
 
