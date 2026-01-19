@@ -95,11 +95,13 @@ def send_archiver_file_not_found_mails(src, user, results, url):
     NotificationType.Type.DESK_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
         destination_address=settings.OSF_SUPPORT_EMAIL,
         event_context={
-            'user': user.id,
-            'src': src._id,
+            'domain': settings.DOMAIN,
+            'src': src,
+            'src_title': src.title,
+            'user__id': user._id,
+            'user_fullname': user.fullname,
+            'src__id': src._id,
             'results': results,
-            'url': url,
-            'can_change_preferences': False,
         }
     )
     NotificationType.Type.USER_ARCHIVE_JOB_FILE_NOT_FOUND.instance.emit(
