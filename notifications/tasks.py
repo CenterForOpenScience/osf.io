@@ -1,6 +1,6 @@
 import itertools
 from calendar import monthrange
-from datetime import date, datetime
+from datetime import date
 from django.contrib.contenttypes.models import ContentType
 from django.db import connection
 from django.utils import timezone
