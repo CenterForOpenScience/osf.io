@@ -1,13 +1,17 @@
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.db.models import Value, When, Case, OuterRef, Subquery
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
-from django.contrib.contenttypes.models import ContentType
+
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotFound
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from rest_framework.response import Response
+
+from framework import sentry
 from framework.auth.oauth_scopes import CoreScopes
+
 from api.base.views import JSONAPIBaseView
 from api.base.filters import ListFilterMixin
 from api.base import permissions as base_permissions
@@ -18,6 +22,7 @@ from api.subscriptions.serializers import (
     RegistrationSubscriptionSerializer,
 )
 from api.subscriptions.permissions import IsSubscriptionOwner
+
 from osf.models import (
     CollectionProvider,
     PreprintProvider,
@@ -25,6 +30,7 @@ from osf.models import (
     AbstractProvider,
     AbstractNode,
     Guid,
+    OSFUser,
 )
 from osf.models.notification_type import NotificationType
 from osf.models.notification_subscription import NotificationSubscription
@@ -156,14 +162,18 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
     def get_object(self):
         subscription_id = self.kwargs['subscription_id']
         user_guid = self.request.user._id
-
-        provider_ct = ContentType.objects.get(app_label='osf', model='abstractprovider')
-        node_ct = ContentType.objects.get(app_label='osf', model='abstractnode')
+        user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED.instance
+        reviews_submission_status_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+        user_ct = ContentType.objects.get_for_model(OSFUser)
+        node_ct = ContentType.objects.get_for_model(AbstractNode)
+        provider_ct = ContentType.objects.get_for_model(AbstractProvider)
 
         node_subquery = AbstractNode.objects.filter(
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
+        existing_subscriptions = None
+        missing_subscription_created = None
         try:
             annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
                 legacy_id=Case(
@@ -185,17 +195,37 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                     output_field=CharField(),
                 ),
             )
-            obj = annotated_obj_qs.filter(legacy_id=subscription_id)
-
+            existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
         except ObjectDoesNotExist:
-            raise NotFound
+            # `global_file_updated` and `global_reviews` should exist by default for every user
+            # if not found, create them with `none` frequency as default.
+            if subscription_id == f'{user_guid}_global_file_updated':
+                notification_type = user_file_updated_nt
+            elif subscription_id == f'{user_guid}_global_reviews':
+                notification_type = reviews_submission_status_nt
+            else:
+                raise NotFound
+            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], type={notification_type}, id={subscription_id}')
+            missing_subscription_created = NotificationSubscription.objects.create(
+                notification_type=notification_type,
+                user=self.request.user,
+                content_type=user_ct,
+                object_id=self.request.user.id,
+                defaults={
+                    'is_digest': True,
+                    'message_frequency': 'none',
+                },
+            )
 
-        obj = obj.filter(user=self.request.user).first()
-        if not obj:
-            raise PermissionDenied
+        if missing_subscription_created:
+            subscription = missing_subscription_created
+        else:
+            subscription = existing_subscriptions.filter(user=self.request.user).order_by('id').first()
+            if not subscription:
+                raise PermissionDenied
 
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, subscription)
+        return subscription
 
     def update(self, request, *args, **kwargs):
         """
