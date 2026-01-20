@@ -444,6 +444,8 @@ class TestOSFUser:
 
     @mock.patch('api.share.utils.update_share')
     def test_merge_user_triggers_share_reindex(self, mock_update_share):
+        from osf.models import Preprint
+
         user = AuthUserFactory()
         user2 = AuthUserFactory()
 
@@ -460,7 +462,7 @@ class TestOSFUser:
         # Verify update_share was called for both nodes
         nodes_reindexed = [
             call[0][0] for call in mock_update_share.call_args_list
-            if hasattr(call[0][0], 'type') and call[0][0].type == 'osf.node'
+            if isinstance(call[0][0], AbstractNode)
         ]
         assert len(nodes_reindexed) == 2
         assert node_one in nodes_reindexed
@@ -469,7 +471,7 @@ class TestOSFUser:
         # Verify update_share was called for both preprints
         preprints_reindexed = [
             call[0][0] for call in mock_update_share.call_args_list
-            if hasattr(call[0][0], 'provider')
+            if isinstance(call[0][0], Preprint)
         ]
         assert len(preprints_reindexed) == 2
         assert preprint_one in preprints_reindexed
