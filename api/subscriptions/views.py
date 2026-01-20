@@ -164,6 +164,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         user_guid = self.request.user._id
         user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED.instance
         reviews_submission_status_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+        node_file_updated_nt = NotificationType.Type.NODE_FILE_UPDATED.instance
         user_ct = ContentType.objects.get_for_model(OSFUser)
         node_ct = ContentType.objects.get_for_model(AbstractNode)
         provider_ct = ContentType.objects.get_for_model(AbstractProvider)
@@ -172,6 +173,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             id=Cast(OuterRef('object_id'), IntegerField()),
         ).values('guids___id')[:1]
 
+        node_guid = 'n/a'
         existing_subscriptions = None
         missing_subscription_created = None
         try:
@@ -200,17 +202,31 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             # `global_file_updated` and `global_reviews` should exist by default for every user
             # if not found, create them with `none` frequency as default.
             if subscription_id == f'{user_guid}_global_file_updated':
+                # TODO: should we verify user auth/permissions?
                 notification_type = user_file_updated_nt
+                content_type = user_ct
+                object_id = self.request.user.id
             elif subscription_id == f'{user_guid}_global_reviews':
+                # TODO: should we verify user auth/permissions?
                 notification_type = reviews_submission_status_nt
+                content_type = user_ct
+                object_id = self.request.user.id
+            elif subscription_id.endswith('_files_updated'):
+                node_guid = subscription_id[:-len('_files_updated')]
+                node = AbstractNode.objects.get(guid___id=node_guid)
+                # TODO: should we verify node contributorship and user auth/permissions?
+                notification_type = node_file_updated_nt
+                content_type = node_ct
+                object_id = node.id
             else:
+                # TODO: what is this `{user_guid}_global` legacy ID? Is this the same as not found?
                 raise NotFound
-            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], type={notification_type}, id={subscription_id}')
+            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
             missing_subscription_created = NotificationSubscription.objects.create(
                 notification_type=notification_type,
                 user=self.request.user,
-                content_type=user_ct,
-                object_id=self.request.user.id,
+                content_type=content_type,
+                object_id=object_id,
                 defaults={
                     'is_digest': True,
                     'message_frequency': 'none',
