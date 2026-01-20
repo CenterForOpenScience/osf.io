@@ -728,6 +728,11 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         if self == user:
             raise ValueError('Cannot merge a user into itself')
 
+        # Capture content to SHARE reindex BEFORE merge transfers contributors
+        # After merge, user.contributed and user.preprints will be empty
+        nodes_to_reindex = list(user.contributed)
+        preprints_to_reindex = list(user.preprints.all())
+
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags.all():
@@ -859,13 +864,13 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
 
         from api.share.utils import update_share
 
-        for node in user.contributed:
+        for node in nodes_to_reindex:
             try:
                 update_share(node)
             except Exception as e:
                 logger.exception(f'Failed to SHARE reindex node {node._id} during user merge: {e}')
 
-        for preprint in user.preprints.all():
+        for preprint in preprints_to_reindex:
             try:
                 update_share(preprint)
             except Exception as e:
