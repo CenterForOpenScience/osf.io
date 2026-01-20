@@ -151,6 +151,28 @@ class NotificationType(models.Model):
             obj, created = NotificationType.objects.get_or_create(name=self.value)
             return obj
 
+    @property
+    def is_digest_type(self):
+        digest_types = {
+            NotificationType.Type.USER_DIGEST.value,
+            NotificationType.Type.DIGEST_REVIEWS_MODERATORS.value,
+            NotificationType.Type.ADDON_FILE_RENAMED.value,
+            NotificationType.Type.ADDON_FILE_COPIED.value,
+            NotificationType.Type.FILE_ADDED.value,
+            NotificationType.Type.ADDON_FILE_MOVED.value,
+            NotificationType.Type.FILE_REMOVED.value,
+            NotificationType.Type.FILE_UPDATED.value,
+            NotificationType.Type.FOLDER_CREATED.value,
+            NotificationType.Type.USER_FILE_UPDATED.value,
+            NotificationType.Type.NODE_FILE_UPDATED.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+            NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
+            NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
+            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
+            NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
+        }
+        return self.name in digest_types
+
     notification_interval_choices = ArrayField(
         base_field=models.CharField(max_length=32),
         default=get_default_frequency_choices,
