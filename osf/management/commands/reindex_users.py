@@ -1,4 +1,3 @@
-"""Resend all resources (nodes, registrations, preprints) for given providers to SHARE."""
 import logging
 
 from django.core.management.base import BaseCommand
