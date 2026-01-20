@@ -881,8 +881,9 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
 
         allow_unconfigured = force_archive_params.get('allow_unconfigured', False)
 
-        addons = set(registration.registered_from.get_addon_names())
-        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
 
         try:
             verify(registration, permissible_addons=addons, raise_error=True)
