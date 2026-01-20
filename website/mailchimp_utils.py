@@ -127,7 +127,7 @@ def subscribe_on_confirm(user):
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
         defaults={
-            'is_digest': True,
+            '_is_digest': True,
             'message_frequency': 'instantly',
         },
     )
@@ -138,7 +138,7 @@ def subscribe_on_confirm(user):
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
         defaults={
-            'is_digest': True,
+            '_is_digest': True,
             'message_frequency': 'instantly',
         },
     )

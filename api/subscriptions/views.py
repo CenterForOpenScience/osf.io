@@ -228,7 +228,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 content_type=content_type,
                 object_id=object_id,
                 defaults={
-                    'is_digest': True,
+                    '_is_digest': True,
                     'message_frequency': 'none',
                 },
             )
