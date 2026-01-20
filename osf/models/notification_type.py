@@ -230,6 +230,7 @@ class NotificationType(models.Model):
         if is_digest != self.is_digest_type:
             sentry.log_message(f'NotificationType.emit called with is_digest={is_digest} for '
                 f'NotificationType {self.name} which has is_digest_type={self.is_digest_type}')
+            is_digest = self.is_digest_type
 
         # use concrete model for AbstractProvider to specifically get the provider content type
         if isinstance(subscribed_object, AbstractProvider):
