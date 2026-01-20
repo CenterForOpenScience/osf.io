@@ -126,7 +126,10 @@ def subscribe_on_confirm(user):
         notification_type=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
-        defaults={'message_frequency': 'instantly'},
+        defaults={
+            'is_digest': True,
+            'message_frequency': 'instantly',
+        },
     )
 
     NotificationSubscription.objects.get_or_create(
@@ -134,5 +137,8 @@ def subscribe_on_confirm(user):
         notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.id,
-        defaults={'message_frequency': 'instantly'},
+        defaults={
+            'is_digest': True,
+            'message_frequency': 'instantly',
+        },
     )
