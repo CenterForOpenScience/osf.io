@@ -154,6 +154,8 @@ class NotificationType(models.Model):
     @property
     def is_digest_type(self):
         digest_types = {
+            # User types
+            NotificationType.Type.USER_NO_ADDON.value,
             # File types
             NotificationType.Type.ADDON_FILE_COPIED.value,
             NotificationType.Type.ADDON_FILE_MOVED.value,
@@ -169,7 +171,6 @@ class NotificationType(models.Model):
             NotificationType.Type.COLLECTION_SUBMISSION_SUBMITTED.value,
             NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
             NotificationType.Type.PROVIDER_NEW_PENDING_WITHDRAW_REQUESTS.value,
-            NotificationType.Type.PROVIDER_REVIEWS_SUBMISSION_CONFIRMATION.value,
             NotificationType.Type.REVIEWS_SUBMISSION_STATUS.value,
         }
         return self.name in digest_types
