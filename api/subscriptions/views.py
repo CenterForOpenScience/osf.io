@@ -1,5 +1,5 @@
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import PermissionDenied
 from django.db.models import Value, When, Case, OuterRef, Subquery
 from django.db.models.fields import CharField, IntegerField
 from django.db.models.functions import Concat, Cast
@@ -174,33 +174,31 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         ).values('guids___id')[:1]
 
         node_guid = 'n/a'
-        existing_subscriptions = None
         missing_subscription_created = None
-        try:
-            annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
-                legacy_id=Case(
-                    When(
-                        notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
-                        content_type=node_ct,
-                        then=Concat(Subquery(node_subquery), Value('_files_updated')),
-                    ),
-                    When(
-                        notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
-                        then=Value(f'{user_guid}_global_file_updated'),
-                    ),
-                    When(
-                        notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
-                        content_type=provider_ct,
-                        then=Value(f'{user_guid}_global_reviews'),
-                    ),
-                    default=Value(f'{user_guid}_global'),
-                    output_field=CharField(),
+        annotated_obj_qs = NotificationSubscription.objects.filter(user=self.request.user).annotate(
+            legacy_id=Case(
+                When(
+                    notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
+                    content_type=node_ct,
+                    then=Concat(Subquery(node_subquery), Value('_files_updated')),
                 ),
-            )
-            existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
-        except ObjectDoesNotExist:
-            # `global_file_updated` and `global_reviews` should exist by default for every user
-            # if not found, create them with `none` frequency as default.
+                When(
+                    notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
+                    then=Value(f'{user_guid}_global_file_updated'),
+                ),
+                When(
+                    notification_type__name=NotificationType.Type.PROVIDER_NEW_PENDING_SUBMISSIONS.value,
+                    content_type=provider_ct,
+                    then=Value(f'{user_guid}_global_reviews'),
+                ),
+                default=Value(f'{user_guid}_global'),
+                output_field=CharField(),
+            ),
+        )
+        existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
+        if not existing_subscriptions:
+            # `global_file_updated` and `global_reviews` should exist by default for every user.
+            # If not found, create them with `none` frequency and `_is_digest=True` as default.
             if subscription_id == f'{user_guid}_global_file_updated':
                 # TODO: should we verify user auth/permissions?
                 notification_type = user_file_updated_nt
@@ -213,13 +211,16 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 object_id = self.request.user.id
             elif subscription_id.endswith('_files_updated'):
                 node_guid = subscription_id[:-len('_files_updated')]
-                node = AbstractNode.objects.get(guid___id=node_guid)
+                node = AbstractNode.objects.filter(guid___id=node_guid).first()
+                if not node:
+                    sentry.log_message(f'Invalid node in legacy subscription ID: [user={user_guid}, legacy_id={subscription_id}]')
+                    raise NotFound
                 # TODO: should we verify node contributorship and user auth/permissions?
                 notification_type = node_file_updated_nt
                 content_type = node_ct
                 object_id = node.id
             else:
-                # TODO: what is this `{user_guid}_global` legacy ID? Is this the same as not found?
+                sentry.log_message(f'Subscription not found: [user={user_guid}, legacy_id={subscription_id}]')
                 raise NotFound
             sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
             missing_subscription_created = NotificationSubscription.objects.create(
@@ -236,7 +237,8 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
         if missing_subscription_created:
             subscription = missing_subscription_created
         else:
-            subscription = existing_subscriptions.filter(user=self.request.user).order_by('id').first()
+            # TODO: should we only have one item in `existing_subscriptions` (assume there is no duplicates)?
+            subscription = existing_subscriptions.filter(user=self.request.user).order_by('id').last()
             if not subscription:
                 raise PermissionDenied
 
