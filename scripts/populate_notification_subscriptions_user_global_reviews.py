@@ -4,6 +4,7 @@ django.setup()
 from website.app import init_app
 init_app(routes=False)
 
+from datetime import datetime
 from framework.celery_tasks import app as celery_app
 from django.contrib.contenttypes.models import ContentType
 from osf.models import OSFUser, NotificationSubscription, NotificationType
@@ -11,33 +12,77 @@ from osf.models import OSFUser, NotificationSubscription, NotificationType
 
 @celery_app.task(name='scripts.populate_reviews_notification_subscriptions')
 def populate_reviews_notification_subscriptions():
-    created = 0
-    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+    print('---Starting REVIEWS_SUBMISSION_STATUS subscription population script----')
+    global_start = datetime.now()
+
+    batch_size = 1000
+    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
 
     user_ct = ContentType.objects.get_for_model(OSFUser)
 
-    reviews_qs = OSFUser.objects.exclude(subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS).distinct('id')
+    updated_start = datetime.now()
+    updated = (
+        NotificationSubscription.objects.filter(
+            notification_type__name=review_nt,
+            _is_digest=False,
+        )
+        .update(_is_digest=True)
+    )
+    updated_end = datetime.now()
+    print(f'Updated {updated} subscriptions. Took time: {updated_end - updated_start}')
+    print('Update finished.')
 
-    print(f"Creating REVIEWS_SUBMISSION_STATUS subscriptions for {reviews_qs.count()} users.")
-    for id, user in enumerate(reviews_qs, 1):
-        print(f"Processing user {id} / {reviews_qs.count()}")
-        try:
-            _, is_created = NotificationSubscription.objects.get_or_create(
-                notification_type=review_nt,
+    user_qs = OSFUser.objects.exclude(
+        subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
+    ).distinct('id')
+
+    items_to_create = []
+    total_created = 0
+
+    for count, user in enumerate(user_qs, 1):
+        batch_start = datetime.now()
+        items_to_create.append(
+            NotificationSubscription(
+                notification_type=review_nt.instance,
                 user=user,
                 content_type=user_ct,
                 object_id=user.id,
-                defaults={
-                    'message_frequency': 'none',
-                },
+                _is_digest=True,
+                message_frequency='none',
             )
-            if is_created:
-                created += 1
-        except Exception as exeption:
-            print(exeption)
-            continue
+        )
+        if len(items_to_create) >= batch_size:
+            print(f'Creating batch of {len(items_to_create)} subscriptions...')
+            try:
+                NotificationSubscription.objects.bulk_create(
+                    items_to_create,
+                    batch_size=batch_size,
+                    ignore_conflicts=True,
+                )
+                total_created += len(items_to_create)
+            except Exception as e:
+                print(f'Error during bulk_create: {e}')
+            finally:
+                items_to_create.clear()
+            batch_end = datetime.now()
+            print(f'Batch took {batch_end - batch_start}')
 
-    print(f"Created {created} subscriptions")
+            if count % 1000 == 0:
+                print(f'Processed {count}, created {total_created}')
 
-if __name__ == '__main__':
-    populate_reviews_notification_subscriptions.delay()
+    if items_to_create:
+        print(f'Creating final batch of {len(items_to_create)} subscriptions...')
+        try:
+            NotificationSubscription.objects.bulk_create(
+                items_to_create,
+                batch_size=batch_size,
+                ignore_conflicts=True,
+            )
+            total_created += len(items_to_create)
+        except Exception as e:
+            print(f'Error during bulk_create: {e}')
+
+    global_end = datetime.now()
+    print(f'Total time for REVIEWS_SUBMISSION_STATUS subscription population: {global_end - global_start}')
+    print(f'Created {total_created} subscriptions.')
+    print('----Creation finished----')
