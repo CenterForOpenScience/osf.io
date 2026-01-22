@@ -249,6 +249,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
     # }
 
     email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
+    no_login_email_last_sent = NonNaiveDateTimeField(null=True, blank=True)
     change_password_last_attempt = NonNaiveDateTimeField(null=True, blank=True)
     # Logs number of times user attempted to change their password where their
     # old password was invalid
