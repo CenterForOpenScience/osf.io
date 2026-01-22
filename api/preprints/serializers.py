@@ -21,6 +21,7 @@ from api.base.serializers import (
     HideIfPreprint,
     LinkedNodesRelationshipSerializer,
 )
+from api.base.settings import BULK_SETTINGS
 from api.base.utils import absolute_reverse, get_user_auth
 from api.base.parsers import NO_DATA_ERROR
 from api.nodes.serializers import (
@@ -615,6 +616,7 @@ class PreprintContributorsSerializer(NodeContributorsSerializer):
 
     class Meta:
         type_ = 'contributors'
+        bulk_limit = BULK_SETTINGS.get('PREPRINT_CONTRIBUTORS_BULK_LIMIT', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
     def get_absolute_url(self, obj):
         return absolute_reverse(
