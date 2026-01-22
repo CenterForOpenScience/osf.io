@@ -43,8 +43,8 @@ def populate_notification_subscriptions_user_global_file_updated():
     items_to_create = []
     total_created = 0
 
+    batch_start = datetime.now()
     for count, user in enumerate(user_qs, 1):
-        batch_start = datetime.now()
         items_to_create.append(
             NotificationSubscription(
                 notification_type=user_file_updated_nt.instance,
@@ -71,8 +71,9 @@ def populate_notification_subscriptions_user_global_file_updated():
             batch_end = datetime.now()
             print(f'Batch took {batch_end - batch_start}')
 
-            if count % 1000 == 0:
+            if count % batch_size == 0:
                 print(f'Processed {count}, created {total_created}')
+            batch_start = datetime.now()
 
     if items_to_create:
         print(f'Creating final batch of {len(items_to_create)} subscriptions...')
