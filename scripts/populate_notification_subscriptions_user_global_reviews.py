@@ -12,25 +12,13 @@ from osf.models import OSFUser, NotificationSubscription, NotificationType
 
 @celery_app.task(name='scripts.populate_reviews_notification_subscriptions')
 def populate_reviews_notification_subscriptions():
-    print('---Starting REVIEWS_SUBMISSION_STATUS subscription population script----')
+    print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions population script----')
     global_start = datetime.now()
 
     batch_size = 1000
     review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
 
     user_ct = ContentType.objects.get_for_model(OSFUser)
-
-    updated_start = datetime.now()
-    updated = (
-        NotificationSubscription.objects.filter(
-            notification_type__name=review_nt,
-            _is_digest=False,
-        )
-        .update(_is_digest=True)
-    )
-    updated_end = datetime.now()
-    print(f'Updated {updated} subscriptions. Took time: {updated_end - updated_start}')
-    print('Update finished.')
 
     user_qs = OSFUser.objects.exclude(
         subscriptions__notification_type__name=NotificationType.Type.REVIEWS_SUBMISSION_STATUS.instance
@@ -86,3 +74,22 @@ def populate_reviews_notification_subscriptions():
     print(f'Total time for REVIEWS_SUBMISSION_STATUS subscription population: {global_end - global_start}')
     print(f'Created {total_created} subscriptions.')
     print('----Creation finished----')
+
+@celery_app.task(name='scripts.update_reviews_notification_subscriptions')
+def update_reviews_notification_subscriptions():
+    print('---Starting REVIEWS_SUBMISSION_STATUS subscriptions updating script----')
+
+    review_nt = NotificationType.Type.REVIEWS_SUBMISSION_STATUS
+
+    updated_start = datetime.now()
+    updated = (
+        NotificationSubscription.objects.filter(
+            notification_type__name=review_nt,
+            _is_digest=False,
+        )
+        .update(_is_digest=True)
+    )
+    updated_end = datetime.now()
+
+    print(f'Updated {updated} subscriptions. Took time: {updated_end - updated_start}')
+    print('Update finished.')

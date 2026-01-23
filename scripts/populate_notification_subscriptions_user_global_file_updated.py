@@ -12,25 +12,11 @@ from osf.models import OSFUser, NotificationSubscription, NotificationType
 
 @celery_app.task(name='scripts.populate_notification_subscriptions_user_global_file_updated')
 def populate_notification_subscriptions_user_global_file_updated():
-    print('---Starting USER_FILE_UPDATED subscription population script----')
+    print('---Starting USER_FILE_UPDATED subscriptions population script----')
     global_start = datetime.now()
 
     batch_size = 1000
     user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED
-
-    update_start = datetime.now()
-    updated = (
-        NotificationSubscription.objects
-        .filter(
-            notification_type__name=user_file_updated_nt,
-            _is_digest=False,
-        )
-        .update(_is_digest=True)
-    )
-    update_end = datetime.now()
-
-    print(f'Updated {updated} subscriptions. Took time: {update_end - update_start}')
-    print('Update finished.')
 
     user_ct = ContentType.objects.get_for_model(OSFUser)
     user_qs = (OSFUser.objects
@@ -91,3 +77,23 @@ def populate_notification_subscriptions_user_global_file_updated():
     print(f'Total time for USER_FILE_UPDATED subscription population: {global_end - global_start}')
     print(f'Created {total_created} subscriptions.')
     print('----Creation finished----')
+
+@celery_app.task(name='scripts.update_notification_subscriptions_user_global_file_updated')
+def update_notification_subscriptions_user_global_file_updated():
+    print('---Starting USER_FILE_UPDATED subscriptions updating script----')
+
+    user_file_updated_nt = NotificationType.Type.USER_FILE_UPDATED
+
+    update_start = datetime.now()
+    updated = (
+        NotificationSubscription.objects
+        .filter(
+            notification_type__name=user_file_updated_nt,
+            _is_digest=False,
+        )
+        .update(_is_digest=True)
+    )
+    update_end = datetime.now()
+
+    print(f'Updated {updated} subscriptions. Took time: {update_end - update_start}')
+    print('Update finished.')

@@ -14,25 +14,13 @@ from osf.models import  Node, NotificationSubscription, NotificationType
 
 @celery_app.task(name='scripts.populate_nodes_notification_subscriptions')
 def populate_nodes_notification_subscriptions():
-    print('---Starting NODE_FILE_UPDATED subscription population script----')
+    print('---Starting NODE_FILE_UPDATED subscriptions population script----')
     global_start = datetime.now()
 
     batch_size = 1000
     node_file_nt = NotificationType.Type.NODE_FILE_UPDATED
 
     node_ct = ContentType.objects.get_for_model(Node)
-
-    updated_start = datetime.now()
-    updated = (
-        NotificationSubscription.objects.filter(
-            notification_type__name=node_file_nt,
-            _is_digest=False,
-        )
-        .update(_is_digest=True)
-    )
-    updated_end = datetime.now()
-    print(f'Updated {updated} subscriptions. Took time: {updated_end - updated_start}')
-    print('Update finished.')
 
     node_notifications_sq = (
         NotificationSubscription.objects.filter(
@@ -116,3 +104,21 @@ def populate_nodes_notification_subscriptions():
     print(f'Total time for NODE_FILE_UPDATED subscription population: {global_end - global_start}')
     print(f'Created {total_created} subscriptions.')
     print('----Creation finished----')
+
+@celery_app.task(name='scripts.update_nodes_notification_subscriptions')
+def update_nodes_notification_subscriptions():
+    print('---Starting NODE_FILE_UPDATED subscriptions update script----')
+
+    node_file_nt = NotificationType.Type.NODE_FILE_UPDATED
+
+    updated_start = datetime.now()
+    updated = (
+        NotificationSubscription.objects.filter(
+            notification_type__name=node_file_nt,
+            _is_digest=False,
+        )
+        .update(_is_digest=True)
+    )
+    updated_end = datetime.now()
+    print(f'Updated {updated} subscriptions. Took time: {updated_end - updated_start}')
+    print('Update finished.')
