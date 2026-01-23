@@ -180,7 +180,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 When(
                     notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                     content_type=node_ct,
-                    then=Concat(Subquery(node_subquery), Value('_files_updated')),
+                    then=Concat(Subquery(node_subquery), Value('_file_updated')),
                 ),
                 When(
                     notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
