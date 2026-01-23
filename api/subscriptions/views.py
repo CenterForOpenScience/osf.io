@@ -180,7 +180,7 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 When(
                     notification_type__name=NotificationType.Type.NODE_FILE_UPDATED.value,
                     content_type=node_ct,
-                    then=Concat(Subquery(node_subquery), Value('_file_updated')),
+                    then=Concat(Subquery(node_subquery), Value('_files_updated')),
                 ),
                 When(
                     notification_type__name=NotificationType.Type.USER_FILE_UPDATED.value,
@@ -211,10 +211,10 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
                 # Mismatched request user and subscription user
                 sentry.log_message(f'Permission denied: [user={user_guid}, legacy_id={subscription_id}]')
                 raise PermissionDenied
-            elif subscription_id.endswith('_file_updated'):
+            elif subscription_id.endswith('_files_updated'):
                 notification_type = node_file_updated_nt
                 content_type = node_ct
-                node_guid = subscription_id[:-len('_file_updated')]
+                node_guid = subscription_id[:-len('_files_updated')]
                 node = AbstractNode.objects.filter(guids___id=node_guid, is_deleted=False, type='osf.node').first()
                 if not node:
                     # The node in the legacy subscription ID does not exist or is invalid

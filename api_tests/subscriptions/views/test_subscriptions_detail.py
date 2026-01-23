@@ -71,15 +71,15 @@ class TestSubscriptionDetail:
 
     @pytest.fixture()
     def url_node_file_updated(self, node):
-        return f'/{API_BASE}subscriptions/{node._id}_file_updated/'
+        return f'/{API_BASE}subscriptions/{node._id}_files_updated/'
 
     @pytest.fixture()
     def url_node_file_updated_not_found(self):
-        return f'/{API_BASE}subscriptions/12345_file_updated/'
+        return f'/{API_BASE}subscriptions/12345_files_updated/'
 
     @pytest.fixture()
     def url_node_file_updated_without_permission(self, node_without_permission):
-        return f'/{API_BASE}subscriptions/{node_without_permission._id}_file_updated/'
+        return f'/{API_BASE}subscriptions/{node_without_permission._id}_files_updated/'
 
     @pytest.fixture()
     def url_invalid(self):
@@ -137,13 +137,13 @@ class TestSubscriptionDetail:
         res = app.get(url_node_file_updated, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
-        assert notification_id == f'{node._id}_file_updated'
+        assert notification_id == f'{node._id}_files_updated'
 
     def test_node_file_updated_subscription_detail_not_found(self, app, user, node, notification_node_file_updated, url_node_file_updated_not_found):
         res = app.get(url_node_file_updated_not_found, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
-    def test_node_file_updated_subscription_detail_no_permission(self, app, user, node, notification_node_file_updated, url_node_file_updated_without_permission):
+    def test_node_file_updated_subscription_detail_permission_denied(self, app, user, node, notification_node_file_updated, url_node_file_updated_without_permission):
         res = app.get(url_node_file_updated_without_permission, auth=user.auth, expect_errors=True)
         assert res.status_code == 403
 
