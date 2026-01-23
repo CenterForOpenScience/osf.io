@@ -490,3 +490,22 @@ def send_no_addon_email(self, dry_run=False, **kwargs):
                     pass
             else:
                 notification.mark_sent()
+
+
+@celery_app.task(bind=True, name='notifications.tasks.notifications_cleanup_task')
+def notifications_cleanup_task(self, dry_run=False, **kwargs):
+    """Remove old notifications and email tasks from the database."""
+
+    cutoff_date = timezone.now() - settings.NOTIFICATIONS_CLEANUP_AGE
+    old_notifications = Notification.objects.filter(sent__lt=cutoff_date)
+    old_email_tasks = EmailTask.objects.filter(created_at__lt=cutoff_date)
+
+    if dry_run:
+        notifications_count = old_notifications.count()
+        email_tasks_count = old_email_tasks.count()
+        logger.info(f'[Dry Run] Notifications Cleanup Task: {notifications_count} notifications and {email_tasks_count} email tasks would be deleted.')
+        return
+
+    deleted_notifications_count, _ = old_notifications.delete()
+    deleted_email_tasks_count, _ = old_email_tasks.delete()
+    logger.info(f'Notifications Cleanup Task: Deleted {deleted_notifications_count} notifications and {deleted_email_tasks_count} email tasks older than {cutoff_date}.')
