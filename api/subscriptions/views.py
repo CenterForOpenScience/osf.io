@@ -196,48 +196,51 @@ class SubscriptionDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView):
             ),
         )
         existing_subscriptions = annotated_obj_qs.filter(legacy_id=subscription_id)
-        if not existing_subscriptions:
+        if not existing_subscriptions.exists():
             # `global_file_updated` and `global_reviews` should exist by default for every user.
             # If not found, create them with `none` frequency and `_is_digest=True` as default.
             if subscription_id == f'{user_guid}_global_file_updated':
-                # TODO: should we verify user auth/permissions?
                 notification_type = user_file_updated_nt
                 content_type = user_ct
                 object_id = self.request.user.id
             elif subscription_id == f'{user_guid}_global_reviews':
-                # TODO: should we verify user auth/permissions?
                 notification_type = reviews_submission_status_nt
                 content_type = user_ct
                 object_id = self.request.user.id
-            elif subscription_id.endswith('_files_updated'):
-                node_guid = subscription_id[:-len('_files_updated')]
-                node = AbstractNode.objects.filter(guid___id=node_guid).first()
-                if not node:
-                    sentry.log_message(f'Invalid node in legacy subscription ID: [user={user_guid}, legacy_id={subscription_id}]')
-                    raise NotFound
-                # TODO: should we verify node contributorship and user auth/permissions?
+            elif subscription_id.endswith('_global_file_updated') or subscription_id.endswith('_global_reviews'):
+                # Mismatched request user and subscription user
+                sentry.log_message(f'Permission denied: [user={user_guid}, legacy_id={subscription_id}]')
+                raise PermissionDenied
+            elif subscription_id.endswith('_file_updated'):
                 notification_type = node_file_updated_nt
                 content_type = node_ct
+                node_guid = subscription_id[:-len('_file_updated')]
+                node = AbstractNode.objects.filter(guids___id=node_guid, is_deleted=False, type='osf.node').first()
+                if not node:
+                    # The node in the legacy subscription ID does not exist or is invalid
+                    sentry.log_message(f'Node not found in legacy subscription ID: [user={user_guid}, legacy_id={subscription_id}]')
+                    raise NotFound
+                if not node.is_contributor(self.request.user):
+                    # The request user is not a contributor of the node
+                    sentry.log_message(f'Permission denied: [user={user_guid}], node={node_guid}, legacy_id={subscription_id}]')
+                    raise PermissionDenied
                 object_id = node.id
             else:
                 sentry.log_message(f'Subscription not found: [user={user_guid}, legacy_id={subscription_id}]')
                 raise NotFound
-            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
             missing_subscription_created = NotificationSubscription.objects.create(
                 notification_type=notification_type,
                 user=self.request.user,
                 content_type=content_type,
                 object_id=object_id,
-                defaults={
-                    '_is_digest': True,
-                    'message_frequency': 'none',
-                },
+                _is_digest=True,
+                message_frequency='none',
             )
+            sentry.log_message(f'Missing default subscription has been created: [user={user_guid}], node={node_guid} type={notification_type}, legacy_id={subscription_id}]')
 
         if missing_subscription_created:
             subscription = missing_subscription_created
         else:
-            # TODO: should we only have one item in `existing_subscriptions` (assume there is no duplicates)?
             subscription = existing_subscriptions.filter(user=self.request.user).order_by('id').last()
             if not subscription:
                 raise PermissionDenied
