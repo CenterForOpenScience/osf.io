@@ -1765,6 +1765,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
                 sso_department=sso_department,
                 sso_other_attributes={}
             )
+            self.update_search()
             return affiliation
         # CASE 2: affiliation exists
         updated = False
@@ -1783,6 +1784,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             return None
         # CASE 1.3: at least one attribute is updated -> return the affiliation
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def remove_sso_identity_from_affiliation(self, institution):
@@ -1791,6 +1793,7 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
         affiliation = InstitutionAffiliation.objects.get(user__id=self.id, institution__id=institution.id)
         affiliation.sso_identity = None
         affiliation.save()
+        self.update_search()
         return affiliation
 
     def copy_institution_affiliation_when_merging_user(self, user):
@@ -1832,6 +1835,8 @@ class OSFUser(DirtyFieldsMixin, GuidMixin, BaseModel, AbstractBaseUser, Permissi
             group = affiliation.institution.get_group('institutional_admins')
             group.user_set.remove(self)
             group.save()
+
+        self.update_search()
         return True
 
     def remove_all_affiliated_institutions(self):
