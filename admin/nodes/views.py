@@ -845,11 +845,12 @@ class CheckArchiveStatusRegistrationsView(NodeMixin, View):
             messages.success(request, f"Registration {registration._id} is archived.")
             return redirect(self.get_success_url())
 
-        addons = set(registration.registered_from.get_addon_names())
-        addons.update(DEFAULT_PERMISSIBLE_ADDONS)
+        addons = set(DEFAULT_PERMISSIBLE_ADDONS)
+        for reg in registration.node_and_primary_descendants():
+            addons.update(reg.registered_from.get_addon_names())
 
         try:
-            archive_status = check(registration, permissible_addons=addons)
+            archive_status = check(registration, permissible_addons=addons, verify_addons=False)
             messages.success(request, archive_status)
         except RegistrationStuckError as exc:
             messages.error(request, str(exc))
@@ -885,17 +886,21 @@ class ForceArchiveRegistrationsView(NodeMixin, View):
         for reg in registration.node_and_primary_descendants():
             addons.update(reg.registered_from.get_addon_names())
 
-        try:
-            verify(registration, permissible_addons=addons, raise_error=True)
-        except ValidationError as exc:
-            messages.error(request, str(exc))
-            return redirect(self.get_success_url())
+        # No need to verify addons during force archive,
+        # because we fetched all permissible addons above
+        verify_addons = False
 
-        dry_mode = force_archive_params.get('dry_mode', False)
-
-        if dry_mode:
-            messages.success(request, f"Registration {registration._id} can be archived.")
+        if force_archive_params.get('dry_mode', False):
+            # For dry mode, verify synchronously to provide immediate feedback
+            try:
+                verify(registration, permissible_addons=addons, verify_addons=verify_addons, raise_error=True)
+                messages.success(request, f"Registration {registration._id} can be archived.")
+            except ValidationError as exc:
+                messages.error(request, str(exc))
+                return redirect(self.get_success_url())
         else:
+            # For actual archiving, skip synchronous verification to avoid 502 timeouts
+            # Verification will be performed asynchronously in the task
             force_archive_task = force_archive.delay(
                 str(registration._id),
                 permissible_addons=list(addons),

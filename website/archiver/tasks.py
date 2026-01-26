@@ -375,7 +375,7 @@ def archive_success(self, dst_pk, job_pk):
 
 @celery_app.task(bind=True)
 def force_archive(self, registration_id, permissible_addons, allow_unconfigured=False, skip_collisions=False, delete_collisions=False):
-    from osf.management.commands.force_archive import archive
+    from osf.management.commands.force_archive import archive, verify
 
     create_app_context()
 
@@ -383,6 +383,8 @@ def force_archive(self, registration_id, permissible_addons, allow_unconfigured=
         registration = AbstractNode.load(registration_id)
         if not registration or not isinstance(registration, Registration):
             return f'Registration {registration_id} not found'
+
+        verify(registration, permissible_addons=set(permissible_addons), raise_error=True)
 
         archive(
             registration,
