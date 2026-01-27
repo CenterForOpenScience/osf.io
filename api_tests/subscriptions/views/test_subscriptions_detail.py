@@ -17,7 +17,7 @@ class TestSubscriptionDetail:
         return AuthUserFactory()
 
     @pytest.fixture()
-    def user_no_auth(self):
+    def user_no_permission(self):
         return AuthUserFactory()
 
     @pytest.fixture()
@@ -25,7 +25,7 @@ class TestSubscriptionDetail:
         return NodeFactory(creator=user)
 
     @pytest.fixture()
-    def notification(self, user):
+    def notification_user_global_file_updated(self, user):
         return NotificationSubscriptionFactory(
             notification_type=NotificationType.Type.USER_FILE_UPDATED.instance,
             object_id=user.id,
@@ -58,7 +58,7 @@ class TestSubscriptionDetail:
         )
 
     @pytest.fixture()
-    def url(self, user):
+    def url_user_global_file_updated(self, user):
         return f'/{API_BASE}subscriptions/{user._id}_global_file_updated/'
 
     @pytest.fixture()
@@ -107,28 +107,28 @@ class TestSubscriptionDetail:
             self,
             app,
             user,
-            user_no_auth,
-            notification,
+            user_no_permission,
+            notification_user_global_file_updated,
             notification_user_global_reviews,
-            url,
+            url_user_global_file_updated,
             url_user_global_reviews
     ):
-        res = app.get(url, auth=user_no_auth.auth, expect_errors=True)
+        res = app.get(url_user_global_file_updated, auth=user_no_permission.auth, expect_errors=True)
         assert res.status_code == 403
-        res = app.get(url_user_global_reviews, auth=user_no_auth.auth, expect_errors=True)
+        res = app.get(url_user_global_reviews, auth=user_no_permission.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_user_global_subscription_detail_forbidden(
             self,
             app,
             user,
-            user_no_auth,
-            notification,
+            user_no_permission,
+            notification_user_global_file_updated,
             notification_user_global_reviews,
-            url,
+            url_user_global_file_updated,
             url_user_global_reviews
     ):
-        res = app.get(url, expect_errors=True)
+        res = app.get(url_user_global_file_updated, expect_errors=True)
         assert res.status_code == 401
         res = app.get(url_user_global_reviews, expect_errors=True)
         assert res.status_code == 401
@@ -137,13 +137,13 @@ class TestSubscriptionDetail:
             self,
             app,
             user,
-            user_no_auth,
-            notification,
+            user_no_permission,
+            notification_user_global_file_updated,
             notification_user_global_reviews,
-            url,
+            url_user_global_file_updated,
             url_user_global_reviews
     ):
-        res = app.get(url, auth=user.auth)
+        res = app.get(url_user_global_file_updated, auth=user.auth)
         notification_id = res.json['data']['id']
         assert res.status_code == 200
         assert notification_id == f'{user._id}_global_file_updated'
@@ -180,12 +180,12 @@ class TestSubscriptionDetail:
             self,
             app,
             user,
-            user_no_auth,
+            user_no_permission,
             node,
             notification_node_file_updated,
             url_node_file_updated
     ):
-        res = app.get(url_node_file_updated, auth=user_no_auth.auth, expect_errors=True)
+        res = app.get(url_node_file_updated, auth=user_no_permission.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_node_file_updated_subscription_detail_forbidden(
@@ -200,13 +200,13 @@ class TestSubscriptionDetail:
         assert res.status_code == 401
 
     def test_subscription_detail_invalid_notification_id_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
         res = app.get(url_invalid, expect_errors=True)
         assert res.status_code == 404
 
     def test_subscription_detail_invalid_notification_id_existing_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
         res = app.get(
             url_invalid,
@@ -216,22 +216,22 @@ class TestSubscriptionDetail:
         assert res.status_code == 404
 
     def test_subscription_detail_invalid_payload_403(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
-        res = app.patch_json_api(url, payload_invalid, auth=user_no_auth.auth, expect_errors=True)
+        res = app.patch_json_api(url_user_global_file_updated, payload_invalid, auth=user_no_permission.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_subscription_detail_invalid_payload_401(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+            self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
-        res = app.patch_json_api(url, payload_invalid, expect_errors=True)
+        res = app.patch_json_api(url_user_global_file_updated, payload_invalid, expect_errors=True)
         assert res.status_code == 401
 
     def test_subscription_detail_invalid_payload_400(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
         res = app.patch_json_api(
-            url,
+            url_user_global_file_updated,
             payload_invalid,
             auth=user.auth,
             expect_errors=True,
@@ -241,33 +241,33 @@ class TestSubscriptionDetail:
         assert res.json['errors'][0]['detail'] == ('"invalid-frequency" is not a valid choice.')
 
     def test_subscription_detail_patch_invalid_notification_id_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
         res = app.patch_json_api(url_invalid, payload, expect_errors=True)
         assert res.status_code == 404
 
     def test_subscription_detail_patch_invalid_notification_id_existing_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
         res = app.patch_json_api(url_invalid, payload, auth=user.auth, expect_errors=True)
         assert res.status_code == 404
 
     def test_subscription_detail_patch_invalid_user(
-            self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+            self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
-        res = app.patch_json_api(url, payload, auth=user_no_auth.auth, expect_errors=True)
+        res = app.patch_json_api(url_user_global_file_updated, payload, auth=user_no_permission.auth, expect_errors=True)
         assert res.status_code == 403
 
     def test_subscription_detail_patch_no_user(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
-        res = app.patch_json_api(url, payload, expect_errors=True)
+        res = app.patch_json_api(url_user_global_file_updated, payload, expect_errors=True)
         assert res.status_code == 401
 
     def test_subscription_detail_patch(
-        self, app, user, user_no_auth, notification, url, url_invalid, payload, payload_invalid
+        self, app, user, user_no_permission, notification_user_global_file_updated, url_user_global_file_updated, url_invalid, payload, payload_invalid
     ):
 
-        res = app.patch_json_api(url, payload, auth=user.auth)
+        res = app.patch_json_api(url_user_global_file_updated, payload, auth=user.auth)
         assert res.status_code == 200
         assert res.json['data']['attributes']['frequency'] == 'none'
