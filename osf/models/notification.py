@@ -16,7 +16,6 @@ class Notification(models.Model):
     )
     event_context: dict = models.JSONField()
     sent = models.DateTimeField(null=True, blank=True)
-    seen = models.DateTimeField(null=True, blank=True)
     created = models.DateTimeField(auto_now_add=True)
     fake_sent = models.BooleanField(default=False)
 
@@ -60,11 +59,6 @@ class Notification(models.Model):
     def mark_sent(self) -> None:
         self.sent = timezone.now()
         self.save(update_fields=['sent'])
-
-    def mark_seen(self) -> None:
-        raise NotImplementedError('mark_seen must be implemented by subclasses.')
-        # self.seen = timezone.now()
-        # self.save(update_fields=['seen'])
 
     def render(self) -> str:
         """Render the notification message using the event context."""
